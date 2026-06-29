@@ -1,0 +1,376 @@
+/**
+ * Идемпотентный bootstrap Directus для Клуба выпускников факультета права НИУ ВШЭ.
+ * Создаёт: коллекции + поля + связи, роли, сервисный токен, тестовые аккаунты, сиды.
+ * Повторный запуск ничего не дублирует (всё проверяется перед созданием).
+ *
+ * Запуск: pnpm --filter @club/scripts bootstrap   (env: DIRECTUS_URL, ADMIN_EMAIL, ADMIN_PASSWORD, ...)
+ */
+import {
+  createDirectus,
+  rest,
+  staticToken,
+  readCollections,
+  createCollection,
+  readFieldsByCollection,
+  createField,
+  readRelations,
+  createRelation,
+  readRoles,
+  createRole,
+  readUsers,
+  createUser,
+  updateUser,
+  readItems,
+  createItems,
+} from "@directus/sdk";
+import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED } from "@club/shared";
+
+type Schema = Record<string, any>;
+
+const URL = req("DIRECTUS_URL");
+const ADMIN_EMAIL = req("ADMIN_EMAIL");
+const ADMIN_PASSWORD = req("ADMIN_PASSWORD");
+const SERVICE_TOKEN = req("DIRECTUS_SERVICE_TOKEN");
+
+function req(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Не задана переменная окружения ${name}`);
+  return v;
+}
+function log(msg: string) {
+  console.log(msg);
+}
+
+/** Логин админом → access_token (минуем drift сигнатур SDK login). */
+async function adminToken(): Promise<string> {
+  for (let attempt = 1; attempt <= 30; attempt++) {
+    try {
+      const res = await fetch(`${URL}/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { data: { access_token: string } };
+        return json.data.access_token;
+      }
+    } catch {
+      /* directus ещё поднимается */
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  throw new Error("Directus недоступен: не удалось залогиниться админом за 60с");
+}
+
+const token = await adminToken();
+const client = createDirectus<Schema>(URL).with(staticToken(token)).with(rest());
+
+// ──────────────────────────── helpers ────────────────────────────
+const collectionsSet = new Set((await client.request(readCollections())).map((c: any) => c.collection));
+const relations = await client.request(readRelations());
+const fieldCache = new Map<string, Set<string>>();
+
+function pkUuid() {
+  return {
+    field: "id",
+    type: "uuid",
+    meta: { hidden: true, readonly: true, interface: "input", special: ["uuid"] },
+    schema: { is_primary_key: true, length: 36, has_auto_increment: false },
+  };
+}
+
+async function ensureCollection(collection: string, icon = "box") {
+  if (collectionsSet.has(collection)) return;
+  await client.request(
+    createCollection({ collection, meta: { icon }, schema: {}, fields: [pkUuid()] } as any),
+  );
+  collectionsSet.add(collection);
+  log(`+ коллекция ${collection}`);
+}
+
+async function fieldsOf(collection: string) {
+  if (!fieldCache.has(collection)) {
+    const fs = (await client.request((readFieldsByCollection as any)(collection))) as any[];
+    fieldCache.set(collection, new Set(fs.map((f: any) => f.field)));
+  }
+  return fieldCache.get(collection)!;
+}
+
+type Spec = { type: string; meta?: Record<string, any>; schema?: Record<string, any> };
+async function ensureField(collection: string, field: string, spec: Spec) {
+  const set = await fieldsOf(collection);
+  if (set.has(field)) return;
+  await client.request(
+    (createField as any)(collection, { field, type: spec.type, meta: spec.meta ?? {}, schema: spec.schema ?? {} }),
+  );
+  set.add(field);
+  log(`  + ${collection}.${field}`);
+}
+
+async function ensureM2O(collection: string, field: string, related: string, onDelete = "SET NULL") {
+  await ensureField(collection, field, {
+    type: "uuid",
+    meta: { interface: "select-dropdown-m2o", special: ["m2o"] },
+    schema: {},
+  });
+  if (relations.some((r: any) => r.collection === collection && r.field === field)) return;
+  await client.request(
+    createRelation({ collection, field, related_collection: related, schema: { on_delete: onDelete }, meta: {} } as any),
+  );
+  relations.push({ collection, field } as any);
+  log(`  ~ ${collection}.${field} → ${related}`);
+}
+
+// краткие конструкторы полей
+const str = (unique = false, def?: string): Spec => ({ type: "string", schema: { is_unique: unique, default_value: def } });
+const txt = (): Spec => ({ type: "text" });
+const int = (def?: number): Spec => ({ type: "integer", schema: { default_value: def } });
+const bool = (def?: boolean): Spec => ({ type: "boolean", schema: { default_value: def } });
+const json = (): Spec => ({ type: "json" });
+const ts = (special?: "date-created" | "date-updated"): Spec => ({
+  type: "timestamp",
+  meta: special ? { special: [special] } : {},
+});
+const enumf = (choices: string[], def?: string): Spec => ({
+  type: "string",
+  meta: { interface: "select-dropdown", options: { choices: choices.map((c) => ({ text: c, value: c })) } },
+  schema: { default_value: def },
+});
+
+async function ensureSeed(collection: string, keyField: string, rows: Record<string, any>[]) {
+  const existing = (await client.request((readItems as any)(collection, { fields: [keyField], limit: -1 }))) as any[];
+  const have = new Set(existing.map((r) => r[keyField]));
+  const toCreate = rows.filter((r) => !have.has(r[keyField]));
+  if (toCreate.length) {
+    await client.request((createItems as any)(collection, toCreate));
+    log(`  seed ${collection}: +${toCreate.length}`);
+  }
+}
+
+// ──────────────────────────── 1. коллекции (PK) ────────────────────────────
+const COLLECTIONS = [
+  "levels", "point_rules", "achievements", "alumni", "points_ledger",
+  "alumni_achievements", "pages", "news", "programs", "products",
+  "carts", "orders", "offers", "referrals",
+];
+log("== Коллекции ==");
+for (const c of COLLECTIONS) await ensureCollection(c);
+
+// ──────────────────────────── 2. поля + связи ────────────────────────────
+log("== Поля и связи ==");
+
+// levels
+await ensureField("levels", "key", str(true));
+await ensureField("levels", "title", str());
+await ensureField("levels", "min_points", int(0));
+await ensureField("levels", "discount_percent", int(0));
+await ensureField("levels", "sort", int());
+await ensureField("levels", "color", str());
+
+// point_rules
+await ensureField("point_rules", "reason", str(true));
+await ensureField("point_rules", "points", int(0));
+await ensureField("point_rules", "active", bool(true));
+await ensureField("point_rules", "description", str());
+
+// achievements
+await ensureField("achievements", "key", str(true));
+await ensureField("achievements", "title", str());
+await ensureField("achievements", "description", txt());
+await ensureField("achievements", "rule_json", json());
+await ensureField("achievements", "points_reward", int(0));
+await ensureField("achievements", "sort", int());
+
+// alumni
+await ensureM2O("alumni", "user_id", "directus_users");
+await ensureField("alumni", "fio", str());
+await ensureField("alumni", "cohort", str());
+await ensureField("alumni", "status", enumf(["active", "inactive", "alumni_left"], "active"));
+await ensureField("alumni", "verification_status", enumf(["pending", "verified", "rejected"], "pending"));
+await ensureField("alumni", "points_cached", int(0));
+await ensureField("alumni", "level_cached", enumf(["graduate", "friend", "expert", "ambassador"], "graduate"));
+await ensureField("alumni", "personal_discount", int(0));
+await ensureField("alumni", "contacts_json", json());
+await ensureField("alumni", "referral_code", str(true));
+await ensureM2O("alumni", "referred_by", "alumni");
+await ensureField("alumni", "joined_at", ts("date-created"));
+await ensureField("alumni", "last_activity_at", ts());
+
+// points_ledger (append-only источник правды)
+await ensureM2O("points_ledger", "alumni_id", "alumni", "CASCADE");
+await ensureField("points_ledger", "delta", int(0));
+await ensureField("points_ledger", "reason", enumf(["program", "event", "referral", "mentorship", "order", "decay", "manual", "achievement"]));
+await ensureField("points_ledger", "ref", str());
+await ensureField("points_ledger", "comment", txt());
+await ensureField("points_ledger", "idempotency_key", str(true));
+await ensureField("points_ledger", "created_at", ts("date-created"));
+
+// alumni_achievements (junction = M2M)
+await ensureM2O("alumni_achievements", "alumni_id", "alumni", "CASCADE");
+await ensureM2O("alumni_achievements", "achievement_id", "achievements", "CASCADE");
+await ensureField("alumni_achievements", "earned_at", ts("date-created"));
+
+// pages (минимально — блоки M2A в Фазе 1)
+await ensureField("pages", "slug", str(true));
+await ensureField("pages", "title", str());
+await ensureField("pages", "status", enumf(["draft", "published", "archived"], "draft"));
+await ensureField("pages", "sort", int());
+
+// news
+await ensureField("news", "slug", str(true));
+await ensureField("news", "title", str());
+await ensureField("news", "excerpt", txt());
+await ensureField("news", "body", txt());
+await ensureField("news", "source_url", str());
+await ensureField("news", "published_at", ts());
+await ensureField("news", "status", enumf(["draft", "published"], "draft"));
+
+// programs (ДПО)
+await ensureField("programs", "slug", str(true));
+await ensureField("programs", "title", str());
+await ensureField("programs", "direction", str());
+await ensureField("programs", "format", enumf(["online", "offline", "blended"], "online"));
+await ensureField("programs", "duration", str());
+await ensureField("programs", "price", int(0));
+await ensureField("programs", "dates", json());
+await ensureField("programs", "capacity", int());
+await ensureField("programs", "seats_taken", int(0));
+await ensureField("programs", "modules", json());
+await ensureField("programs", "teachers", json());
+await ensureField("programs", "description", txt());
+await ensureField("programs", "status", enumf(["draft", "published", "archived"], "draft"));
+
+// products (мерч)
+await ensureField("products", "slug", str(true));
+await ensureField("products", "title", str());
+await ensureField("products", "category", str());
+await ensureField("products", "price", int(0));
+await ensureField("products", "images", json());
+await ensureField("products", "variants_json", json());
+await ensureField("products", "stock", int(0));
+await ensureField("products", "description", txt());
+await ensureField("products", "status", enumf(["draft", "published", "archived"], "draft"));
+
+// carts
+await ensureM2O("carts", "alumni_id", "alumni", "SET NULL");
+await ensureField("carts", "session_token", str());
+await ensureField("carts", "items_json", json());
+await ensureField("carts", "updated_at", ts("date-updated"));
+
+// orders (ЗАЯВКА — без оплаты)
+await ensureField("orders", "number", str(true));
+await ensureM2O("orders", "alumni_id", "alumni", "SET NULL");
+await ensureField("orders", "type", enumf(["dpo", "merch", "mixed"], "dpo"));
+await ensureField("orders", "items_json", json());
+await ensureField("orders", "subtotal", int(0));
+await ensureField("orders", "member_discount", int(0));
+await ensureField("orders", "total_estimate", int(0));
+await ensureField("orders", "contact_fio", str());
+await ensureField("orders", "contact_phone", str());
+await ensureField("orders", "contact_email", str());
+await ensureField("orders", "fulfillment", enumf(["pickup", "delivery"], "pickup"));
+await ensureField("orders", "address", txt());
+await ensureField("orders", "comment", txt());
+await ensureField("orders", "consent_pdn", bool(false));
+await ensureField("orders", "status", enumf(["new", "in_progress", "confirmed", "done", "canceled"], "new"));
+await ensureField("orders", "created_at", ts("date-created"));
+
+// offers
+await ensureField("offers", "kind", enumf(["level", "personal"], "level"));
+await ensureM2O("offers", "alumni_id", "alumni", "CASCADE");
+await ensureField("offers", "level_key", str());
+await ensureField("offers", "percent", int(0));
+await ensureField("offers", "title", str());
+await ensureField("offers", "active", bool(true));
+await ensureField("offers", "valid_until", ts());
+
+// referrals
+await ensureM2O("referrals", "referrer_id", "alumni", "CASCADE");
+await ensureM2O("referrals", "invited_user_id", "directus_users", "SET NULL");
+await ensureField("referrals", "code", str());
+await ensureField("referrals", "status", enumf(["pending", "confirmed"], "pending"));
+await ensureField("referrals", "reward_points", int(0));
+await ensureField("referrals", "created_at", ts("date-created"));
+
+// ──────────────────────────── 3. роли ────────────────────────────
+log("== Роли ==");
+const roles = await client.request(readRoles());
+async function ensureRole(name: string, icon: string) {
+  let r = roles.find((x: any) => x.name === name);
+  if (!r) {
+    r = await client.request(createRole({ name, icon } as any));
+    roles.push(r);
+    log(`+ роль ${name}`);
+  }
+  return r;
+}
+await ensureRole("editor", "edit_note");
+await ensureRole("alumni", "school");
+await ensureRole("service", "smart_toy");
+// Administrator существует из ENV-бутстрапа Directus — используем для сервисного токена.
+const adminRole = roles.find((x: any) => x.name === "Administrator");
+
+// ──────────────────────────── 4. пользователи ────────────────────────────
+log("== Пользователи ==");
+async function ensureUser(email: string, fields: Record<string, any>) {
+  const found = (await client.request(readUsers({ filter: { email: { _eq: email } }, limit: 1 }))) as any[];
+  if (found.length) return { id: found[0].id, created: false };
+  const u = (await client.request(createUser({ email, status: "active", ...fields } as any))) as any;
+  log(`+ пользователь ${email}`);
+  return { id: u.id, created: true };
+}
+
+// Сервисный пользователь со статическим токеном для apps/api (пока под Administrator;
+// тонкие политики роли service — в Фазе 4).
+const svc = await ensureUser("service@club.example.com", {
+  first_name: "Service",
+  last_name: "API",
+  password: SERVICE_TOKEN,
+  role: adminRole?.id ?? null,
+  token: SERVICE_TOKEN,
+});
+await client.request(updateUser(svc.id, { token: SERVICE_TOKEN, role: adminRole?.id ?? undefined } as any));
+log("  сервисный токен установлен");
+
+// Тестовые аккаунты офиса и выпускника
+const editorRole = roles.find((x: any) => x.name === "editor");
+const alumniRole = roles.find((x: any) => x.name === "alumni");
+await ensureUser(req("TEST_EDITOR_EMAIL"), {
+  first_name: "Тест", last_name: "Офис", password: req("TEST_EDITOR_PASSWORD"), role: editorRole?.id ?? null,
+});
+const testAlumniUser = await ensureUser(req("TEST_ALUMNI_EMAIL"), {
+  first_name: "Анна", last_name: "Гаджиева", password: req("TEST_ALUMNI_PASSWORD"), role: alumniRole?.id ?? null,
+});
+
+// ──────────────────────────── 5. сиды ────────────────────────────
+log("== Сиды ==");
+await ensureSeed("levels", "key", LEVELS.map((l) => ({ ...l, color: "" })));
+await ensureSeed("point_rules", "reason", POINT_RULES.map((p) => ({ ...p, active: true })));
+await ensureSeed("achievements", "key", ACHIEVEMENTS);
+await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "published" })));
+
+// Профиль для тестового выпускника (если ещё нет)
+const alumniRows = (await client.request(
+  (readItems as any)("alumni", { filter: { user_id: { _eq: testAlumniUser.id } }, limit: 1 }),
+)) as any[];
+if (!alumniRows.length) {
+  await client.request(
+    (createItems as any)("alumni", [
+      {
+        user_id: testAlumniUser.id,
+        fio: "Анна Гаджиева",
+        cohort: "2024",
+        status: "active",
+        verification_status: "verified",
+        points_cached: 420,
+        level_cached: "friend",
+        personal_discount: 0,
+        referral_code: "ANNA2024",
+      },
+    ]),
+  );
+  log("  + профиль alumni для тестового выпускника");
+}
+
+log("\n✓ Bootstrap завершён. Повторный запуск идемпотентен.");
+process.exit(0);

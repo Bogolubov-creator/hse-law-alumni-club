@@ -1,0 +1,130 @@
+name: club-pravo-hse
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # named volume — переживает пересоздание (доп. п.4)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  directus:
+    image: directus/directus:11
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KEY: ${DIRECTUS_KEY}
+      SECRET: ${DIRECTUS_SECRET}
+      DB_CLIENT: pg
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL}
+      WEBSOCKETS_ENABLED: "true"
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "true"
+    volumes:
+      - directus_uploads:/directus/uploads
+    ports:
+      - "127.0.0.1:8055:8055"   # прямой доступ только с localhost; наружу — через Caddy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8055/server/health').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  bootstrap:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+    depends_on:
+      directus:
+        condition: service_healthy
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN}
+      TEST_EDITOR_EMAIL: ${TEST_EDITOR_EMAIL}
+      TEST_EDITOR_PASSWORD: ${TEST_EDITOR_PASSWORD}
+      TEST_ALUMNI_EMAIL: ${TEST_ALUMNI_EMAIL}
+      TEST_ALUMNI_PASSWORD: ${TEST_ALUMNI_PASSWORD}
+    restart: "no"   # одноразовый прогон; идемпотентен — можно запускать повторно
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      directus:
+        condition: service_healthy
+    environment:
+      API_PORT: "3000"
+      DIRECTUS_URL: ${DIRECTUS_URL}
+      DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN}
+      OFFICE_NOTIFY_CHANNEL: ${OFFICE_NOTIFY_CHANNEL}
+      OFFICE_TG_BOT_TOKEN: ${OFFICE_TG_BOT_TOKEN}
+      OFFICE_TG_CHAT_ID: ${OFFICE_TG_CHAT_ID}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+      - directus
+    environment:
+      WEB_DOMAIN: ${WEB_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:8081:8081"   # локальная админка через Caddy; на VPS не публичен
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  directus_uploads:
+  caddy_data:
+  caddy_config:

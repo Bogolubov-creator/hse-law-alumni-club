@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-kost text-grafit font-body antialiased;
+}
+
+/* Хелперы админки (порт из Админка.dc.html) */
+::selection { background: #ec5a13; color: #fbf3e8; }
+.foc:focus-visible { outline: 3px solid #ec5a13; outline-offset: 2px; border-radius: 8px; }
+.arow { transition: background 0.15s; }
+.arow:hover { background: #fbf7ef; }
+@keyframes g-pop {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 920px) {
+  .a-shell { grid-template-columns: 1fr !important; }
+  .a-side { position: static !important; height: auto !important; flex-direction: row !important; overflow-x: auto !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arow, [class] { animation: none !important; transition: none !important; }
+}

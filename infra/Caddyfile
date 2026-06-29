@@ -1,0 +1,21 @@
+# Один Caddyfile для локали и VPS — меняются только переменные окружения.
+# Локально WEB_DOMAIN=:80 / ADMIN_DOMAIN=:8081 → обычный HTTP (без TLS).
+# На VPS WEB_DOMAIN=club.example.ru / ADMIN_DOMAIN=admin.club.example.ru → Caddy сам берёт TLS.
+{
+	email {$ACME_EMAIL}
+}
+
+{$WEB_DOMAIN} {
+	encode gzip
+	handle_path /api/* {
+		reverse_proxy api:3000
+	}
+	handle {
+		reverse_proxy web:80
+	}
+}
+
+{$ADMIN_DOMAIN} {
+	encode gzip
+	reverse_proxy directus:8055
+}
