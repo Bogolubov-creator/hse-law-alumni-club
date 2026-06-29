@@ -23,7 +23,7 @@ import {
   readItems,
   createItems,
 } from "@directus/sdk";
-import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, NEWS_SEED } from "@club/shared";
+import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, PRODUCTS_SEED, NEWS_SEED } from "@club/shared";
 
 type Schema = Record<string, any>;
 
@@ -427,6 +427,7 @@ await ensureSeed("point_rules", "reason", POINT_RULES.map((p) => ({ ...p, active
 await ensureSeed("achievements", "key", ACHIEVEMENTS);
 await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "published" })));
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
+await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
 
 // Профиль для тестового выпускника (если ещё нет)
 const alumniRows = (await client.request(

@@ -33,6 +33,17 @@ export async function apiPatch<T>(path: string, body: unknown, token: string): P
 
 export type LedgerEntry = { id: string; delta: number; reason: string; ref: string | null; comment: string | null; created_at: string };
 
+export type Program = { id: string; slug: string; title: string; direction: string; format: string; duration: string; price: number };
+export type ProgramFull = Program & { dates?: unknown; modules?: unknown; teachers?: unknown; description?: string | null };
+export type ProductVariant = { sku: string; size?: string; color?: string; stock: number };
+export type Product = { id: string; slug: string; title: string; category: string; price: number; variants_json: ProductVariant[] | null; stock: number; description?: string | null };
+export type CartLine = { type: "dpo" | "merch"; ref_id: string; variant_sku?: string | null; qty: number; price: number; title: string };
+export type CartSummary = { items: CartLine[]; count: number; subtotal: number };
+export type OrderResult = { number: string; status: string; member_discount: number; subtotal: number; total_estimate: number; notified: { channel: string; ok: boolean; blocked?: boolean } };
+
+export const FORMAT_LABEL: Record<string, string> = { online: "онлайн", offline: "очно", blended: "смешанный" };
+export const rub = (kop: number) => (kop / 100).toLocaleString("ru-RU") + " ₽";
+
 export type AlumniBrief = { fio: string | null; cohort: string | null; verification_status: string; contacts?: Record<string, string> };
 export type LevelInfo = { points: number; level: string; level_title: string; discount: number; next_level: string | null; to_next: number };
 export type Achievement = { key: string; title: string; description: string; earned: boolean };

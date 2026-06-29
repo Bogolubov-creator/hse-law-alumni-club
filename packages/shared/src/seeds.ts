@@ -43,6 +43,38 @@ export const NEWS_SEED: NewsSeed[] = [
   },
 ];
 
+export interface ProductSeed {
+  slug: string;
+  title: string;
+  category: string;
+  price: number; // копейки
+  stock: number;
+  variants_json: { sku: string; size?: string; color?: string; stock: number }[];
+}
+
+// Сид мерча — из админ-дизайна. price в копейках.
+export const PRODUCTS_SEED: ProductSeed[] = [
+  {
+    slug: "hoodie-faculty", title: "Худи с логотипом факультета", category: "Одежда", price: 420_000, stock: 18,
+    variants_json: [
+      { sku: "hoodie-graphite-M", size: "M", color: "графит", stock: 6 },
+      { sku: "hoodie-graphite-L", size: "L", color: "графит", stock: 7 },
+      { sku: "hoodie-graphite-XL", size: "XL", color: "графит", stock: 5 },
+    ],
+  },
+  {
+    slug: "shopper-themis", title: "Шоппер с Фемидой", category: "Аксессуары", price: 120_000, stock: 30,
+    variants_json: [{ sku: "shopper-kost", color: "кост", stock: 30 }],
+  },
+  {
+    slug: "graduate-robe", title: "Мантия выпускника", category: "Одежда", price: 690_000, stock: 6,
+    variants_json: [
+      { sku: "robe-M", size: "M", stock: 3 },
+      { sku: "robe-L", size: "L", stock: 3 },
+    ],
+  },
+];
+
 export const PROGRAMS_SEED: ProgramSeed[] = [
   { slug: "anticorruption-compliance", title: "Антикоррупционный комплаенс в бизнесе", direction: "Комплаенс", format: "online", duration: "6 недель", price: 4_800_000 },
   { slug: "digital-law-ai", title: "Цифровое право и ИИ", direction: "Цифровое право", format: "blended", duration: "8 недель", price: 6_200_000 },
