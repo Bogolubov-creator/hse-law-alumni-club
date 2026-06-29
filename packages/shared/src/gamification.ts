@@ -80,3 +80,29 @@ export function computeMemberDiscount(points: number, personalDiscount = 0): num
   const personal = clamp(personalDiscount, 0, PERSONAL_DISCOUNT_MAX);
   return clamp(base + personal, 0, MEMBER_DISCOUNT_CAP);
 }
+
+export const DECAY_RATE = 0.15; // −15% за месяц неактивности
+
+/** Дельта decay для записи в ledger: отрицательная, округлённая. */
+export function decayDelta(points: number): number {
+  return -Math.round(Math.max(0, points) * DECAY_RATE) || 0; // || 0 убирает -0
+}
+
+export interface AchievementStats {
+  programs_completed?: number;
+  events_attended?: number;
+  mentorship_count?: number;
+  points?: number;
+}
+
+/** Ключи достижений, заслуженных при данной статистике (по rule_json). */
+export function evaluateAchievements(stats: AchievementStats): string[] {
+  const earned: string[] = [];
+  for (const a of ACHIEVEMENTS) {
+    const rule = a.rule_json as { type?: string; gte?: number };
+    if (!rule?.type || typeof rule.gte !== "number") continue;
+    const value = (stats as Record<string, number | undefined>)[rule.type] ?? 0;
+    if (value >= rule.gte) earned.push(a.key);
+  }
+  return earned;
+}

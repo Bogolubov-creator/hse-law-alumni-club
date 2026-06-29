@@ -1,12 +1,21 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import cron from "node-cron";
 import { env } from "./env.js";
 import { checkDirectus } from "./lib/directus.js";
 import { contentRoutes } from "./routes/content.js";
+import { pointsRoutes } from "./routes/points.js";
+import { runDecay } from "./lib/engine.js";
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
 await app.register(contentRoutes);
+await app.register(pointsRoutes);
+
+// Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
+cron.schedule("0 3 1 * *", () => {
+  runDecay().catch((e) => app.log.error(e, "decay failed"));
+});
 
 // Базовый health — для healthcheck'а docker и Caddy.
 app.get("/health", async () => ({
