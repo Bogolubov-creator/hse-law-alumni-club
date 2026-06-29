@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiGet, type NewsItem } from "./api.js";
+import { apiGet, type NewsItem, type PageHome } from "./api.js";
+
+export function usePage(slug: string) {
+  return useQuery({ queryKey: ["page", slug], queryFn: () => apiGet<PageHome>(`/pages/${slug}`) });
+}
 
 export function useNewsList(limit?: number) {
   return useQuery({

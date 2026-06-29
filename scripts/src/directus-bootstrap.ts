@@ -292,6 +292,84 @@ await ensureField("referrals", "status", enumf(["pending", "confirmed"], "pendin
 await ensureField("referrals", "reward_points", int(0));
 await ensureField("referrals", "created_at", ts("date-created"));
 
+// ──────────────────────────── 2b. M2A-блоки страниц (Фаза 1b) ────────────────────────────
+// pages ←(o2m alias "blocks")→ pages_blocks ←(m2a "item")→ block_hero | block_cta
+log("== M2A блоки страниц ==");
+await ensureCollection("block_hero", "title");
+await ensureField("block_hero", "badge", str());
+await ensureField("block_hero", "title_pre", str());
+await ensureField("block_hero", "title_accent", str());
+await ensureField("block_hero", "subtitle", txt());
+await ensureField("block_hero", "cta_primary", str());
+await ensureField("block_hero", "cta_secondary", str());
+
+await ensureCollection("block_cta", "campaign");
+await ensureField("block_cta", "title", str());
+await ensureField("block_cta", "text", txt());
+await ensureField("block_cta", "button", str());
+
+await ensureCollection("pages_blocks", "list");
+await ensureField("pages_blocks", "collection", str());
+await ensureField("pages_blocks", "item", str());
+await ensureField("pages_blocks", "sort", int());
+
+// alias-поле на pages (o2m к junction)
+{
+  const set = await fieldsOf("pages");
+  if (!set.has("blocks")) {
+    await client.request((createField as any)("pages", { field: "blocks", type: "alias", meta: { special: ["m2a"], interface: "list-m2a" } }));
+    set.add("blocks");
+    log("  + pages.blocks (alias m2a)");
+  }
+}
+// junction → pages (m2o) с обратным алиасом blocks
+await ensureField("pages_blocks", "pages_id", { type: "uuid", meta: { interface: "select-dropdown-m2o", special: ["m2o"] }, schema: {} });
+if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "pages_id")) {
+  await client.request((createRelation as any)({ collection: "pages_blocks", field: "pages_id", related_collection: "pages", meta: { one_field: "blocks", sort_field: "sort", junction_field: "item" }, schema: { on_delete: "CASCADE" } }));
+  relations.push({ collection: "pages_blocks", field: "pages_id" } as any);
+  log("  ~ pages_blocks.pages_id → pages");
+}
+// junction.item → any (m2a)
+if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "item")) {
+  await client.request((createRelation as any)({ collection: "pages_blocks", field: "item", related_collection: null, meta: { one_collection_field: "collection", one_allowed_collections: ["block_hero", "block_cta"], junction_field: "pages_id", sort_field: "sort" }, schema: null }));
+  relations.push({ collection: "pages_blocks", field: "item" } as any);
+  log("  ~ pages_blocks.item → any (m2a)");
+}
+
+// Сид страницы home (если ещё нет блоков)
+{
+  const pages = (await client.request((readItems as any)("pages", { filter: { slug: { _eq: "home" } }, limit: 1 }))) as any[];
+  let homeId = pages[0]?.id;
+  if (!homeId) {
+    const created = (await client.request((createItems as any)("pages", [{ slug: "home", title: "Главная", status: "published" }]))) as any;
+    homeId = Array.isArray(created) ? created[0].id : created.id;
+    log("  + страница home");
+  }
+  const links = (await client.request((readItems as any)("pages_blocks", { filter: { pages_id: { _eq: homeId } }, limit: 1 }))) as any[];
+  if (!links.length) {
+    const hero = (await client.request((createItems as any)("block_hero", [{
+      badge: "Сообщество выпускников факультета права",
+      title_pre: "Статус выпускника, который",
+      title_accent: "работает",
+      subtitle: "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка 5% на ДПО и мерч, новости и менторы – всё в одном месте.",
+      cta_primary: "Войти в личный кабинет",
+      cta_secondary: "Как вступить",
+    }]))) as any;
+    const cta = (await client.request((createItems as any)("block_cta", [{
+      title: "Вступить в клуб",
+      text: "Подтвердите выпуск у учебного офиса – и получите статус, скидки и доступ к витринам.",
+      button: "Подать заявку",
+    }]))) as any;
+    const heroId = Array.isArray(hero) ? hero[0].id : hero.id;
+    const ctaId = Array.isArray(cta) ? cta[0].id : cta.id;
+    await client.request((createItems as any)("pages_blocks", [
+      { pages_id: homeId, collection: "block_hero", item: String(heroId), sort: 1 },
+      { pages_id: homeId, collection: "block_cta", item: String(ctaId), sort: 2 },
+    ]));
+    log("  + блоки home: hero + cta");
+  }
+}
+
 // ──────────────────────────── 3. роли ────────────────────────────
 log("== Роли ==");
 const roles = await client.request(readRoles());

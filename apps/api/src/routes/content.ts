@@ -35,13 +35,26 @@ export async function contentRoutes(app: FastifyInstance) {
 
   app.get("/pages/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
-    const rows = await directus.request(
-      readItems("pages", {
+    const rows = (await directus.request(
+      (readItems as any)("pages", {
         filter: { slug: { _eq: slug }, status: { _eq: "published" } },
         limit: 1,
+        fields: [
+          "id", "slug", "title", "status",
+          "blocks.collection", "blocks.sort",
+          "blocks.item:block_hero.*",
+          "blocks.item:block_cta.*",
+        ],
+        deep: { blocks: { _sort: ["sort"] } },
       }),
-    );
+    )) as any[];
     if (!rows.length) return reply.code(404).send({ error: "Страница не найдена" });
-    return rows[0];
+    const page = rows[0];
+    // Свернуть M2A-блоки в { hero, cta } для удобства фронта.
+    const blocks: Record<string, unknown> = {};
+    for (const b of page.blocks ?? []) {
+      if (b?.collection && b?.item) blocks[String(b.collection).replace("block_", "")] = b.item;
+    }
+    return { slug: page.slug, title: page.title, blocks };
   });
 }

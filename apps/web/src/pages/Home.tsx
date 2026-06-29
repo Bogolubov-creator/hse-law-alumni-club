@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
-import { useNewsList, formatNewsDate } from "../lib/queries.js";
+import { useNewsList, usePage, formatNewsDate } from "../lib/queries.js";
 
 /**
  * Главная — порт «Главная.dc.html» (Claude Design) в React.
@@ -57,6 +57,10 @@ export default function Home() {
   const pinTrackRef = useRef<HTMLDivElement>(null);
   const [heroIn, setHeroIn] = useState(false);
   const news = useNewsList(3);
+  const page = usePage("home");
+  // Тексты блоков из CMS (M2A) с фоллбэком на дефолты в коде.
+  const hero = page.data?.blocks?.hero ?? {};
+  const cta = page.data?.blocks?.cta ?? {};
 
   const reduce = () => {
     try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; }
@@ -204,12 +208,12 @@ export default function Home() {
       <section id="top" style={{ maxWidth: 1180, margin: "0 auto", padding: "74px 28px 60px" }}>
         <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 48, alignItems: "center" }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, ...mono, fontSize: 12, letterSpacing: ".1em", color: "#B5331B", background: "rgba(181,51,27,.1)", border: "1px solid rgba(181,51,27,.25)", padding: "6px 13px", borderRadius: 999 }}>● Сообщество выпускников факультета права</div>
-            <h1 className="h-xl" style={{ ...disp, fontWeight: 800, fontSize: 62, lineHeight: 1.03, letterSpacing: "-0.015em", margin: "22px 0 0", textWrap: "balance" } as CSSProperties}>Статус выпускника,<br />который <span style={{ color: "#EC5A13" }}>работает</span></h1>
-            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка 5% на ДПО и мерч, новости и менторы — всё в одном месте.</p>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, ...mono, fontSize: 12, letterSpacing: ".1em", color: "#B5331B", background: "rgba(181,51,27,.1)", border: "1px solid rgba(181,51,27,.25)", padding: "6px 13px", borderRadius: 999 }}>● {hero.badge ?? "Сообщество выпускников факультета права"}</div>
+            <h1 className="h-xl" style={{ ...disp, fontWeight: 800, fontSize: 62, lineHeight: 1.03, letterSpacing: "-0.015em", margin: "22px 0 0", textWrap: "balance" } as CSSProperties}>{hero.title_pre ?? "Статус выпускника, который"} <span style={{ color: "#EC5A13" }}>{hero.title_accent ?? "работает"}</span></h1>
+            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>{hero.subtitle ?? "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка 5% на ДПО и мерч, новости и менторы – всё в одном месте."}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 32 }}>
-              <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>Войти в личный кабинет</Link>
-              <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>Как вступить</a>
+              <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_primary ?? "Войти в личный кабинет"}</Link>
+              <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_secondary ?? "Как вступить"}</a>
             </div>
             <div style={{ display: "flex", gap: 38, marginTop: 46, flexWrap: "wrap" }}>
               <div data-count="2"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}><span data-count="2">0</span></div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>выпуска<br />в клубе</div></div>
@@ -348,10 +352,10 @@ export default function Home() {
         <div data-reveal style={{ position: "relative", overflow: "hidden", borderRadius: 26, background: "#11296B", color: "#FBF3E8", padding: "60px 48px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 34, flexWrap: "wrap" }}>
           <div style={{ position: "absolute", right: -40, top: -40, width: 280, height: 280, background: "radial-gradient(circle,rgba(236,90,19,.5),transparent 65%)", filter: "blur(8px)" }} />
           <div style={{ position: "relative", maxWidth: 560 }}>
-            <h2 style={{ ...disp, fontWeight: 800, fontSize: 38, letterSpacing: "-0.01em", lineHeight: 1.08, margin: 0 }}>Вступить в клуб</h2>
-            <p style={{ fontSize: 17, color: "rgba(251,243,232,.8)", lineHeight: 1.5, margin: "16px 0 0" }}>Подтвердите выпуск у учебного офиса — и получите статус, скидки и доступ к витринам.</p>
+            <h2 style={{ ...disp, fontWeight: 800, fontSize: 38, letterSpacing: "-0.01em", lineHeight: 1.08, margin: 0 }}>{cta.title ?? "Вступить в клуб"}</h2>
+            <p style={{ fontSize: 17, color: "rgba(251,243,232,.8)", lineHeight: 1.5, margin: "16px 0 0" }}>{cta.text ?? "Подтвердите выпуск у учебного офиса – и получите статус, скидки и доступ к витринам."}</p>
           </div>
-          <Link to="/lk" data-mag className="foc" style={{ position: "relative", textDecoration: "none", fontWeight: 600, fontSize: 17, padding: "17px 36px", borderRadius: 14, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 14px 30px -12px rgba(0,0,0,.5)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", flex: "none" }}>Подать заявку</Link>
+          <Link to="/lk" data-mag className="foc" style={{ position: "relative", textDecoration: "none", fontWeight: 600, fontSize: 17, padding: "17px 36px", borderRadius: 14, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 14px 30px -12px rgba(0,0,0,.5)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", flex: "none" }}>{cta.button ?? "Подать заявку"}</Link>
         </div>
       </section>
 

@@ -8,7 +8,7 @@
 | 0 · Фундамент | done | baseline | ✓ | монорепо, Directus+PG, bootstrap, стек поднят |
 | H · Админка (порт дизайна) | done | baseline | ✓ | `apps/web/src/admin/AdminApp.tsx`, мок-данные |
 | 1a · Главная + живые новости | done | feat(web): Фаза 1a | ✓ | порт Главной, /api/news, сид новостей |
-| 1b · M2A-блоки Главной | todo | – | – | – |
+| 1b · M2A-блоки Главной | done | feat: Фаза 1b | ✓ | block_hero/block_cta, pages_blocks (M2A) |
 | 2 · ЛК + геймификация | todo | – | – | – |
 | 3 · Витрины + заявка | todo | – | – | – |
 | 4 · Админка на реальных данных | todo | – | – | – |
@@ -29,6 +29,14 @@
   Главная (сборка Фемиды + секции), /news и /news/:slug – рендер на канон-токенах, живые данные.
   Консоль: только future-flag предупреждения React Router (включил v7-флаги). Lint в репо не настроен
   (отметка); юнит-тестов в 1a нет – движков нет, тесты появятся в Фазе 2.
+
+- 2026-06-29 Фаза 1b (done): Directus M2A для страниц – коллекции `block_hero`, `block_cta`,
+  junction `pages_blocks` (alias `pages.blocks`, relations m2o→pages + m2a→any). Сид страницы `home`
+  с блоками hero+cta. `apps/api` `GET /pages/:slug` резолвит блоки в `{ hero, cta }`.
+  `Home.tsx` берёт badge/title/subtitle/CTA-тексты из CMS с фоллбэком на дефолты в коде.
+  Самопроверка: api/web build чисто, scripts typecheck чисто; bootstrap M2A прогнан локально без ошибок
+  (идемпотентен). Доказана редактируемость: PATCH `block_hero.title_accent` в Directus → `/api/pages/home`
+  → H1 на Главной обновился без участия разработчика (затем откатил к сид-значению).
 
 ## BLOCKED: нужен я
 - (пока нет)
