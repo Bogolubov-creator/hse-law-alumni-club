@@ -2,8 +2,25 @@ import { createDirectus, rest, staticToken, readMe, readItems } from "@directus/
 import { env } from "../env.js";
 
 // Минимальная схема — коллекции добавляем по мере фаз.
+export interface NewsRow {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  body: string | null;
+  published_at: string | null;
+  status: string;
+}
+export interface PageRow {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+}
 interface Schema {
   levels: { key: string; title: string; min_points: number; discount_percent: number }[];
+  news: NewsRow[];
+  pages: PageRow[];
 }
 
 export const directus = createDirectus<Schema>(env.DIRECTUS_URL)

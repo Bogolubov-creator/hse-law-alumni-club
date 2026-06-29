@@ -2,9 +2,11 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { env } from "./env.js";
 import { checkDirectus } from "./lib/directus.js";
+import { contentRoutes } from "./routes/content.js";
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
+await app.register(contentRoutes);
 
 // Базовый health — для healthcheck'а docker и Caddy.
 app.get("/health", async () => ({
