@@ -1,5 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiGet, type NewsItem, type PageHome, type Me } from "./api.js";
+import { apiGet, type NewsItem, type PageHome, type Me, type LedgerEntry } from "./api.js";
+
+export function useLedger(token: string | null) {
+  return useQuery({
+    queryKey: ["ledger", token],
+    queryFn: () => apiGet<LedgerEntry[]>("/me/ledger", token!),
+    enabled: !!token,
+    retry: false,
+  });
+}
 
 export function usePage(slug: string) {
   return useQuery({ queryKey: ["page", slug], queryFn: () => apiGet<PageHome>(`/pages/${slug}`) });

@@ -54,13 +54,14 @@ export interface AlumniCtx {
   verification_status: string;
   personal_discount: number;
   points_cached: number;
+  contacts_json: Record<string, string> | null;
 }
 
 export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null> {
   const rows = (await di.request(
     (readItems as any)("alumni", {
       filter: { user_id: { _eq: userId } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached"],
+      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json"],
     }),
   )) as AlumniCtx[];
   return rows[0] ?? null;
@@ -75,7 +76,7 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   const rows = (await di.request(
     (readItems as any)("alumni", {
       filter: { id: { _eq: payload.alumni_id } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached"],
+      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json"],
     }),
   )) as AlumniCtx[];
   return rows[0] ?? null;

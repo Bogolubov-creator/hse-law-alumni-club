@@ -20,7 +20,20 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export type AlumniBrief = { fio: string | null; cohort: string | null; verification_status: string };
+export async function apiPatch<T>(path: string, body: unknown, token: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PATCH",
+    headers: { accept: "application/json", "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as any)?.error || `API ${res.status}`);
+  return data as T;
+}
+
+export type LedgerEntry = { id: string; delta: number; reason: string; ref: string | null; comment: string | null; created_at: string };
+
+export type AlumniBrief = { fio: string | null; cohort: string | null; verification_status: string; contacts?: Record<string, string> };
 export type LevelInfo = { points: number; level: string; level_title: string; discount: number; next_level: string | null; to_next: number };
 export type Achievement = { key: string; title: string; description: string; earned: boolean };
 export type ActivityPoint = { month: string; points: number };

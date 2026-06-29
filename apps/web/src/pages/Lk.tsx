@@ -106,6 +106,8 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
             <div style={{ ...disp, fontWeight: 800, fontSize: 15, letterSpacing: "-0.01em" }}>Личный кабинет</div>
           </Link>
           <nav style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ color: "#FBF3E8", fontWeight: 600, fontSize: 14, padding: "8px 14px", borderRadius: 10, background: "rgba(236,90,19,.16)" }}>Обзор</span>
+            <Link to="/lk/profile" className="foc" style={{ textDecoration: "none", color: "#c8cdd6", fontWeight: 500, fontSize: 14, padding: "8px 14px", borderRadius: 10 }}>Профиль</Link>
             <Link to="/dpo" className="foc" style={{ textDecoration: "none", color: "#c8cdd6", fontWeight: 500, fontSize: 14, padding: "8px 14px", borderRadius: 10 }}>Витрины</Link>
             <button onClick={onLogout} className="foc" style={{ ...mono, fontSize: 13, color: "#FBF3E8", background: "rgba(251,243,232,.08)", border: "1px solid rgba(251,243,232,.14)", borderRadius: 10, padding: "8px 13px", cursor: "pointer" }}>Выйти</button>
           </nav>
