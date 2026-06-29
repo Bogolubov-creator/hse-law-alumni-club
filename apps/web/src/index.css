@@ -38,6 +38,9 @@ body {
   .two-col { grid-template-columns: 1fr !important; }
   nav .nav-link { display: none; }
 }
+@media (max-width: 860px) {
+  .grid-2 { grid-template-columns: 1fr !important; }
+}
 @media (prefers-reduced-motion: reduce) {
   .marq-track { animation: none !important; }
 }

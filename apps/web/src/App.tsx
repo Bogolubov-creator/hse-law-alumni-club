@@ -3,6 +3,7 @@ import Home from "./pages/Home.js";
 import News from "./pages/News.js";
 import NewsPost from "./pages/NewsPost.js";
 import Stub from "./pages/Stub.js";
+import Lk from "./pages/Lk.js";
 import AdminApp from "./admin/AdminApp.js";
 
 export default function App() {
@@ -12,7 +13,7 @@ export default function App() {
       <Route path="/news" element={<News />} />
       <Route path="/news/:slug" element={<NewsPost />} />
       <Route path="/admin/*" element={<AdminApp />} />
-      <Route path="/lk" element={<Stub title="Личный кабинет" />} />
+      <Route path="/lk" element={<Lk />} />
       <Route path="/dpo" element={<Stub title="Витрина ДПО" />} />
       <Route path="/merch" element={<Stub title="Витрина мерча" />} />
       <Route path="/cart" element={<Stub title="Корзина" />} />

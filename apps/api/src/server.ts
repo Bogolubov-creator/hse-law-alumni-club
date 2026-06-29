@@ -5,12 +5,16 @@ import { env } from "./env.js";
 import { checkDirectus } from "./lib/directus.js";
 import { contentRoutes } from "./routes/content.js";
 import { pointsRoutes } from "./routes/points.js";
+import { authRoutes } from "./routes/auth.js";
+import { meRoutes } from "./routes/me.js";
 import { runDecay } from "./lib/engine.js";
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
 await app.register(contentRoutes);
 await app.register(pointsRoutes);
+await app.register(authRoutes);
+await app.register(meRoutes);
 
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
 cron.schedule("0 3 1 * *", () => {
