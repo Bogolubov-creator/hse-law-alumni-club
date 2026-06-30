@@ -12,7 +12,7 @@
 | 2 · ЛК + геймификация | done | feat: Фаза 2 (движок+ЛК+профиль) | ✓ | движок+тесты, auth, Дашборд B, Профиль C |
 | 3 · Витрины + заявка | done | feat: Фаза 3 | ✓ | витрины D/E/F, корзина+заявка G, без оплаты |
 | 4 · Админка на реальных данных | done | feat: Фаза 4 | ✓ | admin-auth, верификация/баллы/скидки/заявки |
-| 5 · mini-app | todo (часть BLOCKED) | – | – | нужны боевые токены |
+| 5 · mini-app | ядро done; live BLOCKED | feat: Фаза 5 | ✓ (тесты) | initData-валидация + рефералка; токены нужны |
 | 6 · Полировка | todo | – | – | – |
 
 ## Лог
@@ -76,6 +76,10 @@
   бота у @BotFather, добавить в чат офиса, взять chat_id). Код готов: при наличии токенов офис получает
   уведомление о новой заявке; без них заявка создаётся, но шлётся только лог (`[notify:BLOCKED]`).
   Вписать в `.env` и перезапустить api. Аналогично `SMTP_*` для письма-подтверждения заявителю.
+- **Mini-app (Фаза 5 live)**: нужен боевой `TELEGRAM_BOT_TOKEN` (бот Mini App у @BotFather) — тогда
+  `/auth/telegram` валидирует initData и пускает выпускника; без токена эндпоинт отвечает 503, а
+  валидация подписи покрыта юнит-тестами. MAX mini-app — нужен доступ к их web-app API/Госуслугам.
+  Привязка `alumni.telegram_id` к профилю — через будущую регистрацию из мессенджера.
 
 - 2026-06-30 Фаза 4 (done): admin-сессия — `POST /auth/admin-login` (роли editor/admin/Administrator,
   JWT scope=admin), `resolveAdmin`. Эндпоинты `apps/api/routes/admin.ts`: `GET /admin/overview`,
@@ -88,13 +92,21 @@
   alumni-токен на /admin → 401. Визуально Обзор + модалка выпускника на реальных данных.
   Контент-CRUD (новости/программы/товары/блоки) — в Directus Studio (как задумано архитектурой).
 
+- 2026-06-30 Фаза 5 — ядро (done), live BLOCKED: `lib/telegram.ts` валидация Telegram initData
+  (HMAC-SHA256 по bot-токену) + 4 юнит-теста (vitest в apps/api). `POST /auth/telegram` (валидирует
+  initData, ищет alumni по `telegram_id`, выдаёт сессию) — без `TELEGRAM_BOT_TOKEN` отвечает 503.
+  Рефералка: при верификации приглашённого (`alumni.referred_by`) реферер получает `+80` (reason=referral,
+  идемпотентно по ключу `referral-<id>`) — встроено в `PATCH /admin/members/:id`. Проверено:
+  Anna 536→616 при верификации приглашённого, повтор — без изменений; `/auth/telegram` без токена → 503;
+  4 telegram-теста зелёные. Тесты всего: shared 10 + api 4 = 14.
+
 ## Как возобновить
-- Последний зелёный коммит: `feat: Фаза 4 — админка на реальных данных`.
-- **Следующий шаг — Фаза 5 (mini-app, частично BLOCKED):** сборка `apps/web` как Telegram Mini App +
-  MAX; валидация Telegram `initData` (подпись HMAC по bot-токену — юнит-тест с тестовым ключом),
-  заглушка входа MAX; рефералка (deep-link с кодом → `+80` рефереру при верификации приглашённого,
-  коллекция `referrals` уже есть). BLOCKED: боевые токены Telegram/MAX — оставить `.env.example` +
-  тесты с тестовым ключом, «живую» авторизацию за флагом.
+- Последний зелёный коммит: `feat: Фаза 5 — initData-валидация + рефералка`.
+- **Следующий шаг — Фаза 6 (полировка):** Lighthouse ≥90 (Perf/BP/SEO) на ключевых страницах;
+  a11y без критичных; reduced-motion и 360px по всем экранам; состояния loading/empty/error
+  (в основном уже есть); обновить README; финальная сводка. Плюс «хвосты» Фазы 5 при наличии токенов:
+  собрать `apps/web` как Telegram Mini App (подключить telegram-web-app.js, авто-вход через
+  `/auth/telegram`), MAX-обёртку, deep-link рефералки (код в URL → `alumni.referred_by` при регистрации).
 - Docker: команды через ASCII-симлинк `/Users/macbook/club-pravo-hse` + `COMPOSE_BAKE=false`
   (кириллица в пути ломает BuildKit). Сид/bootstrap идемпотентны. `.env` содержит `AUTH_SECRET`.
 - Тест-данные: выпускник Анна (после тестов Фазы 4: points 536/expert, personal_discount 5, verified);

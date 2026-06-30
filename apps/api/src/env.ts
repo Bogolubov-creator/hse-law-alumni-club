@@ -5,6 +5,7 @@ const schema = z.object({
   DIRECTUS_URL: z.string().url(),
   DIRECTUS_SERVICE_TOKEN: z.string().min(1, "DIRECTUS_SERVICE_TOKEN обязателен"),
   AUTH_SECRET: z.string().min(16, "AUTH_SECRET минимум 16 символов"),
+  TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app авторизация BLOCKED
   // Уведомление офиса (решение 3.2) — на старте telegram
   OFFICE_NOTIFY_CHANNEL: z.enum(["telegram", "email", "both"]).default("telegram"),
   OFFICE_TG_BOT_TOKEN: z.string().default(""),

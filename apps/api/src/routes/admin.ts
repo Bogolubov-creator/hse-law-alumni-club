@@ -69,6 +69,15 @@ export async function adminRoutes(app: FastifyInstance) {
     const patch: Record<string, unknown> = { ...body };
     if (body.verification_status === "verified") patch.verified_at = new Date().toISOString();
     await di.request((updateItem as any)("alumni", id, patch));
+
+    // Рефералка: при верификации приглашённого — +80 баллов рефереру (идемпотентно).
+    if (body.verification_status === "verified") {
+      const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: id } }, limit: 1, fields: ["referred_by"] }))) as any[];
+      const referrer = rows[0]?.referred_by;
+      if (referrer) {
+        await addPoints(referrer, { reason: "referral", ref: id, comment: "Приглашённый выпускник верифицирован", idempotencyKey: `referral-${id}` });
+      }
+    }
     return { ok: true };
   });
 
