@@ -1,73 +1,84 @@
 # Клуб выпускников факультета права НИУ ВШЭ
 
-Монорепо портала клуба. **Оплаты нет** — заказ это заявка с контактами, которую учебный офис обрабатывает вручную.
+Портал клуба выпускников: публичный сайт, личный кабинет с геймификацией, витрины ДПО и мерча,
+заявки (без онлайн-оплаты) и админка учебного офиса.
 
-## Состав
+> **Оплаты на сайте нет.** Корзина ведёт к заявке с контактами — её обрабатывает офис.
+> **Канон:** ohra `#EC5A13`, hse-blue `#11296B`, grafit `#14181F`, kost `#FBF3E8`; шрифты Unbounded + Onest + Martian Mono.
+
+## Архитектура
 ```
-apps/web        Vite + React + TS + Tailwind (фронт; экраны — Claude Design)
-apps/api        Fastify + TS + zod (корзина, заявки, геймификация, decay — по фазам)
-packages/shared zod-схемы, константы геймификации, сиды (единый источник для api/web/scripts)
-scripts         идемпотентный directus-bootstrap (схема, роли, сиды, сервисный токен)
+apps/web        Vite + React + TS + Tailwind (SPA: сайт, ЛК, витрины, корзина, админка)
+apps/api        Fastify + TS + zod (геймификация, корзина/заявки, auth-сессии, админ-операции, cron-decay)
+packages/shared zod-схемы, константы геймификации, сиды (единый источник)
+scripts         идемпотентный directus-bootstrap (схема, M2A, роли, сиды, сервисный токен)
 infra           Caddyfile (один на локаль и VPS)
-docs            directus-schema.md — схема данных (источник правды)
+docs            directus-schema.md — схема данных
 docker-compose.yml  postgres · directus · api · web · caddy · bootstrap
 ```
-
-Стек правды и админка — **Directus + PostgreSQL**. Кастомная логика — **apps/api**. Деплой — docker-compose (локально и на VPS одинаково, различие только в `.env`).
+**Directus + PostgreSQL** — бэкенд правды, админка контента, авторизация. **apps/api** — бизнес-логика,
+которой нет в CMS, и единственная точка, через которую фронт читает данные (`/api/*`, same-origin).
+Directus наружу не выставляется.
 
 ## Быстрый старт (локально)
 ```bash
 cp .env.example .env
-# Сгенерируйте секреты и впишите в .env:
-#   openssl rand -hex 32   # DIRECTUS_KEY
-#   openssl rand -hex 32   # DIRECTUS_SECRET
-#   openssl rand -hex 24   # DIRECTUS_SERVICE_TOKEN
-# Поменяйте POSTGRES_PASSWORD и ADMIN_PASSWORD.
-
+# Сгенерировать секреты:  openssl rand -hex 32  (DIRECTUS_KEY, DIRECTUS_SECRET, AUTH_SECRET)
+#                          openssl rand -hex 24  (DIRECTUS_SERVICE_TOKEN)
+# Поменять POSTGRES_PASSWORD, ADMIN_PASSWORD. E-mail — с валидным доменом (Directus отклоняет .local).
 docker compose up -d --build
-docker compose logs -f bootstrap     # дождитесь "Bootstrap завершён"
+docker compose logs -f bootstrap   # дождаться "Bootstrap завершён"
 ```
+> Если путь к репозиторию содержит не-ASCII символы, Docker BuildKit падает на сессионном ключе —
+> собирайте через ASCII-симлинк: `ln -s "<repo>" ~/club-pravo-hse` и запускайте docker оттуда
+> с `COMPOSE_BAKE=false`.
 
-Адреса локально:
-| Сервис | URL |
+| Сервис | Локально |
 |---|---|
-| Сайт (web через Caddy) | http://localhost |
-| API через Caddy | http://localhost/api/health, http://localhost/api/ready |
-| Directus (админка) | http://localhost:8055 |
-| Directus (через Caddy) | http://localhost:8081 |
+| Сайт | http://localhost |
+| API | http://localhost/api/health · /api/ready |
+| Directus Studio (контент) | http://localhost:8055 |
 
-Вход в админку: `ADMIN_EMAIL` / `ADMIN_PASSWORD` из `.env`.
-Тестовые аккаунты (создаёт bootstrap): `editor@club.example.com` / `editor12345`, `alumni@club.example.com` / `alumni12345`.
-(E-mail должны быть с валидным доменом — Directus отклоняет `.local`.)
+**Тестовые аккаунты** (создаёт bootstrap): выпускник `alumni@club.example.com` / `alumni12345`,
+офис `editor@club.example.com` / `editor12345`, админ Directus — из `.env`.
 
-## Разработка без Docker
+## Что реализовано (фазы)
+- **0 · Фундамент** — монорепо, Directus+PG, идемпотентный bootstrap, стек в Docker.
+- **1a · Главная** — `/` лендинг (сборка Фемиды, параллакс, маркиза, pinned-таймлайн) + живые новости.
+- **1b · CMS-блоки** — тексты главной редактируются в Directus через Many-to-Any (`pages` → `pages_blocks`).
+- **2 · ЛК + геймификация** — `points_ledger` (источник правды) → уровни/скидки/достижения, cron-decay −15%/мес;
+  экраны `/lk` (дашборд) и `/lk/profile`. Auth выпускника — JWT-сессия apps/api.
+- **3 · Витрины + заявка** — `/dpo`, `/dpo/:slug`, `/merch` (карточка модалкой), `/cart` → заявка (без оплаты),
+  скидка выпускника справочно, уведомление офиса (Telegram/лог).
+- **4 · Админка офиса** — `/admin`: верификация, ручные баллы, персональные скидки, статусы заявок;
+  контент — в Directus Studio.
+- **5 · mini-app (ядро)** — валидация Telegram `initData` (тесты), рефералка `+80` рефереру.
+
+## Маршруты
+`/` · `/news` · `/news/:slug` · `/dpo` · `/dpo/:slug` · `/merch` · `/cart` · `/lk` · `/lk/profile` · `/admin/*`
+
+## Ключевые эндпоинты `/api`
+- Контент: `GET /news`, `/news/:slug`, `/pages/:slug`, `/programs`, `/programs/:slug`, `/products`
+- ЛК: `POST /auth/login`, `GET /me`, `/me/level`, `/me/ledger`, `/me/orders`, `PATCH /me/profile`
+- Корзина/заявки: `GET/POST/PATCH/DELETE /cart`, `POST /orders`
+- Геймификация: `POST /points`, `POST /decay/run` (сервисный токен)
+- Админ: `POST /auth/admin-login`, `GET /admin/overview|orders|members`, `PATCH /admin/orders/:id`,
+  `PATCH /admin/members/:id`, `POST /admin/members/:id/points`
+- Mini-app: `POST /auth/telegram` (503 без `TELEGRAM_BOT_TOKEN`)
+
+## Тесты
 ```bash
-pnpm install
-pnpm --filter @club/shared build
-# Directus поднимите через docker compose (postgres+directus), затем:
-DIRECTUS_URL=http://localhost:8055 ADMIN_EMAIL=... ADMIN_PASSWORD=... \
-DIRECTUS_SERVICE_TOKEN=... TEST_EDITOR_EMAIL=... TEST_EDITOR_PASSWORD=... \
-TEST_ALUMNI_EMAIL=... TEST_ALUMNI_PASSWORD=... pnpm bootstrap
-pnpm dev:api    # http://localhost:3000
-pnpm dev:web    # http://localhost:5173 (проксирует /api на :3000)
+pnpm -r test    # shared: уровни/скидка/decay/достижения (10) · api: telegram initData (4)
 ```
 
 ## Деплой на VPS
-Тот же `docker compose up -d --build`. В `.env` поменять только домены:
-```
-WEB_DOMAIN=club.example.ru
-ADMIN_DOMAIN=admin.club.example.ru
-DIRECTUS_PUBLIC_URL=https://admin.club.example.ru
-ACME_EMAIL=you@example.ru
-```
-Caddy сам выпустит TLS. Порты Directus/API публикуются только на 127.0.0.1 — наружу доступ через Caddy.
+Тот же `docker compose up -d --build`. В `.env` поменять домены (`WEB_DOMAIN`, `ADMIN_DOMAIN`,
+`DIRECTUS_PUBLIC_URL`, `ACME_EMAIL`) — Caddy сам возьмёт TLS. Directus/API публикуются только на 127.0.0.1.
 
-## Критерий приёмки Фазы 0
-1. `docker compose up` поднимает стек (postgres, directus, api, web, caddy).
-2. Админка Directus открывается (http://localhost:8055).
-3. `bootstrap` создаёт схему, роли, сиды (levels, point_rules, achievements, programs), сервисный токен и тестовые аккаунты — повторный запуск не дублирует.
-4. `curl http://localhost/api/health` → `{"status":"ok"}`.
-5. `curl http://localhost/api/ready` → `directus.ok=true`, `levelsSeeded=4` (api видит Directus сервисным токеном).
+## Требует реальных секретов (BLOCKED)
+- `OFFICE_TG_BOT_TOKEN` + `OFFICE_TG_CHAT_ID` — уведомление офиса о заявке (без них заявка создаётся, шлётся лог).
+- `SMTP_*` — письмо-подтверждение заявителю.
+- `TELEGRAM_BOT_TOKEN` — живой вход через Telegram Mini App (валидация подписи уже покрыта тестами).
 
-## Дальше
-Фаза 1 — страницы через Directus M2A + новостная лента. Фазы и решения — в `docs/` и оркестрационных документах.
+## Дальше (Фаза 6, требует деплоя)
+Lighthouse ≥90 на проде, финальный a11y-проход, мониторинг/бэкапы. Прогресс — в `WORKLOG.md`.
