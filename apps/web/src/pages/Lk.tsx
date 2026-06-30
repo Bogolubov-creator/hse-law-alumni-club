@@ -254,7 +254,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28, flexWrap: "wrap" }}>
         <span style={{ ...mono, fontSize: 13, color: "#6B7280" }}>Поделиться профилем:</span>
         <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8" }}>↗ Telegram</a>
-        <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#fff", color: "#9aa0aa", border: "1.5px solid #E5E7EB", cursor: "not-allowed" }}>↗ Макс · скоро</button>
+        <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#fff", color: "#6B7280", border: "1.5px solid #E5E7EB", cursor: "not-allowed" }}>↗ Макс · скоро</button>
       </div>
     </>
   );

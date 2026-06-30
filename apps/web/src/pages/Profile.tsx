@@ -126,11 +126,11 @@ function ProfileBody({ token }: { token: string }) {
               <div style={{ ...surface, padding: "26px 28px" }}>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>История баллов</div>
                 <div style={{ display: "flex", flexDirection: "column", marginTop: 18 }}>
-                  {ledger.isLoading && <p style={{ ...mono, fontSize: 12, color: "#9aa0aa" }}>Загрузка…</p>}
-                  {ledger.data?.length === 0 && <p style={{ ...mono, fontSize: 12, color: "#9aa0aa" }}>Пока нет начислений.</p>}
+                  {ledger.isLoading && <p style={{ ...mono, fontSize: 12, color: "#6B7280" }}>Загрузка…</p>}
+                  {ledger.data?.length === 0 && <p style={{ ...mono, fontSize: 12, color: "#6B7280" }}>Пока нет начислений.</p>}
                   {ledger.data?.map((p: LedgerEntry) => (
                     <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 0", borderBottom: "1px solid #f0ece2" }}>
-                      <span style={{ ...mono, fontSize: 11, color: "#9aa0aa", width: 54, flex: "none" }}>{fmtShort(p.created_at)}</span>
+                      <span style={{ ...mono, fontSize: 11, color: "#6B7280", width: 54, flex: "none" }}>{fmtShort(p.created_at)}</span>
                       <span style={{ flex: 1, fontSize: 14, color: "#3a3f49", lineHeight: 1.35 }}>{p.comment || REASON_TEXT[p.reason] || p.reason}</span>
                       <span style={{ ...mono, fontSize: 14, fontWeight: 500, color: p.delta >= 0 ? "#1F8A5B" : "#B5331B", whiteSpace: "nowrap" }}>{p.delta >= 0 ? "+" : ""}{p.delta}</span>
                     </div>
@@ -153,7 +153,7 @@ function ProfileBody({ token }: { token: string }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                         <div style={{ ...disp, fontWeight: 600, fontSize: 16, letterSpacing: "-0.01em" }}>{b.title}</div>
-                        <span style={{ ...mono, fontSize: 10, letterSpacing: ".04em", color: b.earned ? "#1F8A5B" : "#9aa0aa", whiteSpace: "nowrap" }}>{b.earned ? "ПОЛУЧЕНО" : "ЗАКРЫТО"}</span>
+                        <span style={{ ...mono, fontSize: 10, letterSpacing: ".04em", color: b.earned ? "#1F8A5B" : "#6B7280", whiteSpace: "nowrap" }}>{b.earned ? "ПОЛУЧЕНО" : "ЗАКРЫТО"}</span>
                       </div>
                       <p style={{ fontSize: 13, lineHeight: 1.5, color: "#6B7280", margin: "8px 0 0" }}>{b.description}</p>
                       <div style={{ height: 8, borderRadius: 999, background: "#F2E3CF", overflow: "hidden", marginTop: 12 }}>
