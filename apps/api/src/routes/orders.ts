@@ -7,7 +7,7 @@ import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { lookup } from "./cart.js";
 
-const di = directus as any;
+const di = directus;
 const rub = (kop: number) => (kop / 100).toLocaleString("ru-RU");
 
 function session(req: FastifyRequest): string | null {
@@ -32,7 +32,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = createOrderBody.parse(req.body);
 
-    const cartRows = (await di.request((readItems as any)("carts", { filter: { session_token: { _eq: token } }, limit: 1, fields: ["id", "items_json"] }))) as any[];
+    const cartRows = (await di.request(readItems("carts", { filter: { session_token: { _eq: token } }, limit: 1, fields: ["id", "items_json"] }))) as any[];
     const items = (cartRows[0]?.items_json as any[]) ?? [];
     if (!items.length) return reply.code(400).send({ error: "Корзина пуста" });
 
@@ -71,7 +71,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     let number = "";
     let created = false;
     for (let attempt = 0; attempt < 6 && !created; attempt++) {
-      const all = (await di.request((readItems as any)("orders", { fields: ["id"], limit: -1 }))) as any[];
+      const all = (await di.request(readItems("orders", { fields: ["id"], limit: -1 }))) as any[];
       number = orderNumber(year, all.length, attempt);
       try {
         await di.request((createItem as any)("orders", { ...base, number }));
@@ -106,7 +106,7 @@ export async function ordersRoutes(app: FastifyInstance) {
   app.get("/me/orders", async (req, reply) => {
     const alumni = await resolveAlumni(req);
     if (!alumni) return reply.code(401).send({ error: "Не авторизован" });
-    return di.request((readItems as any)("orders", {
+    return di.request(readItems("orders", {
       filter: { alumni_id: { _eq: alumni.id } }, sort: ["-created_at"], limit: 50,
       fields: ["number", "type", "status", "subtotal", "member_discount", "total_estimate", "created_at"],
     }));

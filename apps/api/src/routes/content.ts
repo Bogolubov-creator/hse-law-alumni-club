@@ -35,14 +35,14 @@ export async function contentRoutes(app: FastifyInstance) {
 
   // Каталог ДПО.
   app.get("/programs", async () =>
-    directus.request((readItems as any)("programs", {
+    directus.request(readItems("programs", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "direction", "format", "duration", "price"],
     })),
   );
   app.get("/programs/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
-    const rows = (await directus.request((readItems as any)("programs", {
+    const rows = (await directus.request(readItems("programs", {
       filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1,
       fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description"],
     }))) as any[];
@@ -52,7 +52,7 @@ export async function contentRoutes(app: FastifyInstance) {
 
   // Каталог мерча.
   app.get("/products", async () =>
-    directus.request((readItems as any)("products", {
+    directus.request(readItems("products", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "category", "price", "images", "variants_json", "stock", "description"],
     })),

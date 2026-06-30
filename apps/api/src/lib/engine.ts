@@ -5,7 +5,7 @@ import {
 } from "@club/shared";
 import { directus } from "./directus.js";
 
-const di = directus as any; // коллекции движка типизируем свободно
+const di = directus; // типизированный клиент; касты остаются на записях/реляциях
 
 export interface AddPointsInput {
   reason: PointReason;
@@ -23,7 +23,7 @@ export async function addPoints(alumniId: string, input: AddPointsInput) {
   // Идемпотентность (decay / вебхуки)
   if (input.idempotencyKey) {
     const dup = (await di.request(
-      (readItems as any)("points_ledger", { filter: { idempotency_key: { _eq: input.idempotencyKey } }, limit: 1, fields: ["id"] }),
+      readItems("points_ledger", { filter: { idempotency_key: { _eq: input.idempotencyKey } }, limit: 1, fields: ["id"] }),
     )) as any[];
     if (dup.length) return recompute(alumniId);
   }
@@ -50,7 +50,7 @@ export async function addPoints(alumniId: string, input: AddPointsInput) {
 /** Пересчёт points_cached/level_cached из ledger (агрегат). */
 export async function recompute(alumniId: string) {
   const rows = (await di.request(
-    (readItems as any)("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["delta"] }),
+    readItems("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["delta"] }),
   )) as { delta: number }[];
   const points = rows.reduce((s, r) => s + (r.delta || 0), 0);
   const level = computeLevel(points);
@@ -60,7 +60,7 @@ export async function recompute(alumniId: string) {
 
 async function counts(alumniId: string) {
   const rows = (await di.request(
-    (readItems as any)("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["reason"] }),
+    readItems("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["reason"] }),
   )) as { reason: string }[];
   const by = (r: string) => rows.filter((x) => x.reason === r).length;
   return { programs_completed: by("program"), events_attended: by("event"), mentorship_count: by("mentorship") };
@@ -68,14 +68,14 @@ async function counts(alumniId: string) {
 
 /** Выдать заслуженные достижения, которых ещё нет. */
 export async function grantAchievements(alumniId: string) {
-  const alumni = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["points_cached"] }))) as any[];
+  const alumni = (await di.request(readItems("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["points_cached"] }))) as any[];
   const points = alumni[0]?.points_cached ?? 0;
   const stats = { ...(await counts(alumniId)), points };
   const earnedKeys = evaluateAchievements(stats);
   if (!earnedKeys.length) return;
 
-  const defs = (await di.request((readItems as any)("achievements", { filter: { key: { _in: earnedKeys } }, limit: -1, fields: ["id", "key"] }))) as any[];
-  const existing = (await di.request((readItems as any)("alumni_achievements", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["achievement_id"] }))) as any[];
+  const defs = (await di.request(readItems("achievements", { filter: { key: { _in: earnedKeys } }, limit: -1, fields: ["id", "key"] }))) as any[];
+  const existing = (await di.request(readItems("alumni_achievements", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["achievement_id"] }))) as any[];
   const have = new Set(existing.map((e) => e.achievement_id));
   for (const d of defs) {
     if (!have.has(d.id)) {

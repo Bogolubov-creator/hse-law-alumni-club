@@ -47,8 +47,8 @@ export async function pointsRoutes(app: FastifyInstance) {
     if (!alumni) return reply.code(401).send({ error: "Не авторизован" });
     if (alumni.verification_status !== "verified")
       return reply.code(403).send({ error: "ЛК активируется после верификации учебным офисом" });
-    const rows = await (directus as any).request(
-      (readItems as any)("points_ledger", {
+    const rows = await directus.request(
+      readItems("points_ledger", {
         filter: { alumni_id: { _eq: alumni.id } },
         sort: ["-created_at"], limit: 50,
         fields: ["id", "delta", "reason", "ref", "comment", "created_at"],

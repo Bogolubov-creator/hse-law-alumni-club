@@ -4,7 +4,7 @@ import { readItems, readUsers } from "@directus/sdk";
 import { env } from "../env.js";
 import { directus } from "./directus.js";
 
-const di = directus as any;
+const di = directus;
 
 function bearer(req: FastifyRequest): string | null {
   const h = req.headers.authorization;
@@ -87,7 +87,7 @@ export interface AlumniCtx {
 
 export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null> {
   const rows = (await di.request(
-    (readItems as any)("alumni", {
+    readItems("alumni", {
       filter: { user_id: { _eq: userId } }, limit: 1,
       fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json"],
     }),
@@ -102,7 +102,7 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   const payload = verifySession(token);
   if (!payload?.alumni_id) return null;
   const rows = (await di.request(
-    (readItems as any)("alumni", {
+    readItems("alumni", {
       filter: { id: { _eq: payload.alumni_id } }, limit: 1,
       fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json"],
     }),

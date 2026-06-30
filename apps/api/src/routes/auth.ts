@@ -14,7 +14,7 @@ export async function authRoutes(app: FastifyInstance) {
     const v = validateInitData(initData, env.TELEGRAM_BOT_TOKEN, { maxAgeSec: 86400 });
     if (!v.ok) return reply.code(401).send({ error: "Невалидная подпись Telegram" });
     const tgId = String((v.user as any)?.id ?? "");
-    const rows = (await (directus as any).request((readItems as any)("alumni", {
+    const rows = (await directus.request(readItems("alumni", {
       filter: { telegram_id: { _eq: tgId } }, limit: 1,
       fields: ["id", "fio", "cohort", "verification_status"],
     }))) as any[];

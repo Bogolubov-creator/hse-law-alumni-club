@@ -6,7 +6,7 @@ import { directus } from "../lib/directus.js";
 import { levelInfo } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
 
-const di = directus as any;
+const di = directus;
 const MONTHS_RU = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
 
 function lastSixMonths(ledger: { delta: number; created_at: string }[], now = new Date()) {
@@ -39,7 +39,7 @@ export async function meRoutes(app: FastifyInstance) {
     const earned = new Set(earnedRows.map((e) => e.achievement_id?.key));
 
     const ledger = (await di.request(
-      (readItems as any)("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at"], limit: -1 }),
+      readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at"], limit: -1 }),
     )) as { delta: number; created_at: string }[];
 
     return {

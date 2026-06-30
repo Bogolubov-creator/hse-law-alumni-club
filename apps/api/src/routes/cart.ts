@@ -4,7 +4,7 @@ import { z } from "zod";
 import { cartItemSchema, addLine, setLineQty, summarizeCart, type StoredCartItem } from "@club/shared";
 import { directus } from "../lib/directus.js";
 
-const di = directus as any;
+const di = directus;
 
 function session(req: FastifyRequest): string | null {
   const s = req.headers["x-cart-session"];
@@ -12,7 +12,7 @@ function session(req: FastifyRequest): string | null {
 }
 
 async function loadCart(token: string): Promise<{ id: string; items: StoredCartItem[] } | null> {
-  const rows = (await di.request((readItems as any)("carts", { filter: { session_token: { _eq: token } }, limit: 1, fields: ["id", "items_json"] }))) as any[];
+  const rows = (await di.request(readItems("carts", { filter: { session_token: { _eq: token } }, limit: 1, fields: ["id", "items_json"] }))) as any[];
   if (!rows.length) return null;
   return { id: rows[0].id, items: (rows[0].items_json as StoredCartItem[]) ?? [] };
 }
@@ -25,7 +25,7 @@ async function saveCart(token: string, items: StoredCartItem[]) {
 
 export async function lookup(type: "dpo" | "merch", slug: string): Promise<{ title: string; price: number } | null> {
   const collection = type === "dpo" ? "programs" : "products";
-  const rows = (await di.request((readItems as any)(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields: ["title", "price"] }))) as any[];
+  const rows = (await di.request(readItems(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields: ["title", "price"] }))) as any[];
   return rows[0] ? { title: rows[0].title, price: rows[0].price ?? 0 } : null;
 }
 

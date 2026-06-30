@@ -5,7 +5,7 @@ import { directus } from "../lib/directus.js";
 import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 
-const di = directus as any;
+const di = directus;
 const ADMIN_ROLES = ["editor", "admin", "Administrator"];
 
 function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
@@ -25,8 +25,8 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get("/admin/overview", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    const orders = (await di.request((readItems as any)("orders", { fields: ["status"], limit: -1 }))) as any[];
-    const alumni = (await di.request((readItems as any)("alumni", { fields: ["verification_status"], limit: -1 }))) as any[];
+    const orders = (await di.request(readItems("orders", { fields: ["status"], limit: -1 }))) as any[];
+    const alumni = (await di.request(readItems("alumni", { fields: ["verification_status"], limit: -1 }))) as any[];
     return {
       new_orders: orders.filter((o) => o.status === "new").length,
       orders_count: orders.length,
@@ -37,7 +37,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get("/admin/orders", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return di.request((readItems as any)("orders", {
+    return di.request(readItems("orders", {
       sort: ["-created_at"], limit: 100,
       fields: ["id", "number", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "status", "subtotal", "total_estimate", "created_at"],
     }));
@@ -53,7 +53,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get("/admin/members", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return di.request((readItems as any)("alumni", {
+    return di.request(readItems("alumni", {
       sort: ["-points_cached"], limit: 200,
       fields: ["id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount"],
     }));
@@ -72,7 +72,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     // Рефералка: при верификации приглашённого — +80 баллов рефереру (идемпотентно).
     if (body.verification_status === "verified") {
-      const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: id } }, limit: 1, fields: ["referred_by"] }))) as any[];
+      const rows = (await di.request(readItems("alumni", { filter: { id: { _eq: id } }, limit: 1, fields: ["referred_by"] }))) as any[];
       const referrer = rows[0]?.referred_by;
       if (referrer) {
         await addPoints(referrer, { reason: "referral", ref: id, comment: "Приглашённый выпускник верифицирован", idempotencyKey: `referral-${id}` });
