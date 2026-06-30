@@ -17,11 +17,11 @@ export default function SiteShell({ children }: { children: ReactNode }) {
               <div className="mt-0.5 font-mono text-[10px] tracking-wider text-grafit-soft">факультета права Вышки</div>
             </div>
           </Link>
-          <nav className="flex items-center gap-1.5 text-[14px]">
-            <Link to="/dpo" className="foc nav-link rounded-[10px] px-3 py-2 font-medium">ДПО</Link>
-            <Link to="/merch" className="foc nav-link rounded-[10px] px-3 py-2 font-medium">Мерч</Link>
-            <Link to="/news" className="foc nav-link rounded-[10px] px-3 py-2 font-medium">Новости</Link>
-            <Link to="/lk" className="foc nav-link rounded-[10px] px-3 py-2 font-medium">ЛК</Link>
+          <nav className="flex flex-wrap items-center justify-end gap-1.5 text-[14px]">
+            <Link to="/dpo" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">ДПО</Link>
+            <Link to="/merch" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Мерч</Link>
+            <Link to="/news" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Новости</Link>
+            <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">ЛК</Link>
             <Link to="/cart" className="foc relative ml-1 rounded-[11px] bg-grafit px-4 py-2.5 font-semibold text-kost">
               Корзина{count > 0 && <span className="ml-1.5 rounded-full bg-ohra px-1.5 font-mono text-[12px]">{count}</span>}
             </Link>

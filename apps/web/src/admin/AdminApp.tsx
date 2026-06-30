@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from "react";
+import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
+
+const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
   adminLogin, adminToken, setAdminToken, clearAdminToken,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
@@ -145,8 +148,8 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
               <div className="text-sm font-semibold">{m.fio}</div>
               <div className="font-mono text-[11px] text-grafit-soft">Выпуск {m.cohort}</div>
               <div className="mt-2 flex gap-2">
-                <button onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc flex-1 rounded-[9px] bg-[#1F8A5B] py-2 text-[13px] font-semibold text-white">Подтвердить</button>
-                <button onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc flex-1 rounded-[9px] border-[1.5px] border-[#E5E7EB] py-2 text-[13px] font-semibold text-karmin">Отклонить</button>
+                <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc flex-1 rounded-[9px] bg-[#1F8A5B] py-2 text-[13px] font-semibold text-white disabled:opacity-60">Подтвердить</button>
+                <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc flex-1 rounded-[9px] border-[1.5px] border-[#E5E7EB] py-2 text-[13px] font-semibold text-karmin disabled:opacity-60">Отклонить</button>
               </div>
             </div>
           ))}
@@ -210,31 +213,31 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
   const [discount, setDiscount] = useState(String(member.personal_discount));
   const [delta, setDelta] = useState("");
   return (
-    <div onClick={onClose} className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(15,18,24,.55)] p-6 backdrop-blur-sm">
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-[460px] rounded-[22px] bg-white p-7 shadow-2xl" style={{ animation: "g-pop .26s cubic-bezier(.2,.8,.2,1)" }}>
-        <button onClick={onClose} className="foc absolute right-4 top-4 h-9 w-9 rounded-[10px] border border-[#E5E7EB] text-grafit-soft">✕</button>
-        <div className="font-display text-2xl font-bold">{member.fio}</div>
+    <Modal onClose={onClose} labelledBy="member-modal-title" maxWidth={460}>
+      <div className="relative rounded-[22px] bg-white p-7 shadow-2xl" style={{ animation: "g-pop .26s cubic-bezier(.2,.8,.2,1)" }}>
+        <button onClick={onClose} aria-label="Закрыть" className="foc absolute right-4 top-4 h-9 w-9 rounded-[10px] border border-[#E5E7EB] text-grafit-soft">✕</button>
+        <div id="member-modal-title" className="font-display text-2xl font-bold">{member.fio}</div>
         <div className="mt-1 font-mono text-[12px] text-grafit-soft">Выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов</div>
 
         <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Верификация</div>
         <div className="mt-2 flex gap-2">
-          <button onClick={() => patchMember.mutate({ id: member.id, verification_status: "verified" })} className="foc flex-1 rounded-[10px] bg-[#1F8A5B] py-2.5 text-sm font-semibold text-white">Подтвердить</button>
-          <button onClick={() => patchMember.mutate({ id: member.id, verification_status: "rejected" })} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] py-2.5 text-sm font-semibold text-karmin">Отклонить</button>
+          <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: member.id, verification_status: "verified" })} className="foc flex-1 rounded-[10px] bg-[#1F8A5B] py-2.5 text-sm font-semibold text-white disabled:opacity-60">Подтвердить</button>
+          <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: member.id, verification_status: "rejected" })} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] py-2.5 text-sm font-semibold text-karmin disabled:opacity-60">Отклонить</button>
         </div>
 
         <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Ручные баллы</div>
         <div className="mt-2 flex gap-2">
           <input value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="напр. 60 или −30" className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
-          <button onClick={() => { const d = parseInt(delta, 10); if (!isNaN(d)) { addPoints.mutate({ id: member.id, delta: d }); setDelta(""); } }} className="foc rounded-[10px] bg-hse-blue px-5 text-sm font-semibold text-kost">Начислить</button>
+          <button disabled={addPoints.isPending} onClick={() => { const d = parseInt(delta, 10); if (!isNaN(d)) { addPoints.mutate({ id: member.id, delta: d }); setDelta(""); } }} className="foc rounded-[10px] bg-hse-blue px-5 text-sm font-semibold text-kost disabled:opacity-60">Начислить</button>
         </div>
 
         <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Персональная скидка (0–10%)</div>
         <div className="mt-2 flex gap-2">
           <input value={discount} onChange={(e) => setDiscount(e.target.value)} type="number" min={0} max={10} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
-          <button onClick={() => patchMember.mutate({ id: member.id, personal_discount: Math.max(0, Math.min(10, parseInt(discount, 10) || 0)) })} className="foc rounded-[10px] bg-ohra px-5 text-sm font-semibold text-kost">Сохранить</button>
+          <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: member.id, personal_discount: Math.max(0, Math.min(10, parseInt(discount, 10) || 0)) })} className="foc rounded-[10px] bg-ohra px-5 text-sm font-semibold text-kost disabled:opacity-60">Сохранить</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -243,10 +246,10 @@ function Content() {
     <Card>
       <div className="font-display text-lg font-semibold">Контент сайта</div>
       <p className="mt-2 max-w-[560px] text-sm text-grafit-soft">
-        Новости, программы ДПО, товары и блоки главной страницы редактируются в админке Directus — там готовые формы, загрузка медиа и история изменений. Изменения сразу попадают на сайт через API.
+        Новости, программы ДПО, товары и блоки главной страницы редактируются в админке Directus – там готовые формы, загрузка медиа и история изменений. Изменения сразу попадают на сайт через API.
       </p>
-      <a href="http://localhost:8055" target="_blank" rel="noopener noreferrer" className="foc mt-4 inline-block rounded-[11px] bg-grafit px-5 py-3 font-semibold text-kost">Открыть Directus Studio →</a>
-      <p className="mt-3 font-mono text-[11px] text-grafit-soft">На проде — https://admin.&lt;домен&gt;</p>
+      <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc mt-4 inline-block rounded-[11px] bg-grafit px-5 py-3 font-semibold text-kost">Открыть Directus Studio →</a>
+      <p className="mt-3 font-mono text-[11px] text-grafit-soft">Адрес задаётся переменной VITE_DIRECTUS_URL (на проде – https://admin.&lt;домен&gt;).</p>
     </Card>
   );
 }

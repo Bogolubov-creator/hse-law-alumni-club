@@ -2,12 +2,14 @@ import { Link, useParams } from "react-router-dom";
 import SiteShell, { DiscountBadge } from "../components/SiteShell.js";
 import { FORMAT_LABEL, rub } from "../lib/api.js";
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
+import { useToast } from "../components/Toast.js";
 
 export default function Program() {
   const { slug = "" } = useParams();
   const q = useProgram(slug);
   const discount = useMemberDiscount();
   const { add } = useCartMutations();
+  const toast = useToast();
   const p = q.data;
   const priced = p ? Math.round((p.price * (100 - discount)) / 100 / 100) * 100 : 0;
   const modules = Array.isArray(p?.modules) ? (p!.modules as string[]) : [];
@@ -35,7 +37,7 @@ export default function Program() {
               {teachers.length > 0 && (
                 <div className="mt-7">
                   <h2 className="font-display text-lg font-semibold">Преподаватели</h2>
-                  <div className="mt-3 space-y-2">{teachers.map((t, i) => <div key={i} className="text-sm"><b>{t.name}</b>{t.role ? ` — ${t.role}` : ""}</div>)}</div>
+                  <div className="mt-3 space-y-2">{teachers.map((t, i) => <div key={i} className="text-sm"><b>{t.name}</b>{t.role ? ` – ${t.role}` : ""}</div>)}</div>
                 </div>
               )}
             </div>
@@ -45,8 +47,8 @@ export default function Program() {
                 {discount > 0 && <span className="font-mono text-sm text-grafit-soft line-through">{rub(p.price)}</span>}
               </div>
               {discount > 0 && <div className="mt-2"><DiscountBadge percent={discount} /></div>}
-              <button onClick={() => add.mutate({ type: "dpo", ref_id: p.slug })} className="foc mt-4 w-full rounded-[12px] bg-ohra py-3.5 font-semibold text-kost">В корзину</button>
-              <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Оплаты нет — оформление ведёт к заявке, офис свяжется с вами.</p>
+              <button disabled={add.isPending} onClick={() => add.mutate({ type: "dpo", ref_id: p.slug }, { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") })} className="foc mt-4 w-full rounded-[12px] bg-ohra py-3.5 font-semibold text-kost disabled:opacity-60">В корзину</button>
+              <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Оплаты нет – оформление ведёт к заявке, офис свяжется с вами.</p>
             </aside>
           </div>
         )}

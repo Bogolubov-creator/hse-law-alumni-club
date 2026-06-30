@@ -1,11 +1,14 @@
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { LEVELS } from "@club/shared";
-import { apiPost, type LoginResponse, type AlumniBrief, type Achievement } from "../lib/api.js";
-import { useMe } from "../lib/queries.js";
+import { apiPost, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
+import { useMe, useMyOrders } from "../lib/queries.js";
+import Modal from "../components/Modal.js";
+
+const ORDER_STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
 
 /**
- * Личный кабинет — порт «Дашборд ЛК.dc.html» (B), данные из /api/me.
+ * Личный кабинет – порт «Дашборд ЛК.dc.html» (B), данные из /api/me.
  * Логин выпускника → JWT-сессия apps/api. ЛК активен только после верификации.
  */
 
@@ -122,25 +125,26 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
             <button onClick={onLogout} className="foc" style={{ marginTop: 12, ...mono, fontSize: 13, border: "1.5px solid #E5E7EB", borderRadius: 10, padding: "8px 13px", cursor: "pointer" }}>Войти заново</button>
           </div>
         )}
-        {me.data && <DashboardBody me={me.data} onBadge={setSel} />}
+        {me.data && <DashboardBody me={me.data} token={token} onBadge={setSel} />}
       </main>
 
       {sel && (
-        <div onClick={() => setSel(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 430, ...surface, padding: "32px 32px 28px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
-            <button onClick={() => setSel(null)} className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: "1px solid #E5E7EB", background: "transparent", color: "#6B7280", cursor: "pointer" }}>✕</button>
+        <Modal onClose={() => setSel(null)} labelledBy="badge-modal-title" maxWidth={430}>
+          <div style={{ position: "relative", ...surface, padding: "32px 32px 28px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
+            <button onClick={() => setSel(null)} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: "1px solid #E5E7EB", background: "transparent", color: "#6B7280", cursor: "pointer" }}>✕</button>
             <BadgeSquare a={sel} size={64} />
             <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", color: sel.earned ? "#1F8A5B" : "#6B7280", marginTop: 22 }}>{sel.earned ? "Получено" : "Закрыто"}</div>
-            <div style={{ ...disp, fontWeight: 600, fontSize: 24, letterSpacing: "-0.01em", marginTop: 8 }}>{sel.title}</div>
+            <div id="badge-modal-title" style={{ ...disp, fontWeight: 600, fontSize: 24, letterSpacing: "-0.01em", marginTop: 8 }}>{sel.title}</div>
             <p style={{ color: "#6B7280", fontSize: 15, lineHeight: 1.55, margin: "12px 0 0" }}>{sel.description}</p>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
 }
 
-function DashboardBody({ me, onBadge }: { me: import("../lib/api.js").Me; onBadge: (a: Achievement) => void }) {
+function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me; token: string; onBadge: (a: Achievement) => void }) {
+  const orders = useMyOrders(token);
   const cur = LEVELS.find((l) => l.key === me.level.level) ?? LEVELS[0]!;
   const idx = LEVELS.findIndex((l) => l.key === cur.key);
   const next = LEVELS[idx + 1] ?? null;
@@ -157,7 +161,7 @@ function DashboardBody({ me, onBadge }: { me: import("../lib/api.js").Me; onBadg
         <div style={{ width: 84, height: 84, borderRadius: 22, flex: "none", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>{initial}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{me.alumni.fio ?? "Выпускник"}</div>
-          <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "—"} · факультет права</div>
+          <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "–"} · факультет права</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}>
             <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Верифицирован учебным офисом
           </div>
@@ -218,6 +222,23 @@ function DashboardBody({ me, onBadge }: { me: import("../lib/api.js").Me; onBadg
         </div>
       </div>
 
+      {/* МОИ ЗАЯВКИ */}
+      {orders.data && orders.data.length > 0 && (
+        <div style={{ ...surface, padding: "26px 28px", marginTop: 22 }}>
+          <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Мои заявки</div>
+          <div style={{ marginTop: 12 }}>
+            {orders.data.map((o: MyOrder) => (
+              <div key={o.number} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: "1px solid #f0ece2", padding: "12px 0", flexWrap: "wrap" }}>
+                <span style={{ ...mono, fontSize: 12, color: "#6B7280", minWidth: 130 }}>{o.number}</span>
+                <span style={{ flex: 1, fontSize: 14, minWidth: 80 }}>{o.type === "dpo" ? "ДПО" : o.type === "merch" ? "Мерч" : "Смешанная"}</span>
+                <span style={{ ...mono, fontSize: 13 }}>{rub(o.total_estimate)}</span>
+                <span style={{ ...mono, fontSize: 11, padding: "4px 10px", borderRadius: 999, background: "rgba(46,111,174,.12)", color: "#2E6FAE" }}>{ORDER_STATUS_RU[o.status] ?? o.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* PERSONAL OFFER */}
       <div style={{ position: "relative", overflow: "hidden", marginTop: 44, borderRadius: 22, background: "#11296B", color: "#FBF3E8", padding: "34px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 28, flexWrap: "wrap" }}>
         <div style={{ position: "absolute", right: -30, top: -30, width: 200, height: 200, background: "radial-gradient(circle,rgba(236,90,19,.55),transparent 65%)", filter: "blur(6px)" }} />
@@ -233,7 +254,7 @@ function DashboardBody({ me, onBadge }: { me: import("../lib/api.js").Me; onBadg
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28, flexWrap: "wrap" }}>
         <span style={{ ...mono, fontSize: 13, color: "#6B7280" }}>Поделиться профилем:</span>
         <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8" }}>↗ Telegram</a>
-        <span style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#fff", color: "#14181F", border: "1.5px solid #E5E7EB" }}>↗ Макс</span>
+        <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#fff", color: "#9aa0aa", border: "1.5px solid #E5E7EB", cursor: "not-allowed" }}>↗ Макс · скоро</button>
       </div>
     </>
   );

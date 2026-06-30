@@ -1,10 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiGet, type NewsItem, type PageHome, type Me, type LedgerEntry } from "./api.js";
+import { apiGet, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
 
 export function useLedger(token: string | null) {
   return useQuery({
     queryKey: ["ledger", token],
     queryFn: () => apiGet<LedgerEntry[]>("/me/ledger", token!),
+    enabled: !!token,
+    retry: false,
+  });
+}
+
+export function useMyOrders(token: string | null) {
+  return useQuery({
+    queryKey: ["my-orders", token],
+    queryFn: () => apiGet<MyOrder[]>("/me/orders", token!),
     enabled: !!token,
     retry: false,
   });

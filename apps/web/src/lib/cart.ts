@@ -45,7 +45,7 @@ export function useProducts() {
   return useQuery({ queryKey: ["products"], queryFn: () => apiGet<Product[]>("/products") });
 }
 
-/** Скидка выпускника (если вошёл и верифицирован) — для справочного бейджа на витринах. */
+/** Скидка выпускника (если вошёл и верифицирован) – для справочного бейджа на витринах. */
 export function useMemberDiscount(): number {
   const token = localStorage.getItem(TOKEN_KEY);
   const q = useQuery({ queryKey: ["me-discount", token], queryFn: () => apiGet<Me>("/me", token!), enabled: !!token, retry: false });

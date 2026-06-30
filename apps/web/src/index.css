@@ -34,6 +34,10 @@ body {
 @media (max-width: 920px) {
   .hero-grid { grid-template-columns: 1fr !important; }
 }
+.shop-nav:hover { color: #c9450e; }
+@media (max-width: 1024px) and (min-width: 761px) {
+  .two-col { grid-template-columns: 1fr 1fr !important; }
+}
 @media (max-width: 760px) {
   .two-col { grid-template-columns: 1fr !important; }
   nav .nav-link { display: none; }

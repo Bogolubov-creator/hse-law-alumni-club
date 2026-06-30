@@ -96,6 +96,21 @@
   • Гигиена секретов перепроверена: `.env` не в git, значений секретов в трекнутых файлах нет.
   Не меняли (осознанно): `member_discount` хранит % (по схеме; сумма = subtotal − total_estimate).
 
+- 2026-06-30 Многоагентный проход (4 агента: типы, тесты, безопасность, UX) + исправления:
+  • Безопасность: `@fastify/rate-limit` (auth 5/мин, общий 300/мин) + `trustProxy`; `@fastify/helmet`
+    (CSP/HSTS/nosniff); CORS-allowlist (same-origin + Telegram + `CORS_ORIGINS`) вместо `origin:true`;
+    `bodyLimit` 256 КБ; `AUTH_SECRET` мин 32; UUID-валидация `x-cart-session`; security-заголовки веба в Caddy
+    (frame-ancestors для Telegram). Привилегии/PII-доступ — подтверждены корректными.
+  • Чистые функции в `@club/shared` + тесты (vitest): `order-calc` (computeOrderTotals/effectiveDiscount/
+    orderNumber/repriceItems) и `cart` (addLine/setLineQty/summarizeCart) — роуты `orders`/`cart` переписаны
+    на них. `LEVELS/POINT_RULES/ACHIEVEMENTS` → `readonly`; общие zod-схемы (nullish). Тесты: shared 26, api 6.
+  • UX/доступность: тосты при «В корзину» (+disable во время запроса); доступная модалка `Modal`
+    (Esc/фокус/role=dialog/aria) для мерча/ЛК/админки; aria-labels на иконочных кнопках; состояния ошибки
+    на витринах; «Мои заявки» в ЛК (`/me/orders`); адаптив витрин 2 кол. на планшете + видимая мобильная
+    навигация; ссылка на Directus через `VITE_DIRECTUS_URL`; защита от двойного клика в админке;
+    честная кнопка «Макс · скоро»; em dash → en dash во всех текстах (8 файлов).
+  Проверено: тосты и Esc-закрытие модалки в превью; все сборки/тесты зелёные.
+
 ## BLOCKED: нужен я
 - **Telegram-уведомление офиса**: нужны боевые `OFFICE_TG_BOT_TOKEN` + `OFFICE_TG_CHAT_ID` (создать
   бота у @BotFather, добавить в чат офиса, взять chat_id). Код готов: при наличии токенов офис получает

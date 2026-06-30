@@ -32,6 +32,7 @@ export async function apiPatch<T>(path: string, body: unknown, token: string): P
 }
 
 export type LedgerEntry = { id: string; delta: number; reason: string; ref: string | null; comment: string | null; created_at: string };
+export type MyOrder = { number: string; type: string; status: string; subtotal: number; member_discount: number; total_estimate: number; created_at: string };
 
 export type Program = { id: string; slug: string; title: string; direction: string; format: string; duration: string; price: number };
 export type ProgramFull = Program & { dates?: unknown; modules?: unknown; teachers?: unknown; description?: string | null };

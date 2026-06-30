@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { useNewsList, usePage, formatNewsDate } from "../lib/queries.js";
 
 /**
- * Главная — порт «Главная.dc.html» (Claude Design) в React.
+ * Главная – порт «Главная.dc.html» (Claude Design) в React.
  * Структура и анимации 1:1: сборка Фемиды из осколков, параллакс, маркиза,
  * pinned-таймлайн, reveal, count-up, «магнитные» CTA. Канон-токены.
- * Новости — живьём из /api/news. Полный prefers-reduced-motion фоллбэк.
+ * Новости – живьём из /api/news. Полный prefers-reduced-motion фоллбэк.
  */
 
 const THEMIS = "/assets/themis.jpeg";
@@ -44,9 +44,9 @@ const TIMELINE = [
   { year: "2026", title: "Сегодня", text: "Растущее сообщество выпускников факультета права с витринами и менторством.", metric: "и это только начало", photo: "[ фото · сообщество ]" },
 ];
 const REASONS = [
-  { num: "01", color: "#C49A45", title: "Статус, который видно", text: "Верификация учебным офисом, личный бейдж и уровень — ваш профиль выпускника всегда подтверждён.", delay: 0 },
-  { num: "02", color: "#EC5A13", title: "Скидка 5% выпускнику", text: "Цена выпускника на программы ДПО и фирменный мерч — прямо в витринах клуба.", delay: 90 },
-  { num: "03", color: "#2E6FAE", title: "Сообщество и связи", text: "Выпуски, менторы, партнёры и мероприятия — нетворкинг, который работает на карьеру.", delay: 180 },
+  { num: "01", color: "#C49A45", title: "Статус, который видно", text: "Верификация учебным офисом, личный бейдж и уровень – ваш профиль выпускника всегда подтверждён.", delay: 0 },
+  { num: "02", color: "#EC5A13", title: "Скидка 5% выпускнику", text: "Цена выпускника на программы ДПО и фирменный мерч – прямо в витринах клуба.", delay: 90 },
+  { num: "03", color: "#2E6FAE", title: "Сообщество и связи", text: "Выпуски, менторы, партнёры и мероприятия – нетворкинг, который работает на карьеру.", delay: 180 },
 ];
 
 export default function Home() {
@@ -248,13 +248,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ИСТОРИЯ — PINNED TIMELINE */}
+      {/* ИСТОРИЯ – PINNED TIMELINE */}
       <section id="istoriya" ref={pinSectionRef} style={{ position: "relative", height: "240vh", background: "#14181F", color: "#FBF3E8" }}>
         <div ref={pinInnerRef} style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 28px", width: "100%" }}>
             <div style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>История клуба</div>
-            <h2 style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 0" }}>От первого выпуска — к сообществу</h2>
-            <p style={{ color: "#9aa3b2", fontSize: 14, margin: "10px 0 0", ...mono }}>↓ листайте — таймлайн движется вбок</p>
+            <h2 style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 0" }}>От первого выпуска – к сообществу</h2>
+            <p style={{ color: "#9aa3b2", fontSize: 14, margin: "10px 0 0", ...mono }}>↓ листайте – таймлайн движется вбок</p>
           </div>
           <div ref={pinTrackRef} style={{ display: "flex", gap: 26, marginTop: 34, padding: "0 max(28px,calc((100vw - 1180px)/2 + 28px))", willChange: "transform" }}>
             {TIMELINE.map((t, i) => (
@@ -278,7 +278,7 @@ export default function Home() {
       <section id="vitriny" style={{ maxWidth: 1180, margin: "0 auto", padding: "88px 28px 20px" }}>
         <div data-reveal style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>Витрины клуба</div>
         <h2 data-reveal style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 6px" }}>Что доступно выпускнику</h2>
-        <p data-reveal style={{ color: "#6B7280", fontSize: 16, maxWidth: 540, margin: "0 0 34px" }}>Две витрины ведут к общей корзине и заявке — оплату ведёт учебный офис.</p>
+        <p data-reveal style={{ color: "#6B7280", fontSize: 16, maxWidth: 540, margin: "0 0 34px" }}>Две витрины ведут к общей корзине и заявке – оплату ведёт учебный офис.</p>
         <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 26 }}>
           {[
             { to: "/dpo", bg: "#11296B", tag: "[ обложка · ДПО ]", title2: "ДПО", h: "Программы доп. образования", p: "Курсы и интенсивы со скидкой выпускника. Фильтры по направлению, формату и длительности.", meta: "6 программ · скидка выпускника 5%", metaColor: "#2E6FAE", cta: "Открыть →", ctaColor: "#11296B", delay: undefined as number | undefined },
@@ -317,7 +317,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* НОВОСТИ — живьём из /api/news */}
+      {/* НОВОСТИ – живьём из /api/news */}
       <section id="novosti" style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 28px 20px" }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 14, marginBottom: 34 }}>
           <div>
