@@ -10,6 +10,7 @@ import { authRoutes } from "./routes/auth.js";
 import { meRoutes } from "./routes/me.js";
 import { cartRoutes } from "./routes/cart.js";
 import { ordersRoutes } from "./routes/orders.js";
+import { adminRoutes } from "./routes/admin.js";
 import { runDecay } from "./lib/engine.js";
 
 const app = Fastify({ logger: true });
@@ -29,6 +30,7 @@ await app.register(authRoutes);
 await app.register(meRoutes);
 await app.register(cartRoutes);
 await app.register(ordersRoutes);
+await app.register(adminRoutes);
 
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
 cron.schedule("0 3 1 * *", () => {

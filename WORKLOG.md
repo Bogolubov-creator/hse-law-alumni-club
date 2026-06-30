@@ -11,7 +11,7 @@
 | 1b · M2A-блоки Главной | done | feat: Фаза 1b | ✓ | block_hero/block_cta, pages_blocks (M2A) |
 | 2 · ЛК + геймификация | done | feat: Фаза 2 (движок+ЛК+профиль) | ✓ | движок+тесты, auth, Дашборд B, Профиль C |
 | 3 · Витрины + заявка | done | feat: Фаза 3 | ✓ | витрины D/E/F, корзина+заявка G, без оплаты |
-| 4 · Админка на реальных данных | todo | – | – | – |
+| 4 · Админка на реальных данных | done | feat: Фаза 4 | ✓ | admin-auth, верификация/баллы/скидки/заявки |
 | 5 · mini-app | todo (часть BLOCKED) | – | – | нужны боевые токены |
 | 6 · Полировка | todo | – | – | – |
 
@@ -77,15 +77,26 @@
   уведомление о новой заявке; без них заявка создаётся, но шлётся только лог (`[notify:BLOCKED]`).
   Вписать в `.env` и перезапустить api. Аналогично `SMTP_*` для письма-подтверждения заявителю.
 
+- 2026-06-30 Фаза 4 (done): admin-сессия — `POST /auth/admin-login` (роли editor/admin/Administrator,
+  JWT scope=admin), `resolveAdmin`. Эндпоинты `apps/api/routes/admin.ts`: `GET /admin/overview`,
+  `GET /admin/orders` + `PATCH /admin/orders/:id` (статус), `GET /admin/members` +
+  `PATCH /admin/members/:id` (verification_status / personal_discount 0–10) + `POST /admin/members/:id/points`
+  (ручные баллы через движок). `apps/web/admin/AdminApp.tsx` переписан на реальные данные: гейт входа,
+  разделы Обзор (статы+последние заявки+верификация), Заявки (таблица + смена статуса), Выпускники
+  (таблица + модалка: верификация/баллы/скидка), Контент → ссылка на Directus Studio.
+  Проверено: editor-login, overview (3 заявки), ручные +60 → 536/expert, скидка=5, статус заявки→in_progress,
+  alumni-токен на /admin → 401. Визуально Обзор + модалка выпускника на реальных данных.
+  Контент-CRUD (новости/программы/товары/блоки) — в Directus Studio (как задумано архитектурой).
+
 ## Как возобновить
-- Последний зелёный коммит: `feat: Фаза 3 — витрины + корзина + заявка`.
-- **Следующий шаг — Фаза 4 (админка на реальных данных):** подключить `AdminApp` (уже собран на моках)
-  к Directus/`apps/api`: верификация (подтвердить/отклонить → `alumni.verification_status`), ручные
-  баллы (`POST /points` reason=manual), персональная скидка (`alumni.personal_discount`), смена статусов
-  заявок (`orders.status`), CRUD новостей/программ/товаров (через Directus или api), редактор блоков
-  страниц (M2A из 1b). Роуты `/admin/*` под ролями editor/admin. Нужны admin-эндпоинты в apps/api
-  (под сервисным токеном или новой admin-сессией) ИЛИ прямое подключение к Directus REST из админки.
-  Приёмка: офис ведёт верификацию/баллы/скидки/заявки/контент сам.
+- Последний зелёный коммит: `feat: Фаза 4 — админка на реальных данных`.
+- **Следующий шаг — Фаза 5 (mini-app, частично BLOCKED):** сборка `apps/web` как Telegram Mini App +
+  MAX; валидация Telegram `initData` (подпись HMAC по bot-токену — юнит-тест с тестовым ключом),
+  заглушка входа MAX; рефералка (deep-link с кодом → `+80` рефереру при верификации приглашённого,
+  коллекция `referrals` уже есть). BLOCKED: боевые токены Telegram/MAX — оставить `.env.example` +
+  тесты с тестовым ключом, «живую» авторизацию за флагом.
 - Docker: команды через ASCII-симлинк `/Users/macbook/club-pravo-hse` + `COMPOSE_BAKE=false`
   (кириллица в пути ломает BuildKit). Сид/bootstrap идемпотентны. `.env` содержит `AUTH_SECRET`.
-- Тест-данные: выпускник Анна (points 476, friend, verified); заявки ALU-2026-000001..000003.
+- Тест-данные: выпускник Анна (после тестов Фазы 4: points 536/expert, personal_discount 5, verified);
+  заявки ALU-2026-000001..000003 (одна in_progress). Тест-аккаунты: editor@club.example.com / editor12345,
+  alumni@club.example.com / alumni12345.

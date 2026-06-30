@@ -1,381 +1,252 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useState, type FormEvent } from "react";
+import { rub } from "../lib/api.js";
+import {
+  adminLogin, adminToken, setAdminToken, clearAdminToken,
+  useOverview, useAdminOrders, useMembers, useAdminMutations,
+  type AdminOrder, type Member,
+} from "../lib/admin.js";
 
 /**
- * Админка клуба выпускников — порт дизайна «Админка.dc.html» (Claude Design) в React.
- * Поведение и стиль 1:1 с исходником: разделы, таблицы, модалка заявки, редактор блоков.
- * Данные — мок (как в дизайне). Подключение к Directus/apps/api — Фаза 4.
+ * Админка офиса на реальных данных (Фаза 4). Подключена к /api/admin/*.
+ * Верификация, ручные баллы, персональная скидка, статусы заявок.
+ * Контент (новости/программы/товары/блоки) редактируется в Directus Studio.
  */
 
-type ReqStatus = "Новая" | "В работе" | "Подтверждена" | "Отклонена";
-type Request = {
-  type: "ДПО" | "Одежда" | "Верификация";
-  client: string;
-  item: string;
-  phone: string;
-  email: string;
-  date: string;
-  status: ReqStatus;
-};
-type Row = { name: string; meta: string; status: "Опубликовано" | "Черновик" };
-type Block = { name: string; type: string; visible: boolean };
-type TableKey = "news" | "programs" | "products";
-type Section = "overview" | "requests" | TableKey | "pages";
+const ORDER_STATUS: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
+const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled"];
+const VERIF: Record<string, string> = { pending: "На проверке", verified: "Верифицирован", rejected: "Отклонён" };
+const LEVEL_RU: Record<string, string> = { graduate: "Выпускник", friend: "Друг клуба", expert: "Знаток", ambassador: "Амбассадор" };
 
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
-const card: CSSProperties = { background: "#fff", border: "1px solid #E5E7EB", borderRadius: 18, padding: 22 };
+const stPill = (s: string) =>
+  s === "new" || s === "pending" ? "bg-[rgba(236,90,19,.14)] text-ohra-deep"
+    : s === "in_progress" ? "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"
+      : s === "confirmed" || s === "verified" || s === "done" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]"
+        : "bg-[rgba(181,51,27,.12)] text-karmin";
 
-function stStyle(s: string): { bg: string; color: string } {
-  const map: Record<string, [string, string]> = {
-    Новая: ["rgba(236,90,19,.14)", "#C9450E"],
-    "В работе": ["rgba(46,111,174,.14)", "#2E6FAE"],
-    Подтверждена: ["rgba(31,138,91,.14)", "#1F8A5B"],
-    Отклонена: ["rgba(181,51,27,.12)", "#B5331B"],
-    Опубликовано: ["rgba(31,138,91,.14)", "#1F8A5B"],
-    Черновик: ["rgba(107,114,128,.14)", "#6B7280"],
+type Section = "overview" | "orders" | "members" | "content";
+
+export default function AdminApp() {
+  const [token, setToken] = useState<string | null>(() => adminToken());
+  if (!token) return <AdminGate onAuthed={(t) => { setAdminToken(t); setToken(t); }} />;
+  return <AdminShell onLogout={() => { clearAdminToken(); setToken(null); }} />;
+}
+
+function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); setErr(null); setBusy(true);
+    try { const r = await adminLogin(email, password); onAuthed(r.token); }
+    catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
-  const c = map[s] ?? map["Черновик"]!;
-  return { bg: c[0], color: c[1] };
-}
-function typeStyle(t: string): { bg: string; color: string } {
-  if (t === "ДПО") return { bg: "rgba(17,41,107,.1)", color: "#11296B" };
-  if (t === "Одежда") return { bg: "rgba(236,90,19,.14)", color: "#C9450E" };
-  return { bg: "rgba(196,154,69,.18)", color: "#a07d2e" };
-}
-
-const pill = (bg: string, color: string): CSSProperties => ({
-  ...mono,
-  fontSize: 11,
-  padding: "5px 10px",
-  borderRadius: 999,
-  background: bg,
-  color,
-});
-
-const INITIAL_REQUESTS: Request[] = [
-  { type: "ДПО", client: "Анна Соколова", item: "Юрист в сфере договорного права", phone: "+7 905 123-45-67", email: "a.sokolova@mail.ru", date: "24 июн", status: "Новая" },
-  { type: "Одежда", client: "Иван Петров", item: "Худи (M, графит) ×1", phone: "+7 916 800-11-22", email: "i.petrov@mail.ru", date: "24 июн", status: "Новая" },
-  { type: "Верификация", client: "Мария Климова", item: "Подтверждение выпуска 2025", phone: "+7 903 444-55-66", email: "m.klimova@mail.ru", date: "23 июн", status: "Новая" },
-  { type: "ДПО", client: "Сергей Лосев", item: "Медиация и конфликтология", phone: "+7 921 777-88-99", email: "s.losev@mail.ru", date: "22 июн", status: "В работе" },
-  { type: "Одежда", client: "Ольга Власова", item: "Шоппер ×2", phone: "+7 909 222-33-44", email: "o.vlasova@mail.ru", date: "21 июн", status: "Подтверждена" },
-  { type: "Верификация", client: "Дмитрий Орлов", item: "Подтверждение выпуска 2024", phone: "+7 985 111-00-99", email: "d.orlov@mail.ru", date: "20 июн", status: "Подтверждена" },
-];
-const INITIAL_NEWS: Row[] = [
-  { name: "Новый набор ДПО осенью", meta: "24 июн", status: "Опубликовано" },
-  { name: "Встреча выпусков ’24 и ’25", meta: "18 июн", status: "Опубликовано" },
-  { name: "Новые бейджи в кабинете", meta: "05 июн", status: "Черновик" },
-];
-const INITIAL_PROGRAMS: Row[] = [
-  { name: "Юрист в сфере договорного права", meta: "30 000 ₽", status: "Опубликовано" },
-  { name: "Медиация и конфликтология", meta: "30 000 ₽", status: "Опубликовано" },
-  { name: "Практика применения ИИ в юриспруденции", meta: "35 000 ₽", status: "Черновик" },
-];
-const INITIAL_PRODUCTS: Row[] = [
-  { name: "Худи с логотипом факультета", meta: "4 200 ₽ · 18 шт.", status: "Опубликовано" },
-  { name: "Шоппер с Фемидой", meta: "1 200 ₽ · 30 шт.", status: "Опубликовано" },
-  { name: "Мантия выпускника", meta: "6 900 ₽ · 6 шт.", status: "Черновик" },
-];
-const INITIAL_BLOCKS: Block[] = [
-  { name: "Hero — сборка Фемиды", type: "hero", visible: true },
-  { name: "Маркиза выпусков", type: "marquee", visible: true },
-  { name: "История клуба", type: "timeline", visible: true },
-  { name: "Витрины (ДПО / Одежда)", type: "showcase", visible: true },
-  { name: "Зачем вступать", type: "features", visible: false },
-  { name: "Новости", type: "news", visible: true },
-];
-
-const TITLES: Record<Section, string> = {
-  overview: "Обзор", requests: "Заявки и заказы", news: "Новости",
-  programs: "Программы ДПО", products: "Товары", pages: "Редактор страниц",
-};
-const CREATE_LABELS: Partial<Record<Section, string>> = { news: "Новость", programs: "Программу", products: "Товар" };
-const COL_HEAD: Record<TableKey, [string, string]> = {
-  news: ["Заголовок", "Дата"], programs: ["Программа", "Цена"], products: ["Товар", "Цена · остаток"],
-};
-
-// Компактный фасеточный знак Фемиды для шапки сайдбара.
-function Mark() {
   return (
-    <svg width={38} height={38} viewBox="0 0 40 40" style={{ borderRadius: 9, flex: "none" }} aria-label="Логотип">
-      <rect width="40" height="40" rx="9" fill="#11296B" />
-      <polygon points="20,5 27,12 20,19 13,12" fill="#EC5A13" />
-      <polygon points="20,19 27,12 31,27 20,35" fill="#2E6FAE" />
-      <polygon points="20,19 13,12 9,27 20,35" fill="#C9450E" />
-      <rect x="12" y="16.5" width="16" height="3" rx="1.5" fill="#C49A45" />
-    </svg>
+    <main className="flex min-h-screen items-center justify-center bg-grafit px-6 font-body">
+      <form onSubmit={submit} className="w-full max-w-[400px] rounded-[22px] bg-white p-8 shadow-2xl">
+        <div className="font-display text-xl font-extrabold">Админка клуба</div>
+        <p className="mt-1 font-mono text-[11px] text-grafit-soft">учебный офис</p>
+        <label className="mt-6 block font-mono text-[11px] uppercase text-grafit-soft">Почта</label>
+        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
+        <label className="mt-4 block font-mono text-[11px] uppercase text-grafit-soft">Пароль</label>
+        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
+        {err && <p className="mt-3 font-mono text-xs text-karmin">{err}</p>}
+        <button disabled={busy} className="foc mt-5 w-full rounded-[11px] bg-ohra py-3 font-semibold text-kost disabled:opacity-60">{busy ? "Входим…" : "Войти"}</button>
+      </form>
+    </main>
   );
 }
 
-export default function AdminApp() {
+function AdminShell({ onLogout }: { onLogout: () => void }) {
   const [section, setSection] = useState<Section>("overview");
-  const [sel, setSel] = useState<number | null>(null);
-  const [requests, setRequests] = useState<Request[]>(INITIAL_REQUESTS);
-  const [tables, setTables] = useState<Record<TableKey, Row[]>>({
-    news: INITIAL_NEWS, programs: INITIAL_PROGRAMS, products: INITIAL_PRODUCTS,
-  });
-  const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
-
-  const setStatus = (idx: number, status: ReqStatus) =>
-    setRequests((rs) => rs.map((r, i) => (i === idx ? { ...r, status } : r)));
-  const delRow = (key: TableKey, i: number) =>
-    setTables((t) => ({ ...t, [key]: t[key].filter((_, k) => k !== i) }));
-  const togglePub = (key: TableKey, i: number) =>
-    setTables((t) => ({
-      ...t,
-      [key]: t[key].map((r, k) =>
-        k === i ? { ...r, status: r.status === "Опубликовано" ? "Черновик" : "Опубликовано" } : r,
-      ),
-    }));
-  const moveBlock = (i: number, d: number) =>
-    setBlocks((b) => {
-      const j = i + d;
-      if (j < 0 || j >= b.length) return b;
-      const next = b.slice();
-      [next[i], next[j]] = [next[j]!, next[i]!];
-      return next;
-    });
-  const toggleBlock = (i: number) =>
-    setBlocks((b) => b.map((x, k) => (k === i ? { ...x, visible: !x.visible } : x)));
-  const create = (key: TableKey) =>
-    setTables((t) => ({ ...t, [key]: [{ name: "Новая запись (черновик)", meta: "—", status: "Черновик" }, ...t[key]] }));
-
-  const newCount = useMemo(() => requests.filter((r) => r.status === "Новая").length, [requests]);
-  const verifNew = requests.filter((r) => r.type === "Верификация" && r.status === "Новая").length;
-  const tableKey: TableKey | null =
-    section === "news" || section === "programs" || section === "products" ? section : null;
-
-  const navDef: { key: Section; label: string; badge?: number }[] = [
+  const ov = useOverview();
+  const nav: { key: Section; label: string; badge?: number }[] = [
     { key: "overview", label: "Обзор" },
-    { key: "requests", label: "Заявки и заказы", badge: newCount },
-    { key: "news", label: "Новости" },
-    { key: "programs", label: "Программы ДПО" },
-    { key: "products", label: "Товары" },
-    { key: "pages", label: "Страницы" },
+    { key: "orders", label: "Заявки", badge: ov.data?.new_orders },
+    { key: "members", label: "Выпускники", badge: ov.data?.pending_verifications },
+    { key: "content", label: "Контент" },
   ];
+  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент" };
 
-  const stats = [
-    { label: "Новые заявки", value: newCount, color: "#EC5A13", note: "требуют ответа" },
-    { label: "Заказы сегодня", value: requests.filter((r) => r.date === "24 июн" && r.type !== "Верификация").length, color: "#11296B", note: "ДПО и одежда" },
-    { label: "На верификацию", value: verifNew, color: "#a07d2e", note: "подтвердить выпуск" },
-    { label: "Активность", value: "+18%", color: "#1F8A5B", note: "к прошлой неделе" },
-  ];
-
-  const verifs = requests
-    .map((r, i) => ({ r, i }))
-    .filter((x) => x.r.type === "Верификация");
-
-  const sr = sel != null ? requests[sel] : null;
-
-  const RequestRow = ({ r, i, compact }: { r: Request; i: number; compact?: boolean }) => {
-    const ts = typeStyle(r.type);
-    const ss = stStyle(r.status);
-    if (compact) {
-      return (
-        <button onClick={() => setSel(i)} className="arow foc" style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: "1px solid #f0ece2", cursor: "pointer", padding: "13px 4px", fontFamily: "'Onest'" }}>
-          <span style={{ ...pill(ts.bg, ts.color), fontSize: 10, padding: "3px 8px", flex: "none" }}>{r.type}</span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>{r.client}</span>
-            <span style={{ color: "#9aa0aa", fontSize: 13 }}> · {r.item}</span>
-          </span>
-          <span style={{ ...pill(ss.bg, ss.color), flex: "none" }}>{r.status}</span>
-        </button>
-      );
-    }
-    return (
-      <button onClick={() => setSel(i)} className="arow foc" style={{ display: "grid", gridTemplateColumns: "96px 1fr 1fr 92px 130px", gap: 12, alignItems: "center", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: "1px solid #f0ece2", cursor: "pointer", padding: "15px 22px", fontFamily: "'Onest'" }}>
-        <span><span style={{ ...pill(ts.bg, ts.color), fontSize: 10, padding: "3px 8px" }}>{r.type}</span></span>
-        <span style={{ fontWeight: 600, fontSize: 14, minWidth: 0 }}>{r.client}</span>
-        <span style={{ color: "#6B7280", fontSize: 13, minWidth: 0 }}>{r.item}</span>
-        <span style={{ ...mono, fontSize: 12, color: "#9aa0aa" }}>{r.date}</span>
-        <span><span style={pill(ss.bg, ss.color)}>{r.status}</span></span>
-      </button>
-    );
-  };
+  if (ov.isError) return <AdminGate onAuthed={() => location.reload()} />;
 
   return (
-    <div className="a-shell" style={{ display: "grid", gridTemplateColumns: "248px 1fr", minHeight: "100vh", background: "#FBF3E8", color: "#14181F", fontFamily: "'Onest', system-ui, sans-serif" }}>
-      {/* SIDEBAR */}
-      <aside className="a-side" style={{ position: "sticky", top: 0, height: "100vh", background: "#14181F", color: "#FBF3E8", display: "flex", flexDirection: "column", padding: "22px 16px", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "6px 8px 18px" }}>
-          <Mark />
-          <div style={{ lineHeight: 1.1 }}>
-            <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 800, fontSize: 14 }}>Админка</div>
-            <div style={{ ...mono, fontSize: 9, color: "#8a93a3", letterSpacing: ".06em", marginTop: 3 }}>клуб выпускников</div>
-          </div>
+    <div className="grid min-h-screen grid-cols-[248px_1fr] bg-kost-2 font-body text-grafit max-md:grid-cols-1">
+      <aside className="sticky top-0 flex h-screen flex-col gap-1.5 bg-grafit p-4 text-kost max-md:h-auto">
+        <div className="px-2 pb-4 pt-1.5">
+          <div className="font-display text-sm font-extrabold">Админка</div>
+          <div className="mt-0.5 font-mono text-[9px] tracking-wider text-[#8a93a3]">клуб выпускников</div>
         </div>
-        {navDef.map((n) => {
-          const active = section === n.key;
-          return (
-            <button key={n.key} onClick={() => setSection(n.key)} className="foc" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, width: "100%", textAlign: "left", border: "none", cursor: "pointer", fontFamily: "'Onest'", fontWeight: 600, fontSize: 14, padding: "11px 13px", borderRadius: 11, background: active ? "rgba(236,90,19,.18)" : "transparent", color: active ? "#FBF3E8" : "#c8cdd6" }}>
-              <span>{n.label}</span>
-              {n.badge ? (
-                <span style={{ ...mono, fontSize: 11, background: "#EC5A13", color: "#FBF3E8", borderRadius: 999, minWidth: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>{n.badge}</span>
-              ) : null}
-            </button>
-          );
-        })}
-        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", borderTop: "1px solid rgba(251,243,232,.1)" }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#2E6FAE,#11296B)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Unbounded', sans-serif", fontWeight: 800, fontSize: 13, flex: "none" }}>О</div>
-          <div style={{ lineHeight: 1.2 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Учебный офис</div>
-            <div style={{ ...mono, fontSize: 10, color: "#8a93a3" }}>админ</div>
-          </div>
-        </div>
+        {nav.map((n) => (
+          <button key={n.key} onClick={() => setSection(n.key)} className={`foc flex items-center justify-between rounded-[11px] px-3.5 py-3 text-left text-sm font-semibold ${section === n.key ? "bg-[rgba(236,90,19,.18)] text-kost" : "text-[#c8cdd6]"}`}>
+            {n.label}{n.badge ? <span className="rounded-full bg-ohra px-1.5 font-mono text-[11px]">{n.badge}</span> : null}
+          </button>
+        ))}
+        <button onClick={onLogout} className="foc mt-auto rounded-[11px] border border-[rgba(251,243,232,.14)] px-3.5 py-2.5 text-left font-mono text-[12px] text-kost">Выйти</button>
       </aside>
 
-      {/* MAIN */}
-      <main style={{ padding: "30px 34px 70px", minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 26 }}>
-          <h1 style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 800, fontSize: 30, letterSpacing: "-0.01em", margin: 0 }}>{TITLES[section]}</h1>
-          {tableKey ? (
-            <button onClick={() => create(tableKey)} className="foc" style={{ fontFamily: "'Onest'", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 11, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer" }}>+ {CREATE_LABELS[section]}</button>
-          ) : null}
-        </div>
-
-        {/* OVERVIEW */}
-        {section === "overview" && (
-          <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 18 }}>
-              {stats.map((s) => (
-                <div key={s.label} style={card}>
-                  <div style={{ ...mono, fontSize: 11, color: "#6B7280", letterSpacing: ".05em" }}>{s.label}</div>
-                  <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 800, fontSize: 38, letterSpacing: "-0.02em", marginTop: 10, color: s.color }}>{s.value}</div>
-                  <div style={{ ...mono, fontSize: 11, color: "#9aa0aa", marginTop: 6 }}>{s.note}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="a-shell" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 22, marginTop: 24 }}>
-              <div style={{ ...card, padding: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 600, fontSize: 18, letterSpacing: "-0.01em" }}>Последние заявки</div>
-                  <button onClick={() => setSection("requests")} className="foc" style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 600, color: "#2E6FAE", fontSize: 13 }}>Все →</button>
-                </div>
-                {requests.slice(0, 4).map((r, i) => (
-                  <RequestRow key={i} r={r} i={i} compact />
-                ))}
-              </div>
-              <div style={{ ...card, padding: 24 }}>
-                <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 600, fontSize: 18, letterSpacing: "-0.01em", marginBottom: 6 }}>На верификацию</div>
-                {verifs.map((x) => {
-                  const pending = x.r.status === "Новая";
-                  return (
-                    <div key={x.i} style={{ borderTop: "1px solid #f0ece2", padding: "14px 0" }}>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{x.r.client}</div>
-                      <div style={{ ...mono, fontSize: 11, color: "#9aa0aa", marginTop: 4 }}>{x.r.item}</div>
-                      {pending ? (
-                        <div style={{ display: "flex", gap: 8, marginTop: 11 }}>
-                          <button onClick={() => setStatus(x.i, "Подтверждена")} className="foc" style={{ flex: 1, fontFamily: "'Onest'", fontWeight: 600, fontSize: 13, padding: 8, borderRadius: 9, border: "none", background: "#1F8A5B", color: "#fff", cursor: "pointer" }}>Подтвердить</button>
-                          <button onClick={() => setStatus(x.i, "Отклонена")} className="foc" style={{ flex: 1, fontFamily: "'Onest'", fontWeight: 600, fontSize: 13, padding: 8, borderRadius: 9, border: "1.5px solid #E5E7EB", background: "#fff", color: "#B5331B", cursor: "pointer" }}>Отклонить</button>
-                        </div>
-                      ) : (
-                        <div style={{ ...mono, fontSize: 11, marginTop: 9, color: x.r.status === "Подтверждена" ? "#1F8A5B" : "#B5331B" }}>
-                          {x.r.status === "Подтверждена" ? "✓ подтверждено" : "✕ отклонено"}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* REQUESTS TABLE */}
-        {section === "requests" && (
-          <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 18, overflow: "hidden" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "96px 1fr 1fr 92px 130px", gap: 12, padding: "14px 22px", background: "#FBF7EF", ...mono, fontSize: 11, color: "#6B7280", letterSpacing: ".05em", textTransform: "uppercase" }}>
-              <span>Тип</span><span>Клиент</span><span>Позиция</span><span>Дата</span><span>Статус</span>
-            </div>
-            {requests.map((r, i) => (
-              <RequestRow key={i} r={r} i={i} />
-            ))}
-          </div>
-        )}
-
-        {/* CRUD TABLE */}
-        {tableKey && (
-          <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 18, overflow: "hidden" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 150px 130px 150px", gap: 12, padding: "14px 22px", background: "#FBF7EF", ...mono, fontSize: 11, color: "#6B7280", letterSpacing: ".05em", textTransform: "uppercase" }}>
-              <span>{COL_HEAD[tableKey][0]}</span><span>{COL_HEAD[tableKey][1]}</span><span>Статус</span><span style={{ textAlign: "right" }}>Действия</span>
-            </div>
-            {tables[tableKey].map((t, i) => {
-              const ss = stStyle(t.status);
-              return (
-                <div key={i} className="arow" style={{ display: "grid", gridTemplateColumns: "1fr 150px 130px 150px", gap: 12, alignItems: "center", borderTop: "1px solid #f0ece2", padding: "15px 22px" }}>
-                  <span style={{ fontWeight: 600, fontSize: 14, minWidth: 0 }}>{t.name}</span>
-                  <span style={{ ...mono, fontSize: 13, color: "#6B7280" }}>{t.meta}</span>
-                  <span><span style={pill(ss.bg, ss.color)}>{t.status}</span></span>
-                  <span style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                    <button onClick={() => togglePub(tableKey, i)} className="foc" title="Публикация" style={{ border: "1.5px solid #E5E7EB", background: "#fff", borderRadius: 9, padding: "7px 11px", cursor: "pointer", ...mono, fontSize: 11, color: "#14181F" }}>{t.status === "Опубликовано" ? "Снять" : "Опубл."}</button>
-                    <button onClick={() => delRow(tableKey, i)} className="foc" title="Удалить" style={{ border: "1.5px solid #E5E7EB", background: "#fff", borderRadius: 9, padding: "7px 10px", cursor: "pointer", color: "#B5331B", fontSize: 13 }}>✕</button>
-                  </span>
-                </div>
-              );
-            })}
-            {tables[tableKey].length === 0 && (
-              <div style={{ padding: 40, textAlign: "center", color: "#9aa0aa", fontSize: 14 }}>Пусто — нажмите «Создать», чтобы добавить запись.</div>
-            )}
-          </div>
-        )}
-
-        {/* PAGE BLOCK EDITOR */}
-        {section === "pages" && (
-          <>
-            <p style={{ color: "#6B7280", fontSize: 15, margin: "0 0 18px", maxWidth: 560 }}>Блоки главной страницы. Меняйте порядок стрелками, скрывайте ненужные.</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 680 }}>
-              {blocks.map((b, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, background: "#fff", border: "1px solid #E5E7EB", borderRadius: 14, padding: "16px 18px", opacity: b.visible ? 1 : 0.5 }}>
-                  <span style={{ cursor: "grab", color: "#cdd2da", fontSize: 18, flex: "none", letterSpacing: -2 }}>⠿</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 15 }}>{b.name}</div>
-                    <div style={{ ...mono, fontSize: 11, color: "#9aa0aa", marginTop: 3 }}>{b.type}</div>
-                  </div>
-                  <span style={{ ...mono, fontSize: 11, flex: "none", color: b.visible ? "#1F8A5B" : "#9aa0aa" }}>{b.visible ? "виден" : "скрыт"}</span>
-                  <div style={{ display: "flex", gap: 6, flex: "none" }}>
-                    <button onClick={() => moveBlock(i, -1)} className="foc" title="Выше" style={{ width: 32, height: 32, border: "1.5px solid #E5E7EB", background: "#fff", borderRadius: 9, cursor: "pointer", color: "#14181F" }}>↑</button>
-                    <button onClick={() => moveBlock(i, 1)} className="foc" title="Ниже" style={{ width: 32, height: 32, border: "1.5px solid #E5E7EB", background: "#fff", borderRadius: 9, cursor: "pointer", color: "#14181F" }}>↓</button>
-                    <button onClick={() => toggleBlock(i)} className="foc" title="Скрыть/показать" style={{ width: 32, height: 32, border: "1.5px solid #E5E7EB", borderRadius: 9, cursor: "pointer", background: b.visible ? "rgba(31,138,91,.12)" : "#fff", color: b.visible ? "#1F8A5B" : "#cdd2da" }}>◉</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+      <main className="min-w-0 px-8 py-7 max-md:px-5">
+        <h1 className="mb-6 font-display text-3xl font-extrabold tracking-tight">{titles[section]}</h1>
+        {section === "overview" && <Overview onGo={setSection} />}
+        {section === "orders" && <Orders />}
+        {section === "members" && <Members />}
+        {section === "content" && <Content />}
       </main>
-
-      {/* REQUEST DETAIL MODAL */}
-      {sr && sel != null && (
-        <div onClick={() => setSel(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "auto" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 460, background: "#fff", borderRadius: 22, padding: 30, boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .26s cubic-bezier(.2,.8,.2,1)" }}>
-            <button onClick={() => setSel(null)} className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: "1px solid #E5E7EB", background: "#fff", color: "#6B7280", cursor: "pointer", fontSize: 15 }}>✕</button>
-            <span style={pill(typeStyle(sr.type).bg, typeStyle(sr.type).color)}>{sr.type}</span>
-            <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 600, fontSize: 22, letterSpacing: "-0.01em", marginTop: 14, lineHeight: 1.2 }}>{sr.client}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 1, border: "1px solid #E5E7EB", borderRadius: 13, overflow: "hidden", marginTop: 18 }}>
-              {[
-                { k: "Позиция", v: sr.item, mono: false, alt: false },
-                { k: "Телефон", v: sr.phone, mono: true, alt: true },
-                { k: "Email", v: sr.email, mono: true, alt: false },
-                { k: "Дата", v: sr.date, mono: true, alt: true },
-              ].map((row) => (
-                <div key={row.k} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "12px 15px", background: row.alt ? "#FBF7EF" : "#fff" }}>
-                  <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>{row.k}</span>
-                  <span style={{ ...(row.mono ? mono : {}), fontSize: 13, fontWeight: row.mono ? 400 : 500, textAlign: "right" }}>{row.v}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", color: "#6B7280", textTransform: "uppercase", marginTop: 20 }}>Статус заявки</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-              {(["Новая", "В работе", "Подтверждена", "Отклонена"] as ReqStatus[]).map((s) => {
-                const active = sr.status === s;
-                const ss = stStyle(s);
-                return (
-                  <button key={s} onClick={() => setStatus(sel, s)} className="foc" style={{ fontFamily: "'Onest'", fontWeight: 600, fontSize: 13, padding: "9px 14px", borderRadius: 10, border: `1.5px solid ${active ? ss.color : "#E5E7EB"}`, background: active ? ss.color : "#fff", color: active ? "#fff" : ss.color, cursor: "pointer" }}>{s}</button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-[18px] border border-[#E5E7EB] bg-white p-6">{children}</div>;
+}
+
+function Overview({ onGo }: { onGo: (s: Section) => void }) {
+  const ov = useOverview();
+  const orders = useAdminOrders();
+  const members = useMembers();
+  const { patchMember } = useAdminMutations();
+  const pending = (members.data ?? []).filter((m) => m.verification_status === "pending");
+  const stats = [
+    { label: "Новые заявки", value: ov.data?.new_orders ?? 0, color: "#EC5A13" },
+    { label: "На верификацию", value: ov.data?.pending_verifications ?? 0, color: "#a07d2e" },
+    { label: "Выпускников", value: ov.data?.alumni_count ?? 0, color: "#11296B" },
+    { label: "Заявок всего", value: ov.data?.orders_count ?? 0, color: "#1F8A5B" },
+  ];
+  return (
+    <>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+        {stats.map((s) => (
+          <Card key={s.label}>
+            <div className="font-mono text-[11px] text-grafit-soft">{s.label}</div>
+            <div className="mt-2 font-display text-4xl font-extrabold" style={{ color: s.color }}>{s.value}</div>
+          </Card>
+        ))}
+      </div>
+      <div className="mt-6 grid grid-cols-[1.4fr_1fr] gap-5 max-md:grid-cols-1">
+        <Card>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="font-display text-lg font-semibold">Последние заявки</div>
+            <button onClick={() => onGo("orders")} className="foc text-[13px] font-semibold text-[#2E6FAE]">Все →</button>
+          </div>
+          {(orders.data ?? []).slice(0, 5).map((o) => (
+            <div key={o.id} className="flex items-center gap-3 border-t border-[#f0ece2] py-3 text-sm">
+              <span className="font-mono text-[11px] text-grafit-soft">{o.number}</span>
+              <span className="flex-1 truncate font-semibold">{o.contact_fio}</span>
+              <span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(o.status)}`}>{ORDER_STATUS[o.status]}</span>
+            </div>
+          ))}
+          {orders.data?.length === 0 && <p className="py-3 font-mono text-[12px] text-grafit-soft">Заявок пока нет.</p>}
+        </Card>
+        <Card>
+          <div className="font-display text-lg font-semibold">На верификацию</div>
+          {pending.length === 0 && <p className="mt-3 font-mono text-[12px] text-grafit-soft">Нет ожидающих.</p>}
+          {pending.map((m) => (
+            <div key={m.id} className="border-t border-[#f0ece2] py-3">
+              <div className="text-sm font-semibold">{m.fio}</div>
+              <div className="font-mono text-[11px] text-grafit-soft">Выпуск {m.cohort}</div>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc flex-1 rounded-[9px] bg-[#1F8A5B] py-2 text-[13px] font-semibold text-white">Подтвердить</button>
+                <button onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc flex-1 rounded-[9px] border-[1.5px] border-[#E5E7EB] py-2 text-[13px] font-semibold text-karmin">Отклонить</button>
+              </div>
+            </div>
+          ))}
+        </Card>
+      </div>
+    </>
+  );
+}
+
+function Orders() {
+  const orders = useAdminOrders();
+  const { setOrderStatus } = useAdminMutations();
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+      <div className="grid grid-cols-[110px_1fr_1fr_130px_150px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
+        <span>Номер</span><span>Клиент</span><span>Контакты</span><span>Сумма</span><span>Статус</span>
+      </div>
+      {(orders.data ?? []).map((o: AdminOrder) => (
+        <div key={o.id} className="grid grid-cols-[110px_1fr_1fr_130px_150px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm">
+          <span className="font-mono text-[12px]">{o.number}</span>
+          <span className="min-w-0 truncate font-semibold">{o.contact_fio}</span>
+          <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{o.contact_phone}</span>
+          <span className="font-mono text-[13px]">{rub(o.total_estimate)}</span>
+          <select value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
+            {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS[s]}</option>)}
+          </select>
+        </div>
+      ))}
+      {orders.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Заявок нет.</p>}
+    </div>
+  );
+}
+
+function Members() {
+  const members = useMembers();
+  const [sel, setSel] = useState<Member | null>(null);
+  return (
+    <>
+      <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+        <div className="grid grid-cols-[1fr_90px_120px_90px_110px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
+          <span>Выпускник</span><span>Выпуск</span><span>Статус</span><span>Баллы</span><span>Скидка</span>
+        </div>
+        {(members.data ?? []).map((m) => (
+          <button key={m.id} onClick={() => setSel(m)} className="arow foc grid w-full grid-cols-[1fr_90px_120px_90px_110px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-left text-sm">
+            <span className="font-semibold">{m.fio}</span>
+            <span className="font-mono text-[12px] text-grafit-soft">{m.cohort}</span>
+            <span><span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(m.verification_status)}`}>{VERIF[m.verification_status]}</span></span>
+            <span className="font-mono text-[13px]">{m.points_cached}</span>
+            <span className="font-mono text-[13px]">−{m.personal_discount}%</span>
+          </button>
+        ))}
+        {members.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Выпускников нет.</p>}
+      </div>
+      {sel && <MemberModal member={sel} onClose={() => setSel(null)} />}
+    </>
+  );
+}
+
+function MemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
+  const { patchMember, addPoints } = useAdminMutations();
+  const [discount, setDiscount] = useState(String(member.personal_discount));
+  const [delta, setDelta] = useState("");
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(15,18,24,.55)] p-6 backdrop-blur-sm">
+      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-[460px] rounded-[22px] bg-white p-7 shadow-2xl" style={{ animation: "g-pop .26s cubic-bezier(.2,.8,.2,1)" }}>
+        <button onClick={onClose} className="foc absolute right-4 top-4 h-9 w-9 rounded-[10px] border border-[#E5E7EB] text-grafit-soft">✕</button>
+        <div className="font-display text-2xl font-bold">{member.fio}</div>
+        <div className="mt-1 font-mono text-[12px] text-grafit-soft">Выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов</div>
+
+        <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Верификация</div>
+        <div className="mt-2 flex gap-2">
+          <button onClick={() => patchMember.mutate({ id: member.id, verification_status: "verified" })} className="foc flex-1 rounded-[10px] bg-[#1F8A5B] py-2.5 text-sm font-semibold text-white">Подтвердить</button>
+          <button onClick={() => patchMember.mutate({ id: member.id, verification_status: "rejected" })} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] py-2.5 text-sm font-semibold text-karmin">Отклонить</button>
+        </div>
+
+        <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Ручные баллы</div>
+        <div className="mt-2 flex gap-2">
+          <input value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="напр. 60 или −30" className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
+          <button onClick={() => { const d = parseInt(delta, 10); if (!isNaN(d)) { addPoints.mutate({ id: member.id, delta: d }); setDelta(""); } }} className="foc rounded-[10px] bg-hse-blue px-5 text-sm font-semibold text-kost">Начислить</button>
+        </div>
+
+        <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Персональная скидка (0–10%)</div>
+        <div className="mt-2 flex gap-2">
+          <input value={discount} onChange={(e) => setDiscount(e.target.value)} type="number" min={0} max={10} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
+          <button onClick={() => patchMember.mutate({ id: member.id, personal_discount: Math.max(0, Math.min(10, parseInt(discount, 10) || 0)) })} className="foc rounded-[10px] bg-ohra px-5 text-sm font-semibold text-kost">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Content() {
+  return (
+    <Card>
+      <div className="font-display text-lg font-semibold">Контент сайта</div>
+      <p className="mt-2 max-w-[560px] text-sm text-grafit-soft">
+        Новости, программы ДПО, товары и блоки главной страницы редактируются в админке Directus — там готовые формы, загрузка медиа и история изменений. Изменения сразу попадают на сайт через API.
+      </p>
+      <a href="http://localhost:8055" target="_blank" rel="noopener noreferrer" className="foc mt-4 inline-block rounded-[11px] bg-grafit px-5 py-3 font-semibold text-kost">Открыть Directus Studio →</a>
+      <p className="mt-3 font-mono text-[11px] text-grafit-soft">На проде — https://admin.&lt;домен&gt;</p>
+    </Card>
   );
 }

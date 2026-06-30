@@ -47,6 +47,29 @@ export async function findUserByEmail(email: string): Promise<{ id: string; firs
   return rows[0] ?? null;
 }
 
+export async function findUserWithRole(email: string): Promise<{ id: string; role: string } | null> {
+  const rows = (await di.request((readUsers as any)({ filter: { email: { _eq: email } }, limit: 1, fields: ["id", "role.name"] }))) as any[];
+  if (!rows[0]) return null;
+  return { id: rows[0].id, role: (rows[0].role?.name as string) ?? "" };
+}
+
+// ── Админ-сессия (роли editor/admin) ──────────────────────────
+export interface AdminCtx { userId: string; role: string }
+export function signAdmin(userId: string, role: string): string {
+  return jwt.sign({ sub: userId, role, scope: "admin" }, env.AUTH_SECRET, { expiresIn: "7d" });
+}
+export function resolveAdmin(req: FastifyRequest): AdminCtx | null {
+  const token = bearer(req);
+  if (!token || token === env.DIRECTUS_SERVICE_TOKEN) return null;
+  try {
+    const p = jwt.verify(token, env.AUTH_SECRET) as any;
+    if (p?.scope !== "admin" || !p?.sub) return null;
+    return { userId: p.sub, role: p.role };
+  } catch {
+    return null;
+  }
+}
+
 export interface AlumniCtx {
   id: string;
   fio: string | null;
