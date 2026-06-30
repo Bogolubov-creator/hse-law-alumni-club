@@ -5,6 +5,8 @@ const schema = z.object({
   DIRECTUS_URL: z.string().url(),
   DIRECTUS_SERVICE_TOKEN: z.string().min(1, "DIRECTUS_SERVICE_TOKEN обязателен"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET минимум 32 символа"),
+  // Отдельный секрет для админ-сессий (defense-in-depth). Пусто = используется AUTH_SECRET.
+  ADMIN_AUTH_SECRET: z.string().default(""),
   TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app авторизация BLOCKED
   // Доп. разрешённые cross-origin источники (через запятую); same-origin и Telegram разрешены всегда.
   CORS_ORIGINS: z.string().default(""),

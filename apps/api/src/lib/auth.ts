@@ -16,13 +16,16 @@ export function isServiceToken(req: FastifyRequest): boolean {
   return bearer(req) === env.DIRECTUS_SERVICE_TOKEN;
 }
 
+// Отдельный секрет для админ-токенов (если задан), иначе общий.
+const adminSecret = (): string => env.ADMIN_AUTH_SECRET || env.AUTH_SECRET;
+
 // Собственная сессия apps/api (Directus наружу не светим).
 export function signSession(alumniId: string, userId: string): string {
   return jwt.sign({ alumni_id: alumniId, sub: userId }, env.AUTH_SECRET, { expiresIn: "7d" });
 }
 function verifySession(token: string): { alumni_id?: string; sub?: string } | null {
   try {
-    return jwt.verify(token, env.AUTH_SECRET) as any;
+    return jwt.verify(token, env.AUTH_SECRET) as { alumni_id?: string; sub?: string };
   } catch {
     return null;
   }
@@ -58,15 +61,15 @@ export async function findUserWithRole(email: string): Promise<{ id: string; rol
 // ── Админ-сессия (роли editor/admin) ──────────────────────────
 export interface AdminCtx { userId: string; role: string }
 export function signAdmin(userId: string, role: string): string {
-  return jwt.sign({ sub: userId, role, scope: "admin" }, env.AUTH_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ sub: userId, role, scope: "admin" }, adminSecret(), { expiresIn: "12h" });
 }
 export function resolveAdmin(req: FastifyRequest): AdminCtx | null {
   const token = bearer(req);
   if (!token || token === env.DIRECTUS_SERVICE_TOKEN) return null;
   try {
-    const p = jwt.verify(token, env.AUTH_SECRET) as any;
+    const p = jwt.verify(token, adminSecret()) as { scope?: string; sub?: string; role?: string };
     if (p?.scope !== "admin" || !p?.sub) return null;
-    return { userId: p.sub, role: p.role };
+    return { userId: p.sub, role: p.role ?? "" };
   } catch {
     return null;
   }
