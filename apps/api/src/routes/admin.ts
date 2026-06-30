@@ -15,7 +15,7 @@ function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
 }
 
 export async function adminRoutes(app: FastifyInstance) {
-  app.post("/auth/admin-login", async (req, reply) => {
+  app.post("/auth/admin-login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
     if (!(await directusCredsValid(email, password))) return reply.code(401).send({ error: "Неверная почта или пароль" });
     const user = await findUserWithRole(email);

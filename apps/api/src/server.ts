@@ -1,5 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import cron from "node-cron";
 import { ZodError } from "zod";
 import { env } from "./env.js";
@@ -13,7 +15,7 @@ import { ordersRoutes } from "./routes/orders.js";
 import { adminRoutes } from "./routes/admin.js";
 import { runDecay } from "./lib/engine.js";
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 256 * 1024 });
 
 // Валидационные ошибки zod → 400 (не 500).
 app.setErrorHandler((err, _req, reply) => {
@@ -23,7 +25,23 @@ app.setErrorHandler((err, _req, reply) => {
   return reply.code(code && code < 500 ? code : 500).send({ error: "Внутренняя ошибка" });
 });
 
-await app.register(cors, { origin: true });
+// Заголовки безопасности (API всегда JSON и не встраивается во фрейм).
+await app.register(helmet, {
+  contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
+  hsts: { maxAge: 15552000, includeSubDomains: true },
+});
+// Глобальный лимит запросов (на auth-роуты — жёстче, см. сами роуты).
+await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
+// CORS: same-origin (без Origin) + Telegram + явный список из CORS_ORIGINS. Токены в Authorization, не в cookie.
+const corsAllow = new Set([
+  "https://web.telegram.org",
+  "https://oauth.telegram.org",
+  ...env.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
+]);
+await app.register(cors, {
+  origin: (origin, cb) => cb(null, !origin || corsAllow.has(origin)),
+  methods: ["GET", "POST", "PATCH", "DELETE"],
+});
 await app.register(contentRoutes);
 await app.register(pointsRoutes);
 await app.register(authRoutes);

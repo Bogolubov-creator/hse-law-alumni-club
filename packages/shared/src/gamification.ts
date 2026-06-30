@@ -11,7 +11,7 @@ export interface LevelDef {
   sort: number;
 }
 
-export const LEVELS: LevelDef[] = [
+export const LEVELS: readonly LevelDef[] = [
   { key: "graduate", title: "Выпускник", min_points: 0, discount_percent: 5, sort: 1 },
   { key: "friend", title: "Друг клуба", min_points: 200, discount_percent: 10, sort: 2 },
   { key: "expert", title: "Знаток", min_points: 500, discount_percent: 15, sort: 3 },
@@ -34,7 +34,7 @@ export interface PointRuleDef {
   description: string;
 }
 
-export const POINT_RULES: PointRuleDef[] = [
+export const POINT_RULES: readonly PointRuleDef[] = [
   { reason: "program", points: 100, description: "Завершение программы ДПО" },
   { reason: "event", points: 60, description: "Участие в событии клуба" },
   { reason: "referral", points: 80, description: "Приглашённый выпускник верифицирован" },
@@ -49,7 +49,7 @@ export interface AchievementDef {
   sort: number;
 }
 
-export const ACHIEVEMENTS: AchievementDef[] = [
+export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { key: "first_step", title: "Первый шаг", description: "Первая пройденная программа", rule_json: { type: "programs_completed", gte: 1 }, sort: 1 },
   { key: "networker", title: "Нетворкер", description: "Участие в событии клуба", rule_json: { type: "events_attended", gte: 1 }, sort: 2 },
   { key: "expert3", title: "Знаток", description: "Три завершённые программы", rule_json: { type: "programs_completed", gte: 3 }, sort: 3 },

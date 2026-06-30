@@ -4,7 +4,7 @@ import { z } from "zod";
 export const cartItemSchema = z.object({
   type: z.enum(["dpo", "merch"]),
   ref_id: z.string().min(1),
-  variant_sku: z.string().optional(),
+  variant_sku: z.string().nullish(),
   qty: z.number().int().positive().default(1),
 });
 export type CartItem = z.infer<typeof cartItemSchema>;
@@ -18,8 +18,8 @@ export const createOrderSchema = z.object({
   contact_phone: z.string().min(5),
   contact_email: z.string().email(),
   fulfillment: z.enum(["pickup", "delivery"]),
-  address: z.string().optional(),
-  comment: z.string().optional(),
+  address: z.string().nullish(),
+  comment: z.string().nullish(),
   consent_pdn: z.literal(true, { errorMap: () => ({ message: "Требуется согласие на обработку ПДн" }) }),
 });
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

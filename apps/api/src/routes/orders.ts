@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { computeMemberDiscount } from "@club/shared";
+import { effectiveDiscount, computeOrderTotals, orderNumber, repriceItems } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
@@ -12,7 +12,7 @@ const rub = (kop: number) => (kop / 100).toLocaleString("ru-RU");
 
 function session(req: FastifyRequest): string | null {
   const s = req.headers["x-cart-session"];
-  return typeof s === "string" && s.length ? s : null;
+  return typeof s === "string" && z.string().uuid().safeParse(s).success ? s : null;
 }
 
 const createOrderBody = z.object({
@@ -36,18 +36,24 @@ export async function ordersRoutes(app: FastifyInstance) {
     const items = (cartRows[0]?.items_json as any[]) ?? [];
     if (!items.length) return reply.code(400).send({ error: "Корзина пуста" });
 
-    // Переоценка цен на сервере по актуальному каталогу (не доверяем снимку из корзины).
-    const priced = [];
+    // Переоценка по каталогу (анти-подмена цены): собрать актуальные цены, затем чистые функции.
+    const priceMap = new Map<string, { title: string; price: number }>();
     for (const i of items) {
-      const info = await lookup(i.type, i.ref_id);
-      priced.push({ ...i, price: info ? info.price : i.price, title: info ? info.title : i.title });
+      const key = `${i.type}:${i.ref_id}`;
+      if (!priceMap.has(key)) {
+        const info = await lookup(i.type, i.ref_id);
+        if (info) priceMap.set(key, info);
+      }
     }
-    const subtotal = priced.reduce((s, i) => s + i.price * i.qty, 0);
+    const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
 
     const alumni = await resolveAlumni(req);
-    const discount = alumni && alumni.verification_status === "verified"
-      ? computeMemberDiscount(alumni.points_cached ?? 0, alumni.personal_discount ?? 0) : 0;
-    const total = subtotal - Math.round((subtotal * discount) / 100);
+    const discount = effectiveDiscount(
+      !!alumni && alumni.verification_status === "verified",
+      alumni?.points_cached ?? 0,
+      alumni?.personal_discount ?? 0,
+    );
+    const { subtotal, total } = computeOrderTotals(priced, discount);
 
     const types = [...new Set(priced.map((i) => i.type))];
     const type = types.length > 1 ? "mixed" : types[0] === "dpo" ? "dpo" : "merch";
@@ -66,7 +72,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     let created = false;
     for (let attempt = 0; attempt < 6 && !created; attempt++) {
       const all = (await di.request((readItems as any)("orders", { fields: ["id"], limit: -1 }))) as any[];
-      number = `ALU-${year}-${String(all.length + 1 + attempt).padStart(6, "0")}`;
+      number = orderNumber(year, all.length, attempt);
       try {
         await di.request((createItem as any)("orders", { ...base, number }));
         created = true;

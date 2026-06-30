@@ -8,7 +8,7 @@ import { validateInitData } from "../lib/telegram.js";
 
 export async function authRoutes(app: FastifyInstance) {
   // Вход через Telegram Mini App (initData). BLOCKED без TELEGRAM_BOT_TOKEN.
-  app.post("/auth/telegram", async (req, reply) => {
+  app.post("/auth/telegram", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram mini-app не настроен (нет TELEGRAM_BOT_TOKEN)" });
     const { initData } = z.object({ initData: z.string().min(1) }).parse(req.body);
     const v = validateInitData(initData, env.TELEGRAM_BOT_TOKEN, { maxAgeSec: 86400 });
@@ -24,7 +24,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // Логин выпускника: креды проверяет Directus, сессию (JWT с alumni_id) выдаёт apps/api.
-  app.post("/auth/login", async (req, reply) => {
+  app.post("/auth/login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
     if (!(await directusCredsValid(email, password))) return reply.code(401).send({ error: "Неверная почта или пароль" });
     const user = await findUserByEmail(email);

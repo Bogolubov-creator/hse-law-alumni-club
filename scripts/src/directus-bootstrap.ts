@@ -424,7 +424,7 @@ const testAlumniUser = await ensureUser(req("TEST_ALUMNI_EMAIL"), {
 log("== Сиды ==");
 await ensureSeed("levels", "key", LEVELS.map((l) => ({ ...l, color: "" })));
 await ensureSeed("point_rules", "reason", POINT_RULES.map((p) => ({ ...p, active: true })));
-await ensureSeed("achievements", "key", ACHIEVEMENTS);
+await ensureSeed("achievements", "key", [...ACHIEVEMENTS]);
 await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "published" })));
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
