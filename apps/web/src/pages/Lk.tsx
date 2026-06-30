@@ -1,6 +1,6 @@
 import { useId, useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { LEVELS } from "@club/shared";
+import { LEVELS, loginResponseSchema } from "@club/shared";
 import { apiPost, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders } from "../lib/queries.js";
 import Modal from "../components/Modal.js";
@@ -52,7 +52,7 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
-      onAuthed(await apiPost<LoginResponse>("/auth/login", { email, password }));
+      onAuthed(await apiPost<LoginResponse>("/auth/login", { email, password }, loginResponseSchema));
     } catch (e) {
       setErr((e as Error).message);
     } finally {
