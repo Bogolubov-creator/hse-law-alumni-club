@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
 
@@ -39,6 +39,8 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const emailId = useId();
+  const passId = useId();
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setErr(null); setBusy(true);
     try { const r = await adminLogin(email, password); onAuthed(r.token); }
@@ -49,10 +51,10 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
       <form onSubmit={submit} className="w-full max-w-[400px] rounded-[22px] bg-white p-8 shadow-2xl">
         <div className="font-display text-xl font-extrabold">Админка клуба</div>
         <p className="mt-1 font-mono text-[11px] text-grafit-soft">учебный офис</p>
-        <label className="mt-6 block font-mono text-[11px] uppercase text-grafit-soft">Почта</label>
-        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
-        <label className="mt-4 block font-mono text-[11px] uppercase text-grafit-soft">Пароль</label>
-        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
+        <label htmlFor={emailId} className="mt-6 block font-mono text-[11px] uppercase text-grafit-soft">Почта</label>
+        <input id={emailId} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
+        <label htmlFor={passId} className="mt-4 block font-mono text-[11px] uppercase text-grafit-soft">Пароль</label>
+        <input id={passId} type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
         {err && <p className="mt-3 font-mono text-xs text-karmin">{err}</p>}
         <button disabled={busy} className="foc mt-5 w-full rounded-[11px] bg-ohra py-3 font-semibold text-kost disabled:opacity-60">{busy ? "Входим…" : "Войти"}</button>
       </form>

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import SiteShell from "../components/SiteShell.js";
@@ -144,10 +144,11 @@ function Label({ children }: { children: React.ReactNode }) {
   return <label className="block text-[13px] font-semibold">{children}</label>;
 }
 function Input({ label, value, onChange, type = "text", required }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean }) {
+  const id = useId();
   return (
     <div>
-      <Label>{label}</Label>
-      <input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} className="foc mt-1.5 w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3.5 py-2.5 text-[15px] outline-none focus:border-ohra" />
+      <label htmlFor={id} className="block text-[13px] font-semibold">{label}</label>
+      <input id={id} type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} className="foc mt-1.5 w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3.5 py-2.5 text-[15px] outline-none focus:border-ohra" />
     </div>
   );
 }

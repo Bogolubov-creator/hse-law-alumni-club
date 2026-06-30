@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useId, useState, type CSSProperties } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { LEVELS } from "@club/shared";
 import { apiPatch, type Achievement, type LedgerEntry } from "../lib/api.js";
@@ -172,10 +172,11 @@ function ProfileBody({ token }: { token: string }) {
 }
 
 function Field({ label, value, onChange, ph }: { label: string; value: string; onChange: (v: string) => void; ph: string }) {
+  const id = useId();
   return (
     <div>
-      <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 7 }}>{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} className="foc" style={{ width: "100%", fontSize: 15, padding: "12px 14px", borderRadius: 11, border: "1.5px solid #E5E7EB", background: "#FBF3E8", outline: "none" }} />
+      <label htmlFor={id} style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 7 }}>{label}</label>
+      <input id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} className="foc" style={{ width: "100%", fontSize: 15, padding: "12px 14px", borderRadius: 11, border: "1.5px solid #E5E7EB", background: "#FBF3E8", outline: "none" }} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useId, useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { LEVELS } from "@club/shared";
 import { apiPost, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
@@ -45,6 +45,8 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const emailId = useId();
+  const passId = useId();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -65,10 +67,10 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         <p className="mt-5 font-mono text-xs uppercase tracking-[0.16em] text-ohra">Личный кабинет</p>
         <h1 className="mt-2 font-display text-2xl font-bold">Вход для выпускников</h1>
         <p className="mt-2 text-sm text-grafit-soft">Доступ открывается после верификации учебным офисом.</p>
-        <label className="mt-5 block font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Почта</label>
-        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 text-[15px] outline-none focus:border-ohra" placeholder="you@edu.hse.ru" />
-        <label className="mt-4 block font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Пароль</label>
-        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 text-[15px] outline-none focus:border-ohra" />
+        <label htmlFor={emailId} className="mt-5 block font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Почта</label>
+        <input id={emailId} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 text-[15px] outline-none focus:border-ohra" placeholder="you@edu.hse.ru" />
+        <label htmlFor={passId} className="mt-4 block font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Пароль</label>
+        <input id={passId} type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 text-[15px] outline-none focus:border-ohra" />
         {err && <p className="mt-3 font-mono text-xs text-karmin">{err}</p>}
         <button type="submit" disabled={busy} className="foc mt-5 w-full rounded-[12px] bg-ohra py-3 font-semibold text-kost disabled:opacity-60">
           {busy ? "Входим…" : "Войти в кабинет"}
