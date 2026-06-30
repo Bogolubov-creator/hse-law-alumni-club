@@ -37,7 +37,9 @@ export async function directusCredsValid(email: string, password: string): Promi
       body: JSON.stringify({ email, password }),
     });
     return r.ok;
-  } catch {
+  } catch (e) {
+    // Сетевой сбой (Directus недоступен) — не молча: оставляем след в логах.
+    console.error("[auth] Directus /auth/login недоступен:", (e as Error).message);
     return false;
   }
 }

@@ -38,7 +38,12 @@ export async function addPoints(alumniId: string, input: AddPointsInput) {
     await di.request((updateItem as any)("alumni", alumniId, { last_activity_at: new Date().toISOString() }));
   }
   const res = await recompute(alumniId);
-  await grantAchievements(alumniId);
+  // Достижения — не критичны: их сбой не должен валить уже зачисленные баллы.
+  try {
+    await grantAchievements(alumniId);
+  } catch (e) {
+    console.error(`[grantAchievements] не удалось для ${alumniId}:`, (e as Error).message);
+  }
   return res;
 }
 
@@ -105,12 +110,16 @@ export async function runDecay(now = new Date()) {
   )) as any[];
   let affected = 0;
   for (const a of stale) {
-    const delta = decayDelta(a.points_cached ?? 0);
-    if (delta >= 0) continue;
-    const before = computeLevel(a.points_cached ?? 0).key;
-    const res = await addPoints(a.id, { reason: "decay", delta, idempotencyKey: `decay-${a.id}-${ym}`, comment: "Ежемесячный decay за неактивность" });
-    affected++;
-    if (res.level !== before) console.log(`[decay] alumni ${a.id} просел: ${before} → ${res.level}`);
+    try {
+      const delta = decayDelta(a.points_cached ?? 0);
+      if (delta >= 0) continue;
+      const before = computeLevel(a.points_cached ?? 0).key;
+      const res = await addPoints(a.id, { reason: "decay", delta, idempotencyKey: `decay-${a.id}-${ym}`, comment: "Ежемесячный decay за неактивность" });
+      affected++;
+      if (res.level !== before) console.log(`[decay] alumni ${a.id} просел: ${before} → ${res.level}`);
+    } catch (e) {
+      console.error(`[decay] сбой для ${a.id}:`, (e as Error).message); // не прерываем пакет
+    }
   }
   console.log(`[decay] ${ym}: обработано ${affected}`);
   return { month: ym, affected };

@@ -45,6 +45,11 @@ export default function Cart() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(31,138,91,.14)] text-3xl text-[#1F8A5B]">✓</div>
           <h1 className="mt-5 font-display text-3xl font-bold">Заявка принята</h1>
           <p className="mt-3 text-grafit-soft">Номер вашей заявки — <b className="font-mono text-grafit">{result.number}</b>. Учебный офис свяжется с вами по указанным контактам. Оплаты на сайте нет.</p>
+          {!result.notified.ok && (
+            <p className="mx-auto mt-4 max-w-[440px] rounded-[12px] bg-[rgba(181,51,27,.08)] px-4 py-3 text-sm text-karmin">
+              Заявка сохранена, но автоматическое уведомление офиса не прошло. Пожалуйста, продублируйте заявку в Telegram <a className="underline" href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer">@pravohse</a> — так офис точно увидит её.
+            </p>
+          )}
           <div className="mx-auto mt-6 max-w-[360px] rounded-[16px] border border-[#E5E7EB] bg-white p-5 text-left font-mono text-[13px]">
             <Row k="Сумма (справочно)" v={rub(result.subtotal)} />
             {result.member_discount > 0 && <Row k="Скидка выпускника" v={`−${result.member_discount}%`} />}

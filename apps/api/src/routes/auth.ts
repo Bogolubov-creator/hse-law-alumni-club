@@ -11,7 +11,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post("/auth/telegram", async (req, reply) => {
     if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram mini-app не настроен (нет TELEGRAM_BOT_TOKEN)" });
     const { initData } = z.object({ initData: z.string().min(1) }).parse(req.body);
-    const v = validateInitData(initData, env.TELEGRAM_BOT_TOKEN);
+    const v = validateInitData(initData, env.TELEGRAM_BOT_TOKEN, { maxAgeSec: 86400 });
     if (!v.ok) return reply.code(401).send({ error: "Невалидная подпись Telegram" });
     const tgId = String((v.user as any)?.id ?? "");
     const rows = (await (directus as any).request((readItems as any)("alumni", {

@@ -25,4 +25,15 @@ describe("Telegram initData validation", () => {
   it("отклоняет без hash", () => {
     expect(validateInitData("auth_date=1700000000", TOKEN).ok).toBe(false);
   });
+
+  it("отклоняет устаревший initData при maxAgeSec (freshness)", () => {
+    const old = signInitData({ auth_date: "1700000000", user: '{"id":1}' }, TOKEN); // 2023 г.
+    expect(validateInitData(old, TOKEN, { maxAgeSec: 86400 }).ok).toBe(false);
+  });
+
+  it("принимает свежий initData при maxAgeSec", () => {
+    const now = Math.floor(Date.now() / 1000).toString();
+    const fresh = signInitData({ auth_date: now, user: '{"id":1}' }, TOKEN);
+    expect(validateInitData(fresh, TOKEN, { maxAgeSec: 86400 }).ok).toBe(true);
+  });
 });

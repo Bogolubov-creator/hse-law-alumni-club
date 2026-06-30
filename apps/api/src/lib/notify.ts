@@ -43,8 +43,8 @@ export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; o
 /** Подтверждение заявителю. Email если настроен SMTP, иначе лог. */
 export async function confirmApplicant(o: OrderNotice): Promise<void> {
   if (env.SMTP_HOST) {
-    console.log(`[confirm] (SMTP настроен) письмо ${o.contact_email}: заявка ${o.number} принята.`);
-    // Реальная отправка SMTP — когда дадут креды (BLOCKED).
+    // BLOCKED: реальная SMTP-отправка не реализована (нужны рабочие креды). Честно помечаем.
+    console.warn(`[confirm:NOT_IMPLEMENTED] SMTP задан, но письмо не отправлено — ${o.contact_email}, заявка ${o.number}.`);
   } else {
     console.log(`[confirm:log] ${o.contact_email}: заявка ${o.number} принята, офис свяжется с вами.`);
   }

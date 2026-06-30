@@ -34,7 +34,7 @@ async function saveCart(token: string, items: CartItem[]) {
   }
 }
 
-async function lookup(type: "dpo" | "merch", slug: string): Promise<{ title: string; price: number } | null> {
+export async function lookup(type: "dpo" | "merch", slug: string): Promise<{ title: string; price: number } | null> {
   const collection = type === "dpo" ? "programs" : "products";
   const rows = (await di.request((readItems as any)(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields: ["title", "price"] }))) as any[];
   return rows[0] ? { title: rows[0].title, price: rows[0].price ?? 0 } : null;
