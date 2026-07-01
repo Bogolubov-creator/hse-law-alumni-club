@@ -395,7 +395,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 28px 0", ...mono, fontSize: 11, color: "#6B7280" }}>© 2026 Клуб выпускников факультета права Вышки · макет</div>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 28px 0", ...mono, fontSize: 11, color: "#6B7280" }}>© 2026 Клуб выпускников факультета права Вышки</div>
       </footer>
     </div>
   );

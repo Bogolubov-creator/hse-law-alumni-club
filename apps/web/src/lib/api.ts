@@ -36,7 +36,7 @@ export async function apiPatch<T>(path: string, body: unknown, token: string, sc
 
 // Типы ответов — из @club/shared (z.infer от схем-источников).
 export type {
-  NewsItem, HeroBlock, CtaBlock, PageHome, Program, ProgramFull, ProductVariant, Product,
+  NewsItem, HeroBlock, CtaBlock, PageHome, Program, ProgramFull, ProgramModule, ProgramTeacher, ProductVariant, Product,
   CartLine, CartSummary, LevelInfo, Achievement, ActivityPoint, AlumniBrief, Me, LoginResponse,
   OrderResult, MyOrder, LedgerEntry,
 } from "@club/shared";

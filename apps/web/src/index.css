@@ -27,7 +27,7 @@ body {
 @keyframes marq {
   to { transform: translateX(-50%); }
 }
-.marq-track { animation: marq 34s linear infinite; }
+.marq-track { animation: marq 22s linear infinite; }
 .nav-link:hover { color: #c9450e; }
 .vcard { transition: transform 0.2s, box-shadow 0.2s; }
 .h-xl { font-size: clamp(34px, 7vw, 62px) !important; }

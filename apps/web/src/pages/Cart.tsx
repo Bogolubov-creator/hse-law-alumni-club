@@ -45,7 +45,7 @@ export default function Cart() {
       <SiteShell>
         <main className="mx-auto max-w-[620px] px-7 py-16 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(31,138,91,.14)] text-3xl text-[#1F8A5B]">✓</div>
-          <h1 className="mt-5 font-display text-3xl font-bold">Заявка принята</h1>
+          <h1 className="mt-5 font-display text-3xl font-bold">Заявка отправлена</h1>
           <p className="mt-3 text-grafit-soft">Номер вашей заявки – <b className="font-mono text-grafit">{result.number}</b>. Менеджер учебного офиса свяжется с вами по указанным контактам, чтобы подтвердить детали. Оплаты на сайте нет.</p>
           {!result.notified.ok && (
             <p className="mx-auto mt-4 max-w-[440px] rounded-[12px] bg-[rgba(181,51,27,.08)] px-4 py-3 text-sm text-karmin">
@@ -57,7 +57,10 @@ export default function Cart() {
             {result.subtotal > result.total_estimate && <Row k="Скидка выпускника (ДПО)" v={`−${result.member_discount}%`} />}
             <Row k="Итого (оценочно)" v={rub(result.total_estimate)} bold />
           </div>
-          <Link to="/dpo" className="foc mt-7 inline-block rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">К витринам</Link>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link to="/lk" className="foc rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">В личный кабинет</Link>
+            <Link to="/" className="foc rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold">На главную</Link>
+          </div>
         </main>
       </SiteShell>
     );
@@ -70,8 +73,12 @@ export default function Cart() {
         {cart.isLoading && <p className="mt-8 font-mono text-sm text-grafit-soft">Загрузка…</p>}
         {!cart.isLoading && items.length === 0 && (
           <div className="mt-8 rounded-[18px] border border-[#E5E7EB] bg-white p-10 text-center">
-            <p className="text-grafit-soft">Корзина пуста.</p>
-            <Link to="/dpo" className="foc mt-4 inline-block rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">В витрину ДПО</Link>
+            <h2 className="font-display text-2xl font-bold">Корзина пуста</h2>
+            <p className="mt-2 text-grafit-soft">Выберите программу ДПО со скидкой выпускника или брендированную одежду клуба.</p>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <Link to="/dpo" className="foc rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">В витрину ДПО</Link>
+              <Link to="/merch" className="foc rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold">Одежда клуба</Link>
+            </div>
           </div>
         )}
 
@@ -81,16 +88,20 @@ export default function Cart() {
             <div className="flex flex-col gap-3">
               {items.map((it) => (
                 <div key={`${it.ref_id}-${it.variant_sku ?? ""}`} className="flex items-center gap-4 rounded-[16px] border border-[#E5E7EB] bg-white p-4">
-                  <span className={`rounded-full px-2.5 py-1 font-mono text-[10px] ${it.type === "dpo" ? "bg-[rgba(17,41,107,.1)] text-hse-blue" : "bg-[rgba(236,90,19,.14)] text-ohra-deep"}`}>{it.type === "dpo" ? "ДПО" : "Мерч"}</span>
+                  <span className={`rounded-full px-2.5 py-1 font-mono text-[10px] ${it.type === "dpo" ? "bg-[rgba(17,41,107,.1)] text-hse-blue" : "bg-[rgba(236,90,19,.14)] text-ohra-deep"}`}>{it.type === "dpo" ? "ДПО" : "Одежда"}</span>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold leading-tight">{it.title}</div>
                     {it.variant_sku && <div className="font-mono text-[11px] text-grafit-soft">{it.variant_sku}</div>}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button aria-label="Уменьшить количество" onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB]">−</button>
-                    <span className="w-6 text-center font-mono" aria-live="polite">{it.qty}</span>
-                    <button aria-label="Увеличить количество" onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB]">+</button>
-                  </div>
+                  {it.type === "dpo" ? (
+                    <span className="font-mono text-[11px] text-grafit-soft">заявка · 1 место</span>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button aria-label="Уменьшить количество" onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB]">−</button>
+                      <span className="w-6 text-center font-mono" aria-live="polite">{it.qty}</span>
+                      <button aria-label="Увеличить количество" onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB]">+</button>
+                    </div>
+                  )}
                   <div className="w-24 text-right font-mono text-sm">{rub(it.price * it.qty)}</div>
                   <button aria-label="Удалить из корзины" onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: 0 })} className="foc text-karmin">✕</button>
                 </div>

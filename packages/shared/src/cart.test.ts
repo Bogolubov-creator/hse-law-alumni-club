@@ -6,12 +6,19 @@ const line = (over: Partial<StoredCartItem> = {}): StoredCartItem => ({
 });
 
 describe("addLine", () => {
-  it("повторное добавление того же увеличивает qty, не дублирует", () => {
+  it("мерч: повторное добавление того же увеличивает qty, не дублирует", () => {
+    let items: StoredCartItem[] = [];
+    items = addLine(items, line({ type: "merch", ref_id: "m", variant_sku: "M" }));
+    items = addLine(items, line({ type: "merch", ref_id: "m", variant_sku: "M", qty: 2 }));
+    expect(items).toHaveLength(1);
+    expect(items[0]!.qty).toBe(3);
+  });
+  it("ДПО: заявка на одно место — повторное добавление не увеличивает qty", () => {
     let items: StoredCartItem[] = [];
     items = addLine(items, line());
     items = addLine(items, line({ qty: 2 }));
     expect(items).toHaveLength(1);
-    expect(items[0]!.qty).toBe(3);
+    expect(items[0]!.qty).toBe(1);
   });
   it("variant_sku undefined и null — одна позиция", () => {
     let items = addLine([], line({ type: "merch", ref_id: "m", variant_sku: undefined }));

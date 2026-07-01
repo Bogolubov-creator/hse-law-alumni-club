@@ -135,9 +135,20 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
           <div style={{ position: "relative", ...surface, padding: "32px 32px 28px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
             <button onClick={() => setSel(null)} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: "1px solid #E5E7EB", background: "transparent", color: "#6B7280", cursor: "pointer" }}>✕</button>
             <BadgeSquare a={sel} size={64} />
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", color: sel.earned ? "#1F8A5B" : "#6B7280", marginTop: 22 }}>{sel.earned ? "Получено" : "Закрыто"}</div>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", color: achColor(sel), marginTop: 22 }}>{achStatus(sel)}</div>
             <div id="badge-modal-title" style={{ ...disp, fontWeight: 600, fontSize: 24, letterSpacing: "-0.01em", marginTop: 8 }}>{sel.title}</div>
             <p style={{ color: "#6B7280", fontSize: 15, lineHeight: 1.55, margin: "12px 0 0" }}>{sel.description}</p>
+            {!sel.earned && sel.target > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 12, color: "#6B7280" }}>
+                  <span>Прогресс</span><span>{sel.current} / {sel.target}</span>
+                </div>
+                <div style={{ height: 10, borderRadius: 999, background: "#F2E3CF", overflow: "hidden", marginTop: 8 }}>
+                  <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((sel.current / sel.target) * 100)}%` }} />
+                </div>
+                <p style={{ ...mono, fontSize: 12, color: "#6B7280", margin: "10px 0 0" }}>Осталось ещё {Math.max(0, sel.target - sel.current)} — и достижение ваше.</p>
+              </div>
+            )}
           </div>
         </Modal>
       )}
@@ -215,9 +226,10 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
           <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>{doneCount} из {me.achievements.length} открыто</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "18px 10px", marginTop: 24 }}>
             {me.achievements.map((a) => (
-              <button key={a.key} onClick={() => onBadge(a)} className="foc" style={{ textAlign: "center", opacity: a.earned ? 1 : 0.4, background: "none", border: "none", padding: "6px 2px", cursor: "pointer", color: "inherit" }}>
+              <button key={a.key} onClick={() => onBadge(a)} className="foc" style={{ textAlign: "center", opacity: a.earned ? 1 : achInProgress(a) ? 0.85 : 0.4, background: "none", border: "none", padding: "6px 2px", cursor: "pointer", color: "inherit" }}>
                 <BadgeSquare a={a} size={50} />
                 <div style={{ fontSize: 12, fontWeight: 600, marginTop: 14, lineHeight: 1.2 }}>{a.title}</div>
+                <div style={{ ...mono, fontSize: 10, color: achColor(a), marginTop: 4 }}>{a.earned ? "получено" : achInProgress(a) ? `${a.current} / ${a.target}` : "закрыто"}</div>
               </button>
             ))}
           </div>
@@ -262,11 +274,23 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
   );
 }
 
+function achInProgress(a: Achievement): boolean {
+  return !a.earned && a.current > 0;
+}
+function achStatus(a: Achievement): string {
+  return a.earned ? "Достижение получено" : achInProgress(a) ? "В процессе" : "Ещё не открыто";
+}
+function achColor(a: Achievement): string {
+  return a.earned ? "#1F8A5B" : achInProgress(a) ? "#C9450E" : "#6B7280";
+}
+
 function BadgeSquare({ a, size }: { a: Achievement; size: number }) {
   const letter = a.title.trim()[0]?.toUpperCase() ?? "?";
+  const inProg = achInProgress(a);
+  const bg = a.earned ? "linear-gradient(135deg,#E3C272,#C49A45)" : inProg ? "linear-gradient(135deg,#F7D9BD,#EBB489)" : "#F2E3CF";
   return (
-    <div style={{ width: size, height: size, borderRadius: size * 0.28, transform: "rotate(45deg)", margin: size <= 50 ? "0 auto" : 0, background: a.earned ? "linear-gradient(135deg,#E3C272,#C49A45)" : "#F2E3CF", boxShadow: a.earned ? "0 8px 20px -10px rgba(196,154,69,.8)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: size * 0.3, color: a.earned ? "#3a2a00" : "#b8a98a" }}>{letter}</span>
+    <div style={{ width: size, height: size, borderRadius: size * 0.28, transform: "rotate(45deg)", margin: size <= 50 ? "0 auto" : 0, background: bg, boxShadow: a.earned ? "0 8px 20px -10px rgba(196,154,69,.8)" : inProg ? "0 8px 20px -12px rgba(201,69,14,.5)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: size * 0.3, color: a.earned ? "#3a2a00" : inProg ? "#7a3410" : "#b8a98a" }}>{letter}</span>
     </div>
   );
 }

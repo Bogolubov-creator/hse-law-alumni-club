@@ -32,7 +32,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
       {children}
       <footer className="mt-20 bg-grafit px-7 py-10 text-[13px] text-[#9aa3b2]">
         <div className="mx-auto flex max-w-[1180px] flex-wrap justify-between gap-4">
-          <span>© 2026 Клуб выпускников факультета права Вышки · макет</span>
+          <span>© 2026 Клуб выпускников факультета права Вышки</span>
           <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc text-latun-br">t.me/pravohse</a>
         </div>
       </footer>

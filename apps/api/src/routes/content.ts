@@ -44,7 +44,7 @@ export async function contentRoutes(app: FastifyInstance) {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const rows = (await directus.request(readItems("programs", {
       filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description"],
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document"],
     }))) as any[];
     if (!rows.length) return reply.code(404).send({ error: "Программа не найдена" });
     return rows[0];

@@ -145,15 +145,18 @@ function ProfileBody({ token }: { token: string }) {
               <h2 style={{ ...disp, fontWeight: 600, fontSize: 26, letterSpacing: "-0.01em", margin: "10px 0 4px" }}>Правила и прогресс</h2>
               <p style={{ color: "#6B7280", fontSize: 15, margin: "0 0 22px" }}>{data.achievements.filter((a) => a.earned).length} из {data.achievements.length} открыто · достижения отражают вашу активность в клубе.</p>
               <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-                {data.achievements.map((b: Achievement) => (
-                  <div key={b.key} style={{ display: "flex", gap: 18, ...surface, borderRadius: 18, padding: 22, opacity: b.earned ? 1 : 0.55 }}>
-                    <div style={{ width: 52, height: 52, borderRadius: 15, transform: "rotate(45deg)", flex: "none", background: b.earned ? "linear-gradient(135deg,#E3C272,#C49A45)" : "#F2E3CF", boxShadow: b.earned ? "0 8px 20px -10px rgba(196,154,69,.8)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: 16, color: b.earned ? "#3a2a00" : "#b8a98a" }}>{b.title.trim()[0]?.toUpperCase()}</span>
+                {data.achievements.map((b: Achievement) => {
+                  const inProg = !b.earned && b.current > 0;
+                  const statusColor = b.earned ? "#1F8A5B" : inProg ? "#C9450E" : "#6B7280";
+                  return (
+                  <div key={b.key} style={{ display: "flex", gap: 18, ...surface, borderRadius: 18, padding: 22, opacity: b.earned ? 1 : inProg ? 0.85 : 0.55 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 15, transform: "rotate(45deg)", flex: "none", background: b.earned ? "linear-gradient(135deg,#E3C272,#C49A45)" : inProg ? "linear-gradient(135deg,#F7D9BD,#EBB489)" : "#F2E3CF", boxShadow: b.earned ? "0 8px 20px -10px rgba(196,154,69,.8)" : inProg ? "0 8px 20px -12px rgba(201,69,14,.5)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: 16, color: b.earned ? "#3a2a00" : inProg ? "#7a3410" : "#b8a98a" }}>{b.title.trim()[0]?.toUpperCase()}</span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                         <div style={{ ...disp, fontWeight: 600, fontSize: 16, letterSpacing: "-0.01em" }}>{b.title}</div>
-                        <span style={{ ...mono, fontSize: 10, letterSpacing: ".04em", color: b.earned ? "#1F8A5B" : "#6B7280", whiteSpace: "nowrap" }}>{b.earned ? "ПОЛУЧЕНО" : `${b.current} / ${b.target}`}</span>
+                        <span style={{ ...mono, fontSize: 10, letterSpacing: ".04em", color: statusColor, whiteSpace: "nowrap" }}>{b.earned ? "ПОЛУЧЕНО" : inProg ? `${b.current} / ${b.target}` : "ЗАКРЫТО"}</span>
                       </div>
                       <p style={{ fontSize: 13, lineHeight: 1.5, color: "#6B7280", margin: "8px 0 0" }}>{b.description}</p>
                       <div style={{ height: 8, borderRadius: 999, background: "#F2E3CF", overflow: "hidden", marginTop: 12 }}>
@@ -161,7 +164,8 @@ function ProfileBody({ token }: { token: string }) {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </>

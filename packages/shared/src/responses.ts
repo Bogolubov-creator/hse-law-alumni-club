@@ -22,8 +22,14 @@ export const programSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(), direction: z.string(), format: z.string(), duration: z.string(), price: z.number(),
 });
 export const programsSchema = z.array(programSchema);
+export const programModuleSchema = z.object({ title: z.string(), hours: z.number().optional(), points: z.array(z.string()).optional() });
+export const programTeacherSchema = z.object({ name: z.string(), role: z.string().optional() });
 export const programFullSchema = programSchema.extend({
-  dates: z.unknown().optional(), modules: z.unknown().optional(), teachers: z.unknown().optional(), description: z.string().nullable().optional(),
+  dates: z.object({ start: z.string() }).partial().nullable().optional(),
+  modules: z.array(programModuleSchema).nullable().optional(),
+  teachers: z.array(programTeacherSchema).nullable().optional(),
+  description: z.string().nullable().optional(),
+  document: z.string().nullable().optional(),
 });
 
 export const productVariantSchema = z.object({ sku: z.string(), size: z.string().optional(), color: z.string().optional(), stock: z.number() });
@@ -75,6 +81,8 @@ export type CtaBlock = z.infer<typeof ctaBlockSchema>;
 export type PageHome = z.infer<typeof pageHomeSchema>;
 export type Program = z.infer<typeof programSchema>;
 export type ProgramFull = z.infer<typeof programFullSchema>;
+export type ProgramModule = z.infer<typeof programModuleSchema>;
+export type ProgramTeacher = z.infer<typeof programTeacherSchema>;
 export type ProductVariant = z.infer<typeof productVariantSchema>;
 export type Product = z.infer<typeof productSchema>;
 export type CartLine = z.infer<typeof cartLineSchema>;

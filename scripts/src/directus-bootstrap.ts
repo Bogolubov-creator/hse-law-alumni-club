@@ -239,6 +239,7 @@ await ensureField("programs", "capacity", int());
 await ensureField("programs", "seats_taken", int(0));
 await ensureField("programs", "modules", json());
 await ensureField("programs", "teachers", json());
+await ensureField("programs", "document", str());
 await ensureField("programs", "description", txt());
 await ensureField("programs", "status", enumf(["draft", "published", "archived"], "draft"));
 
