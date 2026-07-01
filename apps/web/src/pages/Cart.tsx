@@ -17,7 +17,9 @@ export default function Cart() {
 
   const items = cart.data?.items ?? [];
   const subtotal = cart.data?.subtotal ?? 0;
-  const discountAmount = Math.round((subtotal * discount) / 100);
+  // Скидка выпускника — только на ДПО; мерч по базовой цене.
+  const dpoSubtotal = items.filter((i) => i.type === "dpo").reduce((s, i) => s + i.price * i.qty, 0);
+  const discountAmount = Math.round((dpoSubtotal * discount) / 100);
   const total = subtotal - discountAmount;
   const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -44,7 +46,7 @@ export default function Cart() {
         <main className="mx-auto max-w-[620px] px-7 py-16 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(31,138,91,.14)] text-3xl text-[#1F8A5B]">✓</div>
           <h1 className="mt-5 font-display text-3xl font-bold">Заявка принята</h1>
-          <p className="mt-3 text-grafit-soft">Номер вашей заявки – <b className="font-mono text-grafit">{result.number}</b>. Учебный офис свяжется с вами по указанным контактам. Оплаты на сайте нет.</p>
+          <p className="mt-3 text-grafit-soft">Номер вашей заявки – <b className="font-mono text-grafit">{result.number}</b>. Менеджер учебного офиса свяжется с вами по указанным контактам, чтобы подтвердить детали. Оплаты на сайте нет.</p>
           {!result.notified.ok && (
             <p className="mx-auto mt-4 max-w-[440px] rounded-[12px] bg-[rgba(181,51,27,.08)] px-4 py-3 text-sm text-karmin">
               Заявка сохранена, но автоматическое уведомление офиса не прошло. Пожалуйста, продублируйте заявку в Telegram <a className="underline" href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer">@pravohse</a> – так офис точно увидит её.
@@ -52,7 +54,7 @@ export default function Cart() {
           )}
           <div className="mx-auto mt-6 max-w-[360px] rounded-[16px] border border-[#E5E7EB] bg-white p-5 text-left font-mono text-[13px]">
             <Row k="Сумма (справочно)" v={rub(result.subtotal)} />
-            {result.member_discount > 0 && <Row k="Скидка выпускника" v={`−${result.member_discount}%`} />}
+            {result.subtotal > result.total_estimate && <Row k="Скидка выпускника (ДПО)" v={`−${result.member_discount}%`} />}
             <Row k="Итого (оценочно)" v={rub(result.total_estimate)} bold />
           </div>
           <Link to="/dpo" className="foc mt-7 inline-block rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">К витринам</Link>
@@ -99,11 +101,11 @@ export default function Cart() {
             <form onSubmit={submit} className="h-fit rounded-[18px] border border-[#E5E7EB] bg-white p-6">
               <div className="space-y-1.5 font-mono text-[13px]">
                 <Row k="Подытог" v={rub(subtotal)} />
-                {discount > 0 && <Row k={`Скидка выпускника −${discount}%`} v={`−${rub(discountAmount)}`} />}
+                {discountAmount > 0 && <Row k={`Скидка выпускника (ДПО) −${discount}%`} v={`−${rub(discountAmount)}`} />}
                 <div className="my-2 border-t border-[#f0ece2]" />
                 <Row k="Итого (справочно)" v={rub(total)} bold />
               </div>
-              <p className="mt-2 font-mono text-[11px] text-grafit-soft">Оплаты на сайте нет – сумма справочная, заявку обрабатывает офис.</p>
+              <p className="mt-2 font-mono text-[11px] text-grafit-soft">Оплаты на сайте нет – сумма справочная. После оформления заявки с вами свяжется менеджер учебного офиса и подтвердит детали. Скидка выпускника действует только на программы ДПО.</p>
 
               <div className="mt-5 space-y-3">
                 <Input label="ФИО" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required />

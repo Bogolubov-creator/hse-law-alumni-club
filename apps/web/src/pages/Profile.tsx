@@ -91,7 +91,7 @@ function ProfileBody({ token }: { token: string }) {
               <div style={{ width: 88, height: 88, borderRadius: 22, flex: "none", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>{(data.alumni.fio?.trim()?.[0] ?? "В").toUpperCase()}</div>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{data.alumni.fio ?? "Выпускник"}</div>
-                <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {data.alumni.cohort ?? "–"}{data.alumni.edu_program ? ` · магистратура, ОП «${data.alumni.edu_program}»` : " · факультет права"}</div>
+                <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {data.alumni.cohort ?? "–"}{data.alumni.edu_program ? ` · ${data.alumni.edu_level ?? "магистратура"}, ОП «${data.alumni.edu_program}»` : " · факультет права"}</div>
                 <div style={{ display: "flex", gap: 9, flexWrap: "wrap", marginTop: 14 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}><span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Верифицирован учебным офисом</span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(17,41,107,.1)", color: "#11296B" }}>Уровень {idx + 1} · {data.level.level_title}</span>
@@ -153,11 +153,11 @@ function ProfileBody({ token }: { token: string }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                         <div style={{ ...disp, fontWeight: 600, fontSize: 16, letterSpacing: "-0.01em" }}>{b.title}</div>
-                        <span style={{ ...mono, fontSize: 10, letterSpacing: ".04em", color: b.earned ? "#1F8A5B" : "#6B7280", whiteSpace: "nowrap" }}>{b.earned ? "ПОЛУЧЕНО" : "ЗАКРЫТО"}</span>
+                        <span style={{ ...mono, fontSize: 10, letterSpacing: ".04em", color: b.earned ? "#1F8A5B" : "#6B7280", whiteSpace: "nowrap" }}>{b.earned ? "ПОЛУЧЕНО" : `${b.current} / ${b.target}`}</span>
                       </div>
                       <p style={{ fontSize: 13, lineHeight: 1.5, color: "#6B7280", margin: "8px 0 0" }}>{b.description}</p>
                       <div style={{ height: 8, borderRadius: 999, background: "#F2E3CF", overflow: "hidden", marginTop: 12 }}>
-                        <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: b.earned ? "100%" : "0%" }} />
+                        <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${b.earned ? 100 : b.target ? Math.round((b.current / b.target) * 100) : 0}%` }} />
                       </div>
                     </div>
                   </div>

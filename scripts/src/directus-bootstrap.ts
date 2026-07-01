@@ -192,6 +192,7 @@ await ensureField("alumni", "level_cached", enumf(["graduate", "friend", "expert
 await ensureField("alumni", "personal_discount", int(0));
 await ensureField("alumni", "contacts_json", json());
 await ensureField("alumni", "edu_program", str());
+await ensureField("alumni", "edu_level", str());
 await ensureField("alumni", "referral_code", str(true));
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
@@ -418,7 +419,7 @@ await ensureUser(req("TEST_EDITOR_EMAIL"), {
   first_name: "Тест", last_name: "Офис", password: req("TEST_EDITOR_PASSWORD"), role: editorRole?.id ?? null,
 });
 const testAlumniUser = await ensureUser(req("TEST_ALUMNI_EMAIL"), {
-  first_name: "Анна", last_name: "Гаджиева", password: req("TEST_ALUMNI_PASSWORD"), role: alumniRole?.id ?? null,
+  first_name: "Сергей", last_name: "Кондратьев", password: req("TEST_ALUMNI_PASSWORD"), role: alumniRole?.id ?? null,
 });
 
 // ──────────────────────────── 5. сиды ────────────────────────────
@@ -440,14 +441,15 @@ if (!alumniRows.length) {
       {
         user_id: testAlumniUser.id,
         fio: "Сергей Кондратьев",
-        cohort: "2024",
+        cohort: "2026",
         edu_program: "Публичное право",
+        edu_level: "магистратура",
         status: "active",
         verification_status: "verified",
-        points_cached: 420,
-        level_cached: "friend",
+        points_cached: 120,
+        level_cached: "graduate",
         personal_discount: 0,
-        referral_code: "ANNA2024",
+        referral_code: "SERGEY2026",
       },
     ]),
   );

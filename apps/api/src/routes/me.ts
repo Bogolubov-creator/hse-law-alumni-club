@@ -1,9 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { ACHIEVEMENTS } from "@club/shared";
+import { achievementProgress } from "@club/shared";
 import { directus } from "../lib/directus.js";
-import { levelInfo } from "../lib/engine.js";
+import { levelInfo, alumniStats } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
 
 const di = directus;
@@ -43,9 +43,9 @@ export async function meRoutes(app: FastifyInstance) {
     )) as { delta: number; created_at: string }[];
 
     return {
-      alumni: { fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {}, edu_program: a.edu_program },
+      alumni: { fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {}, edu_program: a.edu_program, edu_level: a.edu_level },
       level: levelInfo(a.points_cached ?? 0, a.personal_discount ?? 0),
-      achievements: ACHIEVEMENTS.map((x) => ({ key: x.key, title: x.title, description: x.description, earned: earned.has(x.key) })),
+      achievements: achievementProgress(await alumniStats(a.id)).map((p) => ({ ...p, earned: earned.has(p.key) })),
       activity: lastSixMonths(ledger),
     };
   });

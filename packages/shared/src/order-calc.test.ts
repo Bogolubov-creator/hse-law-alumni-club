@@ -3,18 +3,29 @@ import { computeOrderTotals, effectiveDiscount, orderNumber, repriceItems } from
 
 describe("computeOrderTotals (копейки)", () => {
   it("сумма по нескольким позициям и количествам", () => {
-    const r = computeOrderTotals([{ price: 4800000, qty: 1 }, { price: 420000, qty: 2 }], 0);
+    const r = computeOrderTotals([{ type: "dpo", price: 4800000, qty: 1 }, { type: "merch", price: 420000, qty: 2 }], 0);
     expect(r.subtotal).toBe(5640000);
     expect(r.total).toBe(5640000);
   });
-  it("скидка с округлением", () => {
-    expect(computeOrderTotals([{ price: 999, qty: 1 }], 5).total).toBe(949); // 999 - round(49.95)=50
-    expect(computeOrderTotals([{ price: 10000, qty: 1 }], 10).total).toBe(9000);
+  it("скидка с округлением (ДПО)", () => {
+    expect(computeOrderTotals([{ type: "dpo", price: 999, qty: 1 }], 5).total).toBe(949); // 999 - round(49.95)=50
+    expect(computeOrderTotals([{ type: "dpo", price: 10000, qty: 1 }], 10).total).toBe(9000);
+  });
+  it("скидка не действует на мерч", () => {
+    const r = computeOrderTotals([{ type: "merch", price: 10000, qty: 1 }], 20);
+    expect(r.discountAmount).toBe(0);
+    expect(r.total).toBe(10000);
+  });
+  it("смешанная заявка: скидка только с ДПО-части", () => {
+    const r = computeOrderTotals([{ type: "dpo", price: 10000, qty: 1 }, { type: "merch", price: 5000, qty: 1 }], 10);
+    expect(r.subtotal).toBe(15000);
+    expect(r.discountAmount).toBe(1000); // 10% только с 10000
+    expect(r.total).toBe(14000);
   });
   it("discount=0 → total==subtotal; total не отрицателен; пустой список → 0", () => {
-    expect(computeOrderTotals([{ price: 5000, qty: 1 }], 0).total).toBe(5000);
-    expect(computeOrderTotals([], 20)).toEqual({ subtotal: 0, discount: 20, total: 0 });
-    expect(computeOrderTotals([{ price: 100, qty: 1 }], 200).total).toBe(0); // clamp 100%
+    expect(computeOrderTotals([{ type: "dpo", price: 5000, qty: 1 }], 0).total).toBe(5000);
+    expect(computeOrderTotals([], 20)).toEqual({ subtotal: 0, discount: 20, discountAmount: 0, total: 0 });
+    expect(computeOrderTotals([{ type: "dpo", price: 100, qty: 1 }], 200).total).toBe(0); // clamp 100%
   });
 });
 

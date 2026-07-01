@@ -6,7 +6,7 @@ import { env } from "../env.js";
 export interface AlumniRow {
   id: string; user_id: string | null; fio: string | null; cohort: string | null;
   status: string; verification_status: string; points_cached: number; level_cached: LevelKey;
-  personal_discount: number; contacts_json: Record<string, string> | null; edu_program: string | null;
+  personal_discount: number; contacts_json: Record<string, string> | null; edu_program: string | null; edu_level: string | null;
   referral_code: string | null; referred_by: string | null; last_activity_at: string | null;
   verified_at: string | null; joined_at: string | null; telegram_id: string | null;
 }

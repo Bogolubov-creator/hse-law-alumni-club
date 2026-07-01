@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { useNewsList, usePage, formatNewsDate } from "../lib/queries.js";
+import { token } from "../lib/cart.js";
 
 /**
  * Главная – порт «Главная.dc.html» (Claude Design) в React.
@@ -199,7 +200,7 @@ export default function Home() {
             <a href="#istoriya" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>История</a>
             <a href="#vitriny" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Витрины</a>
             <Link to="/news" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Новости</Link>
-            <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, background: "#EC5A13", color: "#FBF3E8", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>Войти в ЛК</Link>
+            <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, background: "#EC5A13", color: "#FBF3E8", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{token() ? "Личный кабинет" : "Войти в ЛК"}</Link>
           </nav>
         </div>
       </header>
@@ -212,7 +213,7 @@ export default function Home() {
             <h1 className="h-xl" style={{ ...disp, fontWeight: 800, fontSize: 62, lineHeight: 1.03, letterSpacing: "-0.015em", margin: "22px 0 0", textWrap: "balance" } as CSSProperties}>{hero.title_pre ?? "Статус выпускника, который"} <span style={{ color: "#EC5A13" }}>{hero.title_accent ?? "работает"}</span></h1>
             <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>{hero.subtitle ?? "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка 5% на ДПО и мерч, новости и менторы – всё в одном месте."}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 32 }}>
-              <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_primary ?? "Войти в личный кабинет"}</Link>
+              <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{token() ? "Мой личный кабинет" : hero.cta_primary ?? "Войти в личный кабинет"}</Link>
               <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_secondary ?? "Как вступить"}</a>
             </div>
             <div style={{ display: "flex", gap: 38, marginTop: 46, flexWrap: "wrap" }}>

@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useCart } from "../lib/cart.js";
+import { useCart, token } from "../lib/cart.js";
 
 // Общая обёртка публичных витрин: шапка с корзиной + футер. Канон-токены.
 export default function SiteShell({ children }: { children: ReactNode }) {
   const cart = useCart();
   const count = cart.data?.count ?? 0;
+  const authed = !!token();
   return (
     <div className="min-h-screen bg-kost font-body text-grafit">
       <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-kost/85 backdrop-blur">
@@ -21,7 +22,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <Link to="/dpo" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">ДПО</Link>
             <Link to="/merch" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Мерч</Link>
             <Link to="/news" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Новости</Link>
-            <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">ЛК</Link>
+            <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{authed ? "Личный кабинет" : "ЛК"}</Link>
             <Link to="/cart" className="foc relative ml-1 rounded-[11px] bg-grafit px-4 py-2.5 font-semibold text-kost">
               Корзина{count > 0 && <span className="ml-1.5 rounded-full bg-ohra px-1.5 font-mono text-[12px]">{count}</span>}
             </Link>

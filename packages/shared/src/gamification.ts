@@ -50,12 +50,27 @@ export interface AchievementDef {
 }
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
-  { key: "first_step", title: "Первый шаг", description: "Первая пройденная программа", rule_json: { type: "programs_completed", gte: 1 }, sort: 1 },
-  { key: "networker", title: "Нетворкер", description: "Участие в событии клуба", rule_json: { type: "events_attended", gte: 1 }, sort: 2 },
-  { key: "expert3", title: "Знаток", description: "Три завершённые программы", rule_json: { type: "programs_completed", gte: 3 }, sort: 3 },
-  { key: "mentor", title: "Наставник", description: "Менторство младшего потока", rule_json: { type: "mentorship_count", gte: 1 }, sort: 4 },
-  { key: "legend", title: "Легенда выпуска", description: "1000 баллов активности", rule_json: { type: "points", gte: 1000 }, sort: 5 },
+  { key: "first_step", title: "Первый шаг", description: "Первая пройденная программа ДПО", rule_json: { type: "programs_completed", gte: 1 }, sort: 1 },
+  { key: "networker", title: "Нетворкер", description: "Участие в первом событии клуба", rule_json: { type: "events_attended", gte: 1 }, sort: 2 },
+  { key: "activist", title: "Активист", description: "Участие в трёх событиях клуба", rule_json: { type: "events_attended", gte: 3 }, sort: 3 },
+  { key: "expert3", title: "Знаток", description: "Три завершённые программы ДПО", rule_json: { type: "programs_completed", gte: 3 }, sort: 4 },
+  { key: "scholar5", title: "Эрудит", description: "Пять завершённых программ ДПО", rule_json: { type: "programs_completed", gte: 5 }, sort: 5 },
+  { key: "mentor", title: "Наставник", description: "Менторство младшего потока", rule_json: { type: "mentorship_count", gte: 1 }, sort: 6 },
+  { key: "connector", title: "Проводник", description: "Приглашён и верифицирован первый выпускник", rule_json: { type: "referrals_count", gte: 1 }, sort: 7 },
+  { key: "legend", title: "Легенда выпуска", description: "1000 баллов активности", rule_json: { type: "points", gte: 1000 }, sort: 8 },
 ];
+
+export interface AchievementProgressItem { key: string; title: string; description: string; current: number; target: number }
+
+/** Прогресс по каждому достижению для данной статистики (для «Правил и прогресса»). */
+export function achievementProgress(stats: AchievementStats): AchievementProgressItem[] {
+  return ACHIEVEMENTS.map((a) => {
+    const rule = a.rule_json as { type?: string; gte?: number };
+    const target = rule.gte ?? 0;
+    const raw = (stats as Record<string, number | undefined>)[rule.type ?? ""] ?? 0;
+    return { key: a.key, title: a.title, description: a.description, current: Math.min(raw, target), target };
+  });
+}
 
 /** Текущий уровень по сумме баллов. */
 export function computeLevel(points: number): LevelDef {

@@ -42,11 +42,14 @@ export const levelInfoSchema = z.object({
   points: z.number(), level: z.string(), level_title: z.string(), discount: z.number(),
   next_level: z.string().nullable(), to_next: z.number(),
 });
-export const achievementResSchema = z.object({ key: z.string(), title: z.string(), description: z.string(), earned: z.boolean() });
+export const achievementResSchema = z.object({
+  key: z.string(), title: z.string(), description: z.string(), earned: z.boolean(),
+  current: z.number(), target: z.number(),
+});
 export const activityPointSchema = z.object({ month: z.string(), points: z.number() });
 export const alumniBriefSchema = z.object({
   fio: z.string().nullable(), cohort: z.string().nullable(), verification_status: z.string(),
-  contacts: z.record(z.string()).optional(), edu_program: z.string().nullable().optional(),
+  contacts: z.record(z.string()).optional(), edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
 });
 export const meSchema = z.object({
   alumni: alumniBriefSchema, level: levelInfoSchema, achievements: z.array(achievementResSchema), activity: z.array(activityPointSchema),

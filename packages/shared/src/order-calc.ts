@@ -1,13 +1,19 @@
 import { computeMemberDiscount } from "./gamification.js";
 
 // Чистая денежная математика заявки (копейки). Тестируема без Directus.
-export interface PricedLine { price: number; qty: number }
+export interface PricedLine { type: "dpo" | "merch"; price: number; qty: number }
 
-export function computeOrderTotals(items: PricedLine[], discountPercent: number): { subtotal: number; discount: number; total: number } {
+/** Скидка выпускника действует только на ДПО; мерч всегда по базовой цене. */
+export function computeOrderTotals(
+  items: PricedLine[],
+  discountPercent: number,
+): { subtotal: number; discount: number; discountAmount: number; total: number } {
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const discountBase = items.filter((i) => i.type === "dpo").reduce((s, i) => s + i.price * i.qty, 0);
   const discount = Math.max(0, Math.min(100, discountPercent));
-  const total = Math.max(0, subtotal - Math.round((subtotal * discount) / 100));
-  return { subtotal, discount, total };
+  const discountAmount = Math.round((discountBase * discount) / 100);
+  const total = Math.max(0, subtotal - discountAmount);
+  return { subtotal, discount, discountAmount, total };
 }
 
 /** Справочная скидка применяется только верифицированному выпускнику. */

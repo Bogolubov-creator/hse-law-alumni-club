@@ -63,7 +63,17 @@ async function counts(alumniId: string) {
     readItems("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["reason"] }),
   )) as { reason: string }[];
   const by = (r: string) => rows.filter((x) => x.reason === r).length;
-  return { programs_completed: by("program"), events_attended: by("event"), mentorship_count: by("mentorship") };
+  return {
+    programs_completed: by("program"), events_attended: by("event"),
+    mentorship_count: by("mentorship"), referrals_count: by("referral"),
+  };
+}
+
+/** Полная статистика выпускника (для прогресса достижений). */
+export async function alumniStats(alumniId: string) {
+  const c = await counts(alumniId);
+  const rows = (await di.request(readItems("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["points_cached"] }))) as { points_cached: number }[];
+  return { ...c, points: rows[0]?.points_cached ?? 0 };
 }
 
 /** Выдать заслуженные достижения, которых ещё нет. */

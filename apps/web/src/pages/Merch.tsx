@@ -1,19 +1,17 @@
 import { useState } from "react";
-import SiteShell, { DiscountBadge } from "../components/SiteShell.js";
+import SiteShell from "../components/SiteShell.js";
 import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { rub, type Product, type ProductVariant } from "../lib/api.js";
-import { useProducts, useMemberDiscount, useCartMutations } from "../lib/cart.js";
+import { useProducts, useCartMutations } from "../lib/cart.js";
 
 export default function Merch() {
   const products = useProducts();
-  const discount = useMemberDiscount();
   const { add } = useCartMutations();
   const toast = useToast();
   const [open, setOpen] = useState<Product | null>(null);
 
-  const priced = (price: number) => Math.round((price * (100 - discount)) / 100 / 100) * 100;
-
+  // Скидка выпускника действует только на ДПО — мерч всегда по базовой цене.
   return (
     <SiteShell>
       <main className="mx-auto max-w-[1180px] px-7 py-12">
@@ -32,8 +30,7 @@ export default function Merch() {
               <div className="p-5">
                 <div className="font-display text-[17px] font-semibold leading-tight tracking-tight">{p.title}</div>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className="font-mono text-[18px] font-medium">{rub(priced(p.price))}</span>
-                  {discount > 0 && <span className="font-mono text-[13px] text-grafit-soft line-through">{rub(p.price)}</span>}
+                  <span className="font-mono text-[18px] font-medium">{rub(p.price)}</span>
                 </div>
                 <div className="mt-3 text-sm font-semibold text-ohra-deep">Быстрый просмотр →</div>
               </div>
@@ -45,7 +42,6 @@ export default function Merch() {
       {open && (
         <ProductModal
           product={open}
-          discount={discount}
           onClose={() => setOpen(null)}
           onAdd={(sku) => {
             add.mutate(
@@ -60,10 +56,9 @@ export default function Merch() {
   );
 }
 
-function ProductModal({ product, discount, onClose, onAdd }: { product: Product; discount: number; onClose: () => void; onAdd: (sku: string | null) => void }) {
+function ProductModal({ product, onClose, onAdd }: { product: Product; onClose: () => void; onAdd: (sku: string | null) => void }) {
   const variants: ProductVariant[] = product.variants_json ?? [];
   const [sku, setSku] = useState<string | null>(variants[0]?.sku ?? null);
-  const priced = Math.round((product.price * (100 - discount)) / 100 / 100) * 100;
   const vLabel = (v: ProductVariant) => [v.size, v.color].filter(Boolean).join(" · ") || v.sku;
 
   return (
@@ -74,9 +69,7 @@ function ProductModal({ product, discount, onClose, onAdd }: { product: Product;
         <h2 id="merch-modal-title" className="mt-2 font-display text-2xl font-bold leading-tight tracking-tight">{product.title}</h2>
         {product.description && <p className="mt-3 text-sm leading-relaxed text-grafit-soft">{product.description}</p>}
         <div className="mt-4 flex items-baseline gap-2">
-          <span className="font-mono text-2xl font-medium">{rub(priced)}</span>
-          {discount > 0 && <span className="font-mono text-sm text-grafit-soft line-through">{rub(product.price)}</span>}
-          {discount > 0 && <DiscountBadge percent={discount} />}
+          <span className="font-mono text-2xl font-medium">{rub(product.price)}</span>
         </div>
         {variants.length > 0 && (
           <div className="mt-5">
