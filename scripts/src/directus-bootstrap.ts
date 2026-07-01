@@ -191,6 +191,7 @@ await ensureField("alumni", "points_cached", int(0));
 await ensureField("alumni", "level_cached", enumf(["graduate", "friend", "expert", "ambassador"], "graduate"));
 await ensureField("alumni", "personal_discount", int(0));
 await ensureField("alumni", "contacts_json", json());
+await ensureField("alumni", "edu_program", str());
 await ensureField("alumni", "referral_code", str(true));
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
@@ -438,8 +439,9 @@ if (!alumniRows.length) {
     (createItems as any)("alumni", [
       {
         user_id: testAlumniUser.id,
-        fio: "Анна Гаджиева",
+        fio: "Сергей Кондратьев",
         cohort: "2024",
+        edu_program: "Публичное право",
         status: "active",
         verification_status: "verified",
         points_cached: 420,

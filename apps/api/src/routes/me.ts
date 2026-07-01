@@ -43,7 +43,7 @@ export async function meRoutes(app: FastifyInstance) {
     )) as { delta: number; created_at: string }[];
 
     return {
-      alumni: { fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {} },
+      alumni: { fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {}, edu_program: a.edu_program },
       level: levelInfo(a.points_cached ?? 0, a.personal_discount ?? 0),
       achievements: ACHIEVEMENTS.map((x) => ({ key: x.key, title: x.title, description: x.description, earned: earned.has(x.key) })),
       activity: lastSixMonths(ledger),
