@@ -72,8 +72,12 @@ async function counts(alumniId: string) {
 /** Полная статистика выпускника (для прогресса достижений). */
 export async function alumniStats(alumniId: string) {
   const c = await counts(alumniId);
-  const rows = (await di.request(readItems("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["points_cached"] }))) as { points_cached: number }[];
-  return { ...c, points: rows[0]?.points_cached ?? 0 };
+  const rows = (await di.request(readItems("alumni", {
+    filter: { id: { _eq: alumniId } }, limit: 1, fields: ["points_cached", "verification_status"],
+  }))) as { points_cached: number; verification_status: string }[];
+  const points = rows[0]?.points_cached ?? 0;
+  const status_level = LEVELS.findIndex((l) => l.key === computeLevel(points).key) + 1;
+  return { ...c, points, verified: rows[0]?.verification_status === "verified" ? 1 : 0, status_level };
 }
 
 /** Выдать заслуженные достижения, которых ещё нет. */

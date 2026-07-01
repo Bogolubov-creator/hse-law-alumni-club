@@ -1,7 +1,7 @@
-import { useId, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useId, useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { LEVELS, loginResponseSchema } from "@club/shared";
-import { apiPost, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
+import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders } from "../lib/queries.js";
 import Modal from "../components/Modal.js";
 
@@ -99,6 +99,11 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const me = useMe(token);
   const [sel, setSel] = useState<Achievement | null>(null);
 
+  // Истёкшая/битая сессия (401) — не тупик с ошибкой, а возврат к окну логина.
+  useEffect(() => {
+    if (me.isError && isAuthError(me.error)) onLogout();
+  }, [me.isError, me.error, onLogout]);
+
   const vars: CSSProperties = { background: "#FBF3E8", color: "#14181F", minHeight: "100vh", fontFamily: "'Onest', system-ui, sans-serif" };
 
   return (
@@ -141,7 +146,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
             {!sel.earned && sel.target > 0 && (
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 12, color: "#6B7280" }}>
-                  <span>Прогресс</span><span>{sel.current} / {sel.target}</span>
+                  <span>Прогресс · {sel.kind}</span><span>{sel.current} / {sel.target}</span>
                 </div>
                 <div style={{ height: 10, borderRadius: 999, background: "#F2E3CF", overflow: "hidden", marginTop: 8 }}>
                   <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((sel.current / sel.target) * 100)}%` }} />
@@ -174,7 +179,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
         <div style={{ width: 84, height: 84, borderRadius: 22, flex: "none", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>{initial}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{me.alumni.fio ?? "Выпускник"}</div>
-          <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "–"}{me.alumni.edu_program ? ` · ${me.alumni.edu_level ?? "магистратура"}, ОП «${me.alumni.edu_program}»` : " · факультет права"}</div>
+          <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "–"}{me.alumni.edu_program ? ` · ${me.alumni.edu_level ?? "магистратура"} · ОП «${me.alumni.edu_program}»` : " · факультет права"}</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}>
             <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Верифицирован учебным офисом
           </div>
@@ -226,7 +231,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
           <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>{doneCount} из {me.achievements.length} открыто</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "18px 10px", marginTop: 24 }}>
             {me.achievements.map((a) => (
-              <button key={a.key} onClick={() => onBadge(a)} className="foc" style={{ textAlign: "center", opacity: a.earned ? 1 : achInProgress(a) ? 0.85 : 0.4, background: "none", border: "none", padding: "6px 2px", cursor: "pointer", color: "inherit" }}>
+              <button key={a.key} onClick={() => onBadge(a)} className="foc" style={{ textAlign: "center", opacity: a.earned || a.star ? 1 : achInProgress(a) ? 0.85 : 0.4, background: "none", border: "none", padding: "6px 2px", cursor: "pointer", color: "inherit" }}>
                 <BadgeSquare a={a} size={50} />
                 <div style={{ fontSize: 12, fontWeight: 600, marginTop: 14, lineHeight: 1.2 }}>{a.title}</div>
                 <div style={{ ...mono, fontSize: 10, color: achColor(a), marginTop: 4 }}>{a.earned ? "получено" : achInProgress(a) ? `${a.current} / ${a.target}` : "закрыто"}</div>
@@ -278,19 +283,25 @@ function achInProgress(a: Achievement): boolean {
   return !a.earned && a.current > 0;
 }
 function achStatus(a: Achievement): string {
-  return a.earned ? "Достижение получено" : achInProgress(a) ? "В процессе" : "Ещё не открыто";
+  return a.earned ? "● Достижение получено" : achInProgress(a) ? "◐ В процессе" : "○ Ещё не открыто";
 }
 function achColor(a: Achievement): string {
-  return a.earned ? "#1F8A5B" : achInProgress(a) ? "#C9450E" : "#6B7280";
+  return a.earned ? "#1F8A5B" : achInProgress(a) ? "#EC5A13" : "#6B7280";
 }
 
+// Оформление «ромба» повторяет Claude Design: получено — teal→navy, следующее — оранжевый, закрыто — soft.
 function BadgeSquare({ a, size }: { a: Achievement; size: number }) {
-  const letter = a.title.trim()[0]?.toUpperCase() ?? "?";
-  const inProg = achInProgress(a);
-  const bg = a.earned ? "linear-gradient(135deg,#E3C272,#C49A45)" : inProg ? "linear-gradient(135deg,#F7D9BD,#EBB489)" : "#F2E3CF";
+  const star = !a.earned && a.star;
+  const bg = a.earned ? "linear-gradient(140deg,#2C6E80,#11296B)" : star ? "#EC5A13" : "#F2E3CF";
+  const ink = a.earned || star ? "#FBF3E8" : "#b8a98a";
+  const glow = a.earned
+    ? "0 10px 24px -12px rgba(17,41,107,.65)"
+    : star
+      ? "0 0 0 4px rgba(236,90,19,.18), 0 12px 26px -10px rgba(236,90,19,.7)"
+      : "inset 0 0 0 1px #E5E7EB";
   return (
-    <div style={{ width: size, height: size, borderRadius: size * 0.28, transform: "rotate(45deg)", margin: size <= 50 ? "0 auto" : 0, background: bg, boxShadow: a.earned ? "0 8px 20px -10px rgba(196,154,69,.8)" : inProg ? "0 8px 20px -12px rgba(201,69,14,.5)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: size * 0.3, color: a.earned ? "#3a2a00" : inProg ? "#7a3410" : "#b8a98a" }}>{letter}</span>
+    <div style={{ width: size, height: size, borderRadius: size * 0.28, transform: "rotate(45deg)", margin: size <= 50 ? "0 auto" : 0, background: bg, boxShadow: glow, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: a.icon.length > 1 ? size * 0.24 : size * 0.32, color: ink }}>{a.icon}</span>
     </div>
   );
 }

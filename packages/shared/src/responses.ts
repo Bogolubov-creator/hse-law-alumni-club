@@ -51,6 +51,7 @@ export const levelInfoSchema = z.object({
 export const achievementResSchema = z.object({
   key: z.string(), title: z.string(), description: z.string(), earned: z.boolean(),
   current: z.number(), target: z.number(),
+  icon: z.string(), kind: z.string(), star: z.boolean(),
 });
 export const activityPointSchema = z.object({ month: z.string(), points: z.number() });
 export const alumniBriefSchema = z.object({

@@ -33,11 +33,6 @@ export async function meRoutes(app: FastifyInstance) {
     if (a.verification_status !== "verified")
       return reply.code(403).send({ error: "ЛК активируется после верификации учебным офисом" });
 
-    const earnedRows = (await di.request(
-      (readItems as any)("alumni_achievements", { filter: { alumni_id: { _eq: a.id } }, fields: ["achievement_id.key"], limit: -1 }),
-    )) as any[];
-    const earned = new Set(earnedRows.map((e) => e.achievement_id?.key));
-
     const ledger = (await di.request(
       readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at"], limit: -1 }),
     )) as { delta: number; created_at: string }[];
@@ -45,7 +40,7 @@ export async function meRoutes(app: FastifyInstance) {
     return {
       alumni: { fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {}, edu_program: a.edu_program, edu_level: a.edu_level },
       level: levelInfo(a.points_cached ?? 0, a.personal_discount ?? 0),
-      achievements: achievementProgress(await alumniStats(a.id)).map((p) => ({ ...p, earned: earned.has(p.key) })),
+      achievements: achievementProgress(await alumniStats(a.id)),
       activity: lastSixMonths(ledger),
     };
   });

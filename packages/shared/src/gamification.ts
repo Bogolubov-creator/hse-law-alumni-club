@@ -45,30 +45,43 @@ export interface AchievementDef {
   key: string;
   title: string;
   description: string;
-  rule_json: Record<string, unknown>;
+  icon: string; // символ/буква на «ромбе» бейджа (как в Claude Design)
+  kind: string; // подпись прогресса, напр. «мероприятия»
+  rule_json: { type: string; gte: number };
   sort: number;
+  star?: boolean; // «следующее» достижение — оранжевая подсветка
+  demo?: number; // временное значение для метрик, которые ещё не трекаются (соцсети/лайки)
 }
 
+// Набор и оформление достижений повторяют «Дашборд ЛК.dc.html» (Claude Design).
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
-  { key: "first_step", title: "Первый шаг", description: "Первая пройденная программа ДПО", rule_json: { type: "programs_completed", gte: 1 }, sort: 1 },
-  { key: "networker", title: "Нетворкер", description: "Участие в первом событии клуба", rule_json: { type: "events_attended", gte: 1 }, sort: 2 },
-  { key: "activist", title: "Активист", description: "Участие в трёх событиях клуба", rule_json: { type: "events_attended", gte: 3 }, sort: 3 },
-  { key: "expert3", title: "Знаток", description: "Три завершённые программы ДПО", rule_json: { type: "programs_completed", gte: 3 }, sort: 4 },
-  { key: "scholar5", title: "Эрудит", description: "Пять завершённых программ ДПО", rule_json: { type: "programs_completed", gte: 5 }, sort: 5 },
-  { key: "mentor", title: "Наставник", description: "Менторство младшего потока", rule_json: { type: "mentorship_count", gte: 1 }, sort: 6 },
-  { key: "connector", title: "Проводник", description: "Приглашён и верифицирован первый выпускник", rule_json: { type: "referrals_count", gte: 1 }, sort: 7 },
-  { key: "legend", title: "Легенда выпуска", description: "1000 баллов активности", rule_json: { type: "points", gte: 1000 }, sort: 8 },
+  { key: "first_step", title: "Первый шаг", description: "Посетите своё первое мероприятие клуба — встречу, лекцию или нетворкинг.", icon: "1", kind: "мероприятия", rule_json: { type: "events_attended", gte: 1 }, sort: 1 },
+  { key: "office_seal", title: "Печать офиса", description: "Пройдите верификацию профиля у учебного офиса и подтвердите свой выпуск.", icon: "✓", kind: "статус", rule_json: { type: "verified", gte: 1 }, sort: 2 },
+  { key: "on_radar", title: "На радаре", description: "Подпишитесь на все соцсети факультета права, чтобы ничего не пропускать.", icon: "@", kind: "соцсети", rule_json: { type: "socials", gte: 1 }, sort: 3, demo: 1 },
+  { key: "on_wave", title: "На волне", description: "Наберите 50 лайков под постами факультета за один месяц.", icon: "♥", kind: "лайки за месяц", rule_json: { type: "likes_month", gte: 50 }, sort: 4, demo: 38 },
+  { key: "club_voice", title: "Голос клуба", description: "Оставьте 10 комментариев в соцсетях факультета за один месяц.", icon: "✎", kind: "комментарии за месяц", rule_json: { type: "comments_month", gte: 10 }, sort: 5, demo: 7 },
+  { key: "regular", title: "Завсегдатай", description: "Посетите 5 мероприятий клуба. Вы уже на полпути — продолжайте!", icon: "5", kind: "мероприятия", rule_json: { type: "events_attended", gte: 5 }, sort: 6, star: true },
+  { key: "eternal_student", title: "Вечный студент", description: "Пройдите 3 программы ДПО со скидкой выпускника.", icon: "Д", kind: "программы ДПО", rule_json: { type: "programs_completed", gte: 3 }, sort: 7 },
+  { key: "insider", title: "Свой человек", description: "Посетите 10 мероприятий клуба и станьте его постоянным лицом.", icon: "10", kind: "мероприятия", rule_json: { type: "events_attended", gte: 10 }, sort: 8 },
+  { key: "connector", title: "Проводник", description: "Пригласите 3 выпускников вступить в клуб по вашей рекомендации.", icon: "+", kind: "приглашения", rule_json: { type: "referrals_count", gte: 3 }, sort: 9 },
+  { key: "legend", title: "Легенда выпуска", description: "Достигните высшего уровня статуса — «Амбассадор».", icon: "★", kind: "уровень статуса", rule_json: { type: "status_level", gte: 4 }, sort: 10 },
 ];
 
-export interface AchievementProgressItem { key: string; title: string; description: string; current: number; target: number }
+export interface AchievementProgressItem {
+  key: string; title: string; description: string; icon: string; kind: string;
+  current: number; target: number; earned: boolean; star: boolean;
+}
 
 /** Прогресс по каждому достижению для данной статистики (для «Правил и прогресса»). */
 export function achievementProgress(stats: AchievementStats): AchievementProgressItem[] {
+  const s = stats as Record<string, number | undefined>;
   return ACHIEVEMENTS.map((a) => {
-    const rule = a.rule_json as { type?: string; gte?: number };
-    const target = rule.gte ?? 0;
-    const raw = (stats as Record<string, number | undefined>)[rule.type ?? ""] ?? 0;
-    return { key: a.key, title: a.title, description: a.description, current: Math.min(raw, target), target };
+    const target = a.rule_json.gte;
+    const raw = (a.rule_json.type in s ? s[a.rule_json.type] : a.demo) ?? 0;
+    return {
+      key: a.key, title: a.title, description: a.description, icon: a.icon, kind: a.kind,
+      current: Math.min(raw, target), target, earned: raw >= target, star: a.star ?? false,
+    };
   });
 }
 
@@ -107,7 +120,10 @@ export interface AchievementStats {
   programs_completed?: number;
   events_attended?: number;
   mentorship_count?: number;
+  referrals_count?: number;
   points?: number;
+  verified?: number; // 1 если верифицирован учебным офисом
+  status_level?: number; // порядковый номер уровня (1..4)
 }
 
 /** Ключи достижений, заслуженных при данной статистике (по rule_json). */

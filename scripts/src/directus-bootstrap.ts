@@ -180,6 +180,8 @@ await ensureField("achievements", "description", txt());
 await ensureField("achievements", "rule_json", json());
 await ensureField("achievements", "points_reward", int(0));
 await ensureField("achievements", "sort", int());
+await ensureField("achievements", "icon", str());
+await ensureField("achievements", "kind", str());
 
 // alumni
 await ensureM2O("alumni", "user_id", "directus_users");
@@ -427,7 +429,9 @@ const testAlumniUser = await ensureUser(req("TEST_ALUMNI_EMAIL"), {
 log("== Сиды ==");
 await ensureSeed("levels", "key", LEVELS.map((l) => ({ ...l, color: "" })));
 await ensureSeed("point_rules", "reason", POINT_RULES.map((p) => ({ ...p, active: true })));
-await ensureSeed("achievements", "key", [...ACHIEVEMENTS]);
+await ensureSeed("achievements", "key", ACHIEVEMENTS.map((a) => ({
+  key: a.key, title: a.title, description: a.description, rule_json: a.rule_json, sort: a.sort, icon: a.icon, kind: a.kind,
+})));
 await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "published" })));
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));

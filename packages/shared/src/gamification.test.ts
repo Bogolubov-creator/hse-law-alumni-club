@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  computeLevel, computeMemberDiscount, decayDelta, evaluateAchievements, LEVELS, MEMBER_DISCOUNT_CAP,
+  computeLevel, computeMemberDiscount, decayDelta, evaluateAchievements, achievementProgress, LEVELS, MEMBER_DISCOUNT_CAP,
 } from "./gamification";
 
 describe("computeLevel", () => {
@@ -52,14 +52,36 @@ describe("decayDelta (−15%)", () => {
   });
 });
 
-describe("evaluateAchievements", () => {
-  it("«Знаток» открывается на 3-й программе", () => {
-    expect(evaluateAchievements({ programs_completed: 2 })).not.toContain("expert3");
-    expect(evaluateAchievements({ programs_completed: 3 })).toContain("expert3");
+describe("evaluateAchievements (набор Claude Design)", () => {
+  it("«Первый шаг» — на первом мероприятии", () => {
+    expect(evaluateAchievements({ events_attended: 0 })).not.toContain("first_step");
+    expect(evaluateAchievements({ events_attended: 1 })).toContain("first_step");
   });
-  it("первый шаг и легенда", () => {
-    expect(evaluateAchievements({ programs_completed: 1 })).toContain("first_step");
-    expect(evaluateAchievements({ points: 1000 })).toContain("legend");
-    expect(evaluateAchievements({ points: 999 })).not.toContain("legend");
+  it("«Завсегдатай» — на 5 мероприятиях", () => {
+    expect(evaluateAchievements({ events_attended: 4 })).not.toContain("regular");
+    expect(evaluateAchievements({ events_attended: 5 })).toContain("regular");
+  });
+  it("«Вечный студент» — 3 программы ДПО", () => {
+    expect(evaluateAchievements({ programs_completed: 3 })).toContain("eternal_student");
+  });
+  it("«Легенда» — высший уровень (status_level 4)", () => {
+    expect(evaluateAchievements({ status_level: 3 })).not.toContain("legend");
+    expect(evaluateAchievements({ status_level: 4 })).toContain("legend");
+  });
+  it("«Печать офиса» — верификация", () => {
+    expect(evaluateAchievements({ verified: 1 })).toContain("office_seal");
+  });
+});
+
+describe("achievementProgress", () => {
+  it("считает current/target/earned и подставляет demo для нетрекаемых метрик", () => {
+    const p = achievementProgress({ events_attended: 1, programs_completed: 1, referrals_count: 0, verified: 1, status_level: 1 });
+    const by = (k: string) => p.find((x) => x.key === k)!;
+    expect(by("first_step").earned).toBe(true); // events 1 >= 1
+    expect(by("regular")).toMatchObject({ current: 1, target: 5, earned: false, star: true });
+    expect(by("office_seal").earned).toBe(true); // verified
+    expect(by("on_wave")).toMatchObject({ current: 38, target: 50, earned: false }); // demo
+    expect(by("legend")).toMatchObject({ current: 1, target: 4, earned: false });
+    expect(p).toHaveLength(10);
   });
 });

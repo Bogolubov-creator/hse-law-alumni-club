@@ -91,7 +91,7 @@ function ProfileBody({ token }: { token: string }) {
               <div style={{ width: 88, height: 88, borderRadius: 22, flex: "none", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>{(data.alumni.fio?.trim()?.[0] ?? "В").toUpperCase()}</div>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{data.alumni.fio ?? "Выпускник"}</div>
-                <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {data.alumni.cohort ?? "–"}{data.alumni.edu_program ? ` · ${data.alumni.edu_level ?? "магистратура"}, ОП «${data.alumni.edu_program}»` : " · факультет права"}</div>
+                <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {data.alumni.cohort ?? "–"}{data.alumni.edu_program ? ` · ${data.alumni.edu_level ?? "магистратура"} · ОП «${data.alumni.edu_program}»` : " · факультет права"}</div>
                 <div style={{ display: "flex", gap: 9, flexWrap: "wrap", marginTop: 14 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}><span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Верифицирован учебным офисом</span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(17,41,107,.1)", color: "#11296B" }}>Уровень {idx + 1} · {data.level.level_title}</span>
@@ -147,11 +147,14 @@ function ProfileBody({ token }: { token: string }) {
               <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
                 {data.achievements.map((b: Achievement) => {
                   const inProg = !b.earned && b.current > 0;
-                  const statusColor = b.earned ? "#1F8A5B" : inProg ? "#C9450E" : "#6B7280";
+                  const star = !b.earned && b.star;
+                  const statusColor = b.earned ? "#1F8A5B" : inProg ? "#EC5A13" : "#6B7280";
+                  const badgeBg = b.earned ? "linear-gradient(140deg,#2C6E80,#11296B)" : star ? "#EC5A13" : "#F2E3CF";
+                  const badgeInk = b.earned || star ? "#FBF3E8" : "#b8a98a";
                   return (
-                  <div key={b.key} style={{ display: "flex", gap: 18, ...surface, borderRadius: 18, padding: 22, opacity: b.earned ? 1 : inProg ? 0.85 : 0.55 }}>
-                    <div style={{ width: 52, height: 52, borderRadius: 15, transform: "rotate(45deg)", flex: "none", background: b.earned ? "linear-gradient(135deg,#E3C272,#C49A45)" : inProg ? "linear-gradient(135deg,#F7D9BD,#EBB489)" : "#F2E3CF", boxShadow: b.earned ? "0 8px 20px -10px rgba(196,154,69,.8)" : inProg ? "0 8px 20px -12px rgba(201,69,14,.5)" : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: 16, color: b.earned ? "#3a2a00" : inProg ? "#7a3410" : "#b8a98a" }}>{b.title.trim()[0]?.toUpperCase()}</span>
+                  <div key={b.key} style={{ display: "flex", gap: 18, ...surface, borderRadius: 18, padding: 22, opacity: b.earned || star ? 1 : inProg ? 0.85 : 0.55 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 15, transform: "rotate(45deg)", flex: "none", background: badgeBg, boxShadow: b.earned ? "0 10px 24px -12px rgba(17,41,107,.65)" : star ? "0 0 0 4px rgba(236,90,19,.18), 0 12px 26px -12px rgba(236,90,19,.7)" : "inset 0 0 0 1px #E5E7EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: b.icon.length > 1 ? 13 : 17, color: badgeInk }}>{b.icon}</span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>

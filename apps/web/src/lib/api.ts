@@ -3,11 +3,23 @@ const BASE = "/api";
 
 type Parser<T> = { parse: (data: unknown) => T };
 
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+/** true для ошибок недействительной сессии (истёк/битый токен) — повод показать логин заново. */
+export function isAuthError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 401;
+}
+
 export async function apiGet<T>(path: string, token?: string, schema?: Parser<T>): Promise<T> {
   const headers: Record<string, string> = { accept: "application/json" };
   if (token) headers.authorization = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, { headers });
-  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+  if (!res.ok) throw new ApiError(res.status, `API ${res.status}: ${path}`);
   const data = await res.json();
   return schema ? schema.parse(data) : (data as T);
 }
