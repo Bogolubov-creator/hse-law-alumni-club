@@ -51,7 +51,6 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
     <main className="flex min-h-screen items-center justify-center bg-grafit px-6 font-body">
       <form onSubmit={submit} className="w-full max-w-[400px] rounded-[22px] bg-white p-8 shadow-2xl">
         <div className="font-display text-xl font-extrabold">Админка клуба</div>
-        <p className="mt-1 font-mono text-[11px] text-grafit-soft">учебный офис</p>
         <label htmlFor={emailId} className="mt-6 block font-mono text-[11px] uppercase text-grafit-soft">Почта</label>
         <input id={emailId} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
         <label htmlFor={passId} className="mt-4 block font-mono text-[11px] uppercase text-grafit-soft">Пароль</label>
