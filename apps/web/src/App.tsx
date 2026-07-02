@@ -1,4 +1,5 @@
-import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Home from "./pages/Home.js";
 import News from "./pages/News.js";
 import NewsPost from "./pages/NewsPost.js";
@@ -14,6 +15,13 @@ import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
 
 export default function App() {
+  const navigate = useNavigate();
+  // Обратная совместимость: старый хэш-адрес админки (#/admin) → обычный маршрут.
+  useEffect(() => {
+    if (window.location.hash.startsWith("#/")) {
+      navigate(window.location.hash.slice(1), { replace: true });
+    }
+  }, [navigate]);
   return (
     <>
       <Routes>
