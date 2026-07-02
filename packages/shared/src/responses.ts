@@ -36,6 +36,7 @@ export const productVariantSchema = z.object({ sku: z.string(), size: z.string()
 export const productSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(), category: z.string(), price: z.number(),
   variants_json: z.array(productVariantSchema).nullable(), stock: z.number(), description: z.string().nullable().optional(),
+  images: z.array(z.string()).nullable().optional(), // пути/URL фото товара
 });
 export const productsSchema = z.array(productSchema);
 

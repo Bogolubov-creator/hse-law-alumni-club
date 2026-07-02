@@ -160,6 +160,7 @@ export async function adminRoutes(app: FastifyInstance) {
     stock: z.number().int().min(0).default(0),
     description: z.string().nullish(),
     variants_json: z.array(z.object({ sku: z.string().min(1), size: z.string().optional(), color: z.string().optional(), stock: z.number().int().min(0) })).nullish(),
+    images: z.array(z.string()).nullish(), // пути/URL фото
     status: z.enum(["draft", "published", "archived"]).default("published"),
   });
 
@@ -197,6 +198,50 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("products", id));
+    return { ok: true };
+  });
+
+  // ── Наполнение страниц: hero и CTA главной (M2A-блоки) ──────────
+  const pageBlocks = async (slug: string) => {
+    const rows = (await di.request((readItems as any)("pages", {
+      filter: { slug: { _eq: slug } }, limit: 1,
+      fields: ["id", "slug", "title", "blocks.collection", "blocks.item:block_hero.*", "blocks.item:block_cta.*"],
+    }))) as any[];
+    return rows[0] ?? null;
+  };
+
+  app.get("/admin/pages/:slug", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
+    const page = await pageBlocks(slug);
+    if (!page) return reply.code(404).send({ error: "Страница не найдена" });
+    const blocks: Record<string, unknown> = {};
+    for (const b of page.blocks ?? []) {
+      if (b?.collection && b?.item) blocks[String(b.collection).replace("block_", "")] = b.item;
+    }
+    return { slug: page.slug, title: page.title, blocks };
+  });
+
+  const heroBody = z.object({
+    badge: z.string().optional(), title_pre: z.string().optional(), title_accent: z.string().optional(),
+    subtitle: z.string().optional(), cta_primary: z.string().optional(), cta_secondary: z.string().optional(),
+  });
+  const ctaBody = z.object({ title: z.string().optional(), text: z.string().optional(), button: z.string().optional() });
+
+  app.patch("/admin/pages/:slug", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
+    const body = z.object({ hero: heroBody.optional(), cta: ctaBody.optional() }).parse(req.body);
+    const page = await pageBlocks(slug);
+    if (!page) return reply.code(404).send({ error: "Страница не найдена" });
+    for (const b of page.blocks ?? []) {
+      if (body.hero && b?.collection === "block_hero" && b.item?.id) {
+        await di.request((updateItem as any)("block_hero", b.item.id, body.hero));
+      }
+      if (body.cta && b?.collection === "block_cta" && b.item?.id) {
+        await di.request((updateItem as any)("block_cta", b.item.id, body.cta));
+      }
+    }
     return { ok: true };
   });
 

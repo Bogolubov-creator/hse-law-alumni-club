@@ -34,9 +34,15 @@ export default function Merch() {
         <div className="two-col mt-7 grid grid-cols-3 gap-5">
           {list.map((p) => (
             <button key={p.id} onClick={() => setOpen(p)} className="vcard foc block overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white text-left">
-              <div className="flex h-[200px] items-end bg-ohra p-5" style={{ backgroundImage: "repeating-linear-gradient(45deg,rgba(251,243,232,.1) 0 14px,transparent 14px 28px)" }}>
-                <span className="font-display text-xl font-extrabold text-kost">{p.category}</span>
-              </div>
+              {p.images?.[0] ? (
+                <div className="relative flex h-[200px] items-end bg-white p-5" style={{ background: `#fff url(${p.images[0]}) center / contain no-repeat` }}>
+                  <span className="rounded-full bg-grafit/70 px-3 py-1 font-display text-sm font-bold text-kost">{p.category}</span>
+                </div>
+              ) : (
+                <div className="flex h-[200px] items-end bg-ohra p-5" style={{ backgroundImage: "repeating-linear-gradient(45deg,rgba(251,243,232,.1) 0 14px,transparent 14px 28px)" }}>
+                  <span className="font-display text-xl font-extrabold text-kost">{p.category}</span>
+                </div>
+              )}
               <div className="p-5">
                 <div className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">{p.category}</div>
                 <div className="mt-1 font-display text-[17px] font-semibold leading-tight tracking-tight">{p.title}</div>
@@ -82,6 +88,9 @@ function ProductModal({ product, onClose, onAdd }: { product: Product; onClose: 
     <Modal onClose={onClose} labelledBy="merch-modal-title" maxWidth={460}>
       <div className="relative rounded-[22px] bg-white p-8 shadow-2xl" style={{ animation: "g-pop .26s cubic-bezier(.2,.8,.2,1)" }}>
         <button onClick={onClose} aria-label="Закрыть" className="foc absolute right-4 top-4 h-9 w-9 rounded-[10px] border border-[#E5E7EB] text-grafit-soft">✕</button>
+        {product.images?.[0] && (
+          <img src={product.images[0]} alt={product.title} className="mx-auto mb-4 max-h-[220px] rounded-[14px] object-contain" />
+        )}
         <div className="font-mono text-[11px] uppercase tracking-wide text-ohra-deep">{product.category}</div>
         <h2 id="merch-modal-title" className="mt-2 font-display text-2xl font-bold leading-tight tracking-tight">{product.title}</h2>
         {product.description && <p className="mt-3 text-sm leading-relaxed text-grafit-soft">{product.description}</p>}

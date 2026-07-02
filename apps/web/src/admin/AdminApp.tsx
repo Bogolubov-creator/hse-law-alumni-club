@@ -6,7 +6,7 @@ const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://lo
 import {
   adminLogin, adminToken, setAdminToken, clearAdminToken,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
-  useAdminPrograms, useAdminProducts,
+  useAdminPrograms, useAdminProducts, useAdminPage,
   type AdminOrder, type Member, type AdminProgram, type AdminProduct, type ProgramInput, type ProductInput,
 } from "../lib/admin.js";
 
@@ -260,16 +260,82 @@ const FORMAT_RU: Record<string, string> = { online: "Онлайн", offline: "О
 const CATALOG_STATUS: Record<string, string> = { published: "На витрине", draft: "Черновик", archived: "Архив" };
 
 function Content() {
-  const [tab, setTab] = useState<"programs" | "products">("programs");
+  const [tab, setTab] = useState<"programs" | "products" | "pages">("programs");
+  const tabs = [
+    { key: "programs" as const, label: "Программы ДПО" },
+    { key: "products" as const, label: "Товары (мерч)" },
+    { key: "pages" as const, label: "Страницы" },
+  ];
   return (
     <>
-      <div className="mb-5 flex gap-2">
-        <button onClick={() => setTab("programs")} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === "programs" ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>Программы ДПО</button>
-        <button onClick={() => setTab("products")} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === "products" ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>Товары (мерч)</button>
-        <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc ml-auto rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2.5 font-mono text-[12px] text-grafit-soft">Directus Studio → медиа/новости/блоки</a>
+      <div className="mb-5 flex flex-wrap gap-2">
+        {tabs.map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === t.key ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>{t.label}</button>
+        ))}
+        <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc ml-auto rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2.5 font-mono text-[12px] text-grafit-soft">Directus Studio → медиа/новости</a>
       </div>
-      {tab === "programs" ? <ProgramsAdmin /> : <ProductsAdmin />}
+      {tab === "programs" && <ProgramsAdmin />}
+      {tab === "products" && <ProductsAdmin />}
+      {tab === "pages" && <PagesAdmin />}
     </>
+  );
+}
+
+/** Наполнение главной: hero + CTA-блок. Изменения сразу видны на сайте. */
+function PagesAdmin() {
+  const page = useAdminPage("home");
+  const { savePage } = useAdminMutations();
+  const [hero, setHero] = useState<Record<string, string>>({});
+  const [cta, setCta] = useState<Record<string, string>>({});
+  const [loaded, setLoaded] = useState(false);
+
+  if (page.data && !loaded) {
+    const h = page.data.blocks.hero ?? {}, c = page.data.blocks.cta ?? {};
+    setHero({ badge: h.badge ?? "", title_pre: h.title_pre ?? "", title_accent: h.title_accent ?? "", subtitle: h.subtitle ?? "", cta_primary: h.cta_primary ?? "", cta_secondary: h.cta_secondary ?? "" });
+    setCta({ title: c.title ?? "", text: c.text ?? "", button: c.button ?? "" });
+    setLoaded(true);
+  }
+
+  const hset = (k: string, v: string) => setHero((s) => ({ ...s, [k]: v }));
+  const cset = (k: string, v: string) => setCta((s) => ({ ...s, [k]: v }));
+  const save = () => savePage.mutate({ slug: "home", hero, cta });
+
+  if (page.isLoading) return <Card><p className="font-mono text-sm text-grafit-soft">Загрузка…</p></Card>;
+  if (page.isError) return <Card><p className="font-mono text-sm text-karmin">Не удалось загрузить страницу.</p></Card>;
+
+  return (
+    <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+      <Card>
+        <div className="font-display text-lg font-semibold">Главная · Hero</div>
+        <p className="mt-1 font-mono text-[11px] text-grafit-soft">Первый экран: бейдж, заголовок, подзаголовок, кнопки.</p>
+        <div className="mt-4 space-y-3">
+          <FormField label="Бейдж" value={hero.badge ?? ""} onChange={(v) => hset("badge", v)} />
+          <FormField label="Заголовок (начало)" value={hero.title_pre ?? ""} onChange={(v) => hset("title_pre", v)} />
+          <FormField label="Заголовок (акцент)" value={hero.title_accent ?? ""} onChange={(v) => hset("title_accent", v)} />
+          <FormField label="Подзаголовок" value={hero.subtitle ?? ""} onChange={(v) => hset("subtitle", v)} textarea />
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Кнопка (основная)" value={hero.cta_primary ?? ""} onChange={(v) => hset("cta_primary", v)} />
+            <FormField label="Кнопка (вторая)" value={hero.cta_secondary ?? ""} onChange={(v) => hset("cta_secondary", v)} />
+          </div>
+        </div>
+      </Card>
+      <Card>
+        <div className="font-display text-lg font-semibold">Главная · CTA-блок</div>
+        <p className="mt-1 font-mono text-[11px] text-grafit-soft">Тёмный блок призыва внизу страницы.</p>
+        <div className="mt-4 space-y-3">
+          <FormField label="Заголовок" value={cta.title ?? ""} onChange={(v) => cset("title", v)} />
+          <FormField label="Текст" value={cta.text ?? ""} onChange={(v) => cset("text", v)} textarea />
+          <FormField label="Кнопка" value={cta.button ?? ""} onChange={(v) => cset("button", v)} />
+        </div>
+        <div className="mt-5 flex items-center gap-3">
+          <button onClick={save} disabled={savePage.isPending} className="foc rounded-[11px] bg-ohra px-6 py-2.5 font-semibold text-kost disabled:opacity-60">
+            {savePage.isPending ? "Сохраняем…" : "Сохранить обе секции"}
+          </button>
+          {savePage.isSuccess && <span className="font-mono text-[12px] text-[#1F8A5B]">сохранено ✓ — уже на сайте</span>}
+          {savePage.isError && <span className="font-mono text-[12px] text-karmin">не удалось сохранить</span>}
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -430,7 +496,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
 }
 
 function ProductForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: ProductInput) => void }) {
-  const [f, setF] = useState({ title: "", category: "Одежда", priceRub: "", stock: "10", description: "" });
+  const [f, setF] = useState({ title: "", category: "Одежда", priceRub: "", stock: "10", description: "", image: "" });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
   const valid = f.title.trim().length >= 3 && Number(f.priceRub) > 0;
   const submit = (e: FormEvent) => {
@@ -439,6 +505,7 @@ function ProductForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
     onSave({
       title: f.title.trim(), category: f.category, price: Math.round(Number(f.priceRub) * 100),
       stock: Number(f.stock) || 0, description: f.description.trim() || null,
+      images: f.image.trim() ? [f.image.trim()] : null,
     });
   };
   return (
@@ -458,6 +525,7 @@ function ProductForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
             <FormField label="Остаток, шт." value={f.stock} onChange={(v) => set("stock", v.replace(/[^\d]/g, ""))} />
           </div>
           <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
+          <FormField label="Фото (ссылка или /assets/…)" value={f.image} onChange={(v) => set("image", v)} ph="/assets/merch-hoodie.jpg" />
           <p className="font-mono text-[11px] text-grafit-soft">Размеры/варианты добавляются позже в Directus Studio (поле variants_json).</p>
         </div>
         <div className="mt-5 flex gap-2">

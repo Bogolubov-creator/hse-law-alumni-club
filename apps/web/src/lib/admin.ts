@@ -31,7 +31,10 @@ export type Member = { id: string; fio: string | null; cohort: string | null; st
 export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; dates?: { start?: string } | null; document?: string | null; description?: string | null };
 export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
 export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };
-export type ProductInput = { title: string; category: string; price: number; stock?: number; description?: string | null; status?: string };
+export type ProductInput = { title: string; category: string; price: number; stock?: number; description?: string | null; images?: string[] | null; status?: string };
+export type PageHeroInput = { badge?: string; title_pre?: string; title_accent?: string; subtitle?: string; cta_primary?: string; cta_secondary?: string };
+export type PageCtaInput = { title?: string; text?: string; button?: string };
+export type AdminPage = { slug: string; title: string; blocks: { hero?: PageHeroInput & { id?: string }; cta?: PageCtaInput & { id?: string } } };
 
 export function useOverview() {
   return useQuery({ queryKey: ["adm", "overview"], queryFn: () => req<Overview>("GET", "/admin/overview"), retry: false });
@@ -47,6 +50,9 @@ export function useAdminPrograms() {
 }
 export function useAdminProducts() {
   return useQuery({ queryKey: ["adm", "products"], queryFn: () => req<AdminProduct[]>("GET", "/admin/products"), retry: false });
+}
+export function useAdminPage(slug: string) {
+  return useQuery({ queryKey: ["adm", "page", slug], queryFn: () => req<AdminPage>("GET", `/admin/pages/${slug}`), retry: false });
 }
 
 export function useAdminMutations() {
@@ -64,5 +70,6 @@ export function useAdminMutations() {
     patchProduct: useMutation({ mutationFn: (v: { id: string } & Partial<ProductInput>) => req("PATCH", `/admin/products/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
     deleteProduct: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/products/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
     syncDpo: useMutation({ mutationFn: () => req<{ ok: boolean; created: number; updated: number; archived: number; total: number }>("POST", "/admin/dpo-sync"), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
+    savePage: useMutation({ mutationFn: (v: { slug: string; hero?: PageHeroInput; cta?: PageCtaInput }) => req("PATCH", `/admin/pages/${v.slug}`, { hero: v.hero, cta: v.cta }), onSuccess: (_r, v) => { refetch(); qc.invalidateQueries({ queryKey: ["page", v.slug] }); } }),
   };
 }

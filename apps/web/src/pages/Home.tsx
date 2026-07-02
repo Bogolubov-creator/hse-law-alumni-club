@@ -282,13 +282,13 @@ export default function Home() {
         <p data-reveal style={{ color: "#6B7280", fontSize: 16, maxWidth: 540, margin: "0 0 34px" }}>Две витрины ведут к общей корзине и заявке – оплату ведёт учебный офис.</p>
         <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 26 }}>
           {[
-            { to: "/dpo", bg: "#11296B", tag: "[ обложка · ДПО ]", title2: "ДПО", h: "Программы доп. образования", p: "Курсы и интенсивы со скидкой выпускника. Фильтры по направлению, формату и длительности.", meta: "6 программ · скидка выпускника 5%", metaColor: "#2E6FAE", cta: "Открыть →", ctaColor: "#11296B", delay: undefined as number | undefined },
-            { to: "/merch", bg: "#EC5A13", tag: "[ обложка · Мерч ]", title2: "Мерч", h: "Фирменный мерч клуба", p: "Одежда и аксессуары с фасеточной Фемидой. Размеры, цвета, самовывоз или доставка.", meta: "новинки сезона", metaColor: "#B5331B", cta: "Открыть →", ctaColor: "#C9450E", delay: 90 },
+            { to: "/dpo", bg: "#11296B", img: "/assets/dpo-hero.jpg", imgPos: "center", title2: "ДПО", h: "Программы доп. образования", p: "Курсы и интенсивы со скидкой выпускника. Фильтры по направлению, формату и длительности.", meta: "актуальный набор ВШЭ · скидка выпускника", metaColor: "#2E6FAE", cta: "Открыть →", ctaColor: "#11296B", delay: undefined as number | undefined },
+            { to: "/merch", bg: "#EC5A13", img: "/assets/merch-hoodie.jpg", imgPos: "center 30%", title2: "Мерч", h: "Фирменный мерч клуба", p: "Одежда и аксессуары с фасеточной Фемидой. Размеры, цвета, самовывоз или доставка.", meta: "новинки сезона", metaColor: "#B5331B", cta: "Открыть →", ctaColor: "#C9450E", delay: 90 },
           ].map((v) => (
             <Link key={v.to} to={v.to} data-reveal data-reveal-delay={v.delay} data-tilt className="vcard foc" style={{ textDecoration: "none", color: "inherit", borderRadius: 22, overflow: "hidden", border: "1px solid #E5E7EB", background: "#fff", display: "block" }}>
-              <div style={{ position: "relative", height: 230, background: v.bg, backgroundImage: "repeating-linear-gradient(45deg,rgba(251,243,232,.09) 0 14px,transparent 14px 28px)", display: "flex", alignItems: "flex-end", padding: 24 }}>
-                <span style={{ ...mono, fontSize: 11, color: "rgba(251,243,232,.65)", position: "absolute", top: 20, left: 24 }}>{v.tag}</span>
-                <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: "#FBF3E8", letterSpacing: "-0.01em" }}>{v.title2}</span>
+              <div style={{ position: "relative", height: 230, background: `${v.bg} url(${v.img}) ${v.imgPos} / cover no-repeat`, display: "flex", alignItems: "flex-end", padding: 24 }}>
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(20,24,31,0) 40%, rgba(20,24,31,.55))" }} />
+                <span style={{ position: "relative", ...disp, fontWeight: 800, fontSize: 30, color: "#FBF3E8", letterSpacing: "-0.01em", textShadow: "0 2px 14px rgba(0,0,0,.45)" }}>{v.title2}</span>
               </div>
               <div style={{ padding: 24 }}>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>{v.h}</div>
