@@ -10,10 +10,12 @@ export function clearAdminToken() { localStorage.removeItem(ADMIN_TOKEN); }
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const t = adminToken();
+  const hasBody = body !== undefined;
   const res = await fetch(`/api${path}`, {
     method,
-    headers: { accept: "application/json", "content-type": "application/json", ...(t ? { authorization: `Bearer ${t}` } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
+    // content-type только при наличии тела — иначе Fastify падает на пустом JSON
+    headers: { accept: "application/json", ...(hasBody ? { "content-type": "application/json" } : {}), ...(t ? { authorization: `Bearer ${t}` } : {}) },
+    body: hasBody ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as any)?.error || `API ${res.status}`);
@@ -28,7 +30,7 @@ export type Overview = { new_orders: number; orders_count: number; pending_verif
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
 export type Member = { id: string; fio: string | null; cohort: string | null; status: string; verification_status: string; points_cached: number; level_cached: string; personal_discount: number };
-export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; dates?: { start?: string } | null; document?: string | null; description?: string | null };
+export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; enrollment?: "actual" | "nonactual" | null; dates?: { start?: string } | null; document?: string | null; description?: string | null };
 export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
 export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };
 export type ProductInput = { title: string; category: string; price: number; stock?: number; description?: string | null; images?: string[] | null; status?: string };

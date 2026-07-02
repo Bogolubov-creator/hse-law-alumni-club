@@ -4,18 +4,23 @@ import { directus } from "./directus.js";
 
 /**
  * Автосинхронизация каталога ДПО с сайтом ВШЭ (факультет права, orgUnit 22753).
+ * Забираются ОБА листинга, как на hse.ru:
+ *   • актуальный набор  …/edu/dpo/?orgUnit=22753            → enrollment=actual
+ *   • неактуальные      …/edu/dpo/?onlyNonactual=1&orgUnit= → enrollment=nonactual
+ * (программа в обоих списках считается актуальной).
  *
  * Контракт:
- *  • карточка есть на hse.ru → upsert (сопоставление по source_url/hseId, затем
- *    по нормализованному названию) — обновляются цена/формат/старт/длительность/
- *    документ, статус published; ручные поля (описание, модули, направление)
- *    НЕ затираются;
- *  • управляемой синком программы (есть source_url) больше нет на сайте → archived;
- *  • программы, добавленные вручную в админке (без source_url), синк не трогает;
- *  • защита от пустого/битого парса: < 3 карточек → синк отменяется с ошибкой.
+ *  • карточка есть на hse.ru → upsert (по source_url/hseId, затем по названию);
+ *    обновляются цена/формат/старт/длительность/документ/enrollment; ручные
+ *    описание/модули/направление не затираются;
+ *  • управляемая синком программа пропала из обоих списков → archived;
+ *  • ручные программы (без source_url) не трогаются;
+ *  • пустой/битый парс актуального списка (< 3 карточек) → синк отменяется.
  */
 
-const SOURCE_URL = process.env.HSE_DPO_URL || "https://www.hse.ru/edu/dpo/?orgUnit=22753";
+const BASE_URL = process.env.HSE_DPO_URL || "https://www.hse.ru/edu/dpo/?orgUnit=22753";
+const NONACTUAL_URL = process.env.HSE_DPO_NONACTUAL_URL
+  || BASE_URL + (BASE_URL.includes("?") ? "&" : "?") + "onlyNonactual=1";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36";
 const DOC_BY_TYPE = {
   "ПК": "Удостоверение о повышении квалификации НИУ ВШЭ",
@@ -24,15 +29,34 @@ const DOC_BY_TYPE = {
 
 const di = directus;
 
-export async function fetchHseDpo(): Promise<HseDpoCard[]> {
-  const res = await fetch(SOURCE_URL, { headers: { "user-agent": UA, accept: "text/html" } });
-  if (!res.ok) throw new Error(`hse.ru: HTTP ${res.status}`);
-  const cards = parseHseDpoCards(await res.text());
-  if (cards.length < 3) throw new Error(`hse.ru: подозрительно мало карточек (${cards.length}) — синк отменён, каталог не тронут`);
-  return cards;
+async function fetchList(url: string): Promise<HseDpoCard[]> {
+  const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html" } });
+  if (!res.ok) throw new Error(`hse.ru: HTTP ${res.status} (${url})`);
+  return parseHseDpoCards(await res.text());
 }
 
-export interface DpoSyncResult { created: number; updated: number; archived: number; total: number }
+export type Enrollment = "actual" | "nonactual";
+export type TaggedCard = HseDpoCard & { enrollment: Enrollment };
+
+/** Оба листинга hse.ru; при дубле hseId актуальный статус приоритетнее. */
+export async function fetchHseDpo(): Promise<TaggedCard[]> {
+  const actual = await fetchList(BASE_URL);
+  if (actual.length < 3) throw new Error(`hse.ru: подозрительно мало карточек (${actual.length}) — синк отменён, каталог не тронут`);
+  // Неактуальный список вторичен: его сбой не должен ронять весь синк.
+  let nonactual: HseDpoCard[] = [];
+  try {
+    nonactual = await fetchList(NONACTUAL_URL);
+  } catch (e) {
+    console.error("[dpo-sync] неактуальный список недоступен:", (e as Error).message);
+  }
+  const seen = new Set(actual.map((c) => c.hseId));
+  return [
+    ...actual.map((c) => ({ ...c, enrollment: "actual" as const })),
+    ...nonactual.filter((c) => !seen.has(c.hseId)).map((c) => ({ ...c, enrollment: "nonactual" as const })),
+  ];
+}
+
+export interface DpoSyncResult { created: number; updated: number; archived: number; actual: number; nonactual: number; total: number }
 
 export async function syncDpoCatalog(): Promise<DpoSyncResult> {
   const cards = await fetchHseDpo();
@@ -54,7 +78,7 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
 
   for (const c of cards) {
     const match = byHseId.get(c.hseId) ?? byTitle.get(normalizeTitle(c.title));
-    if (match) {
+    if (match && !matchedIds.has(match.id)) {
       matchedIds.add(match.id);
       const patch: Record<string, unknown> = {
         price: c.priceKop,
@@ -62,12 +86,13 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
         dates: c.start ? { start: c.start } : null,
         document: DOC_BY_TYPE[c.type],
         source_url: c.url,
+        enrollment: c.enrollment,
         status: "published",
       };
       if (c.duration) patch.duration = c.duration; // нет на сайте — оставляем прежнюю
       await di.request((updateItem as any)("programs", match.id, patch));
       updated++;
-    } else {
+    } else if (!match) {
       let slug = slugifyRu(c.title.split(" / ")[0]!);
       while (slugs.has(slug)) slug = `${slug}-${c.hseId.slice(-4)}`;
       slugs.add(slug);
@@ -77,13 +102,14 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
         format: c.format, duration: c.duration ?? "уточняется",
         price: c.priceKop, dates: c.start ? { start: c.start } : null,
         document: DOC_BY_TYPE[c.type], source_url: c.url,
+        enrollment: c.enrollment,
         description: null, status: "published",
       }));
       created++;
     }
   }
 
-  // В архив — только управляемые синком (source_url задан) и пропавшие с сайта.
+  // В архив — только управляемые синком (source_url задан) и пропавшие из ОБОИХ списков.
   for (const r of existing) {
     if (r.source_url && !matchedIds.has(r.id) && r.status !== "archived") {
       await di.request((updateItem as any)("programs", r.id, { status: "archived" }));
@@ -91,5 +117,10 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
     }
   }
 
-  return { created, updated, archived, total: cards.length };
+  return {
+    created, updated, archived,
+    actual: cards.filter((c) => c.enrollment === "actual").length,
+    nonactual: cards.filter((c) => c.enrollment === "nonactual").length,
+    total: cards.length,
+  };
 }

@@ -20,6 +20,7 @@ export const pageHomeSchema = z.object({
 
 export const programSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(), direction: z.string(), format: z.string(), duration: z.string(), price: z.number(),
+  enrollment: z.enum(["actual", "nonactual"]).nullable().optional(), // актуальный набор / набор закрыт
 });
 export const programsSchema = z.array(programSchema);
 export const programModuleSchema = z.object({ title: z.string(), hours: z.number().optional(), points: z.array(z.string()).optional() });

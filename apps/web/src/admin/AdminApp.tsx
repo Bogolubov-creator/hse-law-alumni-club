@@ -363,13 +363,13 @@ function ProgramsAdmin() {
           <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить программу</button>
         </div>
       </div>
-      {syncDpo.isSuccess && <p className="border-t border-[#f0ece2] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[#1F8A5B]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (на сайте {syncDpo.data.total}). Ночная автосинхронизация — ежедневно в 05:00.</p>}
+      {syncDpo.isSuccess && <p className="border-t border-[#f0ece2] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[#1F8A5B]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (актуальный набор {(syncDpo.data as any).actual ?? "—"}, закрытые {(syncDpo.data as any).nonactual ?? "—"}). Ночная автосинхронизация — ежедневно в 05:00.</p>}
       {syncDpo.isError && <p className="border-t border-[#f0ece2] px-6 py-2.5 font-mono text-[12px] text-karmin">Синхронизация не удалась: {(syncDpo.error as Error).message}</p>}
       {(programs.data ?? []).map((p) => (
         <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm max-md:grid-cols-1">
           <div className="min-w-0">
             <div className="truncate font-semibold">{p.title}</div>
-            <div className="font-mono text-[11px] text-grafit-soft">{p.direction} · {FORMAT_RU[p.format] ?? p.format} · {p.duration}{p.dates?.start ? ` · старт ${p.dates.start}` : ""}</div>
+            <div className="font-mono text-[11px] text-grafit-soft">{p.direction} · {FORMAT_RU[p.format] ?? p.format} · {p.duration}{p.dates?.start ? ` · старт ${p.dates.start}` : ""}{p.enrollment === "nonactual" ? " · набор закрыт" : ""}</div>
           </div>
           <span className="font-mono text-[13px]">{rub(p.price)}</span>
           <span className="font-mono text-[11px] text-grafit-soft">{p.slug}</span>

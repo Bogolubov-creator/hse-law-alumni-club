@@ -116,7 +116,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!requireAdmin(req, reply)) return;
     return di.request(readItems("programs", {
       sort: ["title"], limit: -1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "status", "dates", "document", "description"],
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "status", "enrollment", "dates", "document", "description"],
     }));
   });
 

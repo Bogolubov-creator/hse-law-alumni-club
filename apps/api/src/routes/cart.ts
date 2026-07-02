@@ -23,10 +23,11 @@ async function saveCart(token: string, items: StoredCartItem[]) {
   else await di.request((createItem as any)("carts", { session_token: token, items_json: items, updated_at: new Date().toISOString() }));
 }
 
-export async function lookup(type: "dpo" | "merch", slug: string): Promise<{ title: string; price: number } | null> {
+export async function lookup(type: "dpo" | "merch", slug: string): Promise<{ title: string; price: number; enrollment?: string | null } | null> {
   const collection = type === "dpo" ? "programs" : "products";
-  const rows = (await di.request(readItems(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields: ["title", "price"] }))) as any[];
-  return rows[0] ? { title: rows[0].title, price: rows[0].price ?? 0 } : null;
+  const fields = type === "dpo" ? ["title", "price", "enrollment"] : ["title", "price"];
+  const rows = (await di.request((readItems as any)(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields }))) as any[];
+  return rows[0] ? { title: rows[0].title, price: rows[0].price ?? 0, enrollment: rows[0].enrollment ?? null } : null;
 }
 
 export async function cartRoutes(app: FastifyInstance) {
@@ -43,6 +44,9 @@ export async function cartRoutes(app: FastifyInstance) {
     const body = cartItemSchema.parse(req.body);
     const info = await lookup(body.type, body.ref_id);
     if (!info) return reply.code(404).send({ error: "Позиция не найдена" });
+    // Набор закрыт — заявка не оформляется (программа в каталоге справочно).
+    if (body.type === "dpo" && info.enrollment === "nonactual")
+      return reply.code(400).send({ error: "Набор на эту программу закрыт" });
     const cart = await loadCart(token);
     const items = addLine(cart?.items ?? [], {
       type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null,

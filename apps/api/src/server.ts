@@ -25,7 +25,9 @@ app.setErrorHandler((err, _req, reply) => {
   if (err instanceof ZodError) return reply.code(400).send({ error: "Некорректные данные", details: err.issues.map((i) => i.message) });
   app.log.error(err);
   const code = (err as { statusCode?: number }).statusCode;
-  return reply.code(code && code < 500 ? code : 500).send({ error: "Внутренняя ошибка" });
+  // 4xx — честное сообщение (это ошибка запроса, не наша); 5xx не раскрываем.
+  if (code && code < 500) return reply.code(code).send({ error: (err as Error).message || "Некорректный запрос" });
+  return reply.code(500).send({ error: "Внутренняя ошибка" });
 });
 
 // Заголовки безопасности (API всегда JSON и не встраивается во фрейм).

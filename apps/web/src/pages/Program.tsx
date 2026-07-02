@@ -44,6 +44,7 @@ export default function Program() {
                 <Tag>{FORMAT_LABEL[p.format] ?? p.format}</Tag>
                 <Tag>{p.duration}</Tag>
                 {totalHours > 0 && <Tag>{totalHours} ак. ч.</Tag>}
+                {p.enrollment === "nonactual" && <span className="rounded-full bg-[rgba(107,114,128,.14)] px-3 py-1.5 font-mono text-[12px] text-grafit-soft">набор закрыт</span>}
               </div>
               {p.description && (
                 <div className="mt-7">
@@ -117,9 +118,18 @@ export default function Program() {
                     {p.document && <Fact k="Документ" v={p.document} />}
                   </dl>
 
-                  <button disabled={add.isPending} onClick={addToCart} className="foc mt-5 w-full rounded-[12px] bg-hse-blue py-3.5 font-semibold text-kost disabled:opacity-60">В корзину</button>
-                  <button disabled={add.isPending} onClick={leaveRequest} className="foc mt-2 w-full rounded-[12px] border border-[#E5E7EB] py-3 font-semibold">Оставить заявку</button>
-                  <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Оплаты на сайте нет — оформление ведёт к заявке, менеджер учебного офиса свяжется с вами.</p>
+                  {p.enrollment === "nonactual" ? (
+                    <>
+                      <div className="mt-5 w-full rounded-[12px] bg-kost-2 py-3.5 text-center font-semibold text-grafit-soft">Набор закрыт</div>
+                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Набор на эту программу завершён. Следите за новым набором — каталог обновляется с hse.ru автоматически.</p>
+                    </>
+                  ) : (
+                    <>
+                      <button disabled={add.isPending} onClick={addToCart} className="foc mt-5 w-full rounded-[12px] bg-hse-blue py-3.5 font-semibold text-kost disabled:opacity-60">В корзину</button>
+                      <button disabled={add.isPending} onClick={leaveRequest} className="foc mt-2 w-full rounded-[12px] border border-[#E5E7EB] py-3 font-semibold">Оставить заявку</button>
+                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Оформление ведёт к заявке — менеджер учебного офиса свяжется с вами.</p>
+                    </>
+                  )}
                 </div>
               </div>
             </aside>

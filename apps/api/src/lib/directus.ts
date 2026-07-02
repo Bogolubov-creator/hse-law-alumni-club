@@ -22,7 +22,7 @@ export interface LevelRow { id: string; key: string; title: string; min_points: 
 export interface ProgramRow {
   id: string; slug: string; title: string; direction: string; format: string; duration: string;
   price: number; dates: unknown; modules: unknown; teachers: unknown; description: string | null; document: string | null;
-  source_url: string | null; status: string;
+  source_url: string | null; enrollment: "actual" | "nonactual" | null; status: string;
 }
 export interface ProductRow {
   id: string; slug: string; title: string; category: string; price: number;

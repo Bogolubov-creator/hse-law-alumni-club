@@ -23,8 +23,12 @@ export default function Dpo() {
   const [fmt, setFmt] = useState<string | null>(null);
   const [dur, setDur] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("default");
+  // Как на hse.ru: «Актуальный набор» отдельно от полного каталога.
+  const [showAll, setShowAll] = useState(false);
 
-  const all = programs.data ?? [];
+  const catalog = programs.data ?? [];
+  const actualCount = catalog.filter((p) => p.enrollment !== "nonactual").length;
+  const all = showAll ? catalog : catalog.filter((p) => p.enrollment !== "nonactual");
   const directions = useMemo(() => [...new Set(all.map((p) => p.direction).filter(Boolean))], [all]);
   const formats = useMemo(() => [...new Set(all.map((p) => p.format).filter(Boolean))], [all]);
   const durations = useMemo(() => [...new Set(all.map((p) => p.duration).filter(Boolean))].sort(), [all]);
@@ -48,8 +52,14 @@ export default function Dpo() {
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Программы по праву со скидкой выпускника</h1>
         <p className="mt-3 max-w-[600px] text-grafit-soft">Каталог программ дополнительного образования факультета права. Цена выпускника применяется автоматически после верификации в личном кабинете.</p>
 
+        {/* НАБОР: актуальный / все (как на hse.ru) */}
+        <div className="mt-7 flex flex-wrap gap-2">
+          <button onClick={() => setShowAll(false)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${!showAll ? "bg-hse-blue text-kost" : "border border-[#E5E7EB] bg-white"}`}>Актуальный набор · {actualCount}</button>
+          <button onClick={() => setShowAll(true)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${showAll ? "bg-hse-blue text-kost" : "border border-[#E5E7EB] bg-white"}`}>Все программы · {catalog.length}</button>
+        </div>
+
         {/* FILTERS */}
-        <div className="mt-7 flex flex-col gap-3">
+        <div className="mt-5 flex flex-col gap-3">
           <FilterRow label="Направление">
             <Chip active={!dir} onClick={() => setDir(null)}>Все</Chip>
             {directions.map((d) => <Chip key={d} active={dir === d} onClick={() => setDir(dir === d ? null : d)}>{d}</Chip>)}
@@ -97,6 +107,7 @@ export default function Dpo() {
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
                     <Tag>{FORMAT_LABEL[p.format] ?? p.format}</Tag>
                     <Tag>{p.duration}</Tag>
+                    {p.enrollment === "nonactual" && <span className="rounded-full bg-[rgba(107,114,128,.14)] px-2.5 py-1 font-mono text-[11px] text-grafit-soft">набор закрыт</span>}
                   </div>
                   <div className="mt-auto pt-4">
                     <div className="flex items-baseline gap-2">
@@ -106,7 +117,9 @@ export default function Dpo() {
                     {discount > 0 && <div className="mt-1"><DiscountBadge percent={discount} /></div>}
                     <div className="mt-3 flex gap-2">
                       <Link to={`/dpo/${p.slug}`} className="foc flex-1 rounded-[12px] border border-hse-blue py-3 text-center font-semibold text-hse-blue">Подробнее</Link>
-                      <button disabled={add.isPending} onClick={() => add.mutate({ type: "dpo", ref_id: p.slug }, { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") })} className="foc flex-1 rounded-[12px] bg-hse-blue py-3 font-semibold text-kost disabled:opacity-60">В корзину</button>
+                      {p.enrollment !== "nonactual" && (
+                        <button disabled={add.isPending} onClick={() => add.mutate({ type: "dpo", ref_id: p.slug }, { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") })} className="foc flex-1 rounded-[12px] bg-hse-blue py-3 font-semibold text-kost disabled:opacity-60">В корзину</button>
+                      )}
                     </div>
                   </div>
                 </div>
