@@ -28,6 +28,10 @@ export type Overview = { new_orders: number; orders_count: number; pending_verif
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
 export type Member = { id: string; fio: string | null; cohort: string | null; status: string; verification_status: string; points_cached: number; level_cached: string; personal_discount: number };
+export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; dates?: { start?: string } | null; document?: string | null; description?: string | null };
+export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
+export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };
+export type ProductInput = { title: string; category: string; price: number; stock?: number; description?: string | null; status?: string };
 
 export function useOverview() {
   return useQuery({ queryKey: ["adm", "overview"], queryFn: () => req<Overview>("GET", "/admin/overview"), retry: false });
@@ -38,6 +42,12 @@ export function useAdminOrders() {
 export function useMembers() {
   return useQuery({ queryKey: ["adm", "members"], queryFn: () => req<Member[]>("GET", "/admin/members"), retry: false });
 }
+export function useAdminPrograms() {
+  return useQuery({ queryKey: ["adm", "programs"], queryFn: () => req<AdminProgram[]>("GET", "/admin/programs"), retry: false });
+}
+export function useAdminProducts() {
+  return useQuery({ queryKey: ["adm", "products"], queryFn: () => req<AdminProduct[]>("GET", "/admin/products"), retry: false });
+}
 
 export function useAdminMutations() {
   const qc = useQueryClient();
@@ -46,5 +56,12 @@ export function useAdminMutations() {
     setOrderStatus: useMutation({ mutationFn: (v: { id: string; status: string }) => req("PATCH", `/admin/orders/${v.id}`, { status: v.status }), onSuccess: refetch }),
     patchMember: useMutation({ mutationFn: (v: { id: string; verification_status?: string; personal_discount?: number }) => req("PATCH", `/admin/members/${v.id}`, { verification_status: v.verification_status, personal_discount: v.personal_discount }), onSuccess: refetch }),
     addPoints: useMutation({ mutationFn: (v: { id: string; delta: number; comment?: string }) => req("POST", `/admin/members/${v.id}/points`, { delta: v.delta, reason: "manual", comment: v.comment }), onSuccess: refetch }),
+    // Каталог: программы ДПО и мерч (инвалидация и публичных витрин тоже)
+    createProgram: useMutation({ mutationFn: (v: ProgramInput) => req("POST", "/admin/programs", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
+    patchProgram: useMutation({ mutationFn: (v: { id: string } & Partial<ProgramInput>) => req("PATCH", `/admin/programs/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
+    deleteProgram: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/programs/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
+    createProduct: useMutation({ mutationFn: (v: ProductInput) => req("POST", "/admin/products", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
+    patchProduct: useMutation({ mutationFn: (v: { id: string } & Partial<ProductInput>) => req("PATCH", `/admin/products/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
+    deleteProduct: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/products/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
   };
 }

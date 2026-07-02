@@ -6,7 +6,8 @@ const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://lo
 import {
   adminLogin, adminToken, setAdminToken, clearAdminToken,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
-  type AdminOrder, type Member,
+  useAdminPrograms, useAdminProducts,
+  type AdminOrder, type Member, type AdminProgram, type AdminProduct, type ProgramInput, type ProductInput,
 } from "../lib/admin.js";
 
 /**
@@ -254,15 +255,222 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
   );
 }
 
+// ── Контент: управление каталогом (программы ДПО + мерч) ─────────────
+const FORMAT_RU: Record<string, string> = { online: "Онлайн", offline: "Очно", blended: "Смешанный" };
+const CATALOG_STATUS: Record<string, string> = { published: "На витрине", draft: "Черновик", archived: "Архив" };
+
 function Content() {
+  const [tab, setTab] = useState<"programs" | "products">("programs");
   return (
-    <Card>
-      <div className="font-display text-lg font-semibold">Контент сайта</div>
-      <p className="mt-2 max-w-[560px] text-sm text-grafit-soft">
-        Новости, программы ДПО, товары и блоки главной страницы редактируются в админке Directus – там готовые формы, загрузка медиа и история изменений. Изменения сразу попадают на сайт через API.
-      </p>
-      <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc mt-4 inline-block rounded-[11px] bg-grafit px-5 py-3 font-semibold text-kost">Открыть Directus Studio →</a>
-      <p className="mt-3 font-mono text-[11px] text-grafit-soft">Адрес задаётся переменной VITE_DIRECTUS_URL (на проде – https://admin.&lt;домен&gt;).</p>
-    </Card>
+    <>
+      <div className="mb-5 flex gap-2">
+        <button onClick={() => setTab("programs")} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === "programs" ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>Программы ДПО</button>
+        <button onClick={() => setTab("products")} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === "products" ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>Товары (мерч)</button>
+        <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc ml-auto rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2.5 font-mono text-[12px] text-grafit-soft">Directus Studio → медиа/новости/блоки</a>
+      </div>
+      {tab === "programs" ? <ProgramsAdmin /> : <ProductsAdmin />}
+    </>
+  );
+}
+
+function StatusToggle({ status, onSet, busy }: { status: string; onSet: (s: string) => void; busy: boolean }) {
+  return (
+    <select value={status} disabled={busy} onChange={(e) => onSet(e.target.value)} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : status === "draft" ? "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]" : "bg-[rgba(107,114,128,.14)] text-grafit-soft"}`}>
+      {Object.entries(CATALOG_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+    </select>
+  );
+}
+
+function ProgramsAdmin() {
+  const programs = useAdminPrograms();
+  const { createProgram, patchProgram, deleteProgram } = useAdminMutations();
+  const [showCreate, setShowCreate] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<AdminProgram | null>(null);
+
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+      <div className="flex items-center justify-between gap-3 bg-[#FBF7EF] px-6 py-3.5">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Каталог ДПО · {programs.data?.length ?? "…"} программ</span>
+        <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить программу</button>
+      </div>
+      {(programs.data ?? []).map((p) => (
+        <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm max-md:grid-cols-1">
+          <div className="min-w-0">
+            <div className="truncate font-semibold">{p.title}</div>
+            <div className="font-mono text-[11px] text-grafit-soft">{p.direction} · {FORMAT_RU[p.format] ?? p.format} · {p.duration}{p.dates?.start ? ` · старт ${p.dates.start}` : ""}</div>
+          </div>
+          <span className="font-mono text-[13px]">{rub(p.price)}</span>
+          <span className="font-mono text-[11px] text-grafit-soft">{p.slug}</span>
+          <StatusToggle status={p.status} busy={patchProgram.isPending} onSet={(s) => patchProgram.mutate({ id: p.id, status: s })} />
+          <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
+        </div>
+      ))}
+      {programs.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Программ нет — добавьте первую.</p>}
+      {(createProgram.isError || deleteProgram.isError || patchProgram.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение — попробуйте ещё раз.</p>}
+
+      {showCreate && <ProgramForm busy={createProgram.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProgram.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
+      {confirmDel && (
+        <ConfirmDelete
+          title={confirmDel.title} busy={deleteProgram.isPending}
+          hint="Программа исчезнет с витрины. Уже оформленные заявки сохранятся (в них снимок позиции)."
+          onCancel={() => setConfirmDel(null)}
+          onConfirm={() => deleteProgram.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProductsAdmin() {
+  const products = useAdminProducts();
+  const { createProduct, patchProduct, deleteProduct } = useAdminMutations();
+  const [showCreate, setShowCreate] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<AdminProduct | null>(null);
+
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+      <div className="flex items-center justify-between gap-3 bg-[#FBF7EF] px-6 py-3.5">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Мерч · {products.data?.length ?? "…"} товаров</span>
+        <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить товар</button>
+      </div>
+      {(products.data ?? []).map((p) => (
+        <div key={p.id} className="grid grid-cols-[1fr_150px_110px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm max-md:grid-cols-1">
+          <div className="min-w-0">
+            <div className="truncate font-semibold">{p.title}</div>
+            <div className="font-mono text-[11px] text-grafit-soft">{p.category}{p.variants_json?.length ? ` · ${p.variants_json.length} вар.` : ""}</div>
+          </div>
+          <span className="font-mono text-[13px]">{rub(p.price)}</span>
+          <span className="font-mono text-[12px] text-grafit-soft">склад: {p.stock}</span>
+          <StatusToggle status={p.status} busy={patchProduct.isPending} onSet={(s) => patchProduct.mutate({ id: p.id, status: s })} />
+          <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
+        </div>
+      ))}
+      {products.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Товаров нет — добавьте первый.</p>}
+      {(createProduct.isError || deleteProduct.isError || patchProduct.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение — попробуйте ещё раз.</p>}
+
+      {showCreate && <ProductForm busy={createProduct.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProduct.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
+      {confirmDel && (
+        <ConfirmDelete
+          title={confirmDel.title} busy={deleteProduct.isPending}
+          hint="Товар исчезнет с витрины. Уже оформленные заявки сохранятся (в них снимок позиции)."
+          onCancel={() => setConfirmDel(null)}
+          onConfirm={() => deleteProduct.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmDelete({ title, hint, busy, onCancel, onConfirm }: { title: string; hint: string; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
+  return (
+    <Modal onClose={onCancel} labelledBy="confirm-del-title" maxWidth={420}>
+      <div className="rounded-[18px] bg-white p-7">
+        <h3 id="confirm-del-title" className="font-display text-lg font-bold">Удалить «{title}»?</h3>
+        <p className="mt-2 text-sm text-grafit-soft">{hint}</p>
+        <div className="mt-5 flex gap-2">
+          <button onClick={onConfirm} disabled={busy} className="foc flex-1 rounded-[11px] bg-karmin py-2.5 font-semibold text-kost disabled:opacity-60">{busy ? "Удаляем…" : "Удалить"}</button>
+          <button onClick={onCancel} className="foc flex-1 rounded-[11px] border border-[#E5E7EB] py-2.5 font-semibold">Отмена</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// Цена вводится в рублях, хранится в копейках.
+function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: ProgramInput) => void }) {
+  const [f, setF] = useState({ title: "", direction: "", format: "online", duration: "", priceRub: "", start: "", description: "" });
+  const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const valid = f.title.trim().length >= 3 && f.direction.trim().length >= 2 && f.duration.trim() && Number(f.priceRub) > 0;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!valid) return;
+    onSave({
+      title: f.title.trim(), direction: f.direction.trim(), format: f.format, duration: f.duration.trim(),
+      price: Math.round(Number(f.priceRub) * 100),
+      start: f.start.trim() || null, description: f.description.trim() || null,
+      document: "Удостоверение о повышении квалификации НИУ ВШЭ",
+    });
+  };
+  return (
+    <Modal onClose={onClose} labelledBy="prog-form-title" maxWidth={520}>
+      <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
+        <h3 id="prog-form-title" className="font-display text-lg font-bold">Новая программа ДПО</h3>
+        <div className="mt-4 space-y-3">
+          <FormField label="Название" value={f.title} onChange={(v) => set("title", v)} required />
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Направление" value={f.direction} onChange={(v) => set("direction", v)} required />
+            <label className="block">
+              <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Формат</span>
+              <select value={f.format} onChange={(e) => set("format", e.target.value)} className="foc mt-1.5 w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-[15px]">
+                {Object.entries(FORMAT_RU).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Длительность" value={f.duration} onChange={(v) => set("duration", v)} ph="напр. 6 недель" required />
+            <FormField label="Цена, ₽" value={f.priceRub} onChange={(v) => set("priceRub", v.replace(/[^\d]/g, ""))} ph="50000" required />
+          </div>
+          <FormField label="Старт (дата словами)" value={f.start} onChange={(v) => set("start", v)} ph="напр. 15 сентября 2026" />
+          <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button type="submit" disabled={!valid || busy} className="foc flex-1 rounded-[11px] bg-ohra py-2.5 font-semibold text-kost disabled:opacity-50">{busy ? "Создаём…" : "Создать"}</button>
+          <button type="button" onClick={onClose} className="foc flex-1 rounded-[11px] border border-[#E5E7EB] py-2.5 font-semibold">Отмена</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ProductForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: ProductInput) => void }) {
+  const [f, setF] = useState({ title: "", category: "Одежда", priceRub: "", stock: "10", description: "" });
+  const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const valid = f.title.trim().length >= 3 && Number(f.priceRub) > 0;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!valid) return;
+    onSave({
+      title: f.title.trim(), category: f.category, price: Math.round(Number(f.priceRub) * 100),
+      stock: Number(f.stock) || 0, description: f.description.trim() || null,
+    });
+  };
+  return (
+    <Modal onClose={onClose} labelledBy="prod-form-title" maxWidth={480}>
+      <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
+        <h3 id="prod-form-title" className="font-display text-lg font-bold">Новый товар</h3>
+        <div className="mt-4 space-y-3">
+          <FormField label="Название" value={f.title} onChange={(v) => set("title", v)} required />
+          <div className="grid grid-cols-3 gap-3">
+            <label className="block">
+              <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Категория</span>
+              <select value={f.category} onChange={(e) => set("category", e.target.value)} className="foc mt-1.5 w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-[15px]">
+                <option>Одежда</option><option>Аксессуары</option><option>Канцелярия</option>
+              </select>
+            </label>
+            <FormField label="Цена, ₽" value={f.priceRub} onChange={(v) => set("priceRub", v.replace(/[^\d]/g, ""))} ph="4200" required />
+            <FormField label="Остаток, шт." value={f.stock} onChange={(v) => set("stock", v.replace(/[^\d]/g, ""))} />
+          </div>
+          <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
+          <p className="font-mono text-[11px] text-grafit-soft">Размеры/варианты добавляются позже в Directus Studio (поле variants_json).</p>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button type="submit" disabled={!valid || busy} className="foc flex-1 rounded-[11px] bg-ohra py-2.5 font-semibold text-kost disabled:opacity-50">{busy ? "Создаём…" : "Создать"}</button>
+          <button type="button" onClick={onClose} className="foc flex-1 rounded-[11px] border border-[#E5E7EB] py-2.5 font-semibold">Отмена</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function FormField({ label, value, onChange, ph, required, textarea }: { label: string; value: string; onChange: (v: string) => void; ph?: string; required?: boolean; textarea?: boolean }) {
+  const id = useId();
+  const cls = "foc mt-1.5 w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-[15px] outline-none focus:border-ohra";
+  return (
+    <label htmlFor={id} className="block">
+      <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">{label}{required && " *"}</span>
+      {textarea
+        ? <textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} rows={3} className={cls} />
+        : <input id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} required={required} className={cls} />}
+    </label>
   );
 }

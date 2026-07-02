@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { readItems, updateItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";
 import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin } from "../lib/auth.js";
@@ -78,6 +78,119 @@ export async function adminRoutes(app: FastifyInstance) {
         await addPoints(referrer, { reason: "referral", ref: id, comment: "Приглашённый выпускник верифицирован", idempotencyKey: `referral-${id}` });
       }
     }
+    return { ok: true };
+  });
+
+  // ── Управление каталогом (программы ДПО и мерч) ──────────────────
+  // Офис добавляет/правит/снимает с витрины/удаляет позиции без Directus Studio.
+
+  const TR: Record<string, string> = {
+    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "j",
+    к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f",
+    х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+  };
+  const slugify = (s: string) =>
+    s.toLowerCase()
+      .replace(/[а-яё]/g, (ch) => TR[ch] ?? "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || `item-${Date.now()}`;
+
+  const programBody = z.object({
+    title: z.string().min(3),
+    direction: z.string().min(2),
+    format: z.enum(["online", "offline", "blended"]),
+    duration: z.string().min(1),
+    price: z.number().int().min(0), // копейки
+    description: z.string().nullish(),
+    start: z.string().nullish(), // человекочитаемая дата старта
+    document: z.string().nullish(),
+    status: z.enum(["draft", "published", "archived"]).default("published"),
+  });
+
+  app.get("/admin/programs", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    return di.request(readItems("programs", {
+      sort: ["title"], limit: -1,
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "status", "dates", "document", "description"],
+    }));
+  });
+
+  app.post("/admin/programs", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const b = programBody.parse(req.body);
+    const slug = slugify(b.title);
+    const dup = (await di.request(readItems("programs", { filter: { slug: { _eq: slug } }, limit: 1, fields: ["id"] }))) as any[];
+    const row = {
+      slug: dup.length ? `${slug}-${Date.now() % 10000}` : slug,
+      title: b.title, direction: b.direction, format: b.format, duration: b.duration, price: b.price,
+      description: b.description ?? null, document: b.document ?? null,
+      dates: b.start ? { start: b.start } : null, status: b.status,
+    };
+    const created = (await di.request((createItem as any)("programs", row))) as any;
+    return { ok: true, id: created.id, slug: row.slug };
+  });
+
+  app.patch("/admin/programs/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const b = programBody.partial().parse(req.body);
+    const patch: Record<string, unknown> = { ...b };
+    delete patch.start;
+    if (b.start !== undefined) patch.dates = b.start ? { start: b.start } : null;
+    await di.request((updateItem as any)("programs", id, patch));
+    return { ok: true };
+  });
+
+  app.delete("/admin/programs/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    await di.request((deleteItem as any)("programs", id)); // заявки хранят снимок позиции — не рвутся
+    return { ok: true };
+  });
+
+  const productBody = z.object({
+    title: z.string().min(3),
+    category: z.string().min(2),
+    price: z.number().int().min(0), // копейки
+    stock: z.number().int().min(0).default(0),
+    description: z.string().nullish(),
+    variants_json: z.array(z.object({ sku: z.string().min(1), size: z.string().optional(), color: z.string().optional(), stock: z.number().int().min(0) })).nullish(),
+    status: z.enum(["draft", "published", "archived"]).default("published"),
+  });
+
+  app.get("/admin/products", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    return di.request(readItems("products", {
+      sort: ["title"], limit: -1,
+      fields: ["id", "slug", "title", "category", "price", "stock", "status", "variants_json", "description"],
+    }));
+  });
+
+  app.post("/admin/products", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const b = productBody.parse(req.body);
+    const slug = slugify(b.title);
+    const dup = (await di.request(readItems("products", { filter: { slug: { _eq: slug } }, limit: 1, fields: ["id"] }))) as any[];
+    const row = {
+      slug: dup.length ? `${slug}-${Date.now() % 10000}` : slug,
+      title: b.title, category: b.category, price: b.price, stock: b.stock,
+      description: b.description ?? null, variants_json: b.variants_json ?? null, status: b.status,
+    };
+    const created = (await di.request((createItem as any)("products", row))) as any;
+    return { ok: true, id: created.id, slug: row.slug };
+  });
+
+  app.patch("/admin/products/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const b = productBody.partial().parse(req.body);
+    await di.request((updateItem as any)("products", id, b));
+    return { ok: true };
+  });
+
+  app.delete("/admin/products/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    await di.request((deleteItem as any)("products", id));
     return { ok: true };
   });
 
