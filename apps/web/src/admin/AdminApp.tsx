@@ -283,16 +283,23 @@ function StatusToggle({ status, onSet, busy }: { status: string; onSet: (s: stri
 
 function ProgramsAdmin() {
   const programs = useAdminPrograms();
-  const { createProgram, patchProgram, deleteProgram } = useAdminMutations();
+  const { createProgram, patchProgram, deleteProgram, syncDpo } = useAdminMutations();
   const [showCreate, setShowCreate] = useState(false);
   const [confirmDel, setConfirmDel] = useState<AdminProgram | null>(null);
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
-      <div className="flex items-center justify-between gap-3 bg-[#FBF7EF] px-6 py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#FBF7EF] px-6 py-3.5">
         <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Каталог ДПО · {programs.data?.length ?? "…"} программ</span>
-        <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить программу</button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => syncDpo.mutate()} disabled={syncDpo.isPending} title="Забрать актуальный набор с hse.ru (факультет права)" className="foc rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-semibold disabled:opacity-60">
+            {syncDpo.isPending ? "Синхронизируем…" : "⟳ Обновить с hse.ru"}
+          </button>
+          <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить программу</button>
+        </div>
       </div>
+      {syncDpo.isSuccess && <p className="border-t border-[#f0ece2] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[#1F8A5B]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (на сайте {syncDpo.data.total}). Ночная автосинхронизация — ежедневно в 05:00.</p>}
+      {syncDpo.isError && <p className="border-t border-[#f0ece2] px-6 py-2.5 font-mono text-[12px] text-karmin">Синхронизация не удалась: {(syncDpo.error as Error).message}</p>}
       {(programs.data ?? []).map((p) => (
         <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm max-md:grid-cols-1">
           <div className="min-w-0">

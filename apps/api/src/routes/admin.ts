@@ -2,8 +2,10 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";
+import { slugifyRu } from "@club/shared";
 import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
+import { syncDpoCatalog } from "../lib/hse-sync.js";
 
 const di = directus;
 const ADMIN_ROLES = ["editor", "admin", "Administrator"];
@@ -84,15 +86,19 @@ export async function adminRoutes(app: FastifyInstance) {
   // ── Управление каталогом (программы ДПО и мерч) ──────────────────
   // Офис добавляет/правит/снимает с витрины/удаляет позиции без Directus Studio.
 
-  const TR: Record<string, string> = {
-    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "j",
-    к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f",
-    х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
-  };
-  const slugify = (s: string) =>
-    s.toLowerCase()
-      .replace(/[а-яё]/g, (ch) => TR[ch] ?? "")
-      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || `item-${Date.now()}`;
+  const slugify = slugifyRu;
+
+  // Синхронизация каталога ДПО с hse.ru по запросу офиса (та же логика, что ночной cron).
+  app.post("/admin/dpo-sync", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    try {
+      const r = await syncDpoCatalog();
+      return { ok: true, ...r };
+    } catch (e) {
+      req.log.error({ err: e }, "manual dpo sync failed");
+      return reply.code(502).send({ error: (e as Error).message });
+    }
+  });
 
   const programBody = z.object({
     title: z.string().min(3),

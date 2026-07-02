@@ -16,6 +16,7 @@ import { adminRoutes } from "./routes/admin.js";
 import { communityRoutes } from "./routes/community.js";
 import { paymentsRoutes } from "./routes/payments.js";
 import { runDecay } from "./lib/engine.js";
+import { syncDpoCatalog } from "./lib/hse-sync.js";
 
 const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 256 * 1024 });
 
@@ -57,6 +58,14 @@ await app.register(paymentsRoutes);
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
 cron.schedule("0 3 1 * *", () => {
   runDecay().catch((e) => app.log.error(e, "decay failed"));
+});
+
+// Ночная автосинхронизация каталога ДПО с hse.ru (05:00). Сбой не критичен —
+// каталог остаётся прежним, следующая попытка через сутки (или вручную из админки).
+cron.schedule("0 5 * * *", () => {
+  syncDpoCatalog()
+    .then((r) => app.log.info(r, "dpo sync ok"))
+    .catch((e) => app.log.error(e, "dpo sync failed"));
 });
 
 // Базовый health — для healthcheck'а docker и Caddy.

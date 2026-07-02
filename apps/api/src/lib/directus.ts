@@ -21,7 +21,8 @@ export interface AchievementRow { id: string; key: string; title: string; descri
 export interface LevelRow { id: string; key: string; title: string; min_points: number; discount_percent: number; sort: number; color: string }
 export interface ProgramRow {
   id: string; slug: string; title: string; direction: string; format: string; duration: string;
-  price: number; dates: unknown; modules: unknown; teachers: unknown; description: string | null; document: string | null; status: string;
+  price: number; dates: unknown; modules: unknown; teachers: unknown; description: string | null; document: string | null;
+  source_url: string | null; status: string;
 }
 export interface ProductRow {
   id: string; slug: string; title: string; category: string; price: number;
