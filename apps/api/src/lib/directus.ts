@@ -7,6 +7,7 @@ export interface AlumniRow {
   id: string; user_id: string | null; fio: string | null; cohort: string | null;
   status: string; verification_status: string; points_cached: number; level_cached: LevelKey;
   personal_discount: number; contacts_json: Record<string, string> | null; edu_program: string | null; edu_level: string | null;
+  interests_json: string[] | null;
   referral_code: string | null; referred_by: string | null; last_activity_at: string | null;
   verified_at: string | null; joined_at: string | null; telegram_id: string | null;
 }
@@ -15,6 +16,7 @@ export interface PointsLedgerRow {
   ref: string | null; comment: string | null; idempotency_key: string | null; created_at: string;
 }
 export interface AlumniAchievementRow { id: string; alumni_id: string; achievement_id: string; earned_at: string | null }
+export interface AlumniFriendRow { id: string; alumni_id: string; friend_id: string; status: "pending" | "accepted"; created_at: string }
 export interface AchievementRow { id: string; key: string; title: string; description: string; rule_json: unknown; points_reward: number; sort: number }
 export interface LevelRow { id: string; key: string; title: string; min_points: number; discount_percent: number; sort: number; color: string }
 export interface ProgramRow {
@@ -39,6 +41,7 @@ interface Schema {
   alumni: AlumniRow[];
   points_ledger: PointsLedgerRow[];
   alumni_achievements: AlumniAchievementRow[];
+  alumni_friends: AlumniFriendRow[];
   achievements: AchievementRow[];
   levels: LevelRow[];
   programs: ProgramRow[];

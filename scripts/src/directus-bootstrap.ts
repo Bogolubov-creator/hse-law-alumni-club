@@ -150,7 +150,7 @@ async function ensureSeed(collection: string, keyField: string, rows: Record<str
 // ──────────────────────────── 1. коллекции (PK) ────────────────────────────
 const COLLECTIONS = [
   "levels", "point_rules", "achievements", "alumni", "points_ledger",
-  "alumni_achievements", "pages", "news", "programs", "products",
+  "alumni_achievements", "alumni_friends", "pages", "news", "programs", "products",
   "carts", "orders", "offers", "referrals",
 ];
 log("== Коллекции ==");
@@ -195,6 +195,7 @@ await ensureField("alumni", "personal_discount", int(0));
 await ensureField("alumni", "contacts_json", json());
 await ensureField("alumni", "edu_program", str());
 await ensureField("alumni", "edu_level", str());
+await ensureField("alumni", "interests_json", json());
 await ensureField("alumni", "referral_code", str(true));
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
@@ -213,6 +214,12 @@ await ensureField("points_ledger", "created_at", ts("date-created"));
 await ensureM2O("alumni_achievements", "alumni_id", "alumni", "CASCADE");
 await ensureM2O("alumni_achievements", "achievement_id", "achievements", "CASCADE");
 await ensureField("alumni_achievements", "earned_at", ts("date-created"));
+
+// alumni_friends («Сообщество»: заявки в друзья между выпускниками)
+await ensureM2O("alumni_friends", "alumni_id", "alumni", "CASCADE");
+await ensureM2O("alumni_friends", "friend_id", "alumni", "CASCADE");
+await ensureField("alumni_friends", "status", enumf(["pending", "accepted"], "pending"));
+await ensureField("alumni_friends", "created_at", ts("date-created"));
 
 // pages (минимально — блоки M2A в Фазе 1)
 await ensureField("pages", "slug", str(true));
@@ -459,6 +466,20 @@ if (!alumniRows.length) {
     ]),
   );
   log("  + профиль alumni для тестового выпускника");
+}
+
+// Демо-однокурсники для «Сообщества» (тот же выпуск 2026 / ОП «Публичное право»).
+const CLASSMATES = [
+  { fio: "Алина Ветрова", cohort: "2026", edu_program: "Публичное право", edu_level: "магистратура", interests_json: ["Публичное право", "GR и публичная политика"], referral_code: "ALINA2026" },
+  { fio: "Максим Столяров", cohort: "2026", edu_program: "Публичное право", edu_level: "магистратура", interests_json: ["Налоговое право", "Комплаенс и антикоррупция"], referral_code: "MAKSIM2026" },
+  { fio: "Дарья Ким", cohort: "2026", edu_program: "Цифровое право", edu_level: "магистратура", interests_json: ["Цифровое право и IT", "LegalTech"], referral_code: "DARIA2026" },
+];
+for (const c of CLASSMATES) {
+  const ex = (await client.request((readItems as any)("alumni", { filter: { referral_code: { _eq: c.referral_code } }, limit: 1, fields: ["id"] }))) as any[];
+  if (!ex.length) {
+    await client.request((createItems as any)("alumni", [{ ...c, status: "active", verification_status: "verified", points_cached: 80, level_cached: "graduate", personal_discount: 0 }]));
+    log(`  + однокурсник ${c.fio}`);
+  }
 }
 
 log("\n✓ Bootstrap завершён. Повторный запуск идемпотентен.");

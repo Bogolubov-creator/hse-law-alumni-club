@@ -108,6 +108,16 @@ upsert по slug + архивирование программ, которых �
 DIRECTUS_URL=http://localhost:8055 pnpm --filter @club/scripts exec tsx src/sync-hse-dpo.ts
 ```
 
+### Сообщество и интересы
+- **«Сообщество» в ЛК** — «найти своих»: список верифицированных однокурсников того же
+  выпуска (cohort) и/или той же образовательной программы (edu_program) с кнопкой
+  «В друзья». Связи — коллекция `alumni_friends` (pending → accepted; встречная заявка
+  автоматически принимает дружбу). API: `GET /me/classmates`, `POST /me/friends`.
+- **Интересы в юриспруденции** — справочник `LEGAL_INTERESTS` (@club/shared/interests),
+  выпускник выбирает до 8 чипов в Профиле (`alumni.interests_json`); ввод фильтруется
+  строго по справочнику (`sanitizeInterests`). Интересы видны однокурсникам в «Сообществе».
+  При появлении самостоятельной регистрации — включить выбор интересов в онбординг.
+
 ### Безопасность
 rate-limit, helmet, CORS-allowlist, bodyLimit, trustProxy; собственные JWT-сессии
 (`AUTH_SECRET`, 7 дней для выпускника; отдельный `ADMIN_AUTH_SECRET`, 12 ч, scope=admin);

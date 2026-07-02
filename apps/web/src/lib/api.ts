@@ -24,14 +24,12 @@ export async function apiGet<T>(path: string, token?: string, schema?: Parser<T>
   return schema ? schema.parse(data) : (data as T);
 }
 
-export async function apiPost<T>(path: string, body: unknown, schema?: Parser<T>): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: { accept: "application/json", "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+export async function apiPost<T>(path: string, body: unknown, schema?: Parser<T>, token?: string): Promise<T> {
+  const headers: Record<string, string> = { accept: "application/json", "content-type": "application/json" };
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${BASE}${path}`, { method: "POST", headers, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any)?.error || `API ${res.status}`);
+  if (!res.ok) throw new ApiError(res.status, (data as any)?.error || `API ${res.status}`);
   return schema ? schema.parse(data) : (data as T);
 }
 

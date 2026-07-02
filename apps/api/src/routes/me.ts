@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { achievementProgress } from "@club/shared";
+import { achievementProgress, sanitizeInterests } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { levelInfo, alumniStats } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
@@ -38,7 +38,7 @@ export async function meRoutes(app: FastifyInstance) {
     )) as { delta: number; created_at: string }[];
 
     return {
-      alumni: { fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {}, edu_program: a.edu_program, edu_level: a.edu_level },
+      alumni: { fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {}, edu_program: a.edu_program, edu_level: a.edu_level, interests: a.interests_json ?? [] },
       level: levelInfo(a.points_cached ?? 0, a.personal_discount ?? 0),
       achievements: achievementProgress(await alumniStats(a.id)),
       activity: lastSixMonths(ledger),
@@ -53,10 +53,12 @@ export async function meRoutes(app: FastifyInstance) {
     const body = z.object({
       fio: z.string().min(2).optional(),
       contacts: z.record(z.string()).optional(),
+      interests: z.array(z.string()).optional(),
     }).parse(req.body);
     const patch: Record<string, unknown> = {};
     if (body.fio) patch.fio = body.fio;
     if (body.contacts) patch.contacts_json = body.contacts;
+    if (body.interests) patch.interests_json = sanitizeInterests(body.interests); // только из справочника
     if (Object.keys(patch).length) await di.request((updateItem as any)("alumni", a.id, patch));
     return { ok: true };
   });

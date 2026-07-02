@@ -2,7 +2,8 @@ import { useEffect, useId, useState, type CSSProperties, type FormEvent } from "
 import { Link } from "react-router-dom";
 import { LEVELS, loginResponseSchema } from "@club/shared";
 import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
-import { useMe, useMyOrders } from "../lib/queries.js";
+import { useMe, useMyOrders, useClassmates, useAddFriend } from "../lib/queries.js";
+import type { Classmate } from "@club/shared";
 import Modal from "../components/Modal.js";
 
 const ORDER_STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
@@ -181,7 +182,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
           <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{me.alumni.fio ?? "Выпускник"}</div>
           <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "–"}{me.alumni.edu_program ? ` · ${me.alumni.edu_level ?? "магистратура"} · ОП «${me.alumni.edu_program}»` : " · факультет права"}</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}>
-            <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Верифицирован учебным офисом
+            <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Подтверждён
           </div>
         </div>
         <div style={{ width: 1, alignSelf: "stretch", background: "#E5E7EB" }} />
@@ -258,6 +259,9 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
         </div>
       )}
 
+      {/* СООБЩЕСТВО: найти своих */}
+      <Community token={token} />
+
       {/* PERSONAL OFFER */}
       <div style={{ position: "relative", overflow: "hidden", marginTop: 44, borderRadius: 22, background: "#11296B", color: "#FBF3E8", padding: "34px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 28, flexWrap: "wrap" }}>
         <div style={{ position: "absolute", right: -30, top: -30, width: 200, height: 200, background: "radial-gradient(circle,rgba(236,90,19,.55),transparent 65%)", filter: "blur(6px)" }} />
@@ -276,6 +280,64 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
         <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#fff", color: "#6B7280", border: "1.5px solid #E5E7EB", cursor: "not-allowed" }}>↗ Макс · скоро</button>
       </div>
     </>
+  );
+}
+
+const MATCH_LABEL: Record<Classmate["match"], string> = {
+  both: "выпуск и ОП", cohort: "тот же выпуск", program: "та же ОП",
+};
+const FRIEND_LABEL: Record<Classmate["friend_status"], string> = {
+  none: "В друзья", pending: "Заявка отправлена", incoming: "Принять заявку", accepted: "В друзьях ✓",
+};
+
+/** «Сообщество» — однокурсники того же выпуска или ОП с кнопкой «В друзья». */
+function Community({ token }: { token: string }) {
+  const classmates = useClassmates(token);
+  const addFriend = useAddFriend(token);
+  const list = classmates.data ?? [];
+  if (classmates.isLoading || classmates.isError || list.length === 0) return null;
+
+  return (
+    <div style={{ ...surface, padding: "26px 28px", marginTop: 22 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Сообщество</div>
+          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>Ваши однокурсники — тот же выпуск или образовательная программа</div>
+        </div>
+        <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>{list.length} чел.</span>
+      </div>
+      <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
+        {list.map((c) => (
+          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #E5E7EB", borderRadius: 16, padding: "14px 16px" }}>
+            <div style={{ width: 46, height: 46, borderRadius: 13, flex: "none", background: "linear-gradient(135deg,#2C6E80,#11296B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 19, color: "#FBF3E8" }}>
+              {(c.fio?.trim()?.[0] ?? "?").toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, lineHeight: 1.2 }}>{c.fio ?? "Выпускник"}</div>
+              <div style={{ ...mono, fontSize: 11, color: "#6B7280", marginTop: 3 }}>
+                {MATCH_LABEL[c.match]}{c.cohort ? ` · ${c.cohort}` : ""}{c.edu_program ? ` · ${c.edu_program}` : ""}
+              </div>
+              {c.interests.length > 0 && (
+                <div style={{ ...mono, fontSize: 10, color: "#a07d2e", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.interests.join(" · ")}</div>
+              )}
+            </div>
+            <button
+              onClick={() => addFriend.mutate(c.id)}
+              disabled={addFriend.isPending || c.friend_status === "pending" || c.friend_status === "accepted"}
+              className="foc"
+              style={{
+                flex: "none", fontWeight: 600, fontSize: 13, padding: "9px 14px", borderRadius: 10, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default",
+                border: "1.5px solid " + (c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? "#E5E7EB" : "#EC5A13"),
+                background: c.friend_status === "none" || c.friend_status === "incoming" ? "#EC5A13" : "#fff",
+                color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? "#6B7280" : "#FBF3E8",
+              }}
+            >
+              {FRIEND_LABEL[c.friend_status]}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

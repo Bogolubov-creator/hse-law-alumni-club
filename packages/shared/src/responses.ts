@@ -57,7 +57,17 @@ export const activityPointSchema = z.object({ month: z.string(), points: z.numbe
 export const alumniBriefSchema = z.object({
   fio: z.string().nullable(), cohort: z.string().nullable(), verification_status: z.string(),
   contacts: z.record(z.string()).optional(), edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
+  interests: z.array(z.string()).optional(),
 });
+// Однокурсник в «Сообществе» ЛК (тот же выпуск или та же ОП).
+export const classmateSchema = z.object({
+  id: z.string(), fio: z.string().nullable(), cohort: z.string().nullable(),
+  edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
+  level_title: z.string(), interests: z.array(z.string()),
+  match: z.enum(["cohort", "program", "both"]),
+  friend_status: z.enum(["none", "pending", "incoming", "accepted"]),
+});
+export const classmatesSchema = z.array(classmateSchema);
 export const meSchema = z.object({
   alumni: alumniBriefSchema, level: levelInfoSchema, achievements: z.array(achievementResSchema), activity: z.array(activityPointSchema),
 });
@@ -92,6 +102,7 @@ export type LevelInfo = z.infer<typeof levelInfoSchema>;
 export type Achievement = z.infer<typeof achievementResSchema>;
 export type ActivityPoint = z.infer<typeof activityPointSchema>;
 export type AlumniBrief = z.infer<typeof alumniBriefSchema>;
+export type Classmate = z.infer<typeof classmateSchema>;
 export type Me = z.infer<typeof meSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
 export type OrderResult = z.infer<typeof orderResultSchema>;

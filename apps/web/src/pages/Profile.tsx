@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type CSSProperties } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { LEVELS } from "@club/shared";
+import { LEVELS, LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPatch, type Achievement, type LedgerEntry } from "../lib/api.js";
 import { useMe, useLedger } from "../lib/queries.js";
 
@@ -35,20 +35,25 @@ function ProfileBody({ token }: { token: string }) {
   const ledger = useLedger(token);
   const [fio, setFio] = useState("");
   const [contacts, setContacts] = useState<Record<string, string>>({});
+  const [interests, setInterests] = useState<string[]>([]);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
   useEffect(() => {
     if (me.data) {
       setFio(me.data.alumni.fio ?? "");
       setContacts(me.data.alumni.contacts ?? {});
+      setInterests(me.data.alumni.interests ?? []);
     }
   }, [me.data]);
+
+  const toggleInterest = (name: string) =>
+    setInterests((cur) => cur.includes(name) ? cur.filter((x) => x !== name) : cur.length >= MAX_INTERESTS ? cur : [...cur, name]);
 
   const logout = () => { localStorage.removeItem(TOKEN_KEY); window.location.assign("/lk"); };
   const save = async () => {
     setSaveState("saving");
     try {
-      await apiPatch("/me/profile", { fio, contacts }, token);
+      await apiPatch("/me/profile", { fio, contacts, interests }, token);
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 2000);
     } catch {
@@ -93,7 +98,7 @@ function ProfileBody({ token }: { token: string }) {
                 <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{data.alumni.fio ?? "Выпускник"}</div>
                 <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {data.alumni.cohort ?? "–"}{data.alumni.edu_program ? ` · ${data.alumni.edu_level ?? "магистратура"} · ОП «${data.alumni.edu_program}»` : " · факультет права"}</div>
                 <div style={{ display: "flex", gap: 9, flexWrap: "wrap", marginTop: 14 }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}><span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Верифицирован учебным офисом</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}><span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Подтверждён</span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(17,41,107,.1)", color: "#11296B" }}>Уровень {idx + 1} · {data.level.level_title}</span>
                 </div>
               </div>
@@ -116,6 +121,21 @@ function ProfileBody({ token }: { token: string }) {
                   {CONTACT_FIELDS.map((f) => (
                     <Field key={f.key} label={f.label} value={contacts[f.key] ?? ""} onChange={(v) => setContacts((c) => ({ ...c, [f.key]: v }))} ph={f.ph} />
                   ))}
+                  {/* ИНТЕРЕСЫ В ЮРИСПРУДЕНЦИИ */}
+                  <div>
+                    <div style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "#6B7280" }}>Интересы в юриспруденции <span style={{ textTransform: "none" }}>· до {MAX_INTERESTS}</span></div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                      {LEGAL_INTERESTS.map((name) => {
+                        const on = interests.includes(name);
+                        return (
+                          <button key={name} type="button" onClick={() => toggleInterest(name)} aria-pressed={on} className="foc"
+                            style={{ fontSize: 12.5, fontWeight: 500, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: "1.5px solid " + (on ? "#EC5A13" : "#E5E7EB"), background: on ? "rgba(236,90,19,.12)" : "#fff", color: on ? "#C9450E" : "#14181F" }}>
+                            {name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                   <button onClick={save} disabled={saveState === "saving"} className="foc" style={{ width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer" }}>
                     {saveState === "saving" ? "Сохраняем…" : "Сохранить"}
                   </button>

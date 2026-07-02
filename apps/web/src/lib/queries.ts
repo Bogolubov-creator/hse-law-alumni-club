@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema } from "@club/shared";
-import { apiGet, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, type Classmate } from "@club/shared";
+import { apiGet, apiPost, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
 
 export function useLedger(token: string | null) {
   return useQuery({
@@ -30,6 +30,24 @@ export function useMe(token: string | null) {
     queryFn: () => apiGet<Me>("/me", token!, meSchema),
     enabled: !!token,
     retry: false,
+  });
+}
+
+// «Сообщество»: однокурсники того же выпуска/ОП + заявка в друзья.
+export function useClassmates(token: string | null) {
+  return useQuery({
+    queryKey: ["classmates", token],
+    queryFn: () => apiGet<Classmate[]>("/me/classmates", token!, classmatesSchema),
+    enabled: !!token,
+    retry: false,
+  });
+}
+
+export function useAddFriend(token: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (alumniId: string) => apiPost<{ status: string }>("/me/friends", { alumni_id: alumniId }, undefined, token ?? undefined),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["classmates"] }),
   });
 }
 
