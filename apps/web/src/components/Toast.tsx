@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
 type Show = (msg: string, kind?: "ok" | "err") => void;
 const ToastCtx = createContext<Show>(() => {});
@@ -6,9 +6,11 @@ export const useToast = (): Show => useContext(ToastCtx);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<{ msg: string; kind: "ok" | "err" } | null>(null);
+  const timer = useRef<number>();
   const show = useCallback<Show>((msg, kind = "ok") => {
+    window.clearTimeout(timer.current); // таймер прежнего тоста не гасит новый
     setToast({ msg, kind });
-    window.setTimeout(() => setToast(null), 2600);
+    timer.current = window.setTimeout(() => setToast(null), 2600);
   }, []);
   return (
     <ToastCtx.Provider value={show}>

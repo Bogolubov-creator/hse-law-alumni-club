@@ -76,6 +76,10 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         <button type="submit" disabled={busy} className="foc mt-5 w-full rounded-[12px] bg-ohra py-3 font-semibold text-kost disabled:opacity-60">
           {busy ? "Входим…" : "Войти в кабинет"}
         </button>
+        <p className="mt-3 text-[12px] leading-relaxed text-grafit-soft">
+          Входя в кабинет, вы подтверждаете согласие с{" "}
+          <Link to="/privacy" target="_blank" className="foc underline underline-offset-2">политикой обработки персональных данных</Link>.
+        </p>
       </form>
     </main>
   );
@@ -323,7 +327,7 @@ function Community({ token }: { token: string }) {
             </div>
             <button
               onClick={() => addFriend.mutate(c.id)}
-              disabled={addFriend.isPending || c.friend_status === "pending" || c.friend_status === "accepted"}
+              disabled={(addFriend.isPending && addFriend.variables === c.id) || c.friend_status === "pending" || c.friend_status === "accepted"}
               className="foc"
               style={{
                 flex: "none", fontWeight: 600, fontSize: 13, padding: "9px 14px", borderRadius: 10, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default",
@@ -337,6 +341,7 @@ function Community({ token }: { token: string }) {
           </div>
         ))}
       </div>
+      {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку — попробуйте ещё раз.</p>}
     </div>
   );
 }

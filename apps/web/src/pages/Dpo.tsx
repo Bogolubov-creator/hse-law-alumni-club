@@ -38,7 +38,8 @@ export default function Dpo() {
 
   const hasFilter = !!(dir || fmt || dur);
   const reset = () => { setDir(null); setFmt(null); setDur(null); };
-  const priced = (p: Program) => Math.round((p.price * (100 - discount)) / 100 / 100) * 100;
+  // Та же математика, что на сервере (order-calc): вычитаем округлённую скидку в копейках.
+  const priced = (p: Program) => p.price - Math.round((p.price * discount) / 100);
 
   return (
     <SiteShell>

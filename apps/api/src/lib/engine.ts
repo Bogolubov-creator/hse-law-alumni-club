@@ -82,9 +82,8 @@ export async function alumniStats(alumniId: string) {
 
 /** Выдать заслуженные достижения, которых ещё нет. */
 export async function grantAchievements(alumniId: string) {
-  const alumni = (await di.request(readItems("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["points_cached"] }))) as any[];
-  const points = alumni[0]?.points_cached ?? 0;
-  const stats = { ...(await counts(alumniId)), points };
+  // Полная статистика (включая verified/status_level) — иначе часть достижений не выдаётся.
+  const stats = await alumniStats(alumniId);
   const earnedKeys = evaluateAchievements(stats);
   if (!earnedKeys.length) return;
 

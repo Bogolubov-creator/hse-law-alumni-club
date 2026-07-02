@@ -33,6 +33,7 @@ export interface OrderRow {
   subtotal: number; member_discount: number; total_estimate: number;
   contact_fio: string; contact_phone: string; contact_email: string;
   fulfillment: string; address: string | null; comment: string | null; consent_pdn: boolean; status: string; created_at: string;
+  payment_id: string | null; payment_status: string | null; paid_at: string | null;
 }
 export interface NewsRow { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string }
 export interface PageRow { id: string; slug: string; title: string; status: string; sort: number; blocks: unknown }

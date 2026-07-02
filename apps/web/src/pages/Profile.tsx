@@ -37,6 +37,7 @@ function ProfileBody({ token }: { token: string }) {
   const [contacts, setContacts] = useState<Record<string, string>>({});
   const [interests, setInterests] = useState<string[]>([]);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (me.data) {
@@ -52,11 +53,14 @@ function ProfileBody({ token }: { token: string }) {
   const logout = () => { localStorage.removeItem(TOKEN_KEY); window.location.assign("/lk"); };
   const save = async () => {
     setSaveState("saving");
+    setSaveErr(null);
     try {
-      await apiPatch("/me/profile", { fio, contacts, interests }, token);
+      await apiPatch("/me/profile", { fio: fio.trim() || undefined, contacts, interests }, token);
       setSaveState("saved");
+      me.refetch(); // данные профиля сразу свежие на всех экранах
       setTimeout(() => setSaveState("idle"), 2000);
-    } catch {
+    } catch (e) {
+      setSaveErr((e as Error).message || "Не удалось сохранить");
       setSaveState("idle");
     }
   };
@@ -136,6 +140,11 @@ function ProfileBody({ token }: { token: string }) {
                       })}
                     </div>
                   </div>
+                  <p style={{ fontSize: 12, lineHeight: 1.5, color: "#6B7280", margin: 0 }}>
+                    Сохраняя, вы даёте согласие на обработку персональных данных —{" "}
+                    <a href="/privacy" target="_blank" className="foc" style={{ color: "#C9450E", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</a>.
+                  </p>
+                  {saveErr && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: 0 }}>{saveErr}</p>}
                   <button onClick={save} disabled={saveState === "saving"} className="foc" style={{ width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer" }}>
                     {saveState === "saving" ? "Сохраняем…" : "Сохранить"}
                   </button>

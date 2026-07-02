@@ -25,10 +25,11 @@ export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCa
   return [...items, line];
 }
 
-/** Установить количество позиции; qty<=0 — удалить. */
+/** Установить количество позиции; qty<=0 — удалить. ДПО — всегда 1 место (канон). */
 export function setLineQty(items: StoredCartItem[], ref: string, sku: string | null | undefined, qty: number): StoredCartItem[] {
   const matches = (i: StoredCartItem) => i.ref_id === ref && (i.variant_sku ?? null) === (sku ?? null);
-  return qty <= 0 ? items.filter((i) => !matches(i)) : items.map((i) => (matches(i) ? { ...i, qty } : i));
+  if (qty <= 0) return items.filter((i) => !matches(i));
+  return items.map((i) => (matches(i) ? { ...i, qty: i.type === "dpo" ? 1 : qty } : i));
 }
 
 export function summarizeCart(items: StoredCartItem[]): { items: StoredCartItem[]; count: number; subtotal: number } {

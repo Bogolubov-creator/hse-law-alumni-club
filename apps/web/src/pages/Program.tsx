@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import SiteShell, { DiscountBadge } from "../components/SiteShell.js";
 import { FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../lib/api.js";
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
@@ -15,12 +15,16 @@ export default function Program() {
   const toast = useToast();
   const [openM, setOpenM] = useState(0);
   const p = q.data;
-  const priced = p ? Math.round((p.price * (100 - discount)) / 100 / 100) * 100 : 0;
+  // Та же математика, что на сервере (order-calc): вычитаем округлённую скидку в копейках.
+  const priced = p ? p.price - Math.round((p.price * discount) / 100) : 0;
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];
   const teachers: ProgramTeacher[] = Array.isArray(p?.teachers) ? p!.teachers : [];
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
 
+  const navigate = useNavigate();
   const addToCart = () => p && add.mutate({ type: "dpo", ref_id: p.slug }, { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") });
+  // «Оставить заявку» = добавить и сразу перейти к оформлению.
+  const leaveRequest = () => p && add.mutate({ type: "dpo", ref_id: p.slug }, { onSuccess: () => navigate("/cart"), onError: () => toast("Не удалось добавить", "err") });
 
   return (
     <SiteShell>
@@ -114,7 +118,7 @@ export default function Program() {
                   </dl>
 
                   <button disabled={add.isPending} onClick={addToCart} className="foc mt-5 w-full rounded-[12px] bg-hse-blue py-3.5 font-semibold text-kost disabled:opacity-60">В корзину</button>
-                  <button disabled={add.isPending} onClick={addToCart} className="foc mt-2 w-full rounded-[12px] border border-[#E5E7EB] py-3 font-semibold">Оставить заявку</button>
+                  <button disabled={add.isPending} onClick={leaveRequest} className="foc mt-2 w-full rounded-[12px] border border-[#E5E7EB] py-3 font-semibold">Оставить заявку</button>
                   <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Оплаты на сайте нет — оформление ведёт к заявке, менеджер учебного офиса свяжется с вами.</p>
                 </div>
               </div>

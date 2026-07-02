@@ -25,7 +25,8 @@ export async function adminLogin(email: string, password: string): Promise<{ tok
 }
 
 export type Overview = { new_orders: number; orders_count: number; pending_verifications: number; alumni_count: number };
-export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string };
+export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
+export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
 export type Member = { id: string; fio: string | null; cohort: string | null; status: string; verification_status: string; points_cached: number; level_cached: string; personal_discount: number };
 
 export function useOverview() {

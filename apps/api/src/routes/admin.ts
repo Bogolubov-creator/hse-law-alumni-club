@@ -39,7 +39,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!requireAdmin(req, reply)) return;
     return di.request(readItems("orders", {
       sort: ["-created_at"], limit: 100,
-      fields: ["id", "number", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "status", "subtotal", "total_estimate", "created_at"],
+      fields: ["id", "number", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "status", "subtotal", "total_estimate", "created_at", "items_json", "address", "comment"],
     }));
   });
 

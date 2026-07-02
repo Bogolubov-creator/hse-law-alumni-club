@@ -57,6 +57,11 @@ export default function Cart() {
             {result.subtotal > result.total_estimate && <Row k="Скидка выпускника (ДПО)" v={`−${result.member_discount}%`} />}
             <Row k="Итого (оценочно)" v={rub(result.total_estimate)} bold />
           </div>
+          {result.payment_url && (
+            <a href={result.payment_url} className="foc mt-6 inline-block rounded-[12px] bg-[#1F8A5B] px-8 py-3.5 font-semibold text-kost">
+              Оплатить онлайн через ЮKassa → {rub(result.total_estimate)}
+            </a>
+          )}
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link to="/lk" className="foc rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">В личный кабинет</Link>
             <Link to="/" className="foc rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold">На главную</Link>
@@ -116,7 +121,7 @@ export default function Cart() {
                 <div className="my-2 border-t border-[#f0ece2]" />
                 <Row k="Итого (справочно)" v={rub(total)} bold />
               </div>
-              <p className="mt-2 font-mono text-[11px] text-grafit-soft">Оплаты на сайте нет – сумма справочная. После оформления заявки с вами свяжется менеджер учебного офиса и подтвердит детали. Скидка выпускника действует только на программы ДПО.</p>
+              <p className="mt-2 font-mono text-[11px] text-grafit-soft">После оформления заявки с вами свяжется менеджер учебного офиса и подтвердит детали. Онлайн-оплата (ЮKassa) появится на экране подтверждения, когда она доступна. Скидка выпускника действует только на программы ДПО.</p>
 
               <div className="mt-5 space-y-3">
                 <Input label="ФИО" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required />
@@ -134,7 +139,10 @@ export default function Cart() {
                 <Input label="Комментарий" value={form.comment} onChange={(v) => set("comment", v)} />
                 <label className="flex cursor-pointer items-start gap-2.5 text-[13px] text-grafit-soft">
                   <input type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} required className="mt-0.5" />
-                  Согласен на обработку персональных данных
+                  <span>
+                    Даю согласие на обработку персональных данных в соответствии с{" "}
+                    <Link to="/privacy" target="_blank" className="foc underline underline-offset-2 hover:text-ohra-deep">политикой обработки персональных данных</Link>
+                  </span>
                 </label>
               </div>
 

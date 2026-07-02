@@ -38,8 +38,11 @@ describe("setLineQty", () => {
     const items = [line({ ref_id: "a" }), line({ ref_id: "b" })];
     expect(setLineQty(items, "a", null, 0)).toHaveLength(1);
   });
-  it("qty=N устанавливает точное значение", () => {
-    expect(setLineQty([line({ ref_id: "a" })], "a", null, 5)[0]!.qty).toBe(5);
+  it("qty=N устанавливает точное значение (мерч)", () => {
+    expect(setLineQty([line({ type: "merch", ref_id: "a" })], "a", null, 5)[0]!.qty).toBe(5);
+  });
+  it("ДПО: qty не поднимается выше 1 даже через прямой PATCH (канон «одно место»)", () => {
+    expect(setLineQty([line({ ref_id: "a" })], "a", null, 5)[0]!.qty).toBe(1);
   });
   it("несовпадающий ref — без изменений", () => {
     const items = [line({ ref_id: "a" })];

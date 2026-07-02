@@ -41,12 +41,14 @@ export async function communityRoutes(app: FastifyInstance) {
     )) as { alumni_id: string; friend_id: string; status: string }[];
 
     const statusFor = (otherId: string): "none" | "pending" | "incoming" | "accepted" => {
-      const link = links.find(
+      // Пара может иметь две строки (гонка встречных заявок) — accepted и incoming в приоритете.
+      const pair = links.filter(
         (l) => (l.alumni_id === me.id && l.friend_id === otherId) || (l.alumni_id === otherId && l.friend_id === me.id),
       );
-      if (!link) return "none";
-      if (link.status === "accepted") return "accepted";
-      return link.alumni_id === me.id ? "pending" : "incoming";
+      if (!pair.length) return "none";
+      if (pair.some((l) => l.status === "accepted")) return "accepted";
+      if (pair.some((l) => l.alumni_id === otherId)) return "incoming";
+      return "pending";
     };
 
     return rows.map((r) => {
@@ -63,7 +65,7 @@ export async function communityRoutes(app: FastifyInstance) {
   });
 
   // Заявка в друзья. Идемпотентна; встречная pending-заявка становится accepted.
-  app.post("/me/friends", async (req, reply) => {
+  app.post("/me/friends", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
     if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
@@ -76,6 +78,8 @@ export async function communityRoutes(app: FastifyInstance) {
     if (!target[0] || target[0].verification_status !== "verified")
       return reply.code(404).send({ error: "Выпускник не найден" });
 
+    // Все связи пары в обе стороны (limit -1): гонка встречных заявок могла
+    // создать две pending-строки — встречную принимаем в приоритете.
     const existing = (await di.request(
       (readItems as any)("alumni_friends", {
         filter: {
@@ -84,19 +88,17 @@ export async function communityRoutes(app: FastifyInstance) {
             { _and: [{ alumni_id: { _eq: body.alumni_id } }, { friend_id: { _eq: me.id } }] },
           ],
         },
-        limit: 1, fields: ["id", "alumni_id", "status"],
+        limit: -1, fields: ["id", "alumni_id", "status"],
       }),
     )) as { id: string; alumni_id: string; status: string }[];
 
-    const link = existing[0];
-    if (link) {
-      // Встречная pending-заявка → принимаем дружбу; свои повторы — no-op.
-      if (link.status === "pending" && link.alumni_id === body.alumni_id) {
-        await di.request((updateItem as any)("alumni_friends", link.id, { status: "accepted" }));
-        return { status: "accepted" };
-      }
-      return { status: link.status === "accepted" ? "accepted" : "pending" };
+    if (existing.some((l) => l.status === "accepted")) return { status: "accepted" };
+    const incoming = existing.find((l) => l.status === "pending" && l.alumni_id === body.alumni_id);
+    if (incoming) {
+      await di.request((updateItem as any)("alumni_friends", incoming.id, { status: "accepted" }));
+      return { status: "accepted" };
     }
+    if (existing.length) return { status: "pending" }; // моя заявка уже отправлена
 
     await di.request((createItem as any)("alumni_friends", { alumni_id: me.id, friend_id: body.alumni_id, status: "pending" }));
     return { status: "pending" };

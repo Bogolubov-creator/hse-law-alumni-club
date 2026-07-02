@@ -284,6 +284,10 @@ await ensureField("orders", "fulfillment", enumf(["pickup", "delivery"], "pickup
 await ensureField("orders", "address", txt());
 await ensureField("orders", "comment", txt());
 await ensureField("orders", "consent_pdn", bool(false));
+// Оплата ЮKassa (заполняются при подключённых ключах магазина)
+await ensureField("orders", "payment_id", str());
+await ensureField("orders", "payment_status", str());
+await ensureField("orders", "paid_at", ts());
 await ensureField("orders", "status", enumf(["new", "in_progress", "confirmed", "done", "canceled"], "new"));
 await ensureField("orders", "created_at", ts("date-created"));
 

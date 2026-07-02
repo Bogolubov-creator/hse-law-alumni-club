@@ -5,6 +5,7 @@ import { effectiveDiscount, computeOrderTotals, orderNumber, repriceItems } from
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
+import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
 import { lookup } from "./cart.js";
 
 const di = directus;
@@ -99,7 +100,26 @@ export async function ordersRoutes(app: FastifyInstance) {
     });
     await confirmApplicant(notice).catch((e) => req.log.error({ err: e, number }, "confirmApplicant threw"));
 
-    return { number, status: "new", member_discount: discount, subtotal, total_estimate: total, notified };
+    // Оплата (ЮKassa) — если подключена: создаём платёж сразу, отдаём ссылку.
+    // Сбой оплаты НЕ роняет заявку — офис свяжется, оплатить можно позже из ЛК.
+    let payment_url: string | undefined;
+    if (paymentsEnabled() && total > 0) {
+      try {
+        const payment = await createPayment({
+          amountKop: total,
+          description: `Заявка ${number} · Клуб выпускников факультета права НИУ ВШЭ`,
+          orderNumber: number,
+          customerEmail: body.contact_email,
+        });
+        payment_url = payment.confirmation?.confirmation_url;
+        const created_order = (await di.request(readItems("orders", { filter: { number: { _eq: number } }, limit: 1, fields: ["id"] }))) as any[];
+        if (created_order[0]) await di.request((updateItem as any)("orders", created_order[0].id, { payment_id: payment.id, payment_status: payment.status }));
+      } catch (e) {
+        req.log.error({ err: e, number }, "yookassa create on order failed");
+      }
+    }
+
+    return { number, status: "new", member_discount: discount, subtotal, total_estimate: total, notified, payment_url };
   });
 
   // Заявки выпускника.

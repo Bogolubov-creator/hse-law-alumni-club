@@ -45,8 +45,8 @@ export async function meRoutes(app: FastifyInstance) {
     };
   });
 
-  // Сохранение профиля выпускником (ФИО + контакты).
-  app.patch("/me/profile", async (req, reply) => {
+  // Сохранение профиля выпускником (ФИО + контакты + интересы).
+  app.patch("/me/profile", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
     if (a.verification_status !== "verified") return reply.code(403).send({ error: "ЛК активируется после верификации" });

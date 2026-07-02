@@ -40,7 +40,7 @@ export async function apiPatch<T>(path: string, body: unknown, token: string, sc
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any)?.error || `API ${res.status}`);
+  if (!res.ok) throw new ApiError(res.status, (data as any)?.error || `API ${res.status}`);
   return schema ? schema.parse(data) : (data as T);
 }
 

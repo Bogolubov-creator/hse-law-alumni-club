@@ -70,7 +70,7 @@ export default function Merch() {
 function ProductModal({ product, onClose, onAdd }: { product: Product; onClose: () => void; onAdd: (sku: string | null, qty: number) => void }) {
   const variants: ProductVariant[] = product.variants_json ?? [];
   const hasVariants = variants.length > 0;
-  const [sku, setSku] = useState<string | null>(hasVariants ? null : null);
+  const [sku, setSku] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const vLabel = (v: ProductVariant) => [v.size, v.color].filter(Boolean).join(" · ") || v.sku;
   const selected = variants.find((v) => v.sku === sku) ?? null;

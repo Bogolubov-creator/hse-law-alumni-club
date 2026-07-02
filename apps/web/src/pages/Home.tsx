@@ -46,7 +46,7 @@ const TIMELINE = [
 ];
 const REASONS = [
   { num: "01", color: "#C49A45", title: "Статус, который видно", text: "Верификация учебным офисом, личный бейдж и уровень – ваш профиль выпускника всегда подтверждён.", delay: 0 },
-  { num: "02", color: "#EC5A13", title: "Скидка 5% выпускнику", text: "Цена выпускника на программы ДПО и фирменный мерч – прямо в витринах клуба.", delay: 90 },
+  { num: "02", color: "#EC5A13", title: "Скидка 5% выпускнику", text: "Цена выпускника на программы ДПО – применяется автоматически после верификации.", delay: 90 },
   { num: "03", color: "#2E6FAE", title: "Сообщество и связи", text: "Выпуски, менторы, партнёры и мероприятия – нетворкинг, который работает на карьеру.", delay: 180 },
 ];
 
@@ -211,7 +211,7 @@ export default function Home() {
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, ...mono, fontSize: 12, letterSpacing: ".1em", color: "#B5331B", background: "rgba(181,51,27,.1)", border: "1px solid rgba(181,51,27,.25)", padding: "6px 13px", borderRadius: 999 }}>● {hero.badge ?? "Сообщество выпускников факультета права"}</div>
             <h1 className="h-xl" style={{ ...disp, fontWeight: 800, fontSize: 62, lineHeight: 1.03, letterSpacing: "-0.015em", margin: "22px 0 0", textWrap: "balance" } as CSSProperties}>{hero.title_pre ?? "Статус выпускника, который"} <span style={{ color: "#EC5A13" }}>{hero.title_accent ?? "работает"}</span></h1>
-            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>{hero.subtitle ?? "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка 5% на ДПО и мерч, новости и менторы – всё в одном месте."}</p>
+            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>{hero.subtitle ?? "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка выпускника на ДПО, новости и менторы – всё в одном месте."}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 32 }}>
               <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{token() ? "Мой личный кабинет" : hero.cta_primary ?? "Войти в личный кабинет"}</Link>
               <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_secondary ?? "Как вступить"}</a>
@@ -395,7 +395,18 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 28px 0", ...mono, fontSize: 11, color: "#6B7280" }}>© 2026 Клуб выпускников факультета права Вышки</div>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 28px 0" }}>
+          {/* 152-ФЗ: юридические документы + информация о владельце */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", fontSize: 13 }}>
+            <Link to="/privacy" className="foc" style={{ color: "#9aa3b2", textDecoration: "underline", textUnderlineOffset: 3 }}>Политика обработки персональных данных</Link>
+            <Link to="/confidential" className="foc" style={{ color: "#9aa3b2", textDecoration: "underline", textUnderlineOffset: 3 }}>Политика конфиденциальности</Link>
+            <Link to="/requisites" className="foc" style={{ color: "#9aa3b2", textDecoration: "underline", textUnderlineOffset: 3 }}>Реквизиты</Link>
+          </div>
+          <p style={{ fontSize: 12, lineHeight: 1.6, color: "#6B7280", margin: "12px 0 0" }}>
+            НИУ «Высшая школа экономики», факультет права · ОГРН 1027739630401 · ИНН 7714030726 · 101000, г. Москва, ул. Мясницкая, д. 20 · pravo@hse.ru · +7 (495) 771-32-32
+          </p>
+          <div style={{ ...mono, fontSize: 11, color: "#6B7280", marginTop: 12 }}>© 2026 Клуб выпускников факультета права Вышки</div>
+        </div>
       </footer>
     </div>
   );

@@ -19,6 +19,12 @@ const schema = z.object({
   SMTP_USER: z.string().default(""),
   SMTP_PASS: z.string().default(""),
   SMTP_FROM: z.string().default(""),
+  // Оплата через ЮKassa (yookassa.ru). Оба ключа заданы = оплата включена,
+  // иначе прежний режим «заявка без оплаты» (BLOCKED до получения ключей магазина).
+  YOOKASSA_SHOP_ID: z.string().default(""),
+  YOOKASSA_SECRET_KEY: z.string().default(""),
+  // Публичный адрес сайта — для return_url после оплаты.
+  PUBLIC_URL: z.string().default("http://localhost"),
 });
 
 export const env = schema.parse(process.env);

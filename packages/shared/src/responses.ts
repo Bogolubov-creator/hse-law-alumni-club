@@ -75,6 +75,7 @@ export const loginResponseSchema = z.object({ token: z.string(), alumni: alumniB
 export const orderResultSchema = z.object({
   number: z.string(), status: z.string(), member_discount: z.number(), subtotal: z.number(), total_estimate: z.number(),
   notified: z.object({ channel: z.string(), ok: z.boolean(), blocked: z.boolean().optional() }),
+  payment_url: z.string().optional(), // ссылка на оплату ЮKassa (если оплата подключена)
 });
 export const myOrderSchema = z.object({
   number: z.string(), type: z.string(), status: z.string(), subtotal: z.number(), member_discount: z.number(), total_estimate: z.number(), created_at: z.string(),

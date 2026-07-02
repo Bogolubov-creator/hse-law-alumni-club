@@ -73,7 +73,8 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   ];
   const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент" };
 
-  if (ov.isError) return <AdminGate onAuthed={() => location.reload()} />;
+  // Истёкшая сессия: сохранить СВЕЖИЙ токен перед перезагрузкой, иначе вечный цикл логина.
+  if (ov.isError) return <AdminGate onAuthed={(t) => { setAdminToken(t); location.reload(); }} />;
 
   return (
     <div className="grid min-h-screen grid-cols-[248px_1fr] bg-kost-2 font-body text-grafit max-md:grid-cols-1">
@@ -170,14 +171,24 @@ function Orders() {
         <span>Номер</span><span>Клиент</span><span>Контакты</span><span>Сумма</span><span>Статус</span>
       </div>
       {(orders.data ?? []).map((o: AdminOrder) => (
-        <div key={o.id} className="grid grid-cols-[110px_1fr_1fr_130px_150px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm">
-          <span className="font-mono text-[12px]">{o.number}</span>
-          <span className="min-w-0 truncate font-semibold">{o.contact_fio}</span>
-          <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{o.contact_phone}</span>
-          <span className="font-mono text-[13px]">{rub(o.total_estimate)}</span>
-          <select value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
-            {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS[s]}</option>)}
-          </select>
+        <div key={o.id} className="border-t border-[#f0ece2] px-6 py-3.5 text-sm">
+          <div className="grid grid-cols-[110px_1fr_1fr_130px_150px] items-center gap-3">
+            <span className="font-mono text-[12px]">{o.number}</span>
+            <span className="min-w-0 truncate font-semibold">{o.contact_fio}</span>
+            <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{o.contact_phone}</span>
+            <span className="font-mono text-[13px]">{rub(o.total_estimate)}</span>
+            <select value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
+              {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS[s]}</option>)}
+            </select>
+          </div>
+          {/* Состав заявки — офис видит позиции без похода в Directus */}
+          {(o.items_json?.length || o.address || o.comment) && (
+            <div className="mt-1.5 pl-[122px] font-mono text-[11px] leading-relaxed text-grafit-soft">
+              {o.items_json?.map((i) => `${i.title}${i.variant_sku ? ` (${i.variant_sku})` : ""} ×${i.qty}`).join("; ")}
+              {o.address ? ` · доставка: ${o.address}` : ""}
+              {o.comment ? ` · «${o.comment}»` : ""}
+            </div>
+          )}
         </div>
       ))}
       {orders.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Заявок нет.</p>}

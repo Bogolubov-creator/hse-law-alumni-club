@@ -14,6 +14,7 @@ import { cartRoutes } from "./routes/cart.js";
 import { ordersRoutes } from "./routes/orders.js";
 import { adminRoutes } from "./routes/admin.js";
 import { communityRoutes } from "./routes/community.js";
+import { paymentsRoutes } from "./routes/payments.js";
 import { runDecay } from "./lib/engine.js";
 
 const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 256 * 1024 });
@@ -51,6 +52,7 @@ await app.register(cartRoutes);
 await app.register(ordersRoutes);
 await app.register(adminRoutes);
 await app.register(communityRoutes);
+await app.register(paymentsRoutes);
 
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
 cron.schedule("0 3 1 * *", () => {
