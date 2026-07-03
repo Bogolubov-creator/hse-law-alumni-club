@@ -5,6 +5,8 @@ import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
 import { extendPodcastSub } from "./podcasts.js";
+import { audit } from "../lib/audit.js";
+import { isYookassaIp } from "../lib/security.js";
 
 const di = directus;
 
@@ -66,6 +68,15 @@ export async function paymentsRoutes(app: FastifyInstance) {
   // прямым запросом к API ЮKassa по payment.id (рекомендация ЮKassa).
   app.post("/payments/yookassa/webhook", { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!paymentsEnabled()) return reply.code(503).send({ ok: false });
+    // Слой 1: уведомления принимаем только с официальных подсетей ЮKassa
+    // (слой 2 ниже — верификация статуса прямым запросом к API).
+    // Локальная разработка (Docker-сеть/localhost) не блокируется.
+    const ip = req.ip.replace(/^::ffff:/, "");
+    const isLocal = ip === "127.0.0.1" || ip === "::1" || /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip);
+    if (!isLocal && !isYookassaIp(ip)) {
+      audit("payment.webhook.badip", { actor: `ip:${ip}`, req });
+      return reply.code(403).send({ ok: false });
+    }
     const body = z.object({
       event: z.string(),
       object: z.object({ id: z.string() }).passthrough(),
@@ -98,9 +109,11 @@ export async function paymentsRoutes(app: FastifyInstance) {
       if (order.type === "podcast" && order.alumni_id) {
         await extendPodcastSub(order.alumni_id, 12).catch((e) => req.log.error({ err: e, orderNumber }, "podcast sub extend failed"));
       }
+      audit("payment.succeeded", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, amount: verified.amount }, req });
       req.log.info({ orderNumber }, "yookassa payment succeeded");
     } else if (verified.status === "canceled") {
       await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "canceled" }));
+      audit("payment.canceled", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id }, req });
     }
     return { ok: true };
   });

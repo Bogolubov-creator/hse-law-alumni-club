@@ -14,7 +14,7 @@ const di = directus;
  * автоматически принимает дружбу.
  */
 export async function communityRoutes(app: FastifyInstance) {
-  app.get("/me/classmates", async (req, reply) => {
+  app.get("/me/classmates", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
     if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });

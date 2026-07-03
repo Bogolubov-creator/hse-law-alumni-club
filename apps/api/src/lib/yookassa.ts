@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { env } from "../env.js";
 
 /**
@@ -67,7 +67,9 @@ export async function createPayment(input: {
     headers: {
       authorization: authHeader(),
       "content-type": "application/json",
-      "Idempotence-Key": randomUUID(), // повтор запроса не создаст дубль платежа
+      // Детерминированный по заявке ключ: повтор (ретрай/двойной клик) не создаёт
+      // дубль платежа — ЮKassa вернёт тот же платёж (аудит L7).
+      "Idempotence-Key": createHash("sha256").update(`order:${input.orderNumber}`).digest("hex").slice(0, 36),
     },
     body: JSON.stringify(body),
   });

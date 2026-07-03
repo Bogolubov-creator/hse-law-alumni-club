@@ -4,6 +4,8 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -19,6 +21,8 @@ services:
   directus:
     image: directus/directus:11
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,7 +40,8 @@ services:
       PUBLIC_URL: ${DIRECTUS_PUBLIC_URL}
       WEBSOCKETS_ENABLED: "true"
       CORS_ENABLED: "true"
-      CORS_ORIGIN: "true"
+      # Studio-домен из env; "true" (любой origin) — только для локали.
+      CORS_ORIGIN: ${DIRECTUS_CORS_ORIGIN:-true}
     volumes:
       - directus_uploads:/directus/uploads
     ports:
@@ -65,12 +70,16 @@ services:
       TEST_ALUMNI_EMAIL: ${TEST_ALUMNI_EMAIL}
       TEST_ALUMNI_PASSWORD: ${TEST_ALUMNI_PASSWORD}
     restart: "no"   # одноразовый прогон; идемпотентен — можно запускать повторно
+    security_opt:
+      - no-new-privileges:true
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       directus:
         condition: service_healthy
@@ -104,12 +113,16 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     expose:
       - "80"
 
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       - web
       - api

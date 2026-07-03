@@ -5,6 +5,8 @@ import { directusCredsValid, findUserByEmail, findAlumniByUser, signSession } fr
 import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 import { validateInitData } from "../lib/telegram.js";
+import { audit } from "../lib/audit.js";
+import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
 
 export async function authRoutes(app: FastifyInstance) {
   // Вход через Telegram Mini App (initData). BLOCKED без TELEGRAM_BOT_TOKEN.
@@ -26,11 +28,22 @@ export async function authRoutes(app: FastifyInstance) {
   // Логин выпускника: креды проверяет Directus, сессию (JWT с alumni_id) выдаёт apps/api.
   app.post("/auth/login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
-    if (!(await directusCredsValid(email, password))) return reply.code(401).send({ error: "Неверная почта или пароль" });
+    // Блок по аккаунту (не только по IP): распределённый перебор с многих адресов.
+    if (loginLocked(email)) {
+      audit("login.locked", { actor: `email:${email}`, req });
+      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте через 15 минут" });
+    }
+    if (!(await directusCredsValid(email, password))) {
+      registerLoginFail(email);
+      audit("login.fail", { actor: `email:${email}`, req });
+      return reply.code(401).send({ error: "Неверная почта или пароль" });
+    }
     const user = await findUserByEmail(email);
     if (!user) return reply.code(401).send({ error: "Пользователь не найден" });
     const alumni = await findAlumniByUser(user.id);
     if (!alumni) return reply.code(403).send({ error: "Аккаунт не привязан к профилю выпускника" });
+    registerLoginSuccess(email);
+    audit("login.ok", { actor: `alumni:${alumni.id}`, req });
     const token = signSession(alumni.id, user.id);
     return { token, alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });

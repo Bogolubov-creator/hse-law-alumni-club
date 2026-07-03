@@ -25,7 +25,7 @@ export function signSession(alumniId: string, userId: string): string {
 }
 function verifySession(token: string): { alumni_id?: string; sub?: string } | null {
   try {
-    return jwt.verify(token, env.AUTH_SECRET) as { alumni_id?: string; sub?: string };
+    return jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as { alumni_id?: string; sub?: string };
   } catch {
     return null;
   }
@@ -67,7 +67,7 @@ export function resolveAdmin(req: FastifyRequest): AdminCtx | null {
   const token = bearer(req);
   if (!token || token === env.DIRECTUS_SERVICE_TOKEN) return null;
   try {
-    const p = jwt.verify(token, adminSecret()) as { scope?: string; sub?: string; role?: string };
+    const p = jwt.verify(token, adminSecret(), { algorithms: ["HS256"] }) as { scope?: string; sub?: string; role?: string };
     if (p?.scope !== "admin" || !p?.sub) return null;
     return { userId: p.sub, role: p.role ?? "" };
   } catch {

@@ -36,8 +36,30 @@ await app.register(helmet, {
   contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
   hsts: { maxAge: 15552000, includeSubDomains: true },
 });
-// Глобальный лимит запросов (на auth-роуты — жёстче, см. сами роуты).
-await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
+
+// Персональные/платёжные ответы не должны оседать в кэшах браузера и прокси.
+app.addHook("onSend", async (req, reply) => {
+  const url = req.url;
+  if (url.startsWith("/me") || url.startsWith("/admin") || url.startsWith("/auth") || url.startsWith("/podcasts") || url.startsWith("/orders")) {
+    reply.header("Cache-Control", "no-store");
+  }
+});
+
+// Предупреждения о небезопасной прод-конфигурации — видны в логах при старте.
+if (env.YOOKASSA_SHOP_ID && !env.PUBLIC_URL.startsWith("https://")) {
+  app.log.warn("ОПЛАТА ВКЛЮЧЕНА, но PUBLIC_URL не https:// — на проде это недопустимо (redirect после оплаты пойдёт по HTTP)");
+}
+if (!env.ADMIN_AUTH_SECRET) {
+  app.log.warn("ADMIN_AUTH_SECRET пуст — админ-сессии подписываются общим AUTH_SECRET (на проде задайте отдельный)");
+}
+// Глобальный лимит запросов per-IP (на auth/оплату/заявки — жёстче, см. роуты).
+// Health-пинги мониторинга не лимитируем. Ключ — реальный IP за Caddy (trustProxy).
+await app.register(rateLimit, {
+  max: 300,
+  timeWindow: "1 minute",
+  allowList: ["/health", "/ready"],
+  continueExceeding: true, // упорный флуд держим в отказе, а не сбрасываем окно
+});
 // CORS: same-origin (без Origin) + Telegram + явный список из CORS_ORIGINS. Токены в Authorization, не в cookie.
 const corsAllow = new Set([
   "https://web.telegram.org",

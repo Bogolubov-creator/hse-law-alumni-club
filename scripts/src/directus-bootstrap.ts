@@ -151,7 +151,7 @@ async function ensureSeed(collection: string, keyField: string, rows: Record<str
 const COLLECTIONS = [
   "levels", "point_rules", "achievements", "alumni", "points_ledger",
   "alumni_achievements", "alumni_friends", "pages", "news", "programs", "products",
-  "carts", "orders", "offers", "referrals", "timeline_items", "podcasts",
+  "carts", "orders", "offers", "referrals", "timeline_items", "podcasts", "audit_log",
 ];
 log("== Коллекции ==");
 for (const c of COLLECTIONS) await ensureCollection(c);
@@ -255,6 +255,14 @@ await ensureField("podcasts", "is_free", bool(false)); // пробный вып�
 await ensureField("podcasts", "sort", int());
 await ensureField("podcasts", "status", enumf(["draft", "published"], "draft"));
 await ensureField("podcasts", "created_at", ts("date-created"));
+
+// audit_log — append-only след критичных операций (логины, платежи, статусы, выдачи)
+await ensureField("audit_log", "event", str());
+await ensureField("audit_log", "actor", str()); // кто: alumni:<id> | admin:<userId> | system | ip
+await ensureField("audit_log", "subject", str()); // над чем: order:<num> | alumni:<id> | ...
+await ensureField("audit_log", "detail", json());
+await ensureField("audit_log", "ip", str());
+await ensureField("audit_log", "created_at", ts("date-created"));
 
 // programs (ДПО)
 await ensureField("programs", "slug", str(true));

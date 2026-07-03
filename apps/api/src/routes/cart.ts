@@ -38,7 +38,7 @@ export async function cartRoutes(app: FastifyInstance) {
     return summarizeCart(cart?.items ?? []);
   });
 
-  app.post("/cart", async (req, reply) => {
+  app.post("/cart", { config: { rateLimit: { max: 40, timeWindow: "1 minute" } } }, async (req, reply) => {
     const token = session(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = cartItemSchema.parse(req.body);

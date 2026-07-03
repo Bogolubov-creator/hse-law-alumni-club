@@ -7,6 +7,8 @@ import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin } from ".
 import { addPoints } from "../lib/engine.js";
 import { syncDpoCatalog } from "../lib/hse-sync.js";
 import { extendPodcastSub, subActive } from "./podcasts.js";
+import { audit } from "../lib/audit.js";
+import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
 
 const di = directus;
 const ADMIN_ROLES = ["editor", "admin", "Administrator"];
@@ -20,9 +22,19 @@ function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
 export async function adminRoutes(app: FastifyInstance) {
   app.post("/auth/admin-login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
-    if (!(await directusCredsValid(email, password))) return reply.code(401).send({ error: "Неверная почта или пароль" });
+    if (loginLocked(email)) {
+      audit("admin.login.locked", { actor: `email:${email}`, req });
+      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте через 15 минут" });
+    }
+    if (!(await directusCredsValid(email, password))) {
+      registerLoginFail(email);
+      audit("admin.login.fail", { actor: `email:${email}`, req });
+      return reply.code(401).send({ error: "Неверная почта или пароль" });
+    }
     const user = await findUserWithRole(email);
     if (!user || !ADMIN_ROLES.includes(user.role)) return reply.code(403).send({ error: "Нет прав администратора" });
+    registerLoginSuccess(email);
+    audit("admin.login.ok", { actor: `admin:${user.id}`, req });
     return { token: signAdmin(user.id, user.role), role: user.role };
   });
 
@@ -66,10 +78,12 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/orders/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    const ctx = requireAdmin(req, reply);
+    if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
     await di.request((updateItem as any)("orders", id, { status }));
+    audit("order.status", { actor: `admin:${ctx.userId}`, subject: `order:${id}`, detail: { status }, req });
     return { ok: true, status };
   });
 
@@ -92,14 +106,17 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Продление подписки на подкасты решением офиса (например, оплата по счёту).
   app.post("/admin/members/:id/podcast-sub", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    const ctx = requireAdmin(req, reply);
+    if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const until = await extendPodcastSub(id, 12);
+    audit("podcast.sub.grant", { actor: `admin:${ctx.userId}`, subject: `alumni:${id}`, detail: { until }, req });
     return { ok: true, until };
   });
 
   app.patch("/admin/members/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    const ctx = requireAdmin(req, reply);
+    if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
       verification_status: z.enum(["pending", "verified", "rejected"]).optional(),
@@ -108,6 +125,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const patch: Record<string, unknown> = { ...body };
     if (body.verification_status === "verified") patch.verified_at = new Date().toISOString();
     await di.request((updateItem as any)("alumni", id, patch));
+    audit("member.patch", { actor: `admin:${ctx.userId}`, subject: `alumni:${id}`, detail: body, req });
 
     // Рефералка: при верификации приглашённого — +80 баллов рефереру (идемпотентно).
     if (body.verification_status === "verified") {
@@ -414,7 +432,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
       reason: z.enum(["program", "event", "referral", "mentorship", "manual"]).default("manual"),
-      delta: z.number().int(),
+      delta: z.number().int().min(-2000).max(2000), // разумный предел ручной корректировки
       comment: z.string().optional(),
     }).parse(req.body);
     const res = await addPoints(id, { reason: body.reason, delta: body.delta, comment: body.comment ?? "Ручное начисление офисом" });

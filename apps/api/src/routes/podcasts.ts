@@ -8,6 +8,7 @@ import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
+import { audit } from "../lib/audit.js";
 
 const di = directus;
 
@@ -17,22 +18,25 @@ export function subActive(until: string | null | undefined): boolean {
 
 // ── Подписанные ссылки на аудио ────────────────────────────────────
 // Реальный audio_url наружу не отдаётся никогда. Клиент получает
-// /api/podcasts/:id/audio?exp=<unix>&sig=<HMAC-SHA256(id.exp, AUTH_SECRET)>.
-// Ссылка живёт AUDIO_LINK_TTL и бесполезна после истечения или для другого id.
-const AUDIO_LINK_TTL_SEC = 6 * 3600;
+// /api/podcasts/:id/audio?h=<holder>&exp=<unix>&sig=HMAC(id.holder.exp).
+// holder = alumni-id подписчика (платный выпуск) либо "free" (пробный).
+// Ссылка привязана к держателю: при отдаче платного аудио сервер повторно
+// проверяет, что у этого выпускника ещё активна подписка → перепродажа
+// ссылки бесполезна после истечения подписки или срока ссылки (аудит M3).
+const AUDIO_LINK_TTL_SEC = 2 * 3600;
 
-function audioSig(id: string, exp: number): string {
-  return createHmac("sha256", env.AUTH_SECRET).update(`${id}.${exp}`).digest("hex");
+function audioSig(id: string, holder: string, exp: number): string {
+  return createHmac("sha256", env.AUTH_SECRET).update(`${id}.${holder}.${exp}`).digest("hex");
 }
 
-export function signedAudioPath(id: string): string {
+export function signedAudioPath(id: string, holder: string): string {
   const exp = Math.floor(Date.now() / 1000) + AUDIO_LINK_TTL_SEC;
-  return `/api/podcasts/${id}/audio?exp=${exp}&sig=${audioSig(id, exp)}`;
+  return `/api/podcasts/${id}/audio?h=${encodeURIComponent(holder)}&exp=${exp}&sig=${audioSig(id, holder, exp)}`;
 }
 
-function verifyAudioSig(id: string, exp: number, sig: string): boolean {
+function verifyAudioSig(id: string, holder: string, exp: number, sig: string): boolean {
   if (!Number.isFinite(exp) || exp * 1000 < Date.now()) return false;
-  const expected = Buffer.from(audioSig(id, exp), "hex");
+  const expected = Buffer.from(audioSig(id, holder, exp), "hex");
   const got = Buffer.from(sig, "hex");
   return expected.length === got.length && timingSafeEqual(expected, got); // сравнение без утечки по времени
 }
@@ -58,7 +62,9 @@ export async function podcastsRoutes(app: FastifyInstance) {
       items: rows.map((p) => ({
         id: p.id, title: p.title, description: p.description, cover: p.cover,
         duration: p.duration, is_free: !!p.is_free,
-        audio_url: (subscribed || p.is_free) && p.audio_url ? signedAudioPath(p.id) : null,
+        audio_url: p.audio_url && (p.is_free || subscribed)
+          ? signedAudioPath(p.id, p.is_free ? "free" : alumni!.id)
+          : null,
       })),
       subscribed,
       sub_until: subscribed ? until : null,
@@ -66,17 +72,24 @@ export async function podcastsRoutes(app: FastifyInstance) {
     };
   });
 
-  // Отдача аудио по подписанной ссылке (проверка HMAC + срока, затем redirect).
-  app.get("/podcasts/:id/audio", async (req, reply) => {
+  // Отдача аудио по подписанной ссылке: проверка HMAC + срока, затем для
+  // платного выпуска — повторная проверка активной подписки держателя (M3).
+  app.get("/podcasts/:id/audio", { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
-    const q = z.object({ exp: z.coerce.number(), sig: z.string().regex(/^[0-9a-f]{64}$/) }).safeParse(req.query);
-    if (!q.success || !verifyAudioSig(id, q.data.exp, q.data.sig))
+    const q = z.object({ h: z.string().min(1).max(64), exp: z.coerce.number(), sig: z.string().regex(/^[0-9a-f]{64}$/) }).safeParse(req.query);
+    if (!q.success || !verifyAudioSig(id, q.data.h, q.data.exp, q.data.sig))
       return reply.code(403).send({ error: "Ссылка недействительна или истекла" });
     const rows = (await di.request(readItems("podcasts", {
-      filter: { id: { _eq: id }, status: { _eq: "published" } }, limit: 1, fields: ["audio_url"],
+      filter: { id: { _eq: id }, status: { _eq: "published" } }, limit: 1, fields: ["audio_url", "is_free"],
     }))) as any[];
-    if (!rows[0]?.audio_url) return reply.code(404).send({ error: "Выпуск не найден" });
-    return reply.redirect(rows[0].audio_url, 302);
+    const podcast = rows[0];
+    if (!podcast?.audio_url) return reply.code(404).send({ error: "Выпуск не найден" });
+    if (!podcast.is_free) {
+      // Держатель ссылки должен быть выпускником с ещё активной подпиской.
+      const a = (await di.request(readItems("alumni", { filter: { id: { _eq: q.data.h } }, limit: 1, fields: ["podcast_sub_until"] }))) as any[];
+      if (!subActive(a[0]?.podcast_sub_until)) return reply.code(403).send({ error: "Подписка неактивна" });
+    }
+    return reply.redirect(podcast.audio_url, 302);
   });
 
   // Оформить годовую подписку: заявка + (если подключена) ссылка на оплату.
@@ -128,6 +141,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
         req.log.error({ err: e, number }, "yookassa podcast sub failed");
       }
     }
+    audit("podcast.sub.request", { actor: `alumni:${alumni.id}`, subject: `order:${number}`, detail: { payment: !!payment_url }, req });
     return { number, payment_url };
   });
 }

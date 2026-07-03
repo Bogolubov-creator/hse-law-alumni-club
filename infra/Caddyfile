@@ -3,10 +3,29 @@
 # На VPS WEB_DOMAIN=club.example.ru / ADMIN_DOMAIN=admin.club.example.ru → Caddy сам берёт TLS.
 {
 	email {$ACME_EMAIL}
+	# Периметр против медленных/жадных запросов (Slowloris, гигантские тела).
+	servers {
+		timeouts {
+			read_body 10s
+			read_header 5s
+			idle 60s
+		}
+		max_header_size 16kb
+	}
 }
 
 {$WEB_DOMAIN} {
 	encode gzip
+	# Тело запроса к API ограничено (доп. к bodyLimit самого API).
+	request_body {
+		max_size 512kb
+	}
+	# Ловушка для ботов-сканеров: типовые «дыры» чужих CMS сразу 404,
+	# не доходя до приложения (handle-блоки матчатся по порядку — этот первый).
+	@bot_probe path /wp-admin* /wp-login.php /.env /.env.* /.git/* /xmlrpc.php /phpmyadmin* /vendor/* /.aws/* /config.php
+	handle @bot_probe {
+		respond 404
+	}
 	handle_path /api/* {
 		reverse_proxy api:3000
 	}

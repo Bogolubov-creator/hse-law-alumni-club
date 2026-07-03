@@ -10,7 +10,7 @@ export default function Cart() {
   const discount = useMemberDiscount();
   const { setQty } = useCartMutations();
   const qc = useQueryClient();
-  const [form, setForm] = useState({ contact_fio: "", contact_phone: "", contact_email: "", fulfillment: "pickup" as "pickup" | "delivery", address: "", comment: "", consent: false });
+  const [form, setForm] = useState({ contact_fio: "", contact_phone: "", contact_email: "", fulfillment: "pickup" as "pickup" | "delivery", address: "", comment: "", consent: false, website: "" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<OrderResult | null>(null);
@@ -30,6 +30,7 @@ export default function Cart() {
       const res = await submitOrder({
         contact_fio: form.contact_fio, contact_phone: form.contact_phone, contact_email: form.contact_email,
         fulfillment: form.fulfillment, address: form.address || null, comment: form.comment || null, consent_pdn: form.consent,
+        website: form.website, // honeypot — реальный пользователь оставит пустым
       });
       setResult(res);
       qc.invalidateQueries({ queryKey: ["cart"] });
@@ -124,6 +125,8 @@ export default function Cart() {
               <p className="mt-2 font-mono text-[11px] text-grafit-soft">После оформления заявки с вами свяжется менеджер учебного офиса и подтвердит детали. Онлайн-оплата (ЮKassa) появится на экране подтверждения, когда она доступна. Скидка выпускника действует только на программы ДПО.</p>
 
               <div className="mt-5 space-y-3">
+                {/* Honeypot: скрыт от людей (offscreen + aria-hidden), боты его заполняют → заявка отклоняется */}
+                <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={form.website} onChange={(e) => set("website", e.target.value)} style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
                 <Input label="ФИО" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required />
                 <Input label="Телефон" value={form.contact_phone} onChange={(v) => set("contact_phone", v)} required />
                 <Input label="Email" type="email" value={form.contact_email} onChange={(v) => set("contact_email", v)} required />

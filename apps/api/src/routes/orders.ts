@@ -6,6 +6,7 @@ import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
+import { audit } from "../lib/audit.js";
 import { lookup } from "./cart.js";
 
 const di = directus;
@@ -17,18 +18,21 @@ function session(req: FastifyRequest): string | null {
 }
 
 const createOrderBody = z.object({
-  contact_fio: z.string().min(2),
-  contact_phone: z.string().min(5),
-  contact_email: z.string().email(),
+  contact_fio: z.string().min(2).max(200),
+  contact_phone: z.string().min(5).max(40),
+  contact_email: z.string().email().max(200),
   fulfillment: z.enum(["pickup", "delivery"]),
-  address: z.string().nullish(),
-  comment: z.string().nullish(),
+  address: z.string().max(500).nullish(),
+  comment: z.string().max(2000).nullish(),
   consent_pdn: z.literal(true, { errorMap: () => ({ message: "Требуется согласие на обработку ПДн" }) }),
+  // Honeypot: скрытое поле, которое видят только боты. Заполнено → отказ.
+  website: z.string().max(0).optional(),
 });
 
 export async function ordersRoutes(app: FastifyInstance) {
-  // Оформление заявки (без оплаты).
-  app.post("/orders", async (req, reply) => {
+  // Оформление заявки. Жёсткий лимит: заявка триггерит уведомление офиса и
+  // создание платежа ЮKassa — защищаем от флуда/DoS (аудит H1).
+  app.post("/orders", { config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async (req, reply) => {
     const token = session(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = createOrderBody.parse(req.body);
@@ -119,6 +123,7 @@ export async function ordersRoutes(app: FastifyInstance) {
       }
     }
 
+    audit("order.created", { actor: alumni ? `alumni:${alumni.id}` : "guest", subject: `order:${number}`, detail: { total, discount, type }, req });
     return { number, status: "new", member_discount: discount, subtotal, total_estimate: total, notified, payment_url };
   });
 
