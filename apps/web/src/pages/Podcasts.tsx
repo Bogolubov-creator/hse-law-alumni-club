@@ -29,8 +29,8 @@ export default function Podcasts() {
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Витрина · Подкасты</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Подкасты клуба</h1>
         <p className="mt-3 max-w-[620px] text-grafit-soft">
-          Разговоры с выпускниками, преподавателями и практиками права. Доступ к прослушиванию —
-          по подписке {priceRub} в год.
+          Разговоры с выпускниками, преподавателями и практиками права. Пробный выпуск открыт
+          для всех, полный доступ — по подписке {priceRub} в год.
         </p>
 
         {/* Подписка */}
@@ -74,6 +74,7 @@ export default function Podcasts() {
                   ? <img src={p.cover} alt="" className="h-24 w-24 flex-none rounded-[14px] object-cover" />
                   : <div className="flex h-24 w-24 flex-none items-center justify-center rounded-[14px] bg-hse-blue font-display text-2xl font-extrabold text-kost">▶</div>}
                 <div className="min-w-0 flex-1">
+                  {p.is_free && <span className="mb-1.5 inline-block rounded-full bg-[rgba(31,138,91,.14)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-[#1F8A5B]">Пробный выпуск · бесплатно</span>}
                   <div className="font-display text-[17px] font-semibold leading-tight tracking-tight">{p.title}</div>
                   {p.description && <p className="mt-2 text-sm leading-relaxed text-grafit-soft">{p.description}</p>}
                   {p.duration && <div className="mt-2 font-mono text-[12px] text-grafit-soft">{p.duration}</div>}

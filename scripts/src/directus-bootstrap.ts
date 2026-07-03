@@ -251,6 +251,7 @@ await ensureField("podcasts", "description", txt());
 await ensureField("podcasts", "cover", str()); // URL/путь обложки
 await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.)
 await ensureField("podcasts", "duration", str()); // «43 мин»
+await ensureField("podcasts", "is_free", bool(false)); // пробный выпуск — доступен без подписки
 await ensureField("podcasts", "sort", int());
 await ensureField("podcasts", "status", enumf(["draft", "published"], "draft"));
 await ensureField("podcasts", "created_at", ts("date-created"));
@@ -476,7 +477,7 @@ await ensureSeed("timeline_items", "title", [
 ]);
 // Демо-подкасты (доступ по подписке)
 await ensureSeed("podcasts", "title", [
-  { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "published" },
+  { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "published", is_free: true },
   { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "published" },
 ]);
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));

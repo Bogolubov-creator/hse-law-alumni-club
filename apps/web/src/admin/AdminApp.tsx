@@ -433,12 +433,20 @@ function PodcastsAdmin() {
         <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить подкаст</button>
       </div>
       {(podcasts.data ?? []).map((p) => (
-        <div key={p.id} className="grid grid-cols-[52px_1fr_90px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm">
+        <div key={p.id} className="grid grid-cols-[52px_1fr_110px_90px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm">
           {p.cover ? <img src={p.cover} alt="" className="h-12 w-12 rounded-[10px] object-cover" /> : <div className="h-12 w-12 rounded-[10px] bg-kost-2" />}
           <div className="min-w-0">
             <div className="truncate font-semibold">{p.title}</div>
             <div className="truncate font-mono text-[11px] text-grafit-soft">{p.description}</div>
           </div>
+          <button
+            onClick={() => patchPodcast.mutate({ id: p.id, is_free: !p.is_free })}
+            disabled={patchPodcast.isPending}
+            title="Пробный выпуск слушается без подписки"
+            className={`foc rounded-full px-3 py-1.5 font-mono text-[11px] ${p.is_free ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-kost-2 text-grafit-soft"}`}
+          >
+            {p.is_free ? "пробный ✓" : "по подписке"}
+          </button>
           <span className="font-mono text-[12px] text-grafit-soft">{p.duration ?? "—"}</span>
           <select value={p.status} disabled={patchPodcast.isPending} onChange={(e) => patchPodcast.mutate({ id: p.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${p.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
             <option value="published">Опубликован</option><option value="draft">Черновик</option>

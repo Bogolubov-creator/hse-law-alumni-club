@@ -16,6 +16,9 @@
 			X-Content-Type-Options "nosniff"
 			Referrer-Policy "strict-origin-when-cross-origin"
 			Content-Security-Policy "frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
+			# Ненужные сайту браузерные API выключены явно; версию сервера не светим
+			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+			-Server
 		}
 		reverse_proxy web:80
 	}

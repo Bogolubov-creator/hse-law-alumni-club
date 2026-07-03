@@ -327,13 +327,14 @@ export async function adminRoutes(app: FastifyInstance) {
     cover: z.string().nullish(),
     audio_url: z.string().nullish(),
     duration: z.string().nullish(),
+    is_free: z.boolean().optional(), // пробный выпуск (без подписки)
     sort: z.number().int().optional(),
     status: z.enum(["draft", "published"]).default("published"),
   });
 
   app.get("/admin/podcasts", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "duration", "sort", "status"] }));
+    return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "duration", "is_free", "sort", "status"] }));
   });
 
   app.post("/admin/podcasts", async (req, reply) => {

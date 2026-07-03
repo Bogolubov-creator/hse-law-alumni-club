@@ -1,6 +1,9 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
+import { z } from "zod";
 import { PODCAST_SUB_PRICE_KOP, orderNumber } from "@club/shared";
+import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
@@ -10,6 +13,28 @@ const di = directus;
 
 export function subActive(until: string | null | undefined): boolean {
   return !!until && new Date(until).getTime() > Date.now();
+}
+
+// ── Подписанные ссылки на аудио ────────────────────────────────────
+// Реальный audio_url наружу не отдаётся никогда. Клиент получает
+// /api/podcasts/:id/audio?exp=<unix>&sig=<HMAC-SHA256(id.exp, AUTH_SECRET)>.
+// Ссылка живёт AUDIO_LINK_TTL и бесполезна после истечения или для другого id.
+const AUDIO_LINK_TTL_SEC = 6 * 3600;
+
+function audioSig(id: string, exp: number): string {
+  return createHmac("sha256", env.AUTH_SECRET).update(`${id}.${exp}`).digest("hex");
+}
+
+export function signedAudioPath(id: string): string {
+  const exp = Math.floor(Date.now() / 1000) + AUDIO_LINK_TTL_SEC;
+  return `/api/podcasts/${id}/audio?exp=${exp}&sig=${audioSig(id, exp)}`;
+}
+
+function verifyAudioSig(id: string, exp: number, sig: string): boolean {
+  if (!Number.isFinite(exp) || exp * 1000 < Date.now()) return false;
+  const expected = Buffer.from(audioSig(id, exp), "hex");
+  const got = Buffer.from(sig, "hex");
+  return expected.length === got.length && timingSafeEqual(expected, got); // сравнение без утечки по времени
 }
 
 /**
@@ -25,14 +50,33 @@ export async function podcastsRoutes(app: FastifyInstance) {
     const subscribed = subActive(until);
     const rows = (await di.request(readItems("podcasts", {
       filter: { status: { _eq: "published" } }, sort: ["sort"], limit: -1,
-      fields: ["id", "title", "description", "cover", "duration", "audio_url"],
+      fields: ["id", "title", "description", "cover", "duration", "is_free", "audio_url"],
     }))) as any[];
     return {
-      items: rows.map((p) => ({ ...p, audio_url: subscribed ? p.audio_url : null })),
+      // Реальный audio_url не покидает сервер: доступным выпускам выдаётся
+      // подписанная истекающая ссылка на наш стрим-эндпоинт.
+      items: rows.map((p) => ({
+        id: p.id, title: p.title, description: p.description, cover: p.cover,
+        duration: p.duration, is_free: !!p.is_free,
+        audio_url: (subscribed || p.is_free) && p.audio_url ? signedAudioPath(p.id) : null,
+      })),
       subscribed,
       sub_until: subscribed ? until : null,
       price: PODCAST_SUB_PRICE_KOP,
     };
+  });
+
+  // Отдача аудио по подписанной ссылке (проверка HMAC + срока, затем redirect).
+  app.get("/podcasts/:id/audio", async (req, reply) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const q = z.object({ exp: z.coerce.number(), sig: z.string().regex(/^[0-9a-f]{64}$/) }).safeParse(req.query);
+    if (!q.success || !verifyAudioSig(id, q.data.exp, q.data.sig))
+      return reply.code(403).send({ error: "Ссылка недействительна или истекла" });
+    const rows = (await di.request(readItems("podcasts", {
+      filter: { id: { _eq: id }, status: { _eq: "published" } }, limit: 1, fields: ["audio_url"],
+    }))) as any[];
+    if (!rows[0]?.audio_url) return reply.code(404).send({ error: "Выпуск не найден" });
+    return reply.redirect(rows[0].audio_url, 302);
   });
 
   // Оформить годовую подписку: заявка + (если подключена) ссылка на оплату.

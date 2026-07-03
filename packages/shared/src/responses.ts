@@ -20,7 +20,8 @@ export const PODCAST_SUB_PRICE_KOP = 399_900; // 3 999 ₽ / год
 export const podcastItemSchema = z.object({
   id: z.string(), title: z.string(), description: z.string().nullable(),
   cover: z.string().nullable(), duration: z.string().nullable(),
-  audio_url: z.string().nullable().optional(), // null/absent без подписки
+  is_free: z.boolean().optional(), // пробный выпуск — слушается без подписки
+  audio_url: z.string().nullable().optional(), // подписанная ссылка; null без доступа
 });
 export const podcastsResSchema = z.object({
   items: z.array(podcastItemSchema),

@@ -34,7 +34,7 @@ export type Overview = {
 };
 export type AdminNews = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string };
 export type AdminTimeline = { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string };
-export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; sort: number; status: string };
+export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
 export type Member = { id: string; fio: string | null; cohort: string | null; status: string; verification_status: string; points_cached: number; level_cached: string; personal_discount: number; friends_count?: number; podcast_active?: boolean };
@@ -100,7 +100,7 @@ export function useAdminMutations() {
     deleteTimeline: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/timeline/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["timeline"] }); } }),
     // Подкасты
     createPodcast: useMutation({ mutationFn: (v: { title: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null }) => req("POST", "/admin/podcasts", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
-    patchPodcast: useMutation({ mutationFn: (v: { id: string; title?: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null; status?: string }) => req("PATCH", `/admin/podcasts/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
+    patchPodcast: useMutation({ mutationFn: (v: { id: string; title?: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null; is_free?: boolean; status?: string }) => req("PATCH", `/admin/podcasts/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
     deletePodcast: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/podcasts/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
     grantPodcastSub: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/podcast-sub`), onSuccess: refetch }),
   };
