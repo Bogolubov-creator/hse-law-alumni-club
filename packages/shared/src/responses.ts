@@ -92,6 +92,16 @@ export const classmateSchema = z.object({
   friend_status: z.enum(["none", "pending", "incoming", "accepted"]),
 });
 export const classmatesSchema = z.array(classmateSchema);
+
+// «События» вверху ЛК: заявки в друзья, статусы заказов, подписка.
+export const lkEventSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("friend_request"), from_id: z.string(), from_fio: z.string().nullable(), created_at: z.string().nullable() }),
+  z.object({ kind: z.literal("friend_accepted"), by_fio: z.string().nullable(), created_at: z.string().nullable() }),
+  z.object({ kind: z.literal("order_status"), number: z.string(), status: z.string(), paid: z.boolean(), created_at: z.string().nullable() }),
+  z.object({ kind: z.literal("podcast_expiring"), days_left: z.number(), until: z.string() }),
+]);
+export const lkEventsSchema = z.array(lkEventSchema);
+export type LkEvent = z.infer<typeof lkEventSchema>;
 export const meSchema = z.object({
   alumni: alumniBriefSchema, level: levelInfoSchema, achievements: z.array(achievementResSchema), activity: z.array(activityPointSchema),
 });

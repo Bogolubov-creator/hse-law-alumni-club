@@ -4,6 +4,7 @@ import { z } from "zod";
 import { computeLevel } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
+import { subActive } from "./podcasts.js";
 
 const di = directus;
 
@@ -62,6 +63,54 @@ export async function communityRoutes(app: FastifyInstance) {
         friend_status: statusFor(r.id),
       };
     });
+  });
+
+  // «События» для блока вверху ЛК: агрегируются из существующих данных,
+  // отдельной коллекции уведомлений нет (нечему рассинхронизироваться).
+  app.get("/me/events", async (req, reply) => {
+    const me = await resolveAlumni(req);
+    if (!me) return reply.code(401).send({ error: "Не авторизован" });
+    if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
+
+    const monthAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+    const events: Record<string, unknown>[] = [];
+
+    // Входящие заявки в друзья (pending, адресованы мне) — самое важное, сверху.
+    const incoming = (await di.request((readItems as any)("alumni_friends", {
+      filter: { friend_id: { _eq: me.id }, status: { _eq: "pending" } },
+      limit: 20, fields: ["alumni_id", "created_at"], sort: ["-created_at"],
+    }))) as { alumni_id: string; created_at: string | null }[];
+
+    // Мои заявки, которые приняли (за месяц).
+    const acceptedMine = (await di.request((readItems as any)("alumni_friends", {
+      filter: { alumni_id: { _eq: me.id }, status: { _eq: "accepted" }, created_at: { _gte: monthAgo } },
+      limit: 20, fields: ["friend_id", "created_at"], sort: ["-created_at"],
+    }))) as { friend_id: string; created_at: string | null }[];
+
+    // Имена участников одним запросом.
+    const ids = [...new Set([...incoming.map((l) => l.alumni_id), ...acceptedMine.map((l) => l.friend_id)])];
+    const names = new Map<string, string | null>();
+    if (ids.length) {
+      const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _in: ids } }, limit: -1, fields: ["id", "fio"] }))) as any[];
+      for (const r of rows) names.set(r.id, r.fio);
+    }
+    for (const l of incoming) events.push({ kind: "friend_request", from_id: l.alumni_id, from_fio: names.get(l.alumni_id) ?? null, created_at: l.created_at });
+    for (const l of acceptedMine) events.push({ kind: "friend_accepted", by_fio: names.get(l.friend_id) ?? null, created_at: l.created_at });
+
+    // Мои заявки со сдвинутым статусом (за месяц; new не показываем — это не событие).
+    const orders = (await di.request((readItems as any)("orders", {
+      filter: { alumni_id: { _eq: me.id }, status: { _neq: "new" }, created_at: { _gte: monthAgo } },
+      limit: 10, fields: ["number", "status", "payment_status", "created_at"], sort: ["-created_at"],
+    }))) as any[];
+    for (const o of orders) events.push({ kind: "order_status", number: o.number, status: o.status, paid: o.payment_status === "succeeded", created_at: o.created_at });
+
+    // Подписка на подкасты: активна и истекает в ближайшие 14 дней.
+    if (subActive(me.podcast_sub_until)) {
+      const daysLeft = Math.ceil((new Date(me.podcast_sub_until!).getTime() - Date.now()) / 86400000);
+      if (daysLeft <= 14) events.push({ kind: "podcast_expiring", days_left: daysLeft, until: me.podcast_sub_until });
+    }
+
+    return events;
   });
 
   // Заявка в друзья. Идемпотентна; встречная pending-заявка становится accepted.

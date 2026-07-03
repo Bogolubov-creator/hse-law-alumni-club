@@ -2,8 +2,8 @@ import { useEffect, useId, useState, type CSSProperties, type FormEvent } from "
 import { Link } from "react-router-dom";
 import { LEVELS, loginResponseSchema } from "@club/shared";
 import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
-import { useMe, useMyOrders, useClassmates, useAddFriend } from "../lib/queries.js";
-import type { Classmate } from "@club/shared";
+import { useMe, useMyOrders, useClassmates, useAddFriend, useLkEvents } from "../lib/queries.js";
+import type { Classmate, LkEvent } from "@club/shared";
 import Modal from "../components/Modal.js";
 
 const ORDER_STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
@@ -183,6 +183,9 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
 
   return (
     <>
+      {/* СОБЫТИЯ: заявки в друзья, статусы, подписка */}
+      <Events token={token} />
+
       {/* PROFILE CARD */}
       <div style={{ ...surface, display: "flex", alignItems: "center", gap: 28, padding: "28px 30px", flexWrap: "wrap", boxShadow: "0 18px 40px -28px rgba(20,24,31,.35)" }}>
         <div style={{ width: 84, height: 84, borderRadius: 22, flex: "none", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>{initial}</div>
@@ -288,6 +291,71 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
         <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#fff", color: "#6B7280", border: "1.5px solid #E5E7EB", cursor: "not-allowed" }}>↗ Макс · скоро</button>
       </div>
     </>
+  );
+}
+
+const ORDER_EVENT_RU: Record<string, string> = {
+  in_progress: "взята в работу", confirmed: "подтверждена", done: "готова", canceled: "отменена",
+};
+
+/** Блок «События» вверху ЛК — то, что требует внимания или радует. */
+function Events({ token }: { token: string }) {
+  const events = useLkEvents(token);
+  const addFriend = useAddFriend(token);
+  const list = events.data ?? [];
+  if (events.isLoading || events.isError || list.length === 0) return null;
+
+  const line = (e: LkEvent, i: number) => {
+    switch (e.kind) {
+      case "friend_request":
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 18 }}>🤝</span>
+            <span style={{ flex: 1, fontSize: 14.5, minWidth: 200 }}><b>{e.from_fio ?? "Выпускник"}</b> хочет добавить вас в друзья</span>
+            <button
+              onClick={() => addFriend.mutate(e.from_id)}
+              disabled={addFriend.isPending && addFriend.variables === e.from_id}
+              className="foc"
+              style={{ fontWeight: 600, fontSize: 13, padding: "8px 16px", borderRadius: 10, border: "none", background: "#1F8A5B", color: "#FBF3E8", cursor: "pointer" }}
+            >
+              {addFriend.isPending && addFriend.variables === e.from_id ? "…" : "Принять"}
+            </button>
+          </div>
+        );
+      case "friend_accepted":
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0" }}>
+            <span style={{ fontSize: 18 }}>✅</span>
+            <span style={{ fontSize: 14.5 }}><b>{e.by_fio ?? "Выпускник"}</b> теперь у вас в друзьях</span>
+          </div>
+        );
+      case "order_status":
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 18 }}>📋</span>
+            <span style={{ fontSize: 14.5 }}>Заявка <b style={mono}>{e.number}</b> {ORDER_EVENT_RU[e.status] ?? e.status}{e.paid && " · оплата прошла ✓"}</span>
+          </div>
+        );
+      case "podcast_expiring":
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 18 }}>🎧</span>
+            <span style={{ flex: 1, fontSize: 14.5, minWidth: 200 }}>Подписка на подкасты истекает через <b>{e.days_left} {e.days_left === 1 ? "день" : e.days_left < 5 ? "дня" : "дней"}</b></span>
+            <Link to="/podcasts" className="foc" style={{ fontWeight: 600, fontSize: 13, padding: "8px 16px", borderRadius: 10, background: "#EC5A13", color: "#FBF3E8", textDecoration: "none" }}>Продлить</Link>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div style={{ ...surface, padding: "20px 28px", marginBottom: 22, borderLeft: "4px solid #EC5A13" }}>
+      <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "#C9450E" }}>События</div>
+      <div style={{ marginTop: 4 }}>
+        {list.map((e, i) => (
+          <div key={i} style={{ borderTop: i ? "1px solid #f0ece2" : "none" }}>{line(e, i)}</div>
+        ))}
+      </div>
+    </div>
   );
 }
 

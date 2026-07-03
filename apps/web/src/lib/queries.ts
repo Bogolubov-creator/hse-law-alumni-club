@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, timelineSchema, podcastsResSchema, type Classmate, type TimelineItem, type PodcastsRes } from "@club/shared";
+import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, timelineSchema, podcastsResSchema, lkEventsSchema, type Classmate, type TimelineItem, type PodcastsRes, type LkEvent } from "@club/shared";
 import { apiGet, apiPost, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
 
 export function useLedger(token: string | null) {
@@ -47,7 +47,20 @@ export function useAddFriend(token: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (alumniId: string) => apiPost<{ status: string }>("/me/friends", { alumni_id: alumniId }, undefined, token ?? undefined),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["classmates"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["classmates"] });
+      qc.invalidateQueries({ queryKey: ["lk-events"] });
+    },
+  });
+}
+
+// «События» вверху ЛК (заявки в друзья, статусы заказов, подписка).
+export function useLkEvents(token: string | null) {
+  return useQuery({
+    queryKey: ["lk-events", token],
+    queryFn: () => apiGet<LkEvent[]>("/me/events", token!, lkEventsSchema),
+    enabled: !!token,
+    retry: false,
   });
 }
 
