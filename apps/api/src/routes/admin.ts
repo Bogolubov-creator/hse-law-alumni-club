@@ -9,6 +9,20 @@ import { syncDpoCatalog } from "../lib/hse-sync.js";
 import { extendPodcastSub, subActive } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
+import { sendEmail } from "../lib/notify.js";
+import { readUsers } from "@directus/sdk";
+import { env } from "../env.js";
+
+/** E-mail выпускника по alumni_id (через привязанный аккаунт). */
+async function alumniEmail(alumniId: string): Promise<string | null> {
+  const a = (await di.request(readItems("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["user_id", "contacts_json"] }))) as any[];
+  if (!a[0]) return null;
+  if (a[0].user_id) {
+    const u = (await di.request((readUsers as any)({ filter: { id: { _eq: a[0].user_id } }, limit: 1, fields: ["email"] }))) as any[];
+    if (u[0]?.email) return u[0].email;
+  }
+  return a[0].contacts_json?.email ?? null;
+}
 
 const di = directus;
 const ADMIN_ROLES = ["editor", "admin", "Administrator"];
@@ -84,6 +98,15 @@ export async function adminRoutes(app: FastifyInstance) {
     const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
     await di.request((updateItem as any)("orders", id, { status }));
     audit("order.status", { actor: `admin:${ctx.userId}`, subject: `order:${id}`, detail: { status }, req });
+    // Письмо клиенту о смене статуса (fire-and-forget).
+    void (async () => {
+      const rows = (await di.request(readItems("orders", { filter: { id: { _eq: id } }, limit: 1, fields: ["number", "contact_email", "contact_fio"] }))) as any[];
+      const o = rows[0];
+      if (!o?.contact_email || o.contact_email === "-") return;
+      const RU: Record<string, string> = { in_progress: "взята в работу", confirmed: "подтверждена", done: "выполнена", canceled: "отменена" };
+      await sendEmail(o.contact_email, `Заявка ${o.number}: ${RU[status] ?? status}`,
+        `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${RU[status] ?? status}.\nДетали — в личном кабинете клуба.\n\n— Клуб выпускников факультета права НИУ ВШЭ`);
+    })().catch((e) => req.log.error({ err: e }, "order status email failed"));
     return { ok: true, status };
   });
 
@@ -126,6 +149,20 @@ export async function adminRoutes(app: FastifyInstance) {
     if (body.verification_status === "verified") patch.verified_at = new Date().toISOString();
     await di.request((updateItem as any)("alumni", id, patch));
     audit("member.patch", { actor: `admin:${ctx.userId}`, subject: `alumni:${id}`, detail: body, req });
+    // Письмо о решении по верификации (fire-and-forget).
+    if (body.verification_status === "verified" || body.verification_status === "rejected") {
+      void (async () => {
+        const email = await alumniEmail(id);
+        if (!email) return;
+        if (body.verification_status === "verified") {
+          await sendEmail(email, "Кабинет выпускника активирован 🎓",
+            "Поздравляем! Учебный офис подтвердил ваш выпуск — личный кабинет клуба активирован.\n\nВас ждут: скидка выпускника на программы ДПО, сообщество однокурсников, подкасты и мерч.\nВойти: " + env.PUBLIC_URL + "/lk\n\n— Клуб выпускников факультета права НИУ ВШЭ");
+        } else {
+          await sendEmail(email, "По вашей заявке на вступление",
+            "К сожалению, учебный офис не смог подтвердить данные вашей заявки. Если считаете это ошибкой — ответьте на письмо или свяжитесь с офисом.\n\n— Клуб выпускников факультета права НИУ ВШЭ");
+        }
+      })().catch((e) => req.log.error({ err: e }, "verification email failed"));
+    }
 
     // Рефералка: при верификации приглашённого — +80 баллов рефереру (идемпотентно).
     if (body.verification_status === "verified") {

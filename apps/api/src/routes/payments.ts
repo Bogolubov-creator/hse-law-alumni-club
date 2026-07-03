@@ -7,6 +7,7 @@ import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js
 import { extendPodcastSub } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { isYookassaIp } from "../lib/security.js";
+import { sendEmail } from "../lib/notify.js";
 
 const di = directus;
 
@@ -95,7 +96,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (!orderNumber) return { ok: true }; // не наш платёж — молча подтверждаем приём
 
     const rows = (await di.request(readItems("orders", {
-      filter: { number: { _eq: orderNumber } }, limit: 1, fields: ["id", "status", "payment_status", "type", "alumni_id"],
+      filter: { number: { _eq: orderNumber } }, limit: 1, fields: ["id", "status", "payment_status", "type", "alumni_id", "contact_email", "contact_fio", "total_estimate"],
     }))) as any[];
     const order = rows[0];
     if (!order) return { ok: true };
@@ -110,6 +111,17 @@ export async function paymentsRoutes(app: FastifyInstance) {
         await extendPodcastSub(order.alumni_id, 12).catch((e) => req.log.error({ err: e, orderNumber }, "podcast sub extend failed"));
       }
       audit("payment.succeeded", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, amount: verified.amount }, req });
+      // Письмо об успешной оплате (fire-and-forget).
+      if (order.contact_email && order.contact_email !== "-") {
+        const isPodcast = order.type === "podcast";
+        void sendEmail(
+          order.contact_email,
+          `Оплата получена — заявка ${orderNumber}`,
+          `Здравствуйте, ${order.contact_fio}!\n\nОплата по заявке ${orderNumber} на сумму ${(order.total_estimate / 100).toLocaleString("ru-RU")} ₽ прошла успешно.` +
+            (isPodcast ? "\nПодписка на подкасты клуба активирована на год — приятного прослушивания!" : "\nЗаявка передана учебному офису в работу.") +
+            "\n\n— Клуб выпускников факультета права НИУ ВШЭ",
+        ).catch((e) => req.log.error({ err: e, orderNumber }, "payment email failed"));
+      }
       req.log.info({ orderNumber }, "yookassa payment succeeded");
     } else if (verified.status === "canceled") {
       await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "canceled" }));
