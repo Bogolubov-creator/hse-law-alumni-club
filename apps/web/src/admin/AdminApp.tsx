@@ -7,8 +7,9 @@ import {
   adminLogin, adminToken, setAdminToken, clearAdminToken,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
   useAdminPrograms, useAdminProducts, useAdminPage, useAdminNews, useAdminTimeline, useAdminPodcasts,
+  useAuditLog, downloadOrdersCsv,
   type AdminOrder, type Member, type AdminProgram, type AdminProduct, type ProgramInput, type ProductInput,
-  type AdminNews, type AdminTimeline, type AdminPodcast,
+  type AdminNews, type AdminTimeline, type AdminPodcast, type AuditEntry,
 } from "../lib/admin.js";
 
 /**
@@ -28,7 +29,7 @@ const stPill = (s: string) =>
       : s === "confirmed" || s === "verified" || s === "done" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]"
         : "bg-[rgba(181,51,27,.12)] text-karmin";
 
-type Section = "overview" | "orders" | "members" | "content";
+type Section = "overview" | "orders" | "members" | "content" | "audit";
 
 export default function AdminApp() {
   const [token, setToken] = useState<string | null>(() => adminToken());
@@ -71,8 +72,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { key: "orders", label: "Заявки", badge: ov.data?.new_orders },
     { key: "members", label: "Выпускники", badge: ov.data?.pending_verifications },
     { key: "content", label: "Контент" },
+    { key: "audit", label: "Журнал" },
   ];
-  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент" };
+  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент", audit: "Журнал безопасности" };
 
   // Истёкшая сессия: сохранить СВЕЖИЙ токен перед перезагрузкой, иначе вечный цикл логина.
   if (ov.isError) return <AdminGate onAuthed={(t) => { setAdminToken(t); location.reload(); }} />;
@@ -98,6 +100,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         {section === "orders" && <Orders />}
         {section === "members" && <Members />}
         {section === "content" && <Content />}
+        {section === "audit" && <AuditLog />}
       </main>
     </div>
   );
@@ -175,12 +178,31 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
 function Orders() {
   const orders = useAdminOrders();
   const { setOrderStatus } = useAdminMutations();
+  const [q, setQ] = useState("");
+  const [csvBusy, setCsvBusy] = useState(false);
+  const list = (orders.data ?? []).filter((o) => {
+    if (!q.trim()) return true;
+    const hay = `${o.number} ${o.contact_fio} ${o.contact_phone} ${o.contact_email}`.toLowerCase();
+    return hay.includes(q.trim().toLowerCase());
+  });
+  const exportCsv = async () => {
+    setCsvBusy(true);
+    try { await downloadOrdersCsv(); } catch { alert("Не удалось выгрузить CSV"); } finally { setCsvBusy(false); }
+  };
   return (
+    <>
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: номер, ФИО, телефон, email…" className="foc w-80 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
+      {q && <span className="font-mono text-[12px] text-grafit-soft">найдено: {list.length}</span>}
+      <button onClick={exportCsv} disabled={csvBusy} className="foc ml-auto rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-60">
+        {csvBusy ? "Готовим…" : "📤 Выгрузить CSV"}
+      </button>
+    </div>
     <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
       <div className="grid grid-cols-[110px_1fr_1fr_130px_150px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
         <span>Номер</span><span>Клиент</span><span>Контакты</span><span>Сумма</span><span>Статус</span>
       </div>
-      {(orders.data ?? []).map((o: AdminOrder) => (
+      {list.map((o: AdminOrder) => (
         <div key={o.id} className="border-t border-[#f0ece2] px-6 py-3.5 text-sm">
           <div className="grid grid-cols-[110px_1fr_1fr_130px_150px] items-center gap-3">
             <span className="font-mono text-[12px]">{o.number}</span>
@@ -201,21 +223,32 @@ function Orders() {
           )}
         </div>
       ))}
-      {orders.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Заявок нет.</p>}
+      {!orders.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q ? "По запросу ничего не найдено." : "Заявок нет."}</p>}
     </div>
+    </>
   );
 }
 
 function Members() {
   const members = useMembers();
   const [sel, setSel] = useState<Member | null>(null);
+  const [q, setQ] = useState("");
+  const list = (members.data ?? []).filter((m) => {
+    if (!q.trim()) return true;
+    const hay = `${m.fio ?? ""} ${m.cohort ?? ""} ${VERIF[m.verification_status] ?? ""}`.toLowerCase();
+    return hay.includes(q.trim().toLowerCase());
+  });
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: ФИО, год выпуска, статус…" className="foc w-80 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
+        {q && <span className="font-mono text-[12px] text-grafit-soft">найдено: {list.length}</span>}
+      </div>
       <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
         <div className="grid grid-cols-[1fr_80px_120px_80px_80px_80px_90px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
           <span>Выпускник</span><span>Выпуск</span><span>Статус</span><span>Баллы</span><span>Скидка</span><span>Друзья</span><span>Подкасты</span>
         </div>
-        {(members.data ?? []).map((m) => (
+        {list.map((m) => (
           <button key={m.id} onClick={() => setSel(m)} className="arow foc grid w-full grid-cols-[1fr_80px_120px_80px_80px_80px_90px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-left text-sm">
             <span className="font-semibold">{m.fio}</span>
             <span className="font-mono text-[12px] text-grafit-soft">{m.cohort}</span>
@@ -226,7 +259,7 @@ function Members() {
             <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "—"}</span>
           </button>
         ))}
-        {members.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Выпускников нет.</p>}
+        {!members.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q ? "По запросу ничего не найдено." : "Выпускников нет."}</p>}
       </div>
       {sel && <MemberModal member={sel} onClose={() => setSel(null)} />}
     </>
@@ -268,6 +301,77 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
         </button>
       </div>
     </Modal>
+  );
+}
+
+// ── Журнал безопасности: кто входил, что менял, какие оплаты прошли ──
+const AUDIT_RU: Record<string, { label: string; icon: string; group: string }> = {
+  "login.ok": { label: "Вход выпускника", icon: "🔓", group: "Входы" },
+  "login.fail": { label: "Неудачный вход", icon: "⚠️", group: "Входы" },
+  "login.locked": { label: "Вход заблокирован (перебор)", icon: "⛔", group: "Входы" },
+  "admin.login.ok": { label: "Вход администратора", icon: "🔐", group: "Входы" },
+  "admin.login.fail": { label: "Неудачный вход админа", icon: "⚠️", group: "Входы" },
+  "admin.login.locked": { label: "Вход админа заблокирован", icon: "⛔", group: "Входы" },
+  "register": { label: "Заявка на вступление", icon: "🎓", group: "Входы" },
+  "password.forgot": { label: "Запрос восстановления пароля", icon: "🔁", group: "Входы" },
+  "password.reset": { label: "Пароль изменён", icon: "🔑", group: "Входы" },
+  "payment.succeeded": { label: "Оплата прошла", icon: "💳", group: "Платежи" },
+  "payment.canceled": { label: "Оплата отменена", icon: "↩️", group: "Платежи" },
+  "payment.webhook.badip": { label: "Webhook с чужого IP (отклонён)", icon: "🛡️", group: "Платежи" },
+  "order.created": { label: "Создана заявка", icon: "🧾", group: "Заявки" },
+  "order.status": { label: "Смена статуса заявки", icon: "📋", group: "Заявки" },
+  "orders.export": { label: "Выгрузка заявок в CSV", icon: "📤", group: "Заявки" },
+  "member.patch": { label: "Изменение выпускника", icon: "👤", group: "Изменения" },
+  "podcast.sub.grant": { label: "Выдана подписка на подкасты", icon: "🎧", group: "Платежи" },
+  "podcast.sub.request": { label: "Запрошена подписка", icon: "🎧", group: "Платежи" },
+  "avatar.upload": { label: "Загружено фото профиля", icon: "🖼️", group: "Изменения" },
+};
+const AUDIT_GROUPS = ["Все", "Входы", "Платежи", "Заявки", "Изменения"];
+
+function AuditLog() {
+  const log = useAuditLog();
+  const [group, setGroup] = useState("Все");
+  const [q, setQ] = useState("");
+  const rows = (log.data ?? []).filter((r) => {
+    const meta = AUDIT_RU[r.event];
+    if (group !== "Все" && (meta?.group ?? "Изменения") !== group) return false;
+    if (!q.trim()) return true;
+    const hay = `${r.event} ${meta?.label ?? ""} ${r.actor ?? ""} ${r.subject ?? ""} ${r.ip ?? ""}`.toLowerCase();
+    return hay.includes(q.trim().toLowerCase());
+  });
+  const fmt = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {AUDIT_GROUPS.map((g) => (
+          <button key={g} onClick={() => setGroup(g)} className={`foc rounded-full px-3.5 py-2 text-[13px] font-semibold ${group === g ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>{g}</button>
+        ))}
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: email, IP, номер заявки…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2 text-sm outline-none focus:border-ohra" />
+      </div>
+      <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+        <div className="grid grid-cols-[110px_1fr_1fr_1fr_120px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
+          <span>Когда</span><span>Событие</span><span>Кто</span><span>Объект</span><span>IP</span>
+        </div>
+        {log.isLoading && <p className="p-8 text-center font-mono text-sm text-grafit-soft">Загрузка…</p>}
+        {rows.map((r: AuditEntry) => {
+          const meta = AUDIT_RU[r.event];
+          const danger = r.event.includes("fail") || r.event.includes("locked") || r.event.includes("badip");
+          return (
+            <div key={r.id} title={r.detail ? JSON.stringify(r.detail) : undefined} className="grid grid-cols-[110px_1fr_1fr_1fr_120px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3 text-sm">
+              <span className="font-mono text-[12px] text-grafit-soft">{fmt(r.created_at)}</span>
+              <span className={`font-semibold ${danger ? "text-karmin" : ""}`}>{meta?.icon ?? "•"} {meta?.label ?? r.event}</span>
+              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.actor ?? "—"}</span>
+              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.subject ?? "—"}</span>
+              <span className="font-mono text-[12px] text-grafit-soft">{r.ip ?? "—"}</span>
+            </div>
+          );
+        })}
+        {!log.isLoading && rows.length === 0 && <p className="p-8 text-center font-mono text-sm text-grafit-soft">Записей не найдено.</p>}
+      </div>
+      <p className="mt-3 font-mono text-[11px] text-grafit-soft">Последние 300 событий · обновляется раз в минуту · наведите на строку, чтобы увидеть детали.</p>
+    </>
   );
 }
 

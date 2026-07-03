@@ -61,6 +61,27 @@ export function useAdminPrograms() {
 export function useAdminProducts() {
   return useQuery({ queryKey: ["adm", "products"], queryFn: () => req<AdminProduct[]>("GET", "/admin/products"), retry: false });
 }
+export type AuditEntry = { id: string; event: string; actor: string | null; subject: string | null; detail: Record<string, unknown> | null; ip: string | null; created_at: string | null };
+export function useAuditLog() {
+  return useQuery({ queryKey: ["adm", "audit"], queryFn: () => req<AuditEntry[]>("GET", "/admin/audit?limit=300"), retry: false, refetchInterval: 60_000 });
+}
+
+/** Скачивание CSV с Bearer-токеном (обычная ссылка не передаст авторизацию). */
+export async function downloadOrdersCsv(): Promise<void> {
+  const t = adminToken();
+  const res = await fetch("/api/admin/orders/export.csv", { headers: t ? { authorization: `Bearer ${t}` } : {} });
+  if (!res.ok) throw new Error("Не удалось выгрузить CSV");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function useAdminPage(slug: string) {
   return useQuery({ queryKey: ["adm", "page", slug], queryFn: () => req<AdminPage>("GET", `/admin/pages/${slug}`), retry: false });
 }

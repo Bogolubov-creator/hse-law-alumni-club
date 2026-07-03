@@ -293,6 +293,51 @@ export async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // ── Журнал безопасности: чтение аудит-лога ───────────────────────
+  app.get("/admin/audit", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { limit } = z.object({ limit: z.coerce.number().int().min(1).max(500).default(300) }).parse(req.query);
+    return di.request((readItems as any)("audit_log", {
+      sort: ["-created_at"], limit,
+      fields: ["id", "event", "actor", "subject", "detail", "ip", "created_at"],
+    }));
+  });
+
+  // ── Выгрузка заявок в CSV (Excel-совместимо: BOM + точка с запятой) ──
+  app.get("/admin/orders/export.csv", async (req, reply) => {
+    const ctx = requireAdmin(req, reply);
+    if (!ctx) return;
+    const orders = (await di.request((readItems as any)("orders", {
+      sort: ["-created_at"], limit: -1,
+      fields: ["number", "created_at", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "address", "items_json", "subtotal", "member_discount", "total_estimate", "status", "payment_status", "comment"],
+    }))) as any[];
+
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rub2 = (kop: number) => (kop / 100).toFixed(2).replace(".", ","); // Excel-число в ru-локали
+    const TYPE_RU: Record<string, string> = { dpo: "ДПО", merch: "Мерч", mixed: "Смешанная", podcast: "Подписка на подкасты" };
+    const STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Выполнена", canceled: "Отменена" };
+
+    const header = ["Номер", "Дата", "Тип", "Клиент", "Телефон", "Email", "Получение", "Адрес", "Состав", "Сумма, ₽", "Скидка, %", "Итого, ₽", "Статус", "Оплата", "Комментарий"];
+    const lines = orders.map((o) => [
+      esc(o.number),
+      esc(o.created_at ? new Date(o.created_at).toLocaleString("ru-RU") : ""),
+      esc(TYPE_RU[o.type] ?? o.type),
+      esc(o.contact_fio), esc(o.contact_phone), esc(o.contact_email),
+      esc(o.fulfillment === "delivery" ? "Доставка" : "Самовывоз"), esc(o.address),
+      esc((o.items_json ?? []).map((i: any) => `${i.title}${i.variant_sku ? ` (${i.variant_sku})` : ""} ×${i.qty}`).join("; ")),
+      esc(rub2(o.subtotal ?? 0)), esc(o.member_discount ?? 0), esc(rub2(o.total_estimate ?? 0)),
+      esc(STATUS_RU[o.status] ?? o.status),
+      esc(o.payment_status === "succeeded" ? "Оплачено" : o.payment_status === "canceled" ? "Отменена" : ""),
+      esc(o.comment),
+    ].join(";"));
+
+    audit("orders.export", { actor: `admin:${ctx.userId}`, detail: { count: orders.length }, req });
+    const csv = "﻿" + [header.map(esc).join(";"), ...lines].join("\r\n"); // BOM — кириллица в Excel
+    reply.header("Content-Type", "text/csv; charset=utf-8");
+    reply.header("Content-Disposition", `attachment; filename="orders-${new Date().toISOString().slice(0, 10)}.csv"`);
+    return csv;
+  });
+
   // ── Новости: пишутся и публикуются из админ-панели ──────────────
   const newsBody = z.object({
     title: z.string().min(3),
