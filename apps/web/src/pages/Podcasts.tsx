@@ -1,14 +1,65 @@
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "../components/SiteShell.js";
 import { rub, type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
+import { usePageTitle } from "../lib/title.js";
+
+const RATES = [1, 1.25, 1.5, 2] as const;
+
+/** Плеер выпуска: запоминает позицию (localStorage) и умеет менять скорость. */
+function EpisodePlayer({ id, src }: { id: string; src: string }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  const lastSave = useRef(0);
+  const [rate, setRate] = useState(1);
+  const posKey = `pod-pos-${id}`;
+
+  const restore = () => {
+    const el = ref.current;
+    const saved = Number(localStorage.getItem(posKey) || 0);
+    // Не восстанавливаем, если дослушано почти до конца — начинаем заново.
+    if (el && saved > 5 && saved < (el.duration || Infinity) - 5) el.currentTime = saved;
+  };
+  const savePos = () => {
+    const el = ref.current;
+    if (!el) return;
+    const now = Date.now();
+    if (now - lastSave.current < 5000) return; // пишем не чаще раза в 5 секунд
+    lastSave.current = now;
+    localStorage.setItem(posKey, String(Math.floor(el.currentTime)));
+  };
+  const cycleRate = () => {
+    const next = RATES[(RATES.indexOf(rate as (typeof RATES)[number]) + 1) % RATES.length]!;
+    setRate(next);
+    if (ref.current) ref.current.playbackRate = next;
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <audio
+        ref={ref}
+        controls
+        preload="none"
+        src={src}
+        className="min-w-0 flex-1"
+        onLoadedMetadata={restore}
+        onTimeUpdate={savePos}
+        onPause={() => { lastSave.current = 0; savePos(); }}
+      />
+      <button onClick={cycleRate} title="Скорость воспроизведения" className="foc flex-none rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 font-mono text-[12px] font-semibold">
+        ×{rate}
+      </button>
+    </div>
+  );
+}
 
 /**
  * Подкасты клуба — витрина по аналогии с мерчем. Слушать можно по годовой
  * подписке (3 999 ₽/год): без неё карточки видны, но вместо плеера — замок и CTA.
  */
 export default function Podcasts() {
+  usePageTitle("Подкасты");
   const t = token();
   const q = usePodcasts(t);
   const subscribe = useSubscribePodcasts(t);
@@ -82,7 +133,7 @@ export default function Podcasts() {
               </div>
               <div className="border-t border-[#f0ece2] px-5 py-4">
                 {p.audio_url ? (
-                  <audio controls preload="none" src={p.audio_url} className="w-full" />
+                  <EpisodePlayer id={p.id} src={p.audio_url} />
                 ) : (
                   <div className="flex items-center gap-3 font-mono text-[12px] text-grafit-soft">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-kost-2">🔒</span>

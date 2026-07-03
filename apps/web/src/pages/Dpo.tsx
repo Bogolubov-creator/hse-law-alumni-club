@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { usePageTitle } from "../lib/title.js";
 import SiteShell, { DiscountBadge } from "../components/SiteShell.js";
 import { FORMAT_LABEL, rub, type Program } from "../lib/api.js";
 import { usePrograms, useMemberDiscount, useCartMutations } from "../lib/cart.js";
@@ -19,12 +20,27 @@ export default function Dpo() {
   const discount = useMemberDiscount();
   const { add } = useCartMutations();
   const toast = useToast();
-  const [dir, setDir] = useState<string | null>(null);
-  const [fmt, setFmt] = useState<string | null>(null);
-  const [dur, setDur] = useState<string | null>(null);
-  const [sort, setSort] = useState<Sort>("default");
+  usePageTitle("Витрина ДПО");
+  // Фильтры живут в URL — подборкой можно поделиться ссылкой.
+  const [params, setParams] = useSearchParams();
+  const [dir, setDir] = useState<string | null>(params.get("dir"));
+  const [fmt, setFmt] = useState<string | null>(params.get("fmt"));
+  const [dur, setDur] = useState<string | null>(params.get("dur"));
+  const [sort, setSort] = useState<Sort>((params.get("sort") as Sort) || "default");
+  const [q, setQ] = useState(params.get("q") ?? "");
   // Как на hse.ru: «Актуальный набор» отдельно от полного каталога.
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(params.get("all") === "1");
+
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (q.trim()) p.set("q", q.trim());
+    if (dir) p.set("dir", dir);
+    if (fmt) p.set("fmt", fmt);
+    if (dur) p.set("dur", dur);
+    if (sort !== "default") p.set("sort", sort);
+    if (showAll) p.set("all", "1");
+    setParams(p, { replace: true });
+  }, [q, dir, fmt, dur, sort, showAll, setParams]);
 
   const catalog = programs.data ?? [];
   const actualCount = catalog.filter((p) => p.enrollment !== "nonactual").length;
@@ -34,14 +50,17 @@ export default function Dpo() {
   const durations = useMemo(() => [...new Set(all.map((p) => p.duration).filter(Boolean))].sort(), [all]);
 
   const list = useMemo(() => {
-    const f = all.filter((p) => (!dir || p.direction === dir) && (!fmt || p.format === fmt) && (!dur || p.duration === dur));
+    const needle = q.trim().toLowerCase();
+    const f = all.filter((p) =>
+      (!dir || p.direction === dir) && (!fmt || p.format === fmt) && (!dur || p.duration === dur)
+      && (!needle || `${p.title} ${p.direction}`.toLowerCase().includes(needle)));
     if (sort === "cheap") return [...f].sort((a, b) => a.price - b.price);
     if (sort === "pricey") return [...f].sort((a, b) => b.price - a.price);
     return f;
-  }, [all, dir, fmt, dur, sort]);
+  }, [all, dir, fmt, dur, sort, q]);
 
-  const hasFilter = !!(dir || fmt || dur);
-  const reset = () => { setDir(null); setFmt(null); setDur(null); };
+  const hasFilter = !!(dir || fmt || dur || q.trim());
+  const reset = () => { setDir(null); setFmt(null); setDur(null); setQ(""); };
   // Та же математика, что на сервере (order-calc): вычитаем округлённую скидку в копейках.
   const priced = (p: Program) => p.price - Math.round((p.price * discount) / 100);
 
@@ -57,6 +76,15 @@ export default function Dpo() {
           <button onClick={() => setShowAll(false)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${!showAll ? "bg-hse-blue text-kost" : "border border-[#E5E7EB] bg-white"}`}>Актуальный набор · {actualCount}</button>
           <button onClick={() => setShowAll(true)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${showAll ? "bg-hse-blue text-kost" : "border border-[#E5E7EB] bg-white"}`}>Все программы · {catalog.length}</button>
         </div>
+
+        {/* ПОИСК */}
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Поиск по названию или направлению…"
+          aria-label="Поиск программ"
+          className="foc mt-5 w-full max-w-[480px] rounded-[12px] border-[1.5px] border-[#E5E7EB] bg-white px-4 py-3 text-[15px] outline-none focus:border-ohra"
+        />
 
         {/* FILTERS */}
         <div className="mt-5 flex flex-col gap-3">

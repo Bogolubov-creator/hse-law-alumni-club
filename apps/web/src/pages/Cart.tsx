@@ -1,11 +1,13 @@
 import { useId, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePageTitle } from "../lib/title.js";
 import SiteShell from "../components/SiteShell.js";
 import { rub, type OrderResult } from "../lib/api.js";
 import { useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 
 export default function Cart() {
+  usePageTitle("Корзина");
   const cart = useCart();
   const discount = useMemberDiscount();
   const { setQty } = useCartMutations();

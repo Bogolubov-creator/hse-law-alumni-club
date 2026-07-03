@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { usePageTitle } from "../lib/title.js";
 import SiteShell from "../components/SiteShell.js";
 import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
@@ -6,6 +7,7 @@ import { rub, type Product, type ProductVariant } from "../lib/api.js";
 import { useProducts, useCartMutations } from "../lib/cart.js";
 
 export default function Merch() {
+  usePageTitle("Мерч клуба");
   const products = useProducts();
   const { add } = useCartMutations();
   const toast = useToast();

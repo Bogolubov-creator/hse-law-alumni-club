@@ -4,6 +4,7 @@ import SiteShell, { DiscountBadge } from "../components/SiteShell.js";
 import { FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../lib/api.js";
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import { useToast } from "../components/Toast.js";
+import { usePageTitle } from "../lib/title.js";
 
 const AVATAR_BG = ["linear-gradient(135deg,#EC5A13,#B5331B)", "linear-gradient(135deg,#11296B,#2E6FAE)", "linear-gradient(135deg,#2C6E80,#11296B)", "linear-gradient(135deg,#C49A45,#E3C272)"];
 
@@ -15,6 +16,7 @@ export default function Program() {
   const toast = useToast();
   const [openM, setOpenM] = useState(0);
   const p = q.data;
+  usePageTitle(p?.title ?? "Программа ДПО");
   // Та же математика, что на сервере (order-calc): вычитаем округлённую скидку в копейках.
   const priced = p ? p.price - Math.round((p.price * discount) / 100) : 0;
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];

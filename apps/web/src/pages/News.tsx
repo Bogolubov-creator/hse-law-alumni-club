@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { useNewsList, formatNewsDate } from "../lib/queries.js";
+import { usePageTitle } from "../lib/title.js";
 
 export default function News() {
+  usePageTitle("Новости");
   const news = useNewsList();
   return (
     <main className="min-h-screen bg-kost text-grafit">
