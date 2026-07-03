@@ -9,6 +9,7 @@ export interface AlumniRow {
   personal_discount: number; contacts_json: Record<string, string> | null; edu_program: string | null; edu_level: string | null;
   interests_json: string[] | null;
   podcast_sub_until: string | null;
+  avatar: string | null;
   referral_code: string | null; referred_by: string | null; last_activity_at: string | null;
   verified_at: string | null; joined_at: string | null; telegram_id: string | null;
 }

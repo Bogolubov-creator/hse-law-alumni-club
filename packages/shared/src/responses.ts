@@ -82,12 +82,14 @@ export const alumniBriefSchema = z.object({
   fio: z.string().nullable(), cohort: z.string().nullable(), verification_status: z.string(),
   contacts: z.record(z.string()).optional(), edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
   interests: z.array(z.string()).optional(),
+  avatar: z.string().nullable().optional(), // uuid файла → /api/avatars/{id}
 });
 // Однокурсник в «Сообществе» ЛК (тот же выпуск или та же ОП).
 export const classmateSchema = z.object({
   id: z.string(), fio: z.string().nullable(), cohort: z.string().nullable(),
   edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
   level_title: z.string(), interests: z.array(z.string()),
+  avatar: z.string().nullable().optional(),
   match: z.enum(["cohort", "program", "both"]),
   friend_status: z.enum(["none", "pending", "incoming", "accepted"]),
 });

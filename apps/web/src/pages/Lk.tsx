@@ -188,7 +188,9 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
 
       {/* PROFILE CARD */}
       <div style={{ ...surface, display: "flex", alignItems: "center", gap: 28, padding: "28px 30px", flexWrap: "wrap", boxShadow: "0 18px 40px -28px rgba(20,24,31,.35)" }}>
-        <div style={{ width: 84, height: 84, borderRadius: 22, flex: "none", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>{initial}</div>
+        <div style={{ position: "relative", width: 84, height: 84, borderRadius: 22, flex: "none", overflow: "hidden", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>
+          {me.alumni.avatar ? <img src={`/api/avatars/${me.alumni.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : initial}
+        </div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{me.alumni.fio ?? "Выпускник"}</div>
           <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "–"}{me.alumni.edu_program ? ` · ${me.alumni.edu_level ?? "магистратура"} · ОП «${me.alumni.edu_program}»` : " · факультет права"}</div>
@@ -271,7 +273,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
       )}
 
       {/* СООБЩЕСТВО: найти своих */}
-      <Community token={token} />
+      <Community token={token} myInterests={me.alumni.interests ?? []} />
 
       {/* PERSONAL OFFER */}
       <div style={{ position: "relative", overflow: "hidden", marginTop: 44, borderRadius: 22, background: "#11296B", color: "#FBF3E8", padding: "34px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 28, flexWrap: "wrap" }}>
@@ -366,10 +368,58 @@ const FRIEND_LABEL: Record<Classmate["friend_status"], string> = {
   none: "В друзья", pending: "Заявка отправлена", incoming: "Принять заявку", accepted: "В друзьях ✓",
 };
 
-/** «Сообщество» — однокурсники того же выпуска или ОП с кнопкой «В друзья». */
-function Community({ token }: { token: string }) {
+function ClassmateAvatar({ c, size }: { c: Classmate; size: number }) {
+  return (
+    <div style={{ position: "relative", width: size, height: size, borderRadius: size * 0.28, flex: "none", overflow: "hidden", background: "linear-gradient(135deg,#2C6E80,#11296B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: size * 0.4, color: "#FBF3E8" }}>
+      {c.avatar ? <img src={`/api/avatars/${c.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : (c.fio?.trim()?.[0] ?? "?").toUpperCase()}
+    </div>
+  );
+}
+
+/** Мини-профиль однокурсника: фото, уровень, интересы с общими пересечениями. */
+function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myInterests: string[]; token: string; onClose: () => void }) {
+  const addFriend = useAddFriend(token);
+  const common = new Set(myInterests);
+  return (
+    <Modal onClose={onClose} labelledBy="cm-modal-title" maxWidth={430}>
+      <div style={{ position: "relative", ...surface, padding: "30px 30px 26px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
+        <button onClick={onClose} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: "1px solid #E5E7EB", background: "transparent", color: "#6B7280", cursor: "pointer" }}>✕</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <ClassmateAvatar c={c} size={72} />
+          <div style={{ minWidth: 0 }}>
+            <div id="cm-modal-title" style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em", lineHeight: 1.15 }}>{c.fio ?? "Выпускник"}</div>
+            <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>Выпуск {c.cohort ?? "–"}{c.edu_program ? ` · ${c.edu_program}` : ""}</div>
+            <div style={{ display: "inline-flex", marginTop: 8, fontSize: 12, fontWeight: 600, padding: "4px 11px", borderRadius: 999, background: "rgba(17,41,107,.1)", color: "#11296B" }}>{c.level_title}</div>
+          </div>
+        </div>
+        {c.interests.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7280" }}>Интересы {c.interests.some((i) => common.has(i)) && <span style={{ color: "#1F8A5B", textTransform: "none" }}>· зелёные — общие с вами</span>}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
+              {c.interests.map((i) => (
+                <span key={i} style={{ fontSize: 12.5, fontWeight: 500, padding: "6px 12px", borderRadius: 999, border: "1.5px solid " + (common.has(i) ? "#1F8A5B" : "#E5E7EB"), background: common.has(i) ? "rgba(31,138,91,.1)" : "#fff", color: common.has(i) ? "#1F8A5B" : "#14181F" }}>{i}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => addFriend.mutate(c.id)}
+          disabled={addFriend.isPending || c.friend_status === "pending" || c.friend_status === "accepted"}
+          className="foc"
+          style={{ marginTop: 22, width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default", border: "none", background: c.friend_status === "accepted" ? "rgba(31,138,91,.12)" : c.friend_status === "pending" ? "#F2E3CF" : "#EC5A13", color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? "#6B7280" : "#FBF3E8" }}
+        >
+          {FRIEND_LABEL[c.friend_status]}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/** «Мои однокурсники» — тот же выпуск или ОП; клик по карточке — мини-профиль. */
+function Community({ token, myInterests }: { token: string; myInterests: string[] }) {
   const classmates = useClassmates(token);
   const addFriend = useAddFriend(token);
+  const [sel, setSel] = useState<Classmate | null>(null);
   const list = classmates.data ?? [];
   const friendsCount = list.filter((c) => c.friend_status === "accepted").length;
   if (classmates.isLoading || classmates.isError || list.length === 0) return null;
@@ -386,18 +436,19 @@ function Community({ token }: { token: string }) {
       <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
         {list.map((c) => (
           <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #E5E7EB", borderRadius: 16, padding: "14px 16px" }}>
-            <div style={{ width: 46, height: 46, borderRadius: 13, flex: "none", background: "linear-gradient(135deg,#2C6E80,#11296B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 19, color: "#FBF3E8" }}>
-              {(c.fio?.trim()?.[0] ?? "?").toUpperCase()}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, lineHeight: 1.2 }}>{c.fio ?? "Выпускник"}</div>
-              <div style={{ ...mono, fontSize: 11, color: "#6B7280", marginTop: 3 }}>
-                {MATCH_LABEL[c.match]}{c.cohort ? ` · ${c.cohort}` : ""}{c.edu_program ? ` · ${c.edu_program}` : ""}
-              </div>
-              {c.interests.length > 0 && (
-                <div style={{ ...mono, fontSize: 10, color: "#a07d2e", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.interests.join(" · ")}</div>
-              )}
-            </div>
+            {/* Клик по человеку — мини-профиль */}
+            <button onClick={() => setSel(c)} className="foc" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}>
+              <ClassmateAvatar c={c} size={46} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontWeight: 600, fontSize: 15, lineHeight: 1.2 }}>{c.fio ?? "Выпускник"}</span>
+                <span style={{ display: "block", ...mono, fontSize: 11, color: "#6B7280", marginTop: 3 }}>
+                  {MATCH_LABEL[c.match]}{c.cohort ? ` · ${c.cohort}` : ""}{c.edu_program ? ` · ${c.edu_program}` : ""}
+                </span>
+                {c.interests.length > 0 && (
+                  <span style={{ display: "block", ...mono, fontSize: 10, color: "#a07d2e", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.interests.join(" · ")}</span>
+                )}
+              </span>
+            </button>
             <button
               onClick={() => addFriend.mutate(c.id)}
               disabled={(addFriend.isPending && addFriend.variables === c.id) || c.friend_status === "pending" || c.friend_status === "accepted"}
@@ -415,6 +466,7 @@ function Community({ token }: { token: string }) {
         ))}
       </div>
       {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку — попробуйте ещё раз.</p>}
+      {sel && <ClassmateModal c={list.find((x) => x.id === sel.id) ?? sel} myInterests={myInterests} token={token} onClose={() => setSel(null)} />}
     </div>
   );
 }

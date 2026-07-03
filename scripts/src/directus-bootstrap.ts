@@ -197,6 +197,7 @@ await ensureField("alumni", "edu_program", str());
 await ensureField("alumni", "edu_level", str());
 await ensureField("alumni", "interests_json", json());
 await ensureField("alumni", "podcast_sub_until", ts()); // подписка на подкасты активна до этой даты
+await ensureField("alumni", "avatar", str()); // uuid файла в Directus (раздача через /api/avatars/:id)
 await ensureField("alumni", "referral_code", str(true));
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));

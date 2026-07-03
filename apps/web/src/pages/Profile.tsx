@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { LEVELS, LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPatch, type Achievement, type LedgerEntry } from "../lib/api.js";
@@ -38,6 +38,25 @@ function ProfileBody({ token }: { token: string }) {
   const [interests, setInterests] = useState<string[]>([]);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [saveErr, setSaveErr] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+
+  // Загрузка фото: multipart → /me/avatar, после — обновляем /me.
+  const uploadAvatar = async (file: File) => {
+    setAvatarBusy(true); setSaveErr(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/me/avatar", { method: "POST", headers: { authorization: `Bearer ${token}` }, body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.error || "Не удалось загрузить фото");
+      me.refetch();
+    } catch (e) {
+      setSaveErr((e as Error).message);
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (me.data) {
@@ -97,7 +116,22 @@ function ProfileBody({ token }: { token: string }) {
           <>
             {/* PROFILE HEADER */}
             <div style={{ ...surface, display: "flex", alignItems: "center", gap: 24, padding: "26px 28px", flexWrap: "wrap", boxShadow: "0 18px 40px -30px rgba(20,24,31,.35)" }}>
-              <div style={{ width: 88, height: 88, borderRadius: 22, flex: "none", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>{(data.alumni.fio?.trim()?.[0] ?? "В").toUpperCase()}</div>
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={avatarBusy}
+                title="Сменить фото"
+                aria-label="Загрузить фото профиля"
+                className="foc"
+                style={{ position: "relative", width: 88, height: 88, borderRadius: 22, flex: "none", border: "none", cursor: "pointer", overflow: "hidden", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}
+              >
+                {data.alumni.avatar
+                  ? <img src={`/api/avatars/${data.alumni.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  : (data.alumni.fio?.trim()?.[0] ?? "В").toUpperCase()}
+                <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "rgba(20,24,31,.65)", color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 600, fontSize: 10, padding: "3px 0", textAlign: "center" }}>
+                  {avatarBusy ? "…" : data.alumni.avatar ? "Сменить" : "Фото"}
+                </span>
+              </button>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); e.target.value = ""; }} />
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{data.alumni.fio ?? "Выпускник"}</div>
                 <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {data.alumni.cohort ?? "–"}{data.alumni.edu_program ? ` · ${data.alumni.edu_level ?? "магистратура"} · ОП «${data.alumni.edu_program}»` : " · факультет права"}</div>

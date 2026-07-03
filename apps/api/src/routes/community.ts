@@ -29,9 +29,9 @@ export async function communityRoutes(app: FastifyInstance) {
       (readItems as any)("alumni", {
         filter: { _and: [{ verification_status: { _eq: "verified" } }, { id: { _neq: me.id } }, { _or: or }] },
         limit: 100,
-        fields: ["id", "fio", "cohort", "edu_program", "edu_level", "points_cached", "interests_json"],
+        fields: ["id", "fio", "cohort", "edu_program", "edu_level", "points_cached", "interests_json", "avatar"],
       }),
-    )) as { id: string; fio: string | null; cohort: string | null; edu_program: string | null; edu_level: string | null; points_cached: number; interests_json: string[] | null }[];
+    )) as { id: string; fio: string | null; cohort: string | null; edu_program: string | null; edu_level: string | null; points_cached: number; interests_json: string[] | null; avatar: string | null }[];
 
     // Мои связи (в обе стороны) — чтобы отдать статус кнопки «В друзья».
     const links = (await di.request(
@@ -59,6 +59,7 @@ export async function communityRoutes(app: FastifyInstance) {
         id: r.id, fio: r.fio, cohort: r.cohort, edu_program: r.edu_program, edu_level: r.edu_level,
         level_title: computeLevel(r.points_cached ?? 0).title,
         interests: r.interests_json ?? [],
+        avatar: r.avatar,
         match: sameCohort && sameProgram ? "both" : sameCohort ? "cohort" : "program",
         friend_status: statusFor(r.id),
       };
