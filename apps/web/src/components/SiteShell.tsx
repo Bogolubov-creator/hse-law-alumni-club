@@ -1,12 +1,22 @@
-import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useState, type ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useCart, token } from "../lib/cart.js";
 
+const NAV = [
+  { to: "/dpo", label: "ДПО" },
+  { to: "/merch", label: "Мерч" },
+  { to: "/podcasts", label: "Подкасты" },
+  { to: "/news", label: "Новости" },
+];
+
 // Общая обёртка публичных витрин: шапка с корзиной + футер. Канон-токены.
+// На десктопе — прежняя горизонтальная навигация; на телефоне — бургер.
 export default function SiteShell({ children }: { children: ReactNode }) {
   const cart = useCart();
   const count = cart.data?.count ?? 0;
   const authed = !!token();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
   return (
     <div className="min-h-screen bg-kost font-body text-grafit">
       <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-kost/85 backdrop-blur">
@@ -18,17 +28,36 @@ export default function SiteShell({ children }: { children: ReactNode }) {
               <div className="mt-0.5 font-mono text-[10px] tracking-wider text-grafit-soft">факультета права Вышки</div>
             </div>
           </Link>
-          <nav className="flex flex-wrap items-center justify-end gap-1.5 text-[14px]">
-            <Link to="/dpo" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">ДПО</Link>
-            <Link to="/merch" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Мерч</Link>
-            <Link to="/podcasts" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Подкасты</Link>
-            <Link to="/news" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Новости</Link>
+          {/* Десктоп: прежняя горизонтальная навигация */}
+          <nav className="desk-only flex flex-wrap items-center justify-end gap-1.5 text-[14px]">
+            {NAV.map((n) => <Link key={n.to} to={n.to} className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{n.label}</Link>)}
             <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{authed ? "Личный кабинет" : "ЛК"}</Link>
             <Link to="/cart" className="foc relative ml-1 rounded-[11px] bg-grafit px-4 py-2.5 font-semibold text-kost">
               Корзина{count > 0 && <span className="ml-1.5 rounded-full bg-ohra px-1.5 font-mono text-[12px]">{count}</span>}
             </Link>
           </nav>
+          {/* Телефон: корзина + бургер */}
+          <div className="mob-only items-center gap-2">
+            <Link to="/cart" aria-label="Корзина" className="foc relative rounded-[11px] bg-grafit px-3.5 py-2.5 font-semibold text-kost">
+              🛒{count > 0 && <span className="absolute -right-1.5 -top-1.5 rounded-full bg-ohra px-1.5 font-mono text-[11px] text-kost">{count}</span>}
+            </Link>
+            <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc rounded-[11px] border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-lg leading-none">
+              {menuOpen ? "✕" : "☰"}
+            </button>
+          </div>
         </div>
+        {/* Мобильная выпадающая панель */}
+        {menuOpen && (
+          <nav className="mob-only flex-col border-t border-[#E5E7EB] bg-kost px-5 pb-4 pt-2">
+            {[...NAV, { to: "/lk", label: authed ? "Личный кабинет" : "Войти в ЛК" }, { to: "/cart", label: "Корзина" }].map((n) => (
+              <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)}
+                className={`foc rounded-[12px] px-4 py-3.5 text-[16px] font-semibold ${pathname === n.to ? "bg-[rgba(236,90,19,.12)] text-ohra-deep" : ""}`}>
+                {n.label}
+              </Link>
+            ))}
+            {!authed && <Link to="/join" onClick={() => setMenuOpen(false)} className="foc mt-2 rounded-[12px] bg-ohra px-4 py-3.5 text-center text-[16px] font-semibold text-kost">Вступить в клуб</Link>}
+          </nav>
+        )}
       </header>
       {children}
       <footer className="mt-20 bg-grafit px-7 py-10 text-[13px] text-[#9aa3b2]">

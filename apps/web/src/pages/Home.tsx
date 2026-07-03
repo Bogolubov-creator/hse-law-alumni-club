@@ -57,6 +57,7 @@ export default function Home() {
   const pinInnerRef = useRef<HTMLDivElement>(null);
   const pinTrackRef = useRef<HTMLDivElement>(null);
   const [heroIn, setHeroIn] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false); // мобильный бургер (десктоп не трогаем)
   const news = useNewsList(3);
   const page = usePage("home");
   // «История» редактируется в админ-панели; до загрузки/при сбое — захардкоженный фолбэк.
@@ -201,13 +202,32 @@ export default function Home() {
               <div style={{ ...mono, fontSize: 10, color: "#6B7280", letterSpacing: ".08em", marginTop: 2 }}>факультета права Вышки</div>
             </div>
           </a>
-          <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
+          <nav className="desk-only" style={{ display: "flex", alignItems: "center", gap: 28 }}>
             <a href="#istoriya" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>История</a>
             <a href="#vitriny" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Витрины</a>
             <Link to="/news" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Новости</Link>
             <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, background: "#EC5A13", color: "#FBF3E8", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{token() ? "Личный кабинет" : "Войти в ЛК"}</Link>
           </nav>
+          <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc mob-only" style={{ alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 11, border: "1px solid #E5E7EB", background: "#fff", fontSize: 19, cursor: "pointer" }}>
+            {menuOpen ? "✕" : "☰"}
+          </button>
         </div>
+        {menuOpen && (
+          <nav className="mob-only" style={{ flexDirection: "column", borderTop: "1px solid #E5E7EB", background: "#FBF3E8", padding: "8px 20px 16px" }}>
+            {[
+              { href: "#istoriya", label: "История" },
+              { href: "#vitriny", label: "Витрины" },
+            ].map((n) => (
+              <a key={n.href} href={n.href} onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>{n.label}</a>
+            ))}
+            <Link to="/dpo" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Витрина ДПО</Link>
+            <Link to="/merch" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Мерч</Link>
+            <Link to="/podcasts" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Подкасты</Link>
+            <Link to="/news" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Новости</Link>
+            <Link to="/lk" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 16px", borderRadius: 12, background: "#EC5A13", color: "#FBF3E8", textAlign: "center", marginTop: 6 }}>{token() ? "Личный кабинет" : "Войти в ЛК"}</Link>
+            {!token() && <Link to="/join" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 16px", borderRadius: 12, border: "1.5px solid #EC5A13", color: "#C9450E", textAlign: "center", marginTop: 8 }}>Вступить в клуб</Link>}
+          </nav>
+        )}
       </header>
 
       {/* HERO */}
@@ -361,7 +381,7 @@ export default function Home() {
             <h2 style={{ ...disp, fontWeight: 800, fontSize: 38, letterSpacing: "-0.01em", lineHeight: 1.08, margin: 0 }}>{cta.title ?? "Вступить в клуб"}</h2>
             <p style={{ fontSize: 17, color: "rgba(251,243,232,.8)", lineHeight: 1.5, margin: "16px 0 0" }}>{cta.text ?? "Подтвердите выпуск у учебного офиса – и получите статус, скидки и доступ к витринам."}</p>
           </div>
-          <Link to="/lk" data-mag className="foc" style={{ position: "relative", textDecoration: "none", fontWeight: 600, fontSize: 17, padding: "17px 36px", borderRadius: 14, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 14px 30px -12px rgba(0,0,0,.5)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", flex: "none" }}>{cta.button ?? "Подать заявку"}</Link>
+          <Link to={token() ? "/lk" : "/join"} data-mag className="foc" style={{ position: "relative", textDecoration: "none", fontWeight: 600, fontSize: 17, padding: "17px 36px", borderRadius: 14, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 14px 30px -12px rgba(0,0,0,.5)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", flex: "none" }}>{cta.button ?? "Подать заявку"}</Link>
         </div>
       </section>
 

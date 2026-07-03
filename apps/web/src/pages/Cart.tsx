@@ -89,7 +89,7 @@ export default function Cart() {
         )}
 
         {items.length > 0 && (
-          <div className="grid-2 mt-8 grid grid-cols-[1.4fr_1fr] gap-7">
+          <div className="grid-2 mt-8 grid grid-cols-[1.4fr_1fr] gap-7 max-md:grid-cols-1">
             {/* ITEMS */}
             <div className="flex flex-col gap-3">
               {items.map((it) => (

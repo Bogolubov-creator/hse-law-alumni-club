@@ -1,12 +1,16 @@
+import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
-import { readItems } from "@directus/sdk";
+import jwt from "jsonwebtoken";
+import { readItems, createItem, createUser, updateUser, readRoles } from "@directus/sdk";
 import { z } from "zod";
+import { sanitizeInterests } from "@club/shared";
 import { directusCredsValid, findUserByEmail, findAlumniByUser, signSession } from "../lib/auth.js";
 import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 import { validateInitData } from "../lib/telegram.js";
 import { audit } from "../lib/audit.js";
 import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
+import { sendEmail, notifyOfficeText } from "../lib/notify.js";
 
 export async function authRoutes(app: FastifyInstance) {
   // Вход через Telegram Mini App (initData). BLOCKED без TELEGRAM_BOT_TOKEN.
@@ -46,5 +50,82 @@ export async function authRoutes(app: FastifyInstance) {
     audit("login.ok", { actor: `alumni:${alumni.id}`, req });
     const token = signSession(alumni.id, user.id);
     return { token, alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
+  });
+
+  // ── Заявка на вступление в клуб ─────────────────────────────────
+  // Создаёт аккаунт (роль alumni) + профиль выпускника со статусом pending;
+  // офис подтверждает в готовой очереди верификации админ-панели.
+  const registerBody = z.object({
+    fio: z.string().min(2).max(200),
+    email: z.string().email().max(200),
+    password: z.string().min(8).max(100),
+    cohort: z.string().regex(/^(19|20)\d{2}$/, "Год выпуска — 4 цифры"),
+    edu_level: z.enum(["бакалавриат", "магистратура", "специалитет", "аспирантура"]),
+    edu_program: z.string().min(2).max(200),
+    interests: z.array(z.string()).optional(),
+    consent_pdn: z.literal(true, { errorMap: () => ({ message: "Требуется согласие на обработку ПДн" }) }),
+    website: z.string().max(0).optional(), // honeypot для ботов
+  });
+
+  app.post("/auth/register", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const b = registerBody.parse(req.body);
+    const email = b.email.toLowerCase().trim();
+
+    const existing = await findUserByEmail(email);
+    if (existing) return reply.code(409).send({ error: "Аккаунт с этой почтой уже есть — войдите или восстановите пароль" });
+
+    const roles = (await directus.request((readRoles as any)({ filter: { name: { _eq: "alumni" } }, limit: 1, fields: ["id"] }))) as any[];
+    if (!roles[0]) return reply.code(500).send({ error: "Роль выпускника не настроена — обратитесь в учебный офис" });
+
+    const user = (await directus.request((createUser as any)({
+      email, password: b.password, role: roles[0].id,
+      first_name: b.fio.split(" ")[0] ?? b.fio, last_name: b.fio.split(" ").slice(1).join(" ") || "-",
+      status: "active",
+    }))) as any;
+
+    await directus.request((createItem as any)("alumni", {
+      user_id: user.id, fio: b.fio.trim(), cohort: b.cohort,
+      edu_level: b.edu_level, edu_program: b.edu_program.trim(),
+      interests_json: sanitizeInterests(b.interests ?? []),
+      status: "active", verification_status: "pending",
+      points_cached: 0, level_cached: "graduate", personal_discount: 0,
+      referral_code: `RC-${randomBytes(4).toString("hex")}`,
+    }));
+
+    audit("register", { actor: `email:${email}`, detail: { cohort: b.cohort, edu_program: b.edu_program }, req });
+    await notifyOfficeText(`🎓 Заявка на вступление в клуб: ${b.fio} · выпуск ${b.cohort} · ОП «${b.edu_program}» · ${email}. Подтвердите в админ-панели.`);
+    return { ok: true, pending: true };
+  });
+
+  // ── Восстановление пароля ───────────────────────────────────────
+  // Ответ всегда одинаковый (не раскрываем существование аккаунта).
+  app.post("/auth/forgot", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req) => {
+    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const user = await findUserByEmail(email.toLowerCase().trim());
+    if (user) {
+      const token = jwt.sign({ sub: user.id, purpose: "reset" }, env.AUTH_SECRET, { expiresIn: "30m" });
+      const url = `${env.PUBLIC_URL}/reset?token=${encodeURIComponent(token)}`;
+      audit("password.forgot", { actor: `email:${email}`, req });
+      await sendEmail(
+        email,
+        "Восстановление пароля — Клуб выпускников факультета права",
+        `Вы запросили восстановление пароля.\n\nСсылка действует 30 минут:\n${url}\n\nЕсли это были не вы — просто проигнорируйте письмо.`,
+      );
+    }
+    return { ok: true }; // одинаково для существующих и несуществующих
+  });
+
+  app.post("/auth/reset", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const { token, password } = z.object({ token: z.string().min(10), password: z.string().min(8).max(100) }).parse(req.body);
+    let payload: { sub?: string; purpose?: string };
+    try {
+      payload = jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as typeof payload;
+    } catch {
+      return reply.code(400).send({ error: "Ссылка недействительна или истекла — запросите новую" });
+    }
+    if (payload.purpose !== "reset" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
+    await directus.request((updateUser as any)(payload.sub, { password }));
+    audit("password.reset", { actor: `user:${payload.sub}`, req });
+    return { ok: true };
   });
 }

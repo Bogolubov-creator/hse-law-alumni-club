@@ -1,4 +1,44 @@
+import nodemailer from "nodemailer";
 import { env } from "../env.js";
+
+// SMTP-транспорт создаётся один раз при наличии кредов (иначе письма в лог).
+const mailer = env.SMTP_HOST
+  ? nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_PORT === 465, // 465 = implicit TLS; 587 — STARTTLS
+      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+    })
+  : null;
+
+/** Письмо пользователю. Без SMTP — содержимое в лог (dev-режим), не падаем. */
+export async function sendEmail(to: string, subject: string, text: string): Promise<boolean> {
+  if (!mailer) {
+    console.warn(`[mail:dev] SMTP не настроен. Кому: ${to}\nТема: ${subject}\n${text}`);
+    return false;
+  }
+  try {
+    await mailer.sendMail({ from: env.SMTP_FROM || env.SMTP_USER, to, subject, text });
+    return true;
+  } catch (e) {
+    console.error(`[mail] не отправилось на ${to}:`, (e as Error).message);
+    return false;
+  }
+}
+
+/** Произвольное текстовое уведомление офису (Telegram при токене, иначе лог). */
+export async function notifyOfficeText(text: string): Promise<void> {
+  if (env.OFFICE_TG_BOT_TOKEN && env.OFFICE_TG_CHAT_ID) {
+    try {
+      await fetch(`https://api.telegram.org/bot${env.OFFICE_TG_BOT_TOKEN}/sendMessage`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chat_id: env.OFFICE_TG_CHAT_ID, text }),
+      });
+      return;
+    } catch { /* лог ниже */ }
+  }
+  console.warn(`[notify:log] ${text}`);
+}
 
 export interface OrderNotice {
   number: string;
@@ -40,12 +80,11 @@ export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; o
   return { channel: "none", ok: false, blocked: true };
 }
 
-/** Подтверждение заявителю. Email если настроен SMTP, иначе лог. */
+/** Подтверждение заявителю: письмо через SMTP (или лог в dev). */
 export async function confirmApplicant(o: OrderNotice): Promise<void> {
-  if (env.SMTP_HOST) {
-    // BLOCKED: реальная SMTP-отправка не реализована (нужны рабочие креды). Честно помечаем.
-    console.warn(`[confirm:NOT_IMPLEMENTED] SMTP задан, но письмо не отправлено — ${o.contact_email}, заявка ${o.number}.`);
-  } else {
-    console.log(`[confirm:log] ${o.contact_email}: заявка ${o.number} принята, офис свяжется с вами.`);
-  }
+  await sendEmail(
+    o.contact_email,
+    `Заявка ${o.number} принята — Клуб выпускников факультета права`,
+    `Здравствуйте, ${o.contact_fio}!\n\nВаша заявка ${o.number} принята:\n${o.itemsSummary}\nСумма (справочно): ${rub(o.total_estimate)} ₽.\n\nМенеджер учебного офиса свяжется с вами для подтверждения деталей.\n\n— Клуб выпускников факультета права НИУ ВШЭ`,
+  );
 }

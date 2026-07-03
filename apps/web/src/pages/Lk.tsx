@@ -76,6 +76,10 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         <button type="submit" disabled={busy} className="foc mt-5 w-full rounded-[12px] bg-ohra py-3 font-semibold text-kost disabled:opacity-60">
           {busy ? "Входим…" : "Войти в кабинет"}
         </button>
+        <div className="mt-4 flex items-center justify-between gap-3 text-[13px]">
+          <Link to="/join" className="foc font-semibold text-ohra-deep underline underline-offset-2">Вступить в клуб</Link>
+          <Link to="/forgot" className="foc text-grafit-soft underline underline-offset-2">Забыли пароль?</Link>
+        </div>
         <p className="mt-3 text-[12px] leading-relaxed text-grafit-soft">
           Входя в кабинет, вы подтверждаете согласие с{" "}
           <Link to="/privacy" target="_blank" className="foc underline underline-offset-2">политикой обработки персональных данных</Link>.

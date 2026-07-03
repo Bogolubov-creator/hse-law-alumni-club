@@ -48,3 +48,10 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .marq-track { animation: none !important; }
 }
+
+/* Мобильная навигация: бургер только на телефоне, десктоп не трогаем */
+.mob-only { display: none !important; }
+@media (max-width: 768px) {
+  .mob-only { display: flex !important; }
+  .desk-only { display: none !important; }
+}
