@@ -11,6 +11,7 @@ import Program from "./pages/Program.js";
 import Merch from "./pages/Merch.js";
 import Cart from "./pages/Cart.js";
 import AdminApp from "./admin/AdminApp.js";
+import Podcasts from "./pages/Podcasts.js";
 import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
 
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/dpo/:slug" element={<Program />} />
         <Route path="/merch" element={<Merch />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/podcasts" element={<Podcasts />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/confidential" element={<Confidential />} />
         <Route path="/requisites" element={<Requisites />} />

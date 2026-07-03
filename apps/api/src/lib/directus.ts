@@ -8,6 +8,7 @@ export interface AlumniRow {
   status: string; verification_status: string; points_cached: number; level_cached: LevelKey;
   personal_discount: number; contacts_json: Record<string, string> | null; edu_program: string | null; edu_level: string | null;
   interests_json: string[] | null;
+  podcast_sub_until: string | null;
   referral_code: string | null; referred_by: string | null; last_activity_at: string | null;
   verified_at: string | null; joined_at: string | null; telegram_id: string | null;
 }
@@ -37,6 +38,8 @@ export interface OrderRow {
   payment_id: string | null; payment_status: string | null; paid_at: string | null;
 }
 export interface NewsRow { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string }
+export interface TimelineItemRow { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string }
+export interface PodcastRow { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; sort: number; status: string; created_at: string }
 export interface PageRow { id: string; slug: string; title: string; status: string; sort: number; blocks: unknown }
 
 interface Schema {
@@ -52,6 +55,8 @@ interface Schema {
   orders: OrderRow[];
   news: NewsRow[];
   pages: PageRow[];
+  timeline_items: TimelineItemRow[];
+  podcasts: PodcastRow[];
 }
 
 export const directus = createDirectus<Schema>(env.DIRECTUS_URL)

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
-import { useNewsList, usePage, formatNewsDate } from "../lib/queries.js";
+import { useNewsList, usePage, useTimeline, formatNewsDate } from "../lib/queries.js";
 import { token } from "../lib/cart.js";
 
 /**
@@ -59,6 +59,11 @@ export default function Home() {
   const [heroIn, setHeroIn] = useState(false);
   const news = useNewsList(3);
   const page = usePage("home");
+  // «История» редактируется в админ-панели; до загрузки/при сбое — захардкоженный фолбэк.
+  const timelineQ = useTimeline();
+  const timeline = timelineQ.data?.length
+    ? timelineQ.data.map((t) => ({ year: t.year, title: t.title, text: t.text ?? "", metric: t.metric ?? "", photo: `[ ${t.year} · ${t.title.toLowerCase()} ]` }))
+    : TIMELINE;
   // Тексты блоков из CMS (M2A) с фоллбэком на дефолты в коде.
   const hero = page.data?.blocks?.hero ?? {};
   const cta = page.data?.blocks?.cta ?? {};
@@ -258,7 +263,7 @@ export default function Home() {
             <p style={{ color: "#9aa3b2", fontSize: 14, margin: "10px 0 0", ...mono }}>↓ листайте – таймлайн движется вбок</p>
           </div>
           <div ref={pinTrackRef} style={{ display: "flex", gap: 26, marginTop: 34, padding: "0 max(28px,calc((100vw - 1180px)/2 + 28px))", willChange: "transform" }}>
-            {TIMELINE.map((t, i) => (
+            {timeline.map((t, i) => (
               <article key={i} style={{ flex: "none", width: 340, background: "rgba(251,243,232,.04)", border: "1px solid rgba(251,243,232,.1)", borderRadius: 18, overflow: "hidden" }}>
                 <div style={{ position: "relative", height: 180, background: "#23272f", backgroundImage: "repeating-linear-gradient(45deg,rgba(196,154,69,.16) 0 12px,transparent 12px 24px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ ...mono, fontSize: 11, color: "#C49A45", letterSpacing: ".08em" }}>{t.photo}</span>

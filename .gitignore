@@ -9,3 +9,4 @@ apps/web/dist/
 caddy_data/
 caddy_config/
 design-export/
+.env.backup*

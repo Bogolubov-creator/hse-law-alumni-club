@@ -48,7 +48,7 @@ export async function apiPatch<T>(path: string, body: unknown, token: string, sc
 export type {
   NewsItem, HeroBlock, CtaBlock, PageHome, Program, ProgramFull, ProgramModule, ProgramTeacher, ProductVariant, Product,
   CartLine, CartSummary, LevelInfo, Achievement, ActivityPoint, AlumniBrief, Me, LoginResponse,
-  OrderResult, MyOrder, LedgerEntry,
+  OrderResult, MyOrder, LedgerEntry, TimelineItem, PodcastItem, PodcastsRes,
 } from "@club/shared";
 
 export const FORMAT_LABEL: Record<string, string> = { online: "онлайн", offline: "очно", blended: "смешанный" };

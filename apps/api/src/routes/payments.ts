@@ -4,6 +4,7 @@ import { z } from "zod";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
+import { extendPodcastSub } from "./podcasts.js";
 
 const di = directus;
 
@@ -83,7 +84,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (!orderNumber) return { ok: true }; // не наш платёж — молча подтверждаем приём
 
     const rows = (await di.request(readItems("orders", {
-      filter: { number: { _eq: orderNumber } }, limit: 1, fields: ["id", "status", "payment_status"],
+      filter: { number: { _eq: orderNumber } }, limit: 1, fields: ["id", "status", "payment_status", "type", "alumni_id"],
     }))) as any[];
     const order = rows[0];
     if (!order) return { ok: true };
@@ -93,6 +94,10 @@ export async function paymentsRoutes(app: FastifyInstance) {
         payment_id: verified.id, payment_status: "succeeded", paid_at: new Date().toISOString(),
         status: order.status === "new" ? "confirmed" : order.status, // оплаченная заявка минует ручное подтверждение
       }));
+      // Оплата подписки на подкасты → сразу продлеваем на год.
+      if (order.type === "podcast" && order.alumni_id) {
+        await extendPodcastSub(order.alumni_id, 12).catch((e) => req.log.error({ err: e, orderNumber }, "podcast sub extend failed"));
+      }
       req.log.info({ orderNumber }, "yookassa payment succeeded");
     } else if (verified.status === "canceled") {
       await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "canceled" }));

@@ -6,8 +6,9 @@ const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://lo
 import {
   adminLogin, adminToken, setAdminToken, clearAdminToken,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
-  useAdminPrograms, useAdminProducts, useAdminPage,
+  useAdminPrograms, useAdminProducts, useAdminPage, useAdminNews, useAdminTimeline, useAdminPodcasts,
   type AdminOrder, type Member, type AdminProgram, type AdminProduct, type ProgramInput, type ProductInput,
+  type AdminNews, type AdminTimeline, type AdminPodcast,
 } from "../lib/admin.js";
 
 /**
@@ -50,7 +51,7 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-grafit px-6 font-body">
       <form onSubmit={submit} className="w-full max-w-[400px] rounded-[22px] bg-white p-8 shadow-2xl">
-        <div className="font-display text-xl font-extrabold">Админка клуба</div>
+        <div className="font-display text-xl font-extrabold">Админ-панель клуба</div>
         <label htmlFor={emailId} className="mt-6 block font-mono text-[11px] uppercase text-grafit-soft">Почта</label>
         <input id={emailId} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="foc mt-1.5 w-full rounded-soft border-[1.5px] border-[#E5E7EB] px-3.5 py-3 outline-none focus:border-ohra" />
         <label htmlFor={passId} className="mt-4 block font-mono text-[11px] uppercase text-grafit-soft">Пароль</label>
@@ -80,7 +81,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     <div className="grid min-h-screen grid-cols-[248px_1fr] bg-kost-2 font-body text-grafit max-md:grid-cols-1">
       <aside className="sticky top-0 flex h-screen flex-col gap-1.5 bg-grafit p-4 text-kost max-md:h-auto">
         <div className="px-2 pb-4 pt-1.5">
-          <div className="font-display text-sm font-extrabold">Админка</div>
+          <div className="font-display text-sm font-extrabold">Админ-панель</div>
           <div className="mt-0.5 font-mono text-[9px] tracking-wider text-[#8a93a3]">клуб выпускников</div>
         </div>
         {nav.map((n) => (
@@ -112,12 +113,20 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const members = useMembers();
   const { patchMember } = useAdminMutations();
   const pending = (members.data ?? []).filter((m) => m.verification_status === "pending");
+  const d = ov.data;
+  // Вся статистика сайта — одним экраном.
   const stats = [
-    { label: "Новые заявки", value: ov.data?.new_orders ?? 0, color: "#EC5A13" },
-    { label: "На верификацию", value: ov.data?.pending_verifications ?? 0, color: "#a07d2e" },
-    { label: "Выпускников", value: ov.data?.alumni_count ?? 0, color: "#11296B" },
-    { label: "Заявок всего", value: ov.data?.orders_count ?? 0, color: "#1F8A5B" },
-  ];
+    { label: "Новые заявки", value: d?.new_orders ?? 0, color: "#EC5A13" },
+    { label: "На верификацию", value: d?.pending_verifications ?? 0, color: "#a07d2e" },
+    { label: "Выпускников", value: d?.alumni_count ?? 0, color: "#11296B", note: `подтверждено ${d?.alumni_verified ?? 0}` },
+    { label: "Заявок всего", value: d?.orders_count ?? 0, color: "#1F8A5B", note: `оплачено ${d?.orders_paid ?? 0}` },
+    { label: "Программ ДПО", value: d?.programs_total ?? 0, color: "#2E6FAE", note: `актуальный набор ${d?.programs_actual ?? 0}` },
+    { label: "Товаров мерча", value: d?.products_count ?? 0, color: "#C9450E" },
+    { label: "Новостей", value: d?.news_count ?? 0, color: "#2C6E80" },
+    { label: "Дружеских связей", value: d?.friendships ?? 0, color: "#C49A45", note: `заявок в друзья ${d?.friend_requests ?? 0}` },
+    { label: "Подкастов", value: d?.podcasts_count ?? 0, color: "#B5331B", note: `подписчиков ${d?.podcast_subscribers ?? 0}` },
+    { label: "Баллов у выпускников", value: d?.points_total ?? 0, color: "#14181F" },
+  ] as { label: string; value: number; color: string; note?: string }[];
   return (
     <>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
@@ -125,6 +134,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
           <Card key={s.label}>
             <div className="font-mono text-[11px] text-grafit-soft">{s.label}</div>
             <div className="mt-2 font-display text-4xl font-extrabold" style={{ color: s.color }}>{s.value}</div>
+            {s.note && <div className="mt-1 font-mono text-[11px] text-grafit-soft">{s.note}</div>}
           </Card>
         ))}
       </div>
@@ -202,16 +212,18 @@ function Members() {
   return (
     <>
       <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
-        <div className="grid grid-cols-[1fr_90px_120px_90px_110px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
-          <span>Выпускник</span><span>Выпуск</span><span>Статус</span><span>Баллы</span><span>Скидка</span>
+        <div className="grid grid-cols-[1fr_80px_120px_80px_80px_80px_90px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
+          <span>Выпускник</span><span>Выпуск</span><span>Статус</span><span>Баллы</span><span>Скидка</span><span>Друзья</span><span>Подкасты</span>
         </div>
         {(members.data ?? []).map((m) => (
-          <button key={m.id} onClick={() => setSel(m)} className="arow foc grid w-full grid-cols-[1fr_90px_120px_90px_110px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-left text-sm">
+          <button key={m.id} onClick={() => setSel(m)} className="arow foc grid w-full grid-cols-[1fr_80px_120px_80px_80px_80px_90px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-left text-sm">
             <span className="font-semibold">{m.fio}</span>
             <span className="font-mono text-[12px] text-grafit-soft">{m.cohort}</span>
             <span><span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(m.verification_status)}`}>{VERIF[m.verification_status]}</span></span>
             <span className="font-mono text-[13px]">{m.points_cached}</span>
             <span className="font-mono text-[13px]">−{m.personal_discount}%</span>
+            <span className="font-mono text-[13px]">{m.friends_count ?? 0}</span>
+            <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "—"}</span>
           </button>
         ))}
         {members.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Выпускников нет.</p>}
@@ -222,7 +234,7 @@ function Members() {
 }
 
 function MemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
-  const { patchMember, addPoints } = useAdminMutations();
+  const { patchMember, addPoints, grantPodcastSub } = useAdminMutations();
   const [discount, setDiscount] = useState(String(member.personal_discount));
   const [delta, setDelta] = useState("");
   return (
@@ -230,7 +242,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
       <div className="relative rounded-[22px] bg-white p-7 shadow-2xl" style={{ animation: "g-pop .26s cubic-bezier(.2,.8,.2,1)" }}>
         <button onClick={onClose} aria-label="Закрыть" className="foc absolute right-4 top-4 h-9 w-9 rounded-[10px] border border-[#E5E7EB] text-grafit-soft">✕</button>
         <div id="member-modal-title" className="font-display text-2xl font-bold">{member.fio}</div>
-        <div className="mt-1 font-mono text-[12px] text-grafit-soft">Выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов</div>
+        <div className="mt-1 font-mono text-[12px] text-grafit-soft">Выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях: {member.friends_count ?? 0}</div>
 
         <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Верификация</div>
         <div className="mt-2 flex gap-2">
@@ -249,6 +261,11 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
           <input value={discount} onChange={(e) => setDiscount(e.target.value)} type="number" min={0} max={10} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
           <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: member.id, personal_discount: Math.max(0, Math.min(10, parseInt(discount, 10) || 0)) })} className="foc rounded-[10px] bg-ohra px-5 text-sm font-semibold text-kost disabled:opacity-60">Сохранить</button>
         </div>
+
+        <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Подкасты · подписка {member.podcast_active ? "активна ✓" : "нет"}</div>
+        <button disabled={grantPodcastSub.isPending} onClick={() => grantPodcastSub.mutate(member.id)} className="foc mt-2 w-full rounded-[10px] border-[1.5px] border-[#E5E7EB] py-2.5 text-sm font-semibold disabled:opacity-60">
+          {grantPodcastSub.isPending ? "Продлеваем…" : "Продлить подписку на год (оплата по счёту)"}
+        </button>
       </div>
     </Modal>
   );
@@ -259,10 +276,13 @@ const FORMAT_RU: Record<string, string> = { online: "Онлайн", offline: "О
 const CATALOG_STATUS: Record<string, string> = { published: "На витрине", draft: "Черновик", archived: "Архив" };
 
 function Content() {
-  const [tab, setTab] = useState<"programs" | "products" | "pages">("programs");
+  const [tab, setTab] = useState<"programs" | "products" | "news" | "timeline" | "podcasts" | "pages">("programs");
   const tabs = [
     { key: "programs" as const, label: "Программы ДПО" },
     { key: "products" as const, label: "Товары (мерч)" },
+    { key: "news" as const, label: "Новости" },
+    { key: "timeline" as const, label: "История" },
+    { key: "podcasts" as const, label: "Подкасты" },
     { key: "pages" as const, label: "Страницы" },
   ];
   return (
@@ -271,12 +291,198 @@ function Content() {
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === t.key ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>{t.label}</button>
         ))}
-        <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc ml-auto rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2.5 font-mono text-[12px] text-grafit-soft">Directus Studio → медиа/новости</a>
+        <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc ml-auto rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2.5 font-mono text-[12px] text-grafit-soft">Directus Studio → медиа</a>
       </div>
       {tab === "programs" && <ProgramsAdmin />}
       {tab === "products" && <ProductsAdmin />}
+      {tab === "news" && <NewsAdmin />}
+      {tab === "timeline" && <TimelineAdmin />}
+      {tab === "podcasts" && <PodcastsAdmin />}
       {tab === "pages" && <PagesAdmin />}
     </>
+  );
+}
+
+// ── Новости: пишутся прямо здесь ─────────────────────────────────────
+function NewsAdmin() {
+  const news = useAdminNews();
+  const { createNews, patchNews, deleteNews } = useAdminMutations();
+  const [showCreate, setShowCreate] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<AdminNews | null>(null);
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+      <div className="flex items-center justify-between gap-3 bg-[#FBF7EF] px-6 py-3.5">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Новости · {news.data?.length ?? "…"}</span>
+        <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Написать новость</button>
+      </div>
+      {(news.data ?? []).map((n) => (
+        <div key={n.id} className="grid grid-cols-[1fr_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm">
+          <div className="min-w-0">
+            <div className="truncate font-semibold">{n.title}</div>
+            {n.excerpt && <div className="truncate font-mono text-[11px] text-grafit-soft">{n.excerpt}</div>}
+          </div>
+          <select value={n.status} disabled={patchNews.isPending} onChange={(e) => patchNews.mutate({ id: n.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${n.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
+            <option value="published">Опубликована</option><option value="draft">Черновик</option>
+          </select>
+          <button aria-label={`Удалить ${n.title}`} onClick={() => setConfirmDel(n)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
+        </div>
+      ))}
+      {news.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Новостей нет — напишите первую.</p>}
+      {showCreate && <NewsForm busy={createNews.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createNews.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
+      {confirmDel && (
+        <ConfirmDelete title={confirmDel.title} busy={deleteNews.isPending} hint="Новость исчезнет с сайта безвозвратно."
+          onCancel={() => setConfirmDel(null)} onConfirm={() => deleteNews.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })} />
+      )}
+    </div>
+  );
+}
+
+function NewsForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: { title: string; excerpt?: string | null; body?: string | null }) => void }) {
+  const [f, setF] = useState({ title: "", excerpt: "", body: "" });
+  const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const valid = f.title.trim().length >= 3;
+  const submit = (e: FormEvent) => { e.preventDefault(); if (valid) onSave({ title: f.title.trim(), excerpt: f.excerpt.trim() || null, body: f.body.trim() || null }); };
+  return (
+    <Modal onClose={onClose} labelledBy="news-form-title" maxWidth={560}>
+      <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
+        <h3 id="news-form-title" className="font-display text-lg font-bold">Новая новость</h3>
+        <div className="mt-4 space-y-3">
+          <FormField label="Заголовок" value={f.title} onChange={(v) => set("title", v)} required />
+          <FormField label="Короткий анонс" value={f.excerpt} onChange={(v) => set("excerpt", v)} />
+          <FormField label="Текст новости" value={f.body} onChange={(v) => set("body", v)} textarea />
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button type="submit" disabled={!valid || busy} className="foc flex-1 rounded-[11px] bg-ohra py-2.5 font-semibold text-kost disabled:opacity-50">{busy ? "Публикуем…" : "Опубликовать"}</button>
+          <button type="button" onClick={onClose} className="foc flex-1 rounded-[11px] border border-[#E5E7EB] py-2.5 font-semibold">Отмена</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ── «История» на главной ─────────────────────────────────────────────
+function TimelineAdmin() {
+  const timeline = useAdminTimeline();
+  const { createTimeline, patchTimeline, deleteTimeline } = useAdminMutations();
+  const [showCreate, setShowCreate] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<AdminTimeline | null>(null);
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+      <div className="flex items-center justify-between gap-3 bg-[#FBF7EF] px-6 py-3.5">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">История на главной · {timeline.data?.length ?? "…"} вех</span>
+        <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить веху</button>
+      </div>
+      {(timeline.data ?? []).map((t) => (
+        <div key={t.id} className="grid grid-cols-[64px_1fr_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm">
+          <span className="font-display text-lg font-extrabold text-hse-blue">{t.year}</span>
+          <div className="min-w-0">
+            <div className="truncate font-semibold">{t.title}</div>
+            <div className="truncate font-mono text-[11px] text-grafit-soft">{t.text}{t.metric ? ` · ${t.metric}` : ""}</div>
+          </div>
+          <select value={t.status} disabled={patchTimeline.isPending} onChange={(e) => patchTimeline.mutate({ id: t.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${t.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
+            <option value="published">На сайте</option><option value="draft">Скрыта</option>
+          </select>
+          <button aria-label={`Удалить ${t.title}`} onClick={() => setConfirmDel(t)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
+        </div>
+      ))}
+      {showCreate && <TimelineForm busy={createTimeline.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createTimeline.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
+      {confirmDel && (
+        <ConfirmDelete title={confirmDel.title} busy={deleteTimeline.isPending} hint="Веха исчезнет из «Истории» на главной."
+          onCancel={() => setConfirmDel(null)} onConfirm={() => deleteTimeline.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })} />
+      )}
+    </div>
+  );
+}
+
+function TimelineForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: { year: string; title: string; text?: string | null; metric?: string | null }) => void }) {
+  const [f, setF] = useState({ year: String(new Date().getFullYear()), title: "", text: "", metric: "" });
+  const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const valid = /^\d{4}$/.test(f.year) && f.title.trim().length >= 2;
+  const submit = (e: FormEvent) => { e.preventDefault(); if (valid) onSave({ year: f.year, title: f.title.trim(), text: f.text.trim() || null, metric: f.metric.trim() || null }); };
+  return (
+    <Modal onClose={onClose} labelledBy="tl-form-title" maxWidth={480}>
+      <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
+        <h3 id="tl-form-title" className="font-display text-lg font-bold">Новая веха истории</h3>
+        <div className="mt-4 space-y-3">
+          <div className="grid grid-cols-[110px_1fr] gap-3">
+            <FormField label="Год" value={f.year} onChange={(v) => set("year", v.replace(/[^\d]/g, "").slice(0, 4))} required />
+            <FormField label="Заголовок" value={f.title} onChange={(v) => set("title", v)} required />
+          </div>
+          <FormField label="Текст" value={f.text} onChange={(v) => set("text", v)} textarea />
+          <FormField label="Метрика (подпись)" value={f.metric} onChange={(v) => set("metric", v)} ph="напр. 2-й выпуск · мерч" />
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button type="submit" disabled={!valid || busy} className="foc flex-1 rounded-[11px] bg-ohra py-2.5 font-semibold text-kost disabled:opacity-50">{busy ? "Добавляем…" : "Добавить"}</button>
+          <button type="button" onClick={onClose} className="foc flex-1 rounded-[11px] border border-[#E5E7EB] py-2.5 font-semibold">Отмена</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ── Подкасты (доступ слушателям — по подписке 3 999 ₽/год) ──────────
+function PodcastsAdmin() {
+  const podcasts = useAdminPodcasts();
+  const { createPodcast, patchPodcast, deletePodcast } = useAdminMutations();
+  const [showCreate, setShowCreate] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<AdminPodcast | null>(null);
+  return (
+    <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+      <div className="flex items-center justify-between gap-3 bg-[#FBF7EF] px-6 py-3.5">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Подкасты · {podcasts.data?.length ?? "…"} · доступ по подписке 3 999 ₽/год</span>
+        <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить подкаст</button>
+      </div>
+      {(podcasts.data ?? []).map((p) => (
+        <div key={p.id} className="grid grid-cols-[52px_1fr_90px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm">
+          {p.cover ? <img src={p.cover} alt="" className="h-12 w-12 rounded-[10px] object-cover" /> : <div className="h-12 w-12 rounded-[10px] bg-kost-2" />}
+          <div className="min-w-0">
+            <div className="truncate font-semibold">{p.title}</div>
+            <div className="truncate font-mono text-[11px] text-grafit-soft">{p.description}</div>
+          </div>
+          <span className="font-mono text-[12px] text-grafit-soft">{p.duration ?? "—"}</span>
+          <select value={p.status} disabled={patchPodcast.isPending} onChange={(e) => patchPodcast.mutate({ id: p.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${p.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
+            <option value="published">Опубликован</option><option value="draft">Черновик</option>
+          </select>
+          <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
+        </div>
+      ))}
+      {podcasts.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Подкастов нет — добавьте первый.</p>}
+      {showCreate && <PodcastForm busy={createPodcast.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createPodcast.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
+      {confirmDel && (
+        <ConfirmDelete title={confirmDel.title} busy={deletePodcast.isPending} hint="Подкаст исчезнет с витрины подкастов."
+          onCancel={() => setConfirmDel(null)} onConfirm={() => deletePodcast.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })} />
+      )}
+    </div>
+  );
+}
+
+function PodcastForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: { title: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null }) => void }) {
+  const [f, setF] = useState({ title: "", description: "", cover: "", audio_url: "", duration: "" });
+  const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const valid = f.title.trim().length >= 3;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (valid) onSave({ title: f.title.trim(), description: f.description.trim() || null, cover: f.cover.trim() || null, audio_url: f.audio_url.trim() || null, duration: f.duration.trim() || null });
+  };
+  return (
+    <Modal onClose={onClose} labelledBy="pod-form-title" maxWidth={520}>
+      <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
+        <h3 id="pod-form-title" className="font-display text-lg font-bold">Новый подкаст</h3>
+        <div className="mt-4 space-y-3">
+          <FormField label="Название" value={f.title} onChange={(v) => set("title", v)} required />
+          <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
+          <FormField label="Картинка (ссылка или /assets/…)" value={f.cover} onChange={(v) => set("cover", v)} ph="/assets/dpo-hero.jpg" />
+          <div className="grid grid-cols-[1fr_120px] gap-3">
+            <FormField label="Аудио (ссылка на mp3)" value={f.audio_url} onChange={(v) => set("audio_url", v)} ph="https://…/episode.mp3" />
+            <FormField label="Длительность" value={f.duration} onChange={(v) => set("duration", v)} ph="42 мин" />
+          </div>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button type="submit" disabled={!valid || busy} className="foc flex-1 rounded-[11px] bg-ohra py-2.5 font-semibold text-kost disabled:opacity-50">{busy ? "Добавляем…" : "Добавить"}</button>
+          <button type="button" onClick={onClose} className="foc flex-1 rounded-[11px] border border-[#E5E7EB] py-2.5 font-semibold">Отмена</button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

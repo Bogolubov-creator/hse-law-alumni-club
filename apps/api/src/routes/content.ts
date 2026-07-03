@@ -58,6 +58,13 @@ export async function contentRoutes(app: FastifyInstance) {
     })),
   );
 
+  // «История» на главной — редактируется в админ-панели.
+  app.get("/timeline", async () =>
+    directus.request(readItems("timeline_items", {
+      filter: { status: { _eq: "published" } }, sort: ["sort"], limit: -1,
+      fields: ["id", "year", "title", "text", "metric", "sort"],
+    })));
+
   app.get("/pages/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const rows = (await directus.request(

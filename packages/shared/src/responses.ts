@@ -8,6 +8,27 @@ export const newsItemSchema = z.object({
 });
 export const newsListSchema = z.array(newsItemSchema);
 
+// «История» на главной (редактируется в админ-панели)
+export const timelineItemSchema = z.object({
+  id: z.string(), year: z.string(), title: z.string(),
+  text: z.string().nullable(), metric: z.string().nullable(), sort: z.number().nullable().optional(),
+});
+export const timelineSchema = z.array(timelineItemSchema);
+
+// Подкасты клуба: audio_url отдаётся только активным подписчикам
+export const PODCAST_SUB_PRICE_KOP = 399_900; // 3 999 ₽ / год
+export const podcastItemSchema = z.object({
+  id: z.string(), title: z.string(), description: z.string().nullable(),
+  cover: z.string().nullable(), duration: z.string().nullable(),
+  audio_url: z.string().nullable().optional(), // null/absent без подписки
+});
+export const podcastsResSchema = z.object({
+  items: z.array(podcastItemSchema),
+  subscribed: z.boolean(),
+  sub_until: z.string().nullable(),
+  price: z.number(), // копейки, в год
+});
+
 export const heroBlockSchema = z.object({
   badge: z.string().optional(), title_pre: z.string().optional(), title_accent: z.string().optional(),
   subtitle: z.string().optional(), cta_primary: z.string().optional(), cta_secondary: z.string().optional(),
@@ -90,6 +111,9 @@ export const ledgerListSchema = z.array(ledgerEntrySchema);
 
 // Инференс типов из схем — единый источник для фронта.
 export type NewsItem = z.infer<typeof newsItemSchema>;
+export type TimelineItem = z.infer<typeof timelineItemSchema>;
+export type PodcastItem = z.infer<typeof podcastItemSchema>;
+export type PodcastsRes = z.infer<typeof podcastsResSchema>;
 export type HeroBlock = z.infer<typeof heroBlockSchema>;
 export type CtaBlock = z.infer<typeof ctaBlockSchema>;
 export type PageHome = z.infer<typeof pageHomeSchema>;

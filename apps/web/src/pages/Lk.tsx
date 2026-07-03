@@ -299,16 +299,17 @@ function Community({ token }: { token: string }) {
   const classmates = useClassmates(token);
   const addFriend = useAddFriend(token);
   const list = classmates.data ?? [];
+  const friendsCount = list.filter((c) => c.friend_status === "accepted").length;
   if (classmates.isLoading || classmates.isError || list.length === 0) return null;
 
   return (
     <div style={{ ...surface, padding: "26px 28px", marginTop: 22 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
-          <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Сообщество</div>
-          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>Ваши однокурсники — тот же выпуск или образовательная программа</div>
+          <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Мои однокурсники</div>
+          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>Тот же выпуск или образовательная программа</div>
         </div>
-        <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>{list.length} чел.</span>
+        <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>{list.length} чел. · в друзьях: <b style={{ color: "#1F8A5B" }}>{friendsCount}</b></span>
       </div>
       <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
         {list.map((c) => (

@@ -21,6 +21,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
           <nav className="flex flex-wrap items-center justify-end gap-1.5 text-[14px]">
             <Link to="/dpo" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">ДПО</Link>
             <Link to="/merch" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Мерч</Link>
+            <Link to="/podcasts" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Подкасты</Link>
             <Link to="/news" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">Новости</Link>
             <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{authed ? "Личный кабинет" : "ЛК"}</Link>
             <Link to="/cart" className="foc relative ml-1 rounded-[11px] bg-grafit px-4 py-2.5 font-semibold text-kost">

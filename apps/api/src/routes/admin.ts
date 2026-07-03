@@ -6,6 +6,7 @@ import { slugifyRu } from "@club/shared";
 import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { syncDpoCatalog } from "../lib/hse-sync.js";
+import { extendPodcastSub, subActive } from "./podcasts.js";
 
 const di = directus;
 const ADMIN_ROLES = ["editor", "admin", "Administrator"];
@@ -25,15 +26,34 @@ export async function adminRoutes(app: FastifyInstance) {
     return { token: signAdmin(user.id, user.role), role: user.role };
   });
 
+  // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    const orders = (await di.request(readItems("orders", { fields: ["status"], limit: -1 }))) as any[];
-    const alumni = (await di.request(readItems("alumni", { fields: ["verification_status"], limit: -1 }))) as any[];
+    const [orders, alumni, programs, products, news, friends, podcasts] = await Promise.all([
+      di.request(readItems("orders", { fields: ["status", "total_estimate", "payment_status"], limit: -1 })),
+      di.request((readItems as any)("alumni", { fields: ["verification_status", "points_cached", "podcast_sub_until"], limit: -1 })),
+      di.request((readItems as any)("programs", { fields: ["status", "enrollment"], limit: -1 })),
+      di.request(readItems("products", { fields: ["status"], limit: -1 })),
+      di.request(readItems("news", { fields: ["status"], limit: -1 })),
+      di.request((readItems as any)("alumni_friends", { fields: ["status"], limit: -1 })),
+      di.request((readItems as any)("podcasts", { fields: ["status"], limit: -1 })),
+    ]) as [any[], any[], any[], any[], any[], any[], any[]];
     return {
       new_orders: orders.filter((o) => o.status === "new").length,
       orders_count: orders.length,
+      orders_paid: orders.filter((o) => o.payment_status === "succeeded").length,
       pending_verifications: alumni.filter((a) => a.verification_status === "pending").length,
       alumni_count: alumni.length,
+      alumni_verified: alumni.filter((a) => a.verification_status === "verified").length,
+      points_total: alumni.reduce((s, a) => s + (a.points_cached || 0), 0),
+      programs_actual: programs.filter((p) => p.status === "published" && p.enrollment !== "nonactual").length,
+      programs_total: programs.filter((p) => p.status === "published").length,
+      products_count: products.filter((p) => p.status === "published").length,
+      news_count: news.filter((n) => n.status === "published").length,
+      friendships: friends.filter((f) => f.status === "accepted").length,
+      friend_requests: friends.filter((f) => f.status === "pending").length,
+      podcasts_count: podcasts.filter((p) => p.status === "published").length,
+      podcast_subscribers: alumni.filter((a) => subActive(a.podcast_sub_until)).length,
     };
   });
 
@@ -55,10 +75,27 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get("/admin/members", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return di.request(readItems("alumni", {
-      sort: ["-points_cached"], limit: 200,
-      fields: ["id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount"],
-    }));
+    const [members, links] = await Promise.all([
+      di.request((readItems as any)("alumni", {
+        sort: ["-points_cached"], limit: 200,
+        fields: ["id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until"],
+      })),
+      di.request((readItems as any)("alumni_friends", { filter: { status: { _eq: "accepted" } }, limit: -1, fields: ["alumni_id", "friend_id"] })),
+    ]) as [any[], any[]];
+    const friendsOf = new Map<string, number>();
+    for (const l of links) {
+      friendsOf.set(l.alumni_id, (friendsOf.get(l.alumni_id) ?? 0) + 1);
+      friendsOf.set(l.friend_id, (friendsOf.get(l.friend_id) ?? 0) + 1);
+    }
+    return members.map((m) => ({ ...m, friends_count: friendsOf.get(m.id) ?? 0, podcast_active: subActive(m.podcast_sub_until) }));
+  });
+
+  // Продление подписки на подкасты решением офиса (например, оплата по счёту).
+  app.post("/admin/members/:id/podcast-sub", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const until = await extendPodcastSub(id, 12);
+    return { ok: true, until };
   });
 
   app.patch("/admin/members/:id", async (req, reply) => {
@@ -198,6 +235,131 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("products", id));
+    return { ok: true };
+  });
+
+  // ── Новости: пишутся и публикуются из админ-панели ──────────────
+  const newsBody = z.object({
+    title: z.string().min(3),
+    excerpt: z.string().nullish(),
+    body: z.string().nullish(),
+    status: z.enum(["draft", "published"]).default("published"),
+  });
+
+  app.get("/admin/news", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    return di.request(readItems("news", { sort: ["-published_at"], limit: -1, fields: ["id", "slug", "title", "excerpt", "body", "published_at", "status"] }));
+  });
+
+  app.post("/admin/news", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const b = newsBody.parse(req.body);
+    const slug = slugify(b.title);
+    const dup = (await di.request(readItems("news", { filter: { slug: { _eq: slug } }, limit: 1, fields: ["id"] }))) as any[];
+    const created = (await di.request((createItem as any)("news", {
+      slug: dup.length ? `${slug}-${Date.now() % 10000}` : slug,
+      title: b.title, excerpt: b.excerpt ?? null, body: b.body ?? null,
+      status: b.status, published_at: new Date().toISOString(),
+    }))) as any;
+    return { ok: true, id: created.id };
+  });
+
+  app.patch("/admin/news/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const b = newsBody.partial().parse(req.body);
+    await di.request((updateItem as any)("news", id, b));
+    return { ok: true };
+  });
+
+  app.delete("/admin/news/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    await di.request((deleteItem as any)("news", id));
+    return { ok: true };
+  });
+
+  // ── «История» на главной ─────────────────────────────────────────
+  const timelineBody = z.object({
+    year: z.string().min(4).max(4),
+    title: z.string().min(2),
+    text: z.string().nullish(),
+    metric: z.string().nullish(),
+    sort: z.number().int().optional(),
+    status: z.enum(["draft", "published"]).default("published"),
+  });
+
+  app.get("/admin/timeline", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    return di.request(readItems("timeline_items", { sort: ["sort"], limit: -1, fields: ["id", "year", "title", "text", "metric", "sort", "status"] }));
+  });
+
+  app.post("/admin/timeline", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const b = timelineBody.parse(req.body);
+    const all = (await di.request(readItems("timeline_items", { fields: ["sort"], limit: -1 }))) as any[];
+    const created = (await di.request((createItem as any)("timeline_items", {
+      ...b, text: b.text ?? null, metric: b.metric ?? null,
+      sort: b.sort ?? Math.max(0, ...all.map((t) => t.sort || 0)) + 1,
+    }))) as any;
+    return { ok: true, id: created.id };
+  });
+
+  app.patch("/admin/timeline/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const b = timelineBody.partial().parse(req.body);
+    await di.request((updateItem as any)("timeline_items", id, b));
+    return { ok: true };
+  });
+
+  app.delete("/admin/timeline/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    await di.request((deleteItem as any)("timeline_items", id));
+    return { ok: true };
+  });
+
+  // ── Подкасты ──────────────────────────────────────────────────────
+  const podcastBody = z.object({
+    title: z.string().min(3),
+    description: z.string().nullish(),
+    cover: z.string().nullish(),
+    audio_url: z.string().nullish(),
+    duration: z.string().nullish(),
+    sort: z.number().int().optional(),
+    status: z.enum(["draft", "published"]).default("published"),
+  });
+
+  app.get("/admin/podcasts", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "duration", "sort", "status"] }));
+  });
+
+  app.post("/admin/podcasts", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const b = podcastBody.parse(req.body);
+    const all = (await di.request(readItems("podcasts", { fields: ["sort"], limit: -1 }))) as any[];
+    const created = (await di.request((createItem as any)("podcasts", {
+      ...b, description: b.description ?? null, cover: b.cover ?? null,
+      audio_url: b.audio_url ?? null, duration: b.duration ?? null,
+      sort: b.sort ?? Math.max(0, ...all.map((p) => p.sort || 0)) + 1,
+    }))) as any;
+    return { ok: true, id: created.id };
+  });
+
+  app.patch("/admin/podcasts/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const b = podcastBody.partial().parse(req.body);
+    await di.request((updateItem as any)("podcasts", id, b));
+    return { ok: true };
+  });
+
+  app.delete("/admin/podcasts/:id", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    await di.request((deleteItem as any)("podcasts", id));
     return { ok: true };
   });
 

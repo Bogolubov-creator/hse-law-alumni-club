@@ -15,6 +15,7 @@ import { ordersRoutes } from "./routes/orders.js";
 import { adminRoutes } from "./routes/admin.js";
 import { communityRoutes } from "./routes/community.js";
 import { paymentsRoutes } from "./routes/payments.js";
+import { podcastsRoutes } from "./routes/podcasts.js";
 import { runDecay } from "./lib/engine.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
@@ -56,6 +57,7 @@ await app.register(ordersRoutes);
 await app.register(adminRoutes);
 await app.register(communityRoutes);
 await app.register(paymentsRoutes);
+await app.register(podcastsRoutes);
 
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
 cron.schedule("0 3 1 * *", () => {

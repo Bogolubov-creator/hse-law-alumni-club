@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, type Classmate } from "@club/shared";
+import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, timelineSchema, podcastsResSchema, type Classmate, type TimelineItem, type PodcastsRes } from "@club/shared";
 import { apiGet, apiPost, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
 
 export function useLedger(token: string | null) {
@@ -48,6 +48,27 @@ export function useAddFriend(token: string | null) {
   return useMutation({
     mutationFn: (alumniId: string) => apiPost<{ status: string }>("/me/friends", { alumni_id: alumniId }, undefined, token ?? undefined),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["classmates"] }),
+  });
+}
+
+// «История» на главной (редактируется в админ-панели).
+export function useTimeline() {
+  return useQuery({ queryKey: ["timeline"], queryFn: () => apiGet<TimelineItem[]>("/timeline", undefined, timelineSchema) });
+}
+
+// Подкасты: audio_url приходит только активным подписчикам.
+export function usePodcasts(token: string | null) {
+  return useQuery({
+    queryKey: ["podcasts", token ?? "guest"],
+    queryFn: () => apiGet<PodcastsRes>("/podcasts", token ?? undefined, podcastsResSchema),
+  });
+}
+
+export function useSubscribePodcasts(token: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPost<{ number: string; payment_url?: string }>("/podcasts/subscribe", {}, undefined, token ?? undefined),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["podcasts"] }),
   });
 }
 

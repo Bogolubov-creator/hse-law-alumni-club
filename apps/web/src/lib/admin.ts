@@ -26,10 +26,18 @@ export async function adminLogin(email: string, password: string): Promise<{ tok
   return req("POST", "/auth/admin-login", { email, password });
 }
 
-export type Overview = { new_orders: number; orders_count: number; pending_verifications: number; alumni_count: number };
+export type Overview = {
+  new_orders: number; orders_count: number; orders_paid: number;
+  pending_verifications: number; alumni_count: number; alumni_verified: number; points_total: number;
+  programs_actual: number; programs_total: number; products_count: number; news_count: number;
+  friendships: number; friend_requests: number; podcasts_count: number; podcast_subscribers: number;
+};
+export type AdminNews = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string };
+export type AdminTimeline = { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string };
+export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; sort: number; status: string };
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
-export type Member = { id: string; fio: string | null; cohort: string | null; status: string; verification_status: string; points_cached: number; level_cached: string; personal_discount: number };
+export type Member = { id: string; fio: string | null; cohort: string | null; status: string; verification_status: string; points_cached: number; level_cached: string; personal_discount: number; friends_count?: number; podcast_active?: boolean };
 export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; enrollment?: "actual" | "nonactual" | null; dates?: { start?: string } | null; document?: string | null; description?: string | null };
 export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
 export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };
@@ -56,6 +64,15 @@ export function useAdminProducts() {
 export function useAdminPage(slug: string) {
   return useQuery({ queryKey: ["adm", "page", slug], queryFn: () => req<AdminPage>("GET", `/admin/pages/${slug}`), retry: false });
 }
+export function useAdminNews() {
+  return useQuery({ queryKey: ["adm", "news"], queryFn: () => req<AdminNews[]>("GET", "/admin/news"), retry: false });
+}
+export function useAdminTimeline() {
+  return useQuery({ queryKey: ["adm", "timeline"], queryFn: () => req<AdminTimeline[]>("GET", "/admin/timeline"), retry: false });
+}
+export function useAdminPodcasts() {
+  return useQuery({ queryKey: ["adm", "podcasts"], queryFn: () => req<AdminPodcast[]>("GET", "/admin/podcasts"), retry: false });
+}
 
 export function useAdminMutations() {
   const qc = useQueryClient();
@@ -73,5 +90,18 @@ export function useAdminMutations() {
     deleteProduct: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/products/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
     syncDpo: useMutation({ mutationFn: () => req<{ ok: boolean; created: number; updated: number; archived: number; total: number }>("POST", "/admin/dpo-sync"), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
     savePage: useMutation({ mutationFn: (v: { slug: string; hero?: PageHeroInput; cta?: PageCtaInput }) => req("PATCH", `/admin/pages/${v.slug}`, { hero: v.hero, cta: v.cta }), onSuccess: (_r, v) => { refetch(); qc.invalidateQueries({ queryKey: ["page", v.slug] }); } }),
+    // Новости
+    createNews: useMutation({ mutationFn: (v: { title: string; excerpt?: string | null; body?: string | null }) => req("POST", "/admin/news", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["news"] }); } }),
+    patchNews: useMutation({ mutationFn: (v: { id: string; title?: string; excerpt?: string | null; body?: string | null; status?: string }) => req("PATCH", `/admin/news/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["news"] }); } }),
+    deleteNews: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/news/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["news"] }); } }),
+    // История главной
+    createTimeline: useMutation({ mutationFn: (v: { year: string; title: string; text?: string | null; metric?: string | null }) => req("POST", "/admin/timeline", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["timeline"] }); } }),
+    patchTimeline: useMutation({ mutationFn: (v: { id: string; year?: string; title?: string; text?: string | null; metric?: string | null; status?: string }) => req("PATCH", `/admin/timeline/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["timeline"] }); } }),
+    deleteTimeline: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/timeline/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["timeline"] }); } }),
+    // Подкасты
+    createPodcast: useMutation({ mutationFn: (v: { title: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null }) => req("POST", "/admin/podcasts", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
+    patchPodcast: useMutation({ mutationFn: (v: { id: string; title?: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null; status?: string }) => req("PATCH", `/admin/podcasts/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
+    deletePodcast: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/podcasts/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
+    grantPodcastSub: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/podcast-sub`), onSuccess: refetch }),
   };
 }

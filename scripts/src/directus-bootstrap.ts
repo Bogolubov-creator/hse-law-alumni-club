@@ -151,7 +151,7 @@ async function ensureSeed(collection: string, keyField: string, rows: Record<str
 const COLLECTIONS = [
   "levels", "point_rules", "achievements", "alumni", "points_ledger",
   "alumni_achievements", "alumni_friends", "pages", "news", "programs", "products",
-  "carts", "orders", "offers", "referrals",
+  "carts", "orders", "offers", "referrals", "timeline_items", "podcasts",
 ];
 log("== Коллекции ==");
 for (const c of COLLECTIONS) await ensureCollection(c);
@@ -196,6 +196,7 @@ await ensureField("alumni", "contacts_json", json());
 await ensureField("alumni", "edu_program", str());
 await ensureField("alumni", "edu_level", str());
 await ensureField("alumni", "interests_json", json());
+await ensureField("alumni", "podcast_sub_until", ts()); // подписка на подкасты активна до этой даты
 await ensureField("alumni", "referral_code", str(true));
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
@@ -235,6 +236,24 @@ await ensureField("news", "body", txt());
 await ensureField("news", "source_url", str());
 await ensureField("news", "published_at", ts());
 await ensureField("news", "status", enumf(["draft", "published"], "draft"));
+
+// timeline_items — «История» на главной (редактируется в админ-панели)
+await ensureField("timeline_items", "year", str());
+await ensureField("timeline_items", "title", str());
+await ensureField("timeline_items", "text", txt());
+await ensureField("timeline_items", "metric", str());
+await ensureField("timeline_items", "sort", int());
+await ensureField("timeline_items", "status", enumf(["draft", "published"], "published"));
+
+// podcasts — подкасты клуба (доступ по годовой подписке)
+await ensureField("podcasts", "title", str());
+await ensureField("podcasts", "description", txt());
+await ensureField("podcasts", "cover", str()); // URL/путь обложки
+await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.)
+await ensureField("podcasts", "duration", str()); // «43 мин»
+await ensureField("podcasts", "sort", int());
+await ensureField("podcasts", "status", enumf(["draft", "published"], "draft"));
+await ensureField("podcasts", "created_at", ts("date-created"));
 
 // programs (ДПО)
 await ensureField("programs", "slug", str(true));
@@ -447,6 +466,19 @@ await ensureSeed("achievements", "key", ACHIEVEMENTS.map((a) => ({
 })));
 await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "published" })));
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
+// История главной — стартовый таймлайн (дальше редактируется в админ-панели)
+await ensureSeed("timeline_items", "title", [
+  { year: "2024", title: "Клуб основан", text: "Первый выпуск собирается в сообщество, появляется личный кабинет.", metric: "1-й выпуск · ~40 участников", sort: 1, status: "published" },
+  { year: "2024", title: "Витрина ДПО", text: "Открывается доступ к программам доп. образования со скидкой выпускника.", metric: "каталог ВШЭ · скидка выпускника", sort: 2, status: "published" },
+  { year: "2025", title: "Геймификация", text: "Запуск уровней статуса, баллов и бейджей за активность в клубе.", metric: "4 уровня · 10 достижений", sort: 3, status: "published" },
+  { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, фирменный мерч и первые партнёрские предложения.", metric: "2-й выпуск · мерч", sort: 4, status: "published" },
+  { year: "2026", title: "Сегодня", text: "Растущее сообщество выпускников факультета права с витринами и менторством.", metric: "и это только начало", sort: 5, status: "published" },
+]);
+// Демо-подкасты (доступ по подписке)
+await ensureSeed("podcasts", "title", [
+  { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "published" },
+  { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "published" },
+]);
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
 
 // Профиль для тестового выпускника (если ещё нет)
