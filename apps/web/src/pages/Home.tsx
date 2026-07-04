@@ -388,7 +388,7 @@ export default function Home() {
             <h2 style={{ ...disp, fontWeight: 800, fontSize: 38, letterSpacing: "-0.01em", lineHeight: 1.08, margin: 0 }}>{cta.title ?? "Вступить в клуб"}</h2>
             <p style={{ fontSize: 17, color: "rgba(251,243,232,.8)", lineHeight: 1.5, margin: "16px 0 0" }}>{cta.text ?? "Подтвердите выпуск у учебного офиса – и получите статус, скидки и доступ к витринам."}</p>
           </div>
-          <Link to={token() ? "/lk" : "/join"} data-mag className="foc" style={{ position: "relative", textDecoration: "none", fontWeight: 600, fontSize: 17, padding: "17px 36px", borderRadius: 14, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 14px 30px -12px rgba(0,0,0,.5)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", flex: "none" }}>{cta.button ?? "Подать заявку"}</Link>
+          <Link to="/join" data-mag className="foc" style={{ position: "relative", textDecoration: "none", fontWeight: 600, fontSize: 17, padding: "17px 36px", borderRadius: 14, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 14px 30px -12px rgba(0,0,0,.5)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", flex: "none" }}>{cta.button ?? "Подать заявку"}</Link>
         </div>
       </section>
 

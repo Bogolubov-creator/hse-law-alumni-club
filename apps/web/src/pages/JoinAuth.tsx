@@ -36,6 +36,9 @@ function Field({ label, value, onChange, type = "text", ph, required }: { label:
 
 // ── Заявка на вступление ────────────────────────────────────────────
 export function Join() {
+  // Уже в клубе? Анкета нужна только новым выпускникам — не «кидаем» молча в ЛК,
+  // а объясняем и даём выбор (в кабинет / выйти и заполнить за другого человека).
+  const [authed, setAuthed] = useState(() => !!localStorage.getItem("club_token"));
   const [f, setF] = useState({ fio: "", email: "", password: "", cohort: "", edu_level: "магистратура", edu_program: "", consent: false, website: "" });
   const [interests, setInterests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -63,6 +66,22 @@ export function Join() {
       setBusy(false);
     }
   };
+
+  if (authed) {
+    return (
+      <AuthShell title="Вы уже в клубе ✓" sub="Вы вошли в личный кабинет — анкета вступления нужна только новым выпускникам. Если хотите подать заявку за другого человека, сначала выйдите из аккаунта.">
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link to="/lk" className="foc rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">В личный кабинет</Link>
+          <button
+            onClick={() => { localStorage.removeItem("club_token"); setAuthed(false); }}
+            className="foc rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold"
+          >
+            Выйти и заполнить анкету
+          </button>
+        </div>
+      </AuthShell>
+    );
+  }
 
   if (done) {
     return (
