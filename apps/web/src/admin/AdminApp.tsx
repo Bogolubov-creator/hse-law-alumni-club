@@ -277,6 +277,15 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
         <div id="member-modal-title" className="font-display text-2xl font-bold">{member.fio}</div>
         <div className="mt-1 font-mono text-[12px] text-grafit-soft">Выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях: {member.friends_count ?? 0}</div>
 
+        {/* Анкета из формы вступления — всё, что заполнил выпускник */}
+        <div className="mt-4 rounded-[14px] bg-[#FBF7EF] px-4 py-3 font-mono text-[12px] leading-relaxed text-grafit-soft">
+          {member.email && <div>Почта: <b className="text-grafit">{member.email}</b></div>}
+          {(member.edu_level || member.edu_program) && <div>Образование: <b className="text-grafit">{[member.edu_level, member.edu_program && `ОП «${member.edu_program}»`].filter(Boolean).join(" · ")}</b></div>}
+          {member.contacts_json && Object.entries(member.contacts_json).filter(([, v]) => v).map(([k, v]) => <div key={k}>{k}: <b className="text-grafit">{v}</b></div>)}
+          {!!member.interests_json?.length && <div>Интересы: <b className="text-grafit">{member.interests_json.join(", ")}</b></div>}
+          {member.joined_at && <div>Заявка подана: {new Date(member.joined_at).toLocaleDateString("ru-RU")}</div>}
+        </div>
+
         <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Верификация</div>
         <div className="mt-2 flex gap-2">
           <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: member.id, verification_status: "verified" })} className="foc flex-1 rounded-[10px] bg-[#1F8A5B] py-2.5 text-sm font-semibold text-white disabled:opacity-60">Подтвердить</button>

@@ -37,7 +37,13 @@ export type AdminTimeline = { id: string; year: string; title: string; text: str
 export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
-export type Member = { id: string; fio: string | null; cohort: string | null; status: string; verification_status: string; points_cached: number; level_cached: string; personal_discount: number; friends_count?: number; podcast_active?: boolean };
+export type Member = {
+  id: string; fio: string | null; cohort: string | null; status: string; verification_status: string;
+  points_cached: number; level_cached: string; personal_discount: number;
+  friends_count?: number; podcast_active?: boolean;
+  email?: string | null; edu_level?: string | null; edu_program?: string | null;
+  interests_json?: string[] | null; contacts_json?: Record<string, string> | null; joined_at?: string | null;
+};
 export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; enrollment?: "actual" | "nonactual" | null; dates?: { start?: string } | null; document?: string | null; description?: string | null };
 export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
 export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };

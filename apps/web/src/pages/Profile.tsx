@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { LEVELS, LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPatch, type Achievement, type LedgerEntry } from "../lib/api.js";
 import { useMe, useLedger } from "../lib/queries.js";
+import { useToast } from "../components/Toast.js";
 
 /** Профиль выпускника – порт «Профиль.dc.html» (C). Контакты + история баллов + правила достижений. */
 
@@ -70,16 +71,19 @@ function ProfileBody({ token }: { token: string }) {
     setInterests((cur) => cur.includes(name) ? cur.filter((x) => x !== name) : cur.length >= MAX_INTERESTS ? cur : [...cur, name]);
 
   const logout = () => { localStorage.removeItem(TOKEN_KEY); window.location.assign("/lk"); };
+  const toast = useToast();
   const save = async () => {
     setSaveState("saving");
     setSaveErr(null);
     try {
       await apiPatch("/me/profile", { fio: fio.trim() || undefined, contacts, interests }, token);
       setSaveState("saved");
+      toast("Профиль сохранён ✓"); // фидбек виден из любой точки страницы
       me.refetch(); // данные профиля сразу свежие на всех экранах
-      setTimeout(() => setSaveState("idle"), 2000);
+      setTimeout(() => setSaveState("idle"), 2500);
     } catch (e) {
       setSaveErr((e as Error).message || "Не удалось сохранить");
+      toast("Не удалось сохранить", "err");
       setSaveState("idle");
     }
   };
@@ -176,11 +180,11 @@ function ProfileBody({ token }: { token: string }) {
                   </div>
                   <p style={{ fontSize: 12, lineHeight: 1.5, color: "#6B7280", margin: 0 }}>
                     Сохраняя, вы даёте согласие на обработку персональных данных —{" "}
-                    <a href="/privacy" target="_blank" className="foc" style={{ color: "#C9450E", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</a>.
+                    <Link to="/privacy" className="foc" style={{ color: "#C9450E", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
                   </p>
                   {saveErr && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: 0 }}>{saveErr}</p>}
-                  <button onClick={save} disabled={saveState === "saving"} className="foc" style={{ width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer" }}>
-                    {saveState === "saving" ? "Сохраняем…" : "Сохранить"}
+                  <button onClick={save} disabled={saveState === "saving"} className="foc" style={{ width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, border: "none", background: saveState === "saved" ? "#1F8A5B" : "#EC5A13", color: "#FBF3E8", cursor: "pointer", transition: "background .2s" }}>
+                    {saveState === "saving" ? "Сохраняем…" : saveState === "saved" ? "Сохранено ✓" : "Сохранить"}
                   </button>
                 </div>
               </div>

@@ -115,7 +115,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const [members, links] = await Promise.all([
       di.request((readItems as any)("alumni", {
         sort: ["-points_cached"], limit: 200,
-        fields: ["id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until"],
+        fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at"],
       })),
       di.request((readItems as any)("alumni_friends", { filter: { status: { _eq: "accepted" } }, limit: -1, fields: ["alumni_id", "friend_id"] })),
     ]) as [any[], any[]];
@@ -124,7 +124,19 @@ export async function adminRoutes(app: FastifyInstance) {
       friendsOf.set(l.alumni_id, (friendsOf.get(l.alumni_id) ?? 0) + 1);
       friendsOf.set(l.friend_id, (friendsOf.get(l.friend_id) ?? 0) + 1);
     }
-    return members.map((m) => ({ ...m, friends_count: friendsOf.get(m.id) ?? 0, podcast_active: subActive(m.podcast_sub_until) }));
+    // Почты аккаунтов одним запросом — офис видит анкету целиком.
+    const userIds = members.map((m) => m.user_id).filter(Boolean);
+    const emails = new Map<string, string>();
+    if (userIds.length) {
+      const users = (await di.request((readUsers as any)({ filter: { id: { _in: userIds } }, limit: -1, fields: ["id", "email"] }))) as any[];
+      for (const u of users) emails.set(u.id, u.email);
+    }
+    return members.map((m) => ({
+      ...m,
+      email: (m.user_id && emails.get(m.user_id)) || m.contacts_json?.email || null,
+      friends_count: friendsOf.get(m.id) ?? 0,
+      podcast_active: subActive(m.podcast_sub_until),
+    }));
   });
 
   // Продление подписки на подкасты решением офиса (например, оплата по счёту).
