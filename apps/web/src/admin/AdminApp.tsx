@@ -233,15 +233,30 @@ function Members() {
   const members = useMembers();
   const [sel, setSel] = useState<Member | null>(null);
   const [q, setQ] = useState("");
-  const list = (members.data ?? []).filter((m) => {
-    if (!q.trim()) return true;
-    const hay = `${m.fio ?? ""} ${m.cohort ?? ""} ${VERIF[m.verification_status] ?? ""}`.toLowerCase();
-    return hay.includes(q.trim().toLowerCase());
-  });
+  const [vf, setVf] = useState<string>("all");
+  const all = members.data ?? [];
+  const pendingCount = all.filter((m) => m.verification_status === "pending").length;
+  const list = all
+    .filter((m) => vf === "all" || m.verification_status === vf)
+    .filter((m) => {
+      if (!q.trim()) return true;
+      const hay = `${m.fio ?? ""} ${m.cohort ?? ""} ${m.email ?? ""} ${VERIF[m.verification_status] ?? ""}`.toLowerCase();
+      return hay.includes(q.trim().toLowerCase());
+    })
+    // Новые заявки на вступление — всегда сверху.
+    .sort((a, b) => (a.verification_status === "pending" ? 0 : 1) - (b.verification_status === "pending" ? 0 : 1));
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: ФИО, год выпуска, статус…" className="foc w-80 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
+        {[
+          { key: "all", label: "Все" },
+          { key: "pending", label: `Заявки на вступление${pendingCount ? ` · ${pendingCount}` : ""}` },
+          { key: "verified", label: "Подтверждённые" },
+          { key: "rejected", label: "Отклонённые" },
+        ].map((f) => (
+          <button key={f.key} onClick={() => setVf(f.key)} className={`foc rounded-full px-3.5 py-2 text-[13px] font-semibold ${vf === f.key ? "bg-grafit text-kost" : f.key === "pending" && pendingCount ? "border border-ohra bg-[rgba(236,90,19,.1)] text-ohra-deep" : "border border-[#E5E7EB] bg-white"}`}>{f.label}</button>
+        ))}
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: ФИО, почта, год…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
         {q && <span className="font-mono text-[12px] text-grafit-soft">найдено: {list.length}</span>}
       </div>
       <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
