@@ -206,7 +206,14 @@ export default function Home() {
             <a href="#istoriya" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>История</a>
             <a href="#vitriny" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Витрины</a>
             <Link to="/news" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Новости</Link>
-            <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, background: "#EC5A13", color: "#FBF3E8", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{token() ? "Личный кабинет" : "Войти в ЛК"}</Link>
+            {token() ? (
+              <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, background: "#EC5A13", color: "#FBF3E8", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>Личный кабинет</Link>
+            ) : (
+              <>
+                <Link to="/lk" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 15 }}>Войти</Link>
+                <Link to="/join" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, background: "#EC5A13", color: "#FBF3E8", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>Вступить в клуб</Link>
+              </>
+            )}
           </nav>
           <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc mob-only" style={{ alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 11, border: "1px solid #E5E7EB", background: "#fff", fontSize: 19, cursor: "pointer" }}>
             {menuOpen ? "✕" : "☰"}

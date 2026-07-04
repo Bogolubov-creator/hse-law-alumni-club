@@ -31,7 +31,10 @@ export default function SiteShell({ children }: { children: ReactNode }) {
           {/* Десктоп: прежняя горизонтальная навигация */}
           <nav className="desk-only flex flex-wrap items-center justify-end gap-1.5 text-[14px]">
             {NAV.map((n) => <Link key={n.to} to={n.to} className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{n.label}</Link>)}
-            <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{authed ? "Личный кабинет" : "ЛК"}</Link>
+            <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{authed ? "Личный кабинет" : "Войти"}</Link>
+            {!authed && (
+              <Link to="/join" className="foc ml-1 rounded-[11px] bg-ohra px-4 py-2.5 font-semibold text-kost">Вступить в клуб</Link>
+            )}
             <Link to="/cart" className="foc relative ml-1 rounded-[11px] bg-grafit px-4 py-2.5 font-semibold text-kost">
               Корзина{count > 0 && <span className="ml-1.5 rounded-full bg-ohra px-1.5 font-mono text-[12px]">{count}</span>}
             </Link>
@@ -64,7 +67,10 @@ export default function SiteShell({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-[1180px]">
           <div className="flex flex-wrap justify-between gap-4">
             <span>© 2026 Клуб выпускников факультета права Вышки</span>
-            <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc text-latun-br">t.me/pravohse</a>
+            <span className="flex flex-wrap gap-4">
+              {!authed && <Link to="/join" className="foc font-semibold text-latun-br underline underline-offset-2">Вступить в клуб</Link>}
+              <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc text-latun-br">t.me/pravohse</a>
+            </span>
           </div>
           {/* 152-ФЗ: юридические документы + информация о владельце на каждой странице */}
           <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-[rgba(251,243,232,.12)] pt-5">
