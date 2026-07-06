@@ -14,6 +14,21 @@ const di = directus;
  * отметка посещения офисом → автоначисление баллов (reason=event, идемпотентно).
  */
 export async function eventsRoutes(app: FastifyInstance) {
+  // Публичные счётчики клуба для главной. Кэш в памяти на 5 минут.
+  let statsCache: { at: number; data: unknown } | null = null;
+  app.get("/stats", async () => {
+    if (statsCache && Date.now() - statsCache.at < 300_000) return statsCache.data;
+    const [alumni, events, programs] = await Promise.all([
+      di.request((readItems as any)("alumni", { filter: { verification_status: { _eq: "verified" } }, limit: -1, fields: ["id"] })),
+      di.request((readItems as any)("events", { filter: { status: { _in: ["published", "done"] } }, limit: -1, fields: ["id"] })),
+      di.request((readItems as any)("programs", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["id"] })),
+    ]) as [any[], any[], any[]];
+    const data = { alumni: alumni.length, events: events.length, programs: programs.length };
+    statsCache = { at: Date.now(), data };
+    return data;
+  });
+
+
   // Публичная афиша: предстоящие и недавние события.
   app.get("/events", async (req) => {
     const alumni = await resolveAlumni(req);

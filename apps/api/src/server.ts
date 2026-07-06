@@ -23,6 +23,7 @@ import { telegramRoutes } from "./routes/telegram.js";
 import { registerBotCommands } from "./lib/telegram-bot.js";
 import { startTelegramPolling } from "./lib/telegram-polling.js";
 import { runDecay } from "./lib/engine.js";
+import { runEventReminders } from "./lib/event-reminders.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
 const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 256 * 1024 });
@@ -102,6 +103,13 @@ cron.schedule("0 5 * * *", () => {
   syncDpoCatalog()
     .then((r) => app.log.info(r, "dpo sync ok"))
     .catch((e) => app.log.error(e, "dpo sync failed"));
+});
+
+// Напоминание записавшимся за сутки до события (10:00 МСК; идемпотентно).
+cron.schedule("0 10 * * *", () => {
+  runEventReminders()
+    .then((r) => { if (r.events) app.log.info(r, "event reminders sent"); })
+    .catch((e) => app.log.error(e, "event reminders failed"));
 });
 
 // Базовый health — для healthcheck'а docker и Caddy.

@@ -38,6 +38,14 @@ function heroShards() {
 }
 
 const RIBBON = ["#EC5A13", "#11296B", "#C49A45", "#2C6E80", "#B5331B"];
+const plural = (n: number, one: string, few: string, many: string) => {
+  const m10 = n % 10, m100 = n % 100;
+  if (m100 >= 11 && m100 <= 14) return many;
+  if (m10 === 1) return one;
+  if (m10 >= 2 && m10 <= 4) return few;
+  return many;
+};
+
 const MARQUEE = ["Выпуск ’24", "Выпуск ’25", "Менторы клуба", "Учебный офис", "Партнёры", "ДПО", "Мерч", "Нетворкинг"];
 const TIMELINE = [
   { year: "2024", title: "Клуб основан", text: "Первый выпуск собирается в сообщество, появляется личный кабинет.", metric: "1-й выпуск · ~40 участников", photo: "[ фото · запуск ]" },
@@ -67,6 +75,12 @@ export default function Home() {
     queryFn: () => apiGet<{ id: string; title: string; description: string | null; starts_at: string; location: string | null; cover: string | null; format: string; points: number; status: string; going: number }[]>("/events"),
     staleTime: 60_000,
   });
+  const statsQ = useQuery({
+    queryKey: ["stats"],
+    queryFn: () => apiGet<{ alumni: number; events: number; programs: number }>("/stats"),
+    staleTime: 300_000,
+  });
+  const st = statsQ.data;
   const upcomingEvents = (eventsQ.data ?? [])
     .filter((e: { status: string; starts_at: string }) => e.status === "published" && new Date(e.starts_at).getTime() >= Date.now())
     .slice(0, 3);
@@ -262,9 +276,20 @@ export default function Home() {
               <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_secondary ?? "Как вступить"}</a>
             </div>
             <div style={{ display: "flex", gap: 38, marginTop: 46, flexWrap: "wrap" }}>
-              <div data-count="2"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}><span data-count="2">0</span></div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>выпуска<br />в клубе</div></div>
-              <div style={{ width: 1, background: "#E5E7EB" }} />
-              <div data-count="4"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}><span data-count="4">0</span></div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>уровня<br />статуса</div></div>
+              {/* Живые счётчики клуба из /api/stats; до загрузки — прежние статические. */}
+              {st ? (
+                <>
+                  <div><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st.alumni}</div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{plural(st.alumni, "выпускник", "выпускника", "выпускников")}<br />в клубе</div></div>
+                  <div style={{ width: 1, background: "#E5E7EB" }} />
+                  <div><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st.events}</div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{plural(st.events, "событие", "события", "событий")}<br />в календаре</div></div>
+                </>
+              ) : (
+                <>
+                  <div data-count="2"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}><span data-count="2">0</span></div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>выпуска<br />в клубе</div></div>
+                  <div style={{ width: 1, background: "#E5E7EB" }} />
+                  <div data-count="4"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}><span data-count="4">0</span></div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>уровня<br />статуса</div></div>
+                </>
+              )}
               <div style={{ width: 1, background: "#E5E7EB" }} />
               <div data-count="5"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em", color: "#EC5A13" }}><span data-count="5">0</span>%</div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>скидка<br />выпускникам</div></div>
             </div>

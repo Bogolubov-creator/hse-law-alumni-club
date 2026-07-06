@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
+import { computeLevel } from "@club/shared";
 
 const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
@@ -316,7 +317,7 @@ function Members() {
             <span className="font-mono text-[12px] text-grafit-soft">{m.cohort}</span>
             <span><span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(m.verification_status)}`}>{VERIF[m.verification_status]}</span></span>
             <span className="font-mono text-[13px]">{m.points_cached}</span>
-            <span className="font-mono text-[13px]">−{m.personal_discount}%</span>
+            <span className="font-mono text-[13px]">{m.verification_status === "verified" ? `−${computeLevel(m.points_cached ?? 0).discount_percent + (m.personal_discount ?? 0)}%` : "—"}</span>
             <span className="font-mono text-[13px]">{m.friends_count ?? 0}</span>
             <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "—"}</span>
           </button>
