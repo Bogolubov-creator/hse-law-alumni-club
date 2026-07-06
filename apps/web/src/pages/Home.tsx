@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useNewsList, usePage, useTimeline, formatNewsDate } from "../lib/queries.js";
+import { apiGet } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 
 /**
@@ -59,6 +61,15 @@ export default function Home() {
   const [heroIn, setHeroIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false); // мобильный бургер (десктоп не трогаем)
   const news = useNewsList(3);
+  // Ближайшие события для блока на главной (тот же /events, что и афиша).
+  const eventsQ = useQuery({
+    queryKey: ["events", "home"],
+    queryFn: () => apiGet<{ id: string; title: string; description: string | null; starts_at: string; location: string | null; cover: string | null; format: string; points: number; status: string; going: number }[]>("/events"),
+    staleTime: 60_000,
+  });
+  const upcomingEvents = (eventsQ.data ?? [])
+    .filter((e: { status: string; starts_at: string }) => e.status === "published" && new Date(e.starts_at).getTime() >= Date.now())
+    .slice(0, 3);
   const page = usePage("home");
   // «История» редактируется в админ-панели; до загрузки/при сбое — захардкоженный фолбэк.
   const timelineQ = useTimeline();
@@ -205,6 +216,7 @@ export default function Home() {
           <nav className="desk-only" style={{ display: "flex", alignItems: "center", gap: 28 }}>
             <a href="#istoriya" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>История</a>
             <a href="#vitriny" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Витрины</a>
+            <Link to="/events" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>События</Link>
             <Link to="/news" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Новости</Link>
             {token() ? (
               <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, background: "#EC5A13", color: "#FBF3E8", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>Личный кабинет</Link>
@@ -229,6 +241,7 @@ export default function Home() {
             ))}
             <Link to="/dpo" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Витрина ДПО</Link>
             <Link to="/merch" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Мерч</Link>
+            <Link to="/events" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>События</Link>
             <Link to="/podcasts" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Подкасты</Link>
             <Link to="/news" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Новости</Link>
             <Link to="/lk" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 16px", borderRadius: 12, background: "#EC5A13", color: "#FBF3E8", textAlign: "center", marginTop: 6 }}>{token() ? "Личный кабинет" : "Войти в ЛК"}</Link>
@@ -334,6 +347,41 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* БЛИЖАЙШИЕ СОБЫТИЯ – живьём из /api/events */}
+      {upcomingEvents.length > 0 && (
+        <section id="sobytiya" style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 28px 20px" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 14, marginBottom: 34 }}>
+            <div>
+              <div data-reveal style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>Календарь клуба</div>
+              <h2 data-reveal style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 0" }}>Ближайшие события</h2>
+            </div>
+            <Link to="/events" data-reveal className="foc" style={{ textDecoration: "none", fontWeight: 600, color: "#2E6FAE", fontSize: 15 }}>Вся афиша и запись →</Link>
+          </div>
+          <div className="two-col" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22 }}>
+            {upcomingEvents.map((e, i) => (
+              <Link key={e.id} to="/events" data-reveal data-reveal-delay={i * 90} className="vcard foc" style={{ textDecoration: "none", color: "inherit", borderRadius: 18, overflow: "hidden", border: "1px solid #E5E7EB", background: "#fff", display: "flex", flexDirection: "column" }}>
+                {e.cover ? (
+                  <div style={{ height: 130, background: `#11296B url(${e.cover}) center / cover no-repeat` }} />
+                ) : (
+                  <div style={{ display: "flex", height: 8 }}><i style={{ flex: 1, background: "#EC5A13" }} /><i style={{ flex: 1, background: "#11296B" }} /><i style={{ flex: 1, background: "#C49A45" }} /><i style={{ flex: 1, background: "#2E6FAE" }} /></div>
+                )}
+                <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", flex: 1 }}>
+                  <div style={{ ...mono, fontSize: 11.5, color: "#C9450E", textTransform: "uppercase", letterSpacing: ".08em" }}>
+                    {new Date(e.starts_at).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })} · {e.format === "online" ? "онлайн" : "очно"}
+                  </div>
+                  <div style={{ ...disp, fontWeight: 600, fontSize: 19, letterSpacing: "-0.01em", marginTop: 10, lineHeight: 1.25 }}>{e.title}</div>
+                  {e.location && <p style={{ ...mono, fontSize: 12, color: "#6B7280", margin: "10px 0 0" }}>📍 {e.location}</p>}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", paddingTop: 16 }}>
+                    <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>{e.going > 0 ? `пойдут: ${e.going}` : "будьте первым!"}</span>
+                    {e.points > 0 && <span style={{ ...mono, fontSize: 12, color: "#a07d2e" }}>+{e.points} баллов</span>}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ЗАЧЕМ ВСТУПАТЬ */}
       <section id="kak" style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 28px 20px" }}>

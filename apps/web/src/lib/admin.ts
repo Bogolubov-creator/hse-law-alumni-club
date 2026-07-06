@@ -26,11 +26,14 @@ export async function adminLogin(email: string, password: string): Promise<{ tok
   return req("POST", "/auth/admin-login", { email, password });
 }
 
+export const adminReq = req;
 export type Overview = {
   new_orders: number; orders_count: number; orders_paid: number;
   pending_verifications: number; alumni_count: number; alumni_verified: number; points_total: number;
   programs_actual: number; programs_total: number; products_count: number; news_count: number;
   friendships: number; friend_requests: number; podcasts_count: number; podcast_subscribers: number;
+  push_subs_count: number;
+  next_event: { id: string; title: string; starts_at: string; rsvps: number } | null;
 };
 export type AdminNews = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string };
 export type AdminTimeline = { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string };

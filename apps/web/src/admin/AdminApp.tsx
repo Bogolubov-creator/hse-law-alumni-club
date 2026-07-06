@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
 
@@ -7,7 +8,7 @@ import {
   adminLogin, adminToken, setAdminToken, clearAdminToken,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
   useAdminPrograms, useAdminProducts, useAdminPage, useAdminNews, useAdminTimeline, useAdminPodcasts, useAdminEvents,
-  useAuditLog, downloadOrdersCsv,
+  useAuditLog, downloadOrdersCsv, adminReq,
   type AdminOrder, type Member, type AdminProgram, type AdminProduct, type ProgramInput, type ProductInput,
   type AdminNews, type AdminTimeline, type AdminPodcast, type AuditEntry, type AdminEvent,
 } from "../lib/admin.js";
@@ -171,7 +172,53 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
           ))}
         </Card>
       </div>
+      <div className="mt-5 grid grid-cols-[1fr_1.4fr] gap-5 max-md:grid-cols-1">
+        <Card>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="font-display text-lg font-semibold">Ближайшее событие</div>
+            <button onClick={() => onGo("content")} className="foc text-[13px] font-semibold text-[#2E6FAE]">К событиям →</button>
+          </div>
+          {d?.next_event ? (
+            <>
+              <div className="mt-1 text-sm font-semibold">{d.next_event.title}</div>
+              <div className="mt-1.5 font-mono text-[12px] text-grafit-soft">{new Date(d.next_event.starts_at).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</div>
+              <div className="mt-3 inline-flex rounded-full bg-[rgba(46,111,174,.12)] px-3 py-1.5 font-mono text-[12px] text-[#2E6FAE]">записались: {d.next_event.rsvps}</div>
+            </>
+          ) : (
+            <p className="mt-3 font-mono text-[12px] text-grafit-soft">Анонсов нет — создайте событие во вкладке «Контент → События».</p>
+          )}
+        </Card>
+        <PushBroadcast subs={d?.push_subs_count ?? 0} />
+      </div>
     </>
+  );
+}
+
+/** Ручная пуш-рассылка: анонс на все подписанные устройства (журналируется). */
+function PushBroadcast({ subs }: { subs: number }) {
+  const [f, setF] = useState({ title: "", body: "", url: "/events" });
+  const [sent, setSent] = useState<string | null>(null);
+  const send = useMutation({
+    mutationFn: () => adminReq<{ ok: boolean; subscribers: number }>("POST", "/admin/push/broadcast", f),
+    onSuccess: (r) => { setSent(`Отправлено на ${r.subscribers} устройств ✓`); setF({ title: "", body: "", url: "/events" }); },
+    onError: (e) => setSent((e as Error).message),
+  });
+  const valid = f.title.trim().length >= 3 && f.body.trim().length >= 3 && /^\/[a-z0-9\-\/]*$/i.test(f.url);
+  return (
+    <Card>
+      <div className="font-display text-lg font-semibold">Пуш-рассылка</div>
+      <p className="mt-1 font-mono text-[11px] text-grafit-soft">уйдёт на {subs} подписанных устройств · попадает в журнал безопасности</p>
+      <div className="mt-3 grid grid-cols-[1fr_1fr_170px] gap-2.5 max-md:grid-cols-1">
+        <input value={f.title} onChange={(e) => setF((s) => ({ ...s, title: e.target.value }))} placeholder="Заголовок (например: Новое событие)" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-sm" />
+        <input value={f.body} onChange={(e) => setF((s) => ({ ...s, body: e.target.value }))} placeholder="Текст уведомления" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-sm" />
+        <input value={f.url} onChange={(e) => setF((s) => ({ ...s, url: e.target.value }))} placeholder="/events" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 font-mono text-sm" />
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button disabled={!valid || send.isPending || subs === 0} onClick={() => send.mutate()} className="foc rounded-[11px] bg-ohra px-5 py-2.5 text-sm font-semibold text-kost disabled:opacity-50">{send.isPending ? "Отправляем…" : "Отправить всем"}</button>
+        {sent && <span className="font-mono text-[12px] text-[#1F8A5B]">{sent}</span>}
+        {subs === 0 && <span className="font-mono text-[11px] text-grafit-soft">подписчиков пока нет</span>}
+      </div>
+    </Card>
   );
 }
 
