@@ -286,6 +286,9 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
       {/* WEB-PUSH: уведомления на телефон/десктоп */}
       <PushBell />
 
+      {/* TELEGRAM-БОТ: привязка для /points и /calendar */}
+      <TgLink />
+
       {/* SHARE */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28, flexWrap: "wrap" }}>
         <span style={{ ...mono, fontSize: 13, color: t.muted }}>Поделиться профилем:</span>
@@ -595,6 +598,33 @@ function PushBell() {
       ) : (
         <button onClick={enable} disabled={state === "busy"} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: state === "busy" ? "wait" : "pointer", flex: "none" }}>{state === "busy" ? "Включаем…" : "Включить уведомления"}</button>
       )}
+    </div>
+  );
+}
+
+/** «Привязать Telegram»: deep-link t.me/бот?start=<код> из /me/tg-link.
+    После привязки бот отвечает на /points и /calendar по данным выпускника. */
+function TgLink() {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
+  const [data, setData] = useState<{ linked: boolean; url: string } | null>(null);
+  useEffect(() => {
+    apiGet<{ linked: boolean; url: string }>("/me/tg-link", localStorage.getItem(TOKEN_KEY) ?? undefined)
+      .then(setData)
+      .catch(() => setData(null));
+  }, []);
+  if (!data) return null;
+  return (
+    <div style={{ ...surface, padding: "20px 28px", marginTop: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+      <div>
+        <div style={{ ...disp, fontWeight: 600, fontSize: 17 }}>🤖 Telegram-бот клуба</div>
+        <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>
+          {data.linked ? "Привязан ✓ — команды /points и /calendar показывают ваши данные" : "Привяжите аккаунт — бот покажет ваши баллы (/points) и события (/calendar)"}
+        </div>
+      </div>
+      <a href={data.url} target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, flex: "none", ...(data.linked ? { border: "1.5px solid #2E6FAE", background: t.ghostBtnBg, color: "#2E6FAE" } : { background: "#2E6FAE", color: "#FBF3E8" }) }}>
+        {data.linked ? "↗ Открыть бота" : "↗ Привязать Telegram"}
+      </a>
     </div>
   );
 }

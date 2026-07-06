@@ -57,7 +57,7 @@ describe("formatStartReply", () => {
   it("реферальная ссылка в /start", () => {
     const text = formatStartReply("SERGEY2026", false, URL);
     expect(text).toContain("ref=SERGEY2026");
-    expect(text).toContain("привязать");
+    expect(text).toContain("Привязать Telegram");
   });
 });
 

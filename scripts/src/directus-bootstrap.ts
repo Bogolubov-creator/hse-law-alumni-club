@@ -200,6 +200,7 @@ await ensureField("alumni", "interests_json", json());
 await ensureField("alumni", "podcast_sub_until", ts()); // подписка на подкасты активна до этой даты
 await ensureField("alumni", "avatar", str()); // uuid файла в Directus (раздача через /api/avatars/:id)
 await ensureField("alumni", "referral_code", str(true));
+await ensureField("alumni", "telegram_id", str(true)); // связка с Telegram-ботом (/points, /calendar)
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
 await ensureField("alumni", "last_activity_at", ts());

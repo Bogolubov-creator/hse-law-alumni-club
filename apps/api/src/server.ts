@@ -21,6 +21,7 @@ import { eventsRoutes } from "./routes/events.js";
 import { pushRoutes } from "./routes/push.js";
 import { telegramRoutes } from "./routes/telegram.js";
 import { registerBotCommands } from "./lib/telegram-bot.js";
+import { startTelegramPolling } from "./lib/telegram-polling.js";
 import { runDecay } from "./lib/engine.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
@@ -121,6 +122,7 @@ try {
   await app.listen({ host: "0.0.0.0", port: env.API_PORT });
   app.log.info(`club-api слушает :${env.API_PORT}`);
   if (env.TELEGRAM_BOT_TOKEN) void registerBotCommands(env.TELEGRAM_BOT_TOKEN);
+  startTelegramPolling();
 } catch (err) {
   app.log.error(err);
   process.exit(1);

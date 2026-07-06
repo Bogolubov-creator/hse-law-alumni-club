@@ -5,6 +5,8 @@ import { achievementProgress, sanitizeInterests } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { levelInfo, alumniStats } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
+import { makeTgLinkCode } from "../lib/tg-link.js";
+import { env } from "../env.js";
 
 const di = directus;
 const MONTHS_RU = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
@@ -26,6 +28,19 @@ function lastSixMonths(ledger: { delta: number; created_at: string }[], now = ne
 }
 
 export async function meRoutes(app: FastifyInstance) {
+  // Ссылка привязки Telegram-бота: t.me/<бот>?start=<подписанный код>.
+  app.get("/me/tg-link", async (req, reply) => {
+    const a = await resolveAlumni(req);
+    if (!a) return reply.code(401).send({ error: "Не авторизован" });
+    if (a.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
+    const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: a.id } }, limit: 1, fields: ["telegram_id"] }))) as any[];
+    return {
+      linked: !!rows[0]?.telegram_id,
+      url: `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${makeTgLinkCode(a.id)}`,
+    };
+  });
+
+
   // Сводка ЛК (профиль + уровень + достижения + активность). Только для верифицированных.
   app.get("/me", async (req, reply) => {
     const a = await resolveAlumni(req);

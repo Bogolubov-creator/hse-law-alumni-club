@@ -10,6 +10,8 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app + webhook-бот BLOCKED
   // Секрет webhook (setWebhook secret_token). Пусто = проверка заголовка отключена.
   TELEGRAM_WEBHOOK_SECRET: z.string().default(""),
+  TELEGRAM_POLLING: z.string().default(""), // "true" = long-polling вместо вебхука (локальный стенд)
+  TELEGRAM_BOT_USERNAME: z.string().default("pravohse_alumni_bot"),
   // Доп. разрешённые cross-origin источники (через запятую); same-origin и Telegram разрешены всегда.
   CORS_ORIGINS: z.string().default(""),
   // Уведомление офиса (решение 3.2) — на старте telegram

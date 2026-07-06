@@ -106,7 +106,7 @@ export function formatStartReply(arg: string, linked: boolean, publicUrl: string
   if (!linked) {
     lines.push(
       "",
-      "ℹ️ Чтобы /points показывал ваши данные, попросите учебный офис привязать Telegram в админ-панели (поле telegram_id) или войдите через mini-app после привязки.",
+      "ℹ️ Чтобы /points показывал ваши данные, нажмите «Привязать Telegram» в личном кабинете на сайте клуба.",
     );
   }
   return lines.join("\n");

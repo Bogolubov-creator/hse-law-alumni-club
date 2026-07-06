@@ -1,6 +1,7 @@
-import { readItems } from "@directus/sdk";
+import { readItems, updateItem } from "@directus/sdk";
 import { directus } from "./directus.js";
 import { env } from "../env.js";
+import { verifyTgLinkCode } from "./tg-link.js";
 import {
   parseCommand,
   formatPointsReply,
@@ -68,6 +69,18 @@ export async function buildBotReply(cmd: string, arg: string, tgId: string): Pro
   const url = env.PUBLIC_URL;
   switch (cmd) {
     case "/start": {
+      // Deep-link привязки из ЛК: /start l-<код> → пишем telegram_id выпускнику.
+      const linkId = arg ? verifyTgLinkCode(arg) : null;
+      if (linkId) {
+        const owner = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: linkId } }, limit: 1, fields: ["id", "fio", "telegram_id"] }))) as any[];
+        if (owner[0]) {
+          // Один Telegram — один аккаунт: снимаем этот tgId с прочих записей.
+          const others = (await di.request((readItems as any)("alumni", { filter: { telegram_id: { _eq: tgId }, id: { _neq: linkId } }, limit: -1, fields: ["id"] }))) as any[];
+          for (const o of others) await di.request((updateItem as any)("alumni", o.id, { telegram_id: null }));
+          await di.request((updateItem as any)("alumni", linkId, { telegram_id: tgId }));
+          return `✅ Telegram привязан к аккаунту <b>${owner[0].fio ?? "выпускника"}</b>.\n\nТеперь /points покажет ваши баллы, а /calendar отметит события, куда вы записаны.`;
+        }
+      }
       const linked = !!(await findAlumniByTelegram(tgId));
       return formatStartReply(arg, linked, url);
     }
