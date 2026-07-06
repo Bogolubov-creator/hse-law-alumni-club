@@ -28,7 +28,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         onClick={(e) => e.stopPropagation()}
-        style={{ position: "relative", width: "100%", maxWidth, outline: "none" }}
+        style={{ position: "relative", width: "100%", maxWidth, outline: "none", maxHeight: "92dvh", overflowY: "auto", WebkitOverflowScrolling: "touch", borderRadius: 22 }}
       >
         {children}
       </div>

@@ -1,16 +1,26 @@
 {
+  "id": "/",
   "name": "Клуб выпускников факультета права НИУ ВШЭ",
   "short_name": "Клуб права",
   "description": "Личный кабинет выпускника: программы ДПО со скидкой, мерч, подкасты и сообщество.",
   "lang": "ru",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "background_color": "#FBF3E8",
   "theme_color": "#11296B",
+  "categories": ["education", "social"],
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Личный кабинет", "url": "/lk", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Витрина ДПО", "url": "/dpo", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Подкасты", "url": "/podcasts", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
   ]
 }

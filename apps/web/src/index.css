@@ -55,3 +55,23 @@ body {
   .mob-only { display: flex !important; }
   .desk-only { display: none !important; }
 }
+
+/* ── PWA/мобильная полировка (десктоп не затрагивается) ── */
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; }
+button, a, input, select, textarea { touch-action: manipulation; } /* без 300мс-задержки и дабл-тап-зума */
+@media (max-width: 768px) {
+  /* iOS зумит страницу при фокусе на поле со шрифтом <16px — не даём */
+  input, select, textarea { font-size: 16px !important; }
+  /* Слишком горячие ховер-подъёмы карточек не нужны на таче */
+  .vcard { transition: none; }
+}
+/* Отступы под «чёлку»/индикатор на телефонах (standalone-режим PWA) */
+@supports (padding: env(safe-area-inset-left)) {
+  header { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+  footer { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
+}
+/* В установленном приложении убираем прыжки резинового скролла за шапкой */
+@media (display-mode: standalone) {
+  html { overscroll-behavior-y: none; }
+}

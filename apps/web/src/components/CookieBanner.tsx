@@ -16,7 +16,7 @@ export default function CookieBanner() {
   };
   return (
     <div role="dialog" aria-label="Использование cookies" style={{
-      position: "fixed", left: 16, right: 16, bottom: 16, zIndex: 300, maxWidth: 720, margin: "0 auto",
+      position: "fixed", left: 16, right: 16, bottom: "calc(16px + env(safe-area-inset-bottom, 0px))", zIndex: 300, maxWidth: 720, margin: "0 auto",
       display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap",
       background: "#14181F", color: "#FBF3E8", borderRadius: 16, padding: "16px 20px",
       boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)", fontSize: 13.5, lineHeight: 1.5,

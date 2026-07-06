@@ -15,6 +15,7 @@ import Podcasts from "./pages/Podcasts.js";
 import { Join, Forgot, Reset } from "./pages/JoinAuth.js";
 import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
+import InstallPrompt from "./components/InstallPrompt.js";
 
 export default function App() {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="*" element={<Stub title="Страница не найдена" />} />
       </Routes>
       <CookieBanner />
+      <InstallPrompt />
     </>
   );
 }

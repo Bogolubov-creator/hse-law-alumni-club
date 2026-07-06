@@ -1,7 +1,7 @@
 /* Service worker для установки на экран (PWA).
    Стратегия: сеть в приоритете (сайт живой, данные из API), статика /assets —
    из кэша с обновлением в фоне. Никогда не кэшируем /api (персональные данные). */
-const CACHE = "club-v1";
+const CACHE = "club-v2";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/manifest.webmanifest", "/icon-192.png"])));
