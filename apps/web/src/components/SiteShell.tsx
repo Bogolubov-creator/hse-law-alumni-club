@@ -6,6 +6,7 @@ const NAV = [
   { to: "/dpo", label: "ДПО" },
   { to: "/merch", label: "Мерч" },
   { to: "/podcasts", label: "Подкасты" },
+  { to: "/events", label: "События" },
   { to: "/news", label: "Новости" },
 ];
 

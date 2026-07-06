@@ -152,6 +152,7 @@ const COLLECTIONS = [
   "levels", "point_rules", "achievements", "alumni", "points_ledger",
   "alumni_achievements", "alumni_friends", "pages", "news", "programs", "products",
   "carts", "orders", "offers", "referrals", "timeline_items", "podcasts", "audit_log",
+  "events", "event_rsvps",
 ];
 log("== Коллекции ==");
 for (const c of COLLECTIONS) await ensureCollection(c);
@@ -256,6 +257,22 @@ await ensureField("podcasts", "is_free", bool(false)); // пробный вып�
 await ensureField("podcasts", "sort", int());
 await ensureField("podcasts", "status", enumf(["draft", "published"], "draft"));
 await ensureField("podcasts", "created_at", ts("date-created"));
+
+// events — календарь событий клуба (встречи, лекции, нетворкинг)
+await ensureField("events", "title", str());
+await ensureField("events", "description", txt());
+await ensureField("events", "starts_at", ts());
+await ensureField("events", "location", str()); // адрес или ссылка на трансляцию
+await ensureField("events", "format", enumf(["offline", "online"], "offline"));
+await ensureField("events", "points", int(60)); // баллы за посещение
+await ensureField("events", "status", enumf(["draft", "published", "done", "canceled"], "published"));
+await ensureField("events", "created_at", ts("date-created"));
+
+// event_rsvps — «пойду» + отметка посещения (посещение = баллы)
+await ensureM2O("event_rsvps", "event_id", "events", "CASCADE");
+await ensureM2O("event_rsvps", "alumni_id", "alumni", "CASCADE");
+await ensureField("event_rsvps", "attended", bool(false));
+await ensureField("event_rsvps", "created_at", ts("date-created"));
 
 // audit_log — append-only след критичных операций (логины, платежи, статусы, выдачи)
 await ensureField("audit_log", "event", str());
@@ -484,6 +501,12 @@ await ensureSeed("timeline_items", "title", [
   { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, фирменный мерч и первые партнёрские предложения.", metric: "2-й выпуск · мерч", sort: 4, status: "published" },
   { year: "2026", title: "Сегодня", text: "Растущее сообщество выпускников факультета права с витринами и менторством.", metric: "и это только начало", sort: 5, status: "published" },
 ]);
+// Демо-события календаря
+await ensureSeed("events", "title", [
+  { title: "Встреча выпуска 2026: нетворкинг в Milutin Hall", description: "Неформальная встреча свежего выпуска: знакомство с клубом, столы по интересам, лёгкий фуршет.", starts_at: "2026-09-18T18:30:00+03:00", location: "Милютинский пер., 13", format: "offline", points: 60, status: "published" },
+  { title: "Открытая лекция: карьера юриста в 2027", description: "Партнёры и инхаус-руководители о том, куда движется рынок юридических услуг.", starts_at: "2026-10-02T19:00:00+03:00", location: "Онлайн (ссылка придёт участникам)", format: "online", points: 60, status: "published" },
+]);
+
 // Демо-подкасты (доступ по подписке)
 await ensureSeed("podcasts", "title", [
   { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "published", is_free: true },
