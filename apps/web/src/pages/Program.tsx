@@ -112,7 +112,7 @@ export default function Program() {
                   </div>
                   {!p.source_url && discount > 0 ? <div className="mt-2"><DiscountBadge percent={discount} /></div> : null}
                   <p className="mt-2 font-mono text-[11px] text-grafit-soft">
-                    {p.source_url ? "Программа НИУ ВШЭ · запись и оплата на маркетплейсе hse.ru" : "Цена выпускника · применяется после верификации в ЛК"}
+                    {p.source_url ? "Запись и оплата — на hse.ru" : "Цена выпускника · применяется после верификации в ЛК"}
                   </p>
 
                   <dl className="mt-5 divide-y divide-[#f0ece2] border-y border-[#f0ece2] font-mono text-[13px]">

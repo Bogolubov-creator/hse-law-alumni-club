@@ -145,7 +145,6 @@ export default function Dpo() {
                       {!p.source_url && discount > 0 && <span className="font-mono text-[13px] text-grafit-soft line-through">{rub(p.price)}</span>}
                     </div>
                     {!p.source_url && discount > 0 && <div className="mt-1"><DiscountBadge percent={discount} /></div>}
-                    {p.source_url && <div className="mt-1 font-mono text-[11px] text-grafit-soft">программа ВШЭ · запись на hse.ru</div>}
                     <div className="mt-3 flex gap-2">
                       <Link to={`/dpo/${p.slug}`} className="foc flex-1 rounded-[12px] border border-hse-blue py-3 text-center font-semibold text-hse-blue">Подробнее</Link>
                       {p.enrollment !== "nonactual" && (
