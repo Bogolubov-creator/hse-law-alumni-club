@@ -98,7 +98,7 @@ export function useAdminTimeline() {
   return useQuery({ queryKey: ["adm", "timeline"], queryFn: () => req<AdminTimeline[]>("GET", "/admin/timeline"), retry: false });
 }
 export type AdminEventRsvp = { id: string; alumni_id: string; fio: string; attended: boolean };
-export type AdminEvent = { id: string; title: string; starts_at: string; location: string | null; format: string; points: number; status: string; rsvps: AdminEventRsvp[] };
+export type AdminEvent = { id: string; title: string; description: string | null; starts_at: string; location: string | null; cover: string | null; reg_url: string | null; format: string; points: number; status: string; rsvps: AdminEventRsvp[] };
 export function useAdminEvents() {
   return useQuery({ queryKey: ["adm", "events"], queryFn: () => req<AdminEvent[]>("GET", "/admin/events"), retry: false });
 }
@@ -136,8 +136,8 @@ export function useAdminMutations() {
     deletePodcast: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/podcasts/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
     grantPodcastSub: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/podcast-sub`), onSuccess: refetch }),
     // События
-    createEvent: useMutation({ mutationFn: (v: { title: string; description?: string | null; starts_at: string; location?: string | null; format?: string; points?: number }) => req("POST", "/admin/events", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
-    patchEvent: useMutation({ mutationFn: (v: { id: string; status?: string; points?: number }) => req("PATCH", `/admin/events/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
+    createEvent: useMutation({ mutationFn: (v: { title: string; description?: string | null; starts_at: string; location?: string | null; cover?: string | null; reg_url?: string | null; format?: string; points?: number }) => req("POST", "/admin/events", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
+    patchEvent: useMutation({ mutationFn: (v: { id: string; status?: string; points?: number; title?: string; description?: string | null; starts_at?: string; location?: string | null; cover?: string | null; reg_url?: string | null; format?: string }) => req("PATCH", `/admin/events/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
     deleteEvent: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/events/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
     markAttended: useMutation({ mutationFn: (rsvpId: string) => req("POST", `/admin/events/rsvp/${rsvpId}/attend`), onSuccess: refetch }),
   };

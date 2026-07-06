@@ -20,7 +20,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     const rows = (await di.request((readItems as any)("events", {
       filter: { status: { _in: ["published", "done"] } },
       sort: ["starts_at"], limit: 50,
-      fields: ["id", "title", "description", "starts_at", "location", "format", "points", "status"],
+      fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"],
     }))) as any[];
 
     // Счётчик «пойдут» + мой RSVP одним заходом.
@@ -70,6 +70,8 @@ export async function eventsRoutes(app: FastifyInstance) {
     description: z.string().nullish(),
     starts_at: z.string().min(4),
     location: z.string().nullish(),
+    cover: z.string().max(500).nullish(),
+    reg_url: z.string().url().max(500).nullish().or(z.literal("").transform(() => null)),
     format: z.enum(["offline", "online"]).default("offline"),
     points: z.number().int().min(0).max(500).default(60),
     status: z.enum(["draft", "published", "done", "canceled"]).default("published"),
@@ -77,7 +79,7 @@ export async function eventsRoutes(app: FastifyInstance) {
 
   app.get("/admin/events", async (req, reply) => {
     if (!resolveAdmin(req)) return reply.code(401).send({ error: "Требуется вход администратора" });
-    const events = (await di.request((readItems as any)("events", { sort: ["-starts_at"], limit: -1, fields: ["id", "title", "starts_at", "location", "format", "points", "status"] }))) as any[];
+    const events = (await di.request((readItems as any)("events", { sort: ["-starts_at"], limit: -1, fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"] }))) as any[];
     const rsvps = (await di.request((readItems as any)("event_rsvps", { limit: -1, fields: ["id", "event_id", "alumni_id", "attended"] }))) as any[];
     const alumniIds = [...new Set(rsvps.map((r) => r.alumni_id))];
     const names = new Map<string, string | null>();
@@ -95,7 +97,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     const ctx = resolveAdmin(req);
     if (!ctx) return reply.code(401).send({ error: "Требуется вход администратора" });
     const b = eventBody.parse(req.body);
-    const created = (await di.request((createItem as any)("events", { ...b, description: b.description ?? null, location: b.location ?? null }))) as any;
+    const created = (await di.request((createItem as any)("events", { ...b, description: b.description ?? null, location: b.location ?? null, cover: b.cover ?? null, reg_url: b.reg_url ?? null }))) as any;
     audit("event.create", { actor: `admin:${ctx.userId}`, subject: `event:${created.id}`, detail: { title: b.title }, req });
     if (b.status === "published") pushToAll({ title: "Новое событие клуба 📅", body: b.title, url: "/events" });
     return { ok: true, id: created.id };

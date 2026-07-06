@@ -41,7 +41,7 @@ async function upcomingEvents(tgId: string | null) {
   const rows = (await di.request((readItems as any)("events", {
     filter: { _and: [{ status: { _eq: "published" } }, { starts_at: { _gte: now } }] },
     sort: ["starts_at"], limit: 5,
-    fields: ["id", "title", "starts_at", "location", "format"],
+    fields: ["id", "title", "starts_at", "location", "format", "reg_url"],
   }))) as { id: string; title: string; starts_at: string; location: string | null; format: string }[];
 
   const rsvps = rows.length
@@ -60,7 +60,7 @@ async function upcomingEvents(tgId: string | null) {
   return rows.map((e) => {
     const mine = myId ? rsvps.some((r) => r.event_id === e.id && r.alumni_id === myId) : false;
     const going = rsvps.filter((r) => r.event_id === e.id).length;
-    return { title: e.title, starts_at: e.starts_at, location: e.location, format: e.format, going, my_rsvp: mine };
+    return { title: e.title, starts_at: e.starts_at, location: e.location, format: e.format, reg_url: (e as any).reg_url ?? null, going, my_rsvp: mine };
   });
 }
 

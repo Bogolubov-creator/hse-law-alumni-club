@@ -63,7 +63,7 @@ export function formatPointsReply(
 }
 
 export function formatCalendarReply(
-  events: { title: string; starts_at: string; location: string | null; format: string; going: number; my_rsvp: boolean }[],
+  events: { title: string; starts_at: string; location: string | null; format: string; going: number; my_rsvp: boolean; reg_url?: string | null }[],
   publicUrl: string,
 ): string {
   if (!events.length) {
@@ -81,6 +81,7 @@ export function formatCalendarReply(
     const rsvp = e.my_rsvp ? " · вы идёте ✓" : "";
     lines.push(`▸ <b>${esc(e.title)}</b>`);
     lines.push(`  ${fmtEventDate(e.starts_at)} · ${place} · ${e.going} чел.${rsvp}`);
+    if (e.reg_url) lines.push(`  📝 <a href="${esc(e.reg_url)}">Регистрация</a>`);
     lines.push("");
   }
   lines.push(`🌐 <a href="${esc(publicUrl)}/events">Вся афиша и RSVP</a>`);

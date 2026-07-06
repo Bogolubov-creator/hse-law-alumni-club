@@ -264,6 +264,8 @@ await ensureField("events", "title", str());
 await ensureField("events", "description", txt());
 await ensureField("events", "starts_at", ts());
 await ensureField("events", "location", str()); // адрес или ссылка на трансляцию
+await ensureField("events", "cover", str()); // картинка-анонс: URL или /assets/…
+await ensureField("events", "reg_url", str()); // внешняя регистрация (Timepad, форма и т.п.)
 await ensureField("events", "format", enumf(["offline", "online"], "offline"));
 await ensureField("events", "points", int(60)); // баллы за посещение
 await ensureField("events", "status", enumf(["draft", "published", "done", "canceled"], "published"));
