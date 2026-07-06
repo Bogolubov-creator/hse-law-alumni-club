@@ -16,12 +16,14 @@ function sig(uuid: string): string {
 
 export function makeTgLinkCode(alumniId: string): string {
   const idPart = b64u(Buffer.from(alumniId.replace(/-/g, ""), "hex")); // uuid → 22 символа
-  return `l-${idPart}.${sig(alumniId)}`;
+  // Без разделителя: payload deep-link допускает только [A-Za-z0-9_-],
+  // а длины частей фиксированные (22 + 16).
+  return `l${idPart}${sig(alumniId)}`;
 }
 
 /** null, если код не наш или подпись не сходится. Иначе — alumni_id. */
 export function verifyTgLinkCode(code: string): string | null {
-  const m = /^l-([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{16})$/.exec(code);
+  const m = /^l([A-Za-z0-9_-]{22})([A-Za-z0-9_-]{16})$/.exec(code);
   if (!m) return null;
   const hex = Buffer.from(m[1]!, "base64url").toString("hex");
   if (hex.length !== 32) return null;
