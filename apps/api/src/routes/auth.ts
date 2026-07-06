@@ -63,6 +63,7 @@ export async function authRoutes(app: FastifyInstance) {
     edu_level: z.enum(["бакалавриат", "магистратура", "специалитет", "аспирантура"]),
     edu_program: z.string().min(2).max(200),
     interests: z.array(z.string()).optional(),
+    ref: z.string().max(40).optional(), // реферальный код пригласившего (?ref= в /join)
     consent_pdn: z.literal(true, { errorMap: () => ({ message: "Требуется согласие на обработку ПДн" }) }),
     website: z.string().max(0).optional(), // honeypot для ботов
   });
@@ -83,6 +84,16 @@ export async function authRoutes(app: FastifyInstance) {
       status: "active",
     }))) as any;
 
+    // Рефералка: пришёл по ссылке однокурсника → привязываем пригласившего
+    // (баллы рефереру начислятся автоматически при верификации офисом).
+    let referredBy: string | null = null;
+    if (b.ref) {
+      const referrer = (await directus.request(readItems("alumni", {
+        filter: { referral_code: { _eq: b.ref } }, limit: 1, fields: ["id"],
+      }))) as any[];
+      referredBy = referrer[0]?.id ?? null;
+    }
+
     await directus.request((createItem as any)("alumni", {
       user_id: user.id, fio: b.fio.trim(), cohort: b.cohort,
       edu_level: b.edu_level, edu_program: b.edu_program.trim(),
@@ -90,6 +101,7 @@ export async function authRoutes(app: FastifyInstance) {
       status: "active", verification_status: "pending",
       points_cached: 0, level_cached: "graduate", personal_discount: 0,
       referral_code: `RC-${randomBytes(4).toString("hex")}`,
+      referred_by: referredBy,
     }));
 
     audit("register", { actor: `email:${email}`, detail: { cohort: b.cohort, edu_program: b.edu_program }, req });

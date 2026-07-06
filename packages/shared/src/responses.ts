@@ -86,6 +86,9 @@ export const alumniBriefSchema = z.object({
   contacts: z.record(z.string()).optional(), edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
   interests: z.array(z.string()).optional(),
   avatar: z.string().nullable().optional(), // uuid файла → /api/avatars/{id}
+  referral_code: z.string().nullable().optional(), // код для «пригласи однокурсника»
+  referrals_verified: z.number().optional(),
+  referrals_pending: z.number().optional(),
 });
 // Однокурсник в «Сообществе» ЛК (тот же выпуск или та же ОП).
 export const classmateSchema = z.object({

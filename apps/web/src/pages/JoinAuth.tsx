@@ -39,6 +39,8 @@ export function Join() {
   // Уже в клубе? Анкета нужна только новым выпускникам — не «кидаем» молча в ЛК,
   // а объясняем и даём выбор (в кабинет / выйти и заполнить за другого человека).
   const [authed, setAuthed] = useState(() => !!localStorage.getItem("club_token"));
+  const [params] = useSearchParams();
+  const ref = params.get("ref") ?? ""; // реферальный код пригласившего
   const [f, setF] = useState({ fio: "", email: "", password: "", cohort: "", edu_level: "магистратура", edu_program: "", consent: false, website: "" });
   const [interests, setInterests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -57,6 +59,7 @@ export function Join() {
       await apiPost("/auth/register", {
         fio: f.fio, email: f.email, password: f.password, cohort: f.cohort,
         edu_level: f.edu_level, edu_program: f.edu_program, interests,
+        ref: ref || undefined,
         consent_pdn: f.consent, website: f.website,
       });
       setDone(true);
@@ -96,6 +99,11 @@ export function Join() {
 
   return (
     <AuthShell title="Вступить в клуб" sub="Заполните анкету — учебный офис подтвердит ваш выпуск, и кабинет со скидками, сообществом и подкастами станет доступен.">
+      {ref && (
+        <p className="mt-4 rounded-[12px] bg-[rgba(31,138,91,.1)] px-4 py-3 text-sm text-[#1F8A5B]">
+          🤝 Вы пришли по приглашению однокурсника — после подтверждения выпуска он получит баллы клуба.
+        </p>
+      )}
       <form onSubmit={submit} className="mt-6 space-y-4">
         {/* Honeypot: люди его не видят, боты заполняют → отказ */}
         <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={(e) => set("website", e.target.value)} style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />

@@ -5,6 +5,7 @@ import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type A
 import { useMe, useMyOrders, useClassmates, useAddFriend, useLkEvents } from "../lib/queries.js";
 import type { Classmate, LkEvent } from "@club/shared";
 import Modal from "../components/Modal.js";
+import { useToast } from "../components/Toast.js";
 
 const ORDER_STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
 
@@ -286,6 +287,9 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
         <Link to="/dpo" className="foc" style={{ position: "relative", textDecoration: "none", ...{ fontFamily: "'Onest'" }, fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", flex: "none", boxShadow: "0 14px 30px -14px rgba(0,0,0,.5)" }}>В витрину ДПО</Link>
       </div>
 
+      {/* РЕФЕРАЛКА: пригласи однокурсника */}
+      <Referral me={me} />
+
       {/* SHARE */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28, flexWrap: "wrap" }}>
         <span style={{ ...mono, fontSize: 13, color: "#6B7280" }}>Поделиться профилем:</span>
@@ -467,6 +471,45 @@ function Community({ token, myInterests }: { token: string; myInterests: string[
       </div>
       {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку — попробуйте ещё раз.</p>}
       {sel && <ClassmateModal c={list.find((x) => x.id === sel.id) ?? sel} myInterests={myInterests} token={token} onClose={() => setSel(null)} />}
+    </div>
+  );
+}
+
+/** «Пригласи однокурсника»: персональная ссылка на анкету + счётчик приглашённых. */
+function Referral({ me }: { me: import("../lib/api.js").Me }) {
+  const toast = useToast();
+  const code = me.alumni.referral_code;
+  if (!code) return null;
+  const link = `${window.location.origin}/join?ref=${encodeURIComponent(code)}`;
+  const shareText = "Вступай в клуб выпускников факультета права Вышки — скидки на ДПО, сообщество и подкасты:";
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast("Ссылка скопирована ✓");
+    } catch {
+      toast("Не удалось скопировать", "err");
+    }
+  };
+  const invited = (me.alumni.referrals_verified ?? 0) + (me.alumni.referrals_pending ?? 0);
+  return (
+    <div style={{ ...surface, padding: "26px 28px", marginTop: 22 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Пригласи однокурсника</div>
+          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>+80 баллов за каждого подтверждённого выпускника по вашей ссылке</div>
+        </div>
+        {invited > 0 && (
+          <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>
+            приглашено: <b style={{ color: "#1F8A5B" }}>{me.alumni.referrals_verified ?? 0}</b>
+            {(me.alumni.referrals_pending ?? 0) > 0 && <> · на проверке: {me.alumni.referrals_pending}</>}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <code style={{ ...mono, fontSize: 12.5, background: "#FBF7EF", border: "1px solid #f0ece2", borderRadius: 10, padding: "11px 14px", flex: 1, minWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{link}</code>
+        <button onClick={copy} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer", flex: "none" }}>Скопировать</button>
+        <a href={`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8", flex: "none" }}>↗ В Telegram</a>
+      </div>
     </div>
   );
 }
