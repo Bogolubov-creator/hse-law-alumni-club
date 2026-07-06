@@ -44,7 +44,7 @@ export type Member = {
   email?: string | null; edu_level?: string | null; edu_program?: string | null;
   interests_json?: string[] | null; contacts_json?: Record<string, string> | null; joined_at?: string | null;
 };
-export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; enrollment?: "actual" | "nonactual" | null; dates?: { start?: string } | null; document?: string | null; description?: string | null };
+export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; enrollment?: "actual" | "nonactual" | null; source_url?: string | null; dates?: { start?: string } | null; document?: string | null; description?: string | null };
 export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
 export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };
 export type ProductInput = { title: string; category: string; price: number; stock?: number; description?: string | null; images?: string[] | null; status?: string };

@@ -711,7 +711,10 @@ function ProgramsAdmin() {
         <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm max-md:grid-cols-1">
           <div className="min-w-0">
             <div className="truncate font-semibold">{p.title}</div>
-            <div className="font-mono text-[11px] text-grafit-soft">{p.direction} · {FORMAT_RU[p.format] ?? p.format} · {p.duration}{p.dates?.start ? ` · старт ${p.dates.start}` : ""}{p.enrollment === "nonactual" ? " · набор закрыт" : ""}</div>
+            <div className="font-mono text-[11px] text-grafit-soft">
+              <span className={`mr-1.5 rounded-full px-2 py-0.5 ${p.source_url ? "bg-[rgba(17,41,107,.1)] text-hse-blue" : "bg-[rgba(236,90,19,.14)] text-ohra-deep"}`}>{p.source_url ? "ВШЭ · синк" : "Клуба"}</span>
+              {p.direction} · {FORMAT_RU[p.format] ?? p.format} · {p.duration}{p.dates?.start ? ` · старт ${p.dates.start}` : ""}{p.enrollment === "nonactual" ? " · набор закрыт" : ""}
+            </div>
           </div>
           <span className="font-mono text-[13px]">{rub(p.price)}</span>
           <span className="font-mono text-[11px] text-grafit-soft">{p.slug}</span>
@@ -808,7 +811,8 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
   return (
     <Modal onClose={onClose} labelledBy="prog-form-title" maxWidth={520}>
       <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
-        <h3 id="prog-form-title" className="font-display text-lg font-bold">Новая программа ДПО</h3>
+        <h3 id="prog-form-title" className="font-display text-lg font-bold">Новая программа клуба</h3>
+        <p className="mt-1 font-mono text-[11px] leading-relaxed text-grafit-soft">Собственная программа клуба выпускников: запись и оплата — через сайт (корзина, скидка выпускника). Программы ВШЭ добавлять не нужно — они приходят из синка с hse.ru и ведут на маркетплейс.</p>
         <div className="mt-4 space-y-3">
           <FormField label="Название" value={f.title} onChange={(v) => set("title", v)} required />
           <div className="grid grid-cols-2 gap-3">

@@ -23,11 +23,11 @@ async function saveCart(token: string, items: StoredCartItem[]) {
   else await di.request((createItem as any)("carts", { session_token: token, items_json: items, updated_at: new Date().toISOString() }));
 }
 
-export async function lookup(type: "dpo" | "merch", slug: string): Promise<{ title: string; price: number; enrollment?: string | null } | null> {
+export async function lookup(type: "dpo" | "merch", slug: string): Promise<{ title: string; price: number; enrollment?: string | null; source_url?: string | null } | null> {
   const collection = type === "dpo" ? "programs" : "products";
-  const fields = type === "dpo" ? ["title", "price", "enrollment"] : ["title", "price"];
+  const fields = type === "dpo" ? ["title", "price", "enrollment", "source_url"] : ["title", "price"];
   const rows = (await di.request((readItems as any)(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields }))) as any[];
-  return rows[0] ? { title: rows[0].title, price: rows[0].price ?? 0, enrollment: rows[0].enrollment ?? null } : null;
+  return rows[0] ? { title: rows[0].title, price: rows[0].price ?? 0, enrollment: rows[0].enrollment ?? null, source_url: rows[0].source_url ?? null } : null;
 }
 
 export async function cartRoutes(app: FastifyInstance) {
@@ -47,6 +47,9 @@ export async function cartRoutes(app: FastifyInstance) {
     // Набор закрыт — заявка не оформляется (программа в каталоге справочно).
     if (body.type === "dpo" && info.enrollment === "nonactual")
       return reply.code(400).send({ error: "Набор на эту программу закрыт" });
+    // Программы ВШЭ (source_url) оформляются на маркетплейсе hse.ru, не через сайт.
+    if (body.type === "dpo" && info.source_url)
+      return reply.code(400).send({ error: "Запись на эту программу — на hse.ru" });
     const cart = await loadCart(token);
     const items = addLine(cart?.items ?? [], {
       type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null,
