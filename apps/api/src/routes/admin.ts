@@ -10,6 +10,7 @@ import { extendPodcastSub, subActive } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
 import { sendEmail } from "../lib/notify.js";
+import { pushToAll, pushToAlumni } from "../lib/push.js";
 import { readUsers } from "@directus/sdk";
 import { env } from "../env.js";
 
@@ -107,6 +108,12 @@ export async function adminRoutes(app: FastifyInstance) {
       await sendEmail(o.contact_email, `Заявка ${o.number}: ${RU[status] ?? status}`,
         `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${RU[status] ?? status}.\nДетали — в личном кабинете клуба.\n\n— Клуб выпускников факультета права НИУ ВШЭ`);
     })().catch((e) => req.log.error({ err: e }, "order status email failed"));
+    // Пуш владельцу заявки (если это участник клуба)
+    void (async () => {
+      const rows = (await di.request(readItems("orders", { filter: { id: { _eq: id } }, limit: 1, fields: ["number", "alumni_id"] }))) as any[];
+      const RU: Record<string, string> = { in_progress: "взята в работу", confirmed: "подтверждена", done: "выполнена", canceled: "отменена" };
+      if (rows[0]?.alumni_id) pushToAlumni(rows[0].alumni_id, { title: "Статус заявки", body: `Заявка ${rows[0].number} ${RU[status] ?? status}`, url: "/lk" });
+    })().catch(() => undefined);
     return { ok: true, status };
   });
 
@@ -458,6 +465,7 @@ export async function adminRoutes(app: FastifyInstance) {
       audio_url: b.audio_url ?? null, duration: b.duration ?? null,
       sort: b.sort ?? Math.max(0, ...all.map((p) => p.sort || 0)) + 1,
     }))) as any;
+    if (b.status === "published") pushToAll({ title: "Новый подкаст 🎧", body: b.title, url: "/podcasts" });
     return { ok: true, id: created.id };
   });
 

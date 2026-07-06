@@ -5,6 +5,7 @@ import { computeLevel } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { subActive } from "./podcasts.js";
+import { pushToAlumni } from "../lib/push.js";
 
 const di = directus;
 
@@ -146,11 +147,13 @@ export async function communityRoutes(app: FastifyInstance) {
     const incoming = existing.find((l) => l.status === "pending" && l.alumni_id === body.alumni_id);
     if (incoming) {
       await di.request((updateItem as any)("alumni_friends", incoming.id, { status: "accepted" }));
+      pushToAlumni(body.alumni_id, { title: "Заявка принята 🤝", body: `${me.fio ?? "Выпускник"} принял(а) вашу заявку в друзья`, url: "/lk" });
       return { status: "accepted" };
     }
     if (existing.length) return { status: "pending" }; // моя заявка уже отправлена
 
     await di.request((createItem as any)("alumni_friends", { alumni_id: me.id, friend_id: body.alumni_id, status: "pending" }));
+    pushToAlumni(body.alumni_id, { title: "Заявка в друзья", body: `${me.fio ?? "Выпускник"} хочет добавить вас в друзья`, url: "/lk" });
     return { status: "pending" };
   });
 }

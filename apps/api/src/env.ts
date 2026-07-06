@@ -7,7 +7,9 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET минимум 32 символа"),
   // Отдельный секрет для админ-сессий (defense-in-depth). Пусто = используется AUTH_SECRET.
   ADMIN_AUTH_SECRET: z.string().default(""),
-  TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app авторизация BLOCKED
+  TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app + webhook-бот BLOCKED
+  // Секрет webhook (setWebhook secret_token). Пусто = проверка заголовка отключена.
+  TELEGRAM_WEBHOOK_SECRET: z.string().default(""),
   // Доп. разрешённые cross-origin источники (через запятую); same-origin и Telegram разрешены всегда.
   CORS_ORIGINS: z.string().default(""),
   // Уведомление офиса (решение 3.2) — на старте telegram
@@ -25,6 +27,9 @@ const schema = z.object({
   YOOKASSA_SECRET_KEY: z.string().default(""),
   // Публичный адрес сайта — для return_url после оплаты.
   PUBLIC_URL: z.string().default("http://localhost"),
+  // Web-push (VAPID). Пусто = пуши выключены, сайт работает как раньше.
+  VAPID_PUBLIC_KEY: z.string().default(""),
+  VAPID_PRIVATE_KEY: z.string().default(""),
 });
 
 export const env = schema.parse(process.env);

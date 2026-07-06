@@ -39,6 +39,7 @@ export interface OrderRow {
   payment_id: string | null; payment_status: string | null; paid_at: string | null;
 }
 export interface NewsRow { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string }
+export interface PushSubRow { id: string; alumni_id: string; endpoint: string; keys: { p256dh: string; auth: string }; created_at: string }
 export interface TimelineItemRow { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string }
 export interface PodcastRow { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; is_free: boolean; sort: number; status: string; created_at: string }
 export interface PageRow { id: string; slug: string; title: string; status: string; sort: number; blocks: unknown }
@@ -57,6 +58,7 @@ interface Schema {
   news: NewsRow[];
   pages: PageRow[];
   timeline_items: TimelineItemRow[];
+  push_subs: PushSubRow[];
   podcasts: PodcastRow[];
 }
 

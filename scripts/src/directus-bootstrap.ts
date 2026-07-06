@@ -152,7 +152,7 @@ const COLLECTIONS = [
   "levels", "point_rules", "achievements", "alumni", "points_ledger",
   "alumni_achievements", "alumni_friends", "pages", "news", "programs", "products",
   "carts", "orders", "offers", "referrals", "timeline_items", "podcasts", "audit_log",
-  "events", "event_rsvps",
+  "events", "event_rsvps", "push_subs",
 ];
 log("== Коллекции ==");
 for (const c of COLLECTIONS) await ensureCollection(c);
@@ -273,6 +273,12 @@ await ensureM2O("event_rsvps", "event_id", "events", "CASCADE");
 await ensureM2O("event_rsvps", "alumni_id", "alumni", "CASCADE");
 await ensureField("event_rsvps", "attended", bool(false));
 await ensureField("event_rsvps", "created_at", ts("date-created"));
+
+// push_subs — web-push подписки браузеров участников
+await ensureM2O("push_subs", "alumni_id", "alumni", "CASCADE");
+await ensureField("push_subs", "endpoint", txt());
+await ensureField("push_subs", "keys", json());
+await ensureField("push_subs", "created_at", ts("date-created"));
 
 // audit_log — append-only след критичных операций (логины, платежи, статусы, выдачи)
 await ensureField("audit_log", "event", str());

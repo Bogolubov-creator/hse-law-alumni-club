@@ -18,6 +18,9 @@ import { paymentsRoutes } from "./routes/payments.js";
 import { podcastsRoutes } from "./routes/podcasts.js";
 import { avatarsRoutes } from "./routes/avatars.js";
 import { eventsRoutes } from "./routes/events.js";
+import { pushRoutes } from "./routes/push.js";
+import { telegramRoutes } from "./routes/telegram.js";
+import { registerBotCommands } from "./lib/telegram-bot.js";
 import { runDecay } from "./lib/engine.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
@@ -84,6 +87,8 @@ await app.register(paymentsRoutes);
 await app.register(podcastsRoutes);
 await app.register(avatarsRoutes);
 await app.register(eventsRoutes);
+await app.register(pushRoutes);
+await app.register(telegramRoutes);
 
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
 cron.schedule("0 3 1 * *", () => {
@@ -115,6 +120,7 @@ app.get("/ready", async (_req, reply) => {
 try {
   await app.listen({ host: "0.0.0.0", port: env.API_PORT });
   app.log.info(`club-api слушает :${env.API_PORT}`);
+  if (env.TELEGRAM_BOT_TOKEN) void registerBotCommands(env.TELEGRAM_BOT_TOKEN);
 } catch (err) {
   app.log.error(err);
   process.exit(1);

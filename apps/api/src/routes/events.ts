@@ -5,6 +5,7 @@ import { directus } from "../lib/directus.js";
 import { resolveAlumni, resolveAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { audit } from "../lib/audit.js";
+import { pushToAll } from "../lib/push.js";
 
 const di = directus;
 
@@ -96,6 +97,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     const b = eventBody.parse(req.body);
     const created = (await di.request((createItem as any)("events", { ...b, description: b.description ?? null, location: b.location ?? null }))) as any;
     audit("event.create", { actor: `admin:${ctx.userId}`, subject: `event:${created.id}`, detail: { title: b.title }, req });
+    if (b.status === "published") pushToAll({ title: "Новое событие клуба 📅", body: b.title, url: "/events" });
     return { ok: true, id: created.id };
   });
 

@@ -1,11 +1,13 @@
 import { useEffect, useId, useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { LEVELS, loginResponseSchema } from "@club/shared";
-import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
+import { apiGet, apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders, useClassmates, useAddFriend, useLkEvents } from "../lib/queries.js";
 import type { Classmate, LkEvent } from "@club/shared";
 import Modal from "../components/Modal.js";
+import { LkShell } from "../components/LkShell.js";
 import { useToast } from "../components/Toast.js";
+import { useLkTokens, lkSurface } from "../lib/lk-theme.js";
 
 const ORDER_STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
 
@@ -17,7 +19,6 @@ const ORDER_STATUS_RU: Record<string, string> = { new: "Новая", in_progress
 const TOKEN_KEY = "club_token";
 const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
 const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
-const surface: CSSProperties = { background: "#fff", border: "1px solid #E5E7EB", borderRadius: 22 };
 
 export default function Lk() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
@@ -109,69 +110,64 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const me = useMe(token);
   const [sel, setSel] = useState<Achievement | null>(null);
 
-  // Истёкшая/битая сессия (401) — не тупик с ошибкой, а возврат к окну логина.
   useEffect(() => {
     if (me.isError && isAuthError(me.error)) onLogout();
   }, [me.isError, me.error, onLogout]);
 
-  const vars: CSSProperties = { background: "#FBF3E8", color: "#14181F", minHeight: "100vh", fontFamily: "'Onest', system-ui, sans-serif" };
-
   return (
-    <div style={vars}>
-      {/* DARK HEADER */}
-      <header style={{ background: "#14181F", color: "#FBF3E8", position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(251,243,232,.08)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
-          <Link to="/" className="foc" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
-            <img src="/assets/themis.jpeg" alt="Логотип" width={38} height={38} style={{ borderRadius: 9, objectFit: "cover" }} />
-            <div style={{ ...disp, fontWeight: 800, fontSize: 15, letterSpacing: "-0.01em" }}>Личный кабинет</div>
-          </Link>
-          <nav style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: "#FBF3E8", fontWeight: 600, fontSize: 14, padding: "8px 14px", borderRadius: 10, background: "rgba(236,90,19,.16)" }}>Обзор</span>
-            <Link to="/lk/profile" className="foc" style={{ textDecoration: "none", color: "#c8cdd6", fontWeight: 500, fontSize: 14, padding: "8px 14px", borderRadius: 10 }}>Профиль</Link>
-            <Link to="/dpo" className="foc" style={{ textDecoration: "none", color: "#c8cdd6", fontWeight: 500, fontSize: 14, padding: "8px 14px", borderRadius: 10 }}>Витрины</Link>
-            <button onClick={onLogout} className="foc" style={{ ...mono, fontSize: 13, color: "#FBF3E8", background: "rgba(251,243,232,.08)", border: "1px solid rgba(251,243,232,.14)", borderRadius: 10, padding: "8px 13px", cursor: "pointer" }}>Выйти</button>
-          </nav>
-        </div>
-      </header>
+    <LkShell active="overview" onLogout={onLogout}>
+      {me.isLoading && <DashboardLoading />}
+      {me.isError && <DashboardError onLogout={onLogout} />}
+      {me.data && <DashboardBody me={me.data} token={token} onBadge={setSel} />}
+      {sel && <BadgeModal a={sel} onClose={() => setSel(null)} />}
+    </LkShell>
+  );
+}
 
-      <main style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 28px 80px" }}>
-        {me.isLoading && <p style={{ ...mono, fontSize: 13, color: "#6B7280" }}>Загрузка кабинета…</p>}
-        {me.isError && (
-          <div style={{ ...surface, padding: 28 }}>
-            <p style={{ color: "#B5331B", ...mono, fontSize: 13 }}>Сессия истекла или недоступна.</p>
-            <button onClick={onLogout} className="foc" style={{ marginTop: 12, ...mono, fontSize: 13, border: "1.5px solid #E5E7EB", borderRadius: 10, padding: "8px 13px", cursor: "pointer" }}>Войти заново</button>
-          </div>
-        )}
-        {me.data && <DashboardBody me={me.data} token={token} onBadge={setSel} />}
-      </main>
+function DashboardLoading() {
+  const t = useLkTokens();
+  return <p style={{ ...mono, fontSize: 13, color: t.muted }}>Загрузка кабинета…</p>;
+}
 
-      {sel && (
-        <Modal onClose={() => setSel(null)} labelledBy="badge-modal-title" maxWidth={430}>
-          <div style={{ position: "relative", ...surface, padding: "32px 32px 28px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
-            <button onClick={() => setSel(null)} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: "1px solid #E5E7EB", background: "transparent", color: "#6B7280", cursor: "pointer" }}>✕</button>
-            <BadgeSquare a={sel} size={64} />
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", color: achColor(sel), marginTop: 22 }}>{achStatus(sel)}</div>
-            <div id="badge-modal-title" style={{ ...disp, fontWeight: 600, fontSize: 24, letterSpacing: "-0.01em", marginTop: 8 }}>{sel.title}</div>
-            <p style={{ color: "#6B7280", fontSize: 15, lineHeight: 1.55, margin: "12px 0 0" }}>{sel.description}</p>
-            {!sel.earned && sel.target > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 12, color: "#6B7280" }}>
-                  <span>Прогресс · {sel.kind}</span><span>{sel.current} / {sel.target}</span>
-                </div>
-                <div style={{ height: 10, borderRadius: 999, background: "#F2E3CF", overflow: "hidden", marginTop: 8 }}>
-                  <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((sel.current / sel.target) * 100)}%` }} />
-                </div>
-                <p style={{ ...mono, fontSize: 12, color: "#6B7280", margin: "10px 0 0" }}>Осталось ещё {Math.max(0, sel.target - sel.current)} — и достижение ваше.</p>
-              </div>
-            )}
-          </div>
-        </Modal>
-      )}
+function DashboardError({ onLogout }: { onLogout: () => void }) {
+  const t = useLkTokens();
+  return (
+    <div style={{ ...lkSurface(t), padding: 28 }}>
+      <p style={{ color: "#B5331B", ...mono, fontSize: 13 }}>Сессия истекла или недоступна.</p>
+      <button onClick={onLogout} className="foc" style={{ marginTop: 12, ...mono, fontSize: 13, border: `1.5px solid ${t.ghostBtnBorder}`, borderRadius: 10, padding: "8px 13px", cursor: "pointer", background: t.ghostBtnBg, color: t.text }}>Войти заново</button>
     </div>
   );
 }
 
+function BadgeModal({ a, onClose }: { a: Achievement; onClose: () => void }) {
+  const t = useLkTokens();
+  return (
+    <Modal onClose={onClose} labelledBy="badge-modal-title" maxWidth={430}>
+      <div style={{ position: "relative", ...lkSurface(t), padding: "32px 32px 28px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
+        <button onClick={onClose} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: `1px solid ${t.modalBtnBorder}`, background: "transparent", color: t.muted, cursor: "pointer" }}>✕</button>
+        <BadgeSquare a={a} size={64} />
+        <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", color: achColor(a), marginTop: 22 }}>{achStatus(a)}</div>
+        <div id="badge-modal-title" style={{ ...disp, fontWeight: 600, fontSize: 24, letterSpacing: "-0.01em", marginTop: 8 }}>{a.title}</div>
+        <p style={{ color: t.muted, fontSize: 15, lineHeight: 1.55, margin: "12px 0 0" }}>{a.description}</p>
+        {!a.earned && a.target > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 12, color: t.muted }}>
+              <span>Прогресс · {a.kind}</span><span>{a.current} / {a.target}</span>
+            </div>
+            <div style={{ height: 10, borderRadius: 999, background: t.progressTrack, overflow: "hidden", marginTop: 8 }}>
+              <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((a.current / a.target) * 100)}%` }} />
+            </div>
+            <p style={{ ...mono, fontSize: 12, color: t.muted, margin: "10px 0 0" }}>Осталось ещё {Math.max(0, a.target - a.current)} — и достижение ваше.</p>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me; token: string; onBadge: (a: Achievement) => void }) {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
   const orders = useMyOrders(token);
   const cur = LEVELS.find((l) => l.key === me.level.level) ?? LEVELS[0]!;
   const idx = LEVELS.findIndex((l) => l.key === cur.key);
@@ -184,66 +180,63 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
 
   return (
     <>
-      {/* СОБЫТИЯ: заявки в друзья, статусы, подписка */}
       <Events token={token} />
 
-      {/* PROFILE CARD */}
-      <div style={{ ...surface, display: "flex", alignItems: "center", gap: 28, padding: "28px 30px", flexWrap: "wrap", boxShadow: "0 18px 40px -28px rgba(20,24,31,.35)" }}>
+      <div style={{ ...surface, display: "flex", alignItems: "center", gap: 28, padding: "28px 30px", flexWrap: "wrap", boxShadow: t.shadow }}>
         <div style={{ position: "relative", width: 84, height: 84, borderRadius: 22, flex: "none", overflow: "hidden", background: "linear-gradient(135deg,#EC5A13,#B5331B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 38, color: "#FBF3E8", boxShadow: "0 12px 26px -12px rgba(201,69,14,.7)" }}>
           {me.alumni.avatar ? <img src={`/api/avatars/${me.alumni.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : initial}
         </div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ ...disp, fontWeight: 600, fontSize: 27, letterSpacing: "-0.01em", lineHeight: 1.1 }}>{me.alumni.fio ?? "Выпускник"}</div>
-          <div style={{ ...mono, fontSize: 13, color: "#6B7280", marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "–"}{me.alumni.edu_program ? ` · ${me.alumni.edu_level ?? "магистратура"} · ОП «${me.alumni.edu_program}»` : " · факультет права"}</div>
+          <div style={{ ...mono, fontSize: 13, color: t.muted, marginTop: 8 }}>Выпуск {me.alumni.cohort ?? "–"}{me.alumni.edu_program ? ` · ${me.alumni.edu_level ?? "магистратура"} · ОП «${me.alumni.edu_program}»` : " · факультет права"}</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14, fontSize: 13, fontWeight: 600, padding: "6px 13px", borderRadius: 999, background: "rgba(196,154,69,.16)", color: "#a07d2e", border: "1px solid rgba(196,154,69,.5)" }}>
             <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#C49A45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</span>Подтверждён
           </div>
         </div>
-        <div style={{ width: 1, alignSelf: "stretch", background: "#E5E7EB" }} />
+        <div style={{ width: 1, alignSelf: "stretch", background: t.divider }} />
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           <div style={{ position: "relative", width: 118, height: 118, flex: "none" }}>
-            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `conic-gradient(from -90deg, #EC5A13 0deg, #C9450E ${deg}deg, #E5E7EB ${deg}deg 360deg)` }} />
-            <div style={{ position: "absolute", inset: 11, borderRadius: "50%", background: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `conic-gradient(from -90deg, #EC5A13 0deg, #C9450E ${deg}deg, ${t.ringTrack} ${deg}deg 360deg)` }} />
+            <div style={{ position: "absolute", inset: 11, borderRadius: "50%", background: t.ringInner, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: 36, lineHeight: 1, letterSpacing: "-0.02em" }}>{idx + 1}</div>
-              <div style={{ ...mono, fontSize: 9, color: "#6B7280", marginTop: 3, letterSpacing: ".1em" }}>УРОВЕНЬ</div>
+              <div style={{ ...mono, fontSize: 9, color: t.muted, marginTop: 3, letterSpacing: ".1em" }}>УРОВЕНЬ</div>
             </div>
           </div>
           <div style={{ textAlign: "center" }}>
             <div style={{ ...disp, fontWeight: 600, fontSize: 14 }}>{me.level.level_title}</div>
-            <div style={{ ...mono, fontSize: 11, color: "#6B7280", marginTop: 4 }}>
+            <div style={{ ...mono, fontSize: 11, color: t.muted, marginTop: 4 }}>
               {next ? `+${me.level.to_next} баллов до «${next.title}»` : "максимальный уровень"}
             </div>
           </div>
         </div>
-        <div style={{ width: 1, alignSelf: "stretch", background: "#E5E7EB" }} />
+        <div style={{ width: 1, alignSelf: "stretch", background: t.divider }} />
         <div style={{ textAlign: "center", padding: "0 6px" }}>
           <div style={{ ...disp, fontWeight: 800, fontSize: 46, lineHeight: 1, letterSpacing: "-0.02em", color: "#EC5A13" }}>−{me.level.discount}%</div>
-          <div style={{ ...mono, fontSize: 11, color: "#6B7280", marginTop: 10, lineHeight: 1.4 }}>скидка<br />выпускника</div>
+          <div style={{ ...mono, fontSize: 11, color: t.muted, marginTop: 10, lineHeight: 1.4 }}>скидка<br />выпускника</div>
         </div>
       </div>
 
-      {/* ACTIVITY + ACHIEVEMENTS */}
       <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1.45fr 1fr", gap: 22, marginTop: 22 }}>
-        <div style={{ ...surface, padding: "26px 28px", boxShadow: "0 18px 40px -30px rgba(20,24,31,.3)" }}>
+        <div style={{ ...surface, padding: "26px 28px", boxShadow: t.shadow }}>
           <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Динамика активности</div>
-          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>баллы за участие · 6 месяцев</div>
+          <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 6 }}>баллы за участие · 6 месяцев</div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 188, marginTop: 26 }}>
             {me.activity.map((m, i) => (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-                <div style={{ width: "100%", maxWidth: 44, height: `${Math.max(4, Math.round((m.points / maxAct) * 100))}%`, borderRadius: "8px 8px 3px 3px", background: m.points > 0 ? "linear-gradient(180deg,#EC5A13,#C9450E)" : "#E5E7EB" }} />
+                <div style={{ width: "100%", maxWidth: 44, height: `${Math.max(4, Math.round((m.points / maxAct) * 100))}%`, borderRadius: "8px 8px 3px 3px", background: m.points > 0 ? "linear-gradient(180deg,#EC5A13,#C9450E)" : t.barEmpty }} />
               </div>
             ))}
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
             {me.activity.map((m, i) => (
-              <div key={i} style={{ flex: 1, textAlign: "center", ...mono, fontSize: 11, color: "#6B7280" }}>{m.month}</div>
+              <div key={i} style={{ flex: 1, textAlign: "center", ...mono, fontSize: 11, color: t.muted }}>{m.month}</div>
             ))}
           </div>
         </div>
 
-        <div style={{ ...surface, padding: "26px 28px", boxShadow: "0 18px 40px -30px rgba(20,24,31,.3)" }}>
+        <div style={{ ...surface, padding: "26px 28px", boxShadow: t.shadow }}>
           <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Достижения</div>
-          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>{doneCount} из {me.achievements.length} открыто</div>
+          <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 6 }}>{doneCount} из {me.achievements.length} открыто</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "18px 10px", marginTop: 24 }}>
             {me.achievements.map((a) => (
               <button key={a.key} onClick={() => onBadge(a)} className="foc" style={{ textAlign: "center", opacity: a.earned || a.star ? 1 : achInProgress(a) ? 0.85 : 0.4, background: "none", border: "none", padding: "6px 2px", cursor: "pointer", color: "inherit" }}>
@@ -262,8 +255,8 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
           <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Мои заявки</div>
           <div style={{ marginTop: 12 }}>
             {orders.data.map((o: MyOrder) => (
-              <div key={o.number} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: "1px solid #f0ece2", padding: "12px 0", flexWrap: "wrap" }}>
-                <span style={{ ...mono, fontSize: 12, color: "#6B7280", minWidth: 130 }}>{o.number}</span>
+              <div key={o.number} style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${t.dividerSoft}`, padding: "12px 0", flexWrap: "wrap" }}>
+                <span style={{ ...mono, fontSize: 12, color: t.muted, minWidth: 130 }}>{o.number}</span>
                 <span style={{ flex: 1, fontSize: 14, minWidth: 80 }}>{o.type === "dpo" ? "ДПО" : o.type === "merch" ? "Мерч" : "Смешанная"}</span>
                 <span style={{ ...mono, fontSize: 13 }}>{rub(o.total_estimate)}</span>
                 <span style={{ ...mono, fontSize: 11, padding: "4px 10px", borderRadius: 999, background: "rgba(46,111,174,.12)", color: "#2E6FAE" }}>{ORDER_STATUS_RU[o.status] ?? o.status}</span>
@@ -290,11 +283,14 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
       {/* РЕФЕРАЛКА: пригласи однокурсника */}
       <Referral me={me} />
 
+      {/* WEB-PUSH: уведомления на телефон/десктоп */}
+      <PushBell />
+
       {/* SHARE */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28, flexWrap: "wrap" }}>
-        <span style={{ ...mono, fontSize: 13, color: "#6B7280" }}>Поделиться профилем:</span>
+        <span style={{ ...mono, fontSize: 13, color: t.muted }}>Поделиться профилем:</span>
         <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8" }}>↗ Telegram</a>
-        <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#fff", color: "#6B7280", border: "1.5px solid #E5E7EB", cursor: "not-allowed" }}>↗ Макс · скоро</button>
+        <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: t.ghostBtnBg, color: t.muted, border: `1.5px solid ${t.ghostBtnBorder}`, cursor: "not-allowed" }}>↗ Макс · скоро</button>
       </div>
     </>
   );
@@ -306,6 +302,8 @@ const ORDER_EVENT_RU: Record<string, string> = {
 
 /** Блок «События» вверху ЛК — то, что требует внимания или радует. */
 function Events({ token }: { token: string }) {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
   const events = useLkEvents(token);
   const addFriend = useAddFriend(token);
   const list = events.data ?? [];
@@ -358,7 +356,7 @@ function Events({ token }: { token: string }) {
       <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "#C9450E" }}>События</div>
       <div style={{ marginTop: 4 }}>
         {list.map((e, i) => (
-          <div key={i} style={{ borderTop: i ? "1px solid #f0ece2" : "none" }}>{line(e, i)}</div>
+          <div key={i} style={{ borderTop: i ? `1px solid ${t.dividerSoft}` : "none" }}>{line(e, i)}</div>
         ))}
       </div>
     </div>
@@ -382,26 +380,28 @@ function ClassmateAvatar({ c, size }: { c: Classmate; size: number }) {
 
 /** Мини-профиль однокурсника: фото, уровень, интересы с общими пересечениями. */
 function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myInterests: string[]; token: string; onClose: () => void }) {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
   const addFriend = useAddFriend(token);
   const common = new Set(myInterests);
   return (
     <Modal onClose={onClose} labelledBy="cm-modal-title" maxWidth={430}>
       <div style={{ position: "relative", ...surface, padding: "30px 30px 26px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
-        <button onClick={onClose} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: "1px solid #E5E7EB", background: "transparent", color: "#6B7280", cursor: "pointer" }}>✕</button>
+        <button onClick={onClose} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: `1px solid ${t.modalBtnBorder}`, background: "transparent", color: t.muted, cursor: "pointer" }}>✕</button>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <ClassmateAvatar c={c} size={72} />
           <div style={{ minWidth: 0 }}>
             <div id="cm-modal-title" style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em", lineHeight: 1.15 }}>{c.fio ?? "Выпускник"}</div>
-            <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>Выпуск {c.cohort ?? "–"}{c.edu_program ? ` · ${c.edu_program}` : ""}</div>
-            <div style={{ display: "inline-flex", marginTop: 8, fontSize: 12, fontWeight: 600, padding: "4px 11px", borderRadius: 999, background: "rgba(17,41,107,.1)", color: "#11296B" }}>{c.level_title}</div>
+            <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 6 }}>Выпуск {c.cohort ?? "–"}{c.edu_program ? ` · ${c.edu_program}` : ""}</div>
+            <div style={{ display: "inline-flex", marginTop: 8, fontSize: 12, fontWeight: 600, padding: "4px 11px", borderRadius: 999, background: t.levelChipBg, color: t.levelChipText }}>{c.level_title}</div>
           </div>
         </div>
         {c.interests.length > 0 && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7280" }}>Интересы {c.interests.some((i) => common.has(i)) && <span style={{ color: "#1F8A5B", textTransform: "none" }}>· зелёные — общие с вами</span>}</div>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: t.muted }}>Интересы {c.interests.some((i) => common.has(i)) && <span style={{ color: "#1F8A5B", textTransform: "none" }}>· зелёные — общие с вами</span>}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
               {c.interests.map((i) => (
-                <span key={i} style={{ fontSize: 12.5, fontWeight: 500, padding: "6px 12px", borderRadius: 999, border: "1.5px solid " + (common.has(i) ? "#1F8A5B" : "#E5E7EB"), background: common.has(i) ? "rgba(31,138,91,.1)" : "#fff", color: common.has(i) ? "#1F8A5B" : "#14181F" }}>{i}</span>
+                <span key={i} style={{ fontSize: 12.5, fontWeight: 500, padding: "6px 12px", borderRadius: 999, border: "1.5px solid " + (common.has(i) ? "#1F8A5B" : t.chipBorder), background: common.has(i) ? "rgba(31,138,91,.1)" : t.chipBg, color: common.has(i) ? "#1F8A5B" : t.text }}>{i}</span>
               ))}
             </div>
           </div>
@@ -410,7 +410,7 @@ function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myIn
           onClick={() => addFriend.mutate(c.id)}
           disabled={addFriend.isPending || c.friend_status === "pending" || c.friend_status === "accepted"}
           className="foc"
-          style={{ marginTop: 22, width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default", border: "none", background: c.friend_status === "accepted" ? "rgba(31,138,91,.12)" : c.friend_status === "pending" ? "#F2E3CF" : "#EC5A13", color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? "#6B7280" : "#FBF3E8" }}
+          style={{ marginTop: 22, width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default", border: "none", background: c.friend_status === "accepted" ? "rgba(31,138,91,.12)" : c.friend_status === "pending" ? t.pendingBg : "#EC5A13", color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? t.muted : "#FBF3E8" }}
         >
           {FRIEND_LABEL[c.friend_status]}
         </button>
@@ -421,6 +421,8 @@ function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myIn
 
 /** «Мои однокурсники» — тот же выпуск или ОП; клик по карточке — мини-профиль. */
 function Community({ token, myInterests }: { token: string; myInterests: string[] }) {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
   const classmates = useClassmates(token);
   const addFriend = useAddFriend(token);
   const [sel, setSel] = useState<Classmate | null>(null);
@@ -433,19 +435,19 @@ function Community({ token, myInterests }: { token: string; myInterests: string[
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Мои однокурсники</div>
-          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>Тот же выпуск или образовательная программа</div>
+          <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 6 }}>Тот же выпуск или образовательная программа</div>
         </div>
-        <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>{list.length} чел. · в друзьях: <b style={{ color: "#1F8A5B" }}>{friendsCount}</b></span>
+        <span style={{ ...mono, fontSize: 12, color: t.muted }}>{list.length} чел. · в друзьях: <b style={{ color: "#1F8A5B" }}>{friendsCount}</b></span>
       </div>
       <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
         {list.map((c) => (
-          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #E5E7EB", borderRadius: 16, padding: "14px 16px" }}>
+          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${t.surfaceBorder}`, borderRadius: 16, padding: "14px 16px" }}>
             {/* Клик по человеку — мини-профиль */}
             <button onClick={() => setSel(c)} className="foc" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}>
               <ClassmateAvatar c={c} size={46} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontWeight: 600, fontSize: 15, lineHeight: 1.2 }}>{c.fio ?? "Выпускник"}</span>
-                <span style={{ display: "block", ...mono, fontSize: 11, color: "#6B7280", marginTop: 3 }}>
+                <span style={{ display: "block", ...mono, fontSize: 11, color: t.muted, marginTop: 3 }}>
                   {MATCH_LABEL[c.match]}{c.cohort ? ` · ${c.cohort}` : ""}{c.edu_program ? ` · ${c.edu_program}` : ""}
                 </span>
                 {c.interests.length > 0 && (
@@ -459,9 +461,9 @@ function Community({ token, myInterests }: { token: string; myInterests: string[
               className="foc"
               style={{
                 flex: "none", fontWeight: 600, fontSize: 13, padding: "9px 14px", borderRadius: 10, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default",
-                border: "1.5px solid " + (c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? "#E5E7EB" : "#EC5A13"),
-                background: c.friend_status === "none" || c.friend_status === "incoming" ? "#EC5A13" : "#fff",
-                color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? "#6B7280" : "#FBF3E8",
+                border: "1.5px solid " + (c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? t.ghostBtnBorder : "#EC5A13"),
+                background: c.friend_status === "none" || c.friend_status === "incoming" ? "#EC5A13" : t.ghostBtnBg,
+                color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? t.muted : "#FBF3E8",
               }}
             >
               {FRIEND_LABEL[c.friend_status]}
@@ -477,6 +479,8 @@ function Community({ token, myInterests }: { token: string; myInterests: string[
 
 /** «Пригласи однокурсника»: персональная ссылка на анкету + счётчик приглашённых. */
 function Referral({ me }: { me: import("../lib/api.js").Me }) {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
   const toast = useToast();
   const code = me.alumni.referral_code;
   if (!code) return null;
@@ -496,20 +500,101 @@ function Referral({ me }: { me: import("../lib/api.js").Me }) {
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Пригласи однокурсника</div>
-          <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 6 }}>+80 баллов за каждого подтверждённого выпускника по вашей ссылке</div>
+          <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 6 }}>+80 баллов за каждого подтверждённого выпускника по вашей ссылке</div>
         </div>
         {invited > 0 && (
-          <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>
+          <span style={{ ...mono, fontSize: 12, color: t.muted }}>
             приглашено: <b style={{ color: "#1F8A5B" }}>{me.alumni.referrals_verified ?? 0}</b>
             {(me.alumni.referrals_pending ?? 0) > 0 && <> · на проверке: {me.alumni.referrals_pending}</>}
           </span>
         )}
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <code style={{ ...mono, fontSize: 12.5, background: "#FBF7EF", border: "1px solid #f0ece2", borderRadius: 10, padding: "11px 14px", flex: 1, minWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{link}</code>
+        <code style={{ ...mono, fontSize: 12.5, background: t.codeBg, border: `1px solid ${t.codeBorder}`, borderRadius: 10, padding: "11px 14px", flex: 1, minWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: t.text }}>{link}</code>
         <button onClick={copy} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer", flex: "none" }}>Скопировать</button>
         <a href={`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8", flex: "none" }}>↗ В Telegram</a>
       </div>
+    </div>
+  );
+}
+
+/** Кнопка «🔔 Включить уведомления»: подписывает браузер на web-push (заявки в
+    друзья, события, подкасты). Прячется, если пуши не сконфигурированы на
+    сервере или браузер их не умеет (например, Safari без установки на экран). */
+function PushBell() {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
+  const toast = useToast();
+  const [state, setState] = useState<"hidden" | "off" | "on" | "busy">("hidden");
+
+  useEffect(() => {
+    void (async () => {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return;
+      try {
+        const cfg = await apiGet<{ enabled: boolean; key: string | null }>("/push/vapid");
+        if (!cfg.enabled || !cfg.key) return;
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setState(sub && Notification.permission === "granted" ? "on" : "off");
+      } catch {
+        /* API недоступен — просто не показываем кнопку */
+      }
+    })();
+  }, []);
+
+  if (state === "hidden") return null;
+
+  const b64ToU8 = (b64: string) => {
+    const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  };
+
+  const enable = async () => {
+    setState("busy");
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { toast("Уведомления запрещены в браузере", "err"); setState("off"); return; }
+      const cfg = await apiGet<{ enabled: boolean; key: string | null }>("/push/vapid");
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(cfg.key!) });
+      const j = sub.toJSON();
+      await apiPost("/me/push/subscribe", { endpoint: sub.endpoint, keys: j.keys }, undefined, localStorage.getItem(TOKEN_KEY) ?? undefined);
+      setState("on");
+      toast("Уведомления включены ✓");
+    } catch {
+      toast("Не удалось включить уведомления", "err");
+      setState("off");
+    }
+  };
+
+  const disable = async () => {
+    setState("busy");
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await apiPost("/me/push/unsubscribe", { endpoint: sub.endpoint }, undefined, localStorage.getItem(TOKEN_KEY) ?? undefined).catch(() => undefined);
+        await sub.unsubscribe();
+      }
+      setState("off");
+      toast("Уведомления выключены");
+    } catch {
+      setState("on");
+    }
+  };
+
+  return (
+    <div style={{ ...surface, padding: "20px 28px", marginTop: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+      <div>
+        <div style={{ ...disp, fontWeight: 600, fontSize: 17 }}>🔔 Уведомления клуба</div>
+        <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>Заявки в друзья, новые события и подкасты — сразу на устройство</div>
+      </div>
+      {state === "on" ? (
+        <button onClick={disable} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "1.5px solid #1F8A5B", background: t.ghostBtnBg, color: "#1F8A5B", cursor: "pointer", flex: "none" }}>Включены ✓ (выключить)</button>
+      ) : (
+        <button onClick={enable} disabled={state === "busy"} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: state === "busy" ? "wait" : "pointer", flex: "none" }}>{state === "busy" ? "Включаем…" : "Включить уведомления"}</button>
+      )}
     </div>
   );
 }
@@ -526,14 +611,15 @@ function achColor(a: Achievement): string {
 
 // Оформление «ромба» повторяет Claude Design: получено — teal→navy, следующее — оранжевый, закрыто — soft.
 function BadgeSquare({ a, size }: { a: Achievement; size: number }) {
+  const t = useLkTokens();
   const star = !a.earned && a.star;
-  const bg = a.earned ? "linear-gradient(140deg,#2C6E80,#11296B)" : star ? "#EC5A13" : "#F2E3CF";
+  const bg = a.earned ? "linear-gradient(140deg,#2C6E80,#11296B)" : star ? "#EC5A13" : t.badgeLocked;
   const ink = a.earned || star ? "#FBF3E8" : "#b8a98a";
   const glow = a.earned
     ? "0 10px 24px -12px rgba(17,41,107,.65)"
     : star
       ? "0 0 0 4px rgba(236,90,19,.18), 0 12px 26px -10px rgba(236,90,19,.7)"
-      : "inset 0 0 0 1px #E5E7EB";
+      : `inset 0 0 0 1px ${t.surfaceBorder}`;
   return (
     <div style={{ width: size, height: size, borderRadius: size * 0.28, transform: "rotate(45deg)", margin: size <= 50 ? "0 auto" : 0, background: bg, boxShadow: glow, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <span style={{ transform: "rotate(-45deg)", ...disp, fontWeight: 800, fontSize: a.icon.length > 1 ? size * 0.24 : size * 0.32, color: ink }}>{a.icon}</span>
