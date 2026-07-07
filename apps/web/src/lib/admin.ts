@@ -51,7 +51,7 @@ export type AdminProgram = { id: string; slug: string; title: string; direction:
 export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
 export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };
 export type ProductInput = { title: string; category: string; price: number; stock?: number; description?: string | null; images?: string[] | null; status?: string };
-export type PageHeroInput = { badge?: string; title_pre?: string; title_accent?: string; subtitle?: string; cta_primary?: string; cta_secondary?: string };
+export type PageHeroInput = { badge?: string; title_pre?: string; title_accent?: string; subtitle?: string; cta_primary?: string; cta_secondary?: string; history_eyebrow?: string; history_title?: string; history_hint?: string; marquee?: string[] };
 export type PageCtaInput = { title?: string; text?: string; button?: string };
 export type AdminPage = { slug: string; title: string; blocks: { hero?: PageHeroInput & { id?: string }; cta?: PageCtaInput & { id?: string } } };
 

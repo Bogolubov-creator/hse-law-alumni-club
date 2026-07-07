@@ -377,6 +377,10 @@ await ensureField("block_hero", "title_accent", str());
 await ensureField("block_hero", "subtitle", txt());
 await ensureField("block_hero", "cta_primary", str());
 await ensureField("block_hero", "cta_secondary", str());
+await ensureField("block_hero", "history_eyebrow", str()); // секция «История клуба»: надзаголовок
+await ensureField("block_hero", "history_title", str());   // ... заголовок
+await ensureField("block_hero", "history_hint", str());    // ... подсказка «листайте»
+await ensureField("block_hero", "marquee", json());        // бегущая лента: массив строк
 
 await ensureCollection("block_cta", "campaign");
 await ensureField("block_cta", "title", str());

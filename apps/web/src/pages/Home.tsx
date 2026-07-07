@@ -93,6 +93,8 @@ export default function Home() {
   // Тексты блоков из CMS (M2A) с фоллбэком на дефолты в коде.
   const hero = page.data?.blocks?.hero ?? {};
   const cta = page.data?.blocks?.cta ?? {};
+  // Бегущая лента: из админки (block_hero.marquee), иначе — дефолт в коде.
+  const marquee = Array.isArray(hero.marquee) && hero.marquee.length ? (hero.marquee as string[]) : MARQUEE;
 
   const reduce = () => {
     try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; }
@@ -306,12 +308,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* MARQUEE */}
+      {/* MARQUEE — лента редактируется в админке (Контент → Страницы) */}
       <div style={{ background: "#14181F", color: "#FBF3E8", overflow: "hidden", padding: "16px 0", borderTop: "1px solid rgba(251,243,232,.08)", borderBottom: "1px solid rgba(251,243,232,.08)" }}>
         <div className="marq-track" style={{ display: "flex", width: "max-content" }}>
           {[0, 1].map((dup) => (
             <div key={dup} style={{ display: "flex", alignItems: "center", gap: 34, paddingRight: 34, ...mono, fontSize: 14, letterSpacing: ".04em", whiteSpace: "nowrap" }}>
-              {MARQUEE.map((m, i) => (
+              {marquee.map((m, i) => (
                 <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 34 }}><span style={{ width: 8, height: 8, background: "#EC5A13", transform: "rotate(45deg)", flex: "none" }} />{m}</span>
               ))}
             </div>
@@ -319,13 +321,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ИСТОРИЯ – PINNED TIMELINE */}
+      {/* ИСТОРИЯ – PINNED TIMELINE (заголовок редактируется в админке) */}
       <section id="istoriya" ref={pinSectionRef} style={{ position: "relative", height: "240vh", background: "#14181F", color: "#FBF3E8" }}>
         <div ref={pinInnerRef} style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 28px", width: "100%" }}>
-            <div style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>История клуба</div>
-            <h2 style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 0" }}>От первого выпуска – к сообществу</h2>
-            <p style={{ color: "#9aa3b2", fontSize: 14, margin: "10px 0 0", ...mono }}>↓ листайте – таймлайн движется вбок</p>
+            <div style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>{hero.history_eyebrow ?? "История клуба"}</div>
+            <h2 style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 0" }}>{hero.history_title ?? "От первого выпуска – к сообществу"}</h2>
+            <p style={{ color: "#9aa3b2", fontSize: 14, margin: "10px 0 0", ...mono }}>{hero.history_hint ?? "↓ листайте – таймлайн движется вбок"}</p>
           </div>
           <div ref={pinTrackRef} style={{ display: "flex", gap: 26, marginTop: 34, padding: "0 max(28px,calc((100vw - 1180px)/2 + 28px))", willChange: "transform" }}>
             {timeline.map((t, i) => (

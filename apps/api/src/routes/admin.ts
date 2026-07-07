@@ -538,6 +538,8 @@ export async function adminRoutes(app: FastifyInstance) {
   const heroBody = z.object({
     badge: z.string().optional(), title_pre: z.string().optional(), title_accent: z.string().optional(),
     subtitle: z.string().optional(), cta_primary: z.string().optional(), cta_secondary: z.string().optional(),
+    history_eyebrow: z.string().max(80).optional(), history_title: z.string().max(200).optional(), history_hint: z.string().max(200).optional(),
+    marquee: z.array(z.string().max(60)).max(20).optional(),
   });
   const ctaBody = z.object({ title: z.string().optional(), text: z.string().optional(), button: z.string().optional() });
 

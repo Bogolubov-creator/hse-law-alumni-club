@@ -790,16 +790,26 @@ function PagesAdmin() {
   const [cta, setCta] = useState<Record<string, string>>({});
   const [loaded, setLoaded] = useState(false);
 
+  const [history, setHistory] = useState<Record<string, string>>({});
+  const [marquee, setMarquee] = useState("");
+
   if (page.data && !loaded) {
     const h = page.data.blocks.hero ?? {}, c = page.data.blocks.cta ?? {};
     setHero({ badge: h.badge ?? "", title_pre: h.title_pre ?? "", title_accent: h.title_accent ?? "", subtitle: h.subtitle ?? "", cta_primary: h.cta_primary ?? "", cta_secondary: h.cta_secondary ?? "" });
     setCta({ title: c.title ?? "", text: c.text ?? "", button: c.button ?? "" });
+    setHistory({ history_eyebrow: h.history_eyebrow ?? "История клуба", history_title: h.history_title ?? "От первого выпуска – к сообществу", history_hint: h.history_hint ?? "↓ листайте – таймлайн движется вбок" });
+    setMarquee((h.marquee?.length ? h.marquee : ["Выпуск ’24", "Выпуск ’25", "Менторы клуба", "Учебный офис", "Партнёры", "ДПО", "Мерч", "Нетворкинг"]).join(", "));
     setLoaded(true);
   }
 
   const hset = (k: string, v: string) => setHero((s) => ({ ...s, [k]: v }));
   const cset = (k: string, v: string) => setCta((s) => ({ ...s, [k]: v }));
-  const save = () => savePage.mutate({ slug: "home", hero, cta });
+  const xset = (k: string, v: string) => setHistory((s) => ({ ...s, [k]: v }));
+  const save = () => savePage.mutate({
+    slug: "home",
+    hero: { ...hero, ...history, marquee: marquee.split(",").map((x) => x.trim()).filter(Boolean) },
+    cta,
+  });
 
   if (page.isLoading) return <Card><p className="font-mono text-sm text-grafit-soft">Загрузка…</p></Card>;
   if (page.isError) return <Card><p className="font-mono text-sm text-karmin">Не удалось загрузить страницу.</p></Card>;
@@ -828,9 +838,23 @@ function PagesAdmin() {
           <FormField label="Текст" value={cta.text ?? ""} onChange={(v) => cset("text", v)} textarea />
           <FormField label="Кнопка" value={cta.button ?? ""} onChange={(v) => cset("button", v)} />
         </div>
-        <div className="mt-5 flex items-center gap-3">
+      </Card>
+
+      <Card>
+        <div className="font-display text-lg font-semibold">Главная · История клуба и лента</div>
+        <p className="mt-1 font-mono text-[11px] text-grafit-soft">Заголовок секции «История клуба» и бегущая лента над ней.</p>
+        <div className="mt-4 space-y-3">
+          <FormField label="Надзаголовок (мелкий, оранжевый)" value={history.history_eyebrow ?? ""} onChange={(v) => xset("history_eyebrow", v)} ph="История клуба" />
+          <FormField label="Заголовок секции" value={history.history_title ?? ""} onChange={(v) => xset("history_title", v)} ph="От первого выпуска – к сообществу" />
+          <FormField label="Подсказка под заголовком" value={history.history_hint ?? ""} onChange={(v) => xset("history_hint", v)} ph="↓ листайте – таймлайн движется вбок" />
+          <FormField label="Бегущая лента (пункты через запятую)" value={marquee} onChange={setMarquee} textarea ph="Выпуск ’24, Выпуск ’25, Менторы клуба, …" />
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-3">
           <button onClick={save} disabled={savePage.isPending} className="foc rounded-[11px] bg-ohra px-6 py-2.5 font-semibold text-kost disabled:opacity-60">
-            {savePage.isPending ? "Сохраняем…" : "Сохранить обе секции"}
+            {savePage.isPending ? "Сохраняем…" : "Сохранить все секции"}
           </button>
           {savePage.isSuccess && <span className="font-mono text-[12px] text-[#1F8A5B]">сохранено ✓ — уже на сайте</span>}
           {savePage.isError && <span className="font-mono text-[12px] text-karmin">не удалось сохранить</span>}

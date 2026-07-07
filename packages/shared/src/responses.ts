@@ -33,6 +33,8 @@ export const podcastsResSchema = z.object({
 export const heroBlockSchema = z.object({
   badge: z.string().optional(), title_pre: z.string().optional(), title_accent: z.string().optional(),
   subtitle: z.string().optional(), cta_primary: z.string().optional(), cta_secondary: z.string().optional(),
+  history_eyebrow: z.string().nullish(), history_title: z.string().nullish(), history_hint: z.string().nullish(),
+  marquee: z.array(z.string()).nullish(),
 }).passthrough();
 export const ctaBlockSchema = z.object({ title: z.string().optional(), text: z.string().optional(), button: z.string().optional() }).passthrough();
 export const pageHomeSchema = z.object({
