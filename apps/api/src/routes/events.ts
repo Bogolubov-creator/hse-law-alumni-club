@@ -2,10 +2,12 @@ import type { FastifyInstance } from "fastify";
 import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";
+import { env } from "../env.js";
 import { resolveAlumni, resolveAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { audit } from "../lib/audit.js";
 import { pushToAll } from "../lib/push.js";
+import { announceEventByEmail } from "../lib/event-announce.js";
 
 const di = directus;
 
@@ -54,6 +56,39 @@ export async function eventsRoutes(app: FastifyInstance) {
       my_rsvp: mine.has(e.id),
       my_attended: mine.get(e.id)?.attended ?? false,
     }));
+  });
+
+  // Экспорт события в календарь (.ics): Apple/Google/Outlook. Публично —
+  // в файле нет ничего, чего нет на афише.
+  app.get("/events/:id.ics", async (req, reply) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse({ id: (req.params as any).id });
+    const rows = (await di.request((readItems as any)("events", {
+      filter: { id: { _eq: id }, status: { _in: ["published", "done"] } }, limit: 1,
+      fields: ["id", "title", "description", "starts_at", "location", "format", "reg_url"],
+    }))) as any[];
+    const ev = rows[0];
+    if (!ev) return reply.code(404).send({ error: "Событие не найдено" });
+    const dt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const start = new Date(ev.starts_at);
+    const end = new Date(start.getTime() + 2 * 3600 * 1000); // 2 часа по умолчанию
+    const esc = (t: string) => t.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const lines = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Клуб выпускников права ВШЭ//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+      "BEGIN:VEVENT",
+      `UID:event-${ev.id}@club-pravo-hse`,
+      `DTSTAMP:${dt(new Date())}`,
+      `DTSTART:${dt(start)}`,
+      `DTEND:${dt(end)}`,
+      `SUMMARY:${esc(ev.title)}`,
+      ...(ev.description ? [`DESCRIPTION:${esc(ev.description + (ev.reg_url ? `\nРегистрация: ${ev.reg_url}` : ""))}`] : []),
+      ...(ev.location && ev.format !== "online" ? [`LOCATION:${esc(ev.location)}`] : []),
+      `URL:${env.PUBLIC_URL}/events`,
+      "BEGIN:VALARM", "TRIGGER:-PT2H", "ACTION:DISPLAY", `DESCRIPTION:${esc(ev.title)} — через 2 часа`, "END:VALARM",
+      "END:VEVENT", "END:VCALENDAR",
+    ];
+    reply.header("content-type", "text/calendar; charset=utf-8");
+    reply.header("content-disposition", `attachment; filename="club-event.ics"`);
+    return lines.join("\r\n");
   });
 
   // «Пойду» / «Передумал» — только верифицированные участники клуба.
@@ -114,7 +149,10 @@ export async function eventsRoutes(app: FastifyInstance) {
     const b = eventBody.parse(req.body);
     const created = (await di.request((createItem as any)("events", { ...b, description: b.description ?? null, location: b.location ?? null, cover: b.cover ?? null, reg_url: b.reg_url ?? null }))) as any;
     audit("event.create", { actor: `admin:${ctx.userId}`, subject: `event:${created.id}`, detail: { title: b.title }, req });
-    if (b.status === "published") pushToAll({ title: "Новое событие клуба 📅", body: b.title, url: "/events" });
+    if (b.status === "published") {
+      pushToAll({ title: "Новое событие клуба 📅", body: b.title, url: "/events" });
+      announceEventByEmail({ id: created.id, title: b.title, starts_at: b.starts_at, location: b.location, format: b.format, reg_url: b.reg_url });
+    }
     return { ok: true, id: created.id };
   });
 

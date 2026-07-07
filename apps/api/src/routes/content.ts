@@ -2,12 +2,46 @@ import type { FastifyInstance } from "fastify";
 import { readItems } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";
+import { env } from "../env.js";
 
 const NEWS_FIELDS = ["id", "slug", "title", "excerpt", "body", "published_at"] as const;
 const listQuery = z.object({ limit: z.coerce.number().int().positive().max(100).optional() });
 
 // Публичные чтения контента. Directus наружу не выставляем — только через apps/api.
 export async function contentRoutes(app: FastifyInstance) {
+  // Sitemap для поисковиков: статические разделы + новости и программы из БД.
+  // Отдаётся через Caddy по /sitemap.xml (см. Caddyfile). Кэш 1 час.
+  let smCache: { at: number; xml: string } | null = null;
+  app.get("/sitemap.xml", async (_req, reply) => {
+    if (!smCache || Date.now() - smCache.at > 3_600_000) {
+      const base = env.PUBLIC_URL.replace(/\/$/, "");
+      const [news, programs] = await Promise.all([
+        directus.request((readItems as any)("news", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug", "published_at"] })),
+        directus.request((readItems as any)("programs", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug"] })),
+      ]) as [any[], any[]];
+      const urls: { loc: string; lastmod?: string; prio: string }[] = [
+        { loc: "/", prio: "1.0" },
+        { loc: "/events", prio: "0.9" },
+        { loc: "/dpo", prio: "0.9" },
+        { loc: "/merch", prio: "0.7" },
+        { loc: "/podcasts", prio: "0.7" },
+        { loc: "/news", prio: "0.8" },
+        { loc: "/join", prio: "0.8" },
+        ...news.map((n) => ({ loc: `/news/${n.slug}`, lastmod: n.published_at?.slice(0, 10), prio: "0.6" })),
+        ...programs.map((p2) => ({ loc: `/dpo/${p2.slug}`, prio: "0.6" })),
+      ];
+      const xml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        ...urls.map((u) => `<url><loc>${base}${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}<priority>${u.prio}</priority></url>`),
+        "</urlset>",
+      ].join("\n");
+      smCache = { at: Date.now(), xml };
+    }
+    reply.header("content-type", "application/xml; charset=utf-8");
+    return smCache.xml;
+  });
+
   app.get("/news", async (req) => {
     const { limit } = listQuery.parse(req.query);
     return directus.request(

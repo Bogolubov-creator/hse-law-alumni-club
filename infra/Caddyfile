@@ -29,6 +29,11 @@
 	handle_path /api/* {
 		reverse_proxy api:3000
 	}
+	# Sitemap собирает API (новости и программы из БД)
+	handle /sitemap.xml {
+		rewrite * /sitemap.xml
+		reverse_proxy api:3000
+	}
 	handle {
 		header {
 			Strict-Transport-Security "max-age=15552000; includeSubDomains"

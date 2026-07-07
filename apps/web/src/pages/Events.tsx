@@ -20,6 +20,21 @@ const fmtDate = (iso: string) =>
 const fmtDateFull = (iso: string) =>
   new Date(iso).toLocaleString("ru-RU", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
+// Ссылка «добавить в Google Календарь» (2 часа по умолчанию, как в .ics).
+function gcalUrl(e: ClubEvent): string {
+  const dt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const start = new Date(e.starts_at);
+  const end = new Date(start.getTime() + 2 * 3600 * 1000);
+  const p = new URLSearchParams({
+    action: "TEMPLATE",
+    text: e.title,
+    dates: `${dt(start)}/${dt(end)}`,
+    details: (e.description ?? "") + (e.reg_url ? `\nРегистрация: ${e.reg_url}` : ""),
+    ...(e.location && e.format !== "online" ? { location: e.location } : {}),
+  });
+  return `https://calendar.google.com/calendar/render?${p.toString()}`;
+}
+
 /** Календарь событий клуба: афиша + «Пойду» (RSVP), клик по карточке — детали. */
 export default function Events() {
   usePageTitle("События клуба");
@@ -138,6 +153,12 @@ export default function Events() {
                     </a>
                   )}
                   <span className="ml-auto font-mono text-[12px] text-grafit-soft">{opened.going > 0 ? `пойдут: ${opened.going}` : "будьте первым!"}</span>
+                </div>
+                {/* В календарь: .ics (Apple/Outlook и любой календарь) + быстрый Google-линк */}
+                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[#f0ece2] pt-4">
+                  <span className="font-mono text-[11px] uppercase tracking-wide text-grafit-soft">Добавить в календарь:</span>
+                  <a href={`/api/events/${opened.id}.ics`} className="foc rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2 text-[13px] font-semibold hover:border-hse-blue">📅 .ics</a>
+                  <a href={gcalUrl(opened)} target="_blank" rel="noopener noreferrer" className="foc rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2 text-[13px] font-semibold hover:border-hse-blue">Google Календарь ↗</a>
                 </div>
               </div>
             </div>
