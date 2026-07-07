@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
-import { readItems, createItem, createUser, updateUser, readRoles } from "@directus/sdk";
+import { readItems, createItem, createUser, updateUser, updateItem, readRoles } from "@directus/sdk";
 import { z } from "zod";
 import { sanitizeInterests } from "@club/shared";
 import { directusCredsValid, findUserByEmail, findAlumniByUser, signSession } from "../lib/auth.js";
@@ -26,7 +26,7 @@ export async function authRoutes(app: FastifyInstance) {
     }))) as any[];
     const alumni = rows[0];
     if (!alumni) return reply.code(404).send({ error: "Профиль выпускника не привязан к Telegram" });
-    return { token: signSession(alumni.id, tgId), alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
+    return { token: signSession(alumni.id, tgId, (alumni as any).token_version ?? 0), alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });
 
   // Логин выпускника: креды проверяет Directus, сессию (JWT с alumni_id) выдаёт apps/api.
@@ -48,7 +48,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!alumni) return reply.code(403).send({ error: "Аккаунт не привязан к профилю выпускника" });
     registerLoginSuccess(email);
     audit("login.ok", { actor: `alumni:${alumni.id}`, req });
-    const token = signSession(alumni.id, user.id);
+    const token = signSession(alumni.id, user.id, (alumni as any).token_version ?? 0);
     return { token, alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });
 
@@ -137,6 +137,9 @@ export async function authRoutes(app: FastifyInstance) {
     }
     if (payload.purpose !== "reset" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
     await directus.request((updateUser as any)(payload.sub, { password }));
+    // Ревокация всех выданных JWT этого выпускника: старые сессии гаснут.
+    const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: payload.sub } }, limit: 1, fields: ["id", "token_version"] }))) as any[];
+    if (linked[0]) await directus.request((updateItem as any)("alumni", linked[0].id, { token_version: (linked[0].token_version ?? 0) + 1 }));
     audit("password.reset", { actor: `user:${payload.sub}`, req });
     return { ok: true };
   });

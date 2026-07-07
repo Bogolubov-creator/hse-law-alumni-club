@@ -34,7 +34,10 @@
 			Strict-Transport-Security "max-age=15552000; includeSubDomains"
 			X-Content-Type-Options "nosniff"
 			Referrer-Policy "strict-origin-when-cross-origin"
-			Content-Security-Policy "frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
+			# Полный CSP: скрипты только свои; стили — свои + инлайновые (React style=)
+			# + Google Fonts; картинки/медиа https (обложки событий и подкастов —
+			# внешние URL из админки); объекты и чужие base/form запрещены.
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
 			# Ненужные сайту браузерные API выключены явно; версию сервера не светим
 			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
 			-Server

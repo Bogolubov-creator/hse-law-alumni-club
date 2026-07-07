@@ -103,6 +103,7 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
     ports:
       - "127.0.0.1:3000:3000"
     healthcheck:

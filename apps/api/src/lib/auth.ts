@@ -20,12 +20,12 @@ export function isServiceToken(req: FastifyRequest): boolean {
 const adminSecret = (): string => env.ADMIN_AUTH_SECRET || env.AUTH_SECRET;
 
 // Собственная сессия apps/api (Directus наружу не светим).
-export function signSession(alumniId: string, userId: string): string {
-  return jwt.sign({ alumni_id: alumniId, sub: userId }, env.AUTH_SECRET, { expiresIn: "7d" });
+export function signSession(alumniId: string, userId: string, tokenVersion = 0): string {
+  return jwt.sign({ alumni_id: alumniId, sub: userId, ver: tokenVersion }, env.AUTH_SECRET, { expiresIn: "7d" });
 }
-function verifySession(token: string): { alumni_id?: string; sub?: string } | null {
+function verifySession(token: string): { alumni_id?: string; sub?: string; ver?: number } | null {
   try {
-    return jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as { alumni_id?: string; sub?: string };
+    return jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as { alumni_id?: string; sub?: string; ver?: number };
   } catch {
     return null;
   }
@@ -95,9 +95,9 @@ export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null
   const rows = (await di.request(
     readItems("alumni", {
       filter: { user_id: { _eq: userId } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code"],
+      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version"],
     }),
-  )) as AlumniCtx[];
+  )) as (AlumniCtx & { token_version?: number | null })[];
   return rows[0] ?? null;
 }
 
@@ -110,8 +110,12 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   const rows = (await di.request(
     readItems("alumni", {
       filter: { id: { _eq: payload.alumni_id } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code"],
+      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version"],
     }),
-  )) as AlumniCtx[];
-  return rows[0] ?? null;
+  )) as (AlumniCtx & { token_version?: number | null })[];
+  const alumni = rows[0];
+  if (!alumni) return null;
+  // Ревокация: сброс пароля поднимает token_version — старые JWT перестают действовать.
+  if ((payload.ver ?? 0) !== (alumni.token_version ?? 0)) return null;
+  return alumni;
 }

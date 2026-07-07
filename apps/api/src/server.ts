@@ -24,14 +24,19 @@ import { registerBotCommands } from "./lib/telegram-bot.js";
 import { startTelegramPolling } from "./lib/telegram-polling.js";
 import { runDecay } from "./lib/engine.js";
 import { runEventReminders } from "./lib/event-reminders.js";
+import { initSentry, captureError } from "./lib/sentry.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
 const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 256 * 1024 });
 
 // Валидационные ошибки zod → 400 (не 500).
+await initSentry();
+
 app.setErrorHandler((err, _req, reply) => {
   if (err instanceof ZodError) return reply.code(400).send({ error: "Некорректные данные", details: err.issues.map((i) => i.message) });
   app.log.error(err);
+  const st = (err as { statusCode?: number }).statusCode;
+  if (!st || st >= 500) captureError(err); // в Sentry — только наши падения, не 4xx клиента
   const code = (err as { statusCode?: number }).statusCode;
   // 4xx — честное сообщение (это ошибка запроса, не наша); 5xx не раскрываем.
   if (code && code < 500) return reply.code(code).send({ error: (err as Error).message || "Некорректный запрос" });

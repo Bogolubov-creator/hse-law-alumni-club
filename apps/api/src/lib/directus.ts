@@ -11,6 +11,7 @@ export interface AlumniRow {
   podcast_sub_until: string | null;
   avatar: string | null;
   referral_code: string | null; referred_by: string | null; last_activity_at: string | null;
+  token_version: number | null;
   verified_at: string | null; joined_at: string | null; telegram_id: string | null;
 }
 export interface PointsLedgerRow {

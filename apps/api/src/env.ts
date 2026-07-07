@@ -32,6 +32,7 @@ const schema = z.object({
   // Web-push (VAPID). Пусто = пуши выключены, сайт работает как раньше.
   VAPID_PUBLIC_KEY: z.string().default(""),
   VAPID_PRIVATE_KEY: z.string().default(""),
+  SENTRY_DSN: z.string().default(""), // пусто = мониторинг ошибок выключен
 });
 
 export const env = schema.parse(process.env);

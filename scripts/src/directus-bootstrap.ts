@@ -201,6 +201,7 @@ await ensureField("alumni", "podcast_sub_until", ts()); // подписка на
 await ensureField("alumni", "avatar", str()); // uuid файла в Directus (раздача через /api/avatars/:id)
 await ensureField("alumni", "referral_code", str(true));
 await ensureField("alumni", "telegram_id", str(true)); // связка с Telegram-ботом (/points, /calendar)
+await ensureField("alumni", "token_version", int(0)); // ревокация JWT: +1 при сбросе пароля
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
 await ensureField("alumni", "last_activity_at", ts());
