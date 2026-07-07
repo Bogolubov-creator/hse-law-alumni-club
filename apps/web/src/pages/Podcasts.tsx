@@ -1,19 +1,51 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "../components/SiteShell.js";
-import { rub, type PodcastItem } from "../lib/api.js";
+import { apiGet, rub, type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
 import { usePageTitle } from "../lib/title.js";
 
 const RATES = [1, 1.25, 1.5, 2] as const;
 
-/** Плеер выпуска: запоминает позицию (localStorage) и умеет менять скорость. */
+/** Плеер выпуска: запоминает позицию (localStorage) и умеет менять скорость.
+    Подписанная ссылка живёт 2 часа — если вкладка провисела дольше и источник
+    вернул ошибку, тихо берём свежую ссылку из API и продолжаем с того же места. */
 function EpisodePlayer({ id, src }: { id: string; src: string }) {
   const ref = useRef<HTMLAudioElement>(null);
   const lastSave = useRef(0);
+  const refreshing = useRef(false);
+  const [liveSrc, setLiveSrc] = useState(src);
+  const [stale, setStale] = useState<string | null>(null);
   const [rate, setRate] = useState(1);
   const posKey = `pod-pos-${id}`;
+
+  const refreshSrc = async () => {
+    if (refreshing.current) return; // одна авто-попытка за раз
+    refreshing.current = true;
+    const el = ref.current;
+    const pos = el?.currentTime || Number(localStorage.getItem(posKey) || 0);
+    try {
+      const t = token();
+      const fresh = await apiGet<{ items: PodcastItem[] }>("/podcasts", t ?? undefined);
+      const url = fresh.items.find((p) => p.id === id)?.audio_url;
+      if (!url) throw new Error("нет ссылки");
+      setStale(null);
+      setLiveSrc(url);
+      // После смены src аудио перезагрузится; вернём позицию и продолжим.
+      requestAnimationFrame(() => {
+        const a = ref.current;
+        if (!a) return;
+        a.load();
+        const onMeta = () => { if (pos > 5) a.currentTime = pos; void a.play().catch(() => undefined); a.removeEventListener("loadedmetadata", onMeta); };
+        a.addEventListener("loadedmetadata", onMeta);
+      });
+    } catch {
+      setStale("Ссылка на аудио устарела — обновите страницу");
+    } finally {
+      setTimeout(() => { refreshing.current = false; }, 3000);
+    }
+  };
 
   const restore = () => {
     const el = ref.current;
@@ -36,20 +68,24 @@ function EpisodePlayer({ id, src }: { id: string; src: string }) {
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <audio
-        ref={ref}
-        controls
-        preload="none"
-        src={src}
-        className="min-w-0 flex-1"
-        onLoadedMetadata={restore}
-        onTimeUpdate={savePos}
-        onPause={() => { lastSave.current = 0; savePos(); }}
-      />
-      <button onClick={cycleRate} title="Скорость воспроизведения" className="foc flex-none rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 font-mono text-[12px] font-semibold">
-        ×{rate}
-      </button>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-3">
+        <audio
+          ref={ref}
+          controls
+          preload="none"
+          src={liveSrc}
+          className="min-w-0 flex-1"
+          onLoadedMetadata={restore}
+          onTimeUpdate={savePos}
+          onPause={() => { lastSave.current = 0; savePos(); }}
+          onError={() => void refreshSrc()}
+        />
+        <button onClick={cycleRate} title="Скорость воспроизведения" className="foc flex-none rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 font-mono text-[12px] font-semibold">
+          ×{rate}
+        </button>
+      </div>
+      {stale && <p className="font-mono text-[11px] text-karmin">{stale}</p>}
     </div>
   );
 }
