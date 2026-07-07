@@ -354,7 +354,14 @@ export async function adminRoutes(app: FastifyInstance) {
       fields: ["number", "created_at", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "address", "items_json", "subtotal", "member_discount", "total_estimate", "status", "payment_status", "comment"],
     }))) as any[];
 
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    // Защита от CSV-инъекции: ячейку, начинающуюся с = + - @ (или таб/CR),
+    // Excel/Sheets выполняют как формулу. Данные заявок вводит любой гость,
+    // поэтому такие значения обезвреживаем ведущим апострофом.
+    const esc = (v: unknown) => {
+      let s = String(v ?? "");
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
     const rub2 = (kop: number) => (kop / 100).toFixed(2).replace(".", ","); // Excel-число в ru-локали
     const TYPE_RU: Record<string, string> = { dpo: "ДПО", merch: "Мерч", mixed: "Смешанная", podcast: "Подписка на подкасты" };
     const STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Выполнена", canceled: "Отменена" };

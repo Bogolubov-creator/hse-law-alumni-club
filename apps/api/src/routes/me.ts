@@ -77,9 +77,10 @@ export async function meRoutes(app: FastifyInstance) {
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
     if (a.verification_status !== "verified") return reply.code(403).send({ error: "ЛК активируется после верификации" });
     const body = z.object({
-      fio: z.string().min(2).optional(),
-      contacts: z.record(z.string()).optional(),
-      interests: z.array(z.string()).optional(),
+      fio: z.string().min(2).max(200).optional(),
+      // Ограничиваем ключи и значения: контакты — трастовая граница API, не фронта.
+      contacts: z.record(z.string().max(40), z.string().max(200)).refine((c) => Object.keys(c).length <= 12, "Слишком много контактов").optional(),
+      interests: z.array(z.string().max(80)).max(30).optional(),
     }).parse(req.body);
     const patch: Record<string, unknown> = {};
     if (body.fio) patch.fio = body.fio;

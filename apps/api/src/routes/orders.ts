@@ -42,15 +42,28 @@ export async function ordersRoutes(app: FastifyInstance) {
     if (!items.length) return reply.code(400).send({ error: "Корзина пуста" });
 
     // Переоценка по каталогу (анти-подмена цены): собрать актуальные цены, затем чистые функции.
+    // Позиция, ставшая недоступной, пока лежала в корзине (снята с публикации, удалена,
+    // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает — иначе
+    // заказ уходит по устаревшей цене на то, что больше не продаётся.
     const priceMap = new Map<string, { title: string; price: number }>();
+    const unavailable: string[] = [];
     for (const i of items) {
       const key = `${i.type}:${i.ref_id}`;
-      if (!priceMap.has(key)) {
-        const info = await lookup(i.type, i.ref_id);
-        if (info) priceMap.set(key, info);
+      if (priceMap.has(key) || unavailable.includes(key)) continue;
+      const info = await lookup(i.type, i.ref_id);
+      if (!info || (i.type === "dpo" && (info.source_url || info.enrollment === "nonactual"))) {
+        unavailable.push(key);
+      } else {
+        priceMap.set(key, info);
       }
     }
-    const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
+    const available = items.filter((i) => priceMap.has(`${i.type}:${i.ref_id}`));
+    if (!available.length) {
+      // Всё в корзине стало недоступно — чистим и просим собрать заново.
+      if (cartRows[0]) await di.request((updateItem as any)("carts", cartRows[0].id, { items_json: [] })).catch(() => undefined);
+      return reply.code(409).send({ error: "Позиции в корзине больше недоступны — обновите каталог и соберите заказ заново" });
+    }
+    const priced = repriceItems(available, (t, r) => priceMap.get(`${t}:${r}`));
 
     const alumni = await resolveAlumni(req);
     const discount = effectiveDiscount(
