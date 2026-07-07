@@ -130,8 +130,6 @@ export function formatUnlinkedPointsReply(publicUrl: string): string {
   return [
     "🔒 <b>Telegram не привязан</b>",
     "",
-    "Чтобы видеть баллы, попросите учебный офис привязать ваш Telegram-ID в админ-панели.",
-    "",
-    `🌐 Или зайдите в <a href="${esc(publicUrl)}/lk">личный кабинет</a> на сайте.`,
+    `Зайдите в <a href="${esc(publicUrl)}/lk">личный кабинет</a> на сайте и нажмите «Привязать Telegram» — после этого /points покажет ваши баллы, уровень и скидку.`,
   ].join("\n");
 }
