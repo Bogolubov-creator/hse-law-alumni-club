@@ -138,13 +138,13 @@ export default function Dpo() {
                     {p.enrollment === "nonactual" && <span className="rounded-full bg-[rgba(107,114,128,.14)] px-2.5 py-1 font-mono text-[11px] text-grafit-soft">набор закрыт</span>}
                   </div>
                   <div className="mt-auto pt-4">
-                    {/* Программы ВШЭ (source_url): цена справочная, запись на hse.ru.
-                        Программы клуба: скидка выпускника + корзина сайта. */}
+                    {/* Скидка выпускника действует на все программы ДПО. Программы ВШЭ
+                        (source_url) — запись на hse.ru; собственные — корзина сайта. */}
                     <div className="flex items-baseline gap-2">
-                      <span className="font-mono text-[19px] font-medium">{rub(p.source_url ? p.price : priced(p))}</span>
-                      {!p.source_url && discount > 0 && <span className="font-mono text-[13px] text-grafit-soft line-through">{rub(p.price)}</span>}
+                      <span className="font-mono text-[19px] font-medium">{rub(priced(p))}</span>
+                      {discount > 0 && <span className="font-mono text-[13px] text-grafit-soft line-through">{rub(p.price)}</span>}
                     </div>
-                    {!p.source_url && discount > 0 && <div className="mt-1"><DiscountBadge percent={discount} /></div>}
+                    {discount > 0 && <div className="mt-1"><DiscountBadge percent={discount} /></div>}
                     <div className="mt-3 flex gap-2">
                       <Link to={`/dpo/${p.slug}`} className="foc flex-1 rounded-[12px] border border-hse-blue py-3 text-center font-semibold text-hse-blue">Подробнее</Link>
                       {p.enrollment !== "nonactual" && (

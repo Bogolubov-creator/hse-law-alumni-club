@@ -105,14 +105,14 @@ export default function Program() {
               <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
                 <div className="flex h-2"><i className="flex-1 bg-ohra" /><i className="flex-1 bg-hse-blue" /><i className="flex-1 bg-latun" /><i className="flex-1 bg-stal" /><i className="flex-1 bg-karmin" /></div>
                 <div className="p-6">
-                  {/* ВШЭ-программа: цена справочная (с hse.ru), скидка сайта не применяется. */}
+                  {/* Скидка выпускника действует на все программы ДПО, включая ВШЭ. */}
                   <div className="flex items-baseline gap-2">
-                    <span className="font-mono text-2xl font-medium">{rub(p.source_url ? p.price : priced)}</span>
-                    {!p.source_url && discount > 0 && <span className="font-mono text-sm text-grafit-soft line-through">{rub(p.price)}</span>}
+                    <span className="font-mono text-2xl font-medium">{rub(priced)}</span>
+                    {discount > 0 && <span className="font-mono text-sm text-grafit-soft line-through">{rub(p.price)}</span>}
                   </div>
-                  {!p.source_url && discount > 0 ? <div className="mt-2"><DiscountBadge percent={discount} /></div> : null}
+                  {discount > 0 ? <div className="mt-2"><DiscountBadge percent={discount} /></div> : null}
                   <p className="mt-2 font-mono text-[11px] text-grafit-soft">
-                    {p.source_url ? "Запись и оплата — на hse.ru" : "Цена выпускника · применяется после верификации в ЛК"}
+                    {p.source_url ? "Цена выпускника · запись и оплата на hse.ru" : "Цена выпускника · применяется после верификации в ЛК"}
                   </p>
 
                   <dl className="mt-5 divide-y divide-[#f0ece2] border-y border-[#f0ece2] font-mono text-[13px]">
@@ -133,7 +133,7 @@ export default function Program() {
                     <>
                       {/* Программа ВШЭ: маршрутизация на маркетплейс, касса сайта не участвует */}
                       <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc mt-5 block w-full rounded-[12px] bg-hse-blue py-3.5 text-center font-semibold text-kost">Записаться на hse.ru →</a>
-                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Запись и оплата — на официальном маркетплейсе ДПО НИУ ВШЭ. Скидка выпускника действует на собственные программы клуба.</p>
+                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Запись и оплата — на официальном маркетплейсе ДПО НИУ ВШЭ. Скидка выпускника действует на все программы ДПО.</p>
                     </>
                   ) : (
                     <>
