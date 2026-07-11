@@ -9,6 +9,25 @@ const listQuery = z.object({ limit: z.coerce.number().int().positive().max(100).
 
 // Публичные чтения контента. Directus наружу не выставляем — только через apps/api.
 export async function contentRoutes(app: FastifyInstance) {
+  // robots.txt из API: абсолютный Sitemap из PUBLIC_URL (единый источник домена).
+  // Приватка закрыта; отдаётся через Caddy по /robots.txt.
+  app.get("/robots.txt", async (_req, reply) => {
+    const base = env.PUBLIC_URL.replace(/\/$/, "");
+    reply.header("content-type", "text/plain; charset=utf-8");
+    return [
+      "# Клуб выпускников факультета права НИУ ВШЭ",
+      "User-agent: *",
+      "Allow: /",
+      "# Личные и служебные разделы поисковикам не нужны",
+      "Disallow: /lk",
+      "Disallow: /admin",
+      "Disallow: /cart",
+      "Disallow: /api/",
+      `Sitemap: ${base}/sitemap.xml`,
+      "",
+    ].join("\n");
+  });
+
   // Sitemap для поисковиков: статические разделы + новости и программы из БД.
   // Отдаётся через Caddy по /sitemap.xml (см. Caddyfile). Кэш 1 час.
   let smCache: { at: number; xml: string } | null = null;

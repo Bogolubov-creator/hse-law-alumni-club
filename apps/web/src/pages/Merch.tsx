@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { usePageTitle } from "../lib/title.js";
+import { useHead } from "../lib/title.js";
 import SiteShell from "../components/SiteShell.js";
 import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
@@ -7,7 +7,7 @@ import { rub, type Product, type ProductVariant } from "../lib/api.js";
 import { useProducts, useCartMutations } from "../lib/cart.js";
 
 export default function Merch() {
-  usePageTitle("Мерч клуба");
+  useHead({ title: "Мерч клуба", description: "Фирменный мерч клуба выпускников факультета права НИУ ВШЭ: одежда и аксессуары с фасеточной Фемидой. Самовывоз в учебном офисе или доставка." });
   const products = useProducts();
   const { add } = useCartMutations();
   const toast = useToast();

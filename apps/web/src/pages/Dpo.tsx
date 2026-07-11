@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { usePageTitle } from "../lib/title.js";
+import { useHead } from "../lib/title.js";
 import SiteShell, { DiscountBadge } from "../components/SiteShell.js";
 import { FORMAT_LABEL, rub, type Program } from "../lib/api.js";
 import { usePrograms, useMemberDiscount, useCartMutations } from "../lib/cart.js";
@@ -20,7 +20,7 @@ export default function Dpo() {
   const discount = useMemberDiscount();
   const { add } = useCartMutations();
   const toast = useToast();
-  usePageTitle("Витрина ДПО");
+  useHead({ title: "Программы ДПО со скидкой выпускника", description: "Каталог программ дополнительного образования факультета права НИУ ВШЭ. Цена выпускника применяется автоматически после верификации.", canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/dpo` });
   // Фильтры живут в URL — подборкой можно поделиться ссылкой.
   const [params, setParams] = useSearchParams();
   const [dir, setDir] = useState<string | null>(params.get("dir"));

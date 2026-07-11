@@ -1,9 +1,0 @@
-# Клуб выпускников факультета права НИУ ВШЭ
-User-agent: *
-Allow: /
-# Личные и служебные разделы поисковикам не нужны
-Disallow: /lk
-Disallow: /admin
-Disallow: /cart
-Disallow: /api/
-Sitemap: /sitemap.xml

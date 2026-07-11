@@ -6,7 +6,7 @@ import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { apiGet, apiPost } from "../lib/api.js";
 import { token } from "../lib/cart.js";
-import { usePageTitle } from "../lib/title.js";
+import { useHead } from "../lib/title.js";
 
 interface ClubEvent {
   id: string; title: string; description: string | null; starts_at: string;
@@ -37,7 +37,7 @@ function gcalUrl(e: ClubEvent): string {
 
 /** Календарь событий клуба: афиша + «Пойду» (RSVP), клик по карточке — детали. */
 export default function Events() {
-  usePageTitle("События клуба");
+  useHead({ title: "События и встречи клуба", description: "Афиша клуба выпускников факультета права НИУ ВШЭ: нетворкинги, лекции и встречи выпусков. Запись заранее, за участие баллы клуба." });
   const t = token();
   const toast = useToast();
   const qc = useQueryClient();
@@ -83,7 +83,7 @@ export default function Events() {
       style={{ opacity: isPast ? 0.65 : 1 }}
     >
       {e.cover ? (
-        <img src={e.cover} alt="" className="h-36 w-full object-cover" onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
+        <img src={e.cover} alt={`Афиша: ${e.title}`} className="h-36 w-full object-cover" onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
       ) : (
         <div className="flex h-2"><i className="flex-1 bg-ohra" /><i className="flex-1 bg-hse-blue" /><i className="flex-1 bg-latun" /><i className="flex-1 bg-stal" /></div>
       )}
@@ -134,7 +134,7 @@ export default function Events() {
           <Modal onClose={() => setOpenId(null)} labelledBy="ev-modal-title" maxWidth={620}>
             <div className="overflow-hidden rounded-[18px] bg-white">
               {opened.cover && (
-                <img src={opened.cover} alt="" className="max-h-64 w-full object-cover" onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
+                <img src={opened.cover} alt={`Афиша: ${opened.title}`} className="max-h-64 w-full object-cover" onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
               )}
               <div className="p-7">
                 <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-wide text-ohra-deep">

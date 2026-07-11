@@ -13,15 +13,59 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Клуб права" />
-    <!-- Превью ссылки в мессенджерах -->
+    <link rel="canonical" href="%SITE_URL%/" />
+    <!-- Превью ссылки в мессенджерах (абсолютные URL — их читают скрейперы без JS) -->
     <meta property="og:title" content="Клуб выпускников факультета права НИУ ВШЭ" />
     <meta property="og:description" content="Программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
-    <meta property="og:image" content="/icon-512.png" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <!-- Интерим-картинка: квадратная иконка. Для прода добавить og-card.png 1200×630
+         в apps/web/public и вернуть summary_large_image + og:image:width/height. -->
+    <meta property="og:image" content="%SITE_URL%/icon-512.png" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Клуб выпускников факультета права НИУ ВШЭ" />
     <meta property="og:locale" content="ru_RU" />
     <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Клуб выпускников факультета права НИУ ВШЭ" />
+    <meta name="twitter:description" content="Программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
+    <meta name="twitter:image" content="%SITE_URL%/icon-512.png" />
     <meta name="robots" content="index, follow" />
+    <!-- Structured data: организация + сайт (schema.org). Виден всем краулерам, включая non-JS. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "EducationalOrganization",
+            "@id": "%SITE_URL%/#club",
+            "name": "Клуб выпускников факультета права НИУ ВШЭ",
+            "url": "%SITE_URL%/",
+            "logo": "%SITE_URL%/icon-512.png",
+            "sameAs": ["https://t.me/pravohse"],
+            "email": "pravo@hse.ru",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "ул. Мясницкая, д. 20",
+              "addressLocality": "Москва",
+              "postalCode": "101000",
+              "addressCountry": "RU"
+            },
+            "parentOrganization": {
+              "@type": "CollegeOrUniversity",
+              "name": "НИУ «Высшая школа экономики»",
+              "url": "https://pravo.hse.ru"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "%SITE_URL%/#website",
+            "url": "%SITE_URL%/",
+            "name": "Клуб выпускников факультета права НИУ ВШЭ",
+            "inLanguage": "ru-RU",
+            "publisher": { "@id": "%SITE_URL%/#club" }
+          }
+        ]
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

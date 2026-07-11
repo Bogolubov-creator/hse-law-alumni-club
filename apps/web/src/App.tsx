@@ -1,22 +1,25 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Home from "./pages/Home.js";
 import News from "./pages/News.js";
 import NewsPost from "./pages/NewsPost.js";
 import Stub from "./pages/Stub.js";
-import Lk from "./pages/Lk.js";
-import Profile from "./pages/Profile.js";
 import Dpo from "./pages/Dpo.js";
 import Program from "./pages/Program.js";
 import Merch from "./pages/Merch.js";
-import Cart from "./pages/Cart.js";
-import AdminApp from "./admin/AdminApp.js";
 import Podcasts from "./pages/Podcasts.js";
 import Events from "./pages/Events.js";
 import { Join, Forgot, Reset } from "./pages/JoinAuth.js";
 import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
 import InstallPrompt from "./components/InstallPrompt.js";
+
+// Приватные/тяжёлые разделы — отдельными чанками: не грузятся публичному посетителю
+// и не раздувают стартовый бандл (важно для LCP публичных страниц и SEO).
+const Lk = lazy(() => import("./pages/Lk.js"));
+const Profile = lazy(() => import("./pages/Profile.js"));
+const Cart = lazy(() => import("./pages/Cart.js"));
+const AdminApp = lazy(() => import("./admin/AdminApp.js"));
 
 export default function App() {
   const navigate = useNavigate();
@@ -28,27 +31,29 @@ export default function App() {
   }, [navigate]);
   return (
     <>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/news/:slug" element={<NewsPost />} />
-        <Route path="/admin/*" element={<AdminApp />} />
-        <Route path="/lk" element={<Lk />} />
-        <Route path="/lk/profile" element={<Profile />} />
-        <Route path="/dpo" element={<Dpo />} />
-        <Route path="/dpo/:slug" element={<Program />} />
-        <Route path="/merch" element={<Merch />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/podcasts" element={<Podcasts />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/join" element={<Join />} />
-        <Route path="/forgot" element={<Forgot />} />
-        <Route path="/reset" element={<Reset />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/confidential" element={<Confidential />} />
-        <Route path="/requisites" element={<Requisites />} />
-        <Route path="*" element={<Stub title="Страница не найдена" />} />
-      </Routes>
+      <Suspense fallback={<div style={{ minHeight: "50vh" }} />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/news/:slug" element={<NewsPost />} />
+          <Route path="/admin/*" element={<AdminApp />} />
+          <Route path="/lk" element={<Lk />} />
+          <Route path="/lk/profile" element={<Profile />} />
+          <Route path="/dpo" element={<Dpo />} />
+          <Route path="/dpo/:slug" element={<Program />} />
+          <Route path="/merch" element={<Merch />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/podcasts" element={<Podcasts />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/join" element={<Join />} />
+          <Route path="/forgot" element={<Forgot />} />
+          <Route path="/reset" element={<Reset />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/confidential" element={<Confidential />} />
+          <Route path="/requisites" element={<Requisites />} />
+          <Route path="*" element={<Stub title="Страница не найдена" />} />
+        </Routes>
+      </Suspense>
       <CookieBanner />
       <InstallPrompt />
     </>

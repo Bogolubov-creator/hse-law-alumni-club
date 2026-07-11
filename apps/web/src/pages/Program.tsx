@@ -4,7 +4,8 @@ import SiteShell, { DiscountBadge } from "../components/SiteShell.js";
 import { FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../lib/api.js";
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import { useToast } from "../components/Toast.js";
-import { usePageTitle } from "../lib/title.js";
+import { useHead } from "../lib/title.js";
+import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
 
 const AVATAR_BG = ["linear-gradient(135deg,#EC5A13,#B5331B)", "linear-gradient(135deg,#11296B,#2E6FAE)", "linear-gradient(135deg,#2C6E80,#11296B)", "linear-gradient(135deg,#C49A45,#E3C272)"];
 
@@ -16,12 +17,53 @@ export default function Program() {
   const toast = useToast();
   const [openM, setOpenM] = useState(0);
   const p = q.data;
-  usePageTitle(p?.title ?? "Программа ДПО");
   // Та же математика, что на сервере (order-calc): вычитаем округлённую скидку в копейках.
   const priced = p ? p.price - Math.round((p.price * discount) / 100) : 0;
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];
   const teachers: ProgramTeacher[] = Array.isArray(p?.teachers) ? p!.teachers : [];
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
+
+  useHead({
+    title: p?.title ?? "Программа ДПО",
+    description: p?.description
+      ?? (p ? `${p.title}: программа ДПО факультета права НИУ ВШЭ. ${p.duration ?? ""}. Цена выпускника.` : null),
+    canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/dpo/${slug}`,
+  });
+  useJsonLd(
+    p && {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Course",
+          name: p.title,
+          description: p.description ?? undefined,
+          url: `${siteOrigin()}/dpo/${p.slug}`,
+          inLanguage: "ru-RU",
+          provider: { "@type": "EducationalOrganization", name: "НИУ «Высшая школа экономики»", url: "https://pravo.hse.ru" },
+          offers: {
+            "@type": "Offer",
+            category: "Paid",
+            price: p.price / 100, // база, без скидки выпускника
+            priceCurrency: "RUB",
+            url: p.source_url ?? `${siteOrigin()}/dpo/${p.slug}`,
+            availability: p.enrollment === "nonactual" ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+          },
+          hasCourseInstance: {
+            "@type": "CourseInstance",
+            courseMode: p.format === "online" ? "Online" : "Onsite",
+            ...(totalHours > 0 ? { courseWorkload: `PT${totalHours}H` } : {}),
+          },
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Витрина ДПО", item: `${siteOrigin()}/dpo` },
+            { "@type": "ListItem", position: 2, name: p.title, item: `${siteOrigin()}/dpo/${p.slug}` },
+          ],
+        },
+      ],
+    },
+  );
 
   const navigate = useNavigate();
   const addToCart = () => p && add.mutate({ type: "dpo", ref_id: p.slug }, { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") });

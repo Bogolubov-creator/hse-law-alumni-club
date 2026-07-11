@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNewsList, usePage, useTimeline, formatNewsDate } from "../lib/queries.js";
 import { apiGet } from "../lib/api.js";
 import { token } from "../lib/cart.js";
+import { useHead } from "../lib/title.js";
 
 /**
  * Главная – порт «Главная.dc.html» (Claude Design) в React.
@@ -61,6 +62,10 @@ const REASONS = [
 ];
 
 export default function Home() {
+  useHead({
+    description: "Клуб выпускников факультета права НИУ ВШЭ: личный кабинет со статусом, скидка выпускника на ДПО, события, подкасты, мерч и сообщество.",
+    canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/`,
+  });
   const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const pinSectionRef = useRef<HTMLElement>(null);

@@ -29,9 +29,13 @@
 	handle_path /api/* {
 		reverse_proxy api:3000
 	}
-	# Sitemap собирает API (новости и программы из БД)
+	# Sitemap и robots собирает API (абсолютные URL из PUBLIC_URL)
 	handle /sitemap.xml {
 		rewrite * /sitemap.xml
+		reverse_proxy api:3000
+	}
+	handle /robots.txt {
+		rewrite * /robots.txt
 		reverse_proxy api:3000
 	}
 	handle {

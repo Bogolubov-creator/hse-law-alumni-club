@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { useNewsList, formatNewsDate } from "../lib/queries.js";
-import { usePageTitle } from "../lib/title.js";
+import { useHead } from "../lib/title.js";
 
 export default function News() {
-  usePageTitle("Новости");
+  useHead({ title: "Новости клуба", description: "Новости клуба выпускников факультета права НИУ ВШЭ: события, программы, партнёрства и жизнь сообщества." });
   const news = useNewsList();
   return (
     <main className="min-h-screen bg-kost text-grafit">

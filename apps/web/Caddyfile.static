@@ -1,6 +1,12 @@
 :80 {
 	root * /srv
 	encode gzip
+	# Хешированные ассеты Vite (имя меняется при сборке) — кэш на год.
+	@assets path /assets/* *.js *.css *.png *.jpg *.jpeg *.webp *.svg *.woff2
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	# Оболочка и SW не кэшируем жёстко — чтобы релиз доезжал сразу.
+	@html path / /index.html /sw.js /manifest.webmanifest
+	header @html Cache-Control "no-cache"
 	try_files {path} /index.html
 	file_server
 }

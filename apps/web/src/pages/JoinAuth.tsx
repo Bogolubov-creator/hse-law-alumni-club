@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPost } from "../lib/api.js";
+import { useHead } from "../lib/title.js";
 
 /**
  * Воронка входа: /join — заявка на вступление в клуб (аккаунт + профиль pending),
@@ -36,6 +37,10 @@ function Field({ label, value, onChange, type = "text", ph, required }: { label:
 
 // ── Заявка на вступление ────────────────────────────────────────────
 export function Join() {
+  useHead({
+    title: "Вступить в клуб",
+    description: "Подайте заявку в клуб выпускников факультета права НИУ ВШЭ: подтвердите выпуск и получите статус, скидку на ДПО и доступ к сообществу.",
+  });
   // Уже в клубе? Анкета нужна только новым выпускникам — не «кидаем» молча в ЛК,
   // а объясняем и даём выбор (в кабинет / выйти и заполнить за другого человека).
   const [authed, setAuthed] = useState(() => !!localStorage.getItem("club_token"));
