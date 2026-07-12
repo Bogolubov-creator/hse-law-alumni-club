@@ -6,6 +6,8 @@ import { directus } from "../lib/directus.js";
 import { levelInfo, alumniStats } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { makeTgLinkCode } from "../lib/tg-link.js";
+import { anonymizeAlumni } from "../lib/anonymize.js";
+import { audit } from "../lib/audit.js";
 import { env } from "../env.js";
 
 const di = directus;
@@ -87,6 +89,19 @@ export async function meRoutes(app: FastifyInstance) {
     if (body.contacts) patch.contacts_json = body.contacts;
     if (body.interests) patch.interests_json = sanitizeInterests(body.interests); // только из справочника
     if (Object.keys(patch).length) await di.request((updateItem as any)("alumni", a.id, patch));
+    return { ok: true };
+  });
+
+  // 152-ФЗ: самоудаление данных и выход из клуба (право на стирание/отзыв согласия).
+  // Требует явного подтверждения телом. Необратимо: профиль обезличивается, аккаунт
+  // входа удаляется, сессии гаснут. После — фронт чистит токен.
+  app.post("/me/delete", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const a = await resolveAlumni(req);
+    if (!a) return reply.code(401).send({ error: "Не авторизован" });
+    const body = z.object({ confirm: z.literal("УДАЛИТЬ", { errorMap: () => ({ message: "Введите УДАЛИТЬ для подтверждения" }) }) }).parse(req.body);
+    void body;
+    await anonymizeAlumni(a.id);
+    audit("alumni.self_delete", { actor: `alumni:${a.id}`, subject: `alumni:${a.id}`, req });
     return { ok: true };
   });
 }

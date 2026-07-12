@@ -11,6 +11,7 @@ import { audit } from "../lib/audit.js";
 import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
 import { sendEmail } from "../lib/notify.js";
 import { pushToAll, pushToAlumni } from "../lib/push.js";
+import { anonymizeAlumni } from "../lib/anonymize.js";
 import { readUsers } from "@directus/sdk";
 import { env } from "../env.js";
 
@@ -571,5 +572,17 @@ export async function adminRoutes(app: FastifyInstance) {
     }).parse(req.body);
     const res = await addPoints(id, { reason: body.reason, delta: body.delta, comment: body.comment ?? "Ручное начисление офисом" });
     return { ok: true, ...res };
+  });
+
+  // 152-ФЗ: офис исполняет запрос на удаление/стирание ПДн участника (без разработчика).
+  // Обезличивает профиль и заявки, удаляет аккаунт входа. Необратимо.
+  app.post("/admin/members/:id/anonymize", async (req, reply) => {
+    const ctx = requireAdmin(req, reply);
+    if (!ctx) return;
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const ok = await anonymizeAlumni(id);
+    if (!ok) return reply.code(404).send({ error: "Участник не найден" });
+    audit("admin.member.anonymize", { actor: `admin:${ctx.userId}`, subject: `alumni:${id}`, req });
+    return { ok: true };
   });
 }

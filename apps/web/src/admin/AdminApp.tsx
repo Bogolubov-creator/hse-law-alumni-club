@@ -330,9 +330,10 @@ function Members() {
 }
 
 function MemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
-  const { patchMember, addPoints, grantPodcastSub } = useAdminMutations();
+  const { patchMember, addPoints, grantPodcastSub, anonymizeMember } = useAdminMutations();
   const [discount, setDiscount] = useState(String(member.personal_discount));
   const [delta, setDelta] = useState("");
+  const [confirmDel, setConfirmDel] = useState(false);
   return (
     <Modal onClose={onClose} labelledBy="member-modal-title" maxWidth={460}>
       <div className="relative rounded-[22px] bg-white p-7 shadow-2xl" style={{ animation: "g-pop .26s cubic-bezier(.2,.8,.2,1)" }}>
@@ -371,6 +372,24 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
         <button disabled={grantPodcastSub.isPending} onClick={() => grantPodcastSub.mutate(member.id)} className="foc mt-2 w-full rounded-[10px] border-[1.5px] border-[#E5E7EB] py-2.5 text-sm font-semibold disabled:opacity-60">
           {grantPodcastSub.isPending ? "Продлеваем…" : "Продлить подписку на год (оплата по счёту)"}
         </button>
+
+        {/* 152-ФЗ: исполнение запроса на удаление/стирание ПДн (без разработчика) */}
+        <div className="mt-6 rounded-[12px] border border-[rgba(181,51,27,.3)] p-3">
+          <div className="font-mono text-[11px] uppercase text-karmin">Удаление данных (152-ФЗ)</div>
+          {anonymizeMember.isSuccess ? (
+            <p className="mt-2 font-mono text-[12px] text-[#1F8A5B]">Данные участника обезличены ✓</p>
+          ) : !confirmDel ? (
+            <button onClick={() => setConfirmDel(true)} className="foc mt-2 w-full rounded-[10px] border-[1.5px] border-karmin py-2.5 text-sm font-semibold text-karmin">Обезличить и закрыть доступ</button>
+          ) : (
+            <div className="mt-2">
+              <p className="font-mono text-[11px] leading-relaxed text-grafit-soft">Профиль, контакты, аватар и заявки будут обезличены, аккаунт входа удалён. Необратимо.</p>
+              <div className="mt-2 flex gap-2">
+                <button disabled={anonymizeMember.isPending} onClick={() => anonymizeMember.mutate(member.id)} className="foc flex-1 rounded-[10px] bg-karmin py-2.5 text-sm font-semibold text-white disabled:opacity-60">{anonymizeMember.isPending ? "Удаляем…" : "Подтвердить удаление"}</button>
+                <button onClick={() => setConfirmDel(false)} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] py-2.5 text-sm font-semibold">Отмена</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </Modal>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type RefObject, type Dispatch, type SetStateAction } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { LEVELS, LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
-import { apiPatch, type Achievement, type LedgerEntry } from "../lib/api.js";
+import { apiPatch, apiPost, type Achievement, type LedgerEntry } from "../lib/api.js";
 import { useMe, useLedger } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { LkShell } from "../components/LkShell.js";
@@ -271,7 +271,51 @@ function ProfileContent({
                 })}
               </div>
             </div>
+
+            <DeleteAccount />
     </>
+  );
+}
+
+/** 152-ФЗ: самоудаление аккаунта и обезличивание данных (с подтверждением «УДАЛИТЬ»). */
+function DeleteAccount() {
+  const t = useLkTokens();
+  const surface = lkSurface(t);
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const del = async () => {
+    setBusy(true);
+    try {
+      await apiPost("/me/delete", { confirm: "УДАЛИТЬ" }, undefined, localStorage.getItem(TOKEN_KEY) ?? undefined);
+      localStorage.removeItem(TOKEN_KEY);
+      toast("Аккаунт и данные удалены");
+      setTimeout(() => window.location.assign("/"), 900);
+    } catch (e) {
+      toast((e as Error).message, "err");
+      setBusy(false);
+    }
+  };
+  return (
+    <div style={{ marginTop: 44, ...surface, padding: "26px 28px", border: "1.5px solid rgba(181,51,27,.35)" }}>
+      <div style={{ ...disp, fontWeight: 600, fontSize: 18, color: "#B5331B" }}>Удаление аккаунта и данных</div>
+      <p style={{ color: t.muted, fontSize: 14, lineHeight: 1.5, margin: "10px 0 0", maxWidth: 620 }}>
+        По 152-ФЗ вы вправе отозвать согласие и потребовать удаления персональных данных. Профиль будет обезличен, контакты и аватар стёрты, вход в аккаунт закрыт. Действие необратимо.
+      </p>
+      {!open ? (
+        <button onClick={() => setOpen(true)} className="foc" style={{ marginTop: 16, fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "1.5px solid #B5331B", background: "transparent", color: "#B5331B", cursor: "pointer" }}>Удалить мой аккаунт</button>
+      ) : (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ ...mono, fontSize: 12, color: t.muted, marginBottom: 8 }}>Введите <b style={{ color: "#B5331B" }}>УДАЛИТЬ</b> для подтверждения:</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="УДАЛИТЬ" className="foc" style={{ ...mono, fontSize: 14, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text }} />
+            <button onClick={del} disabled={confirm !== "УДАЛИТЬ" || busy} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#B5331B", color: "#fff", cursor: confirm === "УДАЛИТЬ" && !busy ? "pointer" : "not-allowed", opacity: confirm === "УДАЛИТЬ" && !busy ? 1 : 0.5 }}>{busy ? "Удаляем…" : "Удалить навсегда"}</button>
+            <button onClick={() => { setOpen(false); setConfirm(""); }} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text, cursor: "pointer" }}>Отмена</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

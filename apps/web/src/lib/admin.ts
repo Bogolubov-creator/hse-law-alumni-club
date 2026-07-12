@@ -143,5 +143,6 @@ export function useAdminMutations() {
     patchEvent: useMutation({ mutationFn: (v: { id: string; status?: string; points?: number; title?: string; description?: string | null; starts_at?: string; location?: string | null; cover?: string | null; reg_url?: string | null; format?: string }) => req("PATCH", `/admin/events/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
     deleteEvent: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/events/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
     markAttended: useMutation({ mutationFn: (rsvpId: string) => req("POST", `/admin/events/rsvp/${rsvpId}/attend`), onSuccess: refetch }),
+    anonymizeMember: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/anonymize`), onSuccess: refetch }),
   };
 }
