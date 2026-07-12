@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type CSSProperties, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { LEVELS, loginResponseSchema } from "@club/shared";
+import { LEVELS, loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU } from "@club/shared";
 import { apiGet, apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders, useClassmates, useAddFriend, useLkEvents } from "../lib/queries.js";
 import type { Classmate, LkEvent } from "@club/shared";
@@ -10,7 +10,6 @@ import { LkShell } from "../components/LkShell.js";
 import { useToast } from "../components/Toast.js";
 import { useLkTokens, lkSurface } from "../lib/lk-theme.js";
 
-const ORDER_STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
 
 /**
  * Личный кабинет – порт «Дашборд ЛК.dc.html» (B), данные из /api/me.
@@ -302,10 +301,6 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
   );
 }
 
-const ORDER_EVENT_RU: Record<string, string> = {
-  in_progress: "взята в работу", confirmed: "подтверждена", done: "готова", canceled: "отменена",
-};
-
 /** Блок «События» вверху ЛК — то, что требует внимания или радует. */
 function Events({ token }: { token: string }) {
   const t = useLkTokens();
@@ -343,7 +338,7 @@ function Events({ token }: { token: string }) {
         return (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", flexWrap: "wrap" }}>
             <span style={{ fontSize: 18 }}>📋</span>
-            <span style={{ fontSize: 14.5 }}>Заявка <b style={mono}>{e.number}</b> {ORDER_EVENT_RU[e.status] ?? e.status}{e.paid && " · оплата прошла ✓"}</span>
+            <span style={{ fontSize: 14.5 }}>Заявка <b style={mono}>{e.number}</b> {ORDER_STATUS_VERB_RU[e.status] ?? e.status}{e.paid && " · оплата прошла ✓"}</span>
           </div>
         );
       case "podcast_expiring":

@@ -137,3 +137,18 @@ export function evaluateAchievements(stats: AchievementStats): string[] {
   }
   return earned;
 }
+
+/** Сводка уровня по баллам: ключ/название уровня, скидка, прогресс до следующего. */
+export function levelInfo(points: number, personalDiscount = 0) {
+  const level = computeLevel(points);
+  const idx = LEVELS.findIndex((l) => l.key === level.key);
+  const next = LEVELS[idx + 1] ?? null;
+  return {
+    points,
+    level: level.key,
+    level_title: level.title,
+    discount: computeMemberDiscount(points, personalDiscount),
+    next_level: next?.title ?? null,
+    to_next: next ? Math.max(0, next.min_points - points) : 0,
+  };
+}

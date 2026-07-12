@@ -1,6 +1,6 @@
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import {
-  computeLevel, computeMemberDiscount, evaluateAchievements, decayDelta,
+  computeLevel, evaluateAchievements, decayDelta,
   POINT_RULES, LEVELS, type PointReason,
 } from "@club/shared";
 import { directus } from "./directus.js";
@@ -97,19 +97,7 @@ export async function grantAchievements(alumniId: string) {
   }
 }
 
-export function levelInfo(points: number, personalDiscount = 0) {
-  const level = computeLevel(points);
-  const idx = LEVELS.findIndex((l) => l.key === level.key);
-  const next = LEVELS[idx + 1] ?? null;
-  return {
-    points,
-    level: level.key,
-    level_title: level.title,
-    discount: computeMemberDiscount(points, personalDiscount),
-    next_level: next?.title ?? null,
-    to_next: next ? Math.max(0, next.min_points - points) : 0,
-  };
-}
+export { levelInfo } from "@club/shared";
 
 /** Cron-decay: −15% за месяц неактивности; идемпотентно по месяцу. */
 export async function runDecay(now = new Date()) {

@@ -1,4 +1,4 @@
-import type { FastifyRequest } from "fastify";
+import type { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import { readItems, readUsers } from "@directus/sdk";
 import { env } from "../env.js";
@@ -118,4 +118,11 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   // Ревокация: сброс пароля поднимает token_version — старые JWT перестают действовать.
   if ((payload.ver ?? 0) !== (alumni.token_version ?? 0)) return null;
   return alumni;
+}
+
+/** Гард админ-маршрута: 401 если нет валидного admin-JWT, иначе контекст. */
+export function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
+  const ctx = resolveAdmin(req);
+  if (!ctx) { reply.code(401).send({ error: "Требуется вход администратора" }); return null; }
+  return ctx;
 }

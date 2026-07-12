@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
+import { formatRub } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
@@ -11,10 +12,7 @@ import { sendEmail } from "../lib/notify.js";
 
 const di = directus;
 
-function session(req: FastifyRequest): string | null {
-  const s = req.headers["x-cart-session"];
-  return typeof s === "string" && z.string().uuid().safeParse(s).success ? s : null;
-}
+
 
 /**
  * Оплата заявок через ЮKassa. Весь контур за фичефлагом paymentsEnabled():
@@ -117,7 +115,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
         void sendEmail(
           order.contact_email,
           `Оплата получена — заявка ${orderNumber}`,
-          `Здравствуйте, ${order.contact_fio}!\n\nОплата по заявке ${orderNumber} на сумму ${(order.total_estimate / 100).toLocaleString("ru-RU")} ₽ прошла успешно.` +
+          `Здравствуйте, ${order.contact_fio}!\n\nОплата по заявке ${orderNumber} на сумму ${formatRub(order.total_estimate)} ₽ прошла успешно.` +
             (isPodcast ? "\nПодписка на подкасты клуба активирована на год — приятного прослушивания!" : "\nЗаявка передана учебному офису в работу.") +
             "\n\n— Клуб выпускников факультета права НИУ ВШЭ",
         ).catch((e) => req.log.error({ err: e, orderNumber }, "payment email failed"));

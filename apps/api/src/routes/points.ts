@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { readItems } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";
-import { addPoints, levelInfo, runDecay } from "../lib/engine.js";
+import { addPoints, runDecay } from "../lib/engine.js";
 import { isServiceToken, resolveAlumni } from "../lib/auth.js";
 
 const pointsBody = z.object({
@@ -30,15 +30,6 @@ export async function pointsRoutes(app: FastifyInstance) {
   app.post("/decay/run", async (req, reply) => {
     if (!isServiceToken(req)) return reply.code(401).send({ error: "Требуется сервисный токен" });
     return runDecay();
-  });
-
-  // ЛК: уровень текущего выпускника (после верификации).
-  app.get("/me/level", async (req, reply) => {
-    const alumni = await resolveAlumni(req);
-    if (!alumni) return reply.code(401).send({ error: "Не авторизован" });
-    if (alumni.verification_status !== "verified")
-      return reply.code(403).send({ error: "ЛК активируется после верификации учебным офисом" });
-    return levelInfo(alumni.points_cached ?? 0, alumni.personal_discount ?? 0);
   });
 
   // ЛК: история баллов.

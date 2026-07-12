@@ -2,8 +2,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";
-import { slugifyRu } from "@club/shared";
-import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin } from "../lib/auth.js";
+import { slugifyRu, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU } from "@club/shared";
+import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin, requireAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { syncDpoCatalog } from "../lib/hse-sync.js";
 import { extendPodcastSub, subActive } from "./podcasts.js";
@@ -29,11 +29,7 @@ async function alumniEmail(alumniId: string): Promise<string | null> {
 const di = directus;
 const ADMIN_ROLES = ["editor", "admin", "Administrator"];
 
-function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
-  const ctx = resolveAdmin(req);
-  if (!ctx) { reply.code(401).send({ error: "Требуется вход администратора" }); return null; }
-  return ctx;
-}
+
 
 export async function adminRoutes(app: FastifyInstance) {
   app.post("/auth/admin-login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
@@ -123,21 +119,18 @@ export async function adminRoutes(app: FastifyInstance) {
     const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
     await di.request((updateItem as any)("orders", id, { status }));
     audit("order.status", { actor: `admin:${ctx.userId}`, subject: `order:${id}`, detail: { status }, req });
-    // Письмо клиенту о смене статуса (fire-and-forget).
+    // Уведомления клиенту (письмо + пуш) — один запрос заказа на оба.
+    const verb = ORDER_STATUS_VERB_RU[status] ?? status;
     void (async () => {
-      const rows = (await di.request(readItems("orders", { filter: { id: { _eq: id } }, limit: 1, fields: ["number", "contact_email", "contact_fio"] }))) as any[];
+      const rows = (await di.request(readItems("orders", { filter: { id: { _eq: id } }, limit: 1, fields: ["number", "contact_email", "contact_fio", "alumni_id"] }))) as any[];
       const o = rows[0];
-      if (!o?.contact_email || o.contact_email === "-") return;
-      const RU: Record<string, string> = { in_progress: "взята в работу", confirmed: "подтверждена", done: "выполнена", canceled: "отменена" };
-      await sendEmail(o.contact_email, `Заявка ${o.number}: ${RU[status] ?? status}`,
-        `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${RU[status] ?? status}.\nДетали — в личном кабинете клуба.\n\n— Клуб выпускников факультета права НИУ ВШЭ`);
-    })().catch((e) => req.log.error({ err: e }, "order status email failed"));
-    // Пуш владельцу заявки (если это участник клуба)
-    void (async () => {
-      const rows = (await di.request(readItems("orders", { filter: { id: { _eq: id } }, limit: 1, fields: ["number", "alumni_id"] }))) as any[];
-      const RU: Record<string, string> = { in_progress: "взята в работу", confirmed: "подтверждена", done: "выполнена", canceled: "отменена" };
-      if (rows[0]?.alumni_id) pushToAlumni(rows[0].alumni_id, { title: "Статус заявки", body: `Заявка ${rows[0].number} ${RU[status] ?? status}`, url: "/lk" });
-    })().catch(() => undefined);
+      if (!o) return;
+      if (o.contact_email && o.contact_email !== "-") {
+        await sendEmail(o.contact_email, `Заявка ${o.number}: ${verb}`,
+          `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${verb}.\nДетали — в личном кабинете клуба.\n\n— Клуб выпускников факультета права НИУ ВШЭ`);
+      }
+      if (o.alumni_id) pushToAlumni(o.alumni_id, { title: "Статус заявки", body: `Заявка ${o.number} ${verb}`, url: "/lk" });
+    })().catch((e) => req.log.error({ err: e }, "order status notify failed"));
     return { ok: true, status };
   });
 
@@ -391,7 +384,6 @@ export async function adminRoutes(app: FastifyInstance) {
     };
     const rub2 = (kop: number) => (kop / 100).toFixed(2).replace(".", ","); // Excel-число в ru-локали
     const TYPE_RU: Record<string, string> = { dpo: "ДПО", merch: "Мерч", mixed: "Смешанная", podcast: "Подписка на подкасты" };
-    const STATUS_RU: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Выполнена", canceled: "Отменена" };
 
     const header = ["Номер", "Дата", "Тип", "Клиент", "Телефон", "Email", "Получение", "Адрес", "Состав", "Сумма, ₽", "Скидка, %", "Итого, ₽", "Статус", "Оплата", "Комментарий"];
     const lines = orders.map((o) => [
@@ -402,7 +394,7 @@ export async function adminRoutes(app: FastifyInstance) {
       esc(o.fulfillment === "delivery" ? "Доставка" : "Самовывоз"), esc(o.address),
       esc((o.items_json ?? []).map((i: any) => `${i.title}${i.variant_sku ? ` (${i.variant_sku})` : ""} ×${i.qty}`).join("; ")),
       esc(rub2(o.subtotal ?? 0)), esc(o.member_discount ?? 0), esc(rub2(o.total_estimate ?? 0)),
-      esc(STATUS_RU[o.status] ?? o.status),
+      esc(ORDER_STATUS_RU[o.status] ?? o.status),
       esc(o.payment_status === "succeeded" ? "Оплачено" : o.payment_status === "canceled" ? "Отменена" : ""),
       esc(o.comment),
     ].join(";"));

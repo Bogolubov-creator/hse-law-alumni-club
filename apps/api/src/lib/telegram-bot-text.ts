@@ -1,17 +1,4 @@
-import { computeLevel, computeMemberDiscount, LEVELS } from "@club/shared";
-
-function levelInfo(points: number, personalDiscount = 0) {
-  const level = computeLevel(points);
-  const idx = LEVELS.findIndex((l) => l.key === level.key);
-  const next = LEVELS[idx + 1] ?? null;
-  return {
-    points,
-    level_title: level.title,
-    discount: computeMemberDiscount(points, personalDiscount),
-    next_level: next?.title ?? null,
-    to_next: next ? Math.max(0, next.min_points - points) : 0,
-  };
-}
+import { levelInfo } from "@club/shared";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

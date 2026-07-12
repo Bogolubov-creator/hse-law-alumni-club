@@ -2,7 +2,7 @@ import { useId, useState, useEffect, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
-import { computeLevel } from "@club/shared";
+import { computeLevel, ORDER_STATUS_RU } from "@club/shared";
 
 const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
@@ -20,7 +20,6 @@ import {
  * Контент (новости/программы/товары/блоки) редактируется в Directus Studio.
  */
 
-const ORDER_STATUS: Record<string, string> = { new: "Новая", in_progress: "В работе", confirmed: "Подтверждена", done: "Готово", canceled: "Отменена" };
 const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled"];
 const VERIF: Record<string, string> = { pending: "На проверке", verified: "Верифицирован", rejected: "Отклонён" };
 const LEVEL_RU: Record<string, string> = { graduate: "Выпускник", friend: "Друг клуба", expert: "Знаток", ambassador: "Амбассадор" };
@@ -153,7 +152,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
             <div key={o.id} className="flex items-center gap-3 border-t border-[#f0ece2] py-3 text-sm">
               <span className="font-mono text-[11px] text-grafit-soft">{o.number}</span>
               <span className="flex-1 truncate font-semibold">{o.contact_fio}</span>
-              <span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(o.status)}`}>{ORDER_STATUS[o.status]}</span>
+              <span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(o.status)}`}>{ORDER_STATUS_RU[o.status]}</span>
             </div>
           ))}
           {orders.data?.length === 0 && <p className="py-3 font-mono text-[12px] text-grafit-soft">Заявок пока нет.</p>}
@@ -258,7 +257,7 @@ function Orders() {
             <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{o.contact_phone}</span>
             <span className="font-mono text-[13px]">{rub(o.total_estimate)}</span>
             <select value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
-              {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS[s]}</option>)}
+              {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
             </select>
           </div>
           {/* Состав заявки — офис видит позиции без похода в Directus */}
@@ -833,14 +832,15 @@ function PagesAdmin() {
   const [history, setHistory] = useState<Record<string, string>>({});
   const [marquee, setMarquee] = useState("");
 
-  if (page.data && !loaded) {
+  useEffect(() => {
+    if (!page.data || loaded) return;
     const h = page.data.blocks.hero ?? {}, c = page.data.blocks.cta ?? {};
     setHero({ badge: h.badge ?? "", title_pre: h.title_pre ?? "", title_accent: h.title_accent ?? "", subtitle: h.subtitle ?? "", cta_primary: h.cta_primary ?? "", cta_secondary: h.cta_secondary ?? "" });
     setCta({ title: c.title ?? "", text: c.text ?? "", button: c.button ?? "" });
     setHistory({ history_eyebrow: h.history_eyebrow ?? "История клуба", history_title: h.history_title ?? "От первого выпуска – к сообществу", history_hint: h.history_hint ?? "↓ листайте – таймлайн движется вбок" });
     setMarquee((h.marquee?.length ? h.marquee : ["Выпуск ’24", "Выпуск ’25", "Менторы клуба", "Учебный офис", "Партнёры", "ДПО", "Мерч", "Нетворкинг"]).join(", "));
     setLoaded(true);
-  }
+  }, [page.data, loaded]);
 
   const hset = (k: string, v: string) => setHero((s) => ({ ...s, [k]: v }));
   const cset = (k: string, v: string) => setCta((s) => ({ ...s, [k]: v }));

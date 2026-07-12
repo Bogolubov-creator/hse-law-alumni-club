@@ -7,15 +7,12 @@ import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
 import { audit } from "../lib/audit.js";
-import { lookup } from "./cart.js";
+import { lookup, cartSession } from "./cart.js";
 
 const di = directus;
-const rub = (kop: number) => (kop / 100).toLocaleString("ru-RU");
 
-function session(req: FastifyRequest): string | null {
-  const s = req.headers["x-cart-session"];
-  return typeof s === "string" && z.string().uuid().safeParse(s).success ? s : null;
-}
+
+
 
 const createOrderBody = z.object({
   contact_fio: z.string().min(2).max(200),
@@ -33,7 +30,7 @@ export async function ordersRoutes(app: FastifyInstance) {
   // Оформление заявки. Жёсткий лимит: заявка триггерит уведомление офиса и
   // создание платежа ЮKassa — защищаем от флуда/DoS (аудит H1).
   app.post("/orders", { config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const token = session(req);
+    const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = createOrderBody.parse(req.body);
 

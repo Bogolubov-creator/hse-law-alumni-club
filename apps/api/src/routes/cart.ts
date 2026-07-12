@@ -6,7 +6,7 @@ import { directus } from "../lib/directus.js";
 
 const di = directus;
 
-function session(req: FastifyRequest): string | null {
+export function cartSession(req: FastifyRequest): string | null {
   const s = req.headers["x-cart-session"];
   return typeof s === "string" && z.string().uuid().safeParse(s).success ? s : null;
 }
@@ -32,14 +32,14 @@ export async function lookup(type: "dpo" | "merch", slug: string): Promise<{ tit
 
 export async function cartRoutes(app: FastifyInstance) {
   app.get("/cart", async (req, reply) => {
-    const token = session(req);
+    const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const cart = await loadCart(token);
     return summarizeCart(cart?.items ?? []);
   });
 
   app.post("/cart", { config: { rateLimit: { max: 40, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const token = session(req);
+    const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = cartItemSchema.parse(req.body);
     const info = await lookup(body.type, body.ref_id);
@@ -60,7 +60,7 @@ export async function cartRoutes(app: FastifyInstance) {
   });
 
   app.patch("/cart", async (req, reply) => {
-    const token = session(req);
+    const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = z.object({ ref_id: z.string(), variant_sku: z.string().nullish(), qty: z.number().int().min(0) }).parse(req.body);
     const cart = await loadCart(token);
@@ -70,7 +70,7 @@ export async function cartRoutes(app: FastifyInstance) {
   });
 
   app.delete("/cart", async (req, reply) => {
-    const token = session(req);
+    const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     await saveCart(token, []);
     return summarizeCart([]);

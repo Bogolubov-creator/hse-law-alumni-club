@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { formatRub } from "@club/shared";
 import { env } from "../env.js";
 
 // SMTP-транспорт создаётся один раз при наличии кредов (иначе письма в лог).
@@ -50,7 +51,7 @@ export interface OrderNotice {
   member_discount: number;
 }
 
-const rub = (kop: number) => (kop / 100).toLocaleString("ru-RU");
+
 
 /** Уведомление офиса о новой заявке. Telegram если есть токен, иначе лог + BLOCKED-пометка. */
 export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; ok: boolean; blocked?: boolean }> {
@@ -58,7 +59,7 @@ export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; o
     `🆕 Новая заявка ${o.number}\n` +
     `${o.contact_fio} · ${o.contact_phone} · ${o.contact_email}\n` +
     `${o.itemsSummary}\n` +
-    `Сумма (справочно): ${rub(o.total_estimate)} ₽ (скидка −${o.member_discount}%)`;
+    `Сумма (справочно): ${formatRub(o.total_estimate)} ₽ (скидка −${o.member_discount}%)`;
 
   const useTg = (env.OFFICE_NOTIFY_CHANNEL === "telegram" || env.OFFICE_NOTIFY_CHANNEL === "both")
     && env.OFFICE_TG_BOT_TOKEN && env.OFFICE_TG_CHAT_ID;
@@ -85,6 +86,6 @@ export async function confirmApplicant(o: OrderNotice): Promise<void> {
   await sendEmail(
     o.contact_email,
     `Заявка ${o.number} принята — Клуб выпускников факультета права`,
-    `Здравствуйте, ${o.contact_fio}!\n\nВаша заявка ${o.number} принята:\n${o.itemsSummary}\nСумма (справочно): ${rub(o.total_estimate)} ₽.\n\nМенеджер учебного офиса свяжется с вами для подтверждения деталей.\n\n— Клуб выпускников факультета права НИУ ВШЭ`,
+    `Здравствуйте, ${o.contact_fio}!\n\nВаша заявка ${o.number} принята:\n${o.itemsSummary}\nСумма (справочно): ${formatRub(o.total_estimate)} ₽.\n\nМенеджер учебного офиса свяжется с вами для подтверждения деталей.\n\n— Клуб выпускников факультета права НИУ ВШЭ`,
   );
 }
