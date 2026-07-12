@@ -92,6 +92,33 @@ export async function meRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // 152-ФЗ (ст. 14): право на доступ — выгрузка всех своих данных одним JSON.
+  app.get("/me/export", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const a = await resolveAlumni(req);
+    if (!a) return reply.code(401).send({ error: "Не авторизован" });
+    const [full, orders, ledger, friends, subs] = await Promise.all([
+      di.request((readItems as any)("alumni", { filter: { id: { _eq: a.id } }, limit: 1,
+        fields: ["fio", "cohort", "edu_level", "edu_program", "verification_status", "points_cached", "level_cached", "personal_discount", "interests_json", "contacts_json", "telegram_id", "referral_code", "consent_at", "consent_version", "joined_at"] })),
+      di.request((readItems as any)("orders", { filter: { alumni_id: { _eq: a.id } }, limit: -1, sort: ["-created_at"],
+        fields: ["number", "type", "status", "payment_status", "subtotal", "total_estimate", "items_json", "contact_fio", "contact_phone", "contact_email", "created_at"] })),
+      di.request((readItems as any)("points_ledger", { filter: { alumni_id: { _eq: a.id } }, limit: -1, sort: ["-created_at"],
+        fields: ["delta", "reason", "comment", "created_at"] })),
+      di.request((readItems as any)("alumni_friends", { filter: { _or: [{ alumni_id: { _eq: a.id } }, { friend_id: { _eq: a.id } }] }, limit: -1, fields: ["alumni_id", "friend_id", "status", "created_at"] })),
+      di.request((readItems as any)("push_subs", { filter: { alumni_id: { _eq: a.id } }, limit: -1, fields: ["endpoint", "created_at"] })),
+    ]) as [any[], any[], any[], any[], any[]];
+    audit("alumni.self_export", { actor: `alumni:${a.id}`, subject: `alumni:${a.id}`, req });
+    reply.header("content-type", "application/json; charset=utf-8");
+    reply.header("content-disposition", `attachment; filename="moi-dannye-kluba.json"`);
+    return {
+      exported_at: new Date().toISOString(),
+      profile: full[0] ?? null,
+      orders,
+      points_ledger: ledger,
+      friends,
+      push_subscriptions: subs,
+    };
+  });
+
   // 152-ФЗ: самоудаление данных и выход из клуба (право на стирание/отзыв согласия).
   // Требует явного подтверждения телом. Необратимо: профиль обезличивается, аккаунт
   // входа удаляется, сессии гаснут. После — фронт чистит токен.

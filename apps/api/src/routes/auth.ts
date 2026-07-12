@@ -12,6 +12,9 @@ import { audit } from "../lib/audit.js";
 import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
 import { sendEmail, notifyOfficeText } from "../lib/notify.js";
 
+// Версия политики обработки ПДн (дата редакции) — фиксируется как доказательство согласия.
+const PDN_POLICY_VERSION = "2026-07-02";
+
 export async function authRoutes(app: FastifyInstance) {
   // Вход через Telegram Mini App (initData). BLOCKED без TELEGRAM_BOT_TOKEN.
   app.post("/auth/telegram", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
@@ -106,10 +109,15 @@ export async function authRoutes(app: FastifyInstance) {
       points_cached: 0, level_cached: "graduate", personal_discount: 0,
       referral_code: `RC-${randomBytes(4).toString("hex")}`,
       referred_by: referredBy,
+      // 152-ФЗ: фиксируем факт согласия (доказательство) — когда и какая редакция политики.
+      consent_at: new Date().toISOString(),
+      consent_version: PDN_POLICY_VERSION,
     }));
 
     audit("register", { actor: `email:${email}`, detail: { cohort: b.cohort, edu_program: b.edu_program }, req });
-    await notifyOfficeText(`🎓 Заявка на вступление в клуб: ${b.fio} · выпуск ${b.cohort} · ОП «${b.edu_program}» · ${email}. Подтвердите в админ-панели.`);
+    // 152-ФЗ: не шлём ПДн заявителя в Telegram (зарубежный сервис). Офис смотрит анкету
+    // в очереди верификации админ-панели (РФ, под доступом).
+    await notifyOfficeText("🎓 Новая заявка на вступление в клуб — подтвердите в админ-панели (очередь верификации).");
     return { ok: true, pending: true };
   });
 

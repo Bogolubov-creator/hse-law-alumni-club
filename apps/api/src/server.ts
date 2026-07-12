@@ -24,6 +24,7 @@ import { registerBotCommands } from "./lib/telegram-bot.js";
 import { startTelegramPolling } from "./lib/telegram-polling.js";
 import { runDecay } from "./lib/engine.js";
 import { runEventReminders } from "./lib/event-reminders.js";
+import { runRetention } from "./lib/retention.js";
 import { initSentry, captureError } from "./lib/sentry.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
@@ -118,6 +119,13 @@ cron.schedule("0 10 * * *", () => {
   runEventReminders()
     .then((r) => { if (r.events) app.log.info(r, "event reminders sent"); })
     .catch((e) => app.log.error(e, "event reminders failed"));
+});
+
+// Ретенция ПДн (04:00): обезличить старые заявки, подчистить аудит (152-ФЗ).
+cron.schedule("0 4 * * *", () => {
+  runRetention()
+    .then((r) => { if (r.orders || r.audit) app.log.info(r, "retention applied"); })
+    .catch((e) => app.log.error(e, "retention failed"));
 });
 
 // Базовый health — для healthcheck'а docker и Caddy.

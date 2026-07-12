@@ -297,12 +297,32 @@ function DeleteAccount() {
       setBusy(false);
     }
   };
+  // 152-ФЗ (ст. 14): выгрузка копии своих данных одним JSON.
+  const exportData = async () => {
+    try {
+      const res = await fetch("/api/me/export", { headers: { authorization: `Bearer ${localStorage.getItem(TOKEN_KEY) ?? ""}` } });
+      if (!res.ok) throw new Error("Не удалось выгрузить данные");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "moi-dannye-kluba.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast("Данные выгружены ✓");
+    } catch (e) {
+      toast((e as Error).message, "err");
+    }
+  };
   return (
     <div style={{ marginTop: 44, ...surface, padding: "26px 28px", border: "1.5px solid rgba(181,51,27,.35)" }}>
       <div style={{ ...disp, fontWeight: 600, fontSize: 18, color: "#B5331B" }}>Удаление аккаунта и данных</div>
       <p style={{ color: t.muted, fontSize: 14, lineHeight: 1.5, margin: "10px 0 0", maxWidth: 620 }}>
-        По 152-ФЗ вы вправе отозвать согласие и потребовать удаления персональных данных. Профиль будет обезличен, контакты и аватар стёрты, вход в аккаунт закрыт. Действие необратимо.
+        По 152-ФЗ вы вправе получить копию своих данных, отозвать согласие и потребовать удаления персональных данных. Профиль будет обезличен, контакты и аватар стёрты, вход в аккаунт закрыт. Действие необратимо.
       </p>
+      <button onClick={exportData} className="foc" style={{ marginTop: 14, fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text, cursor: "pointer" }}>Скачать мои данные (JSON)</button>
       {!open ? (
         <button onClick={() => setOpen(true)} className="foc" style={{ marginTop: 16, fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "1.5px solid #B5331B", background: "transparent", color: "#B5331B", cursor: "pointer" }}>Удалить мой аккаунт</button>
       ) : (

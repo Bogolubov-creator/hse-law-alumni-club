@@ -33,6 +33,8 @@ const schema = z.object({
   VAPID_PUBLIC_KEY: z.string().default(""),
   VAPID_PRIVATE_KEY: z.string().default(""),
   SENTRY_DSN: z.string().default(""), // пусто = мониторинг ошибок выключен
+  ORDER_RETENTION_DAYS: z.coerce.number().int().positive().default(1095), // 3 года — срок хранения заявок (152-ФЗ)
+  AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(365),  // 1 год — срок хранения аудита
 });
 
 export const env = schema.parse(process.env);

@@ -202,6 +202,8 @@ await ensureField("alumni", "avatar", str()); // uuid файла в Directus (р
 await ensureField("alumni", "referral_code", str(true));
 await ensureField("alumni", "telegram_id", str(true)); // связка с Telegram-ботом (/points, /calendar)
 await ensureField("alumni", "token_version", int(0)); // ревокация JWT: +1 при сбросе пароля
+await ensureField("alumni", "consent_at", ts());        // 152-ФЗ: когда дано согласие на ПДн
+await ensureField("alumni", "consent_version", str()); // ... и версия политики (доказательство)
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
 await ensureField("alumni", "last_activity_at", ts());
