@@ -27,7 +27,10 @@ import { runEventReminders } from "./lib/event-reminders.js";
 import { initSentry, captureError } from "./lib/sentry.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
-const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 256 * 1024 });
+// trustProxy: 1 — доверяем ТОЛЬКО одному прокси-хопу (Caddy). true доверял бы всей
+// цепочке X-Forwarded-For, и клиент мог бы подделать req.ip (обход rate-limit,
+// IP-allowlist вебхука ЮKassa, отравление IP в аудите). Число хопов = 1 (Caddy → api).
+const app = Fastify({ logger: true, trustProxy: 1, bodyLimit: 256 * 1024 });
 
 // Валидационные ошибки zod → 400 (не 500).
 await initSentry();

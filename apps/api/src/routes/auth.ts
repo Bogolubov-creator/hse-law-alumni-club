@@ -31,7 +31,11 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Логин выпускника: креды проверяет Directus, сессию (JWT с alumni_id) выдаёт apps/api.
   app.post("/auth/login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
+    const parsed = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
+    // Регистрация/восстановление хранят email в нижнем регистре — логин должен
+    // нормализовать так же, иначе «Ivan@Mail.ru» не найдёт «ivan@mail.ru» → ложное 401.
+    const email = parsed.email.toLowerCase().trim();
+    const { password } = parsed;
     // Блок по аккаунту (не только по IP): распределённый перебор с многих адресов.
     if (loginLocked(email)) {
       audit("login.locked", { actor: `email:${email}`, req });

@@ -489,15 +489,21 @@ const svc = await ensureUser("service@club.example.com", {
 await client.request(updateUser(svc.id, { token: SERVICE_TOKEN, role: adminRole?.id ?? undefined } as any));
 log("  сервисный токен установлен");
 
-// Тестовые аккаунты офиса и выпускника
+// Демо-аккаунты (офис + тестовый выпускник) — ТОЛЬКО при SEED_DEMO=true.
+// В проде НЕ создаём: иначе editor со слабым паролем из .env.example = бэкдор.
+// Офис в проде входит в админку под аккаунтом Directus Administrator.
+const SEED_DEMO = process.env.SEED_DEMO === "true";
 const editorRole = roles.find((x: any) => x.name === "editor");
 const alumniRole = roles.find((x: any) => x.name === "alumni");
-await ensureUser(req("TEST_EDITOR_EMAIL"), {
-  first_name: "Тест", last_name: "Офис", password: req("TEST_EDITOR_PASSWORD"), role: editorRole?.id ?? null,
-});
-const testAlumniUser = await ensureUser(req("TEST_ALUMNI_EMAIL"), {
-  first_name: "Сергей", last_name: "Кондратьев", password: req("TEST_ALUMNI_PASSWORD"), role: alumniRole?.id ?? null,
-});
+let testAlumniUser: { id: string; created: boolean } | null = null;
+if (SEED_DEMO) {
+  await ensureUser(req("TEST_EDITOR_EMAIL"), {
+    first_name: "Тест", last_name: "Офис", password: req("TEST_EDITOR_PASSWORD"), role: editorRole?.id ?? null,
+  });
+  testAlumniUser = await ensureUser(req("TEST_ALUMNI_EMAIL"), {
+    first_name: "Сергей", last_name: "Кондратьев", password: req("TEST_ALUMNI_PASSWORD"), role: alumniRole?.id ?? null,
+  });
+}
 
 // ──────────────────────────── 5. сиды ────────────────────────────
 log("== Сиды ==");
@@ -506,6 +512,8 @@ await ensureSeed("point_rules", "reason", POINT_RULES.map((p) => ({ ...p, active
 await ensureSeed("achievements", "key", ACHIEVEMENTS.map((a) => ({
   key: a.key, title: a.title, description: a.description, rule_json: a.rule_json, sort: a.sort, icon: a.icon, kind: a.kind,
 })));
+// Демо-контент (программы/новости/события/подкасты/мерч/профиль/однокурсники) — только демо.
+if (SEED_DEMO) {
 await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "published" })));
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
 // История главной — стартовый таймлайн (дальше редактируется в админ-панели)
@@ -531,13 +539,13 @@ await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "
 
 // Профиль для тестового выпускника (если ещё нет)
 const alumniRows = (await client.request(
-  (readItems as any)("alumni", { filter: { user_id: { _eq: testAlumniUser.id } }, limit: 1 }),
+  (readItems as any)("alumni", { filter: { user_id: { _eq: testAlumniUser!.id } }, limit: 1 }),
 )) as any[];
 if (!alumniRows.length) {
   await client.request(
     (createItems as any)("alumni", [
       {
-        user_id: testAlumniUser.id,
+        user_id: testAlumniUser!.id,
         fio: "Сергей Кондратьев",
         cohort: "2026",
         edu_program: "Публичное право",
@@ -568,5 +576,6 @@ for (const c of CLASSMATES) {
   }
 }
 
+}
 log("\n✓ Bootstrap завершён. Повторный запуск идемпотентен.");
 process.exit(0);

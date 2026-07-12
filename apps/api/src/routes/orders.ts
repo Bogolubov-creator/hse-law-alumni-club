@@ -46,24 +46,27 @@ export async function ordersRoutes(app: FastifyInstance) {
     // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает — иначе
     // заказ уходит по устаревшей цене на то, что больше не продаётся.
     const priceMap = new Map<string, { title: string; price: number }>();
-    const unavailable: string[] = [];
+    const unavailableTitles = new Set<string>();
     for (const i of items) {
       const key = `${i.type}:${i.ref_id}`;
-      if (priceMap.has(key) || unavailable.includes(key)) continue;
+      if (priceMap.has(key)) continue;
       const info = await lookup(i.type, i.ref_id);
       if (!info || (i.type === "dpo" && (info.source_url || info.enrollment === "nonactual"))) {
-        unavailable.push(key);
+        unavailableTitles.add(i.title || i.ref_id);
       } else {
         priceMap.set(key, info);
       }
     }
-    const available = items.filter((i) => priceMap.has(`${i.type}:${i.ref_id}`));
-    if (!available.length) {
-      // Всё в корзине стало недоступно — чистим и просим собрать заново.
-      if (cartRows[0]) await di.request((updateItem as any)("carts", cartRows[0].id, { items_json: [] })).catch(() => undefined);
-      return reply.code(409).send({ error: "Позиции в корзине больше недоступны — обновите каталог и соберите заказ заново" });
+    // Ни одна позиция молча не выкидывается: если что-то стало недоступным (снято
+    // с публикации, удалено, ДПО ушла на маркетплейс или набор закрыт) — заявку не
+    // создаём и явно сообщаем пользователю, что убрать. Иначе «заказал, а его нет».
+    if (unavailableTitles.size) {
+      return reply.code(409).send({
+        error: `Эти позиции больше недоступны: ${[...unavailableTitles].join(", ")}. Удалите их из корзины и оформите заказ заново.`,
+        unavailable: [...unavailableTitles],
+      });
     }
-    const priced = repriceItems(available, (t, r) => priceMap.get(`${t}:${r}`));
+    const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
 
     const alumni = await resolveAlumni(req);
     const discount = effectiveDiscount(
