@@ -13,6 +13,7 @@ import { Join, Forgot, Reset } from "./pages/JoinAuth.js";
 import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
 import InstallPrompt from "./components/InstallPrompt.js";
+import { VisionPanel } from "./components/Vision.js";
 
 // Приватные/тяжёлые разделы — отдельными чанками: не грузятся публичному посетителю
 // и не раздувают стартовый бандл (важно для LCP публичных страниц и SEO).
@@ -31,6 +32,7 @@ export default function App() {
   }, [navigate]);
   return (
     <>
+      <VisionPanel />
       <Suspense fallback={<div style={{ minHeight: "50vh" }} />}>
         <Routes>
           <Route path="/" element={<Home />} />

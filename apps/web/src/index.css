@@ -75,3 +75,39 @@ button, a, input, select, textarea { touch-action: manipulation; } /* без 300
 @media (display-mode: standalone) {
   html { overscroll-behavior-y: none; }
 }
+
+/* ─────────────── Версия для слабовидящих (ГОСТ Р 52872) ───────────────
+   Агрессивное переопределение: заменяем дизайн простой высококонтрастной
+   раскладкой. Масштаб — через zoom, цвета — через переменные схемы. */
+html.vis { zoom: var(--vis-zoom, 1); }
+html[data-vis-scheme="bw"] { --vis-bg: #ffffff; --vis-fg: #000000; --vis-link: #0000cc; }
+html[data-vis-scheme="wb"] { --vis-bg: #000000; --vis-fg: #ffffff; --vis-link: #74c0ff; }
+html[data-vis-scheme="bb"] { --vis-bg: #f2e9c9; --vis-fg: #0a2a66; --vis-link: #0a2a66; }
+
+html.vis, html.vis body, html.vis #root { background: var(--vis-bg) !important; color: var(--vis-fg) !important; }
+html.vis *:not(svg):not(path):not(.vis-active) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--vis-fg) !important;
+  border-color: var(--vis-fg) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html.vis a, html.vis a * { color: var(--vis-link) !important; text-decoration: underline !important; }
+html.vis button, html.vis input, html.vis select, html.vis textarea,
+html.vis .vis-btn {
+  background: var(--vis-bg) !important;
+  border: 2px solid var(--vis-fg) !important;
+  color: var(--vis-fg) !important;
+}
+/* Активная опция панели — инверсия (специфичнее универсального правила). */
+html.vis .vis-btn.vis-active { background: var(--vis-fg) !important; color: var(--vis-bg) !important; }
+/* Шапка/панель не должны быть прозрачными (иначе текст наезжает при скролле). */
+html.vis header, html.vis .vis-bar { background: var(--vis-bg) !important; border-bottom: 2px solid var(--vis-fg) !important; }
+.vis-bar { position: sticky; top: 0; z-index: 9999; font-size: 16px; }
+/* Изображения: серым в обычном режиме версии; полностью скрыть по кнопке. */
+html.vis img, html.vis video { filter: grayscale(1); }
+html.vis-noimg img, html.vis-noimg video, html.vis-noimg [style*="url("] { display: none !important; }
+/* Шрифт с засечками / межбуквенный интервал. */
+html.vis-serif, html.vis-serif *:not(svg) { font-family: Georgia, "Times New Roman", serif !important; }
+html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.14em !important; line-height: 1.8 !important; }

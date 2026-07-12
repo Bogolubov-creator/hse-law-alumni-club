@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useCart, token } from "../lib/cart.js";
+import { VisionToggle } from "./Vision.js";
 
 const NAV = [
   { to: "/dpo", label: "ДПО" },
@@ -31,6 +32,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
           </Link>
           {/* Десктоп: прежняя горизонтальная навигация */}
           <nav className="desk-only flex flex-wrap items-center justify-end gap-1.5 text-[14px]">
+            <VisionToggle compact />
             {NAV.map((n) => <Link key={n.to} to={n.to} className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{n.label}</Link>)}
             <Link to="/lk" className="foc shop-nav rounded-[10px] px-3 py-2 font-medium">{authed ? "Личный кабинет" : "Войти"}</Link>
             {!authed && (
@@ -42,6 +44,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
           </nav>
           {/* Телефон: корзина + бургер */}
           <div className="mob-only items-center gap-2">
+            <VisionToggle compact />
             <Link to="/cart" aria-label="Корзина" className="foc relative rounded-[11px] bg-grafit px-3.5 py-2.5 font-semibold text-kost">
               🛒{count > 0 && <span className="absolute -right-1.5 -top-1.5 rounded-full bg-ohra px-1.5 font-mono text-[11px] text-kost">{count}</span>}
             </Link>

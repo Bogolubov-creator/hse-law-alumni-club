@@ -5,6 +5,7 @@ import { useNewsList, usePage, useTimeline, formatNewsDate } from "../lib/querie
 import { apiGet } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
+import { VisionToggle } from "../components/Vision.js";
 
 /**
  * Главная – порт «Главная.dc.html» (Claude Design) в React.
@@ -235,6 +236,7 @@ export default function Home() {
             </div>
           </a>
           <nav className="desk-only" style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            <VisionToggle compact />
             <a href="#istoriya" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>История</a>
             <a href="#vitriny" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>Витрины</a>
             <Link to="/events" className="foc nav-link" style={{ textDecoration: "none", color: "#14181F", fontWeight: 500, fontSize: 15 }}>События</Link>
