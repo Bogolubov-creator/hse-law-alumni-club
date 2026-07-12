@@ -44,6 +44,21 @@ export function pushToAlumni(alumniId: string, payload: PushPayload): void {
   })().catch((e) => console.error("[push] alumni failed:", (e as Error).message));
 }
 
+/**
+ * Пуш пачке участников с ОДНИМ payload (напоминания о событии): все подписки —
+ * одним запросом (filter alumni_id _in, индекс), без N+1 по каждому выпускнику.
+ * Возвращает число устройств, которым отправлено (крону нужно дождаться).
+ */
+export async function pushToAlumniMany(alumniIds: string[], payload: PushPayload): Promise<number> {
+  if (!enabled || !alumniIds.length) return 0;
+  const uniq = [...new Set(alumniIds)];
+  const subs = (await directus.request((readItems as any)("push_subs", {
+    filter: { alumni_id: { _in: uniq } }, limit: -1, fields: ["id", "endpoint", "keys"],
+  }))) as any[];
+  if (subs.length) await sendToSubs(subs, payload);
+  return subs.length;
+}
+
 /** Пуш всем подписанным устройствам (анонсы: событие, подкаст). Fire-and-forget. */
 export function pushToAll(payload: PushPayload): void {
   if (!enabled) return;

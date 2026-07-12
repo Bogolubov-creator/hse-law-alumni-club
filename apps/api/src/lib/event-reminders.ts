@@ -1,6 +1,6 @@
 import { readItems, updateItem } from "@directus/sdk";
 import { directus } from "./directus.js";
-import { pushToAlumni } from "./push.js";
+import { pushToAlumniMany } from "./push.js";
 
 const di = directus;
 
@@ -29,14 +29,12 @@ export async function runEventReminders(): Promise<{ events: number; pushes: num
     }))) as { alumni_id: string }[];
     const when = new Date(ev.starts_at).toLocaleString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Moscow" });
     const place = ev.format === "online" ? "онлайн" : ev.location ?? "";
-    for (const r of rsvps) {
-      pushToAlumni(r.alumni_id, {
-        title: "Завтра событие клуба 📅",
-        body: `${ev.title} — в ${when}${place ? `, ${place}` : ""}`,
-        url: "/events",
-      });
-      pushes++;
-    }
+    // Подписки всех записавшихся — одним запросом (без N+1 по каждому выпускнику).
+    pushes += await pushToAlumniMany(rsvps.map((r) => r.alumni_id), {
+      title: "Завтра событие клуба 📅",
+      body: `${ev.title} — в ${when}${place ? `, ${place}` : ""}`,
+      url: "/events",
+    });
     await di.request((updateItem as any)("events", ev.id, { reminder_sent: true }));
   }
   return { events: due.length, pushes };
