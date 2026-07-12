@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 const BASE = "Клуб выпускников факультета права НИУ ВШЭ";
+const BASE_DESC = "Клуб выпускников факультета права НИУ ВШЭ: программы ДПО со скидкой выпускника, мерч, подкасты и сообщество.";
 
 function upsertMeta(key: "name" | "property", val: string, content: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${key}="${val}"]`);
@@ -40,10 +41,11 @@ export function useHead(o: HeadOptions): void {
   useEffect(() => {
     document.title = title ? `${title} — ${BASE}` : BASE;
     upsertMeta("property", "og:title", title ?? BASE);
-    if (description) {
-      upsertMeta("name", "description", description);
-      upsertMeta("property", "og:description", description);
-    }
+    // Описание выставляем ВСЕГДА (дефолт из BASE_DESC), иначе маршрут без своего
+    // description унаследует чужое от предыдущей страницы (SPA не перезагружает head).
+    const desc = description || BASE_DESC;
+    upsertMeta("name", "description", desc);
+    upsertMeta("property", "og:description", desc);
     const url = canonical ?? window.location.origin + window.location.pathname;
     upsertCanonical(url);
     upsertMeta("property", "og:url", url);

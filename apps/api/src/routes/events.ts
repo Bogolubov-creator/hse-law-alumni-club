@@ -6,7 +6,7 @@ import { env } from "../env.js";
 import { resolveAlumni, requireAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { audit } from "../lib/audit.js";
-import { count } from "../lib/agg.js";
+import { count, groupCount } from "../lib/agg.js";
 import { pushToAll } from "../lib/push.js";
 import { announceEventByEmail } from "../lib/event-announce.js";
 
@@ -41,19 +41,21 @@ export async function eventsRoutes(app: FastifyInstance) {
       fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"],
     }))) as any[];
 
-    // Счётчик «пойдут» + мой RSVP — только по показанным событиям (индекс event_id),
-    // а не по всей таблице RSVP: под масштаб критично для этого публичного пути.
+    // «Пойдут» — агрегатный count по показанным событиям (строк = число событий,
+    // не число RSVP): под масштаб не читаем все RSVP на каждый анонимный заход.
     const eventIds = rows.map((e) => e.id);
-    const rsvps = eventIds.length
-      ? (await di.request((readItems as any)("event_rsvps", {
-          filter: { event_id: { _in: eventIds } }, limit: -1, fields: ["event_id", "alumni_id", "attended"],
-        }))) as { event_id: string; alumni_id: string; attended: boolean }[]
-      : [];
     const going = new Map<string, number>();
     const mine = new Map<string, { attended: boolean }>();
-    for (const r of rsvps) {
-      going.set(r.event_id, (going.get(r.event_id) ?? 0) + 1);
-      if (alumni && r.alumni_id === alumni.id) mine.set(r.event_id, { attended: r.attended });
+    if (eventIds.length) {
+      const groups = await groupCount("event_rsvps", ["event_id"], { event_id: { _in: eventIds } });
+      for (const g of groups) going.set(g.event_id as string, g.count);
+      // Мой RSVP — отдельный маленький запрос только для авторизованного участника.
+      if (alumni) {
+        const my = (await di.request((readItems as any)("event_rsvps", {
+          filter: { event_id: { _in: eventIds }, alumni_id: { _eq: alumni.id } }, limit: -1, fields: ["event_id", "attended"],
+        }))) as { event_id: string; attended: boolean }[];
+        for (const r of my) mine.set(r.event_id, { attended: r.attended });
+      }
     }
     return rows.map((e) => ({
       ...e,

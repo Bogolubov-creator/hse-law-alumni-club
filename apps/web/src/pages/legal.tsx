@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import SiteShell from "../components/SiteShell.js";
+import { useHead } from "../lib/title.js";
 
 /**
  * Юридические страницы (152-ФЗ): политика обработки ПДн, политика
@@ -24,6 +25,8 @@ export const OWNER = {
 
 // Один общий каркас юридической страницы: читаемый текст ≥ 14px (норма — не менее 12px).
 function LegalShell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
+  // Свой title/description/canonical (иначе canonical «залипнет» на главной из index.html).
+  useHead({ title, description: `${title} — Клуб выпускников факультета права НИУ ВШЭ.` });
   return (
     <SiteShell>
       <main className="mx-auto max-w-[820px] px-7 py-12 text-[15px] leading-relaxed">

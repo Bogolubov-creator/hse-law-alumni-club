@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
+import { useHead } from "../lib/title.js";
 
-// Заглушка для ещё не реализованных экранов (Фазы 2–3).
+// Заглушка для ненайденных/будущих экранов. noindex: soft-404 не должен индексироваться
+// (SPA отдаёт index.html с HTTP 200, поэтому закрываем на уровне meta для Googlebot).
 export default function Stub({ title }: { title: string }) {
+  useHead({ title, noindex: true });
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-start justify-center px-6">
       <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Клуб выпускников факультета права Вышки</p>

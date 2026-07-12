@@ -100,14 +100,16 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (!order) return { ok: true };
 
     if (verified.status === "succeeded" && order.payment_status !== "succeeded") {
+      // Подписку продлеваем ДО отметки succeeded: если пометить оплату раньше и
+      // продление упадёт, ретрай вебхука отсечётся по payment_status — подписка не
+      // выдана при списанных деньгах. Сбой продления здесь → 500 → ЮKassa повторит.
+      if (order.type === "podcast" && order.alumni_id) {
+        await extendPodcastSub(order.alumni_id, 12);
+      }
       await di.request((updateItem as any)("orders", order.id, {
         payment_id: verified.id, payment_status: "succeeded", paid_at: new Date().toISOString(),
         status: order.status === "new" ? "confirmed" : order.status, // оплаченная заявка минует ручное подтверждение
       }));
-      // Оплата подписки на подкасты → сразу продлеваем на год.
-      if (order.type === "podcast" && order.alumni_id) {
-        await extendPodcastSub(order.alumni_id, 12).catch((e) => req.log.error({ err: e, orderNumber }, "podcast sub extend failed"));
-      }
       audit("payment.succeeded", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, amount: verified.amount }, req });
       // Письмо об успешной оплате (fire-and-forget).
       if (order.contact_email && order.contact_email !== "-") {

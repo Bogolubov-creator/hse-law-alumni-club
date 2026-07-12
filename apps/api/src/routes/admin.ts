@@ -14,7 +14,7 @@ import { pushToAll, pushToAlumni } from "../lib/push.js";
 import { anonymizeAlumni } from "../lib/anonymize.js";
 import { readUsers } from "@directus/sdk";
 import { env } from "../env.js";
-import { count, sum } from "../lib/agg.js";
+import { count, sum, groupCount } from "../lib/agg.js";
 
 /** E-mail выпускника по alumni_id (через привязанный аккаунт). */
 async function alumniEmail(alumniId: string): Promise<string | null> {
@@ -34,7 +34,11 @@ const ADMIN_ROLES = ["editor", "admin", "Administrator"];
 
 export async function adminRoutes(app: FastifyInstance) {
   app.post("/auth/admin-login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
+    const parsed = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
+    // Email в нижний регистр (как register/forgot/login): findUserWithRole ищет _eq,
+    // иначе «Office@Mail.ru» → user не найден → ложное 403 для валидного офиса.
+    const email = parsed.email.toLowerCase().trim();
+    const { password } = parsed;
     if (loginLocked(email)) {
       audit("admin.login.locked", { actor: `email:${email}`, req });
       return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте через 15 минут" });
@@ -157,25 +161,37 @@ export async function adminRoutes(app: FastifyInstance) {
     const filter = and.length ? { _and: and } : undefined;
     const listOpts = filter ? { filter } : {};
 
-    const [pageRows, idRows, allLite, links] = await Promise.all([
-      di.request((readItems as any)("alumni", {
-        ...listOpts, sort: ["-points_cached"], limit: qp.limit, offset: (qp.page - 1) * qp.limit,
-        fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at"],
-      })),
-      di.request((readItems as any)("alumni", { ...listOpts, limit: -1, fields: ["id"] })),   // total по фильтру
-      di.request((readItems as any)("alumni", { limit: -1, fields: ["fio", "cohort"] })),      // лёгкий скан для флага дублей
-      di.request((readItems as any)("alumni_friends", { filter: { status: { _eq: "accepted" } }, limit: -1, fields: ["alumni_id", "friend_id"] })),
-    ]) as [any[], any[], any[], any[]];
+    // Страница + total (агрегат count, не скан). Дубли и друзья считаем только по
+    // показанным участникам — без полного скана alumni на каждый заход (масштаб).
+    const pageRows = (await di.request((readItems as any)("alumni", {
+      ...listOpts, sort: ["-points_cached", "id"], limit: qp.limit, offset: (qp.page - 1) * qp.limit,
+      fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at"],
+    }))) as any[];
+    const pageIds = pageRows.map((m) => m.id);
+    const pageFios = [...new Set(pageRows.map((m) => m.fio).filter(Boolean))];
+
+    const [total, links, dupGroups] = await Promise.all([
+      count("alumni", filter),
+      pageIds.length
+        ? di.request((readItems as any)("alumni_friends", {
+            filter: { _and: [{ status: { _eq: "accepted" } }, { _or: [{ alumni_id: { _in: pageIds } }, { friend_id: { _in: pageIds } }] }] },
+            limit: -1, fields: ["alumni_id", "friend_id"],
+          }))
+        : Promise.resolve([]),
+      // Возможные дубли: одинаковые ФИО+выпуск среди показанных, обезличенных исключаем.
+      pageFios.length
+        ? groupCount("alumni", ["fio", "cohort"], { _and: [{ fio: { _in: pageFios } }, { status: { _neq: "alumni_left" } }] })
+        : Promise.resolve([]),
+    ]) as [number, any[], Array<Record<string, unknown> & { count: number }>];
 
     const friendsOf = new Map<string, number>();
     for (const l of links) {
       friendsOf.set(l.alumni_id, (friendsOf.get(l.alumni_id) ?? 0) + 1);
       friendsOf.set(l.friend_id, (friendsOf.get(l.friend_id) ?? 0) + 1);
     }
-    // Флаг возможных дублей: одинаковые ФИО + год выпуска (офис распознаёт вручную).
     const dupKey = (fio: string | null, cohort: string | null) => `${(fio ?? "").trim().toLowerCase()}|${cohort ?? ""}`;
     const dupCount = new Map<string, number>();
-    for (const a of allLite) { const k = dupKey(a.fio, a.cohort); dupCount.set(k, (dupCount.get(k) ?? 0) + 1); }
+    for (const g of dupGroups) { const k = dupKey(g.fio as string, g.cohort as string); dupCount.set(k, (dupCount.get(k) ?? 0) + g.count); }
 
     const userIds = pageRows.map((m) => m.user_id).filter(Boolean);
     const emails = new Map<string, string>();
@@ -191,7 +207,7 @@ export async function adminRoutes(app: FastifyInstance) {
         podcast_active: subActive(m.podcast_sub_until),
         duplicate: (dupCount.get(dupKey(m.fio, m.cohort)) ?? 0) > 1,
       })),
-      total: idRows.length,
+      total,
       page: qp.page,
       page_size: qp.limit,
     };
