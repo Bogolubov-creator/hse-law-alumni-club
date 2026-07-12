@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, useEffect, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
@@ -115,9 +115,9 @@ function Card({ children }: { children: React.ReactNode }) {
 function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const ov = useOverview();
   const orders = useAdminOrders();
-  const members = useMembers();
+  const members = useMembers({ status: "pending", limit: 100 });
   const { patchMember } = useAdminMutations();
-  const pending = (members.data ?? []).filter((m) => m.verification_status === "pending");
+  const pending = members.data?.items ?? [];
   const d = ov.data;
   // Вся статистика сайта — одним экраном.
   const stats = [
@@ -278,21 +278,29 @@ function Orders() {
 }
 
 function Members() {
-  const members = useMembers();
   const [sel, setSel] = useState<Member | null>(null);
+  const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [vf, setVf] = useState<string>("all");
-  const all = members.data ?? [];
-  const pendingCount = all.filter((m) => m.verification_status === "pending").length;
-  const list = all
-    .filter((m) => vf === "all" || m.verification_status === vf)
-    .filter((m) => {
-      if (!q.trim()) return true;
-      const hay = `${m.fio ?? ""} ${m.cohort ?? ""} ${m.email ?? ""} ${VERIF[m.verification_status] ?? ""}`.toLowerCase();
-      return hay.includes(q.trim().toLowerCase());
-    })
-    // Новые заявки на вступление — всегда сверху.
-    .sort((a, b) => (a.verification_status === "pending" ? 0 : 1) - (b.verification_status === "pending" ? 0 : 1));
+  const [page, setPage] = useState(1);
+  const pendingCount = useOverview().data?.pending_verifications ?? 0;
+
+  // Серверный поиск с дебаунсом (не запрос на каждую клавишу).
+  useEffect(() => {
+    const t = setTimeout(() => { setQ(qInput.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [qInput]);
+
+  const membersQ = useMembers({ q: q || undefined, status: vf === "all" ? undefined : vf, page, limit: 50 });
+  const data = membersQ.data;
+  const list = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pageSize = data?.page_size ?? 50;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+  const setFilter = (key: string) => { setVf(key); setPage(1); };
+
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -302,10 +310,10 @@ function Members() {
           { key: "verified", label: "Подтверждённые" },
           { key: "rejected", label: "Отклонённые" },
         ].map((f) => (
-          <button key={f.key} onClick={() => setVf(f.key)} className={`foc rounded-full px-3.5 py-2 text-[13px] font-semibold ${vf === f.key ? "bg-grafit text-kost" : f.key === "pending" && pendingCount ? "border border-ohra bg-[rgba(236,90,19,.1)] text-ohra-deep" : "border border-[#E5E7EB] bg-white"}`}>{f.label}</button>
+          <button key={f.key} onClick={() => setFilter(f.key)} className={`foc rounded-full px-3.5 py-2 text-[13px] font-semibold ${vf === f.key ? "bg-grafit text-kost" : f.key === "pending" && pendingCount ? "border border-ohra bg-[rgba(236,90,19,.1)] text-ohra-deep" : "border border-[#E5E7EB] bg-white"}`}>{f.label}</button>
         ))}
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: ФИО, почта, год…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
-        {q && <span className="font-mono text-[12px] text-grafit-soft">найдено: {list.length}</span>}
+        <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="Поиск: ФИО, год, программа…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
+        <span className="font-mono text-[12px] text-grafit-soft">всего: {total}</span>
       </div>
       <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
         <div className="grid grid-cols-[1fr_80px_120px_80px_80px_80px_90px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
@@ -313,7 +321,10 @@ function Members() {
         </div>
         {list.map((m) => (
           <button key={m.id} onClick={() => setSel(m)} className="arow foc grid w-full grid-cols-[1fr_80px_120px_80px_80px_80px_90px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-left text-sm">
-            <span className="font-semibold">{m.fio}</span>
+            <span className="flex items-center gap-2 font-semibold">
+              {m.fio}
+              {m.duplicate && <span title="Возможный дубль: тот же ФИО и год выпуска" className="rounded-full bg-[rgba(196,154,69,.18)] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#a07d2e]">⚠ дубль?</span>}
+            </span>
             <span className="font-mono text-[12px] text-grafit-soft">{m.cohort}</span>
             <span><span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(m.verification_status)}`}>{VERIF[m.verification_status]}</span></span>
             <span className="font-mono text-[13px]">{m.points_cached}</span>
@@ -322,8 +333,18 @@ function Members() {
             <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "—"}</span>
           </button>
         ))}
-        {!members.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q ? "По запросу ничего не найдено." : "Выпускников нет."}</p>}
+        {!membersQ.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q ? "По запросу ничего не найдено." : "Выпускников нет."}</p>}
       </div>
+      {pages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <span className="font-mono text-[12px] text-grafit-soft">показаны {from}–{to} из {total}</span>
+          <div className="flex gap-2">
+            <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="foc rounded-[10px] border border-[#E5E7EB] px-4 py-2 text-sm font-semibold disabled:opacity-40">← Назад</button>
+            <span className="px-2 py-2 font-mono text-[12px] text-grafit-soft">{page} / {pages}</span>
+            <button disabled={page >= pages} onClick={() => setPage((p) => Math.min(pages, p + 1))} className="foc rounded-[10px] border border-[#E5E7EB] px-4 py-2 text-sm font-semibold disabled:opacity-40">Вперёд →</button>
+          </div>
+        </div>
+      )}
       {sel && <MemberModal member={sel} onClose={() => setSel(null)} />}
     </>
   );

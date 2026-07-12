@@ -143,31 +143,57 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get("/admin/members", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    const [members, links] = await Promise.all([
+    const qp = z.object({
+      q: z.string().max(100).optional(),
+      status: z.enum(["pending", "verified", "rejected"]).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(50),
+    }).parse(req.query);
+    const q = (qp.q ?? "").trim();
+    const and: unknown[] = [];
+    if (qp.status) and.push({ verification_status: { _eq: qp.status } });
+    if (q) and.push({ _or: [{ fio: { _icontains: q } }, { cohort: { _icontains: q } }, { edu_program: { _icontains: q } }] });
+    const filter = and.length ? { _and: and } : undefined;
+    const listOpts = filter ? { filter } : {};
+
+    const [pageRows, idRows, allLite, links] = await Promise.all([
       di.request((readItems as any)("alumni", {
-        sort: ["-points_cached"], limit: 200,
+        ...listOpts, sort: ["-points_cached"], limit: qp.limit, offset: (qp.page - 1) * qp.limit,
         fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at"],
       })),
+      di.request((readItems as any)("alumni", { ...listOpts, limit: -1, fields: ["id"] })),   // total по фильтру
+      di.request((readItems as any)("alumni", { limit: -1, fields: ["fio", "cohort"] })),      // лёгкий скан для флага дублей
       di.request((readItems as any)("alumni_friends", { filter: { status: { _eq: "accepted" } }, limit: -1, fields: ["alumni_id", "friend_id"] })),
-    ]) as [any[], any[]];
+    ]) as [any[], any[], any[], any[]];
+
     const friendsOf = new Map<string, number>();
     for (const l of links) {
       friendsOf.set(l.alumni_id, (friendsOf.get(l.alumni_id) ?? 0) + 1);
       friendsOf.set(l.friend_id, (friendsOf.get(l.friend_id) ?? 0) + 1);
     }
-    // Почты аккаунтов одним запросом — офис видит анкету целиком.
-    const userIds = members.map((m) => m.user_id).filter(Boolean);
+    // Флаг возможных дублей: одинаковые ФИО + год выпуска (офис распознаёт вручную).
+    const dupKey = (fio: string | null, cohort: string | null) => `${(fio ?? "").trim().toLowerCase()}|${cohort ?? ""}`;
+    const dupCount = new Map<string, number>();
+    for (const a of allLite) { const k = dupKey(a.fio, a.cohort); dupCount.set(k, (dupCount.get(k) ?? 0) + 1); }
+
+    const userIds = pageRows.map((m) => m.user_id).filter(Boolean);
     const emails = new Map<string, string>();
     if (userIds.length) {
       const users = (await di.request((readUsers as any)({ filter: { id: { _in: userIds } }, limit: -1, fields: ["id", "email"] }))) as any[];
       for (const u of users) emails.set(u.id, u.email);
     }
-    return members.map((m) => ({
-      ...m,
-      email: (m.user_id && emails.get(m.user_id)) || m.contacts_json?.email || null,
-      friends_count: friendsOf.get(m.id) ?? 0,
-      podcast_active: subActive(m.podcast_sub_until),
-    }));
+    return {
+      items: pageRows.map((m) => ({
+        ...m,
+        email: (m.user_id && emails.get(m.user_id)) || m.contacts_json?.email || null,
+        friends_count: friendsOf.get(m.id) ?? 0,
+        podcast_active: subActive(m.podcast_sub_until),
+        duplicate: (dupCount.get(dupKey(m.fio, m.cohort)) ?? 0) > 1,
+      })),
+      total: idRows.length,
+      page: qp.page,
+      page_size: qp.limit,
+    };
   });
 
   // Продление подписки на подкасты решением офиса (например, оплата по счёту).
