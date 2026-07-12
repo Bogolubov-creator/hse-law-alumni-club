@@ -6,6 +6,7 @@ import { env } from "../env.js";
 import { resolveAlumni, requireAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { audit } from "../lib/audit.js";
+import { count } from "../lib/agg.js";
 import { pushToAll } from "../lib/push.js";
 import { announceEventByEmail } from "../lib/event-announce.js";
 
@@ -21,11 +22,11 @@ export async function eventsRoutes(app: FastifyInstance) {
   app.get("/stats", async () => {
     if (statsCache && Date.now() - statsCache.at < 300_000) return statsCache.data;
     const [alumni, events, programs] = await Promise.all([
-      di.request((readItems as any)("alumni", { filter: { verification_status: { _eq: "verified" } }, limit: -1, fields: ["id"] })),
-      di.request((readItems as any)("events", { filter: { status: { _in: ["published", "done"] } }, limit: -1, fields: ["id"] })),
-      di.request((readItems as any)("programs", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["id"] })),
-    ]) as [any[], any[], any[]];
-    const data = { alumni: alumni.length, events: events.length, programs: programs.length };
+      count("alumni", { verification_status: { _eq: "verified" } }),
+      count("events", { status: { _in: ["published", "done"] } }),
+      count("programs", { status: { _eq: "published" } }),
+    ]);
+    const data = { alumni, events, programs };
     statsCache = { at: Date.now(), data };
     return data;
   });
@@ -40,10 +41,14 @@ export async function eventsRoutes(app: FastifyInstance) {
       fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"],
     }))) as any[];
 
-    // Счётчик «пойдут» + мой RSVP одним заходом.
-    const rsvps = (await di.request((readItems as any)("event_rsvps", {
-      limit: -1, fields: ["event_id", "alumni_id", "attended"],
-    }))) as { event_id: string; alumni_id: string; attended: boolean }[];
+    // Счётчик «пойдут» + мой RSVP — только по показанным событиям (индекс event_id),
+    // а не по всей таблице RSVP: под масштаб критично для этого публичного пути.
+    const eventIds = rows.map((e) => e.id);
+    const rsvps = eventIds.length
+      ? (await di.request((readItems as any)("event_rsvps", {
+          filter: { event_id: { _in: eventIds } }, limit: -1, fields: ["event_id", "alumni_id", "attended"],
+        }))) as { event_id: string; alumni_id: string; attended: boolean }[]
+      : [];
     const going = new Map<string, number>();
     const mine = new Map<string, { attended: boolean }>();
     for (const r of rsvps) {

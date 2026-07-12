@@ -14,6 +14,7 @@ import { pushToAll, pushToAlumni } from "../lib/push.js";
 import { anonymizeAlumni } from "../lib/anonymize.js";
 import { readUsers } from "@directus/sdk";
 import { env } from "../env.js";
+import { count, sum } from "../lib/agg.js";
 
 /** E-mail выпускника по alumni_id (через привязанный аккаунт). */
 async function alumniEmail(alumniId: string): Promise<string | null> {
@@ -53,39 +54,46 @@ export async function adminRoutes(app: FastifyInstance) {
   // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    const [orders, alumni, programs, products, news, friends, podcasts, events, rsvps, pushSubs] = await Promise.all([
-      di.request(readItems("orders", { fields: ["status", "total_estimate", "payment_status"], limit: -1 })),
-      di.request((readItems as any)("alumni", { fields: ["verification_status", "points_cached", "podcast_sub_until"], limit: -1 })),
-      di.request((readItems as any)("programs", { fields: ["status", "enrollment"], limit: -1 })),
-      di.request(readItems("products", { fields: ["status"], limit: -1 })),
-      di.request(readItems("news", { fields: ["status"], limit: -1 })),
-      di.request((readItems as any)("alumni_friends", { fields: ["status"], limit: -1 })),
-      di.request((readItems as any)("podcasts", { fields: ["status"], limit: -1 })),
-      di.request((readItems as any)("events", { fields: ["id", "title", "starts_at", "status"], limit: -1 })),
-      di.request((readItems as any)("event_rsvps", { fields: ["event_id"], limit: -1 })),
-      di.request((readItems as any)("push_subs", { fields: ["id"], limit: -1 })),
-    ]) as [any[], any[], any[], any[], any[], any[], any[], any[], any[], any[]];
-    const nextEvent = events
-      .filter((e) => e.status === "published" && new Date(e.starts_at).getTime() >= Date.now())
-      .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0] ?? null;
+    // Агрегатные count/sum (Directus считает в БД) вместо полного скана 10 таблиц —
+    // под масштаб не тащим тысячи строк в API ради .length.
+    const now = new Date().toISOString();
+    const [
+      orders_count, new_orders, orders_paid,
+      alumni_count, alumni_verified, pending_verifications, points_total, podcast_subscribers,
+      programs_total, programs_nonactual, products_count, news_count,
+      friendships, friend_requests, podcasts_count, push_subs_count,
+    ] = await Promise.all([
+      count("orders"),
+      count("orders", { status: { _eq: "new" } }),
+      count("orders", { payment_status: { _eq: "succeeded" } }),
+      count("alumni"),
+      count("alumni", { verification_status: { _eq: "verified" } }),
+      count("alumni", { verification_status: { _eq: "pending" } }),
+      sum("alumni", "points_cached"),
+      count("alumni", { podcast_sub_until: { _gte: now } }),
+      count("programs", { status: { _eq: "published" } }),
+      count("programs", { status: { _eq: "published" }, enrollment: { _eq: "nonactual" } }),
+      count("products", { status: { _eq: "published" } }),
+      count("news", { status: { _eq: "published" } }),
+      count("alumni_friends", { status: { _eq: "accepted" } }),
+      count("alumni_friends", { status: { _eq: "pending" } }),
+      count("podcasts", { status: { _eq: "published" } }),
+      count("push_subs"),
+    ]);
+    // «Актуальный набор» = опубликованные минус nonactual (null-enrollment — актуальные,
+    // как на сайте: enrollment !== "nonactual").
+    const programs_actual = programs_total - programs_nonactual;
+    // Ближайшее событие — маленькая выборка (1 строка) + count его RSVP.
+    const evRows = (await di.request((readItems as any)("events", {
+      filter: { status: { _eq: "published" }, starts_at: { _gte: now } }, sort: ["starts_at"], limit: 1, fields: ["id", "title", "starts_at"],
+    }))) as any[];
+    const ne = evRows[0] ?? null;
     return {
-      new_orders: orders.filter((o) => o.status === "new").length,
-      orders_count: orders.length,
-      orders_paid: orders.filter((o) => o.payment_status === "succeeded").length,
-      pending_verifications: alumni.filter((a) => a.verification_status === "pending").length,
-      alumni_count: alumni.length,
-      alumni_verified: alumni.filter((a) => a.verification_status === "verified").length,
-      points_total: alumni.reduce((s, a) => s + (a.points_cached || 0), 0),
-      programs_actual: programs.filter((p) => p.status === "published" && p.enrollment !== "nonactual").length,
-      programs_total: programs.filter((p) => p.status === "published").length,
-      products_count: products.filter((p) => p.status === "published").length,
-      news_count: news.filter((n) => n.status === "published").length,
-      friendships: friends.filter((f) => f.status === "accepted").length,
-      friend_requests: friends.filter((f) => f.status === "pending").length,
-      podcasts_count: podcasts.filter((p) => p.status === "published").length,
-      podcast_subscribers: alumni.filter((a) => subActive(a.podcast_sub_until)).length,
-      push_subs_count: pushSubs.length,
-      next_event: nextEvent ? { id: nextEvent.id, title: nextEvent.title, starts_at: nextEvent.starts_at, rsvps: rsvps.filter((r) => r.event_id === nextEvent.id).length } : null,
+      new_orders, orders_count, orders_paid,
+      pending_verifications, alumni_count, alumni_verified, points_total,
+      programs_actual, programs_total, products_count, news_count,
+      friendships, friend_requests, podcasts_count, podcast_subscribers, push_subs_count,
+      next_event: ne ? { id: ne.id, title: ne.title, starts_at: ne.starts_at, rsvps: await count("event_rsvps", { event_id: { _eq: ne.id } }) } : null,
     };
   });
 

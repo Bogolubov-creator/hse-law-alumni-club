@@ -5,6 +5,7 @@ import { z } from "zod";
 import { PODCAST_SUB_PRICE_KOP, orderNumber } from "@club/shared";
 import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
+import { lastOrderSeq } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
@@ -101,11 +102,11 @@ export async function podcastsRoutes(app: FastifyInstance) {
 
     const contacts = alumni.contacts_json ?? {};
     const year = new Date().getFullYear();
+    const baseSeq = await lastOrderSeq(year);
     let number = "";
     let created = false;
     for (let attempt = 0; attempt < 6 && !created; attempt++) {
-      const all = (await di.request(readItems("orders", { fields: ["id"], limit: -1 }))) as any[];
-      number = orderNumber(year, all.length, attempt);
+      number = orderNumber(year, baseSeq, attempt);
       try {
         await di.request((createItem as any)("orders", {
           number, alumni_id: alumni.id, type: "podcast",

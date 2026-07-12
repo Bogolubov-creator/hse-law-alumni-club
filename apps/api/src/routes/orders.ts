@@ -8,6 +8,7 @@ import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
 import { audit } from "../lib/audit.js";
 import { lookup, cartSession } from "./cart.js";
+import { lastOrderSeq } from "../lib/order-number.js";
 
 const di = directus;
 
@@ -86,11 +87,11 @@ export async function ordersRoutes(app: FastifyInstance) {
 
     // Уникальный номер с повтором при гонке (поле number уникально в БД).
     const year = new Date().getFullYear();
+    const baseSeq = await lastOrderSeq(year);
     let number = "";
     let created = false;
     for (let attempt = 0; attempt < 6 && !created; attempt++) {
-      const all = (await di.request(readItems("orders", { fields: ["id"], limit: -1 }))) as any[];
-      number = orderNumber(year, all.length, attempt);
+      number = orderNumber(year, baseSeq, attempt);
       try {
         await di.request((createItem as any)("orders", { ...base, number }));
         created = true;
