@@ -73,7 +73,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     const end = new Date(start.getTime() + 2 * 3600 * 1000); // 2 часа по умолчанию
     const esc = (t: string) => t.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
     const lines = [
-      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Клуб выпускников права ВШЭ//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Клуб выпускников факультета права НИУ ВШЭ//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
       "BEGIN:VEVENT",
       `UID:event-${ev.id}@club-pravo-hse`,
       `DTSTAMP:${dt(new Date())}`,
@@ -184,7 +184,9 @@ export async function eventsRoutes(app: FastifyInstance) {
     if (rsvp.attended) return { ok: true, already: true };
 
     const ev = (await di.request((readItems as any)("events", { filter: { id: { _eq: rsvp.event_id } }, limit: 1, fields: ["title", "points"] }))) as any[];
-    await di.request((updateItem as any)("event_rsvps", rsvp.id, { attended: true }));
+    // Сначала баллы (идемпотентны по ключу), потом attended:true. Иначе при сбое
+    // начисления attended уже стоял бы, а повтор коротко замыкался guard-ом выше —
+    // участник навсегда без баллов за событие.
     await addPoints(rsvp.alumni_id, {
       reason: "event",
       delta: ev[0]?.points ?? 60,
@@ -192,6 +194,7 @@ export async function eventsRoutes(app: FastifyInstance) {
       comment: `Участие: ${ev[0]?.title ?? "событие клуба"}`,
       idempotencyKey: `event-${rsvp.event_id}-${rsvp.alumni_id}`,
     });
+    await di.request((updateItem as any)("event_rsvps", rsvp.id, { attended: true }));
     audit("event.attended", { actor: `admin:${ctx.userId}`, subject: `alumni:${rsvp.alumni_id}`, detail: { event: rsvp.event_id }, req });
     return { ok: true };
   });
