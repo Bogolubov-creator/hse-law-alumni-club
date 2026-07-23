@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
 import { env } from "../env.js";
+import { orderIdempotenceKey } from "./idempotency.js";
 
 /**
  * ЮKassa (yookassa.ru) — создание платежа и верификация статуса.
@@ -69,7 +69,7 @@ export async function createPayment(input: {
       "content-type": "application/json",
       // Детерминированный по заявке ключ: повтор (ретрай/двойной клик) не создаёт
       // дубль платежа — ЮKassa вернёт тот же платёж (аудит L7).
-      "Idempotence-Key": createHash("sha256").update(`order:${input.orderNumber}`).digest("hex").slice(0, 36),
+      "Idempotence-Key": orderIdempotenceKey(input.orderNumber),
     },
     body: JSON.stringify(body),
   });

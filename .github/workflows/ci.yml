@@ -1,0 +1,35 @@
+name: CI
+
+# Проверка на каждый push в main и на каждый PR: воспроизводимая установка
+# (frozen-lockfile ловит дрейф pnpm-lock.yaml), сборка всех пакетов (= typecheck
+# shared/api + tsc/vite web) и прогон vitest (shared + api).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (typecheck + bundle всех пакетов)
+        run: pnpm -r build
+
+      - name: Test (vitest)
+        run: pnpm -r test
