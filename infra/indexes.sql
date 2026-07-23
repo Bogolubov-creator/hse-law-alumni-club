@@ -7,7 +7,13 @@
 
 -- Баллы: агрегат по выпускнику + идемпотентность начислений
 CREATE INDEX IF NOT EXISTS idx_points_ledger_alumni ON points_ledger (alumni_id);
+-- Уникальность гасит гонку двойного начисления (addPoints) на уровне БД: второй
+-- конкурентный insert с тем же idempotency_key отклоняется. NULL-ключи (обычные
+-- начисления без идемпотентности) не конфликтуют — Postgres считает NULL различными.
+-- Не-уникальный индех оставляем как fallback: если в существующей БД уже есть дубли
+-- ключей, уникальный не создастся (ON_ERROR_STOP выключен), но lookup останется быстрым.
 CREATE INDEX IF NOT EXISTS idx_points_ledger_idem ON points_ledger (idempotency_key);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_points_ledger_idem ON points_ledger (idempotency_key);
 
 -- RSVP: счётчики «пойдут» и «мой RSVP»; уникальность гасит гонку двойного клика
 CREATE INDEX IF NOT EXISTS idx_event_rsvps_event ON event_rsvps (event_id);

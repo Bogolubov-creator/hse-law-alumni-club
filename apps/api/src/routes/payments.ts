@@ -9,6 +9,7 @@ import { extendPodcastSub } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { isYookassaIp } from "../lib/security.js";
 import { sendEmail } from "../lib/notify.js";
+import { withLock } from "../lib/mutex.js";
 
 const di = directus;
 
@@ -93,6 +94,10 @@ export async function paymentsRoutes(app: FastifyInstance) {
     const orderNumber = verified.metadata?.order_number;
     if (!orderNumber) return { ok: true }; // не наш платёж — молча подтверждаем приём
 
+    // Сериализуем обработку по номеру заявки (мьютекс): конкурентные дубли доставки
+    // вебхука ЮKassa не пройдут проверку payment_status одновременно и не продлят
+    // подписку дважды. Второй вызов увидит уже выставленный succeeded и выйдет.
+    return withLock(`order:${orderNumber}`, async () => {
     const rows = (await di.request(readItems("orders", {
       filter: { number: { _eq: orderNumber } }, limit: 1, fields: ["id", "status", "payment_status", "type", "alumni_id", "contact_email", "contact_fio", "total_estimate"],
     }))) as any[];
@@ -128,5 +133,6 @@ export async function paymentsRoutes(app: FastifyInstance) {
       audit("payment.canceled", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id }, req });
     }
     return { ok: true };
+    });
   });
 }

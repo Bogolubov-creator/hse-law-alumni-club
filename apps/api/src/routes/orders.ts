@@ -7,7 +7,7 @@ import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
 import { audit } from "../lib/audit.js";
-import { lookup, cartSession } from "./cart.js";
+import { lookup, cartSession, type CatalogInfo } from "./cart.js";
 import { lastOrderSeq } from "../lib/order-number.js";
 
 const di = directus;
@@ -43,7 +43,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     // Позиция, ставшая недоступной, пока лежала в корзине (снята с публикации, удалена,
     // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает — иначе
     // заказ уходит по устаревшей цене на то, что больше не продаётся.
-    const priceMap = new Map<string, { title: string; price: number }>();
+    const priceMap = new Map<string, CatalogInfo>();
     const unavailableTitles = new Set<string>();
     for (const i of items) {
       const key = `${i.type}:${i.ref_id}`;
@@ -66,6 +66,36 @@ export async function ordersRoutes(app: FastifyInstance) {
     }
     const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
 
+    // Проверка остатков мерча (без атомарного декремента — single-instance, риск
+    // гонки минимален; декремент склада — задача на будущее). Суммируем спрос по
+    // позиции/варианту и сверяем с наличием. Товары без учёта остатков не блокируем.
+    const need = new Map<string, number>();
+    for (const i of priced) {
+      if (i.type !== "merch") continue;
+      const k = `${i.ref_id}|${i.variant_sku ?? ""}`;
+      need.set(k, (need.get(k) ?? 0) + i.qty);
+    }
+    const insufficient: string[] = [];
+    for (const [k, qty] of need) {
+      const sep = k.indexOf("|");
+      const ref = k.slice(0, sep);
+      const sku = k.slice(sep + 1);
+      const info = priceMap.get(`merch:${ref}`);
+      if (!info) continue;
+      const avail = sku && Array.isArray(info.variants)
+        ? info.variants.find((v) => v.sku === sku)?.stock
+        : info.stock;
+      if (typeof avail === "number" && qty > avail) {
+        insufficient.push(`${info.title}${sku ? ` (${sku})` : ""} — в наличии ${avail}`);
+      }
+    }
+    if (insufficient.length) {
+      return reply.code(409).send({
+        error: `Недостаточно на складе: ${insufficient.join("; ")}. Уменьшите количество и попробуйте снова.`,
+        insufficient,
+      });
+    }
+
     const alumni = await resolveAlumni(req);
     const discount = effectiveDiscount(
       !!alumni && alumni.verification_status === "verified",
@@ -73,6 +103,11 @@ export async function ordersRoutes(app: FastifyInstance) {
       alumni?.personal_discount ?? 0,
     );
     const { subtotal, total } = computeOrderTotals(priced, discount);
+    // Санити-гейт суммы: даже с капом qty защищаемся от переполнения/аномальной
+    // цены в каталоге — не создаём заявку с суммой вне безопасного диапазона.
+    if (!Number.isSafeInteger(subtotal) || !Number.isSafeInteger(total) || total < 0) {
+      return reply.code(400).send({ error: "Некорректная сумма заказа" });
+    }
 
     const types = [...new Set(priced.map((i) => i.type))];
     const type = types.length > 1 ? "mixed" : types[0] === "dpo" ? "dpo" : "merch";
