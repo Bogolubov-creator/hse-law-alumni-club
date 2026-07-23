@@ -4,7 +4,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import cron from "node-cron";
 import { ZodError } from "zod";
-import { env } from "./env.js";
+import { env, assertProdConfig } from "./env.js";
 import { checkDirectus } from "./lib/directus.js";
 import { contentRoutes } from "./routes/content.js";
 import { pointsRoutes } from "./routes/points.js";
@@ -68,6 +68,14 @@ if (env.YOOKASSA_SHOP_ID && !env.PUBLIC_URL.startsWith("https://")) {
 if (!env.ADMIN_AUTH_SECRET) {
   app.log.warn("ADMIN_AUTH_SECRET пуст — админ-сессии подписываются общим AUTH_SECRET (на проде задайте отдельный)");
 }
+// Fail-fast: при APP_ENV=production небезопасная конфигурация прерывает старт
+// (плейсхолдеры секретов, PUBLIC_URL не https, бот на webhook без секрета).
+const prodErrs = assertProdConfig();
+if (prodErrs.length) {
+  for (const e of prodErrs) app.log.error(`[prod-config] ${e}`);
+  app.log.fatal("НЕБЕЗОПАСНАЯ ПРОД-КОНФИГУРАЦИЯ (APP_ENV=production) — старт прерван");
+  process.exit(1);
+}
 // Глобальный лимит запросов per-IP (на auth/оплату/заявки — жёстче, см. роуты).
 // Health-пинги мониторинга не лимитируем. Ключ — реальный IP за Caddy (trustProxy).
 await app.register(rateLimit, {
@@ -101,32 +109,37 @@ await app.register(eventsRoutes);
 await app.register(pushRoutes);
 await app.register(telegramRoutes);
 
+// Фоновые cron-задачи. Держим ссылки, чтобы остановить их при плавной остановке.
+// ВНИМАНИЕ: cron выполняется внутри процесса API — деплой одноинстансный. На
+// нескольких инстансах задачи задвоятся (нужен distributed-lock) — см. deploy-runbook.
+const cronTasks: ReturnType<typeof cron.schedule>[] = [];
+
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
-cron.schedule("0 3 1 * *", () => {
+cronTasks.push(cron.schedule("0 3 1 * *", () => {
   runDecay().catch((e) => app.log.error(e, "decay failed"));
-});
+}));
 
 // Ночная автосинхронизация каталога ДПО с hse.ru (05:00). Сбой не критичен —
 // каталог остаётся прежним, следующая попытка через сутки (или вручную из админки).
-cron.schedule("0 5 * * *", () => {
+cronTasks.push(cron.schedule("0 5 * * *", () => {
   syncDpoCatalog()
     .then((r) => app.log.info(r, "dpo sync ok"))
     .catch((e) => app.log.error(e, "dpo sync failed"));
-});
+}));
 
 // Напоминание записавшимся за сутки до события (10:00 МСК; идемпотентно).
-cron.schedule("0 10 * * *", () => {
+cronTasks.push(cron.schedule("0 10 * * *", () => {
   runEventReminders()
     .then((r) => { if (r.events) app.log.info(r, "event reminders sent"); })
     .catch((e) => app.log.error(e, "event reminders failed"));
-});
+}));
 
 // Ретенция ПДн (04:00): обезличить старые заявки, подчистить аудит (152-ФЗ).
-cron.schedule("0 4 * * *", () => {
+cronTasks.push(cron.schedule("0 4 * * *", () => {
   runRetention()
     .then((r) => { if (r.orders || r.audit) app.log.info(r, "retention applied"); })
     .catch((e) => app.log.error(e, "retention failed"));
-});
+}));
 
 // Базовый health — для healthcheck'а docker и Caddy.
 app.get("/health", async () => ({
@@ -141,6 +154,24 @@ app.get("/ready", async (_req, reply) => {
   if (!directus.ok) return reply.code(503).send({ status: "degraded", directus });
   return { status: "ok", directus };
 });
+
+// Плавная остановка: по SIGTERM/SIGINT (docker stop, редеплой) останавливаем cron
+// и даём Fastify закрыть уже принятые соединения, а не рвём их посреди запроса.
+let shuttingDown = false;
+async function gracefulShutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  app.log.info(`${signal} получен — плавная остановка`);
+  for (const t of cronTasks) { try { t.stop(); } catch { /* уже остановлена */ } }
+  try {
+    await app.close(); // дождаться завершения активных запросов и закрыть сервер
+  } catch (e) {
+    app.log.error(e, "ошибка при app.close()");
+  }
+  process.exit(0);
+}
+process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => void gracefulShutdown("SIGINT"));
 
 try {
   await app.listen({ host: "0.0.0.0", port: env.API_PORT });

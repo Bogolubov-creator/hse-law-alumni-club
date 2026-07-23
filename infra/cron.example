@@ -1,7 +1,8 @@
 # Крон-задания для VPS клуба (установить: crontab -e у пользователя с docker).
 # Пути замените на реальный каталог репозитория на сервере.
 #
-# Ночной шифрованный бэкап БД (03:30) — держит 14 дней, см. scripts/backup-db.sh
+# Ночной шифрованный бэкап БД (03:30) — держит 14 дней, см. scripts/backup-db.sh.
+# Если в .env задан BACKUP_OFFSITE_REMOTE, скрипт сам скопирует дамп offsite (rclone).
 30 3 * * * /opt/club/scripts/backup-db.sh >> /var/log/club-backup.log 2>&1
 #
 # Еженедельная проверка восстановимости бэкапа (пн 04:00) — разворачивает
@@ -11,5 +12,6 @@
 # Uptime-пинг каждые 5 минут: падение/восстановление — сообщение в офисный чат.
 */5 * * * * /opt/club/scripts/uptime-check.sh >> /var/log/club-uptime.log 2>&1
 #
-# Копию бэкапов — на отдельное хранилище (пример через rclone, настроить remote):
-# 0 5 * * * rclone copy /opt/club/backups remote:club-backups --max-age 48h >> /var/log/club-offsite.log 2>&1
+# Offsite-копия делается внутри backup-db.sh при заданном BACKUP_OFFSITE_REMOTE.
+# Альтернатива (пакетно, если не хотите per-run): отдельным заданием через rclone:
+# 0 5 * * * rclone copy /opt/club/backups <remote>:club-backups --max-age 48h >> /var/log/club-offsite.log 2>&1

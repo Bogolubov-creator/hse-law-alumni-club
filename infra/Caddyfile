@@ -57,5 +57,14 @@
 
 {$ADMIN_DOMAIN} {
 	encode gzip
+	header {
+		# Заголовки безопасности и на Studio-домене (раньше их не было вовсе).
+		# CSP тут НЕ задаём: Directus присылает собственную политику для админки.
+		Strict-Transport-Security "max-age=15552000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		-Server
+	}
 	reverse_proxy directus:8055
 }

@@ -1,5 +1,12 @@
 name: club-pravo-hse
 
+# Единые лимиты логов: не дать json-file-логам забить диск на долгоживущем VPS.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -17,6 +24,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    mem_limit: 1g   # подберите под размер VPS; защита от OOM всего хоста
+    logging: *default-logging
 
   directus:
     image: directus/directus:11
@@ -52,6 +61,8 @@ services:
       timeout: 5s
       retries: 30
       start_period: 30s
+    mem_limit: 1g
+    logging: *default-logging
 
   bootstrap:
     build:
@@ -104,6 +115,16 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # Явный прод-флаг: включает fail-fast небезопасной конфигурации (env.ts).
+      APP_ENV: ${APP_ENV:-development}
+      # Публичный адрес — return_url оплаты, абсолютные URL sitemap/robots/canonical.
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
+      # Оплата ЮKassa (пусто = контур выключен, «заявка без оплаты»).
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
+      # Сроки хранения ПДн (152-ФЗ): заявки 3 года, аудит 1 год.
+      ORDER_RETENTION_DAYS: ${ORDER_RETENTION_DAYS:-1095}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
     ports:
       - "127.0.0.1:3000:3000"
     healthcheck:
@@ -112,16 +133,32 @@ services:
       timeout: 5s
       retries: 10
       start_period: 15s
+    mem_limit: 512m
+    stop_grace_period: 30s   # успеть плавно завершить активные запросы (SIGTERM → app.close)
+    logging: *default-logging
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # Build-time конфиг SPA (Vite инлайнит в бандл — рантаймом не задать).
+        # Site — публичный домен для og/canonical; Directus — база Studio/ассетов.
+        VITE_SITE_URL: ${PUBLIC_URL:-http://localhost}
+        VITE_DIRECTUS_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     expose:
       - "80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 128m
+    logging: *default-logging
 
   caddy:
     image: caddy:2-alpine
@@ -144,6 +181,15 @@ services:
       - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    healthcheck:
+      # Admin API Caddy на localhost:2019 — не зависит от домена/Host сайта.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2019/config/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 128m
+    logging: *default-logging
 
 volumes:
   pgdata:

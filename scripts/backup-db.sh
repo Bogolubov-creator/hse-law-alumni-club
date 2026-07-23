@@ -41,5 +41,16 @@ docker compose -f "$REPO_DIR/docker-compose.yml" exec -T postgres \
 chmod 600 "$OUT"
 echo "OK: $OUT ($(du -h "$OUT" | cut -f1))"
 
+# Offsite-копия (152-ФЗ: резервное хранилище отдельно от сервера БД, в РФ). Если
+# задан rclone-remote в BACKUP_OFFSITE_REMOTE (напр. "ydisk:club-backups") — копируем
+# туда шифрованный дамп. Без переменной шаг молча пропускается (локальный стенд).
+if [ -n "${BACKUP_OFFSITE_REMOTE:-}" ]; then
+  if command -v rclone >/dev/null 2>&1; then
+    rclone copy "$OUT" "$BACKUP_OFFSITE_REMOTE" && echo "OFFSITE OK: $BACKUP_OFFSITE_REMOTE"
+  else
+    echo "ВНИМАНИЕ: BACKUP_OFFSITE_REMOTE задан, но rclone не установлен — offsite-копия НЕ сделана" >&2
+  fi
+fi
+
 # Ротация: чистим старше KEEP_DAYS
 find "$BACKUP_DIR" -name 'club-*.sql.gz.enc' -mtime +"$KEEP_DAYS" -delete
