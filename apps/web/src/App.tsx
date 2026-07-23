@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import Home from "./pages/Home.js";
 import News from "./pages/News.js";
 import NewsPost from "./pages/NewsPost.js";
@@ -14,6 +15,8 @@ import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
 import InstallPrompt from "./components/InstallPrompt.js";
 import { VisionPanel } from "./components/Vision.js";
+import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
+import { clearToken } from "./lib/cart.js";
 
 // Приватные/тяжёлые разделы — отдельными чанками: не грузятся публичному посетителю
 // и не раздувают стартовый бандл (важно для LCP публичных страниц и SEO).
@@ -24,16 +27,29 @@ const AdminApp = lazy(() => import("./admin/AdminApp.js"));
 
 export default function App() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   // Обратная совместимость: старый хэш-адрес админки (#/admin) → обычный маршрут.
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {
       navigate(window.location.hash.slice(1), { replace: true });
     }
   }, [navigate]);
+  // Централизованная реакция на истёкшую сессию (событие из api.ts при 401 с токеном):
+  // чистим токен, сбрасываем кэш авторизованных данных и ведём на вход.
+  useEffect(() => {
+    const onUnauth = () => {
+      clearToken();
+      qc.clear();
+      navigate("/lk", { replace: true });
+    };
+    window.addEventListener("club:unauthorized", onUnauth);
+    return () => window.removeEventListener("club:unauthorized", onUnauth);
+  }, [navigate, qc]);
   return (
     <>
       <VisionPanel />
-      <Suspense fallback={<div style={{ minHeight: "50vh" }} />}>
+      <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/news" element={<News />} />
@@ -56,6 +72,7 @@ export default function App() {
           <Route path="*" element={<Stub title="Страница не найдена" />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
       <CookieBanner />
       <InstallPrompt />
     </>

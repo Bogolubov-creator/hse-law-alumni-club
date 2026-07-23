@@ -9,6 +9,8 @@ import Modal from "../components/Modal.js";
 import { LkShell } from "../components/LkShell.js";
 import { useToast } from "../components/Toast.js";
 import { useLkTokens, lkSurface } from "../lib/lk-theme.js";
+import { useHead } from "../lib/title.js";
+import { VisionCorner } from "../components/Vision.js";
 
 
 /**
@@ -21,6 +23,7 @@ const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
 const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
 
 export default function Lk() {
+  useHead({ title: "Личный кабинет", noindex: true }); // приватная зона — не индексируем
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [pending, setPending] = useState<AlumniBrief | null>(null);
 
@@ -65,6 +68,7 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-kost px-6">
+      <VisionCorner />
       <form onSubmit={submit} className="w-full max-w-[420px] rounded-[22px] border border-[#E5E7EB] bg-white p-8 shadow-sm">
         <Link to="/" className="foc font-mono text-xs text-ohra-deep">← На главную</Link>
         <p className="mt-5 font-mono text-xs uppercase tracking-[0.16em] text-ohra">Личный кабинет</p>
@@ -94,6 +98,7 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
 function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => void }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-kost px-6">
+      <VisionCorner />
       <div className="w-full max-w-[420px] rounded-[22px] border border-[#E5E7EB] bg-white p-8 text-center shadow-sm">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-latun/20 font-display text-2xl text-[#a07d2e]">⏳</div>
         <h1 className="mt-4 font-display text-xl font-bold">Ожидает верификации</h1>

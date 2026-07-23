@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { CSSProperties, ReactNode } from "react";
 import { LkTokensContext, useLkTheme } from "../lib/lk-theme.js";
+import { VisionToggle } from "./Vision.js";
 
 const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
 const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
@@ -38,6 +39,7 @@ export function LkShell({
               {navLink("overview", "/lk", "Обзор")}
               {navLink("profile", "/lk/profile", "Профиль")}
               <Link to="/dpo" className="foc" style={{ textDecoration: "none", color: t.navMuted, fontWeight: 500, fontSize: 14, padding: "8px 14px", borderRadius: 10 }}>Витрины</Link>
+              <VisionToggle compact />
               <button
                 type="button"
                 onClick={toggle}
@@ -53,6 +55,14 @@ export function LkShell({
           </div>
         </header>
         <main style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 28px 80px" }}>{children}</main>
+        {/* 152-ФЗ: юр-документы доступны и в ЛК (как и на публичных страницах). */}
+        <footer style={{ borderTop: `1px solid ${t.divider}`, padding: "22px 28px 40px" }}>
+          <div style={{ maxWidth: 1180, margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 16, ...mono, fontSize: 12 }}>
+            <Link to="/privacy" className="foc" style={{ color: t.navMuted, textDecoration: "underline", textUnderlineOffset: 2 }}>Политика обработки ПДн</Link>
+            <Link to="/confidential" className="foc" style={{ color: t.navMuted, textDecoration: "underline", textUnderlineOffset: 2 }}>Конфиденциальность</Link>
+            <Link to="/requisites" className="foc" style={{ color: t.navMuted, textDecoration: "underline", textUnderlineOffset: 2 }}>Реквизиты</Link>
+          </div>
+        </footer>
       </div>
     </LkTokensContext.Provider>
   );

@@ -1,15 +1,16 @@
 import { Link } from "react-router-dom";
 import { useNewsList, formatNewsDate } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
+import SiteShell from "../components/SiteShell.js";
 
 export default function News() {
   useHead({ title: "Новости клуба", description: "Новости клуба выпускников факультета права НИУ ВШЭ: события, программы, партнёрства и жизнь сообщества." });
   const news = useNewsList();
   return (
-    <main className="min-h-screen bg-kost text-grafit">
+    <SiteShell>
+      <main className="min-h-screen bg-kost text-grafit">
       <div className="mx-auto max-w-[1180px] px-7 py-14">
-        <Link to="/" className="foc font-mono text-xs text-ohra-deep">← На главную</Link>
-        <p className="mt-6 font-mono text-xs uppercase tracking-[0.16em] text-ohra">Новости</p>
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Новости</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Что в клубе сейчас</h1>
 
         {news.isLoading && <p className="mt-8 font-mono text-sm text-grafit-soft">Загрузка…</p>}
@@ -33,5 +34,6 @@ export default function News() {
         </div>
       </div>
     </main>
+    </SiteShell>
   );
 }

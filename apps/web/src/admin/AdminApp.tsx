@@ -3,6 +3,8 @@ import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
 import { computeLevel, ORDER_STATUS_RU } from "@club/shared";
+import { useHead } from "../lib/title.js";
+import { VisionToggle } from "../components/Vision.js";
 
 const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
@@ -33,6 +35,7 @@ const stPill = (s: string) =>
 type Section = "overview" | "orders" | "members" | "content" | "audit";
 
 export default function AdminApp() {
+  useHead({ title: "Админ-панель", noindex: true }); // офисная зона — не индексируем
   const [token, setToken] = useState<string | null>(() => adminToken());
   if (!token) return <AdminGate onAuthed={(t) => { setAdminToken(t); setToken(t); }} />;
   return <AdminShell onLogout={() => { clearAdminToken(); setToken(null); }} />;
@@ -77,8 +80,10 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   ];
   const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент", audit: "Журнал безопасности" };
 
-  // Истёкшая сессия: сохранить СВЕЖИЙ токен перед перезагрузкой, иначе вечный цикл логина.
-  if (ov.isError) return <AdminGate onAuthed={(t) => { setAdminToken(t); location.reload(); }} />;
+  // На вход выкидываем ТОЛЬКО при 401 (истёкшая сессия). Прочие ошибки (5xx/сеть)
+  // не должны маскироваться под разлогин — показываем ретрай в основной области.
+  if (ov.isError && (ov.error as { status?: number })?.status === 401)
+    return <AdminGate onAuthed={(t) => { setAdminToken(t); location.reload(); }} />;
 
   return (
     <div className="grid min-h-screen grid-cols-[248px_1fr] bg-kost-2 font-body text-grafit max-md:grid-cols-1">
@@ -92,11 +97,18 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
             {n.label}{n.badge ? <span className="rounded-full bg-ohra px-1.5 font-mono text-[11px]">{n.badge}</span> : null}
           </button>
         ))}
+        <div className="mt-3 px-1"><VisionToggle compact /></div>
         <button onClick={onLogout} className="foc mt-auto rounded-[11px] border border-[rgba(251,243,232,.14)] px-3.5 py-2.5 text-left font-mono text-[12px] text-kost">Выйти</button>
       </aside>
 
       <main className="min-w-0 px-8 py-7 max-md:px-5">
         <h1 className="mb-6 font-display text-3xl font-extrabold tracking-tight">{titles[section]}</h1>
+        {ov.isError && (
+          <p className="mb-5 rounded-[10px] bg-[rgba(181,51,27,.08)] px-4 py-3 font-mono text-xs text-karmin">
+            Не удалось загрузить данные (ошибка сети или сервера).{" "}
+            <button onClick={() => ov.refetch()} className="foc underline">Повторить</button>
+          </p>
+        )}
         {section === "overview" && <Overview onGo={setSection} />}
         {section === "orders" && <Orders />}
         {section === "members" && <Members />}

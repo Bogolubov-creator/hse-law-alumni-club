@@ -18,7 +18,13 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
     body: hasBody ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any)?.error || `API ${res.status}`);
+  if (!res.ok) {
+    // Пробрасываем HTTP-статус: 401 = истёкшая сессия (на вход), прочее (5xx/сеть) —
+    // показываем ретрай, а не выкидываем администратора на логин.
+    const e = new Error((data as any)?.error || `API ${res.status}`) as Error & { status?: number };
+    e.status = res.status;
+    throw e;
+  }
   return data as T;
 }
 

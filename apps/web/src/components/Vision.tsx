@@ -7,11 +7,23 @@ export function VisionToggle({ compact = false }: { compact?: boolean }) {
     <button
       onClick={() => setVision({ on: !v.on })}
       aria-pressed={v.on}
+      aria-label="Версия для слабовидящих"
       title="Версия для слабовидящих"
       className="foc rounded-[10px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-[13px] font-medium leading-none"
     >
       <span aria-hidden>👁</span>{!compact && <span className="ml-1.5 align-middle">Для слабовидящих</span>}
     </button>
+  );
+}
+
+/** Плавающая кнопка версии для слабовидящих для страниц без общей шапки (auth/ЛК/админка). */
+export function VisionCorner() {
+  const v = useVision();
+  if (v.on) return null; // когда режим включён, панель настроек уже видна сверху
+  return (
+    <div style={{ position: "fixed", top: 10, right: 10, zIndex: 60 }}>
+      <VisionToggle compact />
+    </div>
   );
 }
 

@@ -6,6 +6,7 @@ import { useMe, useLedger } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { LkShell } from "../components/LkShell.js";
 import { useLkTokens, lkSurface } from "../lib/lk-theme.js";
+import { useHead } from "../lib/title.js";
 
 /** Профиль выпускника – порт «Профиль.dc.html» (C). Контакты + история баллов + правила достижений. */
 
@@ -28,6 +29,7 @@ const CONTACT_FIELDS: { key: string; label: string; ph: string }[] = [
 ];
 
 export default function Profile() {
+  useHead({ title: "Профиль", noindex: true }); // приватная зона — не индексируем
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return <Navigate to="/lk" replace />;
   return <ProfileBody token={token} />;
@@ -329,7 +331,7 @@ function DeleteAccount() {
         <div style={{ marginTop: 16 }}>
           <div style={{ ...mono, fontSize: 12, color: t.muted, marginBottom: 8 }}>Введите <b style={{ color: "#B5331B" }}>УДАЛИТЬ</b> для подтверждения:</div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="УДАЛИТЬ" className="foc" style={{ ...mono, fontSize: 14, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text }} />
+            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="УДАЛИТЬ" aria-label="Подтверждение удаления — введите слово УДАЛИТЬ" className="foc" style={{ ...mono, fontSize: 14, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text }} />
             <button onClick={del} disabled={confirm !== "УДАЛИТЬ" || busy} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#B5331B", color: "#fff", cursor: confirm === "УДАЛИТЬ" && !busy ? "pointer" : "not-allowed", opacity: confirm === "УДАЛИТЬ" && !busy ? 1 : 0.5 }}>{busy ? "Удаляем…" : "Удалить навсегда"}</button>
             <button onClick={() => { setOpen(false); setConfirm(""); }} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text, cursor: "pointer" }}>Отмена</button>
           </div>

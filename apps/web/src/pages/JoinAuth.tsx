@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPost } from "../lib/api.js";
 import { useHead } from "../lib/title.js";
+import { VisionCorner } from "../components/Vision.js";
 
 /**
  * Воронка входа: /join — заявка на вступление в клуб (аккаунт + профиль pending),
@@ -13,15 +14,24 @@ const EDU_LEVELS = ["бакалавриат", "магистратура", "сп�
 
 function AuthShell({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-kost px-4 py-10">
-      <div className="w-full max-w-[520px] rounded-[22px] border border-[#E5E7EB] bg-white p-8 shadow-sm max-md:p-6">
-        <Link to="/" className="foc font-mono text-xs text-ohra-deep">← На главную</Link>
-        <p className="mt-5 font-mono text-xs uppercase tracking-[0.16em] text-ohra">Клуб выпускников</p>
-        <h1 className="mt-2 font-display text-2xl font-bold">{title}</h1>
-        {sub && <p className="mt-2 text-sm text-grafit-soft">{sub}</p>}
-        {children}
-      </div>
-    </main>
+    <>
+      <VisionCorner />
+      <main className="flex min-h-screen flex-col items-center justify-center bg-kost px-4 py-10">
+        <div className="w-full max-w-[520px] rounded-[22px] border border-[#E5E7EB] bg-white p-8 shadow-sm max-md:p-6">
+          <Link to="/" className="foc font-mono text-xs text-ohra-deep">← На главную</Link>
+          <p className="mt-5 font-mono text-xs uppercase tracking-[0.16em] text-ohra">Клуб выпускников</p>
+          <h1 className="mt-2 font-display text-2xl font-bold">{title}</h1>
+          {sub && <p className="mt-2 text-sm text-grafit-soft">{sub}</p>}
+          {children}
+        </div>
+        {/* 152-ФЗ: доступ к юр-документам и на страницах входа/восстановления. */}
+        <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[12px] text-grafit-soft">
+          <Link to="/privacy" className="foc underline underline-offset-2">Политика обработки ПДн</Link>
+          <Link to="/confidential" className="foc underline underline-offset-2">Конфиденциальность</Link>
+          <Link to="/requisites" className="foc underline underline-offset-2">Реквизиты</Link>
+        </div>
+      </main>
+    </>
   );
 }
 
@@ -154,6 +164,7 @@ export function Join() {
 
 // ── Восстановление пароля ───────────────────────────────────────────
 export function Forgot() {
+  useHead({ title: "Восстановление пароля", noindex: true });
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -181,6 +192,7 @@ export function Forgot() {
 }
 
 export function Reset() {
+  useHead({ title: "Новый пароль", noindex: true });
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const [p1, setP1] = useState("");

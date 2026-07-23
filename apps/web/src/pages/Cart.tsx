@@ -79,7 +79,13 @@ export default function Cart() {
       <main className="mx-auto max-w-[1180px] px-7 py-12">
         <h1 className="font-display text-4xl font-bold tracking-tight">Корзина</h1>
         {cart.isLoading && <p className="mt-8 font-mono text-sm text-grafit-soft">Загрузка…</p>}
-        {!cart.isLoading && items.length === 0 && (
+        {cart.isError && (
+          <div className="mt-8 rounded-[18px] border border-[#E5E7EB] bg-white p-8 text-center">
+            <p className="font-mono text-sm text-karmin">Не удалось загрузить корзину. Проверьте соединение и попробуйте снова.</p>
+            <button onClick={() => cart.refetch()} className="foc mt-4 rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">Повторить</button>
+          </div>
+        )}
+        {!cart.isLoading && !cart.isError && items.length === 0 && (
           <div className="mt-8 rounded-[18px] border border-[#E5E7EB] bg-white p-10 text-center">
             <h2 className="font-display text-2xl font-bold">Корзина пуста</h2>
             <p className="mt-2 text-grafit-soft">Выберите программу ДПО со скидкой выпускника или брендированную одежду клуба.</p>
@@ -105,9 +111,9 @@ export default function Cart() {
                     <span className="font-mono text-[11px] text-grafit-soft">заявка · 1 место</span>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button aria-label="Уменьшить количество" onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB]">−</button>
+                      <button aria-label="Уменьшить количество" disabled={setQty.isPending} onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB] disabled:opacity-50">−</button>
                       <span className="w-6 text-center font-mono" aria-live="polite">{it.qty}</span>
-                      <button aria-label="Увеличить количество" onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB]">+</button>
+                      <button aria-label="Увеличить количество" disabled={setQty.isPending || it.qty >= 99} onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })} className="foc h-8 w-8 rounded-[9px] border border-[#E5E7EB] disabled:opacity-50">+</button>
                     </div>
                   )}
                   <div className="w-24 text-right font-mono text-sm">{rub(it.price * it.qty)}</div>

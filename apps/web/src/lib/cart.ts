@@ -57,6 +57,11 @@ export function token(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+/** Убрать сессию ЛК (истёкший/битый токен). Централизованно вызывается при 401. */
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
 export async function submitOrder(body: unknown): Promise<import("./api.js").OrderResult> {
   const headers: Record<string, string> = { accept: "application/json", "content-type": "application/json", "x-cart-session": cartSession() };
   const t = token();
