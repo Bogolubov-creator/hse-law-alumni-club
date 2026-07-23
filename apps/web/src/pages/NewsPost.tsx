@@ -17,20 +17,32 @@ export default function NewsPost() {
   useJsonLd(
     d && {
       "@context": "https://schema.org",
-      "@type": "NewsArticle",
-      headline: d.title,
-      description: d.excerpt ?? undefined,
-      articleBody: d.body ?? undefined,
-      datePublished: d.published_at ?? undefined,
-      dateModified: d.published_at ?? undefined,
-      inLanguage: "ru-RU",
-      mainEntityOfPage: `${siteOrigin()}/news/${slug}`,
-      author: { "@type": "Organization", name: "Клуб выпускников факультета права НИУ ВШЭ" },
-      publisher: {
-        "@type": "Organization",
-        name: "Клуб выпускников факультета права НИУ ВШЭ",
-        logo: { "@type": "ImageObject", url: `${siteOrigin()}/icon-512.png` },
-      },
+      "@graph": [
+        {
+          "@type": "NewsArticle",
+          headline: d.title,
+          description: d.excerpt ?? undefined,
+          articleBody: d.body ?? undefined,
+          image: `${siteOrigin()}/og-card.png`,
+          datePublished: d.published_at ?? undefined,
+          dateModified: d.published_at ?? undefined,
+          inLanguage: "ru-RU",
+          mainEntityOfPage: `${siteOrigin()}/news/${slug}`,
+          author: { "@type": "Organization", name: "Клуб выпускников факультета права НИУ ВШЭ" },
+          publisher: {
+            "@type": "Organization",
+            name: "Клуб выпускников факультета права НИУ ВШЭ",
+            logo: { "@type": "ImageObject", url: `${siteOrigin()}/icon-512.png` },
+          },
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Новости", item: `${siteOrigin()}/news` },
+            { "@type": "ListItem", position: 2, name: d.title, item: `${siteOrigin()}/news/${slug}` },
+          ],
+        },
+      ],
     },
   );
 

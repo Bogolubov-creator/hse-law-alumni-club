@@ -38,21 +38,25 @@ export async function contentRoutes(app: FastifyInstance) {
         directus.request((readItems as any)("news", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug", "published_at"] })),
         directus.request((readItems as any)("programs", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug"] })),
       ]) as [any[], any[]];
-      const urls: { loc: string; lastmod?: string; prio: string }[] = [
-        { loc: "/", prio: "1.0" },
-        { loc: "/events", prio: "0.9" },
-        { loc: "/dpo", prio: "0.9" },
-        { loc: "/merch", prio: "0.7" },
-        { loc: "/podcasts", prio: "0.7" },
-        { loc: "/news", prio: "0.8" },
-        { loc: "/join", prio: "0.8" },
-        ...news.map((n) => ({ loc: `/news/${n.slug}`, lastmod: n.published_at?.slice(0, 10), prio: "0.6" })),
-        ...programs.map((p2) => ({ loc: `/dpo/${p2.slug}`, prio: "0.6" })),
+      const urls: { loc: string; lastmod?: string; prio: string; freq: string }[] = [
+        { loc: "/", prio: "1.0", freq: "weekly" },
+        { loc: "/events", prio: "0.9", freq: "weekly" },
+        { loc: "/dpo", prio: "0.9", freq: "weekly" },
+        { loc: "/news", prio: "0.8", freq: "weekly" },
+        { loc: "/join", prio: "0.8", freq: "monthly" },
+        { loc: "/podcasts", prio: "0.7", freq: "weekly" },
+        { loc: "/merch", prio: "0.7", freq: "monthly" },
+        ...news.map((n) => ({ loc: `/news/${n.slug}`, lastmod: n.published_at?.slice(0, 10), prio: "0.6", freq: "monthly" })),
+        ...programs.map((p2) => ({ loc: `/dpo/${p2.slug}`, prio: "0.6", freq: "monthly" })),
+        // Юридические страницы — публичны и индексируемы (низкий приоритет, редкие изменения).
+        { loc: "/privacy", prio: "0.3", freq: "yearly" },
+        { loc: "/confidential", prio: "0.3", freq: "yearly" },
+        { loc: "/requisites", prio: "0.3", freq: "yearly" },
       ];
       const xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-        ...urls.map((u) => `<url><loc>${base}${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}<priority>${u.prio}</priority></url>`),
+        ...urls.map((u) => `<url><loc>${base}${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}<changefreq>${u.freq}</changefreq><priority>${u.prio}</priority></url>`),
         "</urlset>",
       ].join("\n");
       smCache = { at: Date.now(), xml };

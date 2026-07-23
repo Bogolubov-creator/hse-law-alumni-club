@@ -7,6 +7,7 @@ import { useToast } from "../components/Toast.js";
 import { apiGet, apiPost } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
+import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
 
 interface ClubEvent {
   id: string; title: string; description: string | null; starts_at: string;
@@ -57,6 +58,32 @@ export default function Events() {
   const upcoming = list.filter((e) => new Date(e.starts_at).getTime() >= now && e.status === "published");
   const past = list.filter((e) => new Date(e.starts_at).getTime() < now || e.status === "done");
   const opened = openId ? list.find((e) => e.id === openId) ?? null : null;
+
+  // Event-разметка (schema.org) по ближайшим событиям — rich-результаты Google для афиши.
+  const origin = siteOrigin();
+  useJsonLd(upcoming.length ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: upcoming.slice(0, 20).map((e, i) => ({
+      "@type": "ListItem", position: i + 1,
+      item: {
+        "@type": "Event",
+        name: e.title,
+        startDate: e.starts_at,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: e.format === "online"
+          ? "https://schema.org/OnlineEventAttendanceMode"
+          : "https://schema.org/OfflineEventAttendanceMode",
+        ...(e.description ? { description: e.description } : {}),
+        location: e.format === "online"
+          ? { "@type": "VirtualLocation", url: e.reg_url || `${origin}/events` }
+          : { "@type": "Place", name: e.location || "Факультет права НИУ ВШЭ", address: e.location || "Москва, ул. Мясницкая, д. 20" },
+        organizer: { "@type": "Organization", name: "Клуб выпускников факультета права НИУ ВШЭ", url: `${origin}/` },
+        image: e.cover || `${origin}/og-card.png`,
+        url: e.reg_url || `${origin}/events`,
+      },
+    })),
+  } : null);
 
   // Кнопка RSVP — общая для карточки и модалки.
   const rsvpButton = (e: ClubEvent, isPast: boolean) => {

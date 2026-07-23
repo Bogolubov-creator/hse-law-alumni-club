@@ -5,6 +5,7 @@ import { apiGet, rub, type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
+import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
 
 const RATES = [1, 1.25, 1.5, 2] as const;
 
@@ -101,6 +102,25 @@ export default function Podcasts() {
   const subscribe = useSubscribePodcasts(t);
   const data = q.data;
   const priceRub = data ? rub(data.price) : "3 999 ₽";
+
+  // PodcastSeries + эпизоды (schema.org) — структурированная разметка витрины подкастов.
+  const origin = siteOrigin();
+  useJsonLd(data?.items?.length ? {
+    "@context": "https://schema.org",
+    "@type": "PodcastSeries",
+    name: "Подкасты клуба выпускников факультета права НИУ ВШЭ",
+    description: "Разговоры с выпускниками, преподавателями и практиками права.",
+    url: `${origin}/podcasts`,
+    inLanguage: "ru-RU",
+    publisher: { "@type": "Organization", name: "Клуб выпускников факультета права НИУ ВШЭ", url: `${origin}/` },
+    hasPart: data.items.slice(0, 30).map((p) => ({
+      "@type": "PodcastEpisode",
+      name: p.title,
+      ...(p.description ? { description: p.description } : {}),
+      ...(p.cover ? { image: p.cover } : {}),
+      url: `${origin}/podcasts`,
+    })),
+  } : null);
 
   const onSubscribe = () => {
     subscribe.mutate(undefined, {
