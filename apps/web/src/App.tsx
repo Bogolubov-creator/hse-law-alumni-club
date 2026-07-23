@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import Home from "./pages/Home.js";
 import News from "./pages/News.js";
 import NewsPost from "./pages/NewsPost.js";
@@ -27,7 +26,6 @@ const AdminApp = lazy(() => import("./admin/AdminApp.js"));
 
 export default function App() {
   const navigate = useNavigate();
-  const qc = useQueryClient();
   // Обратная совместимость: старый хэш-адрес админки (#/admin) → обычный маршрут.
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {
@@ -35,16 +33,18 @@ export default function App() {
     }
   }, [navigate]);
   // Централизованная реакция на истёкшую сессию (событие из api.ts при 401 с токеном):
-  // чистим токен, сбрасываем кэш авторизованных данных и ведём на вход.
+  // убираем ТОЛЬКО мёртвый токен. Намеренно НЕ трогаем кэш и НЕ навигируем:
+  //  • qc.clear() отменил бы ещё-pending запрос, его isError не закоммитился бы,
+  //    и экраны, ждущие isError (ЛК), зависли бы в бесконечном рефетч-цикле;
+  //  • navigate('/lk') выкидывал бы гостя с истёкшим токеном с публичных страниц
+  //    (корзина/витрины, где справочный бейдж скидки дёргает /me) и ломал бы
+  //    гостевое оформление.
+  // Защищённые страницы (ЛК/профиль/админка) сами обрабатывают свой 401 и показывают вход.
   useEffect(() => {
-    const onUnauth = () => {
-      clearToken();
-      qc.clear();
-      navigate("/lk", { replace: true });
-    };
+    const onUnauth = () => clearToken();
     window.addEventListener("club:unauthorized", onUnauth);
     return () => window.removeEventListener("club:unauthorized", onUnauth);
-  }, [navigate, qc]);
+  }, []);
   return (
     <>
       <VisionPanel />
