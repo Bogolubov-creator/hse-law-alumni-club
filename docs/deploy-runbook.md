@@ -1,0 +1,121 @@
+# Прод-runbook — Клуб выпускников факультета права НИУ ВШЭ
+
+Оперативная инструкция для оператора VPS: деплой, обновление, откат, восстановление,
+ротация секретов, мониторинг, инциденты. Все команды — от пользователя с доступом к `docker`.
+
+## Архитектура (кратко)
+
+Один VPS, один инстанс API. Docker Compose: `postgres` (16) → `directus` (11, CMS/схема) →
+`bootstrap` (одноразовый идемпотентный сид) → `api` (Fastify) + `web` (SPA за Caddy) →
+`caddy` (внешний TLS-прокси). Postgres — только во внутренней сети (не публикуется).
+Cron-задачи (decay, dpo-sync, напоминания, ретенция ПДн) выполняются **внутри процесса API**.
+
+> **Ограничение single-instance.** Cron и стор rate-limit/лока входа — в памяти процесса.
+> **Нельзя** масштабировать API в несколько реплик без распределённого лока (advisory-lock
+> Postgres / Redis) и общего стора — иначе задвоятся напоминания/начисления, а лимиты
+> перестанут действовать (см. `apps/api/src/lib/mutex.ts`, `lib/security.ts`, `server.ts`).
+
+## 1. Предпосылки перед прод-запуском
+
+Заполнить `.env` из `.env.example` и обязательно:
+
+- Сгенерировать секреты: `POSTGRES_PASSWORD`, `DIRECTUS_KEY`, `DIRECTUS_SECRET`,
+  `DIRECTUS_SERVICE_TOKEN`, `AUTH_SECRET` (≥32), `ADMIN_AUTH_SECRET` (отдельный), `ADMIN_PASSWORD`,
+  `BACKUP_ENCRYPTION_KEY` — каждый через `openssl rand -hex 32`.
+- `APP_ENV=production` — включает **fail-fast**: API не стартует при плейсхолдер-секретах,
+  `PUBLIC_URL` не `https://`, пустом `ADMIN_AUTH_SECRET`, боте на webhook без секрета.
+- Реальные `WEB_DOMAIN`/`ADMIN_DOMAIN`, валидный `ACME_EMAIL` (не `.local` — Let's Encrypt отклонит),
+  `PUBLIC_URL=https://<домен>`, `DIRECTUS_PUBLIC_URL=https://admin.<домен>`,
+  `DIRECTUS_CORS_ORIGIN=https://admin.<домен>` (не `true`).
+- `SEED_DEMO` **не задавать** (иначе editor со слабым паролем станет бэкдором; офис входит
+  под аккаунтом Directus Administrator).
+- Опционально: `TELEGRAM_*`, `SMTP_*`, `OFFICE_TG_*`, `YOOKASSA_*`, `VAPID_*`, `SENTRY_DSN`,
+  `BACKUP_OFFSITE_REMOTE` (rclone-remote для offsite-бэкапа в РФ).
+
+> **Важно про web.** `PUBLIC_URL` и `DIRECTUS_PUBLIC_URL` инлайнятся в SPA-бандл **на сборке**
+> (build-args `VITE_SITE_URL`/`VITE_DIRECTUS_URL`). При смене доменов web нужно **пересобрать**.
+
+Организационные шаги 152-ФЗ (РКН, локализация в РФ, ответственный, DPA с ЮKassa) — см.
+[152fz-compliance.md](152fz-compliance.md).
+
+## 2. Первичный деплой
+
+```bash
+git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club-pravo-hse
+cd club-pravo-hse
+cp .env.example .env      # затем заполнить (см. §1)
+docker compose up -d --build
+docker compose logs -f bootstrap   # дождаться «Bootstrap завершён», Ctrl+C
+./scripts/apply-indexes.sh          # индексы БД под масштаб
+```
+
+Установить cron из `infra/cron.example` (`crontab -e`): бэкап 03:30, проверка бэкапа Пн 04:00,
+uptime каждые 5 мин. Проверить: `curl -fsS https://<домен>/api/health` → `{"status":"ok"}`.
+
+## 3. Обновление / редеплой
+
+```bash
+git pull
+docker compose up -d --build       # пересобирает изменённые образы
+./scripts/apply-indexes.sh          # идемпотентно; на случай новых индексов
+```
+
+SIGTERM обрабатывается gracefully (cron останавливается, активные запросы дозавершаются,
+`stop_grace_period: 30s`). Если менялись домены/`PUBLIC_URL` — web пересоберётся сам (build-args).
+
+## 4. Откат
+
+- **Код:** `git revert <sha>` (или `git checkout <прежний-tag>`), затем `docker compose up -d --build`.
+- **Быстрый откат сервиса:** держать предыдущий образ; `docker compose up -d` на нём.
+- **Данные:** если проблема повредила БД — восстановить из бэкапа (§5). Схема Directus и сиды
+  идемпотентны — повторный `bootstrap` безопасен.
+
+## 5. Восстановление из бэкапа
+
+Бэкапы — AES-256 (`scripts/backup-db.sh`), восстановимость проверяется еженедельно
+(`scripts/backup-verify.sh`). Ручное восстановление:
+
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY \
+  -in backups/club-YYYY-MM-DD-HHMM.sql.gz.enc | gunzip \
+  | docker compose exec -T postgres psql -U club -d club
+```
+
+Ключ `BACKUP_ENCRYPTION_KEY` хранить **отдельно** от бэкапов. Offsite-копия — при заданном
+`BACKUP_OFFSITE_REMOTE` делается автоматически в конце `backup-db.sh`.
+
+## 6. Ротация секретов
+
+- **`AUTH_SECRET` / `ADMIN_AUTH_SECRET`:** заменить в `.env`, `docker compose up -d api`.
+  Все текущие сессии ЛК/админки станут недействительны (потребуется повторный вход) — это ожидаемо.
+- **`DIRECTUS_SERVICE_TOKEN`:** пересоздать токен сервис-аккаунта в Directus Studio, обновить `.env`,
+  перезапустить `api` и `bootstrap`.
+- **Компрометация аккаунта выпускника:** сброс пароля бампает `token_version` — старые токены
+  этого пользователя отзываются немедленно (`lib/auth.ts`). Массовый отзыв — сменой `AUTH_SECRET`.
+- **`POSTGRES_PASSWORD`:** сменить в Postgres и `.env` согласованно (иначе Directus не подключится).
+
+## 7. Мониторинг
+
+- **Healthchecks:** у всех сервисов в compose (`docker compose ps` показывает healthy/unhealthy).
+  `/api/health` — liveness, `/api/ready` — связь с Directus.
+- **Uptime:** `scripts/uptime-check.sh` (host-cron) шлёт алерт в офисный TG при падении/восстановлении.
+- **Ошибки:** Sentry при заданном `SENTRY_DSN` (ПДн вычищаются в `beforeSend`).
+- **Логи:** json-file с ротацией (`max-size 10m`, `max-file 3`) — диск не забьётся.
+- **Рекомендация:** добавить **внешний** аптайм-пробник (UptimeRobot/Healthchecks.io) — host-cron
+  не сообщит, если сам VPS недоступен.
+
+## 8. Инциденты
+
+- **API не стартует после деплоя:** `docker compose logs api` — при `APP_ENV=production` в начале
+  печатаются причины fail-fast (`[prod-config] …`). Исправить `.env`, перезапустить.
+- **Directus/БД недоступны:** `/api/ready` → 503; проверить `docker compose ps`, логи postgres/directus.
+- **Компрометация:** сменить `AUTH_SECRET` (отзыв всех сессий) и `DIRECTUS_SERVICE_TOKEN`,
+  проверить `GET /api/admin/audit`, при необходимости восстановить БД из чистого бэкапа.
+- **Наплыв/DoS:** per-IP rate-limit + per-route лимиты активны; при необходимости ужесточить
+  лимиты Caddy/`server.ts` и увеличить ресурсы (`mem_limit`).
+
+## Связанные документы
+
+- [152fz-compliance.md](152fz-compliance.md) — 152-ФЗ: что в коде, что делает оператор.
+- [seo-plan.md](seo-plan.md) — SEO-план и мета-разметка.
+- `.env.example` — все переменные окружения с комментариями.
