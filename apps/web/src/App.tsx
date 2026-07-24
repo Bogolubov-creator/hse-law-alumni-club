@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { useIsMobile } from "./lib/use-mobile.js";
 import Home from "./pages/Home.js";
 import News from "./pages/News.js";
 import NewsPost from "./pages/NewsPost.js";
@@ -23,9 +24,17 @@ const Lk = lazy(() => import("./pages/Lk.js"));
 const Profile = lazy(() => import("./pages/Profile.js"));
 const Cart = lazy(() => import("./pages/Cart.js"));
 const AdminApp = lazy(() => import("./admin/AdminApp.js"));
+// Мобильная native-app-оболочка (порт Claude Design) — отдельным чанком, только для телефонов.
+const MobileApp = lazy(() => import("./mobile/MobileApp.js"));
+
+// Маршруты-табы, которые на телефоне (<768px) показываются как native-app вместо десктоп-сайта.
+const MOBILE_APP_ROUTES = new Set(["/", "/news", "/dpo", "/podcasts", "/merch"]);
 
 export default function App() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isMobile = useIsMobile();
+  const mobileTakeover = isMobile && MOBILE_APP_ROUTES.has(pathname);
   // Обратная совместимость: старый хэш-адрес админки (#/admin) → обычный маршрут.
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {
@@ -50,6 +59,7 @@ export default function App() {
       <VisionPanel />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
+        {mobileTakeover ? <MobileApp /> : (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/news" element={<News />} />
@@ -71,6 +81,7 @@ export default function App() {
           <Route path="/requisites" element={<Requisites />} />
           <Route path="*" element={<Stub title="Страница не найдена" />} />
         </Routes>
+        )}
       </Suspense>
       </ErrorBoundary>
       <CookieBanner />
