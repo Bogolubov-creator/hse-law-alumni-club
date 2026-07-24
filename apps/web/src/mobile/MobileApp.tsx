@@ -6,6 +6,10 @@ import { token, usePrograms, useProducts, useCart, useMemberDiscount, useCartMut
 import { useMe, useLedger, useNewsList, usePodcasts, formatNewsDate } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
+import { isAndroid } from "../lib/use-mobile.js";
+
+// Платформа фиксируется один раз (UA не меняется в рамках сессии).
+const ANDROID = isAndroid();
 
 /**
  * Мобильная native-app-оболочка (порт «Клуб выпускников.dc.html» из Claude Design).
@@ -35,6 +39,27 @@ const TABS = [
 ];
 
 function TabBar({ active }: { active: string }) {
+  if (ANDROID) {
+    // Material 3 NavigationBar: pill-индикатор активного таба, сплошной фон без блюра.
+    return (
+      <nav style={{ flexShrink: 0, display: "flex", alignItems: "stretch", padding: "6px 6px calc(env(safe-area-inset-bottom, 0px) + 8px)", background: "#FBF3E8", borderTop: "1px solid #E7E0D0" }}>
+        {TABS.map((t) => {
+          const on = t.to === active;
+          const col = on ? "#C9450E" : "#5C5648";
+          return (
+            <Link key={t.to} to={t.to} aria-label={t.label} aria-current={on ? "page" : undefined}
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", textDecoration: "none" }}>
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 62, height: 32, borderRadius: 16, background: on ? "rgba(236,90,19,.16)" : "transparent", transition: "background .2s" }}>
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{t.icon}</svg>
+              </span>
+              <span style={{ ...mono, fontSize: 8.5, letterSpacing: ".02em", color: col }}>{t.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    );
+  }
+  // iOS / прочее — Cupertino-стиль: блюр-фон, активный цвет без «таблетки».
   return (
     <nav style={{ flexShrink: 0, display: "flex", alignItems: "stretch", padding: "9px 6px calc(env(safe-area-inset-bottom, 0px) + 12px)", background: "rgba(251,243,232,.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid #E7E0D0" }}>
       {TABS.map((t) => {
@@ -358,7 +383,11 @@ function MobileDpo() {
 }
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
-  return <button onClick={onClick} style={{ flexShrink: 0, ...{ fontFamily: "'Onest'" }, fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + (on ? "#EC5A13" : "#E4DCCC"), background: on ? "rgba(236,90,19,.1)" : "#fff", color: on ? "#C9450E" : INK, cursor: "pointer" }}>{children}</button>;
+  // Android — Material-чип (тёмный активный); iOS — оранжевый активный.
+  const brd = on ? (ANDROID ? "#14181F" : "#EC5A13") : "#E4DCCC";
+  const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "#fff";
+  const col = on ? (ANDROID ? "#FBF3E8" : "#C9450E") : INK;
+  return <button onClick={onClick} style={{ flexShrink: 0, fontFamily: "'Onest'", fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + brd, background: bg, color: col, cursor: "pointer" }}>{children}</button>;
 }
 
 // ── Подкасты ─────────────────────────────────────────────────────────

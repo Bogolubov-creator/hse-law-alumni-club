@@ -17,3 +17,16 @@ function getSnapshot(): boolean {
 export function useIsMobile(): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
+
+/**
+ * true на Android — для платформенно-идиоматичной мобильной оболочки (Material vs iOS).
+ * Оверрайд ?platform=android|ios (превью/QA любого варианта без реального устройства).
+ */
+export function isAndroid(): boolean {
+  if (typeof window !== "undefined") {
+    const p = new URLSearchParams(window.location.search).get("platform");
+    if (p === "android") return true;
+    if (p === "ios") return false;
+  }
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+}
