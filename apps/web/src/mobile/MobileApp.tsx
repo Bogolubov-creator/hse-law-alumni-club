@@ -1,8 +1,8 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LEVELS } from "@club/shared";
-import { rub, type Program, type Product } from "../lib/api.js";
-import { token, usePrograms, useProducts, useCart, useMemberDiscount, useCartMutations } from "../lib/cart.js";
+import { rub, type Program, type Product, type OrderResult } from "../lib/api.js";
+import { token, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, usePodcasts, formatNewsDate } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
@@ -462,9 +462,214 @@ function MobileMerch() {
   );
 }
 
+// ── Детальные экраны (стадия 2): full-screen без нижней навигации ─────
+const roundDark: CSSProperties = { width: 40, height: 40, borderRadius: 99, border: "none", background: "rgba(20,24,31,.42)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, textDecoration: "none" };
+const roundLight: CSSProperties = { width: 40, height: 40, borderRadius: 12, border: "1px solid #ECE6DA", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 };
+const secTitle: CSSProperties = { ...disp, fontWeight: 600, fontSize: 15, marginBottom: 8 };
+const factChip: CSSProperties = { ...mono, fontSize: 10.5, color: INK, background: "#fff", border: "1px solid #ECE6DA", padding: "7px 11px", borderRadius: 9 };
+const stickyBar: CSSProperties = { flexShrink: 0, padding: "12px 20px calc(env(safe-area-inset-bottom, 0px) + 16px)", background: "#FBF3E8", borderTop: "1px solid #EFE7D8", display: "flex", gap: 11 };
+const primaryBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "none", background: "#EC5A13", color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: "0 12px 24px -12px rgba(236,90,19,.8)" };
+const ghostBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "1.5px solid #14181F", background: "#fff", color: INK, fontFamily: "'Onest'", fontWeight: 700, fontSize: 15, cursor: "pointer" };
+const BackWhite = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
+const BackInk = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
+
+function MobileProgram() {
+  // Оболочка рендерится вне <Route path="/dpo/:slug">, поэтому useParams пуст —
+  // берём slug прямо из пути.
+  const { pathname } = useLocation();
+  const slug = decodeURIComponent(pathname.replace(/^\/dpo\//, ""));
+  const nav = useNavigate();
+  const q = useProgram(slug);
+  const discount = useMemberDiscount();
+  const { add } = useCartMutations();
+  const cart = useCart();
+  const toast = useToast();
+  const p = q.data;
+  useHead({ title: p?.title ?? "Программа ДПО", description: p?.description ?? undefined, canonical: typeof window !== "undefined" ? `${window.location.origin}/dpo/${slug}` : undefined });
+  const count = cart.data?.count ?? 0;
+  const mem = p ? Math.round(p.price * (1 - discount / 100)) : 0;
+  const modules = (Array.isArray(p?.modules) && p!.modules) || [];
+  const teacher = (Array.isArray(p?.teachers) && p!.teachers && p!.teachers[0]) || null;
+  const doAdd = (goCart: boolean) => {
+    if (!p) return;
+    add.mutate({ type: "dpo", ref_id: p.slug, qty: 1 }, {
+      onSuccess: () => { toast(goCart ? "Добавлено — оформите заявку" : `«${p.title}» в корзине`); if (goCart) nav("/cart"); },
+      onError: (e) => toast((e as Error).message, "err"),
+    });
+  };
+  return (
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+      <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ position: "relative", height: 200, overflow: "hidden", background: "linear-gradient(150deg,#1e2942,#11296B 60%,#0f1c3f)" }}>
+          <img src="/assets/themis.jpeg" alt="" style={{ position: "absolute", right: -30, bottom: -30, width: 190, height: 190, objectFit: "cover", opacity: .16, transform: "rotate(8deg)" }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(20,24,31,.15),rgba(20,24,31,.86))" }} />
+          <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 14px)", left: 16, right: 16, display: "flex", justifyContent: "space-between" }}>
+            <button onClick={() => nav("/dpo")} aria-label="Назад" style={roundDark}>{BackWhite}</button>
+            <Link to="/cart" aria-label="Корзина" style={{ ...roundDark, position: "relative" }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>
+              {count > 0 && <span style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 99, background: "#EC5A13", color: "#fff", ...mono, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #0f1c3f" }}>{count}</span>}
+            </Link>
+          </div>
+          {p && <div style={{ position: "absolute", left: 20, right: 20, bottom: 16 }}>
+            <span style={{ ...mono, fontSize: 9, letterSpacing: ".08em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>{FMT_RU[p.format] ?? p.format}</span>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 22, lineHeight: 1.15, color: "#FBF3E8", marginTop: 10 }}>{p.title}</div>
+          </div>}
+        </div>
+        {q.isLoading && <Loader />}
+        {q.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#C9450E" }}>Программа не найдена.</p>}
+        {p && (
+          <div style={{ padding: "18px 20px 24px", display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {p.duration && <span style={factChip}>{p.duration}</span>}
+              {p.document && <span style={factChip}>Документ: {p.document}</span>}
+              {p.direction && <span style={factChip}>{p.direction}</span>}
+            </div>
+            <div style={{ ...CARD, borderRadius: 18, padding: "16px 17px" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <span style={{ ...disp, fontWeight: 800, fontSize: 26, color: "#EC5A13" }}>{rub(mem)}</span>
+                {discount > 0 && <span style={{ ...mono, fontSize: 14, color: "#B8B0A0", textDecoration: "line-through" }}>{rub(p.price)}</span>}
+              </div>
+              <div style={{ ...mono, fontSize: 10.5, color: "#9B9584", marginTop: 6 }}>{discount > 0 ? `Цена члена клуба (−${discount}%) · справочно` : "Цена · справочно"}</div>
+            </div>
+            {p.description && <div><div style={secTitle}>О программе</div><div style={{ fontSize: 14, lineHeight: 1.55, color: "#3a3f49" }}>{p.description}</div></div>}
+            {modules.length > 0 && <div><div style={secTitle}>Модули</div><div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{modules.map((m, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, ...CARD, borderRadius: 13, padding: "12px 14px" }}><span style={{ width: 22, height: 22, borderRadius: 99, background: "rgba(236,90,19,.12)", color: "#C9450E", ...mono, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span><span style={{ fontSize: 13.5 }}>{m.title}</span></div>
+            ))}</div></div>}
+            {teacher && <div style={{ display: "flex", alignItems: "center", gap: 12, background: INK, borderRadius: 16, padding: "15px 16px" }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#E3C272,#C49A45)", color: INK, ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{teacher.name.trim()[0] ?? "≡"}</span><div style={{ minWidth: 0 }}><div style={{ ...mono, fontSize: 9.5, letterSpacing: ".1em", color: "rgba(251,243,232,.5)" }}>ПРЕПОДАВАТЕЛЬ</div><div style={{ fontWeight: 600, fontSize: 14, color: "#FBF3E8", marginTop: 2 }}>{teacher.name}{teacher.role ? ` · ${teacher.role}` : ""}</div></div></div>}
+          </div>
+        )}
+      </div>
+      {p && (p.source_url ? (
+        <div style={stickyBar}><a href={p.source_url} target="_blank" rel="noopener noreferrer" style={{ ...primaryBtn, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>Запись на hse.ru ↗</a></div>
+      ) : (
+        <div style={stickyBar}>
+          <button onClick={() => doAdd(false)} disabled={add.isPending} style={ghostBtn}>В корзину</button>
+          <button onClick={() => doAdd(true)} disabled={add.isPending} style={{ ...primaryBtn, flex: 1.3 }}>Оставить заявку</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CartField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "#fff", padding: "0 15px", fontFamily: "'Onest'", fontSize: 15, color: INK, outline: "none" }} />;
+}
+
+function MobileCart() {
+  useHead({ title: "Заявка", noindex: true });
+  const nav = useNavigate();
+  const cart = useCart();
+  const discount = useMemberDiscount();
+  const { setQty } = useCartMutations();
+  const toast = useToast();
+  const [form, setForm] = useState({ fio: "", phone: "", email: "", fulfillment: "pickup" as "pickup" | "delivery", address: "", consent: false, website: "" });
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<OrderResult | null>(null);
+  const items = cart.data?.items ?? [];
+  const subtotal = cart.data?.subtotal ?? 0;
+  const dpoSub = items.filter((i) => i.type === "dpo").reduce((s, i) => s + i.price * i.qty, 0);
+  const discAmt = Math.round((dpoSub * discount) / 100);
+  const total = subtotal - discAmt;
+  const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault(); setBusy(true);
+    submitOrder({ contact_fio: form.fio, contact_phone: form.phone, contact_email: form.email, fulfillment: form.fulfillment, address: form.address || null, comment: null, consent_pdn: form.consent, website: form.website })
+      .then((res) => { setResult(res); cart.refetch(); })
+      .catch((err) => toast((err as Error).message, "err"))
+      .finally(() => setBusy(false));
+  };
+
+  if (result) {
+    return (
+      <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+        <div style={{ width: 96, height: 96, borderRadius: 99, background: "linear-gradient(140deg,#2C6E80,#15375E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 46px -20px rgba(21,55,94,.8)" }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#FBF3E8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg></div>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 24, marginTop: 26 }}>Заявка отправлена</div>
+        <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "#C9450E", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
+        <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн — кнопка ниже." : ""}</div>
+        {result.payment_url && <a href={result.payment_url} style={{ ...primaryBtn, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", padding: "0 26px", background: "#1F8A5B", boxShadow: "none" }}>Оплатить онлайн</a>}
+        <button onClick={() => nav("/")} style={{ marginTop: 22, height: 52, padding: "0 34px", borderRadius: 15, border: "none", background: INK, color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>На главную</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+      <header style={{ ...HEADER, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 12px" }}>
+        <button onClick={() => nav(-1)} aria-label="Назад" style={roundLight}>{BackInk}</button>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 21, letterSpacing: "-.01em" }}>Заявка</div>
+      </header>
+      <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
+        {cart.isLoading && <Loader />}
+        {cart.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#C9450E" }}>Не удалось загрузить корзину.</p>}
+        {!cart.isLoading && !cart.isError && items.length === 0 && (
+          <div style={{ padding: "70px 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            <div style={{ width: 78, height: 78, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C49A45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg></div>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Заявка пуста</div>
+            <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Добавьте программу ДПО или мерч — и оформите заявку в пару касаний.</div>
+            <button onClick={() => nav("/dpo")} style={{ ...primaryBtn, flex: "none", marginTop: 22, height: 48, padding: "0 26px" }}>К программам</button>
+          </div>
+        )}
+        {items.length > 0 && (
+          <form onSubmit={submit} style={{ padding: "8px 20px 30px", display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+              {items.map((c) => (
+                <div key={`${c.ref_id}-${c.variant_sku ?? ""}`} style={{ display: "flex", gap: 13, ...CARD, borderRadius: 16, padding: "13px 14px", alignItems: "center" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.25 }}>{c.title}</div>
+                    {c.type === "dpo" && <div style={{ ...mono, fontSize: 10, color: "#2C6E80", marginTop: 3 }}>ДПО · скидка выпускника</div>}
+                    <div style={{ ...mono, fontSize: 12, color: "#9B9584", marginTop: 5 }}>{rub(c.price)}</div>
+                  </div>
+                  {c.type === "merch" ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
+                      <button type="button" aria-label="Меньше" disabled={setQty.isPending} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: c.qty - 1 })} style={{ width: 28, height: 28, borderRadius: 9, border: "1px solid #E4DCCC", background: "#fff", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>–</button>
+                      <span style={{ ...mono, fontSize: 13, minWidth: 14, textAlign: "center" }}>{c.qty}</span>
+                      <button type="button" aria-label="Больше" disabled={setQty.isPending || c.qty >= 99} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: c.qty + 1 })} style={{ width: 28, height: 28, borderRadius: 9, border: "1px solid #E4DCCC", background: "#fff", cursor: "pointer", fontSize: 15, lineHeight: 1 }}>+</button>
+                    </div>
+                  ) : (
+                    <button type="button" aria-label="Убрать" disabled={setQty.isPending} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: 0 })} style={{ background: "none", border: "none", color: "#C9450E", cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ ...CARD, borderRadius: 16, padding: "15px 16px", display: "flex", flexDirection: "column", gap: 9 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "#3a3f49" }}><span>Подытог</span><span style={mono}>{rub(subtotal)}</span></div>
+              {discAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "#2C6E80" }}><span>Скидка выпускника −{discount}% (ДПО)</span><span style={mono}>−{rub(discAmt)}</span></div>}
+              <div style={{ height: 1, background: "#F0E9DC", margin: "2px 0" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ ...disp, fontWeight: 700, fontSize: 15 }}>Итого</span><span style={{ ...disp, fontWeight: 800, fontSize: 19, color: "#EC5A13" }}>{rub(total)}</span></div>
+              <div style={{ ...mono, fontSize: 9.5, color: "#9B9584", marginTop: 2 }}>Оценочно. С вами свяжется менеджер учебного офиса.</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+              <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#9B9584" }}>Контакты</div>
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={form.website} onChange={(e) => set("website", e.target.value)} style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} />
+              <CartField label="ФИО" value={form.fio} onChange={(v) => set("fio", v)} />
+              <CartField label="Телефон" value={form.phone} onChange={(v) => set("phone", v)} />
+              <CartField label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} />
+              <div style={{ display: "flex", gap: 9 }}>
+                {(["pickup", "delivery"] as const).map((f) => (
+                  <button type="button" key={f} onClick={() => set("fulfillment", f)} style={{ flex: 1, height: 46, borderRadius: 13, cursor: "pointer", fontFamily: "'Onest'", fontWeight: 600, fontSize: 13.5, border: "1.5px solid " + (form.fulfillment === f ? "#EC5A13" : "#E4DCCC"), background: "#fff", color: INK }}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
+                ))}
+              </div>
+              {form.fulfillment === "delivery" && <CartField label="Адрес доставки" value={form.address} onChange={(v) => set("address", v)} />}
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 12.5, color: "#3a3f49", lineHeight: 1.45, marginTop: 2, cursor: "pointer" }}>
+                <input type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} required style={{ width: 20, height: 20, margin: 0, flexShrink: 0, accentColor: "#EC5A13" }} />
+                <span>Согласен на обработку персональных данных согласно <Link to="/privacy" target="_blank" style={{ color: "#C9450E" }}>политике</Link> (152-ФЗ).</span>
+              </label>
+            </div>
+            <button type="submit" disabled={busy || !form.consent} style={{ ...primaryBtn, height: 54, opacity: busy || !form.consent ? 0.6 : 1 }}>{busy ? "Отправляем…" : "Отправить заявку"}</button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Оболочка ─────────────────────────────────────────────────────────
 export default function MobileApp() {
   const { pathname } = useLocation();
+  // Детальные экраны — full-screen без нижней навигации (слайд-оверлеи макета).
+  if (pathname.startsWith("/dpo/")) return <MobileProgram />;
+  if (pathname === "/cart") return <MobileCart />;
   const active = TABS.some((t) => t.to === pathname) ? pathname : "/";
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#FBF3E8", color: INK, fontFamily: "'Onest', system-ui, sans-serif", overflow: "hidden" }}>
