@@ -34,8 +34,8 @@ export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isMobile = useIsMobile();
-  // На телефоне оболочку показываем и на детальных экранах (программа/корзина — стадия 2).
-  const mobileTakeover = isMobile && (MOBILE_APP_ROUTES.has(pathname) || pathname.startsWith("/dpo/") || pathname === "/cart");
+  // На телефоне оболочку показываем и на детальных экранах (программа/новость/корзина).
+  const mobileTakeover = isMobile && (MOBILE_APP_ROUTES.has(pathname) || pathname.startsWith("/dpo/") || pathname.startsWith("/news/") || pathname === "/cart");
   // Обратная совместимость: старый хэш-адрес админки (#/admin) → обычный маршрут.
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {

@@ -111,3 +111,7 @@ html.vis-noimg img, html.vis-noimg video, html.vis-noimg [style*="url("] { displ
 /* Шрифт с засечками / межбуквенный интервал. */
 html.vis-serif, html.vis-serif *:not(svg) { font-family: Georgia, "Times New Roman", serif !important; }
 html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.14em !important; line-height: 1.8 !important; }
+
+/* Мобильная оболочка (Claude Design): спиннер загрузки и эквалайзер плеера подкастов. */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
