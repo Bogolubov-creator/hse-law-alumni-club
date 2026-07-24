@@ -8,7 +8,7 @@ import { addPoints } from "../lib/engine.js";
 import { syncDpoCatalog } from "../lib/hse-sync.js";
 import { extendPodcastSub, subActive } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
-import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
+import { loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess } from "../lib/security.js";
 import { sendEmail } from "../lib/notify.js";
 import { pushToAll, pushToAlumni } from "../lib/push.js";
 import { anonymizeAlumni } from "../lib/anonymize.js";
@@ -39,18 +39,20 @@ export async function adminRoutes(app: FastifyInstance) {
     // иначе «Office@Mail.ru» → user не найден → ложное 403 для валидного офиса.
     const email = parsed.email.toLowerCase().trim();
     const { password } = parsed;
-    if (loginLocked(email)) {
+    if (loginLocked(email) || ipLoginLocked(req.ip)) {
       audit("admin.login.locked", { actor: `email:${email}`, req });
-      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте через 15 минут" });
+      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте позже" });
     }
     if (!(await directusCredsValid(email, password))) {
       registerLoginFail(email);
+      registerIpFail(req.ip);
       audit("admin.login.fail", { actor: `email:${email}`, req });
       return reply.code(401).send({ error: "Неверная почта или пароль" });
     }
     const user = await findUserWithRole(email);
     if (!user || !ADMIN_ROLES.includes(user.role)) return reply.code(403).send({ error: "Нет прав администратора" });
     registerLoginSuccess(email);
+    registerIpSuccess(req.ip);
     audit("admin.login.ok", { actor: `admin:${user.id}`, req });
     return { token: signAdmin(user.id, user.role), role: user.role };
   });

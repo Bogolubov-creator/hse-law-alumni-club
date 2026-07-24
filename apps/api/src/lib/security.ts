@@ -1,44 +1,63 @@
 /**
- * Анти-брутфорс по конкретному аккаунту (в дополнение к per-IP rate-limit):
- * после MAX_FAILS неудачных попыток вход для этого email блокируется на
- * LOCK_MS независимо от IP (распределённый перебор с многих адресов).
- * Хранение в памяти процесса — при рестарте счётчики обнуляются (приемлемо:
- * rate-limit per-IP остаётся всегда).
+ * Анти-брутфорс входа (в дополнение к per-IP rate-limit @fastify/rate-limit).
+ * Два независимых счётчика неудач:
+ *  • по аккаунту (email) — гасит перебор пароля к ОДНОМУ аккаунту (в т.ч. с многих IP);
+ *  • по IP — гасит password spraying (один IP по МНОГИМ аккаунтам: per-email лок не
+ *    срабатывает, т.к. на каждый email лишь 1 неудача, а rate-limit сбрасывает окно).
+ * Хранение в памяти процесса — при рестарте счётчики обнуляются (приемлемо: rate-limit
+ * per-IP остаётся всегда). Одноинстансный деплой (см. deploy-runbook); при масштабировании
+ * нужен общий стор (Redis).
  */
-const MAX_FAILS = 10;
-const LOCK_MS = 15 * 60 * 1000;
-const WINDOW_MS = 15 * 60 * 1000;
-
 interface Entry { fails: number; first: number; lockedUntil: number }
-const attempts = new Map<string, Entry>();
 
-// Периодическая уборка, чтобы Map не рос бесконечно.
+function isLocked(map: Map<string, Entry>, key: string): boolean {
+  const e = map.get(key);
+  return !!e && e.lockedUntil > Date.now();
+}
+function bumpFail(map: Map<string, Entry>, key: string, maxFails: number, lockMs: number, windowMs: number): void {
+  const now = Date.now();
+  const e = map.get(key);
+  if (!e || now - e.first > windowMs) { map.set(key, { fails: 1, first: now, lockedUntil: 0 }); return; }
+  e.fails++;
+  if (e.fails >= maxFails) e.lockedUntil = now + lockMs;
+}
+
+// По аккаунту: 10 неудач за 15 мин → блок на 15 мин.
+const EMAIL_MAX = 10, EMAIL_LOCK_MS = 15 * 60 * 1000, EMAIL_WINDOW_MS = 15 * 60 * 1000;
+const emailAttempts = new Map<string, Entry>();
+// По IP: 30 неудач за 15 мин → блок на 30 мин (запас под общий NAT легитимных юзеров).
+const IP_MAX = 30, IP_LOCK_MS = 30 * 60 * 1000, IP_WINDOW_MS = 15 * 60 * 1000;
+const ipAttempts = new Map<string, Entry>();
+
+// Периодическая уборка, чтобы Map'ы не росли бесконечно.
 setInterval(() => {
   const now = Date.now();
-  for (const [k, e] of attempts) {
-    if (e.lockedUntil < now && now - e.first > WINDOW_MS) attempts.delete(k);
+  for (const map of [emailAttempts, ipAttempts]) {
+    for (const [k, e] of map) {
+      if (e.lockedUntil < now && now - e.first > IP_WINDOW_MS) map.delete(k);
+    }
   }
 }, 60_000).unref();
 
 export function loginLocked(email: string): boolean {
-  const e = attempts.get(email.toLowerCase());
-  return !!e && e.lockedUntil > Date.now();
+  return isLocked(emailAttempts, email.toLowerCase());
 }
-
 export function registerLoginFail(email: string): void {
-  const key = email.toLowerCase();
-  const now = Date.now();
-  const e = attempts.get(key);
-  if (!e || now - e.first > WINDOW_MS) {
-    attempts.set(key, { fails: 1, first: now, lockedUntil: 0 });
-    return;
-  }
-  e.fails++;
-  if (e.fails >= MAX_FAILS) e.lockedUntil = now + LOCK_MS;
+  bumpFail(emailAttempts, email.toLowerCase(), EMAIL_MAX, EMAIL_LOCK_MS, EMAIL_WINDOW_MS);
+}
+export function registerLoginSuccess(email: string): void {
+  emailAttempts.delete(email.toLowerCase());
 }
 
-export function registerLoginSuccess(email: string): void {
-  attempts.delete(email.toLowerCase());
+/** Заблокирован ли IP по превышению суммарных неудач входа (password spraying). */
+export function ipLoginLocked(ip: string): boolean {
+  return isLocked(ipAttempts, ip);
+}
+export function registerIpFail(ip: string): void {
+  bumpFail(ipAttempts, ip, IP_MAX, IP_LOCK_MS, IP_WINDOW_MS);
+}
+export function registerIpSuccess(ip: string): void {
+  ipAttempts.delete(ip);
 }
 
 /** IP-подсети уведомлений ЮKassa (https://yookassa.ru/developers/using-api/webhooks). */

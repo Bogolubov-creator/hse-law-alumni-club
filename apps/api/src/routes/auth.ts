@@ -9,7 +9,7 @@ import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 import { validateInitData } from "../lib/telegram.js";
 import { audit } from "../lib/audit.js";
-import { loginLocked, registerLoginFail, registerLoginSuccess } from "../lib/security.js";
+import { loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess } from "../lib/security.js";
 import { sendEmail, notifyOfficeText } from "../lib/notify.js";
 
 // Версия политики обработки ПДн (дата редакции) — фиксируется как доказательство согласия.
@@ -39,13 +39,15 @@ export async function authRoutes(app: FastifyInstance) {
     // нормализовать так же, иначе «Ivan@Mail.ru» не найдёт «ivan@mail.ru» → ложное 401.
     const email = parsed.email.toLowerCase().trim();
     const { password } = parsed;
-    // Блок по аккаунту (не только по IP): распределённый перебор с многих адресов.
-    if (loginLocked(email)) {
+    // Блок по аккаунту (перебор пароля к одному email, в т.ч. с многих IP) И по IP
+    // (password spraying: один IP по многим аккаунтам). Оба — поверх per-IP rate-limit.
+    if (loginLocked(email) || ipLoginLocked(req.ip)) {
       audit("login.locked", { actor: `email:${email}`, req });
-      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте через 15 минут" });
+      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте позже" });
     }
     if (!(await directusCredsValid(email, password))) {
       registerLoginFail(email);
+      registerIpFail(req.ip);
       audit("login.fail", { actor: `email:${email}`, req });
       return reply.code(401).send({ error: "Неверная почта или пароль" });
     }
@@ -54,6 +56,7 @@ export async function authRoutes(app: FastifyInstance) {
     const alumni = await findAlumniByUser(user.id);
     if (!alumni) return reply.code(403).send({ error: "Аккаунт не привязан к профилю выпускника" });
     registerLoginSuccess(email);
+    registerIpSuccess(req.ip);
     audit("login.ok", { actor: `alumni:${alumni.id}`, req });
     const token = signSession(alumni.id, user.id, (alumni as any).token_version ?? 0);
     return { token, alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
