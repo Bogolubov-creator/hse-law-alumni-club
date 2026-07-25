@@ -144,6 +144,8 @@ export default function Dpo() {
                       <span className="font-mono text-[19px] font-medium">{rub(priced(p))}</span>
                       {discount > 0 && <span className="font-mono text-[13px] text-grafit-soft line-through">{rub(p.price)}</span>}
                     </div>
+                    {/* Скидку показываем ТОЛЬКО верифицированному выпускнику: гостю
+                        цена выпускника не раскрывается (правило клуба). */}
                     {discount > 0 && <div className="mt-1"><DiscountBadge percent={discount} /></div>}
                     <div className="mt-3 flex gap-2">
                       <Link to={`/dpo/${p.slug}`} className="foc flex-1 rounded-[12px] border border-hse-blue py-3 text-center font-semibold text-hse-blue">Подробнее</Link>

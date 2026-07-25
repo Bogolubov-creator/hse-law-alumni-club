@@ -22,6 +22,30 @@ test("витрина ДПО показывает программы с цена�
   await expect(page.getByText(/₽/).first()).toBeVisible();
 });
 
+test("скидка выпускника не раскрывается гостю", async ({ page }) => {
+  // Правило клуба: −N% видит только верифицированный выпускник, гость — базовую цену.
+  await page.goto("/dpo", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText(/₽/).first()).toBeVisible();
+  await expect(page.getByText(/выпускнику|цена выпускника/)).toHaveCount(0);
+});
+
+test("герой ведёт гостя во вступление, а не во вход", async ({ page, isMobile }) => {
+  test.skip(!!isMobile, "на телефоне главная — native app-shell");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const hero = page.locator("#top");
+  await expect(hero.getByRole("link", { name: "Вступить в клуб" })).toBeVisible();
+  await expect(hero.getByRole("link", { name: /Уже в клубе — войти/ })).toBeVisible();
+});
+
+test("якорь #kak ведёт на объяснение вступления, а не на «Три причины»", async ({ page, isMobile }) => {
+  test.skip(!!isMobile, "на телефоне главная — native app-shell");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const kak = page.locator("#kak");
+  await expect(kak.getByRole("heading", { name: /Три шага и честные сроки/ })).toBeVisible();
+  await expect(kak.getByText(/обычно 1–3 рабочих дня/)).toBeVisible();
+  await expect(kak.getByText(/Оплаты на сайте нет/)).toBeVisible();
+});
+
 test("новости: список открывается и ведёт на публикацию", async ({ page }) => {
   await page.goto("/news", { waitUntil: "domcontentloaded" });
   const first = page.getByRole("link", { name: /Читать|новость/i }).first();

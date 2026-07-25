@@ -59,6 +59,18 @@ const TIMELINE = [
   { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, фирменный мерч и первые партнёрские предложения.", metric: "Фирменный мерч и партнёры", photo: "[ фото · мерч ]" },
   { year: "2026", title: "Сегодня", text: "Растущее сообщество выпускников факультета права с витринами и менторством.", metric: "и это только начало", photo: "[ фото · сообщество ]" },
 ];
+/** Скелет цифры счётчика: держит высоту слота, пока /api/stats не ответил. */
+function StatSkeleton() {
+  return <span aria-hidden style={{ display: "inline-block", width: 64, height: 44, borderRadius: 10, background: "repeating-linear-gradient(115deg,#EFE7D8 0 8px,#F6F0E4 8px 16px)", verticalAlign: "middle" }} />;
+}
+
+/** Шаги вступления в клуб — закрывают якорь #kak: что проверяют, сколько ждать, что откроется. */
+const JOIN_STEPS = [
+  { n: "01", title: "Заявка за 2 минуты", text: "ФИО, год выпуска, программа и почта. Или вход через Telegram — тогда заполнять почти нечего.", when: "сразу", color: "#EC5A13" },
+  { n: "02", title: "Учебный офис сверяет выпуск", text: "Проверка по спискам факультета. Статус заявки виден в личном кабинете, о результате приходит письмо.", when: "обычно 1–3 рабочих дня", color: "#2E6FAE" },
+  { n: "03", title: "Статус, скидка, события", text: "Бейдж выпускника, цена выпускника на ДПО, запись на события с баллами и доступ к менторам.", when: "навсегда, без взносов", color: "#1F8A5B" },
+];
+
 const REASONS = [
   { num: "01", color: "#C49A45", title: "Статус, который видно", text: "Верификация учебным офисом, личный бейдж и уровень – ваш профиль выпускника всегда подтверждён.", delay: 0 },
   { num: "02", color: "#EC5A13", title: "Скидка 5% выпускнику", text: "Цена выпускника на программы ДПО – применяется автоматически после верификации.", delay: 90 },
@@ -283,25 +295,31 @@ export default function Home() {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, ...mono, fontSize: 12, letterSpacing: ".1em", color: "#B5331B", background: "rgba(181,51,27,.1)", border: "1px solid rgba(181,51,27,.25)", padding: "6px 13px", borderRadius: 999 }}>● {hero.badge ?? "Сообщество выпускников факультета права"}</div>
             <h1 className="h-xl" style={{ ...disp, fontWeight: 800, fontSize: 62, lineHeight: 1.03, letterSpacing: "-0.015em", margin: "22px 0 0", textWrap: "balance" } as CSSProperties}>{hero.title_pre ?? "Статус выпускника, который"} <span style={{ color: "#EC5A13" }}>{hero.title_accent ?? "работает"}</span></h1>
             <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>{hero.subtitle ?? "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка выпускника на ДПО, новости и менторы – всё в одном месте."}</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 32 }}>
-              <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{token() ? "Мой личный кабинет" : hero.cta_primary ?? "Войти в личный кабинет"}</Link>
-              <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_secondary ?? "Как вступить"}</a>
+            {/* Порядок действий по аудитории: гостю первым делом «Вступить в клуб»
+                (раньше главной кнопкой был вход — для гостя без аккаунта это тупик),
+                вошедшему — его кабинет. Вход остаётся текстовой ссылкой. */}
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 32 }}>
+              {token() ? (
+                <Link to="/lk" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>Мой личный кабинет</Link>
+              ) : (
+                <Link to="/join" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_primary ?? "Вступить в клуб"}</Link>
+              )}
+              <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_secondary ?? "Как это работает"}</a>
+              {!token() && <Link to="/lk" className="foc" style={{ fontWeight: 600, fontSize: 15, color: "#C9450E", textDecoration: "none" }}>Уже в клубе — войти →</Link>}
             </div>
             <div style={{ display: "flex", gap: 38, marginTop: 46, flexWrap: "wrap" }}>
-              {/* Живые счётчики клуба из /api/stats; до загрузки — прежние статические. */}
-              {st ? (
-                <>
-                  <div><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st.alumni}</div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{plural(st.alumni, "выпускник", "выпускника", "выпускников")}<br />в клубе</div></div>
-                  <div style={{ width: 1, background: "#E5E7EB" }} />
-                  <div><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st.events}</div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{plural(st.events, "событие", "события", "событий")}<br />в календаре</div></div>
-                </>
-              ) : (
-                <>
-                  <div data-count="2"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}><span data-count="2">0</span></div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>выпуска<br />в клубе</div></div>
-                  <div style={{ width: 1, background: "#E5E7EB" }} />
-                  <div data-count="4"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}><span data-count="4">0</span></div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>уровня<br />статуса</div></div>
-                </>
-              )}
+              {/* Счётчики клуба из /api/stats. Слоты и подписи фиксированы: пока данные
+                  едут — скелет вместо цифры, а не другие цифры с другими подписями
+                  (раньше подмена «выпуска/уровня» → «выпускников/событий» дёргала вёрстку). */}
+              <div>
+                <div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st ? st.alumni : <StatSkeleton />}</div>
+                <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{st ? plural(st.alumni, "выпускник", "выпускника", "выпускников") : "выпускников"}<br />в клубе</div>
+              </div>
+              <div style={{ width: 1, background: "#E5E7EB" }} />
+              <div>
+                <div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st ? st.events : <StatSkeleton />}</div>
+                <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{st ? plural(st.events, "событие", "события", "событий") : "событий"}<br />в календаре</div>
+              </div>
               <div style={{ width: 1, background: "#E5E7EB" }} />
               <div data-count="5"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em", color: "#EC5A13" }}><span data-count="5">0</span>%</div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>скидка<br />выпускникам</div></div>
             </div>
@@ -420,8 +438,31 @@ export default function Home() {
         </section>
       )}
 
-      {/* ЗАЧЕМ ВСТУПАТЬ */}
+      {/* КАК ВСТУПИТЬ — закрывает якорь #kak: верификация офисом это главный барьер
+          продукта, и раньше он нигде не объяснялся (якорь вёл на «Три причины»). */}
       <section id="kak" style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 28px 20px" }}>
+        <div data-reveal style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>Как вступить</div>
+        <h2 data-reveal style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 34px" }}>Три шага и честные сроки</h2>
+        <div className="two-col" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22 }}>
+          {JOIN_STEPS.map((s, i) => (
+            <div key={s.n} data-reveal data-reveal-delay={i * 90} style={{ padding: 28, borderRadius: 18, border: "1px solid #E5E7EB", background: "#fff", display: "flex", flexDirection: "column" }}>
+              <div style={{ ...mono, fontSize: 13, color: s.color, fontWeight: 500 }}>{s.n}</div>
+              <div style={{ ...disp, fontWeight: 600, fontSize: 21, letterSpacing: "-0.01em", marginTop: 16, lineHeight: 1.2 }}>{s.title}</div>
+              <p style={{ fontSize: 15, lineHeight: 1.6, color: "#3a3f49", margin: "12px 0 0" }}>{s.text}</p>
+              <div style={{ ...mono, fontSize: 12, color: s.color, marginTop: "auto", paddingTop: 16 }}>{s.when}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, marginTop: 26 }}>
+          <Link to="/join" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 28px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8" }}>Подать заявку</Link>
+          <span style={{ ...mono, fontSize: 12.5, color: "#6B7280", maxWidth: 560, lineHeight: 1.5 }}>
+            Оплаты на сайте нет — заявку на ДПО ведёт учебный офис: он свяжется, выставит счёт и оформит договор.
+          </span>
+        </div>
+      </section>
+
+      {/* ЗАЧЕМ ВСТУПАТЬ */}
+      <section style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 28px 20px" }}>
         <div data-reveal style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>Зачем вступать</div>
         <h2 data-reveal style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 34px" }}>Три причины быть в клубе</h2>
         <div className="two-col" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22 }}>
