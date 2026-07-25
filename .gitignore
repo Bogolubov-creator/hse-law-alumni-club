@@ -11,3 +11,5 @@ caddy_config/
 design-export/
 .env.backup*
 backups/
+test-results/
+playwright-report/

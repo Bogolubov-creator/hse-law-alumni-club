@@ -122,7 +122,7 @@ function MobileHome() {
 
       <div style={{ padding: "16px 20px 2px" }}>
         <div style={{ fontSize: 15, color: "#6B7280" }}>Добрый день,</div>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 30, letterSpacing: "-.02em", marginTop: 1 }}>{first}</div>
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: 30, letterSpacing: "-.02em", margin: "1px 0 0" }}>{first}</h1>
       </div>
 
       {/* Карта выпускника */}
@@ -268,7 +268,7 @@ function GuestHome() {
     <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 30px", textAlign: "center" }}>
         <img src="/assets/themis.jpeg" alt="" width={76} height={76} style={{ borderRadius: 20, objectFit: "cover", boxShadow: "0 14px 30px -12px rgba(236,90,19,.7)" }} />
-        <div style={{ ...disp, fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", marginTop: 22 }}>Клуб выпускников</div>
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", margin: "22px 0 0" }}>Клуб выпускников</h1>
         <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "#9B9584", marginTop: 6 }}>ФАКУЛЬТЕТ ПРАВА · ВЫШКА</div>
         <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.55, marginTop: 18, maxWidth: 300 }}>
           Войдите, чтобы открыть карту выпускника — баллы, уровень и скидку на программы ДПО.
@@ -293,7 +293,9 @@ function ScreenHeader({ title, sub, right }: { title: string; sub?: string; righ
   return (
     <header style={{ ...HEADER, display: right ? "flex" : "block", alignItems: "flex-end", justifyContent: "space-between", padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 12px" }}>
       <div>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em" }}>{title}</div>
+        {/* Настоящий <h1>: экран мобильной оболочки — самостоятельная страница, скринридер
+            должен находить её заголовок навигацией по заголовкам (как на десктопе). */}
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: 0 }}>{title}</h1>
         {sub && <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>{sub}</div>}
       </div>
       {right}
@@ -349,7 +351,7 @@ function MobileDpo() {
   return (
     <div>
       <header style={{ ...HEADER, padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 12px" }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em" }}>Программы ДПО</div>
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: 0 }}>Программы ДПО</h1>
         <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>Скидка выпускника на программы ДПО</div>
         <div className="noscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px 2px" }}>
           <Chip on={!dir} onClick={() => setDir(null)}>Все</Chip>
