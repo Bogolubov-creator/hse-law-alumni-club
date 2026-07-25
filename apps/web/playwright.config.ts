@@ -12,9 +12,14 @@ export default defineConfig({
   retries: 1, // сеть/анимации: один ретрай гасит флейки, настоящие падения останутся
   fullyParallel: true,
   reporter: [["list"]],
+  // Воркеров ограничиваем: локальный стек — один инстанс API, параллель его душит.
+  workers: 4,
   use: {
     baseURL: process.env.E2E_BASE_URL || "http://localhost",
     screenshot: "only-on-failure",
+    // Ждём разбор HTML, а не полный "load": последний висит на внешних Google Fonts
+    // и давал ложные таймауты page.goto (шрифты к проверяемой логике отношения не имеют).
+    navigationTimeout: 20_000,
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },

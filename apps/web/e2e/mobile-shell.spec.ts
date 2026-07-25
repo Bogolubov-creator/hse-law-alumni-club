@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("нижняя таб-навигация: все пять вкладок", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const nav = page.locator("nav").last();
   for (const label of ["Карта", "Лента", "ДПО", "Подкасты", "Мерч"]) {
     await expect(nav.getByRole("link", { name: label })).toBeVisible();
@@ -20,14 +20,16 @@ test("нижняя таб-навигация: все пять вкладок", a
 });
 
 test("гость на «Карте» видит приглашение войти/вступить", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("link", { name: /Войти в кабинет/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Вступить в клуб/ })).toBeVisible();
 });
 
 test("переключение вкладок меняет экран", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const nav = page.locator("nav").last();
+  // Ждём готовности оболочки (lazy-чанк), иначе клик может уйти в пустоту.
+  await expect(nav.getByRole("link", { name: "ДПО" })).toBeVisible();
 
   await nav.getByRole("link", { name: "ДПО" }).click();
   await expect(page).toHaveURL(/\/dpo$/);
@@ -41,7 +43,7 @@ test("переключение вкладок меняет экран", async ({
 });
 
 test("карточка программы: детали и действие «В корзину»", async ({ page }) => {
-  await page.goto("/dpo");
+  await page.goto("/dpo", { waitUntil: "domcontentloaded" });
   await page.locator('a[href^="/dpo/"]').first().click();
   await expect(page).toHaveURL(/\/dpo\/.+/);
   // Клубная программа предлагает корзину; программа ВШЭ — переход на маркетплейс.
@@ -51,7 +53,7 @@ test("карточка программы: детали и действие «В
 });
 
 test("мерч-карточка требует выбрать размер до добавления", async ({ page }) => {
-  await page.goto("/merch");
+  await page.goto("/merch", { waitUntil: "domcontentloaded" });
   await page.locator('a[href^="/merch?item="]').first().click();
   await expect(page).toHaveURL(/item=/);
   // У товара с вариантами кнопка заблокирована до выбора размера.
@@ -60,7 +62,7 @@ test("мерч-карточка требует выбрать размер до 
 });
 
 test("плеер подкаста открывается с элементами управления", async ({ page }) => {
-  await page.goto("/podcasts");
+  await page.goto("/podcasts", { waitUntil: "domcontentloaded" });
   await page.locator('a[href*="?ep="]').first().click();
   await expect(page).toHaveURL(/ep=/);
   // Либо плеер (есть кнопка Играть), либо экран подписки для закрытого выпуска.
@@ -68,8 +70,17 @@ test("плеер подкаста открывается с элементами
   await expect(control.first()).toBeVisible();
 });
 
+test("гость по ссылке на приватный оверлей не попадает в тупик", async ({ page }) => {
+  // Регрессия: ?screen=profile у гостя раньше рендерил пустой экран без выхода.
+  for (const screen of ["profile", "ach", "ledger"]) {
+    await page.goto(`/?screen=${screen}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("link", { name: /Войти в кабинет/ })).toBeVisible();
+    await expect(page.locator("nav").last()).toBeVisible();
+  }
+});
+
 test("пустая корзина показывает честное состояние", async ({ page }) => {
-  await page.goto("/cart");
+  await page.goto("/cart", { waitUntil: "domcontentloaded" });
   await expect(page.getByText(/Заявка пуста|Подытог/).first()).toBeVisible();
 });
 
@@ -77,7 +88,7 @@ test("десктопная версия не показывает мобильн
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
   await page.addInitScript(() => localStorage.setItem("club_cookie_consent", "1"));
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("nav").last().getByRole("link", { name: "Карта" })).toHaveCount(0);
   await ctx.close();
 });

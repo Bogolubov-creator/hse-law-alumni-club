@@ -863,6 +863,18 @@ function MobileMerchItem({ slug }: { slug: string }) {
 }
 
 // ── Оверлеи ЛК: достижения / журнал / профиль (/?screen=…) ───────────
+/** Экран «сессия недоступна» для приватных оверлеев (истёк/отозван токен). */
+function OverlaySignIn() {
+  return (
+    <div style={{ padding: "60px 34px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+      <div style={{ width: 72, height: 72, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }} aria-hidden>🔐</div>
+      <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Нужен вход</div>
+      <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Сессия истекла или недоступна — войдите, чтобы открыть этот раздел.</div>
+      <Link to="/lk" style={{ ...primaryBtn, flex: "none", marginTop: 20, padding: "0 26px", height: 48, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Войти в кабинет</Link>
+    </div>
+  );
+}
+
 function OverlayHeader({ title, sub, onBack }: { title: string; sub?: string; onBack: () => void }) {
   return (
     <header style={{ ...HEADER, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 12px" }}>
@@ -886,6 +898,7 @@ function MobileAch() {
       <OverlayHeader title="Достижения" sub={me.data ? `${earned}/${list.length} · ${me.data.level.points} баллов` : undefined} onBack={() => nav("/")} />
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         {me.isLoading && <Loader />}
+        {me.isError && <OverlaySignIn />}
         <div style={{ padding: "14px 20px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>
           {list.map((a) => {
             const active = a.earned || a.star;
@@ -919,6 +932,7 @@ function MobileLedger() {
       <OverlayHeader title="История баллов" sub={me.data ? `Баланс · ${me.data.level.points} баллов` : undefined} onBack={() => nav("/")} />
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         {ledger.isLoading && <Loader />}
+        {(ledger.isError || me.isError) && <OverlaySignIn />}
         {ledger.data?.length === 0 && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#9B9584" }}>Пока нет начислений.</p>}
         <div style={{ padding: "12px 20px 40px", display: "flex", flexDirection: "column", gap: 10 }}>
           {(ledger.data ?? []).map((l, i) => {
@@ -961,6 +975,7 @@ function MobileProfile() {
       <OverlayHeader title="Профиль" onBack={() => nav("/")} />
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         {me.isLoading && <Loader />}
+        {me.isError && <OverlaySignIn />}
         {m && (
           <div style={{ padding: "14px 20px 40px", display: "flex", flexDirection: "column", gap: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
@@ -1020,7 +1035,10 @@ export default function MobileApp() {
   if (ep) return <MobilePodcastPlayer epId={ep} />;
   const item = pathname === "/merch" ? qs.get("item") : null;
   if (item) return <MobileMerchItem slug={item} />;
-  const screen = pathname === "/" ? qs.get("screen") : null;
+  // Приватные оверлеи ЛК — только для вошедшего: гость по прямой ссылке иначе
+  // получал пустой тупиковый экран. Без токена показываем обычную «Карту»
+  // (для гостя это приглашение войти/вступить).
+  const screen = pathname === "/" && token() ? qs.get("screen") : null;
   if (screen === "ach") return <MobileAch />;
   if (screen === "ledger") return <MobileLedger />;
   if (screen === "profile") return <MobileProfile />;
