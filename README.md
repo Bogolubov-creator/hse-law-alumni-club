@@ -68,8 +68,16 @@ docker compose logs -f bootstrap   # дождаться "Bootstrap заверш�
 
 ## Тесты
 ```bash
-pnpm -r test    # shared: уровни/скидка/decay/достижения (10) · api: telegram initData (4)
+pnpm -r test    # 155 юнитов: shared 46 + api 109
 ```
+- **shared** — уровни, скидка, decay, достижения, переоценка корзины.
+- **api, чистые библиотеки** — Telegram initData, идемпотентность платежа, анти-брутфорс, подсети ЮKassa.
+- **api, роуты** (`src/routes/*.test.ts`) — вход и регистрация с подтверждением почты, сброс пароля,
+  гарды админки, оформление заявки (переоценка по каталогу, остатки, скидка), вебхук ЮKassa
+  (подсети, сверка статуса через API, идемпотентность). Directus подменяется хранилищем в
+  памяти (`src/test/`), сеть не нужна.
+
+E2E (Playwright, против живого стека) — см. [docs/deploy-runbook.md](docs/deploy-runbook.md) §3.1.
 
 ## Деплой на VPS
 Тот же `docker compose up -d --build`. В `.env` поменять домены (`WEB_DOMAIN`, `ADMIN_DOMAIN`,
