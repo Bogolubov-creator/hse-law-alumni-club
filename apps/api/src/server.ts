@@ -3,7 +3,6 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import cron from "node-cron";
-import { ZodError } from "zod";
 import { env, assertProdConfig } from "./env.js";
 import { checkDirectus } from "./lib/directus.js";
 import { contentRoutes } from "./routes/content.js";
@@ -25,7 +24,8 @@ import { startTelegramPolling } from "./lib/telegram-polling.js";
 import { runDecay } from "./lib/engine.js";
 import { runEventReminders } from "./lib/event-reminders.js";
 import { runRetention } from "./lib/retention.js";
-import { initSentry, captureError } from "./lib/sentry.js";
+import { initSentry } from "./lib/sentry.js";
+import { registerErrorHandler } from "./lib/errors.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
 // trustProxy: 1 — доверяем ТОЛЬКО одному прокси-хопу (Caddy). true доверял бы всей
@@ -36,16 +36,8 @@ const app = Fastify({ logger: true, trustProxy: 1, bodyLimit: 256 * 1024 });
 // Валидационные ошибки zod → 400 (не 500).
 await initSentry();
 
-app.setErrorHandler((err, _req, reply) => {
-  if (err instanceof ZodError) return reply.code(400).send({ error: "Некорректные данные", details: err.issues.map((i) => i.message) });
-  app.log.error(err);
-  const st = (err as { statusCode?: number }).statusCode;
-  if (!st || st >= 500) captureError(err); // в Sentry — только наши падения, не 4xx клиента
-  const code = (err as { statusCode?: number }).statusCode;
-  // 4xx — честное сообщение (это ошибка запроса, не наша); 5xx не раскрываем.
-  if (code && code < 500) return reply.code(code).send({ error: (err as Error).message || "Некорректный запрос" });
-  return reply.code(500).send({ error: "Внутренняя ошибка" });
-});
+// Обработчик живёт в lib/errors.ts — тем же пользуются тесты роутов.
+registerErrorHandler(app);
 
 // Заголовки безопасности (API всегда JSON и не встраивается во фрейм).
 await app.register(helmet, {
@@ -149,10 +141,16 @@ app.get("/health", async () => ({
 }));
 
 // Готовность — проверяет связь с Directus сервисным токеном (критерий приёмки Фазы 0).
+// Эндпоинт публичный (Caddy проксирует /api/*), поэтому наружу отдаём только факт
+// готовности: e-mail сервисного аккаунта и детали сидов — подсказка для атакующего.
+// Полный ответ checkDirectus() остаётся в логе оператора.
 app.get("/ready", async (_req, reply) => {
   const directus = await checkDirectus();
-  if (!directus.ok) return reply.code(503).send({ status: "degraded", directus });
-  return { status: "ok", directus };
+  if (!directus.ok) {
+    app.log.error({ directus }, "readiness: Directus недоступен");
+    return reply.code(503).send({ status: "degraded", directus: { ok: false } });
+  }
+  return { status: "ok", directus: { ok: true } };
 });
 
 // Плавная остановка: по SIGTERM/SIGINT (docker stop, редеплой) останавливаем cron
