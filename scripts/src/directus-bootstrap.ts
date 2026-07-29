@@ -5,6 +5,7 @@
  *
  * Запуск: pnpm --filter @club/scripts bootstrap   (env: DIRECTUS_URL, ADMIN_EMAIL, ADMIN_PASSWORD, ...)
  */
+import { randomBytes } from "node:crypto";
 import {
   createDirectus,
   rest,
@@ -204,6 +205,10 @@ await ensureField("alumni", "telegram_id", str(true)); // связка с Telegr
 await ensureField("alumni", "token_version", int(0)); // ревокация JWT: +1 при сбросе пароля
 await ensureField("alumni", "consent_at", ts());        // 152-ФЗ: когда дано согласие на ПДн
 await ensureField("alumni", "consent_version", str()); // ... и версия политики (доказательство)
+// Дата верификации офисом: пишется в admin.ts при переводе в verified и объявлена в
+// AlumniRow, но самого поля в схеме не было — под ролью Administrator Directus молча
+// выбрасывал неизвестный ключ из payload, и дата нигде не сохранялась.
+await ensureField("alumni", "verified_at", ts());
 await ensureM2O("alumni", "referred_by", "alumni");
 await ensureField("alumni", "joined_at", ts("date-created"));
 await ensureField("alumni", "last_activity_at", ts());
@@ -463,11 +468,85 @@ async function ensureRole(name: string, icon: string) {
   }
   return r;
 }
-await ensureRole("editor", "edit_note");
+const editorRoleRec = await ensureRole("editor", "edit_note");
 await ensureRole("alumni", "school");
-await ensureRole("service", "smart_toy");
+const serviceRoleRec = await ensureRole("service", "smart_toy");
 // Administrator существует из ENV-бутстрапа Directus — используем для сервисного токена.
 const adminRole = roles.find((x: any) => x.name === "Administrator");
+
+// ─────────────────── 3.1 политики доступа (least privilege) ───────────────────
+// Directus 11: права живут в политиках, политики цепляются к ролям через directus_access.
+// До этого роли editor/service были ПУСТЫЕ (ноль политик), поэтому офис работал в Studio
+// под Administrator, а apps/api ходил админским токеном — утечка любого из них означала
+// полный доступ ко всем ПДн. Теперь у каждой стороны свой минимум.
+
+/** Контент, который офис ведёт в Studio. ПДн (alumni, orders, points_ledger, audit_log) сюда НЕ входят. */
+const CONTENT_COLLECTIONS = [
+  "pages", "pages_blocks", "block_hero", "block_cta",
+  "news", "programs", "products", "timeline_items", "podcasts", "events", "offers",
+];
+/** Что нужно apps/api: свои коллекции + системные, без которых не работают регистрация и аватары. */
+const SERVICE_SYSTEM = ["directus_files", "directus_users", "directus_roles"];
+const CRUD = ["create", "read", "update", "delete"] as const;
+
+async function api(path: string, init?: RequestInit): Promise<any> {
+  const res = await fetch(`${URL}${path}`, {
+    ...init,
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
+  });
+  if (!res.ok) throw new Error(`${init?.method ?? "GET"} ${path} → ${res.status} ${await res.text()}`);
+  return res.status === 204 ? null : await res.json();
+}
+
+async function ensurePolicy(name: string, opts: { appAccess: boolean; description: string }): Promise<string> {
+  const found = (await api(`/policies?filter[name][_eq]=${encodeURIComponent(name)}&fields=id&limit=1`)).data;
+  if (found?.[0]) return found[0].id as string;
+  const created = await api("/policies", {
+    method: "POST",
+    body: JSON.stringify({ name, icon: "policy", description: opts.description, app_access: opts.appAccess, admin_access: false, enforce_tfa: false }),
+  });
+  log(`+ политика ${name}`);
+  return created.data.id as string;
+}
+
+/** Идемпотентно выдать политике права на коллекцию. Повторный прогон ничего не дублирует. */
+async function ensurePermissions(policyId: string, collections: string[], actions: readonly string[]) {
+  const existing = (await api(`/permissions?filter[policy][_eq]=${policyId}&fields=collection,action&limit=-1`)).data ?? [];
+  const have = new Set(existing.map((p: any) => `${p.collection}:${p.action}`));
+  for (const collection of collections) {
+    for (const action of actions) {
+      if (have.has(`${collection}:${action}`)) continue;
+      await api("/permissions", {
+        method: "POST",
+        body: JSON.stringify({ policy: policyId, collection, action, fields: ["*"], permissions: {}, validation: {} }),
+      });
+    }
+  }
+}
+
+/** Привязать политику к роли (directus_access), не создавая дублей. */
+async function ensureAccess(roleId: string, policyId: string) {
+  const existing = (await api(`/access?filter[role][_eq]=${roleId}&filter[policy][_eq]=${policyId}&fields=id&limit=1`)).data;
+  if (existing?.[0]) return;
+  await api("/access", { method: "POST", body: JSON.stringify({ role: roleId, policy: policyId, sort: 1 }) });
+}
+
+const editorPolicy = await ensurePolicy("Офис (контент)", {
+  appAccess: true, // вход в Studio
+  description: "Редактирование контента сайта. Персональные данные выпускников и заявки недоступны — они ведутся в админ-панели сайта, где действия пишутся в аудит.",
+});
+await ensurePermissions(editorPolicy, CONTENT_COLLECTIONS, CRUD);
+await ensurePermissions(editorPolicy, ["directus_files"], CRUD); // обложки новостей/программ
+if (editorRoleRec?.id) await ensureAccess(editorRoleRec.id, editorPolicy);
+
+const servicePolicy = await ensurePolicy("Сервис (apps/api)", {
+  appAccess: false, // машине Studio не нужна
+  description: "Права бэкенда apps/api: данные приложения и файлы. Схему, настройки и расширения Directus менять нельзя — утечка токена не даёт захватить инсталляцию.",
+});
+await ensurePermissions(servicePolicy, [...COLLECTIONS, "pages_blocks", "block_hero", "block_cta"], CRUD);
+await ensurePermissions(servicePolicy, SERVICE_SYSTEM, CRUD);
+if (serviceRoleRec?.id) await ensureAccess(serviceRoleRec.id, servicePolicy);
+log("  политики: офис — только контент, сервис — только данные приложения");
 
 // ──────────────────────────── 4. пользователи ────────────────────────────
 log("== Пользователи ==");
@@ -481,15 +560,23 @@ async function ensureUser(email: string, fields: Record<string, any>) {
 
 // Сервисный пользователь со статическим токеном для apps/api (пока под Administrator;
 // тонкие политики роли service — в Фазе 4).
+// Пароль — случайный и НИКОМУ не известен (раньше сюда клали сам SERVICE_TOKEN, и утечка
+// токена автоматически давала вход в публичную Studio под полным админом). Машине пароль
+// не нужен: apps/api ходит статическим токеном. Перегенерируется при каждом прогоне —
+// это не мешает идемпотентности, живых сессий у сервисного аккаунта нет.
+// Роль — service с урезанной политикой (см. 3.1), а не Administrator: токен даёт доступ
+// к данным приложения, но не к схеме, настройкам и расширениям Directus.
+const svcRoleId = serviceRoleRec?.id ?? adminRole?.id ?? null;
+const svcPassword = randomBytes(32).toString("hex");
 const svc = await ensureUser("service@club.example.com", {
   first_name: "Service",
   last_name: "API",
-  password: SERVICE_TOKEN,
-  role: adminRole?.id ?? null,
+  password: svcPassword,
+  role: svcRoleId,
   token: SERVICE_TOKEN,
 });
-await client.request(updateUser(svc.id, { token: SERVICE_TOKEN, role: adminRole?.id ?? undefined } as any));
-log("  сервисный токен установлен");
+await client.request(updateUser(svc.id, { token: SERVICE_TOKEN, role: svcRoleId ?? undefined, password: svcPassword } as any));
+log("  сервисный токен установлен (пароль сервисного аккаунта — случайный, вход паролем не предполагается)");
 
 // Демо-аккаунты (офис + тестовый выпускник) — ТОЛЬКО при SEED_DEMO=true.
 // В проде НЕ создаём: иначе editor со слабым паролем из .env.example = бэкдор.
