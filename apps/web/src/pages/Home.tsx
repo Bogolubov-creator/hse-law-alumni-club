@@ -202,21 +202,86 @@ export default function Home() {
       if (pinInner) { pinInner.style.position = "static"; pinInner.style.height = "auto"; pinInner.style.padding = "64px 0"; }
       if (pinTrack) { pinTrack.style.overflowX = "auto"; pinTrack.style.transform = "none"; pinTrack.style.paddingBottom = "10px"; }
     } else {
+      // Геометрия секции целиком считается здесь — заголовок и лента всегда живут
+      // по одной левой границе, иначе композиция разъезжается.
+      //   · лента влезает в экран — центрируем её как единый блок: поля слева и справа
+      //     равные, заголовок ровно над первой карточкой, ехать некуда;
+      //   · не влезает — возвращаемся к колонке 1180px (как у остальных секций сайта)
+      //     и считаем, сколько ленте проехать, чтобы последняя карточка дошла до
+      //     правого края экрана с полем 28px.
+      // scrollWidth для этого не годится: у flex-контейнера он обрезается по padding-box
+      // и вылета карточек не видит — на широких экранах давал фиктивные 28px дрейфа.
+      const GUTTER = 28;   // поле страницы
+      const COLUMN = 1180; // ширина текстовой колонки сайта
+      let travel = 0;
+      const layout = () => {
+        if (!pinSection || !pinInner || !pinTrack) return;
+        const first = pinTrack.firstElementChild as HTMLElement | null;
+        const last = pinTrack.lastElementChild as HTMLElement | null;
+        if (!first || !last) return;
+        // clientWidth, а не innerWidth: последний включает полосу прокрутки и сдвигал бы ленту.
+        const screen = document.documentElement.clientWidth;
+        // Разница offsetLeft гасит текущий паддинг, так что ширина ленты от него не зависит.
+        const beltW = last.offsetLeft + last.offsetWidth - first.offsetLeft;
+        const fits = beltW + GUTTER * 2 <= screen;
+        const pad = fits ? Math.round((screen - beltW) / 2) : Math.max(GUTTER, Math.round((screen - COLUMN) / 2) + GUTTER);
+        travel = fits ? 0 : Math.max(0, pad + beltW - (screen - GUTTER));
+
+        pinTrack.style.paddingLeft = pinTrack.style.paddingRight = `${pad}px`;
+        // Заголовок центрируется по той же ширине, что и лента, — его левый край
+        // совпадает с первой карточкой (в режиме колонки это прежние 1180px + поля).
+        const head = pinSection.querySelector<HTMLElement>("[data-pin-head]");
+        if (head) {
+          head.style.maxWidth = fits ? `${beltW}px` : `${COLUMN}px`;
+          head.style.padding = fits ? "0" : `0 ${GUTTER}px`;
+        }
+        // Подсказка «листайте вбок» честна только когда лента правда едет.
+        const hint = pinSection.querySelector<HTMLElement>("[data-pin-hint]");
+        if (hint) hint.style.display = travel > 0 ? "" : "none";
+
+        if (travel > 0) {
+          // Липкая шапка висит поверх секции, поэтому центрируем контент по полосе
+          // ПОД ней, иначе на пине заголовок с лентой оптически проваливаются вниз.
+          const headerH = document.querySelector("header")?.offsetHeight ?? 0;
+          pinSection.style.height = `calc(100vh + ${Math.round(travel)}px)`;
+          pinInner.style.position = "sticky";
+          pinInner.style.height = "100vh";
+          pinInner.style.padding = `${headerH}px 0 0`;
+        } else {
+          pinSection.style.height = "auto";
+          pinInner.style.position = "static";
+          pinInner.style.height = "auto";
+          // Снизу тёмного воздуха вдвое больше, чем сверху: полоса читается как
+          // самостоятельный экран, а не как подложка под карточками.
+          pinInner.style.padding = "96px 0 200px";
+          pinTrack.style.transform = "none";
+        }
+      };
       const onScroll = () => {
         if (scan) scan();
         const y = window.scrollY;
         if (heroRef.current) heroRef.current.style.transform = `translateY(${y * 0.06}px)`;
-        if (pinSection && pinTrack) {
+        if (pinSection && pinTrack && travel > 0) {
           const rect = pinSection.getBoundingClientRect();
-          const total = pinSection.offsetHeight - window.innerHeight;
-          const prog = Math.min(1, Math.max(0, -rect.top / total));
-          const dist = Math.max(0, pinTrack.scrollWidth - window.innerWidth + 28);
-          pinTrack.style.transform = `translateX(${-prog * dist}px)`;
+          const prog = Math.min(1, Math.max(0, -rect.top / travel));
+          pinTrack.style.transform = `translateX(${-prog * travel}px)`;
         }
       };
+      // Пересчёт при ресайзе: от ширины окна зависит и дистанция, и сам факт пина.
+      let raf = 0;
+      const onResize = () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => { layout(); onScroll(); });
+      };
+      // Вехи приезжают из CMS уже после монтирования: их может стать больше или меньше,
+      // чем в дефолтной ленте, — тогда дистанцию и высоту секции надо пересчитать.
+      const mo = pinTrack ? new MutationObserver(onResize) : null;
+      if (mo && pinTrack) mo.observe(pinTrack, { childList: true });
+      layout();
       window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onResize);
       onScroll();
-      cleanups.push(() => window.removeEventListener("scroll", onScroll));
+      cleanups.push(() => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onResize); cancelAnimationFrame(raf); mo?.disconnect(); });
     }
 
     return () => cleanups.forEach((fn) => fn());
@@ -239,7 +304,11 @@ export default function Home() {
   });
 
   return (
-    <div ref={rootRef} style={{ background: "#FBF3E8", color: "#14181F", fontFamily: "'Onest', system-ui, sans-serif", overflowX: "hidden" }}>
+    // overflow-x: clip, а не hidden. hidden делает контейнер скролл-портом (overflow-y
+    // становится auto), и тогда position:sticky внутри цепляется за него, а не за окно —
+    // из-за этого не липли ни шапка, ни пин-секция «Истории». clip режет так же, но
+    // скролл-порт не создаёт.
+    <div ref={rootRef} style={{ background: "#FBF3E8", color: "#14181F", fontFamily: "'Onest', system-ui, sans-serif", overflowX: "clip" }}>
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(12px)", background: "rgba(251,243,232,.82)", borderBottom: "1px solid #E5E7EB" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "13px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
@@ -352,12 +421,18 @@ export default function Home() {
       {/* ИСТОРИЯ – PINNED TIMELINE (заголовок редактируется в админке) */}
       <section id="istoriya" ref={pinSectionRef} style={{ position: "relative", height: "240vh", background: "#14181F", color: "#FBF3E8" }}>
         <div ref={pinInnerRef} style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 28px", width: "100%" }}>
+          {/* Ширина и поля этого блока задаются в layout(): он держит заголовок на одной
+              левой границе с лентой — по колонке 1180px или по центрированной ленте. */}
+          <div data-pin-head style={{ maxWidth: 1180, margin: "0 auto", padding: "0 28px", width: "100%" }}>
             <div style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>{hero.history_eyebrow ?? "История клуба"}</div>
             <h2 style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 0" }}>{hero.history_title ?? "От первого выпуска – к сообществу"}</h2>
-            <p style={{ color: "#9aa3b2", fontSize: 14, margin: "10px 0 0", ...mono }}>{hero.history_hint ?? "↓ листайте – таймлайн движется вбок"}</p>
+            {/* Подсказку прячем, когда лента помещается целиком и никуда не едет (см. layout()). */}
+            <p data-pin-hint style={{ color: "#9aa3b2", fontSize: 14, margin: "10px 0 0", ...mono }}>{hero.history_hint ?? "↓ листайте – таймлайн движется вбок"}</p>
           </div>
-          <div ref={pinTrackRef} style={{ display: "flex", gap: 26, marginTop: 34, padding: "0 max(28px,calc((100vw - 1180px)/2 + 28px))", willChange: "transform" }}>
+          {/* Отступ считаем от 100% (ширина без полосы прокрутки), а не от 100vw:
+              заголовок выше центрируется по контенту, и с 100vw лента вставала
+              правее него на половину ширины полосы. */}
+          <div ref={pinTrackRef} style={{ display: "flex", gap: 26, marginTop: 34, padding: "0 max(28px,calc((100% - 1180px)/2 + 28px))", willChange: "transform" }}>
             {timeline.map((t, i) => (
               <article key={i} style={{ flex: "none", width: 340, background: "rgba(251,243,232,.04)", border: "1px solid rgba(251,243,232,.1)", borderRadius: 18, overflow: "hidden" }}>
                 <div style={{ position: "relative", height: 180, background: "#23272f", backgroundImage: "repeating-linear-gradient(45deg,rgba(196,154,69,.16) 0 12px,transparent 12px 24px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
