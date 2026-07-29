@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPost } from "../lib/api.js";
@@ -61,6 +61,9 @@ export function Join() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Когда на сервере настроен SMTP, аккаунт до перехода по ссылке из письма неактивен —
+  // экран «готово» должен вести человека в почту, а не в кабинет.
+  const [needConfirm, setNeedConfirm] = useState(false);
   const set = (k: string, v: string | boolean) => setF((s) => ({ ...s, [k]: v }));
   const levelId = useId();
 
@@ -71,12 +74,13 @@ export function Join() {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
-      await apiPost("/auth/register", {
+      const res = await apiPost<{ confirm_required?: boolean }>("/auth/register", {
         fio: f.fio, email: f.email, password: f.password, cohort: f.cohort,
         edu_level: f.edu_level, edu_program: f.edu_program, interests,
         ref: ref || undefined,
         consent_pdn: f.consent, website: f.website,
       });
+      setNeedConfirm(!!res?.confirm_required);
       setDone(true);
     } catch (e) {
       setErr((e as Error).message);
@@ -97,6 +101,17 @@ export function Join() {
             Выйти и заполнить анкету
           </button>
         </div>
+      </AuthShell>
+    );
+  }
+
+  if (done && needConfirm) {
+    return (
+      <AuthShell title="Проверьте почту" sub={`Мы отправили письмо на ${f.email}. Откройте ссылку из него — она действует сутки. После подтверждения заявку проверит учебный офис (1–2 рабочих дня).`}>
+        <p className="mt-4 rounded-[12px] bg-[rgba(46,111,174,.1)] px-4 py-3 text-sm text-[#2E6FAE]">
+          Письма нет? Загляните в «Спам» — иногда оно там.
+        </p>
+        <Link to="/" className="foc mt-6 inline-block rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold">На главную</Link>
       </AuthShell>
     );
   }
@@ -187,6 +202,44 @@ export function Forgot() {
           <button type="submit" disabled={busy} className="foc w-full rounded-[12px] bg-ohra py-3.5 font-semibold text-kost disabled:opacity-60">{busy ? "Отправляем…" : "Прислать ссылку"}</button>
         </form>
       )}
+    </AuthShell>
+  );
+}
+
+/**
+ * Подтверждение почты по ссылке из письма (`/confirm?token=…`). Открывается один раз
+ * сразу после регистрации: до подтверждения аккаунт в Directus неактивен и войти нельзя.
+ */
+export function ConfirmEmail() {
+  useHead({ title: "Подтверждение почты", noindex: true });
+  const [params] = useSearchParams();
+  const token = params.get("token") ?? "";
+  const [state, setState] = useState<"work" | "ok" | "fail">("work");
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) { setState("fail"); setErr("Ссылка неполная — откройте её из письма целиком."); return; }
+    let alive = true;
+    apiPost("/auth/confirm", { token })
+      .then(() => { if (alive) setState("ok"); })
+      .catch((e: Error) => { if (alive) { setErr(e.message); setState("fail"); } });
+    return () => { alive = false; };
+  }, [token]);
+
+  if (state === "work") return <AuthShell title="Подтверждаем почту…" sub="Секунду."><span /></AuthShell>;
+  if (state === "fail") {
+    return (
+      <AuthShell title="Не удалось подтвердить" sub={err ?? "Ссылка недействительна или истекла."}>
+        <Link to="/join" className="foc mt-5 inline-block rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">Подать заявку заново</Link>
+      </AuthShell>
+    );
+  }
+  return (
+    <AuthShell title="Почта подтверждена ✓" sub="Заявка ушла в учебный офис — он сверит данные с реестром выпускников и активирует кабинет. Обычно 1–2 рабочих дня.">
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link to="/lk" className="foc rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">Войти в кабинет</Link>
+        <Link to="/" className="foc rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold">На главную</Link>
+      </div>
     </AuthShell>
   );
 }

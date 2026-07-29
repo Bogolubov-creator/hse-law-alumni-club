@@ -10,7 +10,7 @@ import Program from "./pages/Program.js";
 import Merch from "./pages/Merch.js";
 import Podcasts from "./pages/Podcasts.js";
 import Events from "./pages/Events.js";
-import { Join, Forgot, Reset } from "./pages/JoinAuth.js";
+import { Join, Forgot, Reset, ConfirmEmail } from "./pages/JoinAuth.js";
 import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
 import InstallPrompt from "./components/InstallPrompt.js";
@@ -77,6 +77,7 @@ export default function App() {
           <Route path="/join" element={<Join />} />
           <Route path="/forgot" element={<Forgot />} />
           <Route path="/reset" element={<Reset />} />
+          <Route path="/confirm" element={<ConfirmEmail />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/confidential" element={<Confidential />} />
           <Route path="/requisites" element={<Requisites />} />

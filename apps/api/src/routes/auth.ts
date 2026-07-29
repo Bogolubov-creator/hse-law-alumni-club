@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
-import { readItems, createItem, createUser, updateUser, updateItem, readRoles } from "@directus/sdk";
+import { readItems, createItem, createUser, updateUser, updateItem, readRoles, readUsers } from "@directus/sdk";
 import { z } from "zod";
 import { sanitizeInterests } from "@club/shared";
 import { directusCredsValid, findUserByEmail, findAlumniByUser, signSession } from "../lib/auth.js";
@@ -25,11 +25,16 @@ export async function authRoutes(app: FastifyInstance) {
     const tgId = String((v.user as any)?.id ?? "");
     const rows = (await directus.request(readItems("alumni", {
       filter: { telegram_id: { _eq: tgId } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status"],
+      // token_version обязателен: resolveAlumni сверяет его с версией в токене.
+      // Без него в сессию всегда писался 0, и у любого, кто хоть раз сбрасывал
+      // пароль (версия ≥1), вход через мини-апп молча переставал работать.
+      fields: ["id", "fio", "cohort", "verification_status", "user_id", "token_version"],
     }))) as any[];
     const alumni = rows[0];
     if (!alumni) return reply.code(404).send({ error: "Профиль выпускника не привязан к Telegram" });
-    return { token: signSession(alumni.id, tgId, (alumni as any).token_version ?? 0), alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
+    // sub — id аккаунта Directus (как в обычном логине); для непривязанного профиля
+    // остаётся telegram-id, чтобы сессия всё равно была идентифицируемой.
+    return { token: signSession(alumni.id, (alumni as any).user_id ?? tgId, (alumni as any).token_version ?? 0), alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });
 
   // Логин выпускника: креды проверяет Directus, сессию (JWT с alumni_id) выдаёт apps/api.
@@ -49,6 +54,11 @@ export async function authRoutes(app: FastifyInstance) {
       registerLoginFail(email);
       registerIpFail(req.ip);
       audit("login.fail", { actor: `email:${email}`, req });
+      // Неподтверждённую почту Directus отвергает так же, как неверный пароль. Молчать
+      // тут вредно (человек не поймёт, почему не пускает), а факт существования аккаунта
+      // и так виден на регистрации — она отвечает 409 «аккаунт уже есть».
+      const pending = (await directus.request((readUsers as any)({ filter: { email: { _eq: email }, status: { _eq: "unverified" } }, limit: 1, fields: ["id"] }))) as any[];
+      if (pending[0]) return reply.code(403).send({ error: "Почта не подтверждена — откройте ссылку из письма (проверьте папку «Спам»)" });
       return reply.code(401).send({ error: "Неверная почта или пароль" });
     }
     const user = await findUserByEmail(email);
@@ -88,10 +98,16 @@ export async function authRoutes(app: FastifyInstance) {
     const roles = (await directus.request((readRoles as any)({ filter: { name: { _eq: "alumni" } }, limit: 1, fields: ["id"] }))) as any[];
     if (!roles[0]) return reply.code(500).send({ error: "Роль выпускника не настроена — обратитесь в учебный офис" });
 
+    // Подтверждение почты. Без него любой мог занять чужой адрес: аккаунт создавался
+    // сразу активным, а настоящий владелец потом получал «аккаунт уже есть».
+    // Включается автоматически при настроенном SMTP; без почтового канала (текущий
+    // BLOCKED-статус) поведение прежнее — иначе зарегистрироваться было бы невозможно.
+    const confirmRequired = !!env.SMTP_HOST;
     const user = (await directus.request((createUser as any)({
       email, password: b.password, role: roles[0].id,
       first_name: b.fio.split(" ")[0] ?? b.fio, last_name: b.fio.split(" ").slice(1).join(" ") || "-",
-      status: "active",
+      // unverified: Directus не пускает такого пользователя по паролю, пока не активирован.
+      status: confirmRequired ? "unverified" : "active",
     }))) as any;
 
     // Рефералка: пришёл по ссылке однокурсника → привязываем пригласившего
@@ -117,11 +133,49 @@ export async function authRoutes(app: FastifyInstance) {
       consent_version: PDN_POLICY_VERSION,
     }));
 
-    audit("register", { actor: `email:${email}`, detail: { cohort: b.cohort, edu_program: b.edu_program }, req });
+    audit("register", { actor: `email:${email}`, detail: { cohort: b.cohort, edu_program: b.edu_program, confirm_required: confirmRequired }, req });
+
+    if (confirmRequired) {
+      const confirmToken = jwt.sign({ sub: user.id, purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
+      await sendEmail(
+        email,
+        "Подтвердите почту — Клуб выпускников факультета права",
+        `Здравствуйте, ${b.fio}!\n\nВы подали заявку на вступление в клуб выпускников факультета права НИУ ВШЭ.\n` +
+          `Подтвердите, что почта ваша — ссылка действует 24 часа:\n${env.PUBLIC_URL}/confirm?token=${encodeURIComponent(confirmToken)}\n\n` +
+          `После подтверждения заявку проверит учебный офис.\n\nЕсли заявку подавали не вы — просто проигнорируйте письмо, аккаунт останется неактивным.`,
+      );
+      // Офис зовём только после подтверждения почты — иначе очередь верификации
+      // забивается заявками с чужих и несуществующих адресов.
+      return { ok: true, pending: true, confirm_required: true };
+    }
+
     // 152-ФЗ: не шлём ПДн заявителя в Telegram (зарубежный сервис). Офис смотрит анкету
     // в очереди верификации админ-панели (РФ, под доступом).
     await notifyOfficeText("🎓 Новая заявка на вступление в клуб — подтвердите в админ-панели (очередь верификации).");
-    return { ok: true, pending: true };
+    return { ok: true, pending: true, confirm_required: false };
+  });
+
+  // Подтверждение почты по ссылке из письма. Одноразовость обеспечивает сам статус:
+  // повторный переход по ссылке видит уже активного пользователя и просто говорит «готово».
+  app.post("/auth/confirm", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const { token } = z.object({ token: z.string().min(10) }).parse(req.body);
+    let payload: { sub?: string; purpose?: string };
+    try {
+      payload = jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as typeof payload;
+    } catch {
+      return reply.code(400).send({ error: "Ссылка недействительна или истекла — подайте заявку заново" });
+    }
+    if (payload.purpose !== "email-confirm" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
+
+    const users = (await directus.request((readUsers as any)({ filter: { id: { _eq: payload.sub } }, limit: 1, fields: ["id", "status"] }))) as any[];
+    if (!users[0]) return reply.code(400).send({ error: "Аккаунт не найден" });
+    if (users[0].status === "active") return { ok: true, already: true };
+
+    await directus.request((updateUser as any)(payload.sub, { status: "active" }));
+    audit("email.confirm", { actor: `user:${payload.sub}`, req });
+    // Теперь адрес доказан — зовём офис проверять выпуск.
+    await notifyOfficeText("🎓 Новая заявка на вступление в клуб (почта подтверждена) — очередь верификации в админ-панели.");
+    return { ok: true };
   });
 
   // ── Восстановление пароля ───────────────────────────────────────
