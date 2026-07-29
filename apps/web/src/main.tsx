@@ -20,7 +20,8 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {/* future-флаги v7 больше не нужны: с React Router 7 это поведение по умолчанию. */}
+      <BrowserRouter>
         <ToastProvider>
           <App />
         </ToastProvider>
