@@ -1,0 +1,33 @@
+version: 2
+
+# Еженедельная проверка обновлений. Цель — не «всегда последние версии», а чтобы
+# уязвимость в зависимости не лежала незамеченной месяцами: security-обновления
+# Dependabot присылает отдельным PR вне зависимости от расписания.
+updates:
+  # pnpm-workspace: Dependabot читает корневой pnpm-lock.yaml и покрывает все пакеты монорепо.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 5
+    groups:
+      # Патчи и минорные версии — одним PR, чтобы не забивать очередь ревью.
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Версии GitHub Actions (checkout/setup-node/action-setup) тоже стареют и тоже
+  # бывают уязвимы — обновляем на том же расписании.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Moscow
+    commit-message:
+      prefix: "chore(ci)"
