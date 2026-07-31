@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;800&family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;scroll-behavior:smooth}
+  *{box-sizing:border-box}
+  ::selection{background:#EC5A13;color:#FBF3E8}
+  @keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .foc:focus-visible{outline:3px solid #EC5A13;outline-offset:3px;border-radius:10px}
+  .vcard{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease}
+  @media (max-width:760px){ .hero-grid{grid-template-columns:1fr !important} .two-col{grid-template-columns:1fr !important} .h-xl{font-size:44px !important} }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .marq-track{animation:none !important} }
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="background:#FBF3E8;color:#14181F;font-family:'Onest',system-ui,sans-serif;overflow-x:hidden">
+
+  <!-- ░░ HEADER ░░ -->
+  <header style="position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(251,243,232,.82);border-bottom:1px solid #E5E7EB">
+    <div style="max-width:1180px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+      <a href="#top" class="foc" style="display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit">
+        <img src="assets/themis.jpeg" alt="Логотип клуба" width="42" height="42" style="border-radius:10px;object-fit:cover;flex:none">
+        <div style="line-height:1.05">
+          <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:16px;letter-spacing:-0.01em">Клуб выпускников</div>
+          <div style="font-family:'Martian Mono',monospace;font-size:10px;color:#6B7280;letter-spacing:.08em;margin-top:2px">факультета права Вышки</div>
+        </div>
+      </a>
+      <nav style="display:flex;align-items:center;gap:28px">
+        <a href="#istoriya" class="foc" style="text-decoration:none;color:#14181F;font-weight:500;font-size:15px">История</a>
+        <a href="#vitriny" class="foc" style="text-decoration:none;color:#14181F;font-weight:500;font-size:15px">Витрины</a>
+        <a href="#novosti" class="foc" style="text-decoration:none;color:#14181F;font-weight:500;font-size:15px">Новости</a>
+        <a href="#" class="foc" onMouseMove="{{ magMove }}" onMouseLeave="{{ magLeave }}" onMouseDown="{{ magDown }}" onMouseUp="{{ magUp }}" style="text-decoration:none;font-weight:600;font-size:14px;padding:10px 20px;border-radius:11px;background:#EC5A13;color:#FBF3E8;transition:transform .25s cubic-bezier(.2,.8,.2,1)">Войти в ЛК</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ░░ HERO ░░ -->
+  <section id="top" style="max-width:1180px;margin:0 auto;padding:74px 28px 60px">
+    <div class="hero-grid" style="display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:8px;font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.1em;color:#B5331B;background:rgba(181,51,27,.1);border:1px solid rgba(181,51,27,.25);padding:6px 13px;border-radius:999px">● Сообщество выпускников факультета права</div>
+        <h1 class="h-xl" style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:62px;line-height:1.03;letter-spacing:-0.015em;margin:22px 0 0;text-wrap:balance">Статус выпускника,<br>который <span style="color:#EC5A13">работает</span></h1>
+        <p style="font-size:18px;line-height:1.6;color:#3a3f49;max-width:500px;margin:24px 0 0">Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка 5% на ДПО и мерч, новости и менторы — всё в одном месте.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:32px">
+          <a href="#" class="foc" onMouseMove="{{ magMove }}" onMouseLeave="{{ magLeave }}" onMouseDown="{{ magDown }}" onMouseUp="{{ magUp }}" style="text-decoration:none;font-weight:600;font-size:16px;padding:15px 30px;border-radius:13px;background:#EC5A13;color:#FBF3E8;box-shadow:0 12px 28px -12px rgba(236,90,19,.85);transition:transform .25s cubic-bezier(.2,.8,.2,1)">Войти в личный кабинет</a>
+          <a href="#kak" class="foc" onMouseMove="{{ magMove }}" onMouseLeave="{{ magLeave }}" onMouseDown="{{ magDown }}" onMouseUp="{{ magUp }}" style="text-decoration:none;font-weight:600;font-size:16px;padding:15px 30px;border-radius:13px;border:1.5px solid #14181F;color:#14181F;transition:transform .25s cubic-bezier(.2,.8,.2,1)">Как вступить</a>
+        </div>
+        <div style="display:flex;gap:38px;margin-top:46px;flex-wrap:wrap">
+          <div data-count="2">
+            <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:52px;line-height:1;letter-spacing:-0.02em"><span data-count="2">0</span></div>
+            <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;margin-top:8px;letter-spacing:.05em">выпуска<br>в клубе</div>
+          </div>
+          <div style="width:1px;background:#E5E7EB"></div>
+          <div>
+            <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:52px;line-height:1;letter-spacing:-0.02em"><span data-count="4">0</span></div>
+            <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;margin-top:8px;letter-spacing:.05em">уровня<br>статуса</div>
+          </div>
+          <div style="width:1px;background:#E5E7EB"></div>
+          <div>
+            <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:52px;line-height:1;letter-spacing:-0.02em;color:#EC5A13"><span data-count="5">0</span>%</div>
+            <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;margin-top:8px;letter-spacing:.05em">скидка<br>выпускникам</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assembling Themis -->
+      <div style="display:flex;align-items:center;justify-content:center">
+        <div style="position:relative;width:min(430px,86vw)">
+          <div style="position:absolute;inset:-8%;background:radial-gradient(circle at 50% 42%,rgba(236,90,19,.45),transparent 60%);filter:blur(26px);z-index:0"></div>
+          <div ref="{{ heroRef }}" style="position:relative;z-index:1;aspect-ratio:1;border-radius:28px;overflow:hidden;background:#EC5A13;box-shadow:0 34px 70px -30px rgba(201,69,14,.8);will-change:transform">
+            <sc-for list="{{ heroShards }}" as="s" hint-placeholder-count="12">
+              <div style="{{ s.style }}"></div>
+            </sc-for>
+            <div style="position:absolute;inset:0;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),inset 0 -50px 70px -34px rgba(20,24,31,.45);pointer-events:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ MARQUEE ░░ -->
+  <div style="background:#14181F;color:#FBF3E8;overflow:hidden;padding:16px 0;border-top:1px solid rgba(251,243,232,.08);border-bottom:1px solid rgba(251,243,232,.08)">
+    <div class="marq-track" style="display:flex;width:max-content;animation:marq 34s linear infinite">
+      <div style="display:flex;align-items:center;gap:34px;padding-right:34px;font-family:'Martian Mono',monospace;font-size:14px;letter-spacing:.04em;white-space:nowrap">
+        <sc-for list="{{ marquee }}" as="m" hint-placeholder-count="14">
+          <span style="display:inline-flex;align-items:center;gap:34px"><span style="width:8px;height:8px;background:#EC5A13;transform:rotate(45deg);flex:none"></span>{{ m }}</span>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░ ИСТОРИЯ — PINNED TIMELINE ░░ -->
+  <section id="istoriya" ref="{{ pinSectionRef }}" style="position:relative;height:240vh;background:#14181F;color:#FBF3E8">
+    <div ref="{{ pinInnerRef }}" style="position:sticky;top:0;height:100vh;overflow:hidden;display:flex;flex-direction:column;justify-content:center">
+      <div style="max-width:1180px;margin:0 auto;padding:0 28px;width:100%">
+        <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">История клуба</div>
+        <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:40px;letter-spacing:-0.01em;margin:10px 0 0">От первого выпуска — к сообществу</h2>
+        <p style="color:#9aa3b2;font-size:14px;margin:10px 0 0;font-family:'Martian Mono',monospace">↓ листайте — таймлайн движется вбок</p>
+      </div>
+      <div ref="{{ pinTrackRef }}" style="display:flex;gap:26px;margin-top:34px;padding:0 max(28px,calc((100vw - 1180px)/2 + 28px));will-change:transform">
+        <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="5">
+          <article style="flex:none;width:340px;background:rgba(251,243,232,.04);border:1px solid rgba(251,243,232,.1);border-radius:18px;overflow:hidden">
+            <div style="position:relative;height:180px;background:#23272f;background-image:repeating-linear-gradient(45deg,rgba(196,154,69,.16) 0 12px,transparent 12px 24px);display:flex;align-items:center;justify-content:center">
+              <span style="font-family:'Martian Mono',monospace;font-size:11px;color:#C49A45;letter-spacing:.08em">{{ t.photo }}</span>
+            </div>
+            <div style="padding:22px">
+              <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:34px;letter-spacing:-0.02em;color:#EC5A13">{{ t.year }}</div>
+              <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:19px;letter-spacing:-0.01em;margin-top:8px;line-height:1.2">{{ t.title }}</div>
+              <p style="color:#9aa3b2;font-size:14px;line-height:1.5;margin:10px 0 0">{{ t.text }}</p>
+              <div style="font-family:'Martian Mono',monospace;font-size:13px;color:#E3C272;margin-top:14px;padding-top:14px;border-top:1px solid rgba(251,243,232,.1)">{{ t.metric }}</div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ ВИТРИНЫ ░░ -->
+  <section id="vitriny" style="max-width:1180px;margin:0 auto;padding:88px 28px 20px">
+    <div data-reveal style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">Витрины клуба</div>
+    <h2 data-reveal style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:40px;letter-spacing:-0.01em;margin:10px 0 6px">Что доступно выпускнику</h2>
+    <p data-reveal style="color:#6B7280;font-size:16px;max-width:540px;margin:0 0 34px">Две витрины ведут к общей корзине и заявке — оплату ведёт учебный офис.</p>
+    <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:26px">
+      <a href="#" data-reveal data-tilt class="vcard foc" style="text-decoration:none;color:inherit;border-radius:22px;overflow:hidden;border:1px solid #E5E7EB;background:#fff;display:block">
+        <div style="position:relative;height:230px;background:#11296B;background-image:repeating-linear-gradient(45deg,rgba(251,243,232,.08) 0 14px,transparent 14px 28px);display:flex;align-items:flex-end;padding:24px">
+          <span style="font-family:'Martian Mono',monospace;font-size:11px;color:rgba(251,243,232,.6);position:absolute;top:20px;left:24px">[ обложка · ДПО ]</span>
+          <span style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:30px;color:#FBF3E8;letter-spacing:-0.01em">ДПО</span>
+        </div>
+        <div style="padding:24px">
+          <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;letter-spacing:-0.01em">Программы доп. образования</div>
+          <p style="color:#6B7280;font-size:15px;line-height:1.5;margin:10px 0 0">Курсы и интенсивы со скидкой выпускника. Фильтры по направлению, формату и длительности.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px">
+            <span style="font-family:'Martian Mono',monospace;font-size:12px;color:#2E6FAE">6 программ · скидка выпускника 5%</span>
+            <span style="font-weight:600;color:#11296B">Открыть →</span>
+          </div>
+        </div>
+      </a>
+      <a href="#" data-reveal data-reveal-delay="90" data-tilt class="vcard foc" style="text-decoration:none;color:inherit;border-radius:22px;overflow:hidden;border:1px solid #E5E7EB;background:#fff;display:block">
+        <div style="position:relative;height:230px;background:#EC5A13;background-image:repeating-linear-gradient(45deg,rgba(251,243,232,.1) 0 14px,transparent 14px 28px);display:flex;align-items:flex-end;padding:24px">
+          <span style="font-family:'Martian Mono',monospace;font-size:11px;color:rgba(251,243,232,.7);position:absolute;top:20px;left:24px">[ обложка · Мерч ]</span>
+          <span style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:30px;color:#FBF3E8;letter-spacing:-0.01em">Мерч</span>
+        </div>
+        <div style="padding:24px">
+          <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;letter-spacing:-0.01em">Фирменный мерч клуба</div>
+          <p style="color:#6B7280;font-size:15px;line-height:1.5;margin:10px 0 0">Одежда и аксессуары с фасеточной Фемидой. Размеры, цвета, самовывоз или доставка.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px">
+            <span style="font-family:'Martian Mono',monospace;font-size:12px;color:#B5331B">новинки сезона</span>
+            <span style="font-weight:600;color:#C9450E">Открыть →</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ░░ ЗАЧЕМ ВСТУПАТЬ ░░ -->
+  <section id="kak" style="max-width:1180px;margin:0 auto;padding:72px 28px 20px">
+    <div data-reveal style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">Зачем вступать</div>
+    <h2 data-reveal style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:40px;letter-spacing:-0.01em;margin:10px 0 34px">Три причины быть в клубе</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px" class="two-col">
+      <sc-for list="{{ reasons }}" as="r" hint-placeholder-count="3">
+        <div data-reveal data-reveal-delay="{{ r.delay }}" style="padding:28px;border-radius:18px;border:1px solid #E5E7EB;background:#fff">
+          <div style="font-family:'Martian Mono',monospace;font-size:13px;color:{{ r.color }};font-weight:500">{{ r.num }}</div>
+          <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:21px;letter-spacing:-0.01em;margin-top:16px;line-height:1.2">{{ r.title }}</div>
+          <p style="color:#6B7280;font-size:15px;line-height:1.55;margin:12px 0 0">{{ r.text }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ░░ НОВОСТИ ░░ -->
+  <section id="novosti" style="max-width:1180px;margin:0 auto;padding:72px 28px 20px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:34px">
+      <div>
+        <div data-reveal style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">Новости</div>
+        <h2 data-reveal style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:40px;letter-spacing:-0.01em;margin:10px 0 0">Что в клубе сейчас</h2>
+      </div>
+      <a href="https://t.me/pravohse" target="_blank" rel="noopener" data-reveal class="foc" style="text-decoration:none;font-weight:600;color:#2E6FAE;font-size:15px">Все новости в @pravohse →</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px" class="two-col">
+      <sc-for list="{{ news }}" as="n" hint-placeholder-count="3">
+        <a href="https://t.me/pravohse" target="_blank" rel="noopener" data-reveal data-reveal-delay="{{ n.delay }}" class="vcard foc" style="text-decoration:none;color:inherit;border-radius:18px;overflow:hidden;border:1px solid #E5E7EB;background:#fff;display:block">
+          <div style="position:relative;height:150px;background:#F2E3CF;background-image:repeating-linear-gradient(45deg,rgba(196,154,69,.18) 0 12px,transparent 12px 24px);display:flex;align-items:center;justify-content:center">
+            <span style="font-family:'Martian Mono',monospace;font-size:11px;color:#8a6d28">{{ n.photo }}</span>
+          </div>
+          <div style="padding:20px">
+            <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280;letter-spacing:.05em">{{ n.date }}</div>
+            <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:17px;letter-spacing:-0.01em;margin-top:10px;line-height:1.25">{{ n.title }}</div>
+            <p style="color:#6B7280;font-size:14px;line-height:1.5;margin:10px 0 0">{{ n.text }}</p>
+            <div style="font-weight:600;color:#2E6FAE;font-size:14px;margin-top:14px">Читать в @pravohse →</div>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ░░ CTA STRIP ░░ -->
+  <section style="max-width:1180px;margin:72px auto 0;padding:0 28px">
+    <div data-reveal style="position:relative;overflow:hidden;border-radius:26px;background:#11296B;color:#FBF3E8;padding:60px 48px;display:flex;align-items:center;justify-content:space-between;gap:34px;flex-wrap:wrap">
+      <div style="position:absolute;right:-40px;top:-40px;width:280px;height:280px;background:radial-gradient(circle,rgba(236,90,19,.5),transparent 65%);filter:blur(8px)"></div>
+      <div style="position:relative;max-width:560px">
+        <h2 style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:38px;letter-spacing:-0.01em;line-height:1.08;margin:0">Вступить в клуб</h2>
+        <p style="font-size:17px;color:rgba(251,243,232,.8);line-height:1.5;margin:16px 0 0">Подтвердите выпуск у учебного офиса — и получите статус, скидки и доступ к витринам.</p>
+      </div>
+      <a href="#" class="foc" onMouseMove="{{ magMove }}" onMouseLeave="{{ magLeave }}" onMouseDown="{{ magDown }}" onMouseUp="{{ magUp }}" style="position:relative;text-decoration:none;font-weight:600;font-size:17px;padding:17px 36px;border-radius:14px;background:#EC5A13;color:#FBF3E8;box-shadow:0 14px 30px -12px rgba(0,0,0,.5);transition:transform .25s cubic-bezier(.2,.8,.2,1);flex:none">Подать заявку</a>
+    </div>
+  </section>
+
+  <!-- ░░ FOOTER ░░ -->
+  <footer style="background:#14181F;color:#FBF3E8;margin-top:80px;padding:56px 0 40px">
+    <div style="max-width:1180px;margin:0 auto;padding:0 28px;display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap">
+      <div style="max-width:320px">
+        <div style="display:flex;align-items:center;gap:13px">
+          <img src="assets/themis.jpeg" alt="Логотип" width="44" height="44" style="border-radius:10px;object-fit:cover">
+          <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:17px;line-height:1.15">Клуб выпускников<br>факультета права Вышки</div>
+        </div>
+        <p style="color:#9aa3b2;font-size:14px;line-height:1.55;margin:18px 0 0">Сообщество выпускников факультета права НИУ ВШЭ.</p>
+      </div>
+      <div style="display:flex;gap:64px;flex-wrap:wrap">
+        <div>
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px">Навигация</div>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <a href="#istoriya" class="foc" style="color:#FBF3E8;text-decoration:none;font-size:15px">История</a>
+            <a href="#vitriny" class="foc" style="color:#FBF3E8;text-decoration:none;font-size:15px">Витрины</a>
+            <a href="#novosti" class="foc" style="color:#FBF3E8;text-decoration:none;font-size:15px">Новости</a>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px">Контакты</div>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <a href="https://t.me/pravohse" target="_blank" rel="noopener" class="foc" style="color:#E3C272;text-decoration:none;font-size:15px">t.me/pravohse</a>
+            <a href="https://pravo.hse.ru/businessandlaw/alumni" target="_blank" rel="noopener" class="foc" style="color:#E3C272;text-decoration:none;font-size:15px">pravo.hse.ru/…/alumni</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:10px;overflow:hidden;width:100%;margin-top:44px">
+      <div style="display:flex;width:100%;height:100%">
+        <sc-for list="{{ ribbonCells }}" as="c" hint-placeholder-count="60">
+          <div style="width:34px;height:100%;transform:skewX(-22deg);flex:none;background:{{ c }}"></div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="max-width:1180px;margin:0 auto;padding:24px 28px 0;font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280">© 2026 Клуб выпускников факультета права Вышки · макет</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;forceReducedMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Доступность&quot;}}">
+class Component extends DCLogic {
+  state = { heroIn: false };
+
+  _reduce() {
+    if (this.props.forceReducedMotion) return true;
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+  }
+
+  componentDidMount() {
+    this.reduce = this._reduce();
+    const root = this.root || document;
+
+    // Hero assembly
+    if (this.reduce) { this.setState({ heroIn: true }); }
+    else { requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ heroIn: true }))); }
+
+    // Reveal: visible-by-default with scroll-scan progressive enhancement.
+    this._pending = [...root.querySelectorAll('[data-reveal],[data-count]')];
+    if (this.reduce) {
+      this._pending.forEach(el => this._show(el));
+      this._pending = [];
+    } else {
+      root.querySelectorAll('[data-reveal]').forEach(el => {
+        el.style.transform = 'translateY(26px)';
+        const d = el.dataset.revealDelay ? (+el.dataset.revealDelay) : 0;
+        el.style.transition = `transform .65s cubic-bezier(.2,.8,.2,1) ${d}ms`;
+      });
+      this._scan = () => {
+        if (!this._pending.length) return;
+        this._pending = this._pending.filter(el => {
+          const r = el.getBoundingClientRect();
+          if (r.top < window.innerHeight - 40 && r.bottom > -40) { this._show(el); return false; }
+          return true;
+        });
+      };
+      requestAnimationFrame(() => this._scan());
+      // Safety net: never leave content hidden if scan/observer misbehaves.
+      this._safety = setTimeout(() => { this._pending.forEach(el => this._show(el)); this._pending = []; }, 1500);
+    }
+
+    // Tilt on showcase cards
+    if (!this.reduce) {
+      root.querySelectorAll('[data-tilt]').forEach(card => {
+        card.addEventListener('mousemove', this._tilt);
+        card.addEventListener('mouseleave', this._tiltOut);
+      });
+    }
+
+    // Pinned timeline
+    if (this.reduce && this.pinSection) {
+      this.pinSection.style.height = 'auto';
+      if (this.pinInner) { this.pinInner.style.position = 'static'; this.pinInner.style.height = 'auto'; this.pinInner.style.padding = '64px 0'; }
+      if (this.pinTrack) { this.pinTrack.style.overflowX = 'auto'; this.pinTrack.style.transform = 'none'; this.pinTrack.style.paddingBottom = '10px'; }
+    } else {
+      this._onScroll = () => {
+        if (this._scan) this._scan();
+        const y = window.scrollY;
+        if (this.hero) this.hero.style.transform = `translateY(${y * 0.06}px)`;
+        if (this.pinSection && this.pinTrack) {
+          const rect = this.pinSection.getBoundingClientRect();
+          const total = this.pinSection.offsetHeight - window.innerHeight;
+          const prog = Math.min(1, Math.max(0, -rect.top / total));
+          const dist = Math.max(0, this.pinTrack.scrollWidth - window.innerWidth + 28);
+          this.pinTrack.style.transform = `translateX(${-prog * dist}px)`;
+        }
+      };
+      window.addEventListener('scroll', this._onScroll, { passive: true });
+      this._onScroll();
+    }
+  }
+
+  componentWillUnmount() {
+    if (this._onScroll) window.removeEventListener('scroll', this._onScroll);
+    if (this._safety) clearTimeout(this._safety);
+  }
+
+  _show(el) {
+    if (el.hasAttribute('data-reveal')) { el.style.transform = 'none'; }
+    if (el.hasAttribute('data-count')) this._countUp(el);
+  }
+
+  _tilt = (e) => {
+    const c = e.currentTarget, b = c.getBoundingClientRect();
+    const rx = ((e.clientY - (b.top + b.height / 2)) / b.height) * -6;
+    const ry = ((e.clientX - (b.left + b.width / 2)) / b.width) * 6;
+    c.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-4px)`;
+    c.style.boxShadow = '0 22px 44px -20px rgba(20,24,31,.4)';
+  };
+  _tiltOut = (e) => { const c = e.currentTarget; c.style.transform = ''; c.style.boxShadow = ''; };
+
+  _countUp(el) {
+    const target = +el.dataset.count || 0;
+    const span = el.matches('[data-count] > span, span[data-count]') ? el : el.querySelector('span[data-count]') || el;
+    const out = el.tagName === 'SPAN' ? el : (el.querySelector('span') || el);
+    out.textContent = target; // fail-safe: correct value shown immediately
+    if (this.reduce || out._ct) return;
+    const dur = 1100, t0 = Date.now();
+    out._ct = setInterval(() => {
+      const p = Math.min(1, (Date.now() - t0) / dur);
+      out.textContent = Math.round((1 - Math.pow(1 - p, 3)) * target);
+      if (p >= 1) { out.textContent = target; clearInterval(out._ct); out._ct = null; }
+    }, 33);
+  }
+
+  _heroShards() {
+    const cols = 3, rows = 2, defs = [];
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        const x0 = (i / cols) * 100, x1 = ((i + 1) / cols) * 100;
+        const y0 = (j / rows) * 100, y1 = ((j + 1) / rows) * 100;
+        const flip = (i + j) % 2 === 0;
+        if (flip) {
+          defs.push([[x0, y0], [x1, y0], [x0, y1]]);
+          defs.push([[x1, y0], [x1, y1], [x0, y1]]);
+        } else {
+          defs.push([[x0, y0], [x1, y0], [x1, y1]]);
+          defs.push([[x0, y0], [x1, y1], [x0, y1]]);
+        }
+      }
+    }
+    return defs;
+  }
+
+  renderVals() {
+    const reduce = this._reduce();
+    const inn = this.state.heroIn;
+    const heroShards = this._heroShards().map((tri, i) => {
+      const clip = 'polygon(' + tri.map(p => `${p[0].toFixed(1)}% ${p[1].toFixed(1)}%`).join(',') + ')';
+      const cx = (tri[0][0] + tri[1][0] + tri[2][0]) / 3;
+      const cy = (tri[0][1] + tri[1][1] + tri[2][1]) / 3;
+      const dx = (cx - 50), dy = (cy - 50);
+      const rot = ((i * 47) % 80) - 40;
+      const scattered = `translate(${(dx * 2.6).toFixed(1)}px,${(dy * 2.6).toFixed(1)}px) scale(.4) rotate(${rot}deg)`;
+      const show = reduce || inn;
+      const tr = show ? 'none' : scattered;
+      const trans = reduce ? 'none' : `transform .8s cubic-bezier(.2,.85,.25,1) ${i * 45}ms, opacity .55s ease ${i * 45}ms`;
+      const style = `position:absolute;inset:0;background-image:url('assets/themis.jpeg');background-size:100% 100%;background-position:center;clip-path:${clip};transform-origin:center;transform:${tr};opacity:${show ? 1 : 0};transition:${trans}`;
+      return { style };
+    });
+
+    const ribbonColors = ['#EC5A13', '#11296B', '#C49A45', '#2C6E80', '#B5331B'];
+    const ribbonCells = [];
+    for (let i = 0; i < 60; i++) ribbonCells.push(ribbonColors[i % ribbonColors.length]);
+
+    const marquee = ['Выпуск ’24', 'Выпуск ’25', 'Менторы клуба', 'Учебный офис', 'Партнёры', 'ДПО', 'Мерч', 'Нетворкинг',
+                     'Выпуск ’24', 'Выпуск ’25', 'Менторы клуба', 'Учебный офис', 'Партнёры', 'ДПО', 'Мерч', 'Нетворкинг'];
+
+    const timeline = [
+      { year: '2024', title: 'Клуб основан', text: 'Первый выпуск собирается в сообщество, появляется личный кабинет.', metric: '1-й выпуск · ~40 участников', photo: '[ фото · запуск ]' },
+      { year: '2024', title: 'Витрина ДПО', text: 'Открывается доступ к программам доп. образования со скидкой выпускника.', metric: '6 программ · до −20%', photo: '[ фото · ДПО ]' },
+      { year: '2025', title: 'Геймификация', text: 'Запуск уровней статуса, баллов и бейджей за активность в клубе.', metric: '4 уровня · 5 бейджей', photo: '[ фото · уровни ]' },
+      { year: '2025', title: 'Мерч и партнёры', text: 'Второй выпуск, фирменный мерч и первые партнёрские предложения.', metric: '2-й выпуск · мерч', photo: '[ фото · мерч ]' },
+      { year: '2026', title: 'Сегодня', text: 'Растущее сообщество выпускников факультета права с витринами и менторством.', metric: 'и это только начало', photo: '[ фото · сообщество ]' },
+    ];
+
+    const reasons = [
+      { num: '01', color: '#C49A45', title: 'Статус, который видно', text: 'Верификация учебным офисом, личный бейдж и уровень — ваш профиль выпускника всегда подтверждён.', delay: '0' },
+      { num: '02', color: '#EC5A13', title: 'Скидка 5% выпускнику', text: 'Цена выпускника на программы ДПО и фирменный мерч — прямо в витринах клуба.', delay: '90' },
+      { num: '03', color: '#2E6FAE', title: 'Сообщество и связи', text: 'Выпуски, менторы, партнёры и мероприятия — нетворкинг, который работает на карьеру.', delay: '180' },
+    ];
+
+    const news = [
+      { date: '24 июня 2026', title: 'Новый набор ДПО осенью', text: 'Открыта запись на осенние программы — со скидкой выпускника в витрине ДПО.', photo: '[ новость · ДПО ]', delay: '0' },
+      { date: '18 июня 2026', title: 'Встреча выпусков ’24 и ’25', text: 'Собираемся вживую: нетворкинг, менторы и анонс новинок мерча.', photo: '[ новость · встреча ]', delay: '90' },
+      { date: '05 июня 2026', title: 'Новые бейджи в кабинете', text: 'Добавили достижения за активность — проверьте свой уровень в ЛК.', photo: '[ новость · ЛК ]', delay: '180' },
+    ];
+
+    return {
+      rootRef: (el) => { if (el) this.root = el; },
+      heroRef: (el) => { if (el) this.hero = el; },
+      pinSectionRef: (el) => { if (el) this.pinSection = el; },
+      pinInnerRef: (el) => { if (el) this.pinInner = el; },
+      pinTrackRef: (el) => { if (el) this.pinTrack = el; },
+      heroShards, ribbonCells, marquee, timeline, reasons, news,
+      magMove: reduce ? (() => {}) : (e) => {
+        const el = e.currentTarget, b = el.getBoundingClientRect();
+        el.__o = { x: (e.clientX - (b.left + b.width / 2)) * 0.25, y: (e.clientY - (b.top + b.height / 2)) * 0.35 };
+        const s = el.dataset.p === '1' ? 0.95 : 1;
+        el.style.transform = `translate(${el.__o.x}px,${el.__o.y}px) scale(${s})`;
+      },
+      magLeave: (e) => { const el = e.currentTarget; el.__o = { x: 0, y: 0 }; el.dataset.p = ''; el.style.transform = ''; },
+      magDown: (e) => { const el = e.currentTarget; const o = el.__o || { x: 0, y: 0 }; el.dataset.p = '1'; el.style.transform = `translate(${o.x}px,${o.y}px) scale(.94)`; },
+      magUp: (e) => { const el = e.currentTarget; const o = el.__o || { x: 0, y: 0 }; el.dataset.p = ''; el.style.transform = `translate(${o.x}px,${o.y}px) scale(1)`; },
+    };
+  }
+}
+</script>
+</body>
+</html>
