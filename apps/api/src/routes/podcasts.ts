@@ -102,11 +102,17 @@ export async function podcastsRoutes(app: FastifyInstance) {
 
     // Незакрытая заявка на подписку уже есть — возвращаем её, а не плодим новые.
     // Без этого каждый повторный клик создавал заявку и дёргал офис уведомлением.
+    // ВНИМАНИЕ про NULL: `_nin` транслируется в SQL `NOT IN`, а `NULL NOT IN (…)`
+    // не даёт совпадения. При выключенной оплате payment_status у новой заявки
+    // как раз NULL — без явной ветки `_null` дедупликация не нашла бы её вовсе.
     const pending = (await di.request((readItems as any)("orders", {
       filter: {
-        alumni_id: { _eq: alumni.id }, type: { _eq: "podcast" },
-        status: { _in: ["new", "in_progress"] },
-        payment_status: { _nin: ["succeeded", "canceled"] },
+        _and: [
+          { alumni_id: { _eq: alumni.id } },
+          { type: { _eq: "podcast" } },
+          { status: { _in: ["new", "in_progress"] } },
+          { _or: [{ payment_status: { _null: true } }, { payment_status: { _nin: ["succeeded", "canceled"] } }] },
+        ],
       },
       sort: ["-created_at"], limit: 1, fields: ["number", "payment_id"],
     }))) as any[];
