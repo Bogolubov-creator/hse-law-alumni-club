@@ -224,4 +224,68 @@ describe("POST /auth/forgot и /auth/reset", () => {
     expect(db.directus_users![0]!.password).toBeUndefined();
     expect(db.alumni![0]!.token_version).toBe(0);
   });
+
+  /**
+   * Одноразовость ссылки. Раньше токен жил все 30 минут и позволял менять пароль
+   * повторно: утёкшая ссылка (общий компьютер, пересланное письмо, история браузера)
+   * давала захват аккаунта уже ПОСЛЕ того, как владелец пароль сменил.
+   */
+  it("ссылка сброса срабатывает один раз (jti гасится)", async () => {
+    const app = await build();
+    // Ссылку собираем той же формы, что уходит в письме (jti + поколение сессий),
+    // но без вызова /auth/forgot — иначе тест полез бы в сеть за SMTP.
+    const token = jwt.sign(
+      { sub: USER_ID, purpose: "reset", jti: "одноразовый-ключ", ver: 0 },
+      env.AUTH_SECRET, { expiresIn: "30m" },
+    );
+    const first = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "firstpass123" } });
+    expect(first.statusCode).toBe(200);
+
+    const second = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "hijacked-pass" } });
+    expect(second.statusCode).toBe(400);
+    expect(second.json().error).toMatch(/уже использована/i);
+    // Пароль остался от первого применения — перехват не прошёл.
+    expect(db.directus_users![0]!.password).toBe("firstpass123");
+  });
+
+  it("ссылка, выпущенная до прошлого сброса, не срабатывает (переживает рестарт)", async () => {
+    const app = await build();
+    // ver=0 — поколение сессий на момент выпуска ссылки.
+    const stale = jwt.sign({ sub: USER_ID, purpose: "reset", jti: "старый", ver: 0 }, env.AUTH_SECRET, { expiresIn: "30m" });
+    // Кто-то уже сменил пароль: версия выросла, список jti в памяти неактуален.
+    db.alumni![0]!.token_version = 1;
+
+    const r = await app.inject({ method: "POST", url: "/auth/reset", payload: { token: stale, password: "hijacked-pass" } });
+    expect(r.statusCode).toBe(400);
+    expect(db.directus_users![0]!.password).toBeUndefined();
+    expect(db.alumni![0]!.token_version).toBe(1);
+  });
+
+  it("повторное применение фиксируется в аудите", async () => {
+    const app = await build();
+    const token = jwt.sign({ sub: USER_ID, purpose: "reset", jti: "повтор", ver: 0 }, env.AUTH_SECRET, { expiresIn: "30m" });
+    await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "firstpass123" } });
+    await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "secondpass123" } });
+    expect((db.audit_log ?? []).some((e) => e.event === "password.reset.replay")).toBe(true);
+  });
+
+  /**
+   * Без почтового канала письмо физически не уйдёт. Раньше роут всё равно отвечал
+   * ok, и человек ждал ссылку, которой нет.
+   */
+  it("без настроенного SMTP восстановление честно отвечает 503", async () => {
+    vi.stubEnv("SMTP_HOST", "");
+    const app = await build();
+    const r = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "ivan@example.com" } });
+    expect(r.statusCode).toBe(503);
+    expect(r.json().error).toMatch(/почтовый канал не настроен/i);
+  });
+
+  it("ответ 503 одинаков для существующей и несуществующей почты", async () => {
+    vi.stubEnv("SMTP_HOST", "");
+    const app = await build();
+    const known = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "ivan@example.com" } });
+    const unknown = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "nobody@example.com" } });
+    expect(known.body).toBe(unknown.body);
+  });
 });
