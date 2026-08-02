@@ -6,8 +6,8 @@ import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
 
 /**
- * Воронка входа: /join — заявка на вступление в клуб (аккаунт + профиль pending),
- * /forgot — запрос ссылки восстановления, /reset — новый пароль по токену.
+ * Воронка входа: /join – заявка на вступление в клуб (аккаунт + профиль pending),
+ * /forgot – запрос ссылки восстановления, /reset – новый пароль по токену.
  */
 
 const EDU_LEVELS = ["бакалавриат", "магистратура", "специалитет", "аспирантура"] as const;
@@ -51,7 +51,7 @@ export function Join() {
     title: "Вступить в клуб",
     description: "Подайте заявку в клуб выпускников факультета права НИУ ВШЭ: подтвердите выпуск и получите статус, скидку на ДПО и доступ к сообществу.",
   });
-  // Уже в клубе? Анкета нужна только новым выпускникам — не «кидаем» молча в ЛК,
+  // Уже в клубе? Анкета нужна только новым выпускникам – не «кидаем» молча в ЛК,
   // а объясняем и даём выбор (в кабинет / выйти и заполнить за другого человека).
   const [authed, setAuthed] = useState(() => !!localStorage.getItem("club_token"));
   const [params] = useSearchParams();
@@ -61,7 +61,7 @@ export function Join() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  // Когда на сервере настроен SMTP, аккаунт до перехода по ссылке из письма неактивен —
+  // Когда на сервере настроен SMTP, аккаунт до перехода по ссылке из письма неактивен –
   // экран «готово» должен вести человека в почту, а не в кабинет.
   const [needConfirm, setNeedConfirm] = useState(false);
   const set = (k: string, v: string | boolean) => setF((s) => ({ ...s, [k]: v }));
@@ -91,7 +91,7 @@ export function Join() {
 
   if (authed) {
     return (
-      <AuthShell title="Вы уже в клубе ✓" sub="Вы вошли в личный кабинет — анкета вступления нужна только новым выпускникам. Если хотите подать заявку за другого человека, сначала выйдите из аккаунта.">
+      <AuthShell title="Вы уже в клубе ✓" sub="Вы вошли в личный кабинет – анкета вступления нужна только новым выпускникам. Если хотите подать заявку за другого человека, сначала выйдите из аккаунта.">
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/lk" className="foc rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">В личный кабинет</Link>
           <button
@@ -107,9 +107,9 @@ export function Join() {
 
   if (done && needConfirm) {
     return (
-      <AuthShell title="Проверьте почту" sub={`Мы отправили письмо на ${f.email}. Откройте ссылку из него — она действует сутки. После подтверждения заявку проверит учебный офис (1–2 рабочих дня).`}>
+      <AuthShell title="Проверьте почту" sub={`Мы отправили письмо на ${f.email}. Откройте ссылку из него – она действует сутки. После подтверждения заявку проверит учебный офис (1–2 рабочих дня).`}>
         <p className="mt-4 rounded-[12px] bg-[rgba(46,111,174,.1)] px-4 py-3 text-sm text-[#2E6FAE]">
-          Письма нет? Загляните в «Спам» — иногда оно там.
+          Письма нет? Загляните в «Спам» – иногда оно там.
         </p>
         <Link to="/" className="foc mt-6 inline-block rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold">На главную</Link>
       </AuthShell>
@@ -128,10 +128,10 @@ export function Join() {
   }
 
   return (
-    <AuthShell title="Вступить в клуб" sub="Заполните анкету — учебный офис подтвердит ваш выпуск, и кабинет со скидками, сообществом и подкастами станет доступен.">
+    <AuthShell title="Вступить в клуб" sub="Заполните анкету – учебный офис подтвердит ваш выпуск, и кабинет со скидками, сообществом и подкастами станет доступен.">
       {ref && (
         <p className="mt-4 rounded-[12px] bg-[rgba(31,138,91,.1)] px-4 py-3 text-sm text-[#1F8A5B]">
-          🤝 Вы пришли по приглашению однокурсника — после подтверждения выпуска он получит баллы клуба.
+          🤝 Вы пришли по приглашению однокурсника – после подтверждения выпуска он получит баллы клуба.
         </p>
       )}
       <form onSubmit={submit} className="mt-6 space-y-4">
@@ -165,7 +165,7 @@ export function Join() {
         </div>
         <label className="flex cursor-pointer items-start gap-2.5 text-[13px] text-grafit-soft">
           <input type="checkbox" checked={f.consent} onChange={(e) => set("consent", e.target.checked)} required className="mt-0.5" />
-          <span>Даю согласие на обработку персональных данных — <Link to="/privacy" target="_blank" className="foc underline underline-offset-2">политика обработки</Link></span>
+          <span>Даю согласие на обработку персональных данных – <Link to="/privacy" target="_blank" className="foc underline underline-offset-2">политика обработки</Link></span>
         </label>
         {err && <p className="font-mono text-xs text-karmin">{err}</p>}
         <button type="submit" disabled={busy || !f.consent} className="foc w-full rounded-[12px] bg-ohra py-3.5 font-semibold text-kost disabled:opacity-60">
@@ -190,7 +190,7 @@ export function Forgot() {
     setSent(true); setBusy(false);
   };
   return (
-    <AuthShell title="Восстановление пароля" sub="Укажите почту от аккаунта — пришлём ссылку для смены пароля (действует 30 минут).">
+    <AuthShell title="Восстановление пароля" sub="Укажите почту от аккаунта – пришлём ссылку для смены пароля (действует 30 минут).">
       {sent ? (
         <>
           <p className="mt-6 rounded-[12px] bg-[rgba(31,138,91,.1)] px-4 py-3.5 text-sm text-[#1F8A5B]">Если такой аккаунт существует, письмо со ссылкой уже отправлено. Проверьте почту (и «Спам»).</p>
@@ -218,7 +218,7 @@ export function ConfirmEmail() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) { setState("fail"); setErr("Ссылка неполная — откройте её из письма целиком."); return; }
+    if (!token) { setState("fail"); setErr("Ссылка неполная – откройте её из письма целиком."); return; }
     let alive = true;
     apiPost("/auth/confirm", { token })
       .then(() => { if (alive) setState("ok"); })
@@ -237,7 +237,7 @@ export function ConfirmEmail() {
     );
   }
   return (
-    <AuthShell title="Почта подтверждена ✓" sub="Заявка ушла в учебный офис — он сверит данные с реестром выпускников и активирует кабинет. Обычно 1–2 рабочих дня.">
+    <AuthShell title="Почта подтверждена ✓" sub="Заявка ушла в учебный офис – он сверит данные с реестром выпускников и активирует кабинет. Обычно 1–2 рабочих дня.">
       <div className="mt-6 flex flex-wrap gap-3">
         <Link to="/lk" className="foc rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">Войти в кабинет</Link>
         <Link to="/" className="foc rounded-[12px] border border-[#E5E7EB] px-6 py-3 font-semibold">На главную</Link>

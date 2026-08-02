@@ -35,7 +35,7 @@ const stPill = (s: string) =>
 type Section = "overview" | "orders" | "members" | "content" | "audit";
 
 export default function AdminApp() {
-  useHead({ title: "Админ-панель", noindex: true }); // офисная зона — не индексируем
+  useHead({ title: "Админ-панель", noindex: true }); // офисная зона – не индексируем
   const [token, setToken] = useState<string | null>(() => adminToken());
   if (!token) return <AdminGate onAuthed={(t) => { setAdminToken(t); setToken(t); }} />;
   return <AdminShell onLogout={() => { void adminLogout().finally(() => setToken(null)); }} />;
@@ -81,7 +81,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент", audit: "Журнал безопасности" };
 
   // На вход выкидываем ТОЛЬКО при 401 (истёкшая сессия). Прочие ошибки (5xx/сеть)
-  // не должны маскироваться под разлогин — показываем ретрай в основной области.
+  // не должны маскироваться под разлогин – показываем ретрай в основной области.
   if (ov.isError && (ov.error as { status?: number })?.status === 401)
     return <AdminGate onAuthed={(t) => { setAdminToken(t); location.reload(); }} />;
 
@@ -130,7 +130,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const { patchMember } = useAdminMutations();
   const pending = members.data?.items ?? [];
   const d = ov.data;
-  // Вся статистика сайта — одним экраном.
+  // Вся статистика сайта – одним экраном.
   const stats = [
     { label: "Новые заявки", value: d?.new_orders ?? 0, color: "#EC5A13" },
     { label: "На верификацию", value: d?.pending_verifications ?? 0, color: "#a07d2e" },
@@ -197,7 +197,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
               <div className="mt-3 inline-flex rounded-full bg-[rgba(46,111,174,.12)] px-3 py-1.5 font-mono text-[12px] text-[#2E6FAE]">записались: {d.next_event.rsvps}</div>
             </>
           ) : (
-            <p className="mt-3 font-mono text-[12px] text-grafit-soft">Анонсов нет — создайте событие во вкладке «Контент → События».</p>
+            <p className="mt-3 font-mono text-[12px] text-grafit-soft">Анонсов нет – создайте событие во вкладке «Контент → События».</p>
           )}
         </Card>
         <PushBroadcast subs={d?.push_subs_count ?? 0} />
@@ -289,7 +289,7 @@ function Orders() {
               {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
             </select>
           </div>
-          {/* Состав заявки — офис видит позиции без похода в Directus */}
+          {/* Состав заявки – офис видит позиции без похода в Directus */}
           {(o.items_json?.length || o.address || o.comment) && (
             <div className="mt-1.5 pl-[122px] font-mono text-[11px] leading-relaxed text-grafit-soft">
               {o.items_json?.map((i) => `${i.title}${i.variant_sku ? ` (${i.variant_sku})` : ""} ×${i.qty}`).join("; ")}
@@ -365,9 +365,9 @@ function Members() {
             <span className="font-mono text-[12px] text-grafit-soft">{m.cohort}</span>
             <span><span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(m.verification_status)}`}>{VERIF[m.verification_status]}</span></span>
             <span className="font-mono text-[13px]">{m.points_cached}</span>
-            <span className="font-mono text-[13px]">{m.verification_status === "verified" ? `−${computeLevel(m.points_cached ?? 0).discount_percent + (m.personal_discount ?? 0)}%` : "—"}</span>
+            <span className="font-mono text-[13px]">{m.verification_status === "verified" ? `−${computeLevel(m.points_cached ?? 0).discount_percent + (m.personal_discount ?? 0)}%` : "–"}</span>
             <span className="font-mono text-[13px]">{m.friends_count ?? 0}</span>
-            <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "—"}</span>
+            <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "–"}</span>
           </button>
         ))}
         {!membersQ.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q ? "По запросу ничего не найдено." : "Выпускников нет."}</p>}
@@ -399,7 +399,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
         <div id="member-modal-title" className="font-display text-2xl font-bold">{member.fio}</div>
         <div className="mt-1 font-mono text-[12px] text-grafit-soft">Выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях: {member.friends_count ?? 0}</div>
 
-        {/* Анкета из формы вступления — всё, что заполнил выпускник */}
+        {/* Анкета из формы вступления – всё, что заполнил выпускник */}
         <div className="mt-4 rounded-[14px] bg-[#FBF7EF] px-4 py-3 font-mono text-[12px] leading-relaxed text-grafit-soft">
           {member.email && <div>Почта: <b className="text-grafit">{member.email}</b></div>}
           {(member.edu_level || member.edu_program) && <div>Образование: <b className="text-grafit">{[member.edu_level, member.edu_program && `ОП «${member.edu_program}»`].filter(Boolean).join(" · ")}</b></div>}
@@ -518,7 +518,7 @@ function AuditLog() {
     return hay.includes(q.trim().toLowerCase());
   });
   const fmt = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+    iso ? new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "–";
 
   return (
     <>
@@ -540,9 +540,9 @@ function AuditLog() {
             <div key={r.id} title={r.detail ? JSON.stringify(r.detail) : undefined} className="grid grid-cols-[110px_1fr_1fr_1fr_120px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3 text-sm">
               <span className="font-mono text-[12px] text-grafit-soft">{fmt(r.created_at)}</span>
               <span className={`font-semibold ${danger ? "text-karmin" : ""}`}>{meta?.icon ?? "•"} {meta?.label ?? r.event}</span>
-              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.actor ?? "—"}</span>
-              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.subject ?? "—"}</span>
-              <span className="font-mono text-[12px] text-grafit-soft">{r.ip ?? "—"}</span>
+              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.actor ?? "–"}</span>
+              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.subject ?? "–"}</span>
+              <span className="font-mono text-[12px] text-grafit-soft">{r.ip ?? "–"}</span>
             </div>
           );
         })}
@@ -627,7 +627,7 @@ function EventsAdmin() {
           {e.rsvps.length === 0 && <p className="mt-2 pl-1 font-mono text-[11px] text-grafit-soft">записей пока нет</p>}
         </div>
       ))}
-      {events.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Событий нет — добавьте первое.</p>}
+      {events.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Событий нет – добавьте первое.</p>}
       {showCreate && <EventForm busy={createEvent.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createEvent.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {editing && <EventForm initial={editing} busy={patchEvent.isPending} onClose={() => setEditing(null)} onSave={(v) => patchEvent.mutate({ id: editing.id, ...v }, { onSuccess: () => setEditing(null) })} />}
       {confirmDel && <ConfirmDelete title={confirmDel.title} busy={deleteEvent.isPending} hint="Событие и все записи на него будут удалены." onCancel={() => setConfirmDel(null)} onConfirm={() => deleteEvent.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })} />}
@@ -721,7 +721,7 @@ function NewsAdmin() {
           <button aria-label={`Удалить ${n.title}`} onClick={() => setConfirmDel(n)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {news.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Новостей нет — напишите первую.</p>}
+      {news.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Новостей нет – напишите первую.</p>}
       {showCreate && <NewsForm busy={createNews.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createNews.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {confirmDel && (
         <ConfirmDelete title={confirmDel.title} busy={deleteNews.isPending} hint="Новость исчезнет с сайта безвозвратно."
@@ -814,7 +814,7 @@ function TimelineForm({ busy, onClose, onSave }: { busy: boolean; onClose: () =>
   );
 }
 
-// ── Подкасты (доступ слушателям — по подписке 3 999 ₽/год) ──────────
+// ── Подкасты (доступ слушателям – по подписке 3 999 ₽/год) ──────────
 function PodcastsAdmin() {
   const podcasts = useAdminPodcasts();
   const { createPodcast, patchPodcast, deletePodcast } = useAdminMutations();
@@ -841,14 +841,14 @@ function PodcastsAdmin() {
           >
             {p.is_free ? "пробный ✓" : "по подписке"}
           </button>
-          <span className="font-mono text-[12px] text-grafit-soft">{p.duration ?? "—"}</span>
+          <span className="font-mono text-[12px] text-grafit-soft">{p.duration ?? "–"}</span>
           <select aria-label={`Статус подкаста «${p.title}»`} value={p.status} disabled={patchPodcast.isPending} onChange={(e) => patchPodcast.mutate({ id: p.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${p.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
             <option value="published">Опубликован</option><option value="draft">Черновик</option>
           </select>
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {podcasts.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Подкастов нет — добавьте первый.</p>}
+      {podcasts.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Подкастов нет – добавьте первый.</p>}
       {showCreate && <PodcastForm busy={createPodcast.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createPodcast.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {confirmDel && (
         <ConfirmDelete title={confirmDel.title} busy={deletePodcast.isPending} hint="Подкаст исчезнет с витрины подкастов."
@@ -963,7 +963,7 @@ function PagesAdmin() {
           <button onClick={save} disabled={savePage.isPending} className="foc rounded-[11px] bg-ohra px-6 py-2.5 font-semibold text-kost disabled:opacity-60">
             {savePage.isPending ? "Сохраняем…" : "Сохранить все секции"}
           </button>
-          {savePage.isSuccess && <span className="font-mono text-[12px] text-[#1F8A5B]">сохранено ✓ — уже на сайте</span>}
+          {savePage.isSuccess && <span className="font-mono text-[12px] text-[#1F8A5B]">сохранено ✓ – уже на сайте</span>}
           {savePage.isError && <span className="font-mono text-[12px] text-karmin">не удалось сохранить</span>}
         </div>
       </Card>
@@ -996,7 +996,7 @@ function ProgramsAdmin() {
           <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить программу</button>
         </div>
       </div>
-      {syncDpo.isSuccess && <p className="border-t border-[#f0ece2] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[#1F8A5B]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (актуальный набор {(syncDpo.data as any).actual ?? "—"}, закрытые {(syncDpo.data as any).nonactual ?? "—"}). Ночная автосинхронизация — ежедневно в 05:00.</p>}
+      {syncDpo.isSuccess && <p className="border-t border-[#f0ece2] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[#1F8A5B]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (актуальный набор {(syncDpo.data as any).actual ?? "–"}, закрытые {(syncDpo.data as any).nonactual ?? "–"}). Ночная автосинхронизация – ежедневно в 05:00.</p>}
       {syncDpo.isError && <p className="border-t border-[#f0ece2] px-6 py-2.5 font-mono text-[12px] text-karmin">Синхронизация не удалась: {(syncDpo.error as Error).message}</p>}
       {(programs.data ?? []).map((p) => (
         <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm max-md:grid-cols-1">
@@ -1013,8 +1013,8 @@ function ProgramsAdmin() {
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {programs.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Программ нет — добавьте первую.</p>}
-      {(createProgram.isError || deleteProgram.isError || patchProgram.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение — попробуйте ещё раз.</p>}
+      {programs.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Программ нет – добавьте первую.</p>}
+      {(createProgram.isError || deleteProgram.isError || patchProgram.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение – попробуйте ещё раз.</p>}
 
       {showCreate && <ProgramForm busy={createProgram.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProgram.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {confirmDel && (
@@ -1053,8 +1053,8 @@ function ProductsAdmin() {
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {products.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Товаров нет — добавьте первый.</p>}
-      {(createProduct.isError || deleteProduct.isError || patchProduct.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение — попробуйте ещё раз.</p>}
+      {products.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Товаров нет – добавьте первый.</p>}
+      {(createProduct.isError || deleteProduct.isError || patchProduct.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение – попробуйте ещё раз.</p>}
 
       {showCreate && <ProductForm busy={createProduct.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProduct.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {confirmDel && (
@@ -1103,7 +1103,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
     <Modal onClose={onClose} labelledBy="prog-form-title" maxWidth={520}>
       <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
         <h3 id="prog-form-title" className="font-display text-lg font-bold">Новая программа клуба</h3>
-        <p className="mt-1 font-mono text-[11px] leading-relaxed text-grafit-soft">Собственная программа клуба выпускников: запись и оплата — через сайт (корзина, скидка выпускника). Программы ВШЭ добавлять не нужно — они приходят из синка с hse.ru и ведут на маркетплейс.</p>
+        <p className="mt-1 font-mono text-[11px] leading-relaxed text-grafit-soft">Собственная программа клуба выпускников: запись и оплата – через сайт (корзина, скидка выпускника). Программы ВШЭ добавлять не нужно – они приходят из синка с hse.ru и ведут на маркетплейс.</p>
         <div className="mt-4 space-y-3">
           <FormField label="Название" value={f.title} onChange={(v) => set("title", v)} required />
           <div className="grid grid-cols-2 gap-3">

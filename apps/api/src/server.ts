@@ -28,7 +28,7 @@ import { initSentry } from "./lib/sentry.js";
 import { registerErrorHandler } from "./lib/errors.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
-// trustProxy: 1 — доверяем ТОЛЬКО одному прокси-хопу (Caddy). true доверял бы всей
+// trustProxy: 1 – доверяем ТОЛЬКО одному прокси-хопу (Caddy). true доверял бы всей
 // цепочке X-Forwarded-For, и клиент мог бы подделать req.ip (обход rate-limit,
 // IP-allowlist вебхука ЮKassa, отравление IP в аудите). Число хопов = 1 (Caddy → api).
 const app = Fastify({ logger: true, trustProxy: 1, bodyLimit: 256 * 1024 });
@@ -36,7 +36,7 @@ const app = Fastify({ logger: true, trustProxy: 1, bodyLimit: 256 * 1024 });
 // Валидационные ошибки zod → 400 (не 500).
 await initSentry();
 
-// Обработчик живёт в lib/errors.ts — тем же пользуются тесты роутов.
+// Обработчик живёт в lib/errors.ts – тем же пользуются тесты роутов.
 registerErrorHandler(app);
 
 // Заголовки безопасности (API всегда JSON и не встраивается во фрейм).
@@ -53,23 +53,23 @@ app.addHook("onSend", async (req, reply) => {
   }
 });
 
-// Предупреждения о небезопасной прод-конфигурации — видны в логах при старте.
+// Предупреждения о небезопасной прод-конфигурации – видны в логах при старте.
 if (env.YOOKASSA_SHOP_ID && !env.PUBLIC_URL.startsWith("https://")) {
-  app.log.warn("ОПЛАТА ВКЛЮЧЕНА, но PUBLIC_URL не https:// — на проде это недопустимо (redirect после оплаты пойдёт по HTTP)");
+  app.log.warn("ОПЛАТА ВКЛЮЧЕНА, но PUBLIC_URL не https:// – на проде это недопустимо (redirect после оплаты пойдёт по HTTP)");
 }
 if (!env.ADMIN_AUTH_SECRET) {
-  app.log.warn("ADMIN_AUTH_SECRET пуст — админ-сессии подписываются общим AUTH_SECRET (на проде задайте отдельный)");
+  app.log.warn("ADMIN_AUTH_SECRET пуст – админ-сессии подписываются общим AUTH_SECRET (на проде задайте отдельный)");
 }
 // Fail-fast: при APP_ENV=production небезопасная конфигурация прерывает старт
 // (плейсхолдеры секретов, PUBLIC_URL не https, бот на webhook без секрета).
 const prodErrs = assertProdConfig();
 if (prodErrs.length) {
   for (const e of prodErrs) app.log.error(`[prod-config] ${e}`);
-  app.log.fatal("НЕБЕЗОПАСНАЯ ПРОД-КОНФИГУРАЦИЯ (APP_ENV=production) — старт прерван");
+  app.log.fatal("НЕБЕЗОПАСНАЯ ПРОД-КОНФИГУРАЦИЯ (APP_ENV=production) – старт прерван");
   process.exit(1);
 }
-// Глобальный лимит запросов per-IP (на auth/оплату/заявки — жёстче, см. роуты).
-// Health-пинги мониторинга не лимитируем. Ключ — реальный IP за Caddy (trustProxy).
+// Глобальный лимит запросов per-IP (на auth/оплату/заявки – жёстче, см. роуты).
+// Health-пинги мониторинга не лимитируем. Ключ – реальный IP за Caddy (trustProxy).
 await app.register(rateLimit, {
   max: 300,
   timeWindow: "1 minute",
@@ -102,8 +102,8 @@ await app.register(pushRoutes);
 await app.register(telegramRoutes);
 
 // Фоновые cron-задачи. Держим ссылки, чтобы остановить их при плавной остановке.
-// ВНИМАНИЕ: cron выполняется внутри процесса API — деплой одноинстансный. На
-// нескольких инстансах задачи задвоятся (нужен distributed-lock) — см. deploy-runbook.
+// ВНИМАНИЕ: cron выполняется внутри процесса API – деплой одноинстансный. На
+// нескольких инстансах задачи задвоятся (нужен distributed-lock) – см. deploy-runbook.
 const cronTasks: ReturnType<typeof cron.schedule>[] = [];
 
 // Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
@@ -111,7 +111,7 @@ cronTasks.push(cron.schedule("0 3 1 * *", () => {
   runDecay().catch((e) => app.log.error(e, "decay failed"));
 }));
 
-// Ночная автосинхронизация каталога ДПО с hse.ru (05:00). Сбой не критичен —
+// Ночная автосинхронизация каталога ДПО с hse.ru (05:00). Сбой не критичен –
 // каталог остаётся прежним, следующая попытка через сутки (или вручную из админки).
 cronTasks.push(cron.schedule("0 5 * * *", () => {
   syncDpoCatalog()
@@ -133,16 +133,16 @@ cronTasks.push(cron.schedule("0 4 * * *", () => {
     .catch((e) => app.log.error(e, "retention failed"));
 }));
 
-// Базовый health — для healthcheck'а docker и Caddy.
+// Базовый health – для healthcheck'а docker и Caddy.
 app.get("/health", async () => ({
   status: "ok",
   service: "club-api",
   ts: new Date().toISOString(),
 }));
 
-// Готовность — проверяет связь с Directus сервисным токеном (критерий приёмки Фазы 0).
+// Готовность – проверяет связь с Directus сервисным токеном (критерий приёмки Фазы 0).
 // Эндпоинт публичный (Caddy проксирует /api/*), поэтому наружу отдаём только факт
-// готовности: e-mail сервисного аккаунта и детали сидов — подсказка для атакующего.
+// готовности: e-mail сервисного аккаунта и детали сидов – подсказка для атакующего.
 // Полный ответ checkDirectus() остаётся в логе оператора.
 app.get("/ready", async (_req, reply) => {
   const directus = await checkDirectus();
@@ -159,7 +159,7 @@ let shuttingDown = false;
 async function gracefulShutdown(signal: string) {
   if (shuttingDown) return;
   shuttingDown = true;
-  app.log.info(`${signal} получен — плавная остановка`);
+  app.log.info(`${signal} получен – плавная остановка`);
   for (const t of cronTasks) { try { t.stop(); } catch { /* уже остановлена */ } }
   try {
     await app.close(); // дождаться завершения активных запросов и закрыть сервер

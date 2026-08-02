@@ -2,9 +2,9 @@ import { env } from "../env.js";
 import { handleTelegramUpdate, type TgUpdate } from "./telegram-bot.js";
 
 /**
- * Long-polling для @pravohse_alumni_bot — режим без публичного HTTPS (локальный
+ * Long-polling для @pravohse_alumni_bot – режим без публичного HTTPS (локальный
  * стенд, dev). Включается TELEGRAM_POLLING=true; на проде вместо него ставится
- * webhook (scripts/setup-telegram-webhook.ts), одновременно они не работают —
+ * webhook (scripts/setup-telegram-webhook.ts), одновременно они не работают –
  * поэтому перед стартом поллинга вебхук снимается.
  */
 export function startTelegramPolling(): void {

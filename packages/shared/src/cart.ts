@@ -21,14 +21,14 @@ export const MAX_LINE_QTY = 99;
 export const MAX_CART_LINES = 30;
 
 /**
- * Добавить позицию: если такая (type+ref+variant) уже есть — увеличить qty, иначе добавить.
- * ДПО — это заявка на одно место: qty всегда 1, повторное добавление не увеличивает.
+ * Добавить позицию: если такая (type+ref+variant) уже есть – увеличить qty, иначе добавить.
+ * ДПО – это заявка на одно место: qty всегда 1, повторное добавление не увеличивает.
  * Количество по позиции ограничено MAX_LINE_QTY, число позиций – MAX_CART_LINES.
  */
 export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCartItem[] {
   const ex = items.find((i) => sameLine(i, line.type, line.ref_id, line.variant_sku));
   if (line.type === "dpo") {
-    if (ex) return items; // уже в заявке — одно место
+    if (ex) return items; // уже в заявке – одно место
     if (items.length >= MAX_CART_LINES) return items;
     return [...items, { ...line, qty: 1 }];
   }
@@ -37,7 +37,7 @@ export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCa
   return [...items, { ...line, qty: Math.min(MAX_LINE_QTY, line.qty) }];
 }
 
-/** Установить количество позиции; qty<=0 — удалить. ДПО — всегда 1 место (канон). */
+/** Установить количество позиции; qty<=0 – удалить. ДПО – всегда 1 место (канон). */
 export function setLineQty(items: StoredCartItem[], ref: string, sku: string | null | undefined, qty: number): StoredCartItem[] {
   const matches = (i: StoredCartItem) => i.ref_id === ref && (i.variant_sku ?? null) === (sku ?? null);
   if (qty <= 0) return items.filter((i) => !matches(i));

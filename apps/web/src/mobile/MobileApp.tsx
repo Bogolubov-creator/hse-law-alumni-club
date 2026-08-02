@@ -15,7 +15,7 @@ const ANDROID = isAndroid();
  * Мобильная native-app-оболочка (порт «Клуб выпускников.dc.html» из Claude Design).
  * Включается на телефонах (<768px, см. useIsMobile) вместо десктоп-сайта: нижние
  * табы + экраны на РЕАЛЬНЫХ данных. Экран выбирается по маршруту (deep-link/SEO/назад).
- * Детальные слайд-оверлеи (программа/плеер/оформление/профиль) — стадия 2, пока ведут
+ * Детальные слайд-оверлеи (программа/плеер/оформление/профиль) – стадия 2, пока ведут
  * на существующие маршруты.
  */
 
@@ -59,7 +59,7 @@ function TabBar({ active }: { active: string }) {
       </nav>
     );
   }
-  // iOS / прочее — Cupertino-стиль: блюр-фон, активный цвет без «таблетки».
+  // iOS / прочее – Cupertino-стиль: блюр-фон, активный цвет без «таблетки».
   return (
     <nav style={{ flexShrink: 0, display: "flex", alignItems: "stretch", padding: "9px 6px calc(env(safe-area-inset-bottom, 0px) + 12px)", background: "rgba(251,243,232,.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid #E7E0D0" }}>
       {TABS.map((t) => {
@@ -91,7 +91,7 @@ function MobileHome() {
   const discount = useMemberDiscount();
   const toast = useToast();
 
-  // Гость или недоступная сессия — приглашение (/me отдаётся только верифицированному
+  // Гость или недоступная сессия – приглашение (/me отдаётся только верифицированному
   // выпускнику, поэтому неверифицированные попадают в isError → тоже видят приглашение).
   if (!t || me.isError) return <GuestHome />;
   if (!me.data) return <Loader />;
@@ -133,10 +133,10 @@ function MobileHome() {
           <div style={{ position: "relative", padding: "20px 20px 18px", color: "#FBF3E8" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".24em", color: "rgba(227,194,114,.92)" }}>КАРТА ВЫПУСКНИКА</span>
-              <span style={{ ...mono, fontSize: 10, letterSpacing: ".16em", color: "rgba(251,243,232,.55)" }}>ВЫПУСК {m.alumni.cohort ?? "—"}</span>
+              <span style={{ ...mono, fontSize: 10, letterSpacing: ".16em", color: "rgba(251,243,232,.55)" }}>ВЫПУСК {m.alumni.cohort ?? "–"}</span>
             </div>
             <div style={{ ...disp, fontWeight: 700, fontSize: 23, letterSpacing: "-.01em", marginTop: 28 }}>{m.alumni.fio ?? "Выпускник"}</div>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", color: "rgba(251,243,232,.55)", marginTop: 5 }}>№ {m.alumni.referral_code ?? "—"}</div>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", color: "rgba(251,243,232,.55)", marginTop: 5 }}>№ {m.alumni.referral_code ?? "–"}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 22 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#E3C272,#C49A45)", color: INK, padding: "7px 13px", borderRadius: 11 }}>
                 <span style={{ ...disp, fontWeight: 700, fontSize: 12 }}>{m.level.level_title}</span>
@@ -206,7 +206,7 @@ function MobileHome() {
         <QuickAction to="/?screen=profile" label="Профиль" tint="rgba(196,154,69,.16)" stroke="#B78A2E" icon={<><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>} />
       </div>
 
-      {/* Последнее — история баллов */}
+      {/* Последнее – история баллов */}
       {ledger.data && ledger.data.length > 0 && (
         <div style={{ padding: "16px 20px 2px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10 }}>
@@ -271,7 +271,7 @@ function GuestHome() {
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", margin: "22px 0 0" }}>Клуб выпускников</h1>
         <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "#9B9584", marginTop: 6 }}>ФАКУЛЬТЕТ ПРАВА · ВЫШКА</div>
         <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.55, marginTop: 18, maxWidth: 300 }}>
-          Войдите, чтобы открыть карту выпускника — баллы, уровень и скидку на программы ДПО.
+          Войдите, чтобы открыть карту выпускника – баллы, уровень и скидку на программы ДПО.
         </p>
         <Link to="/lk" style={{ marginTop: 24, width: "100%", maxWidth: 300, height: 52, borderRadius: 15, background: "#EC5A13", color: "#FBF3E8", ...disp, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", boxShadow: "0 14px 28px -14px rgba(236,90,19,.85)" }}>Войти в кабинет</Link>
         <Link to="/join" style={{ marginTop: 12, width: "100%", maxWidth: 300, height: 52, borderRadius: 15, border: "1.5px solid #14181F", color: INK, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: "#fff" }}>Вступить в клуб</Link>
@@ -293,7 +293,7 @@ function ScreenHeader({ title, sub, right }: { title: string; sub?: string; righ
   return (
     <header style={{ ...HEADER, display: right ? "flex" : "block", alignItems: "flex-end", justifyContent: "space-between", padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 12px" }}>
       <div>
-        {/* Настоящий <h1>: экран мобильной оболочки — самостоятельная страница, скринридер
+        {/* Настоящий <h1>: экран мобильной оболочки – самостоятельная страница, скринридер
             должен находить её заголовок навигацией по заголовкам (как на десктопе). */}
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: 0 }}>{title}</h1>
         {sub && <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>{sub}</div>}
@@ -385,7 +385,7 @@ function MobileDpo() {
 }
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
-  // Android — Material-чип (тёмный активный); iOS — оранжевый активный.
+  // Android – Material-чип (тёмный активный); iOS – оранжевый активный.
   const brd = on ? (ANDROID ? "#14181F" : "#EC5A13") : "#E4DCCC";
   const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "#fff";
   const col = on ? (ANDROID ? "#FBF3E8" : "#C9450E") : INK;
@@ -485,7 +485,7 @@ const BackWhite = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" st
 const BackInk = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
 
 function MobileProgram() {
-  // Оболочка рендерится вне <Route path="/dpo/:slug">, поэтому useParams пуст —
+  // Оболочка рендерится вне <Route path="/dpo/:slug">, поэтому useParams пуст –
   // берём slug прямо из пути.
   const { pathname } = useLocation();
   const slug = decodeURIComponent(pathname.replace(/^\/dpo\//, ""));
@@ -504,7 +504,7 @@ function MobileProgram() {
   const doAdd = (goCart: boolean) => {
     if (!p) return;
     add.mutate({ type: "dpo", ref_id: p.slug, qty: 1 }, {
-      onSuccess: () => { toast(goCart ? "Добавлено — оформите заявку" : `«${p.title}» в корзине`); if (goCart) nav("/cart"); },
+      onSuccess: () => { toast(goCart ? "Добавлено – оформите заявку" : `«${p.title}» в корзине`); if (goCart) nav("/cart"); },
       onError: (e) => toast((e as Error).message, "err"),
     });
   };
@@ -597,7 +597,7 @@ function MobileCart() {
         <div style={{ width: 96, height: 96, borderRadius: 99, background: "linear-gradient(140deg,#2C6E80,#15375E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 46px -20px rgba(21,55,94,.8)" }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#FBF3E8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg></div>
         <div style={{ ...disp, fontWeight: 800, fontSize: 24, marginTop: 26 }}>Заявка отправлена</div>
         <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "#C9450E", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
-        <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн — кнопка ниже." : ""}</div>
+        <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
         {result.payment_url && <a href={result.payment_url} style={{ ...primaryBtn, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", padding: "0 26px", background: "#1F8A5B", boxShadow: "none" }}>Оплатить онлайн</a>}
         <button onClick={() => nav("/")} style={{ marginTop: 22, height: 52, padding: "0 34px", borderRadius: 15, border: "none", background: INK, color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>На главную</button>
       </div>
@@ -617,7 +617,7 @@ function MobileCart() {
           <div style={{ padding: "70px 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <div style={{ width: 78, height: 78, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C49A45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg></div>
             <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Заявка пуста</div>
-            <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Добавьте программу ДПО или мерч — и оформите заявку в пару касаний.</div>
+            <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Добавьте программу ДПО или мерч – и оформите заявку в пару касаний.</div>
             <button onClick={() => nav("/dpo")} style={{ ...primaryBtn, flex: "none", marginTop: 22, height: 48, padding: "0 26px" }}>К программам</button>
           </div>
         )}
@@ -683,7 +683,7 @@ function MobileNewsPost() {
   const post = useNewsPost(slug);
   const d = post.data;
   useHead({ title: d?.title ?? "Новость", description: d?.excerpt ?? undefined, canonical: typeof window !== "undefined" ? `${window.location.origin}/news/${slug}` : undefined });
-  // Оттенок героя — стабильный по slug (как цветные карточки ленты).
+  // Оттенок героя – стабильный по slug (как цветные карточки ленты).
   const tint = NEWS_TINTS[Math.abs([...slug].reduce((s, c) => s + c.charCodeAt(0), 0)) % NEWS_TINTS.length];
   return (
     <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
@@ -732,7 +732,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
   const [dur, setDur] = useState(0);
   const posKey = `pod-pos-${epId}`;
 
-  // Смена выпуска — сбрасываем локальный прогресс UI (audio сам перезагрузится по key).
+  // Смена выпуска – сбрасываем локальный прогресс UI (audio сам перезагрузится по key).
   useEffect(() => { setPlaying(false); setPos(0); setDur(0); }, [epId]);
 
   if (q.isLoading) return <div style={{ height: "100dvh", background: "#14181F" }}><Loader /></div>;
@@ -826,7 +826,7 @@ function MobileMerchItem({ slug }: { slug: string }) {
   const buy = () => {
     if (!m) return;
     add.mutate({ type: "merch", ref_id: m.slug, variant_sku: sku, qty: 1 }, {
-      onSuccess: () => { toast("Добавлено — оформите заявку"); nav("/cart"); },
+      onSuccess: () => { toast("Добавлено – оформите заявку"); nav("/cart"); },
       onError: (e) => toast((e as Error).message, "err"),
     });
   };
@@ -878,7 +878,7 @@ function OverlaySignIn() {
     <div style={{ padding: "60px 34px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
       <div style={{ width: 72, height: 72, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }} aria-hidden>🔐</div>
       <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Нужен вход</div>
-      <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Сессия истекла или недоступна — войдите, чтобы открыть этот раздел.</div>
+      <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Сессия истекла или недоступна – войдите, чтобы открыть этот раздел.</div>
       <Link to="/lk" style={{ ...primaryBtn, flex: "none", marginTop: 20, padding: "0 26px", height: 48, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Войти в кабинет</Link>
     </div>
   );
@@ -993,7 +993,7 @@ function MobileProfile() {
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: 19 }}>{m.alumni.fio ?? "Выпускник"}</div>
-                <div style={{ fontSize: 13, color: "#6B7280", marginTop: 3 }}>Выпуск {m.alumni.cohort ?? "—"}{m.alumni.edu_program ? ` · ${m.alumni.edu_program}` : ""}</div>
+                <div style={{ fontSize: 13, color: "#6B7280", marginTop: 3 }}>Выпуск {m.alumni.cohort ?? "–"}{m.alumni.edu_program ? ` · ${m.alumni.edu_program}` : ""}</div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 7, ...mono, fontSize: 10, color: "#2C6E80", background: "rgba(44,110,128,.1)", padding: "4px 9px", borderRadius: 7 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2C6E80" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>Диплом верифицирован
                 </div>
@@ -1036,7 +1036,7 @@ function MobileProfile() {
 export default function MobileApp() {
   const { pathname, search } = useLocation();
   const qs = new URLSearchParams(search);
-  // Детальные экраны — full-screen без нижней навигации (слайд-оверлеи макета).
+  // Детальные экраны – full-screen без нижней навигации (слайд-оверлеи макета).
   if (pathname.startsWith("/dpo/")) return <MobileProgram />;
   if (pathname.startsWith("/news/")) return <MobileNewsPost />;
   if (pathname === "/cart") return <MobileCart />;
@@ -1044,7 +1044,7 @@ export default function MobileApp() {
   if (ep) return <MobilePodcastPlayer epId={ep} />;
   const item = pathname === "/merch" ? qs.get("item") : null;
   if (item) return <MobileMerchItem slug={item} />;
-  // Приватные оверлеи ЛК — только для вошедшего: гость по прямой ссылке иначе
+  // Приватные оверлеи ЛК – только для вошедшего: гость по прямой ссылке иначе
   // получал пустой тупиковый экран. Без токена показываем обычную «Карту»
   // (для гостя это приглашение войти/вступить).
   const screen = pathname === "/" && token() ? qs.get("screen") : null;

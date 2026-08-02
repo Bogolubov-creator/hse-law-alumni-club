@@ -24,7 +24,7 @@ const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
 const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
 
 export default function Lk() {
-  useHead({ title: "Личный кабинет", noindex: true }); // приватная зона — не индексируем
+  useHead({ title: "Личный кабинет", noindex: true }); // приватная зона – не индексируем
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [pending, setPending] = useState<AlumniBrief | null>(null);
 
@@ -163,7 +163,7 @@ function BadgeModal({ a, onClose }: { a: Achievement; onClose: () => void }) {
             <div style={{ height: 10, borderRadius: 999, background: t.progressTrack, overflow: "hidden", marginTop: 8 }}>
               <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((a.current / a.target) * 100)}%` }} />
             </div>
-            <p style={{ ...mono, fontSize: 12, color: t.muted, margin: "10px 0 0" }}>Осталось ещё {Math.max(0, a.target - a.current)} — и достижение ваше.</p>
+            <p style={{ ...mono, fontSize: 12, color: t.muted, margin: "10px 0 0" }}>Осталось ещё {Math.max(0, a.target - a.current)} – и достижение ваше.</p>
           </div>
         )}
       </div>
@@ -308,7 +308,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
   );
 }
 
-/** Блок «События» вверху ЛК — то, что требует внимания или радует. */
+/** Блок «События» вверху ЛК – то, что требует внимания или радует. */
 function Events({ token }: { token: string }) {
   const t = useLkTokens();
   const surface = lkSurface(t);
@@ -422,7 +422,7 @@ function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myIn
         </div>
         {c.interests.length > 0 && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: t.muted }}>Интересы {c.interests.some((i) => common.has(i)) && <span style={{ color: "#1F8A5B", textTransform: "none" }}>· зелёные — общие с вами</span>}</div>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: t.muted }}>Интересы {c.interests.some((i) => common.has(i)) && <span style={{ color: "#1F8A5B", textTransform: "none" }}>· зелёные – общие с вами</span>}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
               {c.interests.map((i) => (
                 <span key={i} style={{ fontSize: 12.5, fontWeight: 500, padding: "6px 12px", borderRadius: 999, border: "1.5px solid " + (common.has(i) ? "#1F8A5B" : t.chipBorder), background: common.has(i) ? "rgba(31,138,91,.1)" : t.chipBg, color: common.has(i) ? "#1F8A5B" : t.text }}>{i}</span>
@@ -454,7 +454,7 @@ function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myIn
   );
 }
 
-/** «Мои однокурсники» — тот же выпуск или ОП; клик по карточке — мини-профиль. */
+/** «Мои однокурсники» – тот же выпуск или ОП; клик по карточке – мини-профиль. */
 function Community({ token, myInterests }: { token: string; myInterests: string[] }) {
   const t = useLkTokens();
   const surface = lkSurface(t);
@@ -477,7 +477,7 @@ function Community({ token, myInterests }: { token: string; myInterests: string[
       <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
         {list.map((c) => (
           <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${t.surfaceBorder}`, borderRadius: 16, padding: "14px 16px" }}>
-            {/* Клик по человеку — мини-профиль */}
+            {/* Клик по человеку – мини-профиль */}
             <button onClick={() => setSel(c)} className="foc" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}>
               <ClassmateAvatar c={c} size={46} />
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -506,7 +506,7 @@ function Community({ token, myInterests }: { token: string; myInterests: string[
           </div>
         ))}
       </div>
-      {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку — попробуйте ещё раз.</p>}
+      {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку – попробуйте ещё раз.</p>}
       {sel && <ClassmateModal c={list.find((x) => x.id === sel.id) ?? sel} myInterests={myInterests} token={token} onClose={() => setSel(null)} />}
     </div>
   );
@@ -520,7 +520,7 @@ function Referral({ me }: { me: import("../lib/api.js").Me }) {
   const code = me.alumni.referral_code;
   if (!code) return null;
   const link = `${window.location.origin}/join?ref=${encodeURIComponent(code)}`;
-  const shareText = "Вступай в клуб выпускников факультета права Вышки — скидки на ДПО, сообщество и подкасты:";
+  const shareText = "Вступай в клуб выпускников факультета права Вышки – скидки на ДПО, сообщество и подкасты:";
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -572,7 +572,7 @@ function PushBell() {
         const sub = await reg.pushManager.getSubscription();
         setState(sub && Notification.permission === "granted" ? "on" : "off");
       } catch {
-        /* API недоступен — просто не показываем кнопку */
+        /* API недоступен – просто не показываем кнопку */
       }
     })();
   }, []);
@@ -623,7 +623,7 @@ function PushBell() {
     <div style={{ ...surface, padding: "20px 28px", marginTop: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
       <div>
         <div style={{ ...disp, fontWeight: 600, fontSize: 17 }}>🔔 Уведомления клуба</div>
-        <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>Заявки в друзья, новые события и подкасты — сразу на устройство</div>
+        <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>Заявки в друзья, новые события и подкасты – сразу на устройство</div>
       </div>
       {state === "on" ? (
         <button onClick={disable} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "1.5px solid #1F8A5B", background: t.ghostBtnBg, color: "#1F8A5B", cursor: "pointer", flex: "none" }}>Включены ✓ (выключить)</button>
@@ -651,7 +651,7 @@ function TgLink() {
       <div>
         <div style={{ ...disp, fontWeight: 600, fontSize: 17 }}>🤖 Telegram-бот клуба</div>
         <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>
-          {data.linked ? "Привязан ✓ — команды /points и /calendar показывают ваши данные" : "Привяжите аккаунт — бот покажет ваши баллы (/points) и события (/calendar)"}
+          {data.linked ? "Привязан ✓ – команды /points и /calendar показывают ваши данные" : "Привяжите аккаунт – бот покажет ваши баллы (/points) и события (/calendar)"}
         </div>
       </div>
       <a href={data.url} target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, flex: "none", ...(data.linked ? { border: "1.5px solid #2E6FAE", background: t.ghostBtnBg, color: "#2E6FAE" } : { background: "#2E6FAE", color: "#FBF3E8" }) }}>
@@ -672,7 +672,7 @@ function NextClubEvent({ token }: { token: string }) {
   const q = useQuery({ queryKey: ["events", token], queryFn: () => apiGet<Ev[]>("/events", token) });
   const rsvp = useMutation({
     mutationFn: (id: string) => apiPost<{ going: boolean }>(`/events/${id}/rsvp`, {}, undefined, token),
-    onSuccess: (r) => { toast(r.going ? "Вы записаны — ждём вас! ✓" : "Запись отменена"); qc.invalidateQueries({ queryKey: ["events"] }); },
+    onSuccess: (r) => { toast(r.going ? "Вы записаны – ждём вас! ✓" : "Запись отменена"); qc.invalidateQueries({ queryKey: ["events"] }); },
     onError: (e) => toast((e as Error).message, "err"),
   });
   const ev = (q.data ?? []).find((e) => e.status === "published" && new Date(e.starts_at).getTime() >= Date.now());
@@ -701,7 +701,7 @@ function NextClubEvent({ token }: { token: string }) {
 }
 
 /** Чек-лист новичка: 4 шага освоиться в клубе. Прячется, когда всё сделано
-    (или после «Скрыть» — localStorage). Состояния собираются из уже
+    (или после «Скрыть» – localStorage). Состояния собираются из уже
     существующих источников: /me, /me/tg-link, /events, PushManager. */
 function NewbieChecklist({ me }: { me: import("../lib/api.js").Me }) {
   const t = useLkTokens();
@@ -727,8 +727,8 @@ function NewbieChecklist({ me }: { me: import("../lib/api.js").Me }) {
   const eventDone = (evq.data ?? []).some((e) => e.my_rsvp || e.my_attended);
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
   const items: { label: string; done: boolean; hint: string; action: () => void }[] = [
-    { label: "Заполнить профиль", done: profileDone, hint: "фото или интересы — вас найдут однокурсники", action: () => { window.location.href = "/lk/profile"; } },
-    ...(pushOn === null ? [] : [{ label: "Включить уведомления", done: pushOn, hint: "заявки в друзья и анонсы — сразу на устройство", action: () => scrollTo("push-bell") }]),
+    { label: "Заполнить профиль", done: profileDone, hint: "фото или интересы – вас найдут однокурсники", action: () => { window.location.href = "/lk/profile"; } },
+    ...(pushOn === null ? [] : [{ label: "Включить уведомления", done: pushOn, hint: "заявки в друзья и анонсы – сразу на устройство", action: () => scrollTo("push-bell") }]),
     { label: "Привязать Telegram", done: tg.data?.linked ?? false, hint: "бот покажет баллы и календарь", action: () => scrollTo("tg-link") },
     { label: "Записаться на событие", done: eventDone, hint: "за участие начисляются баллы", action: () => { window.location.href = "/events"; } },
   ];
@@ -769,7 +769,7 @@ function achColor(a: Achievement): string {
   return a.earned ? "#1F8A5B" : achInProgress(a) ? "#EC5A13" : "#6B7280";
 }
 
-// Оформление «ромба» повторяет Claude Design: получено — teal→navy, следующее — оранжевый, закрыто — soft.
+// Оформление «ромба» повторяет Claude Design: получено – teal→navy, следующее – оранжевый, закрыто – soft.
 function BadgeSquare({ a, size }: { a: Achievement; size: number }) {
   const t = useLkTokens();
   const star = !a.earned && a.star;

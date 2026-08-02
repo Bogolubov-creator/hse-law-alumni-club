@@ -42,7 +42,7 @@ export async function directusCredsValid(email: string, password: string): Promi
     });
     return r.ok;
   } catch (e) {
-    // Сетевой сбой (Directus недоступен) — не молча: оставляем след в логах.
+    // Сетевой сбой (Directus недоступен) – не молча: оставляем след в логах.
     console.error("[auth] Directus /auth/login недоступен:", (e as Error).message);
     return false;
   }
@@ -145,7 +145,7 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   )) as (AlumniCtx & { token_version?: number | null })[];
   const alumni = rows[0];
   if (!alumni) return null;
-  // Ревокация: сброс пароля поднимает token_version — старые JWT перестают действовать.
+  // Ревокация: сброс пароля поднимает token_version – старые JWT перестают действовать.
   if ((payload.ver ?? 0) !== (alumni.token_version ?? 0)) return null;
   return alumni;
 }

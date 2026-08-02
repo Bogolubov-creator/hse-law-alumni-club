@@ -30,7 +30,7 @@ const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "
 
 /**
  * Аватары выпускников. Файл хранится в Directus Files (том uploads),
- * наружу раздаётся ТОЛЬКО через наш прокси /avatars/:fileId — Directus
+ * наружу раздаётся ТОЛЬКО через наш прокси /avatars/:fileId – Directus
  * по-прежнему не светится публично, а старый файл удаляется при замене.
  */
 export async function avatarsRoutes(app: FastifyInstance) {

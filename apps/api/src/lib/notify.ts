@@ -12,7 +12,7 @@ function transport(): ReturnType<typeof nodemailer.createTransport> | null {
     mailer = nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465, // 465 = implicit TLS; 587 — STARTTLS
+      secure: env.SMTP_PORT === 465, // 465 = implicit TLS; 587 – STARTTLS
       auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
     });
   }
@@ -28,7 +28,7 @@ export function mailEnabled(): boolean {
   return !!env.SMTP_HOST;
 }
 
-/** Письмо пользователю. Без SMTP — содержимое в лог (dev-режим), не падаем. */
+/** Письмо пользователю. Без SMTP – содержимое в лог (dev-режим), не падаем. */
 export async function sendEmail(to: string, subject: string, text: string): Promise<boolean> {
   const t = transport();
   if (!t) {
@@ -72,14 +72,14 @@ export interface OrderNotice {
 
 /** Уведомление офиса о новой заявке. Telegram если есть токен, иначе лог + BLOCKED-пометка. */
 export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; ok: boolean; blocked?: boolean }> {
-  // 152-ФЗ: Telegram — зарубежный сервис (трансграничная передача). НЕ отправляем
-  // туда ПДн заявителя (ФИО/телефон/email) — только номер, состав и сумму; контакты
+  // 152-ФЗ: Telegram – зарубежный сервис (трансграничная передача). НЕ отправляем
+  // туда ПДн заявителя (ФИО/телефон/email) – только номер, состав и сумму; контакты
   // офис смотрит в админ-панели (РФ, под доступом). Так же не пишем ПДн в лог.
   const text =
     `🆕 Новая заявка ${o.number}\n` +
     `${o.itemsSummary}\n` +
     `Сумма (справочно): ${formatRub(o.total_estimate)} ₽ (скидка −${o.member_discount}%)\n` +
-    `Контакты и детали — в админ-панели.`;
+    `Контакты и детали – в админ-панели.`;
 
   const useTg = (env.OFFICE_NOTIFY_CHANNEL === "telegram" || env.OFFICE_NOTIFY_CHANNEL === "both")
     && env.OFFICE_TG_BOT_TOKEN && env.OFFICE_TG_CHAT_ID;
@@ -96,7 +96,7 @@ export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; o
     }
   }
 
-  // Токена нет — заявка всё равно создана, но офис не уведомлён.
+  // Токена нет – заявка всё равно создана, но офис не уведомлён.
   console.warn(`[notify:BLOCKED] нет OFFICE_TG_BOT_TOKEN/CHAT_ID. Заявка ${o.number} создана, офис НЕ уведомлён.\n${text}`);
   return { channel: "none", ok: false, blocked: true };
 }
@@ -105,7 +105,7 @@ export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; o
 export async function confirmApplicant(o: OrderNotice): Promise<void> {
   await sendEmail(
     o.contact_email,
-    `Заявка ${o.number} принята — Клуб выпускников факультета права`,
-    `Здравствуйте, ${o.contact_fio}!\n\nВаша заявка ${o.number} принята:\n${o.itemsSummary}\nСумма (справочно): ${formatRub(o.total_estimate)} ₽.\n\nМенеджер учебного офиса свяжется с вами для подтверждения деталей.\n\n— Клуб выпускников факультета права НИУ ВШЭ`,
+    `Заявка ${o.number} принята – Клуб выпускников факультета права`,
+    `Здравствуйте, ${o.contact_fio}!\n\nВаша заявка ${o.number} принята:\n${o.itemsSummary}\nСумма (справочно): ${formatRub(o.total_estimate)} ₽.\n\nМенеджер учебного офиса свяжется с вами для подтверждения деталей.\n\n– Клуб выпускников факультета права НИУ ВШЭ`,
   );
 }

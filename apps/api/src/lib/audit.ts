@@ -14,7 +14,7 @@ export function audit(
   event: string,
   opts: { actor?: string; subject?: string; detail?: Record<string, unknown>; req?: FastifyRequest } = {},
 ): void {
-  const ip = opts.req?.ip ?? null; // за Caddy — реальный IP (trustProxy)
+  const ip = opts.req?.ip ?? null; // за Caddy – реальный IP (trustProxy)
   void directus
     .request((createItem as any)("audit_log", {
       event,

@@ -16,7 +16,7 @@ const pointsBody = z.object({
 });
 
 export async function pointsRoutes(app: FastifyInstance) {
-  // Начисление баллов — только сервисным токеном (админ/офис-операции).
+  // Начисление баллов – только сервисным токеном (админ/офис-операции).
   app.post("/points", async (req, reply) => {
     if (!isServiceToken(req)) return reply.code(401).send({ error: "Требуется сервисный токен" });
     const body = pointsBody.parse(req.body);

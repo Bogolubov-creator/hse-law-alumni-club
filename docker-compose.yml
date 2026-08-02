@@ -9,7 +9,10 @@ x-logging: &default-logging
 
 services:
   postgres:
-    image: postgres:16-alpine
+    # Пин по digest (не только по тегу): major-тег молча тянет любой новый минор.
+    # Обновление — осознанным PR (Dependabot умеет обновлять digest). Проверить/обновить
+    # digest: docker manifest inspect postgres:16-alpine
+    image: postgres:16.14-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -28,7 +31,9 @@ services:
     logging: *default-logging
 
   directus:
-    image: directus/directus:11
+    # Пин по digest: админка с ПДн не должна молча съезжать на непроверенный минор.
+    # Обновлять осознанным PR. Проверить digest: docker manifest inspect directus/directus:11
+    image: directus/directus:11.17.4@sha256:eb326f679ae847c0a776f93b972761dc2ebe84980e0b9d274a6bc31cd62809f7
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -161,7 +166,7 @@ services:
     logging: *default-logging
 
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true

@@ -1,4 +1,4 @@
-// Геймификация — единый источник правды для api, bootstrap и web.
+// Геймификация – единый источник правды для api, bootstrap и web.
 // Числа сверены с прототипом club-business-law.html и решением оркестратора 3.1.
 
 export type LevelKey = "graduate" | "friend" | "expert" | "ambassador";
@@ -49,22 +49,22 @@ export interface AchievementDef {
   kind: string; // подпись прогресса, напр. «мероприятия»
   rule_json: { type: string; gte: number };
   sort: number;
-  star?: boolean; // «следующее» достижение — оранжевая подсветка
+  star?: boolean; // «следующее» достижение – оранжевая подсветка
   demo?: number; // временное значение для метрик, которые ещё не трекаются (соцсети/лайки)
 }
 
 // Набор и оформление достижений повторяют «Дашборд ЛК.dc.html» (Claude Design).
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
-  { key: "first_step", title: "Первый шаг", description: "Посетите своё первое мероприятие клуба — встречу, лекцию или нетворкинг.", icon: "1", kind: "мероприятия", rule_json: { type: "events_attended", gte: 1 }, sort: 1 },
+  { key: "first_step", title: "Первый шаг", description: "Посетите своё первое мероприятие клуба – встречу, лекцию или нетворкинг.", icon: "1", kind: "мероприятия", rule_json: { type: "events_attended", gte: 1 }, sort: 1 },
   { key: "office_seal", title: "Печать офиса", description: "Пройдите верификацию профиля у учебного офиса и подтвердите свой выпуск.", icon: "✓", kind: "статус", rule_json: { type: "verified", gte: 1 }, sort: 2 },
   { key: "on_radar", title: "На радаре", description: "Подпишитесь на все соцсети факультета права, чтобы ничего не пропускать.", icon: "@", kind: "соцсети", rule_json: { type: "socials", gte: 1 }, sort: 3, demo: 1 },
   { key: "on_wave", title: "На волне", description: "Наберите 50 лайков под постами факультета за один месяц.", icon: "♥", kind: "лайки за месяц", rule_json: { type: "likes_month", gte: 50 }, sort: 4, demo: 38 },
   { key: "club_voice", title: "Голос клуба", description: "Оставьте 10 комментариев в соцсетях факультета за один месяц.", icon: "✎", kind: "комментарии за месяц", rule_json: { type: "comments_month", gte: 10 }, sort: 5, demo: 7 },
-  { key: "regular", title: "Завсегдатай", description: "Посетите 5 мероприятий клуба. Вы уже на полпути — продолжайте!", icon: "5", kind: "мероприятия", rule_json: { type: "events_attended", gte: 5 }, sort: 6, star: true },
+  { key: "regular", title: "Завсегдатай", description: "Посетите 5 мероприятий клуба. Вы уже на полпути – продолжайте!", icon: "5", kind: "мероприятия", rule_json: { type: "events_attended", gte: 5 }, sort: 6, star: true },
   { key: "eternal_student", title: "Вечный студент", description: "Пройдите 3 программы ДПО со скидкой выпускника.", icon: "Д", kind: "программы ДПО", rule_json: { type: "programs_completed", gte: 3 }, sort: 7 },
   { key: "insider", title: "Свой человек", description: "Посетите 10 мероприятий клуба и станьте его постоянным лицом.", icon: "10", kind: "мероприятия", rule_json: { type: "events_attended", gte: 10 }, sort: 8 },
   { key: "connector", title: "Проводник", description: "Пригласите 3 выпускников вступить в клуб по вашей рекомендации.", icon: "+", kind: "приглашения", rule_json: { type: "referrals_count", gte: 3 }, sort: 9 },
-  { key: "legend", title: "Легенда выпуска", description: "Достигните высшего уровня статуса — «Амбассадор».", icon: "★", kind: "уровень статуса", rule_json: { type: "status_level", gte: 4 }, sort: 10 },
+  { key: "legend", title: "Легенда выпуска", description: "Достигните высшего уровня статуса – «Амбассадор».", icon: "★", kind: "уровень статуса", rule_json: { type: "status_level", gte: 4 }, sort: 10 },
 ];
 
 export interface AchievementProgressItem {

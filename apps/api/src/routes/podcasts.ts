@@ -74,7 +74,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
   });
 
   // Отдача аудио по подписанной ссылке: проверка HMAC + срока, затем для
-  // платного выпуска — повторная проверка активной подписки держателя (M3).
+  // платного выпуска – повторная проверка активной подписки держателя (M3).
   app.get("/podcasts/:id/audio", { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const q = z.object({ h: z.string().min(1).max(64), exp: z.coerce.number(), sig: z.string().regex(/^[0-9a-f]{64}$/) }).safeParse(req.query);

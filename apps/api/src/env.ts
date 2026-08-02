@@ -18,7 +18,7 @@ const schema = z.object({
   TELEGRAM_BOT_USERNAME: z.string().default("pravohse_alumni_bot"),
   // Доп. разрешённые cross-origin источники (через запятую); same-origin и Telegram разрешены всегда.
   CORS_ORIGINS: z.string().default(""),
-  // Уведомление офиса (решение 3.2) — на старте telegram
+  // Уведомление офиса (решение 3.2) – на старте telegram
   OFFICE_NOTIFY_CHANNEL: z.enum(["telegram", "email", "both"]).default("telegram"),
   OFFICE_TG_BOT_TOKEN: z.string().default(""),
   OFFICE_TG_CHAT_ID: z.string().default(""),
@@ -31,7 +31,7 @@ const schema = z.object({
   // иначе прежний режим «заявка без оплаты» (BLOCKED до получения ключей магазина).
   YOOKASSA_SHOP_ID: z.string().default(""),
   YOOKASSA_SECRET_KEY: z.string().default(""),
-  // Публичный адрес сайта — для return_url после оплаты.
+  // Публичный адрес сайта – для return_url после оплаты.
   PUBLIC_URL: z.string().default("http://localhost"),
   // Web-push (VAPID). Пусто = пуши выключены, сайт работает как раньше.
   VAPID_PUBLIC_KEY: z.string().default(""),
@@ -39,8 +39,8 @@ const schema = z.object({
   SENTRY_DSN: z.string().default(""), // пусто = мониторинг ошибок выключен
   // Демо-наполнение витрин (локальный стенд). На проде обязано быть выключено.
   SEED_DEMO: z.string().default(""),
-  ORDER_RETENTION_DAYS: z.coerce.number().int().positive().default(1095), // 3 года — срок хранения заявок (152-ФЗ)
-  AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(365),  // 1 год — срок хранения аудита
+  ORDER_RETENTION_DAYS: z.coerce.number().int().positive().default(1095), // 3 года – срок хранения заявок (152-ФЗ)
+  AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(365),  // 1 год – срок хранения аудита
 });
 
 export const env = schema.parse(process.env);
@@ -48,19 +48,19 @@ export type Env = z.infer<typeof schema>;
 
 /**
  * Fail-fast небезопасной прод-конфигурации. Возвращает список фатальных проблем
- * (пусто — всё ок). Активна только при APP_ENV=production, чтобы локальный стенд
+ * (пусто – всё ок). Активна только при APP_ENV=production, чтобы локальный стенд
  * (собранный тем же production-образом) не падал на плейсхолдерах.
  */
 export function assertProdConfig(): string[] {
   if (env.APP_ENV !== "production") return [];
   const errs: string[] = [];
   const looksPlaceholder = (v: string) => /replace_with|сгенерируйте|changeme|your[_-]?secret|example/i.test(v);
-  if (looksPlaceholder(env.AUTH_SECRET)) errs.push("AUTH_SECRET выглядит как плейсхолдер — сгенерируйте настоящий (openssl rand -hex 32)");
+  if (looksPlaceholder(env.AUTH_SECRET)) errs.push("AUTH_SECRET выглядит как плейсхолдер – сгенерируйте настоящий (openssl rand -hex 32)");
   if (looksPlaceholder(env.DIRECTUS_SERVICE_TOKEN)) errs.push("DIRECTUS_SERVICE_TOKEN выглядит как плейсхолдер");
-  if (!env.ADMIN_AUTH_SECRET) errs.push("ADMIN_AUTH_SECRET пуст — задайте отдельный секрет админ-сессий (defense-in-depth)");
+  if (!env.ADMIN_AUTH_SECRET) errs.push("ADMIN_AUTH_SECRET пуст – задайте отдельный секрет админ-сессий (defense-in-depth)");
   if (!env.PUBLIC_URL.startsWith("https://")) errs.push("PUBLIC_URL должен быть https://<домен> на проде (return_url оплаты, sitemap, canonical)");
   if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_POLLING !== "true" && !env.TELEGRAM_WEBHOOK_SECRET)
-    errs.push("бот на webhook без TELEGRAM_WEBHOOK_SECRET — кто угодно сможет слать поддельные апдейты");
+    errs.push("бот на webhook без TELEGRAM_WEBHOOK_SECRET – кто угодно сможет слать поддельные апдейты");
   // Почта – не опция: без неё молча ломаются восстановление пароля и подтверждение
   // адреса при регистрации (любой занимает чужой email). Стартовать так на проде нельзя.
   if (!env.SMTP_HOST)

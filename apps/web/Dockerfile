@@ -1,5 +1,5 @@
-# Контекст сборки — корень монорепо.
-FROM node:20-alpine AS build
+# Контекст сборки – корень монорепо.
+FROM node:20.20.2-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS build
 RUN corepack enable
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml* ./
@@ -9,9 +9,9 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY apps/web apps/web
 # Build-time конфигурация SPA. Vite инлайнит эти значения в бандл на этапе сборки,
-# поэтому их нельзя задать в рантайме — только как build-arg (см. docker-compose.yml).
-# VITE_SITE_URL — абсолютный домен для og/JSON-LD/canonical в index.html;
-# VITE_DIRECTUS_URL — база Studio/ассетов для офисной админ-панели.
+# поэтому их нельзя задать в рантайме – только как build-arg (см. docker-compose.yml).
+# VITE_SITE_URL – абсолютный домен для og/JSON-LD/canonical в index.html;
+# VITE_DIRECTUS_URL – база Studio/ассетов для офисной админ-панели.
 ARG VITE_SITE_URL=http://localhost
 ARG VITE_DIRECTUS_URL=http://localhost:8055
 ENV VITE_SITE_URL=$VITE_SITE_URL
@@ -19,7 +19,7 @@ ENV VITE_DIRECTUS_URL=$VITE_DIRECTUS_URL
 RUN pnpm --filter @club/shared build && pnpm --filter @club/web build
 
 # Статика отдаётся отдельным Caddy внутри контейнера; внешний Caddy проксирует на него.
-FROM caddy:2-alpine AS runtime
+FROM caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648 AS runtime
 COPY --from=build /repo/apps/web/dist /srv
 COPY apps/web/Caddyfile.static /etc/caddy/Caddyfile
 EXPOSE 80

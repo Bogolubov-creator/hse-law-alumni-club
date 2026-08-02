@@ -7,7 +7,7 @@ import { env } from "../env.js";
 const NEWS_FIELDS = ["id", "slug", "title", "excerpt", "body", "published_at"] as const;
 const listQuery = z.object({ limit: z.coerce.number().int().positive().max(100).optional() });
 
-// Публичные чтения контента. Directus наружу не выставляем — только через apps/api.
+// Публичные чтения контента. Directus наружу не выставляем – только через apps/api.
 export async function contentRoutes(app: FastifyInstance) {
   // robots.txt из API: абсолютный Sitemap из PUBLIC_URL (единый источник домена).
   // Приватка закрыта; отдаётся через Caddy по /robots.txt.
@@ -48,7 +48,7 @@ export async function contentRoutes(app: FastifyInstance) {
         { loc: "/merch", prio: "0.7", freq: "monthly" },
         ...news.map((n) => ({ loc: `/news/${n.slug}`, lastmod: n.published_at?.slice(0, 10), prio: "0.6", freq: "monthly" })),
         ...programs.map((p2) => ({ loc: `/dpo/${p2.slug}`, prio: "0.6", freq: "monthly" })),
-        // Юридические страницы — публичны и индексируемы (низкий приоритет, редкие изменения).
+        // Юридические страницы – публичны и индексируемы (низкий приоритет, редкие изменения).
         { loc: "/privacy", prio: "0.3", freq: "yearly" },
         { loc: "/confidential", prio: "0.3", freq: "yearly" },
         { loc: "/requisites", prio: "0.3", freq: "yearly" },
@@ -115,7 +115,7 @@ export async function contentRoutes(app: FastifyInstance) {
     })),
   );
 
-  // «История» на главной — редактируется в админ-панели.
+  // «История» на главной – редактируется в админ-панели.
   app.get("/timeline", async () =>
     directus.request(readItems("timeline_items", {
       filter: { status: { _eq: "published" } }, sort: ["sort"], limit: -1,

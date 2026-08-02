@@ -31,3 +31,19 @@ updates:
       timezone: Europe/Moscow
     commit-message:
       prefix: "chore(ci)"
+
+  # Docker-образы запинены по digest (compose + Dockerfile'ы). Чтобы пин не устаревал
+  # молча, Dependabot присылает PR на новые dig/версии — обновление остаётся осознанным.
+  - package-ecosystem: docker
+    directories:
+      - "/"
+      - "/apps/web"
+      - "/apps/api"
+      - "/scripts"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Moscow
+    commit-message:
+      prefix: "chore(docker)"

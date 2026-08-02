@@ -80,7 +80,7 @@ export async function meRoutes(app: FastifyInstance) {
     if (a.verification_status !== "verified") return reply.code(403).send({ error: "ЛК активируется после верификации" });
     const body = z.object({
       fio: z.string().min(2).max(200).optional(),
-      // Ограничиваем ключи и значения: контакты — трастовая граница API, не фронта.
+      // Ограничиваем ключи и значения: контакты – трастовая граница API, не фронта.
       contacts: z.record(z.string().max(40), z.string().max(200)).refine((c) => Object.keys(c).length <= 12, "Слишком много контактов").optional(),
       interests: z.array(z.string().max(80)).max(30).optional(),
     }).parse(req.body);
@@ -92,7 +92,7 @@ export async function meRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // 152-ФЗ (ст. 14): право на доступ — выгрузка всех своих данных одним JSON.
+  // 152-ФЗ (ст. 14): право на доступ – выгрузка всех своих данных одним JSON.
   app.get("/me/export", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
@@ -121,7 +121,7 @@ export async function meRoutes(app: FastifyInstance) {
 
   // 152-ФЗ: самоудаление данных и выход из клуба (право на стирание/отзыв согласия).
   // Требует явного подтверждения телом. Необратимо: профиль обезличивается, аккаунт
-  // входа удаляется, сессии гаснут. После — фронт чистит токен.
+  // входа удаляется, сессии гаснут. После – фронт чистит токен.
   app.post("/me/delete", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });

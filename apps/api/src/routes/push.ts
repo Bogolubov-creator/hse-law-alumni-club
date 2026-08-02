@@ -24,7 +24,7 @@ export async function pushRoutes(app: FastifyInstance) {
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
     if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     const b = subBody.parse(req.body);
-    // Один endpoint — одна запись (переподписка того же браузера не дублирует).
+    // Один endpoint – одна запись (переподписка того же браузера не дублирует).
     // Но если этот endpoint уже закреплён за ДРУГИМ выпускником (общий компьютер,
     // сменился пользователь), запись нужно переназначить: иначе пуши о заявках
     // продолжали уходить прежнему владельцу устройства, а новый их не получал.

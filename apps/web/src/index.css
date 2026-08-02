@@ -64,7 +64,7 @@ html { -webkit-text-size-adjust: 100%; }
 body { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea { touch-action: manipulation; } /* без 300мс-задержки и дабл-тап-зума */
 @media (max-width: 768px) {
-  /* iOS зумит страницу при фокусе на поле со шрифтом <16px — не даём */
+  /* iOS зумит страницу при фокусе на поле со шрифтом <16px – не даём */
   input, select, textarea { font-size: 16px !important; }
   /* Слишком горячие ховер-подъёмы карточек не нужны на таче */
   .vcard { transition: none; }
@@ -81,7 +81,7 @@ button, a, input, select, textarea { touch-action: manipulation; } /* без 300
 
 /* ─────────────── Версия для слабовидящих (ГОСТ Р 52872) ───────────────
    Агрессивное переопределение: заменяем дизайн простой высококонтрастной
-   раскладкой. Масштаб — через zoom, цвета — через переменные схемы. */
+   раскладкой. Масштаб – через zoom, цвета – через переменные схемы. */
 html.vis { zoom: var(--vis-zoom, 1); }
 html[data-vis-scheme="bw"] { --vis-bg: #ffffff; --vis-fg: #000000; --vis-link: #0000cc; }
 html[data-vis-scheme="wb"] { --vis-bg: #000000; --vis-fg: #ffffff; --vis-link: #74c0ff; }
@@ -103,7 +103,7 @@ html.vis .vis-btn {
   border: 2px solid var(--vis-fg) !important;
   color: var(--vis-fg) !important;
 }
-/* Активная опция панели — инверсия (специфичнее универсального правила). */
+/* Активная опция панели – инверсия (специфичнее универсального правила). */
 html.vis .vis-btn.vis-active { background: var(--vis-fg) !important; color: var(--vis-bg) !important; }
 /* Шапка/панель не должны быть прозрачными (иначе текст наезжает при скролле). */
 html.vis header, html.vis .vis-bar { background: var(--vis-bg) !important; border-bottom: 2px solid var(--vis-fg) !important; }

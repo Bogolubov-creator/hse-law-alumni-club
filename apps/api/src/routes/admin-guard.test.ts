@@ -122,7 +122,7 @@ describe("гарды админских маршрутов", () => {
   });
 });
 
-describe("PATCH /admin/members/:id — изменение данных выпускника", () => {
+describe("PATCH /admin/members/:id – изменение данных выпускника", () => {
   // Операции с ПДн и деньгами требуют роль admin: у editor только контент витрин.
   const adminAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });
   const editorAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });

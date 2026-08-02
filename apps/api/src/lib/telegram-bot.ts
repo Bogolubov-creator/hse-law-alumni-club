@@ -74,7 +74,7 @@ export async function buildBotReply(cmd: string, arg: string, tgId: string): Pro
       if (linkId) {
         const owner = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: linkId } }, limit: 1, fields: ["id", "fio", "telegram_id"] }))) as any[];
         if (owner[0]) {
-          // Один Telegram — один аккаунт: снимаем этот tgId с прочих записей.
+          // Один Telegram – один аккаунт: снимаем этот tgId с прочих записей.
           const others = (await di.request((readItems as any)("alumni", { filter: { telegram_id: { _eq: tgId }, id: { _neq: linkId } }, limit: -1, fields: ["id"] }))) as any[];
           for (const o of others) await di.request((updateItem as any)("alumni", o.id, { telegram_id: null }));
           await di.request((updateItem as any)("alumni", linkId, { telegram_id: tgId }));

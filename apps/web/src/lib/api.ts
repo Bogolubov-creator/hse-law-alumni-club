@@ -10,7 +10,7 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
-/** true для ошибок недействительной сессии (истёк/битый токен) — повод показать логин заново. */
+/** true для ошибок недействительной сессии (истёк/битый токен) – повод показать логин заново. */
 export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.status === 401;
 }
@@ -26,7 +26,7 @@ export function retryUnlessClientError(failureCount: number, error: unknown): bo
 }
 
 // 401 при отправленном токене = сессия недействительна. Сообщаем приложению один раз
-// (глобальный слушатель в App очистит токен и уведёт на вход). Если токена не было —
+// (глобальный слушатель в App очистит токен и уведёт на вход). Если токена не было –
 // это обычный «не авторизован» для анонимного запроса, ничего не делаем.
 function signalUnauthorized(status: number, hadToken: boolean): void {
   if (status === 401 && hadToken) {
@@ -72,7 +72,7 @@ export async function apiDelete<T>(path: string, token?: string, schema?: Parser
   return schema ? schema.parse(data) : (data as T);
 }
 
-// Типы ответов — из @club/shared (z.infer от схем-источников).
+// Типы ответов – из @club/shared (z.infer от схем-источников).
 export type {
   NewsItem, HeroBlock, CtaBlock, PageHome, Program, ProgramFull, ProgramModule, ProgramTeacher, ProductVariant, Product,
   CartLine, CartSummary, LevelInfo, Achievement, ActivityPoint, AlumniBrief, Me, LoginResponse,

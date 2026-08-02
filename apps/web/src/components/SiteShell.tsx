@@ -12,7 +12,7 @@ const NAV = [
 ];
 
 // Общая обёртка публичных витрин: шапка с корзиной + футер. Канон-токены.
-// На десктопе — прежняя горизонтальная навигация; на телефоне — бургер.
+// На десктопе – прежняя горизонтальная навигация; на телефоне – бургер.
 export default function SiteShell({ children }: { children: ReactNode }) {
   const cart = useCart();
   const count = cart.data?.count ?? 0;

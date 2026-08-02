@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { orderIdempotenceKey } from "./idempotency.js";
 
-describe("orderIdempotenceKey — ключ идемпотентности платежа", () => {
+describe("orderIdempotenceKey – ключ идемпотентности платежа", () => {
   it("детерминирован: одинаковый номер → одинаковый ключ", () => {
     expect(orderIdempotenceKey("ALU-2026-000001")).toBe(orderIdempotenceKey("ALU-2026-000001"));
   });

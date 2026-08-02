@@ -63,7 +63,7 @@ export async function anonymizeAlumni(alumniId: string): Promise<boolean> {
   }))) as { id: string }[];
   for (const sub of subs) await di.request((deleteItem as any)("push_subs", sub.id)).catch((e) => warn("push_sub", e));
 
-  // Аккаунт входа — удалить. Если удаление не прошло (email — ПДн!), не молчим:
+  // Аккаунт входа – удалить. Если удаление не прошло (email – ПДн!), не молчим:
   // логируем и как fallback затираем email/имя и блокируем вход, чтобы ПДн не осталось.
   if (a.user_id) {
     try {

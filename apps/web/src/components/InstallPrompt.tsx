@@ -12,9 +12,9 @@ const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
 /**
  * Ненавязчивое приглашение установить сайт как приложение:
- *  • Android/Chrome — кнопка «Установить» вызывает системный диалог;
- *  • iOS/Safari — подсказка «Поделиться → На экран „Домой“» (другого пути у Apple нет).
- * Показывается один раз (закрыл — больше не беспокоим), только после принятия
+ *  • Android/Chrome – кнопка «Установить» вызывает системный диалог;
+ *  • iOS/Safari – подсказка «Поделиться → На экран „Домой“» (другого пути у Apple нет).
+ * Показывается один раз (закрыл – больше не беспокоим), только после принятия
  * cookie-баннера и никогда внутри уже установленного приложения.
  */
 export default function InstallPrompt() {
@@ -45,7 +45,7 @@ export default function InstallPrompt() {
     return () => { window.removeEventListener("beforeinstallprompt", onBip); window.clearInterval(timer); };
   }, []);
 
-  // Android без события установки (уже установлено/не поддерживается) — молчим.
+  // Android без события установки (уже установлено/не поддерживается) – молчим.
   if (!show || isStandalone() || (!ios && !deferred)) return null;
 
   const dismiss = () => { localStorage.setItem(DISMISS_KEY, "1"); setShow(false); };
@@ -67,8 +67,8 @@ export default function InstallPrompt() {
       <span style={{ fontSize: 22, flex: "none" }}>📲</span>
       <p style={{ flex: 1, minWidth: 200, margin: 0 }}>
         {ios
-          ? <>Добавьте клуб на экран телефона: нажмите <b>Поделиться</b> <span aria-hidden>⎋</span> → <b>«На экран „Домой“»</b> — сайт откроется как приложение.</>
-          : <>Установите клуб как приложение — быстрый запуск с главного экрана, без адресной строки.</>}
+          ? <>Добавьте клуб на экран телефона: нажмите <b>Поделиться</b> <span aria-hidden>⎋</span> → <b>«На экран „Домой“»</b> – сайт откроется как приложение.</>
+          : <>Установите клуб как приложение – быстрый запуск с главного экрана, без адресной строки.</>}
       </p>
       {!ios && (
         <button onClick={install} className="foc" style={{ flex: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer" }}>

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-// Мобильный брейкпоинт (<768px) — граница включения native-app-оболочки (см. mobile/MobileApp).
+// Мобильный брейкпоинт (<768px) – граница включения native-app-оболочки (см. mobile/MobileApp).
 const QUERY = "(max-width: 767px)";
 
 function subscribe(cb: () => void): () => void {
@@ -19,7 +19,7 @@ export function useIsMobile(): boolean {
 }
 
 /**
- * true на Android — для платформенно-идиоматичной мобильной оболочки (Material vs iOS).
+ * true на Android – для платформенно-идиоматичной мобильной оболочки (Material vs iOS).
  * Оверрайд ?platform=android|ios (превью/QA любого варианта без реального устройства).
  */
 export function isAndroid(): boolean {

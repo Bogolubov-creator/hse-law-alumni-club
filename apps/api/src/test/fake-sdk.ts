@@ -1,11 +1,11 @@
 /**
  * Заглушка @directus/sdk для тестов роутов.
  *
- * Настоящий SDK возвращает из readItems/createItem/... «команду» — функцию, которую
+ * Настоящий SDK возвращает из readItems/createItem/... «команду» – функцию, которую
  * исполняет client.request(). Проверить по такой функции, что именно запросил роут,
  * нельзя. Поэтому в тестах билдеры возвращают описание запроса, а fake-directus его
  * исполняет по данным в памяти. Роуты при этом не меняются: они по-прежнему вызывают
- * readItems("orders", {...}) — просто под ними другой транспорт.
+ * readItems("orders", {...}) – просто под ними другой транспорт.
  */
 export interface Descriptor {
   kind: string;
@@ -28,7 +28,7 @@ export const createUser = (data: any): Descriptor => ({ kind: "createItem", coll
 export const updateUser = (id: string, data: any): Descriptor => ({ kind: "updateItem", collection: "directus_users", id, data });
 export const readRoles = (query?: any): Descriptor => ({ kind: "readItems", collection: "directus_roles", query });
 
-// Клиентские хелперы: в тестах не используются, но модуль должен их экспортировать —
+// Клиентские хелперы: в тестах не используются, но модуль должен их экспортировать –
 // его импортируют и другие файлы (lib/directus.ts, scripts).
 export const createDirectus = () => ({ with: () => ({ with: () => ({ request: async () => [] }) }) });
 export const rest = () => (c: unknown) => c;

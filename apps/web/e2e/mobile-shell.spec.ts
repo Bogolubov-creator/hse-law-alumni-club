@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 /**
  * Мобильная native-app-оболочка (порт Claude Design). Гоняется только в проекте
- * "mobile" (iPhone 13) — на десктопе оболочка намеренно не показывается.
+ * "mobile" (iPhone 13) – на десктопе оболочка намеренно не показывается.
  * Read-only: заявку не отправляем, аудио не проигрываем до конца.
  */
 test.skip(({ isMobile }) => !isMobile, "только мобильный проект");
@@ -46,7 +46,7 @@ test("карточка программы: детали и действие «В
   await page.goto("/dpo", { waitUntil: "domcontentloaded" });
   await page.locator('a[href^="/dpo/"]').first().click();
   await expect(page).toHaveURL(/\/dpo\/.+/);
-  // Клубная программа предлагает корзину; программа ВШЭ — переход на маркетплейс.
+  // Клубная программа предлагает корзину; программа ВШЭ – переход на маркетплейс.
   const cta = page.getByRole("button", { name: "В корзину" }).or(page.getByRole("link", { name: /hse\.ru/ }));
   await expect(cta.first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Назад" })).toBeVisible();

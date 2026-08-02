@@ -14,8 +14,8 @@ export function registerErrorHandler(app: FastifyInstance): void {
     if (err instanceof ZodError) return reply.code(400).send({ error: "Некорректные данные", details: err.issues.map((i) => i.message) });
     app.log.error(err);
     const st = (err as { statusCode?: number }).statusCode;
-    if (!st || st >= 500) captureError(err); // в Sentry — только наши падения, не 4xx клиента
-    // 4xx — честное сообщение (это ошибка запроса, не наша); 5xx не раскрываем.
+    if (!st || st >= 500) captureError(err); // в Sentry – только наши падения, не 4xx клиента
+    // 4xx – честное сообщение (это ошибка запроса, не наша); 5xx не раскрываем.
     if (st && st < 500) return reply.code(st).send({ error: (err as Error).message || "Некорректный запрос" });
     return reply.code(500).send({ error: "Внутренняя ошибка" });
   });

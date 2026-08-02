@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // Абсолютный домен для статических og/JSON-LD в index.html (их читают превью-скрейперы
-// без JS). В проде задаётся VITE_SITE_URL=https://<домен>; по умолчанию — localhost.
+// без JS). В проде задаётся VITE_SITE_URL=https://<домен>; по умолчанию – localhost.
 const SITE_URL = (process.env.VITE_SITE_URL || "http://localhost").replace(/\/$/, "");
 
 // В dev /api проксируется на локальный apps/api; в проде этим занимается Caddy.
@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     {
       name: "html-site-url",
-      // order:'pre' — заменяем плейсхолдеры ДО того, как Vite парсит URL-атрибуты
+      // order:'pre' – заменяем плейсхолдеры ДО того, как Vite парсит URL-атрибуты
       // (иначе decodeURI спотыкается о «%SITE_URL%»).
       transformIndexHtml: { order: "pre", handler: (html: string) => html.replace(/%SITE_URL%/g, SITE_URL) },
     },

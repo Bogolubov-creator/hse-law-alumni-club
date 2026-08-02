@@ -41,7 +41,7 @@ export type TaggedCard = HseDpoCard & { enrollment: Enrollment };
 /** Оба листинга hse.ru; при дубле hseId актуальный статус приоритетнее. */
 export async function fetchHseDpo(): Promise<TaggedCard[]> {
   const actual = await fetchList(BASE_URL);
-  if (actual.length < 3) throw new Error(`hse.ru: подозрительно мало карточек (${actual.length}) — синк отменён, каталог не тронут`);
+  if (actual.length < 3) throw new Error(`hse.ru: подозрительно мало карточек (${actual.length}) – синк отменён, каталог не тронут`);
   // Неактуальный список вторичен: его сбой не должен ронять весь синк.
   let nonactual: HseDpoCard[] = [];
   try {
@@ -89,7 +89,7 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
         enrollment: c.enrollment,
         status: "published",
       };
-      if (c.duration) patch.duration = c.duration; // нет на сайте — оставляем прежнюю
+      if (c.duration) patch.duration = c.duration; // нет на сайте – оставляем прежнюю
       await di.request((updateItem as any)("programs", match.id, patch));
       updated++;
     } else if (!match) {
@@ -109,7 +109,7 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
     }
   }
 
-  // В архив — только управляемые синком (source_url задан) и пропавшие из ОБОИХ списков.
+  // В архив – только управляемые синком (source_url задан) и пропавшие из ОБОИХ списков.
   for (const r of existing) {
     if (r.source_url && !matchedIds.has(r.id) && r.status !== "archived") {
       await di.request((updateItem as any)("programs", r.id, { status: "archived" }));

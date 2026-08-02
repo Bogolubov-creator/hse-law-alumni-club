@@ -2,12 +2,12 @@ import { env } from "../env.js";
 import { orderIdempotenceKey } from "./idempotency.js";
 
 /**
- * ЮKassa (yookassa.ru) — создание платежа и верификация статуса.
+ * ЮKassa (yookassa.ru) – создание платежа и верификация статуса.
  *
  * Включается только при заданных YOOKASSA_SHOP_ID + YOOKASSA_SECRET_KEY;
  * без ключей сайт работает в прежнем режиме «заявка без оплаты».
  *
- * Безопасность: webhook-уведомлениям не доверяем на слово — статус всегда
+ * Безопасность: webhook-уведомлениям не доверяем на слово – статус всегда
  * перепроверяется прямым GET /payments/{id} к API ЮKassa (рекомендация ЮKassa).
  */
 
@@ -32,7 +32,7 @@ export interface YkPayment {
 
 /**
  * Создать платёж: redirect-подтверждение, автосписание (capture: true).
- * amountKop — сумма в копейках (как во всей денежной математике проекта).
+ * amountKop – сумма в копейках (как во всей денежной математике проекта).
  */
 export async function createPayment(input: {
   amountKop: number;
@@ -47,7 +47,7 @@ export async function createPayment(input: {
     description: input.description.slice(0, 128),
     metadata: { order_number: input.orderNumber },
   };
-  // Чек 54-ФЗ формирует ЮKassa при включённой в кабинете фискализации; e-mail плательщика — для чека.
+  // Чек 54-ФЗ формирует ЮKassa при включённой в кабинете фискализации; e-mail плательщика – для чека.
   if (input.customerEmail) {
     body.receipt = {
       customer: { email: input.customerEmail },
@@ -68,7 +68,7 @@ export async function createPayment(input: {
       authorization: authHeader(),
       "content-type": "application/json",
       // Детерминированный по заявке ключ: повтор (ретрай/двойной клик) не создаёт
-      // дубль платежа — ЮKassa вернёт тот же платёж (аудит L7).
+      // дубль платежа – ЮKassa вернёт тот же платёж (аудит L7).
       "Idempotence-Key": orderIdempotenceKey(input.orderNumber),
     },
     body: JSON.stringify(body),

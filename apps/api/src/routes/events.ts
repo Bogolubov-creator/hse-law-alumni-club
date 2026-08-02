@@ -41,7 +41,7 @@ export async function eventsRoutes(app: FastifyInstance) {
       fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"],
     }))) as any[];
 
-    // «Пойдут» — агрегатный count по показанным событиям (строк = число событий,
+    // «Пойдут» – агрегатный count по показанным событиям (строк = число событий,
     // не число RSVP): под масштаб не читаем все RSVP на каждый анонимный заход.
     const eventIds = rows.map((e) => e.id);
     const going = new Map<string, number>();
@@ -49,7 +49,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     if (eventIds.length) {
       const groups = await groupCount("event_rsvps", ["event_id"], { event_id: { _in: eventIds } });
       for (const g of groups) going.set(g.event_id as string, g.count);
-      // Мой RSVP — отдельный маленький запрос только для авторизованного участника.
+      // Мой RSVP – отдельный маленький запрос только для авторизованного участника.
       if (alumni) {
         const my = (await di.request((readItems as any)("event_rsvps", {
           filter: { event_id: { _in: eventIds }, alumni_id: { _eq: alumni.id } }, limit: -1, fields: ["event_id", "attended"],
@@ -65,7 +65,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     }));
   });
 
-  // Экспорт события в календарь (.ics): Apple/Google/Outlook. Публично —
+  // Экспорт события в календарь (.ics): Apple/Google/Outlook. Публично –
   // в файле нет ничего, чего нет на афише.
   app.get("/events/:id.ics", async (req, reply) => {
     const { id } = z.object({ id: z.string().uuid() }).parse({ id: (req.params as any).id });
@@ -90,7 +90,7 @@ export async function eventsRoutes(app: FastifyInstance) {
       ...(ev.description ? [`DESCRIPTION:${esc(ev.description + (ev.reg_url ? `\nРегистрация: ${ev.reg_url}` : ""))}`] : []),
       ...(ev.location && ev.format !== "online" ? [`LOCATION:${esc(ev.location)}`] : []),
       `URL:${env.PUBLIC_URL}/events`,
-      "BEGIN:VALARM", "TRIGGER:-PT2H", "ACTION:DISPLAY", `DESCRIPTION:${esc(ev.title)} — через 2 часа`, "END:VALARM",
+      "BEGIN:VALARM", "TRIGGER:-PT2H", "ACTION:DISPLAY", `DESCRIPTION:${esc(ev.title)} – через 2 часа`, "END:VALARM",
       "END:VEVENT", "END:VCALENDAR",
     ];
     reply.header("content-type", "text/calendar; charset=utf-8");
@@ -98,7 +98,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     return lines.join("\r\n");
   });
 
-  // «Пойду» / «Передумал» — только верифицированные участники клуба.
+  // «Пойду» / «Передумал» – только верифицированные участники клуба.
   app.post("/events/:id/rsvp", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
     if (!me) return reply.code(401).send({ error: "Войдите в личный кабинет" });
@@ -112,7 +112,7 @@ export async function eventsRoutes(app: FastifyInstance) {
       filter: { event_id: { _eq: id }, alumni_id: { _eq: me.id } }, limit: 1, fields: ["id", "attended"],
     }))) as any[];
     if (existing[0]) {
-      if (existing[0].attended) return reply.code(400).send({ error: "Посещение уже отмечено — отменить нельзя" });
+      if (existing[0].attended) return reply.code(400).send({ error: "Посещение уже отмечено – отменить нельзя" });
       await di.request((deleteItem as any)("event_rsvps", existing[0].id));
       return { going: false };
     }
@@ -146,7 +146,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     }
     return events.map((e) => ({
       ...e,
-      rsvps: rsvps.filter((r) => r.event_id === e.id).map((r) => ({ id: r.id, alumni_id: r.alumni_id, fio: names.get(r.alumni_id) ?? "—", attended: r.attended })),
+      rsvps: rsvps.filter((r) => r.event_id === e.id).map((r) => ({ id: r.id, alumni_id: r.alumni_id, fio: names.get(r.alumni_id) ?? "–", attended: r.attended })),
     }));
   });
 
@@ -195,7 +195,7 @@ export async function eventsRoutes(app: FastifyInstance) {
 
     const ev = (await di.request((readItems as any)("events", { filter: { id: { _eq: rsvp.event_id } }, limit: 1, fields: ["title", "points"] }))) as any[];
     // Сначала баллы (идемпотентны по ключу), потом attended:true. Иначе при сбое
-    // начисления attended уже стоял бы, а повтор коротко замыкался guard-ом выше —
+    // начисления attended уже стоял бы, а повтор коротко замыкался guard-ом выше –
     // участник навсегда без баллов за событие.
     await addPoints(rsvp.alumni_id, {
       reason: "event",

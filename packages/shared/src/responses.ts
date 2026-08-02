@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Zod-схемы ответов API — единый источник типов фронта (z.infer) + рантайм-валидация.
+// Zod-схемы ответов API – единый источник типов фронта (z.infer) + рантайм-валидация.
 
 export const newsItemSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(),
@@ -20,7 +20,7 @@ export const PODCAST_SUB_PRICE_KOP = 399_900; // 3 999 ₽ / год
 export const podcastItemSchema = z.object({
   id: z.string(), title: z.string(), description: z.string().nullable(),
   cover: z.string().nullable(), duration: z.string().nullable(),
-  is_free: z.boolean().optional(), // пробный выпуск — слушается без подписки
+  is_free: z.boolean().optional(), // пробный выпуск – слушается без подписки
   audio_url: z.string().nullable().optional(), // подписанная ссылка; null без доступа
 });
 export const podcastsResSchema = z.object({
@@ -130,7 +130,7 @@ export const ledgerEntrySchema = z.object({
 });
 export const ledgerListSchema = z.array(ledgerEntrySchema);
 
-// Инференс типов из схем — единый источник для фронта.
+// Инференс типов из схем – единый источник для фронта.
 export type NewsItem = z.infer<typeof newsItemSchema>;
 export type TimelineItem = z.infer<typeof timelineItemSchema>;
 export type PodcastItem = z.infer<typeof podcastItemSchema>;

@@ -15,15 +15,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastCtx.Provider value={show}>
       {children}
-      {toast && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 200, background: toast.kind === "err" ? "#B5331B" : "#14181F", color: "#FBF3E8", padding: "12px 22px", borderRadius: 999, fontWeight: 600, fontSize: 14, boxShadow: "0 18px 40px -16px rgba(0,0,0,.5)", maxWidth: "90vw", textAlign: "center" }}
-        >
-          {toast.msg}
-        </div>
-      )}
+      {/* Live-region смонтирован постоянно (меняется только текст) – иначе скринридеры
+          часто не озвучивают ПЕРВЫЙ тост, появившийся вместе с самим регионом. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        style={toast
+          ? { position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 200, background: toast.kind === "err" ? "#B5331B" : "#14181F", color: "#FBF3E8", padding: "12px 22px", borderRadius: 999, fontWeight: 600, fontSize: 14, boxShadow: "0 18px 40px -16px rgba(0,0,0,.5)", maxWidth: "90vw", textAlign: "center" }
+          : { position: "fixed", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", clipPath: "inset(50%)", whiteSpace: "nowrap" }}
+      >
+        {toast?.msg ?? ""}
+      </div>
     </ToastCtx.Provider>
   );
 }

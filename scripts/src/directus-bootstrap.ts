@@ -206,7 +206,7 @@ await ensureField("alumni", "token_version", int(0)); // ревокация JWT:
 await ensureField("alumni", "consent_at", ts());        // 152-ФЗ: когда дано согласие на ПДн
 await ensureField("alumni", "consent_version", str()); // ... и версия политики (доказательство)
 // Дата верификации офисом: пишется в admin.ts при переводе в verified и объявлена в
-// AlumniRow, но самого поля в схеме не было — под ролью Administrator Directus молча
+// AlumniRow, но самого поля в схеме не было – под ролью Administrator Directus молча
 // выбрасывал неизвестный ключ из payload, и дата нигде не сохранялась.
 await ensureField("alumni", "verified_at", ts());
 await ensureM2O("alumni", "referred_by", "alumni");
@@ -233,7 +233,7 @@ await ensureM2O("alumni_friends", "friend_id", "alumni", "CASCADE");
 await ensureField("alumni_friends", "status", enumf(["pending", "accepted"], "pending"));
 await ensureField("alumni_friends", "created_at", ts("date-created"));
 
-// pages (минимально — блоки M2A в Фазе 1)
+// pages (минимально – блоки M2A в Фазе 1)
 await ensureField("pages", "slug", str(true));
 await ensureField("pages", "title", str());
 await ensureField("pages", "status", enumf(["draft", "published", "archived"], "draft"));
@@ -248,7 +248,7 @@ await ensureField("news", "source_url", str());
 await ensureField("news", "published_at", ts());
 await ensureField("news", "status", enumf(["draft", "published"], "draft"));
 
-// timeline_items — «История» на главной (редактируется в админ-панели)
+// timeline_items – «История» на главной (редактируется в админ-панели)
 await ensureField("timeline_items", "year", str());
 await ensureField("timeline_items", "title", str());
 await ensureField("timeline_items", "text", txt());
@@ -256,18 +256,18 @@ await ensureField("timeline_items", "metric", str());
 await ensureField("timeline_items", "sort", int());
 await ensureField("timeline_items", "status", enumf(["draft", "published"], "published"));
 
-// podcasts — подкасты клуба (доступ по годовой подписке)
+// podcasts – подкасты клуба (доступ по годовой подписке)
 await ensureField("podcasts", "title", str());
 await ensureField("podcasts", "description", txt());
 await ensureField("podcasts", "cover", str()); // URL/путь обложки
 await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.)
 await ensureField("podcasts", "duration", str()); // «43 мин»
-await ensureField("podcasts", "is_free", bool(false)); // пробный выпуск — доступен без подписки
+await ensureField("podcasts", "is_free", bool(false)); // пробный выпуск – доступен без подписки
 await ensureField("podcasts", "sort", int());
 await ensureField("podcasts", "status", enumf(["draft", "published"], "draft"));
 await ensureField("podcasts", "created_at", ts("date-created"));
 
-// events — календарь событий клуба (встречи, лекции, нетворкинг)
+// events – календарь событий клуба (встречи, лекции, нетворкинг)
 await ensureField("events", "title", str());
 await ensureField("events", "description", txt());
 await ensureField("events", "starts_at", ts());
@@ -280,19 +280,19 @@ await ensureField("events", "points", int(60)); // баллы за посеще�
 await ensureField("events", "status", enumf(["draft", "published", "done", "canceled"], "published"));
 await ensureField("events", "created_at", ts("date-created"));
 
-// event_rsvps — «пойду» + отметка посещения (посещение = баллы)
+// event_rsvps – «пойду» + отметка посещения (посещение = баллы)
 await ensureM2O("event_rsvps", "event_id", "events", "CASCADE");
 await ensureM2O("event_rsvps", "alumni_id", "alumni", "CASCADE");
 await ensureField("event_rsvps", "attended", bool(false));
 await ensureField("event_rsvps", "created_at", ts("date-created"));
 
-// push_subs — web-push подписки браузеров участников
+// push_subs – web-push подписки браузеров участников
 await ensureM2O("push_subs", "alumni_id", "alumni", "CASCADE");
 await ensureField("push_subs", "endpoint", txt());
 await ensureField("push_subs", "keys", json());
 await ensureField("push_subs", "created_at", ts("date-created"));
 
-// audit_log — append-only след критичных операций (логины, платежи, статусы, выдачи)
+// audit_log – append-only след критичных операций (логины, платежи, статусы, выдачи)
 await ensureField("audit_log", "event", str());
 await ensureField("audit_log", "actor", str()); // кто: alumni:<id> | admin:<userId> | system | ip
 await ensureField("audit_log", "subject", str()); // над чем: order:<num> | alumni:<id> | ...
@@ -335,7 +335,7 @@ await ensureField("carts", "session_token", str());
 await ensureField("carts", "items_json", json());
 await ensureField("carts", "updated_at", ts("date-updated"));
 
-// orders (ЗАЯВКА — без оплаты)
+// orders (ЗАЯВКА – без оплаты)
 await ensureField("orders", "number", str(true));
 await ensureM2O("orders", "alumni_id", "alumni", "SET NULL");
 await ensureField("orders", "type", enumf(["dpo", "merch", "mixed"], "dpo"));
@@ -471,13 +471,13 @@ async function ensureRole(name: string, icon: string) {
 const editorRoleRec = await ensureRole("editor", "edit_note");
 await ensureRole("alumni", "school");
 const serviceRoleRec = await ensureRole("service", "smart_toy");
-// Administrator существует из ENV-бутстрапа Directus — используем для сервисного токена.
+// Administrator существует из ENV-бутстрапа Directus – используем для сервисного токена.
 const adminRole = roles.find((x: any) => x.name === "Administrator");
 
 // ─────────────────── 3.1 политики доступа (least privilege) ───────────────────
 // Directus 11: права живут в политиках, политики цепляются к ролям через directus_access.
 // До этого роли editor/service были ПУСТЫЕ (ноль политик), поэтому офис работал в Studio
-// под Administrator, а apps/api ходил админским токеном — утечка любого из них означала
+// под Administrator, а apps/api ходил админским токеном – утечка любого из них означала
 // полный доступ ко всем ПДн. Теперь у каждой стороны свой минимум.
 
 /** Контент, который офис ведёт в Studio. ПДн (alumni, orders, points_ledger, audit_log) сюда НЕ входят. */
@@ -533,7 +533,7 @@ async function ensureAccess(roleId: string, policyId: string) {
 
 const editorPolicy = await ensurePolicy("Офис (контент)", {
   appAccess: true, // вход в Studio
-  description: "Редактирование контента сайта. Персональные данные выпускников и заявки недоступны — они ведутся в админ-панели сайта, где действия пишутся в аудит.",
+  description: "Редактирование контента сайта. Персональные данные выпускников и заявки недоступны – они ведутся в админ-панели сайта, где действия пишутся в аудит.",
 });
 await ensurePermissions(editorPolicy, CONTENT_COLLECTIONS, CRUD);
 await ensurePermissions(editorPolicy, ["directus_files"], CRUD); // обложки новостей/программ
@@ -541,12 +541,12 @@ if (editorRoleRec?.id) await ensureAccess(editorRoleRec.id, editorPolicy);
 
 const servicePolicy = await ensurePolicy("Сервис (apps/api)", {
   appAccess: false, // машине Studio не нужна
-  description: "Права бэкенда apps/api: данные приложения и файлы. Схему, настройки и расширения Directus менять нельзя — утечка токена не даёт захватить инсталляцию.",
+  description: "Права бэкенда apps/api: данные приложения и файлы. Схему, настройки и расширения Directus менять нельзя – утечка токена не даёт захватить инсталляцию.",
 });
 await ensurePermissions(servicePolicy, [...COLLECTIONS, "pages_blocks", "block_hero", "block_cta"], CRUD);
 await ensurePermissions(servicePolicy, SERVICE_SYSTEM, CRUD);
 if (serviceRoleRec?.id) await ensureAccess(serviceRoleRec.id, servicePolicy);
-log("  политики: офис — только контент, сервис — только данные приложения");
+log("  политики: офис – только контент, сервис – только данные приложения");
 
 // ──────────────────────────── 4. пользователи ────────────────────────────
 log("== Пользователи ==");
@@ -559,12 +559,12 @@ async function ensureUser(email: string, fields: Record<string, any>) {
 }
 
 // Сервисный пользователь со статическим токеном для apps/api (пока под Administrator;
-// тонкие политики роли service — в Фазе 4).
-// Пароль — случайный и НИКОМУ не известен (раньше сюда клали сам SERVICE_TOKEN, и утечка
+// тонкие политики роли service – в Фазе 4).
+// Пароль – случайный и НИКОМУ не известен (раньше сюда клали сам SERVICE_TOKEN, и утечка
 // токена автоматически давала вход в публичную Studio под полным админом). Машине пароль
-// не нужен: apps/api ходит статическим токеном. Перегенерируется при каждом прогоне —
+// не нужен: apps/api ходит статическим токеном. Перегенерируется при каждом прогоне –
 // это не мешает идемпотентности, живых сессий у сервисного аккаунта нет.
-// Роль — service с урезанной политикой (см. 3.1), а не Administrator: токен даёт доступ
+// Роль – service с урезанной политикой (см. 3.1), а не Administrator: токен даёт доступ
 // к данным приложения, но не к схеме, настройкам и расширениям Directus.
 const svcRoleId = serviceRoleRec?.id ?? adminRole?.id ?? null;
 const svcPassword = randomBytes(32).toString("hex");
@@ -576,9 +576,9 @@ const svc = await ensureUser("service@club.example.com", {
   token: SERVICE_TOKEN,
 });
 await client.request(updateUser(svc.id, { token: SERVICE_TOKEN, role: svcRoleId ?? undefined, password: svcPassword } as any));
-log("  сервисный токен установлен (пароль сервисного аккаунта — случайный, вход паролем не предполагается)");
+log("  сервисный токен установлен (пароль сервисного аккаунта – случайный, вход паролем не предполагается)");
 
-// Демо-аккаунты (офис + тестовый выпускник) — ТОЛЬКО при SEED_DEMO=true.
+// Демо-аккаунты (офис + тестовый выпускник) – ТОЛЬКО при SEED_DEMO=true.
 // В проде НЕ создаём: иначе editor со слабым паролем из .env.example = бэкдор.
 // Офис в проде входит в админку под аккаунтом Directus Administrator.
 const SEED_DEMO = process.env.SEED_DEMO === "true";
@@ -601,11 +601,11 @@ await ensureSeed("point_rules", "reason", POINT_RULES.map((p) => ({ ...p, active
 await ensureSeed("achievements", "key", ACHIEVEMENTS.map((a) => ({
   key: a.key, title: a.title, description: a.description, rule_json: a.rule_json, sort: a.sort, icon: a.icon, kind: a.kind,
 })));
-// Демо-контент (программы/новости/события/подкасты/мерч/профиль/однокурсники) — только демо.
+// Демо-контент (программы/новости/события/подкасты/мерч/профиль/однокурсники) – только демо.
 if (SEED_DEMO) {
 await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "published" })));
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
-// История главной — стартовый таймлайн (дальше редактируется в админ-панели)
+// История главной – стартовый таймлайн (дальше редактируется в админ-панели)
 await ensureSeed("timeline_items", "title", [
   { year: "2024", title: "Клуб основан", text: "Первый выпуск собирается в сообщество, появляется личный кабинет.", metric: "1-й выпуск · ~40 участников", sort: 1, status: "published" },
   { year: "2024", title: "Витрина ДПО", text: "Открывается доступ к программам доп. образования со скидкой выпускника.", metric: "каталог ВШЭ · скидка выпускника", sort: 2, status: "published" },
