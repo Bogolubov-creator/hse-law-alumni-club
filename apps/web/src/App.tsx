@@ -2,21 +2,30 @@ import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { useIsMobile } from "./lib/use-mobile.js";
 import Home from "./pages/Home.js";
-import News from "./pages/News.js";
-import NewsPost from "./pages/NewsPost.js";
 import Stub from "./pages/Stub.js";
-import Dpo from "./pages/Dpo.js";
-import Program from "./pages/Program.js";
-import Merch from "./pages/Merch.js";
-import Podcasts from "./pages/Podcasts.js";
-import Events from "./pages/Events.js";
-import { Join, Forgot, Reset, ConfirmEmail } from "./pages/JoinAuth.js";
-import { Privacy, Confidential, Requisites } from "./pages/legal.js";
 import CookieBanner from "./components/CookieBanner.js";
 import InstallPrompt from "./components/InstallPrompt.js";
 import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./lib/cart.js";
+
+// Всё, кроме главной, — отдельными чанками. Главная и есть LCP-критичная страница
+// для поисковика и первого визита; код витрин, юр. страниц и форм входа ей не нужен
+// и раньше ехал в стартовом бандле целиком.
+const News = lazy(() => import("./pages/News.js"));
+const NewsPost = lazy(() => import("./pages/NewsPost.js"));
+const Dpo = lazy(() => import("./pages/Dpo.js"));
+const Program = lazy(() => import("./pages/Program.js"));
+const Merch = lazy(() => import("./pages/Merch.js"));
+const Podcasts = lazy(() => import("./pages/Podcasts.js"));
+const Events = lazy(() => import("./pages/Events.js"));
+const Join = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Join })));
+const Forgot = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Forgot })));
+const Reset = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Reset })));
+const ConfirmEmail = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.ConfirmEmail })));
+const Privacy = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Privacy })));
+const Confidential = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Confidential })));
+const Requisites = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Requisites })));
 
 // Приватные/тяжёлые разделы — отдельными чанками: не грузятся публичному посетителю
 // и не раздувают стартовый бандл (важно для LCP публичных страниц и SEO).
