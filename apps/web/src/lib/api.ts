@@ -10,17 +10,17 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
-/** true для ошибок недействительной сессии (истёк/битый токен) — повод показать логин заново. */
+/** true для ошибок недействительной сессии (истёк/битый токен) – повод показать логин заново. */
 export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.status === 401;
 }
-/** true для «доступ запрещён» (нет прав/не верифицирован) — не сеть, показываем текст сервера. */
+/** true для «доступ запрещён» (нет прав/не верифицирован) – не сеть, показываем текст сервера. */
 export function isForbiddenError(err: unknown): boolean {
   return err instanceof ApiError && err.status === 403;
 }
 
 // 401 при отправленном токене = сессия недействительна. Сообщаем приложению один раз
-// (глобальный слушатель в App очистит токен и уведёт на вход). Если токена не было —
+// (глобальный слушатель в App очистит токен и уведёт на вход). Если токена не было –
 // это обычный «не авторизован» для анонимного запроса, ничего не делаем.
 function signalUnauthorized(status: number, hadToken: boolean): void {
   if (status === 401 && hadToken) {
@@ -34,7 +34,7 @@ export async function apiGet<T>(path: string, token?: string, schema?: Parser<T>
   const res = await fetch(`${BASE}${path}`, { headers });
   if (!res.ok) {
     signalUnauthorized(res.status, !!token);
-    // Сообщение сервера (403 «нужна верификация» и т.п.) не теряем — иначе выглядит как сбой сети.
+    // Сообщение сервера (403 «нужна верификация» и т.п.) не теряем – иначе выглядит как сбой сети.
     const err = await res.json().catch(() => ({}));
     throw new ApiError(res.status, (err as any)?.error || `API ${res.status}: ${path}`);
   }
@@ -62,7 +62,7 @@ export async function apiPatch<T>(path: string, body: unknown, token: string, sc
   return schema ? schema.parse(data) : (data as T);
 }
 
-// Типы ответов — из @club/shared (z.infer от схем-источников).
+// Типы ответов – из @club/shared (z.infer от схем-источников).
 export type {
   NewsItem, HeroBlock, CtaBlock, PageHome, Program, ProgramFull, ProgramModule, ProgramTeacher, ProductVariant, Product,
   CartLine, CartSummary, LevelInfo, Achievement, ActivityPoint, AlumniBrief, Me, LoginResponse,

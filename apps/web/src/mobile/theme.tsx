@@ -23,20 +23,20 @@ export const TABS = [
   { to: "/merch", label: "Мерч", icon: (<><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></>) },
 ];
 
-// Экран «Карта» — соответствие reason → человекочитаемая причина начисления.
+// Экран «Карта» – соответствие reason → человекочитаемая причина начисления.
 export const REASON_RU: Record<string, string> = {
   program: "Пройдена программа ДПО", event: "Участие в событии", referral: "Приглашённый выпускник",
   mentorship: "Менторство", order: "Заказ", decay: "Списание за неактивность", manual: "Начисление офисом", achievement: "Достижение",
 };
 
-// Лента (новости) — палитра оттенков карточек.
+// Лента (новости) – палитра оттенков карточек.
 export const NEWS_TINTS = ["#2C6E80", "#11296B", "#C9450E", "#7A5CA8", "#1F8A5B"];
 
-// ДПО — цвет и подпись формата.
+// ДПО – цвет и подпись формата.
 export const FMT_COL: Record<string, string> = { online: "#2C6E80", offline: "#C9450E", blended: "#11296B" };
 export const FMT_RU: Record<string, string> = { online: "онлайн", offline: "очно", blended: "смешанный" };
 
-// Мерч — палитра оттенков карточек.
+// Мерч – палитра оттенков карточек.
 export const MERCH_TINTS = ["#C9450E", "#2C6E80", "#11296B", "#7A5CA8"];
 
 // ── Детальные экраны (стадия 2): full-screen без нижней навигации ─────

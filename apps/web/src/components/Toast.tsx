@@ -15,7 +15,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastCtx.Provider value={show}>
       {children}
-      {/* Live-region смонтирован постоянно (меняется только текст) — иначе скринридеры
+      {/* Live-region смонтирован постоянно (меняется только текст) – иначе скринридеры
           часто не озвучивают ПЕРВЫЙ тост, появившийся вместе с самим регионом. */}
       <div
         role="status"

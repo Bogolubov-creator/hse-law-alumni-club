@@ -1,5 +1,5 @@
 /* Service worker для установки на экран (PWA).
-   Стратегия: сеть в приоритете (сайт живой, данные из API), статика /assets —
+   Стратегия: сеть в приоритете (сайт живой, данные из API), статика /assets –
    из кэша с обновлением в фоне. Никогда не кэшируем /api (персональные данные). */
 const CACHE = "club-v3";
 
@@ -17,7 +17,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.pathname.startsWith("/api")) return; // API не трогаем
 
-  // Хешированная статика Vite — кэш навсегда (имя меняется при новой сборке)
+  // Хешированная статика Vite – кэш навсегда (имя меняется при новой сборке)
   if (url.pathname.startsWith("/assets/") || /\.(png|jpe?g|webp|woff2?)$/.test(url.pathname)) {
     e.respondWith(
       caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
@@ -33,7 +33,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Навигация: сеть, при офлайне — закэшированная оболочка
+  // Навигация: сеть, при офлайне – закэшированная оболочка
   if (e.request.mode === "navigate") {
     e.respondWith(fetch(e.request).catch(() => caches.match("/")));
   }

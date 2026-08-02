@@ -11,7 +11,7 @@ export function MobileNewsPost() {
   const post = useNewsPost(slug);
   const d = post.data;
   useHead({ title: d?.title ?? "Новость", description: d?.excerpt ?? undefined, canonical: typeof window !== "undefined" ? `${window.location.origin}/news/${slug}` : undefined });
-  // Оттенок героя — стабильный по slug (как цветные карточки ленты).
+  // Оттенок героя – стабильный по slug (как цветные карточки ленты).
   const tint = NEWS_TINTS[Math.abs([...slug].reduce((s, c) => s + c.charCodeAt(0), 0)) % NEWS_TINTS.length];
   return (
     <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>

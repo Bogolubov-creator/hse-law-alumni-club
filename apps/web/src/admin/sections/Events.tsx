@@ -43,7 +43,7 @@ export function EventsAdmin() {
           {e.rsvps.length === 0 && <p className="mt-2 pl-1 font-mono text-[11px] text-grafit-soft">записей пока нет</p>}
         </div>
       ))}
-      {events.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Событий нет — добавьте первое.</p>}
+      {events.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Событий нет – добавьте первое.</p>}
       {showCreate && <EventForm busy={createEvent.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createEvent.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {editing && <EventForm initial={editing} busy={patchEvent.isPending} onClose={() => setEditing(null)} onSave={(v) => patchEvent.mutate({ id: editing.id, ...v }, { onSuccess: () => setEditing(null) })} />}
       {confirmDel && <ConfirmDelete title={confirmDel.title} busy={deleteEvent.isPending} hint="Событие и все записи на него будут удалены." onCancel={() => setConfirmDel(null)} onConfirm={() => deleteEvent.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })} />}

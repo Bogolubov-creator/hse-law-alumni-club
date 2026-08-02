@@ -18,13 +18,13 @@ export default function Merch() {
   const categories = useMemo(() => [...new Set(all.map((p) => p.category).filter(Boolean))], [all]);
   const list = cat ? all.filter((p) => p.category === cat) : all;
 
-  // Скидка выпускника действует только на ДПО — мерч всегда по базовой цене.
+  // Скидка выпускника действует только на ДПО – мерч всегда по базовой цене.
   return (
     <SiteShell>
       <main className="mx-auto max-w-[1180px] px-7 py-12">
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Витрина · Брендированная одежда</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Брендированная одежда клуба</h1>
-        <p className="mt-3 max-w-[560px] text-grafit-soft">Одежда и аксессуары с фасеточной Фемидой. Самовывоз в учебном офисе или доставка — выберите при оформлении.</p>
+        <p className="mt-3 max-w-[560px] text-grafit-soft">Одежда и аксессуары с фасеточной Фемидой. Самовывоз в учебном офисе или доставка – выберите при оформлении.</p>
 
         <div className="mt-7 flex flex-wrap gap-2">
           <Chip active={!cat} onClick={() => setCat(null)}>Все</Chip>
@@ -34,7 +34,7 @@ export default function Merch() {
         {products.isLoading && <p className="mt-8 font-mono text-sm text-grafit-soft">Загрузка…</p>}
         {products.isError && <p className="mt-8 font-mono text-sm text-karmin">Не удалось загрузить товары. Обновите страницу.</p>}
         {!products.isLoading && !products.isError && list.length === 0 && (
-          <p className="mt-8 font-mono text-sm text-grafit-soft">{cat ? "В этой категории пока нет товаров." : "Каталог пока пуст — товары скоро появятся."}</p>
+          <p className="mt-8 font-mono text-sm text-grafit-soft">{cat ? "В этой категории пока нет товаров." : "Каталог пока пуст – товары скоро появятся."}</p>
         )}
         <div className="two-col mt-7 grid grid-cols-3 gap-5">
           {list.map((p) => (
@@ -136,7 +136,7 @@ function ProductModal({ product, onClose, onAdd }: { product: Product; onClose: 
         >
           {stock != null && stock <= 0 ? "Нет в наличии" : needsSize ? "Выберите размер" : "В корзину"}
         </button>
-        <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Самовывоз в учебном офисе или доставка — выберите при оформлении заказа. Оплаты на сайте нет.</p>
+        <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Самовывоз в учебном офисе или доставка – выберите при оформлении заказа. Оплаты на сайте нет.</p>
       </div>
     </Modal>
   );

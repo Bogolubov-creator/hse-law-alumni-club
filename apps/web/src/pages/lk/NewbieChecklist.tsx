@@ -5,7 +5,7 @@ import { useLkTokens, lkSurface } from "../../lib/lk-theme.js";
 import { TOKEN_KEY, mono, disp } from "./shared.js";
 
 /** Чек-лист новичка: 4 шага освоиться в клубе. Прячется, когда всё сделано
-    (или после «Скрыть» — localStorage). Состояния собираются из уже
+    (или после «Скрыть» – localStorage). Состояния собираются из уже
     существующих источников: /me, /me/tg-link, /events, PushManager. */
 export function NewbieChecklist({ me }: { me: import("../../lib/api.js").Me }) {
   const t = useLkTokens();
@@ -31,8 +31,8 @@ export function NewbieChecklist({ me }: { me: import("../../lib/api.js").Me }) {
   const eventDone = (evq.data ?? []).some((e) => e.my_rsvp || e.my_attended);
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
   const items: { label: string; done: boolean; hint: string; action: () => void }[] = [
-    { label: "Заполнить профиль", done: profileDone, hint: "фото или интересы — вас найдут однокурсники", action: () => { window.location.href = "/lk/profile"; } },
-    ...(pushOn === null ? [] : [{ label: "Включить уведомления", done: pushOn, hint: "заявки в друзья и анонсы — сразу на устройство", action: () => scrollTo("push-bell") }]),
+    { label: "Заполнить профиль", done: profileDone, hint: "фото или интересы – вас найдут однокурсники", action: () => { window.location.href = "/lk/profile"; } },
+    ...(pushOn === null ? [] : [{ label: "Включить уведомления", done: pushOn, hint: "заявки в друзья и анонсы – сразу на устройство", action: () => scrollTo("push-bell") }]),
     { label: "Привязать Telegram", done: tg.data?.linked ?? false, hint: "бот покажет баллы и календарь", action: () => scrollTo("tg-link") },
     { label: "Записаться на событие", done: eventDone, hint: "за участие начисляются баллы", action: () => { window.location.href = "/events"; } },
   ];

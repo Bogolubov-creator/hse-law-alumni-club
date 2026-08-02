@@ -18,13 +18,13 @@ import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./lib/cart.js";
 
-// Приватные/тяжёлые разделы — отдельными чанками: не грузятся публичному посетителю
+// Приватные/тяжёлые разделы – отдельными чанками: не грузятся публичному посетителю
 // и не раздувают стартовый бандл (важно для LCP публичных страниц и SEO).
 const Lk = lazy(() => import("./pages/Lk.js"));
 const Profile = lazy(() => import("./pages/Profile.js"));
 const Cart = lazy(() => import("./pages/Cart.js"));
 const AdminApp = lazy(() => import("./admin/AdminApp.js"));
-// Мобильная native-app-оболочка (порт Claude Design) — отдельным чанком, только для телефонов.
+// Мобильная native-app-оболочка (порт Claude Design) – отдельным чанком, только для телефонов.
 const MobileApp = lazy(() => import("./mobile/MobileApp.js"));
 
 // Маршруты-табы, которые на телефоне (<768px) показываются как native-app вместо десктоп-сайта.

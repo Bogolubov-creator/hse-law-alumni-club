@@ -23,7 +23,7 @@ export function TabBar({ active }: { active: string }) {
       </nav>
     );
   }
-  // iOS / прочее — Cupertino-стиль: блюр-фон, активный цвет без «таблетки».
+  // iOS / прочее – Cupertino-стиль: блюр-фон, активный цвет без «таблетки».
   return (
     <nav style={{ flexShrink: 0, display: "flex", alignItems: "stretch", padding: "9px 6px calc(env(safe-area-inset-bottom, 0px) + 12px)", background: "rgba(251,243,232,.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid #E7E0D0" }}>
       {TABS.map((t) => {
@@ -65,7 +65,7 @@ export function ScreenHeader({ title, sub, right }: { title: string; sub?: strin
   return (
     <header style={{ ...HEADER, display: right ? "flex" : "block", alignItems: "flex-end", justifyContent: "space-between", padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 12px" }}>
       <div>
-        {/* Настоящий <h1>: экран мобильной оболочки — самостоятельная страница, скринридер
+        {/* Настоящий <h1>: экран мобильной оболочки – самостоятельная страница, скринридер
             должен находить её заголовок навигацией по заголовкам (как на десктопе). */}
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: 0 }}>{title}</h1>
         {sub && <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>{sub}</div>}
@@ -76,7 +76,7 @@ export function ScreenHeader({ title, sub, right }: { title: string; sub?: strin
 }
 
 export function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
-  // Android — Material-чип (тёмный активный); iOS — оранжевый активный.
+  // Android – Material-чип (тёмный активный); iOS – оранжевый активный.
   const brd = on ? (ANDROID ? "#14181F" : "#EC5A13") : "#E4DCCC";
   const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "#fff";
   const col = on ? (ANDROID ? "#FBF3E8" : "#C9450E") : INK;
@@ -89,7 +89,7 @@ export function OverlaySignIn() {
     <div style={{ padding: "60px 34px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
       <div style={{ width: 72, height: 72, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }} aria-hidden>🔐</div>
       <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Нужен вход</div>
-      <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Сессия истекла или недоступна — войдите, чтобы открыть этот раздел.</div>
+      <div style={{ fontSize: 13.5, color: "#6B7280", marginTop: 6, lineHeight: 1.5 }}>Сессия истекла или недоступна – войдите, чтобы открыть этот раздел.</div>
       <Link to="/lk" style={{ ...primaryBtn, flex: "none", marginTop: 20, padding: "0 26px", height: 48, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Войти в кабинет</Link>
     </div>
   );

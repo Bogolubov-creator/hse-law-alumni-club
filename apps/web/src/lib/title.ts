@@ -26,7 +26,7 @@ function upsertCanonical(href: string) {
 export interface HeadOptions {
   title?: string | null;
   description?: string | null;
-  /** Если не задан — origin + pathname (текущий путь без query). */
+  /** Если не задан – origin + pathname (текущий путь без query). */
   canonical?: string | null;
   noindex?: boolean;
 }
@@ -39,7 +39,7 @@ export interface HeadOptions {
 export function useHead(o: HeadOptions): void {
   const { title, description, canonical, noindex } = o;
   useEffect(() => {
-    document.title = title ? `${title} — ${BASE}` : BASE;
+    document.title = title ? `${title} – ${BASE}` : BASE;
     upsertMeta("property", "og:title", title ?? BASE);
     // Описание выставляем ВСЕГДА (дефолт из BASE_DESC), иначе маршрут без своего
     // description унаследует чужое от предыдущей страницы (SPA не перезагружает head).

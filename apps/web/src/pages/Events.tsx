@@ -36,7 +36,7 @@ function gcalUrl(e: ClubEvent): string {
   return `https://calendar.google.com/calendar/render?${p.toString()}`;
 }
 
-/** Календарь событий клуба: афиша + «Пойду» (RSVP), клик по карточке — детали. */
+/** Календарь событий клуба: афиша + «Пойду» (RSVP), клик по карточке – детали. */
 export default function Events() {
   useHead({ title: "События и встречи клуба", description: "Афиша клуба выпускников факультета права НИУ ВШЭ: нетворкинги, лекции и встречи выпусков. Запись заранее, за участие баллы клуба." });
   const t = token();
@@ -49,7 +49,7 @@ export default function Events() {
   });
   const rsvp = useMutation({
     mutationFn: (id: string) => apiPost<{ going: boolean }>(`/events/${id}/rsvp`, {}, undefined, t ?? undefined),
-    onSuccess: (r) => { toast(r.going ? "Вы записаны — ждём вас! ✓" : "Запись отменена"); qc.invalidateQueries({ queryKey: ["events"] }); },
+    onSuccess: (r) => { toast(r.going ? "Вы записаны – ждём вас! ✓" : "Запись отменена"); qc.invalidateQueries({ queryKey: ["events"] }); },
     onError: (e) => toast((e as Error).message, "err"),
   });
 
@@ -59,7 +59,7 @@ export default function Events() {
   const past = list.filter((e) => new Date(e.starts_at).getTime() < now || e.status === "done");
   const opened = openId ? list.find((e) => e.id === openId) ?? null : null;
 
-  // Event-разметка (schema.org) по ближайшим событиям — rich-результаты Google для афиши.
+  // Event-разметка (schema.org) по ближайшим событиям – rich-результаты Google для афиши.
   const origin = siteOrigin();
   useJsonLd(upcoming.length ? {
     "@context": "https://schema.org",
@@ -85,7 +85,7 @@ export default function Events() {
     })),
   } : null);
 
-  // Кнопка RSVP — общая для карточки и модалки.
+  // Кнопка RSVP – общая для карточки и модалки.
   const rsvpButton = (e: ClubEvent, isPast: boolean) => {
     if (isPast) return null;
     if (!t) return <Link to="/lk" onClick={(ev) => ev.stopPropagation()} className="foc rounded-[11px] bg-hse-blue px-5 py-2.5 text-sm font-semibold text-kost">Войти, чтобы записаться</Link>;
@@ -136,7 +136,7 @@ export default function Events() {
       <main className="mx-auto max-w-[1180px] px-7 py-12">
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Календарь клуба</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">События и встречи</h1>
-        <p className="mt-3 max-w-[600px] text-grafit-soft">Нетворкинги, лекции и встречи выпусков. Запишитесь заранее — за участие начисляются баллы клуба.</p>
+        <p className="mt-3 max-w-[600px] text-grafit-soft">Нетворкинги, лекции и встречи выпусков. Запишитесь заранее – за участие начисляются баллы клуба.</p>
 
         {events.isLoading && <p className="mt-8 font-mono text-sm text-grafit-soft">Загрузка…</p>}
         {events.isError && <p className="mt-8 font-mono text-sm text-karmin">Не удалось загрузить события.</p>}
@@ -146,7 +146,7 @@ export default function Events() {
         )}
         {!events.isLoading && upcoming.length === 0 && (
           <div className="mt-8 rounded-[18px] border border-[#E5E7EB] bg-white p-10 text-center">
-            <p className="text-grafit-soft">Ближайших событий пока нет — загляните позже или следите за новостями.</p>
+            <p className="text-grafit-soft">Ближайших событий пока нет – загляните позже или следите за новостями.</p>
           </div>
         )}
 

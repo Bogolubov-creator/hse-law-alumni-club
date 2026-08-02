@@ -26,7 +26,7 @@ export function MobilePodcastPlayer({ epId }: { epId: string }) {
   const [dur, setDur] = useState(0);
   const posKey = `pod-pos-${epId}`;
 
-  // Смена выпуска — сбрасываем локальный прогресс UI (audio сам перезагрузится по key).
+  // Смена выпуска – сбрасываем локальный прогресс UI (audio сам перезагрузится по key).
   useEffect(() => { setPlaying(false); setPos(0); setDur(0); }, [epId]);
 
   if (q.isLoading) return <div style={{ height: "100dvh", background: "#14181F" }}><Loader /></div>;

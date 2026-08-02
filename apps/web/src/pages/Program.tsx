@@ -142,7 +142,7 @@ export default function Program() {
               )}
             </div>
 
-            {/* RIGHT — sticky */}
+            {/* RIGHT – sticky */}
             <aside className="h-fit max-md:order-first md:sticky md:top-[82px]">
               <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
                 <div className="flex h-2"><i className="flex-1 bg-ohra" /><i className="flex-1 bg-hse-blue" /><i className="flex-1 bg-latun" /><i className="flex-1 bg-stal" /><i className="flex-1 bg-karmin" /></div>
@@ -169,19 +169,19 @@ export default function Program() {
                     <>
                       <div className="mt-5 w-full rounded-[12px] bg-kost-2 py-3.5 text-center font-semibold text-grafit-soft">Набор закрыт</div>
                       {p.source_url && <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc mt-2 block w-full rounded-[12px] border border-[#E5E7EB] py-3 text-center font-semibold text-grafit-soft">Страница на hse.ru →</a>}
-                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Набор на эту программу завершён. Следите за новым набором — каталог обновляется с hse.ru автоматически.</p>
+                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Набор на эту программу завершён. Следите за новым набором – каталог обновляется с hse.ru автоматически.</p>
                     </>
                   ) : p.source_url ? (
                     <>
                       {/* Программа ВШЭ: маршрутизация на маркетплейс, касса сайта не участвует */}
                       <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc mt-5 block w-full rounded-[12px] bg-hse-blue py-3.5 text-center font-semibold text-kost">Записаться на hse.ru →</a>
-                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Запись и оплата — на официальном маркетплейсе ДПО НИУ ВШЭ. Скидка выпускника действует на все программы ДПО.</p>
+                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Запись и оплата – на официальном маркетплейсе ДПО НИУ ВШЭ. Скидка выпускника действует на все программы ДПО.</p>
                     </>
                   ) : (
                     <>
                       <button disabled={add.isPending} onClick={addToCart} className="foc mt-5 w-full rounded-[12px] bg-hse-blue py-3.5 font-semibold text-kost disabled:opacity-60">В корзину</button>
                       <button disabled={add.isPending} onClick={leaveRequest} className="foc mt-2 w-full rounded-[12px] border border-[#E5E7EB] py-3 font-semibold">Оставить заявку</button>
-                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Программа клуба выпускников: оформление ведёт к заявке — менеджер свяжется с вами.</p>
+                      <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Программа клуба выпускников: оформление ведёт к заявке – менеджер свяжется с вами.</p>
                     </>
                   )}
                 </div>

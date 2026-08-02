@@ -29,7 +29,7 @@ const CONTACT_FIELDS: { key: string; label: string; ph: string }[] = [
 ];
 
 export default function Profile() {
-  useHead({ title: "Профиль", noindex: true }); // приватная зона — не индексируем
+  useHead({ title: "Профиль", noindex: true }); // приватная зона – не индексируем
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return <Navigate to="/lk" replace />;
   return <ProfileBody token={token} />;
@@ -46,7 +46,7 @@ function ProfileBody({ token }: { token: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
 
-  // Загрузка фото: multipart → /me/avatar, после — обновляем /me.
+  // Загрузка фото: multipart → /me/avatar, после – обновляем /me.
   const uploadAvatar = async (file: File) => {
     setAvatarBusy(true); setSaveErr(null);
     try {
@@ -214,7 +214,7 @@ function ProfileContent({
                     </div>
                   </div>
                   <p style={{ fontSize: 12, lineHeight: 1.5, color: t.muted, margin: 0 }}>
-                    Сохраняя, вы даёте согласие на обработку персональных данных —{" "}
+                    Сохраняя, вы даёте согласие на обработку персональных данных –{" "}
                     <Link to="/privacy" className="foc" style={{ color: "#C9450E", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
                   </p>
                   {saveErr && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: 0 }}>{saveErr}</p>}
@@ -331,7 +331,7 @@ function DeleteAccount() {
         <div style={{ marginTop: 16 }}>
           <div style={{ ...mono, fontSize: 12, color: t.muted, marginBottom: 8 }}>Введите <b style={{ color: "#B5331B" }}>УДАЛИТЬ</b> для подтверждения:</div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="УДАЛИТЬ" aria-label="Подтверждение удаления — введите слово УДАЛИТЬ" className="foc" style={{ ...mono, fontSize: 14, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text }} />
+            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="УДАЛИТЬ" aria-label="Подтверждение удаления – введите слово УДАЛИТЬ" className="foc" style={{ ...mono, fontSize: 14, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text }} />
             <button onClick={del} disabled={confirm !== "УДАЛИТЬ" || busy} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#B5331B", color: "#fff", cursor: confirm === "УДАЛИТЬ" && !busy ? "pointer" : "not-allowed", opacity: confirm === "УДАЛИТЬ" && !busy ? 1 : 0.5 }}>{busy ? "Удаляем…" : "Удалить навсегда"}</button>
             <button onClick={() => { setOpen(false); setConfirm(""); }} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.text, cursor: "pointer" }}>Отмена</button>
           </div>

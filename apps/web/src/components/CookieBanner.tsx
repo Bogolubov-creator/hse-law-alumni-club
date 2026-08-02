@@ -5,7 +5,7 @@ const KEY = "club_cookie_consent";
 
 /**
  * Cookie-баннер (152-ФЗ): показывается при первом визите, скрывается по «Принять».
- * Выбор хранится в localStorage — баннер не навязывается повторно.
+ * Выбор хранится в localStorage – баннер не навязывается повторно.
  */
 export default function CookieBanner() {
   const [accepted, setAccepted] = useState(() => localStorage.getItem(KEY) === "1");

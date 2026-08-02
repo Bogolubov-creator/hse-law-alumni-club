@@ -58,9 +58,9 @@ export function Members() {
             <span className="font-mono text-[12px] text-grafit-soft">{m.cohort}</span>
             <span><span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(m.verification_status)}`}>{VERIF[m.verification_status]}</span></span>
             <span className="font-mono text-[13px]">{m.points_cached}</span>
-            <span className="font-mono text-[13px]">{m.verification_status === "verified" ? `−${computeLevel(m.points_cached ?? 0).discount_percent + (m.personal_discount ?? 0)}%` : "—"}</span>
+            <span className="font-mono text-[13px]">{m.verification_status === "verified" ? `−${computeLevel(m.points_cached ?? 0).discount_percent + (m.personal_discount ?? 0)}%` : "–"}</span>
             <span className="font-mono text-[13px]">{m.friends_count ?? 0}</span>
-            <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "—"}</span>
+            <span className={`font-mono text-[11px] ${m.podcast_active ? "text-[#1F8A5B]" : "text-grafit-soft"}`}>{m.podcast_active ? "подписка ✓" : "–"}</span>
           </button>
         ))}
         {!membersQ.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q ? "По запросу ничего не найдено." : "Выпускников нет."}</p>}
@@ -92,7 +92,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
         <div id="member-modal-title" className="font-display text-2xl font-bold">{member.fio}</div>
         <div className="mt-1 font-mono text-[12px] text-grafit-soft">Выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях: {member.friends_count ?? 0}</div>
 
-        {/* Анкета из формы вступления — всё, что заполнил выпускник */}
+        {/* Анкета из формы вступления – всё, что заполнил выпускник */}
         <div className="mt-4 rounded-[14px] bg-[#FBF7EF] px-4 py-3 font-mono text-[12px] leading-relaxed text-grafit-soft">
           {member.email && <div>Почта: <b className="text-grafit">{member.email}</b></div>}
           {(member.edu_level || member.edu_program) && <div>Образование: <b className="text-grafit">{[member.edu_level, member.edu_program && `ОП «${member.edu_program}»`].filter(Boolean).join(" · ")}</b></div>}

@@ -11,7 +11,7 @@ export function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const { patchMember } = useAdminMutations();
   const pending = members.data?.items ?? [];
   const d = ov.data;
-  // Вся статистика сайта — одним экраном.
+  // Вся статистика сайта – одним экраном.
   const stats = [
     { label: "Новые заявки", value: d?.new_orders ?? 0, color: "#EC5A13" },
     { label: "На верификацию", value: d?.pending_verifications ?? 0, color: "#a07d2e" },
@@ -78,7 +78,7 @@ export function Overview({ onGo }: { onGo: (s: Section) => void }) {
               <div className="mt-3 inline-flex rounded-full bg-[rgba(46,111,174,.12)] px-3 py-1.5 font-mono text-[12px] text-[#2E6FAE]">записались: {d.next_event.rsvps}</div>
             </>
           ) : (
-            <p className="mt-3 font-mono text-[12px] text-grafit-soft">Анонсов нет — создайте событие во вкладке «Контент → События».</p>
+            <p className="mt-3 font-mono text-[12px] text-grafit-soft">Анонсов нет – создайте событие во вкладке «Контент → События».</p>
           )}
         </Card>
         <PushBroadcast subs={d?.push_subs_count ?? 0} />

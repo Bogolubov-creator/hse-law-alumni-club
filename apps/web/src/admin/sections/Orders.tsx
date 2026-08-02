@@ -44,7 +44,7 @@ export function Orders() {
               {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
             </select>
           </div>
-          {/* Состав заявки — офис видит позиции без похода в Directus */}
+          {/* Состав заявки – офис видит позиции без похода в Directus */}
           {(o.items_json?.length || o.address || o.comment) && (
             <div className="mt-1.5 pl-[122px] font-mono text-[11px] leading-relaxed text-grafit-soft">
               {o.items_json?.map((i) => `${i.title}${i.variant_sku ? ` (${i.variant_sku})` : ""} ×${i.qty}`).join("; ")}

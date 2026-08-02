@@ -23,7 +23,7 @@ export function PushBell() {
         const sub = await reg.pushManager.getSubscription();
         setState(sub && Notification.permission === "granted" ? "on" : "off");
       } catch {
-        /* API недоступен — просто не показываем кнопку */
+        /* API недоступен – просто не показываем кнопку */
       }
     })();
   }, []);
@@ -74,7 +74,7 @@ export function PushBell() {
     <div style={{ ...surface, padding: "20px 28px", marginTop: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
       <div>
         <div style={{ ...disp, fontWeight: 600, fontSize: 17 }}>🔔 Уведомления клуба</div>
-        <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>Заявки в друзья, новые события и подкасты — сразу на устройство</div>
+        <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>Заявки в друзья, новые события и подкасты – сразу на устройство</div>
       </div>
       {state === "on" ? (
         <button onClick={disable} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "1.5px solid #1F8A5B", background: t.ghostBtnBg, color: "#1F8A5B", cursor: "pointer", flex: "none" }}>Включены ✓ (выключить)</button>

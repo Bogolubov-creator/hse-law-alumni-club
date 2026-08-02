@@ -23,7 +23,7 @@ import { NewbieChecklist } from "./lk/NewbieChecklist.js";
  */
 
 export default function Lk() {
-  useHead({ title: "Личный кабинет", noindex: true }); // приватная зона — не индексируем
+  useHead({ title: "Личный кабинет", noindex: true }); // приватная зона – не индексируем
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [pending, setPending] = useState<AlumniBrief | null>(null);
 
@@ -162,7 +162,7 @@ function BadgeModal({ a, onClose }: { a: Achievement; onClose: () => void }) {
             <div style={{ height: 10, borderRadius: 999, background: t.progressTrack, overflow: "hidden", marginTop: 8 }}>
               <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((a.current / a.target) * 100)}%` }} />
             </div>
-            <p style={{ ...mono, fontSize: 12, color: t.muted, margin: "10px 0 0" }}>Осталось ещё {Math.max(0, a.target - a.current)} — и достижение ваше.</p>
+            <p style={{ ...mono, fontSize: 12, color: t.muted, margin: "10px 0 0" }}>Осталось ещё {Math.max(0, a.target - a.current)} – и достижение ваше.</p>
           </div>
         )}
       </div>
@@ -306,7 +306,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
   );
 }
 
-/** Блок «События» вверху ЛК — то, что требует внимания или радует. */
+/** Блок «События» вверху ЛК – то, что требует внимания или радует. */
 function Events({ token }: { token: string }) {
   const t = useLkTokens();
   const surface = lkSurface(t);
@@ -377,7 +377,7 @@ function Referral({ me }: { me: import("../lib/api.js").Me }) {
   const code = me.alumni.referral_code;
   if (!code) return null;
   const link = `${window.location.origin}/join?ref=${encodeURIComponent(code)}`;
-  const shareText = "Вступай в клуб выпускников факультета права Вышки — скидки на ДПО, сообщество и подкасты:";
+  const shareText = "Вступай в клуб выпускников факультета права Вышки – скидки на ДПО, сообщество и подкасты:";
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -427,7 +427,7 @@ function TgLink() {
       <div>
         <div style={{ ...disp, fontWeight: 600, fontSize: 17 }}>🤖 Telegram-бот клуба</div>
         <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>
-          {data.linked ? "Привязан ✓ — команды /points и /calendar показывают ваши данные" : "Привяжите аккаунт — бот покажет ваши баллы (/points) и события (/calendar)"}
+          {data.linked ? "Привязан ✓ – команды /points и /calendar показывают ваши данные" : "Привяжите аккаунт – бот покажет ваши баллы (/points) и события (/calendar)"}
         </div>
       </div>
       <a href={data.url} target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, flex: "none", ...(data.linked ? { border: "1.5px solid #2E6FAE", background: t.ghostBtnBg, color: "#2E6FAE" } : { background: "#2E6FAE", color: "#FBF3E8" }) }}>
@@ -448,7 +448,7 @@ function NextClubEvent({ token }: { token: string }) {
   const q = useQuery({ queryKey: ["events", token], queryFn: () => apiGet<Ev[]>("/events", token) });
   const rsvp = useMutation({
     mutationFn: (id: string) => apiPost<{ going: boolean }>(`/events/${id}/rsvp`, {}, undefined, token),
-    onSuccess: (r) => { toast(r.going ? "Вы записаны — ждём вас! ✓" : "Запись отменена"); qc.invalidateQueries({ queryKey: ["events"] }); },
+    onSuccess: (r) => { toast(r.going ? "Вы записаны – ждём вас! ✓" : "Запись отменена"); qc.invalidateQueries({ queryKey: ["events"] }); },
     onError: (e) => toast((e as Error).message, "err"),
   });
   const ev = (q.data ?? []).find((e) => e.status === "published" && new Date(e.starts_at).getTime() >= Date.now());
@@ -486,7 +486,7 @@ function achColor(a: Achievement): string {
   return a.earned ? "#1F8A5B" : achInProgress(a) ? "#EC5A13" : "#6B7280";
 }
 
-// Оформление «ромба» повторяет Claude Design: получено — teal→navy, следующее — оранжевый, закрыто — soft.
+// Оформление «ромба» повторяет Claude Design: получено – teal→navy, следующее – оранжевый, закрыто – soft.
 function BadgeSquare({ a, size }: { a: Achievement; size: number }) {
   const t = useLkTokens();
   const star = !a.earned && a.star;

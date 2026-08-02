@@ -28,8 +28,8 @@ export function ProductsAdmin() {
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {products.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Товаров нет — добавьте первый.</p>}
-      {(createProduct.isError || deleteProduct.isError || patchProduct.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение — попробуйте ещё раз.</p>}
+      {products.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Товаров нет – добавьте первый.</p>}
+      {(createProduct.isError || deleteProduct.isError || patchProduct.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение – попробуйте ещё раз.</p>}
 
       {showCreate && <ProductForm busy={createProduct.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProduct.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {confirmDel && (

@@ -19,7 +19,7 @@ export default function Cart() {
 
   const items = cart.data?.items ?? [];
   const subtotal = cart.data?.subtotal ?? 0;
-  // Скидка выпускника — только на ДПО; мерч по базовой цене.
+  // Скидка выпускника – только на ДПО; мерч по базовой цене.
   const dpoSubtotal = items.filter((i) => i.type === "dpo").reduce((s, i) => s + i.price * i.qty, 0);
   const discountAmount = Math.round((dpoSubtotal * discount) / 100);
   const total = subtotal - discountAmount;
@@ -32,7 +32,7 @@ export default function Cart() {
       const res = await submitOrder({
         contact_fio: form.contact_fio, contact_phone: form.contact_phone, contact_email: form.contact_email,
         fulfillment: form.fulfillment, address: form.address || null, comment: form.comment || null, consent_pdn: form.consent,
-        website: form.website, // honeypot — реальный пользователь оставит пустым
+        website: form.website, // honeypot – реальный пользователь оставит пустым
       });
       setResult(res);
       qc.invalidateQueries({ queryKey: ["cart"] });
@@ -49,7 +49,7 @@ export default function Cart() {
         <main className="mx-auto max-w-[620px] px-7 py-16 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(31,138,91,.14)] text-3xl text-[#1F8A5B]">✓</div>
           <h1 className="mt-5 font-display text-3xl font-bold">Заявка отправлена</h1>
-          <p className="mt-3 text-grafit-soft">Номер вашей заявки – <b className="font-mono text-grafit">{result.number}</b>. Менеджер учебного офиса свяжется с вами по указанным контактам, чтобы подтвердить детали.{result.payment_url ? " Оплатить заявку можно онлайн — кнопка ниже." : " Оплата — через учебный офис после подтверждения."}</p>
+          <p className="mt-3 text-grafit-soft">Номер вашей заявки – <b className="font-mono text-grafit">{result.number}</b>. Менеджер учебного офиса свяжется с вами по указанным контактам, чтобы подтвердить детали.{result.payment_url ? " Оплатить заявку можно онлайн – кнопка ниже." : " Оплата – через учебный офис после подтверждения."}</p>
           {!result.notified.ok && (
             <p className="mx-auto mt-4 max-w-[440px] rounded-[12px] bg-[rgba(181,51,27,.08)] px-4 py-3 text-sm text-karmin">
               Заявка сохранена, но автоматическое уведомление офиса не прошло. Пожалуйста, продублируйте заявку в Telegram <a className="underline" href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer">@pravohse</a> – так офис точно увидит её.

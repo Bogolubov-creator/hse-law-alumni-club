@@ -24,7 +24,7 @@ export function MobileMerchItem({ slug }: { slug: string }) {
   const buy = () => {
     if (!m) return;
     add.mutate({ type: "merch", ref_id: m.slug, variant_sku: sku, qty: 1 }, {
-      onSuccess: () => { toast("Добавлено — оформите заявку"); nav("/cart"); },
+      onSuccess: () => { toast("Добавлено – оформите заявку"); nav("/cart"); },
       onError: (e) => toast((e as Error).message, "err"),
     });
   };

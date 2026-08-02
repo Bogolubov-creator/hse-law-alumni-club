@@ -17,7 +17,7 @@ export function MobileHome() {
   const discount = useMemberDiscount();
   const toast = useToast();
 
-  // Гость или недоступная сессия — приглашение (/me отдаётся только верифицированному
+  // Гость или недоступная сессия – приглашение (/me отдаётся только верифицированному
   // выпускнику, поэтому неверифицированные попадают в isError → тоже видят приглашение).
   if (!t || me.isError) return <GuestHome />;
   if (!me.data) return <Loader />;
@@ -59,10 +59,10 @@ export function MobileHome() {
           <div style={{ position: "relative", padding: "20px 20px 18px", color: "#FBF3E8" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".24em", color: "rgba(227,194,114,.92)" }}>КАРТА ВЫПУСКНИКА</span>
-              <span style={{ ...mono, fontSize: 10, letterSpacing: ".16em", color: "rgba(251,243,232,.55)" }}>ВЫПУСК {m.alumni.cohort ?? "—"}</span>
+              <span style={{ ...mono, fontSize: 10, letterSpacing: ".16em", color: "rgba(251,243,232,.55)" }}>ВЫПУСК {m.alumni.cohort ?? "–"}</span>
             </div>
             <div style={{ ...disp, fontWeight: 700, fontSize: 23, letterSpacing: "-.01em", marginTop: 28 }}>{m.alumni.fio ?? "Выпускник"}</div>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", color: "rgba(251,243,232,.55)", marginTop: 5 }}>№ {m.alumni.referral_code ?? "—"}</div>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", color: "rgba(251,243,232,.55)", marginTop: 5 }}>№ {m.alumni.referral_code ?? "–"}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 22 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#E3C272,#C49A45)", color: INK, padding: "7px 13px", borderRadius: 11 }}>
                 <span style={{ ...disp, fontWeight: 700, fontSize: 12 }}>{m.level.level_title}</span>
@@ -132,7 +132,7 @@ export function MobileHome() {
         <QuickAction to="/?screen=profile" label="Профиль" tint="rgba(196,154,69,.16)" stroke="#B78A2E" icon={<><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>} />
       </div>
 
-      {/* Последнее — история баллов */}
+      {/* Последнее – история баллов */}
       {ledger.data && ledger.data.length > 0 && (
         <div style={{ padding: "16px 20px 2px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10 }}>
@@ -184,7 +184,7 @@ function GuestHome() {
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", margin: "22px 0 0" }}>Клуб выпускников</h1>
         <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "#9B9584", marginTop: 6 }}>ФАКУЛЬТЕТ ПРАВА · ВЫШКА</div>
         <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.55, marginTop: 18, maxWidth: 300 }}>
-          Войдите, чтобы открыть карту выпускника — баллы, уровень и скидку на программы ДПО.
+          Войдите, чтобы открыть карту выпускника – баллы, уровень и скидку на программы ДПО.
         </p>
         <Link to="/lk" style={{ marginTop: 24, width: "100%", maxWidth: 300, height: 52, borderRadius: 15, background: "#EC5A13", color: "#FBF3E8", ...disp, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", boxShadow: "0 14px 28px -14px rgba(236,90,19,.85)" }}>Войти в кабинет</Link>
         <Link to="/join" style={{ marginTop: 12, width: "100%", maxWidth: 300, height: 52, borderRadius: 15, border: "1.5px solid #14181F", color: INK, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: "#fff" }}>Вступить в клуб</Link>

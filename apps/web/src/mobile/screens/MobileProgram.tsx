@@ -7,7 +7,7 @@ import { INK, disp, mono, CARD, FMT_COL, FMT_RU, roundDark, secTitle, factChip, 
 import { Loader } from "../ui.js";
 
 export function MobileProgram() {
-  // Оболочка рендерится вне <Route path="/dpo/:slug">, поэтому useParams пуст —
+  // Оболочка рендерится вне <Route path="/dpo/:slug">, поэтому useParams пуст –
   // берём slug прямо из пути.
   const { pathname } = useLocation();
   const slug = decodeURIComponent(pathname.replace(/^\/dpo\//, ""));
@@ -26,7 +26,7 @@ export function MobileProgram() {
   const doAdd = (goCart: boolean) => {
     if (!p) return;
     add.mutate({ type: "dpo", ref_id: p.slug, qty: 1 }, {
-      onSuccess: () => { toast(goCart ? "Добавлено — оформите заявку" : `«${p.title}» в корзине`); if (goCart) nav("/cart"); },
+      onSuccess: () => { toast(goCart ? "Добавлено – оформите заявку" : `«${p.title}» в корзине`); if (goCart) nav("/cart"); },
       onError: (e) => toast((e as Error).message, "err"),
     });
   };

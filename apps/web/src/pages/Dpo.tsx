@@ -21,7 +21,7 @@ export default function Dpo() {
   const { add } = useCartMutations();
   const toast = useToast();
   useHead({ title: "Программы ДПО со скидкой выпускника", description: "Каталог программ дополнительного образования факультета права НИУ ВШЭ. Цена выпускника применяется автоматически после верификации.", canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/dpo` });
-  // Фильтры живут в URL — подборкой можно поделиться ссылкой.
+  // Фильтры живут в URL – подборкой можно поделиться ссылкой.
   const [params, setParams] = useSearchParams();
   const [dir, setDir] = useState<string | null>(params.get("dir"));
   const [fmt, setFmt] = useState<string | null>(params.get("fmt"));
@@ -139,7 +139,7 @@ export default function Dpo() {
                   </div>
                   <div className="mt-auto pt-4">
                     {/* Скидка выпускника действует на все программы ДПО. Программы ВШЭ
-                        (source_url) — запись на hse.ru; собственные — корзина сайта. */}
+                        (source_url) – запись на hse.ru; собственные – корзина сайта. */}
                     <div className="flex items-baseline gap-2">
                       <span className="font-mono text-[19px] font-medium">{rub(priced(p))}</span>
                       {discount > 0 && <span className="font-mono text-[13px] text-grafit-soft line-through">{rub(p.price)}</span>}

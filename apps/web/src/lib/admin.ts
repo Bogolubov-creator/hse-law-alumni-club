@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Админ-сессия живёт в httpOnly-cookie (её ставит сервер на /auth/admin-login).
-// JS токен не видит и не хранит — при XSS его нельзя украсть. Cookie уходит
+// JS токен не видит и не хранит – при XSS его нельзя украсть. Cookie уходит
 // автоматически с каждым same-origin запросом (credentials: "same-origin").
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -9,13 +9,13 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   const res = await fetch(`/api${path}`, {
     method,
     credentials: "same-origin", // отправлять cookie админ-сессии
-    // content-type только при наличии тела — иначе Fastify падает на пустом JSON
+    // content-type только при наличии тела – иначе Fastify падает на пустом JSON
     headers: { accept: "application/json", ...(hasBody ? { "content-type": "application/json" } : {}) },
     body: hasBody ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    // Пробрасываем HTTP-статус: 401 = истёкшая сессия (на вход), прочее (5xx/сеть) —
+    // Пробрасываем HTTP-статус: 401 = истёкшая сессия (на вход), прочее (5xx/сеть) –
     // показываем ретрай, а не выкидываем администратора на логин.
     const e = new Error((data as any)?.error || `API ${res.status}`) as Error & { status?: number };
     e.status = res.status;

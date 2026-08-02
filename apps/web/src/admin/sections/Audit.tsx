@@ -37,7 +37,7 @@ export function AuditLog() {
     return hay.includes(q.trim().toLowerCase());
   });
   const fmt = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+    iso ? new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "–";
 
   return (
     <>
@@ -59,9 +59,9 @@ export function AuditLog() {
             <div key={r.id} title={r.detail ? JSON.stringify(r.detail) : undefined} className="grid grid-cols-[110px_1fr_1fr_1fr_120px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3 text-sm">
               <span className="font-mono text-[12px] text-grafit-soft">{fmt(r.created_at)}</span>
               <span className={`font-semibold ${danger ? "text-karmin" : ""}`}>{meta?.icon ?? "•"} {meta?.label ?? r.event}</span>
-              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.actor ?? "—"}</span>
-              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.subject ?? "—"}</span>
-              <span className="font-mono text-[12px] text-grafit-soft">{r.ip ?? "—"}</span>
+              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.actor ?? "–"}</span>
+              <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{r.subject ?? "–"}</span>
+              <span className="font-mono text-[12px] text-grafit-soft">{r.ip ?? "–"}</span>
             </div>
           );
         })}

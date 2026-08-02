@@ -77,7 +77,7 @@ export function PagesAdmin() {
           <button onClick={save} disabled={savePage.isPending} className="foc rounded-[11px] bg-ohra px-6 py-2.5 font-semibold text-kost disabled:opacity-60">
             {savePage.isPending ? "Сохраняем…" : "Сохранить все секции"}
           </button>
-          {savePage.isSuccess && <span className="font-mono text-[12px] text-[#1F8A5B]">сохранено ✓ — уже на сайте</span>}
+          {savePage.isSuccess && <span className="font-mono text-[12px] text-[#1F8A5B]">сохранено ✓ – уже на сайте</span>}
           {savePage.isError && <span className="font-mono text-[12px] text-karmin">не удалось сохранить</span>}
         </div>
       </Card>

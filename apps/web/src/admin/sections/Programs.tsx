@@ -23,7 +23,7 @@ export function ProgramsAdmin() {
           <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-ohra px-4 py-2 text-sm font-semibold text-kost">+ Добавить программу</button>
         </div>
       </div>
-      {syncDpo.isSuccess && <p className="border-t border-[#f0ece2] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[#1F8A5B]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (актуальный набор {(syncDpo.data as any).actual ?? "—"}, закрытые {(syncDpo.data as any).nonactual ?? "—"}). Ночная автосинхронизация — ежедневно в 05:00.</p>}
+      {syncDpo.isSuccess && <p className="border-t border-[#f0ece2] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[#1F8A5B]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (актуальный набор {(syncDpo.data as any).actual ?? "–"}, закрытые {(syncDpo.data as any).nonactual ?? "–"}). Ночная автосинхронизация – ежедневно в 05:00.</p>}
       {syncDpo.isError && <p className="border-t border-[#f0ece2] px-6 py-2.5 font-mono text-[12px] text-karmin">Синхронизация не удалась: {(syncDpo.error as Error).message}</p>}
       {(programs.data ?? []).map((p) => (
         <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[#f0ece2] px-6 py-3.5 text-sm max-md:grid-cols-1">
@@ -40,8 +40,8 @@ export function ProgramsAdmin() {
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {programs.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Программ нет — добавьте первую.</p>}
-      {(createProgram.isError || deleteProgram.isError || patchProgram.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение — попробуйте ещё раз.</p>}
+      {programs.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Программ нет – добавьте первую.</p>}
+      {(createProgram.isError || deleteProgram.isError || patchProgram.isError) && <p className="px-6 py-3 font-mono text-xs text-karmin">Не удалось сохранить изменение – попробуйте ещё раз.</p>}
 
       {showCreate && <ProgramForm busy={createProgram.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProgram.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {confirmDel && (
@@ -75,7 +75,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
     <Modal onClose={onClose} labelledBy="prog-form-title" maxWidth={520}>
       <form onSubmit={submit} className="rounded-[18px] bg-white p-7">
         <h3 id="prog-form-title" className="font-display text-lg font-bold">Новая программа клуба</h3>
-        <p className="mt-1 font-mono text-[11px] leading-relaxed text-grafit-soft">Собственная программа клуба выпускников: запись и оплата — через сайт (корзина, скидка выпускника). Программы ВШЭ добавлять не нужно — они приходят из синка с hse.ru и ведут на маркетплейс.</p>
+        <p className="mt-1 font-mono text-[11px] leading-relaxed text-grafit-soft">Собственная программа клуба выпускников: запись и оплата – через сайт (корзина, скидка выпускника). Программы ВШЭ добавлять не нужно – они приходят из синка с hse.ru и ведут на маркетплейс.</p>
         <div className="mt-4 space-y-3">
           <FormField label="Название" value={f.title} onChange={(v) => set("title", v)} required />
           <div className="grid grid-cols-2 gap-3">

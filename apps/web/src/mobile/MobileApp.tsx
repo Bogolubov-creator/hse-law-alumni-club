@@ -20,7 +20,7 @@ import { MobileProfile } from "./screens/MobileProfile.js";
  * Мобильная native-app-оболочка (порт «Клуб выпускников.dc.html» из Claude Design).
  * Включается на телефонах (<768px, см. useIsMobile) вместо десктоп-сайта: нижние
  * табы + экраны на РЕАЛЬНЫХ данных. Экран выбирается по маршруту (deep-link/SEO/назад).
- * Детальные слайд-оверлеи (программа/плеер/оформление/профиль) — стадия 2, пока ведут
+ * Детальные слайд-оверлеи (программа/плеер/оформление/профиль) – стадия 2, пока ведут
  * на существующие маршруты.
  */
 
@@ -28,7 +28,7 @@ import { MobileProfile } from "./screens/MobileProfile.js";
 export default function MobileApp() {
   const { pathname, search } = useLocation();
   const qs = new URLSearchParams(search);
-  // Детальные экраны — full-screen без нижней навигации (слайд-оверлеи макета).
+  // Детальные экраны – full-screen без нижней навигации (слайд-оверлеи макета).
   if (pathname.startsWith("/dpo/")) return <MobileProgram />;
   if (pathname.startsWith("/news/")) return <MobileNewsPost />;
   if (pathname === "/cart") return <MobileCart />;
@@ -36,7 +36,7 @@ export default function MobileApp() {
   if (ep) return <MobilePodcastPlayer epId={ep} />;
   const item = pathname === "/merch" ? qs.get("item") : null;
   if (item) return <MobileMerchItem slug={item} />;
-  // Приватные оверлеи ЛК — только для вошедшего: гость по прямой ссылке иначе
+  // Приватные оверлеи ЛК – только для вошедшего: гость по прямой ссылке иначе
   // получал пустой тупиковый экран. Без токена показываем обычную «Карту»
   // (для гостя это приглашение войти/вступить).
   const screen = pathname === "/" && token() ? qs.get("screen") : null;

@@ -45,7 +45,7 @@ export function setVision(patch: Partial<VisionState>): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
-    /* приватный режим — не критично */
+    /* приватный режим – не критично */
   }
   apply();
   listeners.forEach((l) => l());

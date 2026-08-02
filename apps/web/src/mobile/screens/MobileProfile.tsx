@@ -38,7 +38,7 @@ export function MobileProfile() {
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: 19 }}>{m.alumni.fio ?? "Выпускник"}</div>
-                <div style={{ fontSize: 13, color: "#6B7280", marginTop: 3 }}>Выпуск {m.alumni.cohort ?? "—"}{m.alumni.edu_program ? ` · ${m.alumni.edu_program}` : ""}</div>
+                <div style={{ fontSize: 13, color: "#6B7280", marginTop: 3 }}>Выпуск {m.alumni.cohort ?? "–"}{m.alumni.edu_program ? ` · ${m.alumni.edu_program}` : ""}</div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 7, ...mono, fontSize: 10, color: "#2C6E80", background: "rgba(44,110,128,.1)", padding: "4px 9px", borderRadius: 7 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2C6E80" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>Диплом верифицирован
                 </div>

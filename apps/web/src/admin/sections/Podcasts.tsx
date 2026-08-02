@@ -3,7 +3,7 @@ import Modal from "../../components/Modal.js";
 import { useAdminPodcasts, useAdminMutations, type AdminPodcast } from "../../lib/admin.js";
 import { ConfirmDelete, FormField } from "../ui.js";
 
-// ── Подкасты (доступ слушателям — по подписке 3 999 ₽/год) ──────────
+// ── Подкасты (доступ слушателям – по подписке 3 999 ₽/год) ──────────
 export function PodcastsAdmin() {
   const podcasts = useAdminPodcasts();
   const { createPodcast, patchPodcast, deletePodcast } = useAdminMutations();
@@ -30,14 +30,14 @@ export function PodcastsAdmin() {
           >
             {p.is_free ? "пробный ✓" : "по подписке"}
           </button>
-          <span className="font-mono text-[12px] text-grafit-soft">{p.duration ?? "—"}</span>
+          <span className="font-mono text-[12px] text-grafit-soft">{p.duration ?? "–"}</span>
           <select value={p.status} disabled={patchPodcast.isPending} onChange={(e) => patchPodcast.mutate({ id: p.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${p.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
             <option value="published">Опубликован</option><option value="draft">Черновик</option>
           </select>
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {podcasts.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Подкастов нет — добавьте первый.</p>}
+      {podcasts.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">Подкастов нет – добавьте первый.</p>}
       {showCreate && <PodcastForm busy={createPodcast.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createPodcast.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {confirmDel && (
         <ConfirmDelete title={confirmDel.title} busy={deletePodcast.isPending} hint="Подкаст исчезнет с витрины подкастов."

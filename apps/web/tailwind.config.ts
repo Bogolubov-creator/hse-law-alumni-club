@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-// Канон палитры/шрифтов — прототип club-business-law.html (решение 3.4).
+// Канон палитры/шрифтов – прототип club-business-law.html (решение 3.4).
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {

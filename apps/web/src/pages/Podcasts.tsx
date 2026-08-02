@@ -10,7 +10,7 @@ import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
 const RATES = [1, 1.25, 1.5, 2] as const;
 
 /** Плеер выпуска: запоминает позицию (localStorage) и умеет менять скорость.
-    Подписанная ссылка живёт 2 часа — если вкладка провисела дольше и источник
+    Подписанная ссылка живёт 2 часа – если вкладка провисела дольше и источник
     вернул ошибку, тихо берём свежую ссылку из API и продолжаем с того же места. */
 function EpisodePlayer({ id, src }: { id: string; src: string }) {
   const ref = useRef<HTMLAudioElement>(null);
@@ -42,7 +42,7 @@ function EpisodePlayer({ id, src }: { id: string; src: string }) {
         a.addEventListener("loadedmetadata", onMeta);
       });
     } catch {
-      setStale("Ссылка на аудио устарела — обновите страницу");
+      setStale("Ссылка на аудио устарела – обновите страницу");
     } finally {
       setTimeout(() => { refreshing.current = false; }, 3000);
     }
@@ -51,7 +51,7 @@ function EpisodePlayer({ id, src }: { id: string; src: string }) {
   const restore = () => {
     const el = ref.current;
     const saved = Number(localStorage.getItem(posKey) || 0);
-    // Не восстанавливаем, если дослушано почти до конца — начинаем заново.
+    // Не восстанавливаем, если дослушано почти до конца – начинаем заново.
     if (el && saved > 5 && saved < (el.duration || Infinity) - 5) el.currentTime = saved;
   };
   const savePos = () => {
@@ -92,8 +92,8 @@ function EpisodePlayer({ id, src }: { id: string; src: string }) {
 }
 
 /**
- * Подкасты клуба — витрина по аналогии с мерчем. Слушать можно по годовой
- * подписке (3 999 ₽/год): без неё карточки видны, но вместо плеера — замок и CTA.
+ * Подкасты клуба – витрина по аналогии с мерчем. Слушать можно по годовой
+ * подписке (3 999 ₽/год): без неё карточки видны, но вместо плеера – замок и CTA.
  */
 export default function Podcasts() {
   useHead({ title: "Подкасты клуба", description: "Подкасты клуба выпускников факультета права НИУ ВШЭ: разговоры с выпускниками, преподавателями и практиками права. Пробный выпуск бесплатно." });
@@ -103,7 +103,7 @@ export default function Podcasts() {
   const data = q.data;
   const priceRub = data ? rub(data.price) : "3 999 ₽";
 
-  // PodcastSeries + эпизоды (schema.org) — структурированная разметка витрины подкастов.
+  // PodcastSeries + эпизоды (schema.org) – структурированная разметка витрины подкастов.
   const origin = siteOrigin();
   useJsonLd(data?.items?.length ? {
     "@context": "https://schema.org",
@@ -137,7 +137,7 @@ export default function Podcasts() {
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Подкасты клуба</h1>
         <p className="mt-3 max-w-[620px] text-grafit-soft">
           Разговоры с выпускниками, преподавателями и практиками права. Пробный выпуск открыт
-          для всех, полный доступ — по подписке {priceRub} в год.
+          для всех, полный доступ – по подписке {priceRub} в год.
         </p>
 
         {/* Подписка */}
@@ -146,7 +146,7 @@ export default function Podcasts() {
             <div>
               <div className="font-display text-xl font-semibold">Подписка на подкасты · {priceRub} в год</div>
               <p className="mt-1 max-w-[560px] text-sm text-[rgba(251,243,232,.8)]">
-                Все выпуски без ограничений. {t ? "Оформление — заявка; при подключённой онлайн-оплате сразу откроется оплата картой." : "Чтобы оформить, войдите в личный кабинет."}
+                Все выпуски без ограничений. {t ? "Оформление – заявка; при подключённой онлайн-оплате сразу откроется оплата картой." : "Чтобы оформить, войдите в личный кабинет."}
               </p>
             </div>
             {t ? (
@@ -160,12 +160,12 @@ export default function Podcasts() {
         )}
         {data?.subscribed && (
           <div className="mt-7 rounded-[14px] bg-[rgba(31,138,91,.1)] px-5 py-3.5 font-mono text-[13px] text-[#1F8A5B]">
-            Подписка активна{data.sub_until ? ` до ${new Date(data.sub_until).toLocaleDateString("ru-RU")}` : ""} — слушайте все выпуски.
+            Подписка активна{data.sub_until ? ` до ${new Date(data.sub_until).toLocaleDateString("ru-RU")}` : ""} – слушайте все выпуски.
           </div>
         )}
         {subscribe.isSuccess && !subscribe.data.payment_url && (
           <p className="mt-3 rounded-[14px] bg-[rgba(196,154,69,.14)] px-5 py-3.5 font-mono text-[13px] text-[#a07d2e]">
-            Заявка {subscribe.data.number} оформлена — менеджер учебного офиса свяжется с вами для оплаты, после чего подписка включится.
+            Заявка {subscribe.data.number} оформлена – менеджер учебного офиса свяжется с вами для оплаты, после чего подписка включится.
           </p>
         )}
         {subscribe.isError && <p className="mt-3 font-mono text-[13px] text-karmin">{(subscribe.error as Error).message}</p>}
@@ -200,7 +200,7 @@ export default function Podcasts() {
             </div>
           ))}
         </div>
-        {data && data.items.length === 0 && <p className="mt-8 font-mono text-sm text-grafit-soft">Выпусков пока нет — скоро появятся.</p>}
+        {data && data.items.length === 0 && <p className="mt-8 font-mono text-sm text-grafit-soft">Выпусков пока нет – скоро появятся.</p>}
       </main>
     </SiteShell>
   );

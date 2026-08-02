@@ -17,9 +17,9 @@ import { AuditLog } from "./sections/Audit.js";
  */
 
 export default function AdminApp() {
-  useHead({ title: "Админ-панель", noindex: true }); // офисная зона — не индексируем
-  // Сессия проверяется по httpOnly-cookie (JS токен не хранит). Пока проверяем —
-  // тихий плейсхолдер; нет сессии (401) — вход; есть — панель.
+  useHead({ title: "Админ-панель", noindex: true }); // офисная зона – не индексируем
+  // Сессия проверяется по httpOnly-cookie (JS токен не хранит). Пока проверяем –
+  // тихий плейсхолдер; нет сессии (401) – вход; есть – панель.
   const session = useQuery({ queryKey: ["adm", "session"], queryFn: adminSession, retry: false });
   if (session.isPending) return <div className="min-h-screen bg-kost-2" />;
   if (session.isError) return <AdminGate onAuthed={() => session.refetch()} />;
@@ -66,7 +66,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент", audit: "Журнал безопасности" };
 
   // На вход выкидываем ТОЛЬКО при 401 (истёкшая сессия). Прочие ошибки (5xx/сеть)
-  // не должны маскироваться под разлогин — показываем ретрай в основной области.
+  // не должны маскироваться под разлогин – показываем ретрай в основной области.
   if (ov.isError && (ov.error as { status?: number })?.status === 401)
     return <AdminGate onAuthed={() => location.reload()} />;
 

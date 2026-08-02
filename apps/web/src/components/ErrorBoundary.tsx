@@ -2,7 +2,7 @@ import { Component, type ReactNode } from "react";
 
 /**
  * Ошибка загрузки динамического чанка (устаревший хеш после деплоя, флейки сети).
- * Такое лечится перезагрузкой — показываем мягкое «сайт обновился», а не «ошибка».
+ * Такое лечится перезагрузкой – показываем мягкое «сайт обновился», а не «ошибка».
  */
 function isChunkError(e: unknown): boolean {
   const m = e instanceof Error ? `${e.name} ${e.message}` : String(e);
@@ -17,7 +17,7 @@ interface State {
 /**
  * Граница ошибок верхнего уровня: ловит падение рендера или сбой lazy-import,
  * чтобы вместо белого экрана пользователь увидел понятный экран восстановления.
- * Стили инлайновые — работают даже если CSS не загрузился.
+ * Стили инлайновые – работают даже если CSS не загрузился.
  */
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   state: State = { error: null, chunk: false };
@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           </h1>
           <p style={{ marginTop: 8, color: "#555", lineHeight: 1.5 }}>
             {chunk
-              ? "Похоже, сайт обновился, пока вы были на странице. Обновите — загрузится актуальная версия."
+              ? "Похоже, сайт обновился, пока вы были на странице. Обновите – загрузится актуальная версия."
               : "Произошла непредвиденная ошибка. Попробуйте обновить страницу или вернуться на главную."}
           </p>
           <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>

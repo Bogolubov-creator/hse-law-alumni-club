@@ -1,4 +1,4 @@
-# Контекст сборки — корень монорепо.
+# Контекст сборки – корень монорепо.
 FROM node:20.20.2-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS build
 RUN corepack enable
 WORKDIR /repo
@@ -9,9 +9,9 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY apps/web apps/web
 # Build-time конфигурация SPA. Vite инлайнит эти значения в бандл на этапе сборки,
-# поэтому их нельзя задать в рантайме — только как build-arg (см. docker-compose.yml).
-# VITE_SITE_URL — абсолютный домен для og/JSON-LD/canonical в index.html;
-# VITE_DIRECTUS_URL — база Studio/ассетов для офисной админ-панели.
+# поэтому их нельзя задать в рантайме – только как build-arg (см. docker-compose.yml).
+# VITE_SITE_URL – абсолютный домен для og/JSON-LD/canonical в index.html;
+# VITE_DIRECTUS_URL – база Studio/ассетов для офисной админ-панели.
 ARG VITE_SITE_URL=http://localhost
 ARG VITE_DIRECTUS_URL=http://localhost:8055
 ENV VITE_SITE_URL=$VITE_SITE_URL

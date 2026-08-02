@@ -6,7 +6,7 @@ import { mono, disp } from "./shared.js";
 import { ClassmateAvatar, MATCH_LABEL, FRIEND_LABEL } from "./ClassmateAvatar.js";
 import { ClassmateModal } from "./ClassmateModal.js";
 
-/** «Мои однокурсники» — тот же выпуск или ОП; клик по карточке — мини-профиль. */
+/** «Мои однокурсники» – тот же выпуск или ОП; клик по карточке – мини-профиль. */
 export function Community({ token, myInterests }: { token: string; myInterests: string[] }) {
   const t = useLkTokens();
   const surface = lkSurface(t);
@@ -29,7 +29,7 @@ export function Community({ token, myInterests }: { token: string; myInterests: 
       <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
         {list.map((c) => (
           <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${t.surfaceBorder}`, borderRadius: 16, padding: "14px 16px" }}>
-            {/* Клик по человеку — мини-профиль */}
+            {/* Клик по человеку – мини-профиль */}
             <button onClick={() => setSel(c)} className="foc" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}>
               <ClassmateAvatar c={c} size={46} />
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -58,7 +58,7 @@ export function Community({ token, myInterests }: { token: string; myInterests: 
           </div>
         ))}
       </div>
-      {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку — попробуйте ещё раз.</p>}
+      {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку – попробуйте ещё раз.</p>}
       {sel && <ClassmateModal c={list.find((x) => x.id === sel.id) ?? sel} myInterests={myInterests} token={token} onClose={() => setSel(null)} />}
     </div>
   );
