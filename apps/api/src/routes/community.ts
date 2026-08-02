@@ -1,11 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { computeLevel } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { subActive } from "./podcasts.js";
 import { pushToAlumni } from "../lib/push.js";
+import { audit } from "../lib/audit.js";
 
 const di = directus;
 
@@ -155,5 +156,36 @@ export async function communityRoutes(app: FastifyInstance) {
     await di.request((createItem as any)("alumni_friends", { alumni_id: me.id, friend_id: body.alumni_id, status: "pending" }));
     pushToAlumni(body.alumni_id, { title: "Заявка в друзья", body: `${me.fio ?? "Выпускник"} хочет добавить вас в друзья`, url: "/lk" });
     return { status: "pending" };
+  });
+
+  /**
+   * Отклонить входящую заявку, отозвать свою или удалить из друзей.
+   * Одна операция на все три случая: связь пары удаляется целиком в обе стороны
+   * (гонка встречных заявок могла создать две строки). Раньше отменить заявку
+   * было нечем — входящая висела в ленте событий вечно.
+   */
+  app.delete("/me/friends/:alumniId", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const me = await resolveAlumni(req);
+    if (!me) return reply.code(401).send({ error: "Не авторизован" });
+    if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
+    const { alumniId } = z.object({ alumniId: z.string().uuid() }).parse(req.params);
+
+    const links = (await di.request(
+      (readItems as any)("alumni_friends", {
+        filter: {
+          _or: [
+            { _and: [{ alumni_id: { _eq: me.id } }, { friend_id: { _eq: alumniId } }] },
+            { _and: [{ alumni_id: { _eq: alumniId } }, { friend_id: { _eq: me.id } }] },
+          ],
+        },
+        limit: -1, fields: ["id", "status"],
+      }),
+    )) as { id: string; status: string }[];
+    // Идемпотентно: связи нет — это и есть желаемое состояние.
+    if (!links.length) return { status: "none" };
+    const wasAccepted = links.some((l) => l.status === "accepted");
+    for (const l of links) await di.request((deleteItem as any)("alumni_friends", l.id));
+    audit(wasAccepted ? "friend.remove" : "friend.decline", { actor: `alumni:${me.id}`, subject: `alumni:${alumniId}`, req });
+    return { status: "none" };
   });
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { addLine, setLineQty, summarizeCart, type StoredCartItem } from "./cart";
+import { addLine, setLineQty, summarizeCart, cartLineLimitReached, MAX_LINE_QTY, MAX_CART_LINES, type StoredCartItem } from "./cart";
 
 const line = (over: Partial<StoredCartItem> = {}): StoredCartItem => ({
   type: "dpo", ref_id: "prog", qty: 1, price: 1000, title: "Прог", ...over,
@@ -55,5 +55,35 @@ describe("summarizeCart", () => {
     const r = summarizeCart([line({ qty: 2, price: 1000 }), line({ ref_id: "b", qty: 3, price: 500 })]);
     expect(r.count).toBe(5);
     expect(r.subtotal).toBe(2 * 1000 + 3 * 500);
+  });
+});
+
+describe("границы корзины (защита от раздувания)", () => {
+  const merch = (sku: string, qty = 1): StoredCartItem => ({ type: "merch", ref_id: "robe", variant_sku: sku, qty, price: 100, title: "Мантия" });
+
+  it("накопленное количество не превышает 99 при повторных добавлениях", () => {
+    let items: StoredCartItem[] = [];
+    for (let i = 0; i < 5; i++) items = addLine(items, merch("robe-M", 99));
+    expect(items).toHaveLength(1);
+    expect(items[0]!.qty).toBe(MAX_LINE_QTY);
+  });
+
+  it("установка количества тоже упирается в потолок", () => {
+    const items = setLineQty([merch("robe-M", 1)], "robe", "robe-M", 5000);
+    expect(items[0]!.qty).toBe(MAX_LINE_QTY);
+  });
+
+  it("число различных позиций ограничено", () => {
+    let items: StoredCartItem[] = [];
+    for (let i = 0; i < MAX_CART_LINES + 10; i++) items = addLine(items, merch(`sku-${i}`));
+    expect(items).toHaveLength(MAX_CART_LINES);
+  });
+
+  it("переполнение видно вызывающему до вставки", () => {
+    let items: StoredCartItem[] = [];
+    for (let i = 0; i < MAX_CART_LINES; i++) items = addLine(items, merch(`sku-${i}`));
+    expect(cartLineLimitReached(items, { type: "merch", ref_id: "robe", variant_sku: "новый" })).toBe(true);
+    // Уже лежащую позицию докладывать можно — потолок про НОВЫЕ строки.
+    expect(cartLineLimitReached(items, { type: "merch", ref_id: "robe", variant_sku: "sku-0" })).toBe(false);
   });
 });

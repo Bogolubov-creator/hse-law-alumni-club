@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cartSummarySchema, programsSchema, programFullSchema, productsSchema, meSchema, orderResultSchema } from "@club/shared";
-import { apiGet, type CartSummary, type Program, type ProgramFull, type Product, type Me } from "./api.js";
+import { apiGet, retryUnlessClientError, type CartSummary, type Program, type ProgramFull, type Product, type Me } from "./api.js";
 
 const CART_KEY = "club_cart";
 const TOKEN_KEY = "club_token";
@@ -40,7 +40,7 @@ export function usePrograms() {
   return useQuery({ queryKey: ["programs"], queryFn: () => apiGet<Program[]>("/programs", undefined, programsSchema) });
 }
 export function useProgram(slug: string) {
-  return useQuery({ queryKey: ["program", slug], queryFn: () => apiGet<ProgramFull>(`/programs/${slug}`, undefined, programFullSchema), enabled: !!slug });
+  return useQuery({ queryKey: ["program", slug], queryFn: () => apiGet<ProgramFull>(`/programs/${slug}`, undefined, programFullSchema), enabled: !!slug, retry: retryUnlessClientError });
 }
 export function useProducts() {
   return useQuery({ queryKey: ["products"], queryFn: () => apiGet<Product[]>("/products", undefined, productsSchema) });
@@ -60,6 +60,16 @@ export function token(): string | null {
 /** Убрать сессию ЛК (истёкший/битый токен). Централизованно вызывается при 401. */
 export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
+}
+
+/**
+ * Полный выход: гасим сессию ЛК И сессию корзины. Без второго на общем
+ * компьютере следующий человек открывал сайт с чужим набором позиций
+ * (сессия корзины живёт в отдельном ключе и переживала выход).
+ */
+export function logout(): void {
+  clearToken();
+  localStorage.removeItem(CART_KEY);
 }
 
 export async function submitOrder(body: unknown): Promise<import("./api.js").OrderResult> {

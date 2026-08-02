@@ -228,8 +228,10 @@ export function ConfirmEmail() {
 
   if (state === "work") return <AuthShell title="Подтверждаем почту…" sub="Секунду."><span /></AuthShell>;
   if (state === "fail") {
+    // Открытая «вручную» ссылка без токена — это не провал подтверждения, а
+    // неполный адрес. Заголовок должен говорить именно об этом (как на /reset).
     return (
-      <AuthShell title="Не удалось подтвердить" sub={err ?? "Ссылка недействительна или истекла."}>
+      <AuthShell title={token ? "Не удалось подтвердить" : "Ссылка неполная"} sub={err ?? "Ссылка недействительна или истекла."}>
         <Link to="/join" className="foc mt-5 inline-block rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">Подать заявку заново</Link>
       </AuthShell>
     );

@@ -15,6 +15,16 @@ export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.status === 401;
 }
 
+/**
+ * Политика повторов для react-query: 4xx повторять бессмысленно — ответ не
+ * изменится, а пользователь всё это время (три ретрая с backoff ≈ 7 с) видит
+ * пустой экран вместо «не найдено». Сетевые сбои и 5xx повторяем дважды.
+ */
+export function retryUnlessClientError(failureCount: number, error: unknown): boolean {
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
+  return failureCount < 2;
+}
+
 // 401 при отправленном токене = сессия недействительна. Сообщаем приложению один раз
 // (глобальный слушатель в App очистит токен и уведёт на вход). Если токена не было —
 // это обычный «не авторизован» для анонимного запроса, ничего не делаем.
@@ -48,6 +58,15 @@ export async function apiPatch<T>(path: string, body: unknown, token: string, sc
     headers: { accept: "application/json", "content-type": "application/json", authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { signalUnauthorized(res.status, !!token); throw new ApiError(res.status, (data as any)?.error || `API ${res.status}`); }
+  return schema ? schema.parse(data) : (data as T);
+}
+
+export async function apiDelete<T>(path: string, token?: string, schema?: Parser<T>): Promise<T> {
+  const headers: Record<string, string> = { accept: "application/json" };
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${BASE}${path}`, { method: "DELETE", headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { signalUnauthorized(res.status, !!token); throw new ApiError(res.status, (data as any)?.error || `API ${res.status}`); }
   return schema ? schema.parse(data) : (data as T);

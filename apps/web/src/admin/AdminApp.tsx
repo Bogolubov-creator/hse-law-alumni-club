@@ -8,7 +8,7 @@ import { VisionToggle } from "../components/Vision.js";
 
 const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
-  adminLogin, adminToken, setAdminToken, clearAdminToken,
+  adminLogin, adminToken, setAdminToken, adminLogout,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
   useAdminPrograms, useAdminProducts, useAdminPage, useAdminNews, useAdminTimeline, useAdminPodcasts, useAdminEvents,
   useAuditLog, downloadOrdersCsv, adminReq,
@@ -38,7 +38,7 @@ export default function AdminApp() {
   useHead({ title: "Админ-панель", noindex: true }); // офисная зона — не индексируем
   const [token, setToken] = useState<string | null>(() => adminToken());
   if (!token) return <AdminGate onAuthed={(t) => { setAdminToken(t); setToken(t); }} />;
-  return <AdminShell onLogout={() => { clearAdminToken(); setToken(null); }} />;
+  return <AdminShell onLogout={() => { void adminLogout().finally(() => setToken(null)); }} />;
 }
 
 function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
@@ -125,7 +125,7 @@ function Card({ children }: { children: React.ReactNode }) {
 
 function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const ov = useOverview();
-  const orders = useAdminOrders();
+  const orders = useAdminOrders({ limit: 5 }); // дашборду хватает пяти строк
   const members = useMembers({ status: "pending", limit: 100 });
   const { patchMember } = useAdminMutations();
   const pending = members.data?.items ?? [];
@@ -160,14 +160,14 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
             <div className="font-display text-lg font-semibold">Последние заявки</div>
             <button onClick={() => onGo("orders")} className="foc text-[13px] font-semibold text-[#2E6FAE]">Все →</button>
           </div>
-          {(orders.data ?? []).slice(0, 5).map((o) => (
+          {(orders.data?.items ?? []).slice(0, 5).map((o) => (
             <div key={o.id} className="flex items-center gap-3 border-t border-[#f0ece2] py-3 text-sm">
               <span className="font-mono text-[11px] text-grafit-soft">{o.number}</span>
               <span className="flex-1 truncate font-semibold">{o.contact_fio}</span>
               <span className={`rounded-full px-2.5 py-1 font-mono text-[11px] ${stPill(o.status)}`}>{ORDER_STATUS_RU[o.status]}</span>
             </div>
           ))}
-          {orders.data?.length === 0 && <p className="py-3 font-mono text-[12px] text-grafit-soft">Заявок пока нет.</p>}
+          {orders.data?.items.length === 0 && <p className="py-3 font-mono text-[12px] text-grafit-soft">Заявок пока нет.</p>}
         </Card>
         <Card>
           <div className="font-display text-lg font-semibold">На верификацию</div>
@@ -234,16 +234,23 @@ function PushBroadcast({ subs }: { subs: number }) {
   );
 }
 
+const ORDERS_PER_PAGE = 50;
+
 function Orders() {
-  const orders = useAdminOrders();
-  const { setOrderStatus } = useAdminMutations();
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  // Поиск и фильтр считает сервер: в панели больше нет «последних 100»,
+  // видно все заявки постранично.
+  const orders = useAdminOrders({ q: q.trim() || undefined, status: statusFilter || undefined, page, limit: ORDERS_PER_PAGE });
+  const { setOrderStatus } = useAdminMutations();
   const [csvBusy, setCsvBusy] = useState(false);
-  const list = (orders.data ?? []).filter((o) => {
-    if (!q.trim()) return true;
-    const hay = `${o.number} ${o.contact_fio} ${o.contact_phone} ${o.contact_email}`.toLowerCase();
-    return hay.includes(q.trim().toLowerCase());
-  });
+  const list = orders.data?.items ?? [];
+  const total = orders.data?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / ORDERS_PER_PAGE));
+  // Смена запроса/фильтра всегда возвращает на первую страницу — иначе пустой
+  // экран «страница 7» при выборке из трёх заявок.
+  const resetTo = (fn: () => void) => { fn(); setPage(1); };
   const exportCsv = async () => {
     setCsvBusy(true);
     try { await downloadOrdersCsv(); } catch { alert("Не удалось выгрузить CSV"); } finally { setCsvBusy(false); }
@@ -251,8 +258,12 @@ function Orders() {
   return (
     <>
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: номер, ФИО, телефон, email…" className="foc w-80 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
-      {q && <span className="font-mono text-[12px] text-grafit-soft">найдено: {list.length}</span>}
+      <input value={q} onChange={(e) => resetTo(() => setQ(e.target.value))} placeholder="Поиск: номер, ФИО, телефон, email…" className="foc w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
+      <select value={statusFilter} onChange={(e) => resetTo(() => setStatusFilter(e.target.value))} aria-label="Фильтр по статусу" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-ohra">
+        <option value="">Все статусы</option>
+        {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
+      </select>
+      <span className="font-mono text-[12px] text-grafit-soft">всего: {total}</span>
       <button onClick={exportCsv} disabled={csvBusy} className="foc ml-auto rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-60">
         {csvBusy ? "Готовим…" : "📤 Выгрузить CSV"}
       </button>
@@ -267,7 +278,13 @@ function Orders() {
             <span className="font-mono text-[12px]">{o.number}</span>
             <span className="min-w-0 truncate font-semibold">{o.contact_fio}</span>
             <span className="min-w-0 truncate font-mono text-[12px] text-grafit-soft">{o.contact_phone}</span>
-            <span className="font-mono text-[13px]">{rub(o.total_estimate)}</span>
+            <span className="font-mono text-[13px]">
+              {rub(o.total_estimate)}
+              {/* Вебхук ЮKassa пометил заявку, когда пришедшая сумма не совпала
+                  с суммой заказа. Молча это оставлять нельзя — офис должен видеть. */}
+              {o.payment_status === "review" && <span className="ml-1.5 rounded-full bg-karmin px-2 py-0.5 font-mono text-[10px] text-kost" title="Оплата пришла на другую сумму — проверьте вручную">сумма ≠</span>}
+              {o.payment_status === "succeeded" && <span className="ml-1.5 font-mono text-[11px] text-[#1F8A5B]">оплачено</span>}
+            </span>
             <select value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
               {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
             </select>
@@ -282,8 +299,17 @@ function Orders() {
           )}
         </div>
       ))}
-      {!orders.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q ? "По запросу ничего не найдено." : "Заявок нет."}</p>}
+      {!orders.isLoading && list.length === 0 && <p className="p-10 text-center font-mono text-sm text-grafit-soft">{q || statusFilter ? "По запросу ничего не найдено." : "Заявок нет."}</p>}
     </div>
+    {pages > 1 && (
+      <div className="mt-4 flex items-center justify-center gap-3">
+        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
+          className="foc rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-semibold disabled:opacity-40">← Назад</button>
+        <span className="font-mono text-[12px] text-grafit-soft">стр. {page} из {pages}</span>
+        <button onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page >= pages}
+          className="foc rounded-[11px] border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-semibold disabled:opacity-40">Вперёд →</button>
+      </div>
+    )}
     </>
   );
 }
@@ -448,6 +474,35 @@ const AUDIT_RU: Record<string, { label: string; icon: string; group: string }> =
   "podcast.sub.grant": { label: "Выдана подписка на подкасты", icon: "🎧", group: "Платежи" },
   "podcast.sub.request": { label: "Запрошена подписка", icon: "🎧", group: "Платежи" },
   "avatar.upload": { label: "Загружено фото профиля", icon: "🖼️", group: "Изменения" },
+  "avatar.reject": { label: "Отклонён файл аватара (не изображение)", icon: "🚫", group: "Изменения" },
+  "admin.logout": { label: "Выход администратора", icon: "🔒", group: "Входы" },
+  // Контент витрин: раньше правки цен и публикаций не логировались вовсе.
+  "program.create": { label: "Добавлена программа ДПО", icon: "🎓", group: "Изменения" },
+  "program.patch": { label: "Изменена программа ДПО", icon: "🎓", group: "Изменения" },
+  "program.delete": { label: "Удалена программа ДПО", icon: "🗑️", group: "Изменения" },
+  "product.create": { label: "Добавлен товар", icon: "🧢", group: "Изменения" },
+  "product.patch": { label: "Изменён товар (цена/остаток)", icon: "🧢", group: "Изменения" },
+  "product.delete": { label: "Удалён товар", icon: "🗑️", group: "Изменения" },
+  "news.create": { label: "Опубликована новость", icon: "📰", group: "Изменения" },
+  "news.patch": { label: "Изменена новость", icon: "📰", group: "Изменения" },
+  "news.delete": { label: "Удалена новость", icon: "🗑️", group: "Изменения" },
+  "timeline.create": { label: "Добавлен пункт истории", icon: "📜", group: "Изменения" },
+  "timeline.patch": { label: "Изменён пункт истории", icon: "📜", group: "Изменения" },
+  "timeline.delete": { label: "Удалён пункт истории", icon: "🗑️", group: "Изменения" },
+  "podcast.create": { label: "Добавлен подкаст", icon: "🎙️", group: "Изменения" },
+  "podcast.patch": { label: "Изменён подкаст", icon: "🎙️", group: "Изменения" },
+  "podcast.delete": { label: "Удалён подкаст", icon: "🗑️", group: "Изменения" },
+  "page.patch": { label: "Изменено наполнение страницы", icon: "📝", group: "Изменения" },
+  "catalog.dpo_sync": { label: "Синхронизация каталога ДПО", icon: "🔄", group: "Изменения" },
+  "member.points": { label: "Ручное начисление баллов", icon: "⭐", group: "Изменения" },
+  "friend.decline": { label: "Отклонена заявка в друзья", icon: "🙅", group: "Изменения" },
+  "friend.remove": { label: "Удаление из друзей", icon: "🙅", group: "Изменения" },
+  "payment.amount_mismatch": { label: "Оплата на другую сумму — проверить", icon: "🚨", group: "Платежи" },
+  "password.reset.replay": { label: "Повторное использование ссылки сброса", icon: "⛔", group: "Входы" },
+  "event.patch": { label: "Изменено событие", icon: "📅", group: "Изменения" },
+  "event.delete": { label: "Удалено событие", icon: "🗑️", group: "Изменения" },
+  "points.service": { label: "Служебное начисление баллов", icon: "⭐", group: "Изменения" },
+  "push.sub.reassign": { label: "Пуш-подписка переназначена (общее устройство)", icon: "📱", group: "Изменения" },
 };
 const AUDIT_GROUPS = ["Все", "Входы", "Платежи", "Заявки", "Изменения"];
 

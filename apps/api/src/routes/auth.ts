@@ -9,8 +9,8 @@ import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 import { validateInitData } from "../lib/telegram.js";
 import { audit } from "../lib/audit.js";
-import { loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess } from "../lib/security.js";
-import { sendEmail, notifyOfficeText } from "../lib/notify.js";
+import { loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess, resetTokenUsed, markResetTokenUsed } from "../lib/security.js";
+import { sendEmail, notifyOfficeText, mailEnabled } from "../lib/notify.js";
 
 // Версия политики обработки ПДн (дата редакции) — фиксируется как доказательство согласия.
 const PDN_POLICY_VERSION = "2026-07-02";
@@ -100,9 +100,10 @@ export async function authRoutes(app: FastifyInstance) {
 
     // Подтверждение почты. Без него любой мог занять чужой адрес: аккаунт создавался
     // сразу активным, а настоящий владелец потом получал «аккаунт уже есть».
-    // Включается автоматически при настроенном SMTP; без почтового канала (текущий
-    // BLOCKED-статус) поведение прежнее — иначе зарегистрироваться было бы невозможно.
-    const confirmRequired = !!env.SMTP_HOST;
+    // Включается автоматически при настроенном SMTP. На проде отсутствие SMTP
+    // не даёт стартовать вовсе (assertProdConfig), так что режим «без подтверждения»
+    // остаётся только для локального стенда.
+    const confirmRequired = mailEnabled();
     const user = (await directus.request((createUser as any)({
       email, password: b.password, role: roles[0].id,
       first_name: b.fio.split(" ")[0] ?? b.fio, last_name: b.fio.split(" ").slice(1).join(" ") || "-",
@@ -180,17 +181,31 @@ export async function authRoutes(app: FastifyInstance) {
 
   // ── Восстановление пароля ───────────────────────────────────────
   // Ответ всегда одинаковый (не раскрываем существование аккаунта).
-  app.post("/auth/forgot", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req) => {
+  app.post("/auth/forgot", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    // Без SMTP письмо физически не уйдёт. Раньше роут всё равно отвечал ok —
+    // человек ждал ссылку, которой нет. Отвечаем честно и одинаково для всех
+    // адресов (проверка про канал, а не про аккаунт — существование не раскрывается).
+    if (!mailEnabled()) {
+      req.log.error("password.forgot: SMTP не настроен — восстановление пароля недоступно");
+      return reply.code(503).send({ error: "Восстановление пароля временно недоступно: почтовый канал не настроен. Напишите в учебный офис." });
+    }
     const user = await findUserByEmail(email.toLowerCase().trim());
     if (user) {
-      const token = jwt.sign({ sub: user.id, purpose: "reset" }, env.AUTH_SECRET, { expiresIn: "30m" });
+      // Токен одноразовый: jti гасится после применения, а ver привязывает ссылку
+      // к текущему поколению сессий выпускника (после сброса версия растёт).
+      const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: user.id } }, limit: 1, fields: ["token_version"] }))) as any[];
+      const token = jwt.sign(
+        { sub: user.id, purpose: "reset", jti: randomBytes(16).toString("hex"), ver: linked[0]?.token_version ?? null },
+        env.AUTH_SECRET,
+        { expiresIn: "30m" },
+      );
       const url = `${env.PUBLIC_URL}/reset?token=${encodeURIComponent(token)}`;
       audit("password.forgot", { actor: `email:${email}`, req });
       await sendEmail(
         email,
         "Восстановление пароля — Клуб выпускников факультета права",
-        `Вы запросили восстановление пароля.\n\nСсылка действует 30 минут:\n${url}\n\nЕсли это были не вы — просто проигнорируйте письмо.`,
+        `Вы запросили восстановление пароля.\n\nСсылка действует 30 минут и срабатывает один раз:\n${url}\n\nЕсли это были не вы — просто проигнорируйте письмо.`,
       );
     }
     return { ok: true }; // одинаково для существующих и несуществующих
@@ -198,17 +213,30 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.post("/auth/reset", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { token, password } = z.object({ token: z.string().min(10), password: z.string().min(8).max(100) }).parse(req.body);
-    let payload: { sub?: string; purpose?: string };
+    let payload: { sub?: string; purpose?: string; jti?: string; ver?: number | null };
     try {
       payload = jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as typeof payload;
     } catch {
       return reply.code(400).send({ error: "Ссылка недействительна или истекла — запросите новую" });
     }
     if (payload.purpose !== "reset" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
+    // Одноразовость, слой 1: jti в списке использованных (переживает повтор в пределах процесса).
+    if (payload.jti && resetTokenUsed(payload.jti)) {
+      audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
+      return reply.code(400).send({ error: "Ссылка уже использована — запросите новую" });
+    }
+    const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: payload.sub } }, limit: 1, fields: ["id", "token_version"] }))) as any[];
+    // Одноразовость, слой 2 (переживает рестарт): ссылка выпущена под конкретное
+    // поколение сессий. Первый успешный сброс поднимает token_version — второй
+    // переход по той же ссылке видит расхождение и не срабатывает.
+    if (linked[0] && payload.ver != null && (linked[0].token_version ?? 0) !== payload.ver) {
+      audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
+      return reply.code(400).send({ error: "Ссылка уже использована — запросите новую" });
+    }
     await directus.request((updateUser as any)(payload.sub, { password }));
     // Ревокация всех выданных JWT этого выпускника: старые сессии гаснут.
-    const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: payload.sub } }, limit: 1, fields: ["id", "token_version"] }))) as any[];
     if (linked[0]) await directus.request((updateItem as any)("alumni", linked[0].id, { token_version: (linked[0].token_version ?? 0) + 1 }));
+    if (payload.jti) markResetTokenUsed(payload.jti);
     audit("password.reset", { actor: `user:${payload.sub}`, req });
     return { ok: true };
   });

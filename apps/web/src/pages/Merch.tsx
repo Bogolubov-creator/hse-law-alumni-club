@@ -5,6 +5,7 @@ import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { rub, type Product, type ProductVariant } from "../lib/api.js";
 import { useProducts, useCartMutations } from "../lib/cart.js";
+import { usePaymentsEnabled } from "../lib/queries.js";
 
 export default function Merch() {
   useHead({ title: "Мерч клуба", description: "Фирменный мерч клуба выпускников факультета права НИУ ВШЭ: одежда и аксессуары с фасеточной Фемидой. Самовывоз в учебном офисе или доставка." });
@@ -79,6 +80,9 @@ export default function Merch() {
 }
 
 function ProductModal({ product, onClose, onAdd }: { product: Product; onClose: () => void; onAdd: (sku: string | null, qty: number) => void }) {
+  // Текст про оплату идёт от фичефлага, а не из жёсткой строки: при включении
+  // ЮKassa прежняя формулировка «оплаты на сайте нет» становилась ложью.
+  const payments = usePaymentsEnabled();
   const variants: ProductVariant[] = product.variants_json ?? [];
   const hasVariants = variants.length > 0;
   const [sku, setSku] = useState<string | null>(null);
@@ -136,7 +140,10 @@ function ProductModal({ product, onClose, onAdd }: { product: Product; onClose: 
         >
           {stock != null && stock <= 0 ? "Нет в наличии" : needsSize ? "Выберите размер" : "В корзину"}
         </button>
-        <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">Самовывоз в учебном офисе или доставка — выберите при оформлении заказа. Оплаты на сайте нет.</p>
+        <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">
+          Самовывоз в учебном офисе или доставка — выберите при оформлении заказа.{" "}
+          {payments.data?.enabled ? "Оплатить можно онлайн на шаге подтверждения." : "Оплаты на сайте нет — счёт выставит учебный офис."}
+        </p>
       </div>
     </Modal>
   );

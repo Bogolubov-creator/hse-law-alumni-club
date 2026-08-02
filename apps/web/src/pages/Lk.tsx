@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { LEVELS, loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU } from "@club/shared";
 import { apiGet, apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
-import { useMe, useMyOrders, useClassmates, useAddFriend, useLkEvents } from "../lib/queries.js";
+import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../lib/queries.js";
 import type { Classmate, LkEvent } from "@club/shared";
 import Modal from "../components/Modal.js";
 import { LkShell } from "../components/LkShell.js";
 import { useToast } from "../components/Toast.js";
 import { useLkTokens, lkSurface } from "../lib/lk-theme.js";
 import { useHead } from "../lib/title.js";
+import { logout as logoutSession } from "../lib/cart.js";
 import { VisionCorner } from "../components/Vision.js";
 
 
@@ -36,7 +37,7 @@ export default function Lk() {
     }
   };
   const logout = () => {
-    localStorage.removeItem(TOKEN_KEY);
+    logoutSession(); // токен ЛК + сессия корзины
     setToken(null);
     setPending(null);
   };
@@ -300,7 +301,8 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28, flexWrap: "wrap" }}>
         <span style={{ ...mono, fontSize: 13, color: t.muted }}>Поделиться профилем:</span>
         <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8" }}>↗ Telegram</a>
-        <button disabled title="Шаринг в «Макс» появится позже" aria-label="Поделиться в «Макс» (скоро)" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: t.ghostBtnBg, color: t.muted, border: `1.5px solid ${t.ghostBtnBorder}`, cursor: "not-allowed" }}>↗ Макс · скоро</button>
+        {/* Кнопка «Макс» была нерабочей заглушкой (disabled) — в релиз не берём.
+            Вернём, когда появится реальная интеграция. */}
       </div>
     </>
   );
@@ -312,6 +314,7 @@ function Events({ token }: { token: string }) {
   const surface = lkSurface(t);
   const events = useLkEvents(token);
   const addFriend = useAddFriend(token);
+  const removeFriend = useRemoveFriend(token);
   const list = events.data ?? [];
   if (events.isLoading || events.isError || list.length === 0) return null;
 
@@ -329,6 +332,15 @@ function Events({ token }: { token: string }) {
               style={{ fontWeight: 600, fontSize: 13, padding: "8px 16px", borderRadius: 10, border: "none", background: "#1F8A5B", color: "#FBF3E8", cursor: "pointer" }}
             >
               {addFriend.isPending && addFriend.variables === e.from_id ? "…" : "Принять"}
+            </button>
+            <button
+              onClick={() => removeFriend.mutate(e.from_id)}
+              disabled={removeFriend.isPending && removeFriend.variables === e.from_id}
+              className="foc"
+              aria-label={`Отклонить заявку от ${e.from_fio ?? "выпускника"}`}
+              style={{ fontWeight: 600, fontSize: 13, padding: "8px 16px", borderRadius: 10, border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.muted, cursor: "pointer" }}
+            >
+              {removeFriend.isPending && removeFriend.variables === e.from_id ? "…" : "Отклонить"}
             </button>
           </div>
         );
@@ -389,7 +401,13 @@ function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myIn
   const t = useLkTokens();
   const surface = lkSurface(t);
   const addFriend = useAddFriend(token);
+  const removeFriend = useRemoveFriend(token);
   const common = new Set(myInterests);
+  // Вторичное действие зависит от текущей связи: отозвать свою заявку,
+  // отклонить входящую или удалить из друзей. Раньше отменить было нечем.
+  const undoLabel: Record<Classmate["friend_status"], string | null> = {
+    none: null, pending: "Отозвать заявку", incoming: "Отклонить", accepted: "Удалить из друзей",
+  };
   return (
     <Modal onClose={onClose} labelledBy="cm-modal-title" maxWidth={430}>
       <div style={{ position: "relative", ...surface, padding: "30px 30px 26px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
@@ -420,6 +438,17 @@ function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myIn
         >
           {FRIEND_LABEL[c.friend_status]}
         </button>
+        {undoLabel[c.friend_status] && (
+          <button
+            onClick={() => removeFriend.mutate(c.id)}
+            disabled={removeFriend.isPending}
+            className="foc"
+            style={{ marginTop: 10, width: "100%", fontWeight: 600, fontSize: 14, padding: 11, borderRadius: 12, cursor: "pointer", border: `1.5px solid ${t.ghostBtnBorder}`, background: t.ghostBtnBg, color: t.muted }}
+          >
+            {removeFriend.isPending ? "…" : undoLabel[c.friend_status]}
+          </button>
+        )}
+        {removeFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "10px 0 0" }}>Не удалось — попробуйте ещё раз.</p>}
       </div>
     </Modal>
   );

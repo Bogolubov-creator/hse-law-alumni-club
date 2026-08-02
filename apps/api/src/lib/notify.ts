@@ -2,24 +2,41 @@ import nodemailer from "nodemailer";
 import { formatRub } from "@club/shared";
 import { env } from "../env.js";
 
-// SMTP-транспорт создаётся один раз при наличии кредов (иначе письма в лог).
-const mailer = env.SMTP_HOST
-  ? nodemailer.createTransport({
+// SMTP-транспорт создаётся при первой отправке и переиспользуется. Лениво, а не
+// на импорте: источник правды — env.SMTP_HOST в момент запроса, иначе модуль,
+// загруженный раньше конфигурации, навсегда остался бы «без почты».
+let mailer: ReturnType<typeof nodemailer.createTransport> | null = null;
+function transport(): ReturnType<typeof nodemailer.createTransport> | null {
+  if (!env.SMTP_HOST) return null;
+  if (!mailer) {
+    mailer = nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_PORT === 465, // 465 = implicit TLS; 587 — STARTTLS
       auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
-    })
-  : null;
+    });
+  }
+  return mailer;
+}
+
+/**
+ * Настроен ли почтовый канал. Роуты, смысл которых — доставить письмо
+ * (восстановление пароля), обязаны это проверять и говорить правду, а не
+ * отвечать «письмо отправлено», когда отправлять нечем.
+ */
+export function mailEnabled(): boolean {
+  return !!env.SMTP_HOST;
+}
 
 /** Письмо пользователю. Без SMTP — содержимое в лог (dev-режим), не падаем. */
 export async function sendEmail(to: string, subject: string, text: string): Promise<boolean> {
-  if (!mailer) {
+  const t = transport();
+  if (!t) {
     console.warn(`[mail:dev] SMTP не настроен. Кому: ${to}\nТема: ${subject}\n${text}`);
     return false;
   }
   try {
-    await mailer.sendMail({ from: env.SMTP_FROM || env.SMTP_USER, to, subject, text });
+    await t.sendMail({ from: env.SMTP_FROM || env.SMTP_USER, to, subject, text });
     return true;
   } catch (e) {
     console.error(`[mail] не отправилось на ${to}:`, (e as Error).message);

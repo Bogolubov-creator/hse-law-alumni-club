@@ -10,9 +10,12 @@ export default function NewsPost() {
   const d = post.data;
 
   useHead({
-    title: d?.title ?? "Новость",
+    title: post.isError ? "Новость не найдена" : d?.title ?? "Новость",
     description: d?.excerpt ?? (d ? `${d.title} – новость клуба выпускников факультета права НИУ ВШЭ.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news/${slug}`,
+    // Несуществующий слаг отдаётся оболочкой SPA с кодом 200 — статус тут не
+    // поправить, поэтому закрываем от индексации на уровне meta.
+    noindex: post.isError,
   });
   useJsonLd(
     d && {
