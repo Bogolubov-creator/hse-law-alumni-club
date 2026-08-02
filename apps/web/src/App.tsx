@@ -12,6 +12,8 @@ import { clearToken } from "./lib/cart.js";
 // Всё, кроме главной, – отдельными чанками. Главная и есть LCP-критичная страница
 // для поисковика и первого визита; код витрин, юр. страниц и форм входа ей не нужен
 // и раньше ехал в стартовом бандле целиком.
+// Главная v2 – вариант «Реестр». Живёт рядом со старой, чтобы их сравнить.
+const HomeV2 = lazy(() => import("./pages/HomeV2.js"));
 const News = lazy(() => import("./pages/News.js"));
 const NewsPost = lazy(() => import("./pages/NewsPost.js"));
 const Dpo = lazy(() => import("./pages/Dpo.js"));
@@ -72,6 +74,7 @@ export default function App() {
         {mobileTakeover ? <MobileApp /> : (
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/v2" element={<HomeV2 />} />
           <Route path="/news" element={<News />} />
           <Route path="/news/:slug" element={<NewsPost />} />
           <Route path="/admin/*" element={<AdminApp />} />

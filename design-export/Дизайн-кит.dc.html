@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;800&family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0}
+  *{box-sizing:border-box}
+  ::selection{background:#EC5A13;color:#FBF3E8}
+  @keyframes kit-ribbon { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .kit-focusable:focus-visible{outline:3px solid #EC5A13;outline-offset:2px;border-radius:8px}
+</style>
+</helmet>
+<div style="min-height:100vh;background:{{ pageBg }};color:{{ ink }};font-family:'Onest',system-ui,sans-serif;transition:background .3s,color .3s;padding:0 0 80px">
+
+  <!-- ░░ HEADER ░░ -->
+  <header style="max-width:1100px;margin:0 auto;padding:40px 28px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:18px">
+      <img src="assets/themis.jpeg" alt="Логотип клуба — Фемида" width="56" height="56" style="border-radius:12px;object-fit:cover;flex:none;box-shadow:0 6px 18px -8px rgba(20,24,31,.45)">
+      <div>
+        <div style="font-family:'Martian Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:{{ muted }}">Клуб выпускников факультета права Вышки</div>
+        <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.01em;line-height:1.05;margin-top:4px">Дизайн-кит</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }}">
+      <span style="padding:5px 10px;border:1px solid {{ hair }};border-radius:999px">v1.0</span>
+      <span style="padding:5px 10px;border:1px solid {{ hair }};border-radius:999px">{{ rmLabel }}</span>
+    </div>
+  </header>
+
+  <div style="height:10px;overflow:hidden;width:100%">
+    <div style="display:flex;width:200%;height:100%;animation:{{ ribbonAnim }}">
+      <sc-for list="{{ ribbonCells }}" as="c" hint-placeholder-count="80">
+        <div style="width:30px;height:100%;transform:skewX(-22deg);flex:none;background:{{ c }}"></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <main style="max-width:1100px;margin:0 auto;padding:0 28px">
+
+    <!-- ░░ 01 ПАЛИТРА ░░ -->
+    <section style="padding:56px 0 8px">
+      <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">01 · Токены</div>
+      <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:34px;letter-spacing:-0.01em;margin:10px 0 4px">Палитра</h2>
+      <p style="color:{{ muted }};max-width:560px;margin:0 0 28px;font-size:15px">Тёплые грани — ohra и karmin; холодные — hse-blue и stal; латунь связывает. Светлые секции на kost, тёмные на grafit.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px">
+        <sc-for list="{{ palette }}" as="p" hint-placeholder-count="11">
+          <div>
+            <div style="height:84px;border-radius:14px;background:{{ p.hex }};border:1px solid rgba(0,0,0,.06);box-shadow:0 4px 16px -8px rgba(20,24,31,.35)"></div>
+            <div style="font-weight:600;font-size:13px;margin-top:9px">{{ p.name }}</div>
+            <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }}">{{ p.hex }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:18px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px;font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }}"><span style="width:20px;height:20px;border-radius:6px;background:#6B7280"></span>текст #6B7280</div>
+        <div style="display:flex;align-items:center;gap:10px;font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }}"><span style="width:20px;height:20px;border-radius:6px;background:#E5E7EB;border:1px solid #d8d8d8"></span>бордеры #E5E7EB</div>
+      </div>
+    </section>
+
+    <!-- ░░ 02 ТИПОГРАФИКА ░░ -->
+    <section style="padding:56px 0 8px;border-top:1px solid {{ hair }}">
+      <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">02 · Шрифты</div>
+      <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:34px;letter-spacing:-0.01em;margin:10px 0 28px">Типографика</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px">
+        <div style="padding:22px;border:1px solid {{ hair }};border-radius:18px;background:{{ card }}">
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }};letter-spacing:.1em">DISPLAY · Unbounded</div>
+          <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:40px;letter-spacing:-0.01em;line-height:1.02;margin-top:12px">Статус, который работает</div>
+        </div>
+        <div style="padding:22px;border:1px solid {{ hair }};border-radius:18px;background:{{ card }}">
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }};letter-spacing:.1em">BODY · Onest</div>
+          <p style="font-size:16px;line-height:1.55;margin:12px 0 0">Клуб объединяет выпускников факультета права «Вышки». Живая копия, активный залог, без канцелярита.</p>
+        </div>
+        <div style="padding:22px;border:1px solid {{ hair }};border-radius:18px;background:{{ card }}">
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }};letter-spacing:.1em">ДАННЫЕ · Martian Mono</div>
+          <div style="font-family:'Martian Mono',monospace;font-size:28px;margin-top:14px">−20% · 1 240 ₽</div>
+          <div style="font-family:'Martian Mono',monospace;font-size:13px;color:{{ muted }};margin-top:6px">баллы · цены · уровни</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap;margin-top:26px;padding:22px;border:1px solid {{ hair }};border-radius:18px;background:{{ card }}">
+        <sc-for list="{{ scale }}" as="t" hint-placeholder-count="7">
+          <div style="text-align:center">
+            <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:{{ t.px }};line-height:1;letter-spacing:-0.01em">Аа</div>
+            <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }};margin-top:8px">{{ t.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ░░ 03 СИГНАТУРА ░░ -->
+    <section style="padding:56px 0 8px;border-top:1px solid {{ hair }}">
+      <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">03 · Логотип</div>
+      <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:34px;letter-spacing:-0.01em;margin:10px 0 4px">Фемида — знак клуба</h2>
+      <p style="color:{{ muted }};max-width:600px;margin:0 0 28px;font-size:15px">Существующая фасеточная Фемида — основной логотип. Тёплые грани слева, холодные справа, латунь — меч и весы. На светлом фоне держим фирменный оранжевый кадр.</p>
+      <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:24px;align-items:stretch">
+        <div style="border-radius:18px;overflow:hidden;border:1px solid {{ hair }};background:#EC5A13;display:flex;align-items:center;justify-content:center;padding:24px;min-height:320px">
+          <img src="assets/themis.jpeg" alt="Логотип Фемиды" style="width:auto;max-width:88%;max-height:300px;object-fit:contain;filter:drop-shadow(0 14px 32px rgba(0,0,0,.28))">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="flex:1;border-radius:18px;border:1px solid {{ hair }};background:#14181F;display:flex;align-items:center;gap:16px;padding:22px;min-width:0">
+            <img src="assets/themis.jpeg" alt="Знак на тёмном" width="60" height="60" style="border-radius:12px;object-fit:cover;flex:none">
+            <div style="min-width:0">
+              <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:18px;color:#FBF3E8;line-height:1.15;letter-spacing:-0.01em">Клуб выпускников факультета права Вышки</div>
+            </div>
+          </div>
+          <div style="flex:1;border-radius:18px;border:1px solid {{ hair }};background:{{ card }};display:flex;align-items:center;gap:22px;padding:22px">
+            <div style="text-align:center"><img src="assets/themis.jpeg" alt="48px" width="48" height="48" style="border-radius:10px;object-fit:cover"><div style="font-family:'Martian Mono',monospace;font-size:10px;color:{{ muted }};margin-top:7px">48</div></div>
+            <div style="text-align:center"><img src="assets/themis.jpeg" alt="32px" width="32" height="32" style="border-radius:8px;object-fit:cover"><div style="font-family:'Martian Mono',monospace;font-size:10px;color:{{ muted }};margin-top:7px">32</div></div>
+            <div style="text-align:center"><img src="assets/themis.jpeg" alt="20px favicon" width="20" height="20" style="border-radius:5px;object-fit:cover"><div style="font-family:'Martian Mono',monospace;font-size:10px;color:{{ muted }};margin-top:7px">20</div></div>
+            <div style="font-size:13px;color:{{ muted }};line-height:1.4">Маркер секций<br>и фавикон</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ░░ 04 КОМПОНЕНТЫ ░░ -->
+    <section style="padding:56px 0 8px;border-top:1px solid {{ hair }}">
+      <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">04 · Компоненты</div>
+      <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:34px;letter-spacing:-0.01em;margin:10px 0 28px">Базовые блоки</h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
+
+        <!-- Кнопки -->
+        <div style="padding:24px;border:1px solid {{ hair }};border-radius:18px;background:{{ card }}">
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }};letter-spacing:.1em;margin-bottom:18px">КНОПКИ · магнитный hover + squash</div>
+          <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start">
+            <button class="kit-focusable" onMouseMove="{{ magMove }}" onMouseLeave="{{ magLeave }}" onMouseDown="{{ magDown }}" onMouseUp="{{ magUp }}" style="font-family:'Onest';font-weight:600;font-size:15px;padding:13px 26px;border-radius:12px;border:none;background:#EC5A13;color:#FBF3E8;cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 22px -10px rgba(236,90,19,.8)">Войти в личный кабинет</button>
+            <button class="kit-focusable" onMouseMove="{{ magMove }}" onMouseLeave="{{ magLeave }}" onMouseDown="{{ magDown }}" onMouseUp="{{ magUp }}" style="font-family:'Onest';font-weight:600;font-size:15px;padding:13px 26px;border-radius:12px;border:1.5px solid {{ ink }};background:transparent;color:{{ ink }};cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.2,1)">Как вступить</button>
+            <button class="kit-focusable" style="font-family:'Onest';font-weight:600;font-size:15px;padding:13px 22px;border-radius:12px;border:none;background:transparent;color:#2E6FAE;cursor:pointer">Подробнее →</button>
+          </div>
+        </div>
+
+        <!-- Бейджи -->
+        <div style="padding:24px;border:1px solid {{ hair }};border-radius:18px;background:{{ card }}">
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }};letter-spacing:.1em;margin-bottom:18px">БЕЙДЖИ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:6px 13px;border-radius:999px;background:rgba(196,154,69,.16);color:#8a6d28;border:1px solid rgba(196,154,69,.5)">✓ Верифицирован</span>
+            <span style="font-family:'Martian Mono',monospace;font-size:13px;font-weight:500;padding:6px 13px;border-radius:999px;background:#EC5A13;color:#FBF3E8">−20%</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:6px 13px;border-radius:999px;background:rgba(17,41,107,.1);color:#11296B;border:1px solid rgba(17,41,107,.25)">Уровень 3</span>
+            <span style="font-size:13px;font-weight:600;padding:6px 13px;border-radius:999px;background:rgba(181,51,27,.12);color:#B5331B;border:1px solid rgba(181,51,27,.3)">Новинка</span>
+          </div>
+        </div>
+
+        <!-- Поле формы -->
+        <div style="padding:24px;border:1px solid {{ hair }};border-radius:18px;background:{{ card }}">
+          <div style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ muted }};letter-spacing:.1em;margin-bottom:18px">ПОЛЕ ФОРМЫ</div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Телефон</label>
+          <input class="kit-focusable" type="text" placeholder="+7 ___ ___-__-__" style="width:100%;font-family:'Onest';font-size:15px;padding:12px 14px;border-radius:12px;border:1.5px solid {{ hair }};background:{{ pageBg }};color:{{ ink }};outline:none">
+          <div style="font-size:12px;color:{{ muted }};margin-top:7px">Учебный офис свяжется по этому номеру.</div>
+        </div>
+
+        <!-- Карточка -->
+        <div style="border:1px solid {{ hair }};border-radius:18px;overflow:hidden;background:{{ card }}">
+          <div style="height:8px;display:flex">
+            <div style="flex:1;background:#EC5A13"></div><div style="flex:1;background:#11296B"></div><div style="flex:1;background:#C49A45"></div><div style="flex:1;background:#2C6E80"></div><div style="flex:1;background:#B5331B"></div>
+          </div>
+          <div style="padding:22px">
+            <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
+              <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:18px;letter-spacing:-0.01em;line-height:1.15">Корпоративные финансы для юристов</div>
+              <span style="font-family:'Martian Mono',monospace;font-size:12px;font-weight:500;padding:5px 10px;border-radius:999px;background:#EC5A13;color:#FBF3E8;flex:none">−20%</span>
+            </div>
+            <div style="font-family:'Martian Mono',monospace;font-size:12px;color:{{ muted }};margin-top:10px">14 окт · 6 недель · онлайн</div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:14px">
+              <span style="font-family:'Martian Mono',monospace;font-size:22px;font-weight:500">48 000 ₽</span>
+              <span style="font-family:'Martian Mono',monospace;font-size:14px;color:{{ muted }};text-decoration:line-through">60 000 ₽</span>
+            </div>
+            <button class="kit-focusable" style="margin-top:16px;width:100%;font-family:'Onest';font-weight:600;font-size:14px;padding:11px;border-radius:12px;border:none;background:#11296B;color:#FBF3E8;cursor:pointer">В корзину</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ░░ 05 ЛЕНТА ░░ -->
+    <section style="padding:56px 0 24px;border-top:1px solid {{ hair }}">
+      <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">05 · Разделитель</div>
+      <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:34px;letter-spacing:-0.01em;margin:10px 0 22px">Фасеточная лента</h2>
+      <div style="height:16px;overflow:hidden;width:100%;border-radius:999px">
+        <div style="display:flex;width:200%;height:100%;animation:{{ ribbonAnim }}">
+          <sc-for list="{{ ribbonCells }}" as="c" hint-placeholder-count="80">
+            <div style="width:34px;height:100%;transform:skewX(-22deg);flex:none;background:{{ c }}"></div>
+          </sc-for>
+        </div>
+      </div>
+      <p style="font-size:13px;color:{{ muted }};margin-top:18px;font-family:'Martian Mono',monospace">{{ rmNote }}</p>
+    </section>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;Превью&quot;},&quot;forceReducedMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Превью&quot;}}">
+class Component extends DCLogic {
+  state = { assembled: false };
+
+  componentDidMount() {
+    if (!this._reduce()) {
+      requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ assembled: true })));
+    } else {
+      this.setState({ assembled: true });
+    }
+  }
+
+  _reduce() {
+    if (this.props.forceReducedMotion) return true;
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+  }
+
+  _shardDefs() {
+    return [
+      { points: '60,8 50,24 60,40', fill: '#C9450E' },
+      { points: '60,8 70,24 60,40', fill: '#2E6FAE' },
+      { points: '60,42 53,42 33,60', fill: '#EC5A13' },
+      { points: '60,42 33,60 60,60', fill: '#C9450E' },
+      { points: '60,42 67,42 87,60', fill: '#11296B' },
+      { points: '60,42 87,60 60,60', fill: '#2E6FAE' },
+      { points: '60,60 33,60 49,86', fill: '#B5331B' },
+      { points: '60,60 49,86 60,86', fill: '#EC5A13' },
+      { points: '60,60 87,60 71,86', fill: '#2C6E80' },
+      { points: '60,60 71,86 60,86', fill: '#11296B' },
+      { points: '60,86 49,86 41,120', fill: '#C9450E' },
+      { points: '60,86 41,120 60,120', fill: '#B5331B' },
+      { points: '60,86 71,86 79,120', fill: '#2E6FAE' },
+      { points: '60,86 79,120 60,120', fill: '#2C6E80' },
+      { points: '60,120 41,120 31,153', fill: '#EC5A13' },
+      { points: '60,120 31,153 60,153', fill: '#C9450E' },
+      { points: '60,120 79,120 89,153', fill: '#11296B' },
+      { points: '60,120 89,153 60,153', fill: '#2E6FAE' },
+    ];
+  }
+
+  _shards(reduce, assembled) {
+    return this._shardDefs().map((d, i) => {
+      const pts = d.points.split(' ').map(p => p.split(',').map(Number));
+      const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+      const cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+      const dx = (cx - 60), dy = (cy - 84);
+      const rot = ((i * 53) % 90) - 45;
+      const scattered = `translate(${dx * 2.6}px,${dy * 2.6}px) scale(.25) rotate(${rot}deg)`;
+      const tr = (reduce || assembled) ? 'none' : scattered;
+      const trans = reduce ? 'none' : `transform .75s cubic-bezier(.2,.85,.25,1) ${i * 40}ms, opacity .5s ease ${i * 40}ms`;
+      const style = `transform:${tr};transform-box:fill-box;transform-origin:center;opacity:${(reduce || assembled) ? 1 : 0};transition:${trans}`;
+      return { points: d.points, fill: d.fill, style };
+    });
+  }
+
+  renderVals() {
+    const dark = this.props.theme === 'dark';
+    const reduce = this._reduce();
+    const assembled = this.state.assembled;
+    const shards = this._shards(reduce, assembled);
+
+    const palette = [
+      { name: 'ohra', hex: '#EC5A13' }, { name: 'ohra-deep', hex: '#C9450E' }, { name: 'karmin', hex: '#B5331B' },
+      { name: 'hse-blue', hex: '#11296B' }, { name: 'blue-br', hex: '#2E6FAE' }, { name: 'stal', hex: '#2C6E80' },
+      { name: 'latun', hex: '#C49A45' }, { name: 'latun-br', hex: '#E3C272' },
+      { name: 'grafit', hex: '#14181F' }, { name: 'kost', hex: '#FBF3E8' }, { name: 'kost-2', hex: '#F2E3CF' },
+    ];
+
+    const scale = [12, 14, 16, 20, 28, 40, 64].map(n => ({ px: n + 'px', label: n + 'px' }));
+
+    const cells = [];
+    const ribbonColors = ['#EC5A13', '#11296B', '#C49A45', '#2C6E80', '#B5331B'];
+    for (let i = 0; i < 80; i++) cells.push(ribbonColors[i % ribbonColors.length]);
+
+    const apply = (el) => {
+      const o = el.__o || { x: 0, y: 0 };
+      const s = el.dataset.p === '1' ? 0.94 : 1;
+      el.style.transform = `translate(${o.x}px,${o.y}px) scale(${s})`;
+    };
+    const noop = () => {};
+
+    return {
+      pageBg: dark ? '#14181F' : '#FBF3E8',
+      ink: dark ? '#FBF3E8' : '#14181F',
+      muted: dark ? '#9aa3b2' : '#6B7280',
+      hair: dark ? 'rgba(251,243,232,.14)' : '#E5E7EB',
+      card: dark ? 'rgba(251,243,232,.04)' : '#ffffff',
+      shards,
+      shardsBig: shards,
+      seamStyle: `opacity:${(reduce || assembled) ? 1 : 0};transition:${reduce ? 'none' : 'opacity .5s ease .7s'}`,
+      palette, scale,
+      ribbonCells: cells,
+      ribbonAnim: reduce ? 'none' : 'kit-ribbon 22s linear infinite',
+      rmLabel: reduce ? 'reduced-motion: вкл' : 'motion: вкл',
+      rmNote: reduce ? 'prefers-reduced-motion активен — анимации выключены, всё появляется мгновенно.' : 'При prefers-reduced-motion лента замирает, а Фемида появляется без сборки.',
+      replay: () => {
+        if (reduce) return;
+        this.setState({ assembled: false });
+        requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ assembled: true })));
+      },
+      magMove: reduce ? noop : (e) => {
+        const el = e.currentTarget, b = el.getBoundingClientRect();
+        el.__o = { x: (e.clientX - (b.left + b.width / 2)) * 0.3, y: (e.clientY - (b.top + b.height / 2)) * 0.4 };
+        apply(el);
+      },
+      magLeave: (e) => { const el = e.currentTarget; el.__o = { x: 0, y: 0 }; el.dataset.p = ''; el.style.transform = ''; },
+      magDown: (e) => { const el = e.currentTarget; el.dataset.p = '1'; apply(el); },
+      magUp: (e) => { const el = e.currentTarget; el.dataset.p = ''; apply(el); },
+    };
+  }
+}
+</script>
+</body>
+</html>

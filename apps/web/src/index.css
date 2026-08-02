@@ -1,3 +1,4 @@
+@import "./styles/tokens.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -118,3 +119,20 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
 /* Мобильная оболочка (Claude Design): спиннер загрузки и эквалайзер плеера подкастов. */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+
+/* ── Главная v2: адаптив (DESIGN-PLAN §2.3) ────────────────────── */
+@media (max-width: 900px) {
+  .v2-hero { grid-template-columns: 1fr !important; gap: 32px !important; }
+  /* Знак остаётся первым, но не съедает первый экран: заголовок и кнопка
+     должны попадать в вьюпорт без прокрутки. */
+  .v2-hero-art { order: -1; max-width: 210px; }
+  .v2-two { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 620px) {
+  .v2-row, .v2-row + div a { grid-template-columns: 68px 1fr !important; gap: 16px !important; }
+}
+.v2-card { transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+@media (hover: hover) {
+  .v2-card:hover { border-color: var(--c-accent); transform: translateY(-2px); }
+}
+.v2-card:active { transform: scale(0.995); }

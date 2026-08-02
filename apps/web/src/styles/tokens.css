@@ -1,0 +1,170 @@
+/**
+ * Токены v2. Два слоя, как в DESIGN-PLAN §1.2.
+ *
+ * Слой 1 – палитра: единственное место в проекте, где вообще встречается hex.
+ * Слой 2 – семантика: компоненты обращаются только сюда и не знают о цветах.
+ *
+ * Зачем два слоя: одноуровневый токен (--ohra) не снимает вопрос «какой цвет чему»,
+ * решение всё равно принимает компонент. Семантический слой переносит это решение
+ * в систему, и тёмная тема становится подменой значений, а не правкой компонентов.
+ */
+
+:root {
+  /* ── Слой 1. Палитра ─────────────────────────────────────────── */
+  /* Канон – неприкосновенны */
+  --p-ohra: #ec5a13;         /* акцент клуба */
+  --p-blue: #11296b;         /* синий Вышки, институциональный якорь */
+
+  /* Законное расширение из дизайн-кита */
+  --p-ohra-deep: #c9450e;    /* охра для текста и hover: контраст на кости */
+  --p-karmin: #b5331b;       /* ошибка, отказ верификации */
+  --p-blue-bright: #2e6fae;  /* ссылки и данные на тёмном */
+  --p-steel: #2c6e80;        /* вторичный холодный, нейтральные статусы */
+  --p-brass: #c49a45;        /* статус, уровень, награда */
+  --p-brass-light: #e3c272;  /* статус на тёмном */
+  --p-green: #1f8a5b;        /* подтверждено, верифицирован */
+  --p-ink: #14181f;          /* графит: основной текст и тёмная поверхность */
+  --p-ink-soft: #272c38;     /* вторичный текст */
+  --p-ink-mute: #6b7280;     /* третичный текст, подписи */
+  --p-paper: #fbf3e8;        /* кость: основной фон */
+  --p-paper-2: #f2e3cf;      /* вторичная поверхность */
+  --p-line: #e5e7eb;         /* разделители */
+
+  /* ── Слой 2. Семантика ───────────────────────────────────────── */
+  --c-bg: var(--p-paper);
+  --c-bg-raised: #ffffff;
+  --c-bg-sunken: var(--p-paper-2);
+  --c-bg-inverse: var(--p-ink);
+
+  --c-text: var(--p-ink);
+  --c-text-2: var(--p-ink-soft);
+  --c-text-3: var(--p-ink-mute);
+  --c-text-inverse: var(--p-paper);
+
+  --c-accent: var(--p-ohra);
+  --c-accent-text: var(--p-ohra-deep); /* охра как текст: на кости AA только глубокая */
+  --c-anchor: var(--p-blue);           /* институциональный синий */
+  --c-link: var(--p-blue-bright);
+  --c-status: var(--p-brass);
+  --c-ok: var(--p-green);
+  --c-danger: var(--p-karmin);
+  --c-line: var(--p-line);
+  --c-line-strong: rgb(20 24 31 / 0.14);
+
+  /* Контраст: тёмный текст на охряной кнопке даёт 4.6:1 против 3.1:1 у светлого.
+     Это видимое изменение главной кнопки сайта, принятое ради AA (DESIGN-PLAN §1.3). */
+  --c-on-accent: var(--p-ink);
+
+  /* ── Типографика ─────────────────────────────────────────────── */
+  --f-display: "Unbounded", system-ui, sans-serif;
+  --f-body: "Onest", system-ui, sans-serif;
+  --f-data: "Martian Mono", ui-monospace, monospace;
+
+  --t-caption: 12px;
+  --t-small: 14px;
+  --t-body: 16px;
+  --t-lead: 20px;
+  --t-h3: clamp(22px, 2.2vw, 28px);
+  --t-h2: clamp(28px, 4vw, 40px);
+  --t-h1: clamp(34px, 7vw, 64px);
+
+  --tr-display: -0.01em;
+  --tr-data: 0.16em;
+
+  /* ── Форма, ритм, движение ───────────────────────────────────── */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --space: 4px;
+  --container: 1180px;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-fast: 140ms;
+  --dur-base: 200ms;
+}
+
+/**
+ * Тёмная тема – подмена значений семантического слоя, палитра не трогается.
+ * Канон-охра остаётся узнаваемой: на тёмном она читается и без осветления,
+ * а вот текст-охру приходится поднимать до базовой, иначе проваливается.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-bg: var(--p-ink);
+    --c-bg-raised: #1b202a;
+    --c-bg-sunken: #10141b;
+    --c-bg-inverse: var(--p-paper);
+
+    --c-text: var(--p-paper);
+    --c-text-2: #c9cdd6;
+    --c-text-3: #8e95a3;
+    --c-text-inverse: var(--p-ink);
+
+    --c-accent-text: #ff7a3d;
+    --c-anchor: #6f9bd8;
+    --c-link: var(--p-blue-bright);
+    --c-status: var(--p-brass-light);
+    --c-line: rgb(251 243 232 / 0.14);
+    --c-line-strong: rgb(251 243 232 / 0.28);
+  }
+}
+
+:root[data-theme="dark"] {
+  --c-bg: var(--p-ink);
+  --c-bg-raised: #1b202a;
+  --c-bg-sunken: #10141b;
+  --c-bg-inverse: var(--p-paper);
+  --c-text: var(--p-paper);
+  --c-text-2: #c9cdd6;
+  --c-text-3: #8e95a3;
+  --c-text-inverse: var(--p-ink);
+  --c-accent-text: #ff7a3d;
+  --c-anchor: #6f9bd8;
+  --c-status: var(--p-brass-light);
+  --c-line: rgb(251 243 232 / 0.14);
+  --c-line-strong: rgb(251 243 232 / 0.28);
+}
+
+/* ── Сигнатура: «поле бланка» ──────────────────────────────────────
+   Тонкая линия с моноширинной подписью под ней – типографика официального
+   бланка. Появляется только там, где под ней есть данные из реестра;
+   это не разделитель и не украшение (DESIGN-PLAN §3). */
+.blank-field {
+  display: block;
+  border-bottom: 1.5px solid var(--c-line-strong);
+  padding-bottom: 6px;
+}
+.blank-field__label {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--f-data);
+  font-size: var(--t-caption);
+  letter-spacing: var(--tr-data);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Данные из реестра всегда моноширинные и не прыгают при обновлении. */
+.data {
+  font-family: var(--f-data);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tr-data);
+}
+
+/* Сборка героя: единственный оркестрованный момент на странице (DESIGN-PLAN §4).
+   Анимируются только transform и opacity. */
+@media (prefers-reduced-motion: no-preference) {
+  .v2-enter {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: v2-rise 300ms var(--ease-out) forwards;
+    animation-delay: var(--enter-delay, 0ms);
+  }
+}
+@keyframes v2-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
