@@ -8,6 +8,10 @@ export interface StoredCartItem {
   title: string;
 }
 
+// Верхний предел количества на позицию (совпадает с cartItemSchema.qty.max в order.ts):
+// без него сумма price*qty при накоплении может уехать за Number.MAX_SAFE_INTEGER.
+export const MAX_LINE_QTY = 99;
+
 export const sameLine = (a: StoredCartItem, type: string, ref: string, sku?: string | null): boolean =>
   a.type === type && a.ref_id === ref && (a.variant_sku ?? null) === (sku ?? null);
 
@@ -21,15 +25,21 @@ export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCa
     if (ex) return items; // уже в заявке — одно место
     return [...items, { ...line, qty: 1 }];
   }
-  if (ex) return items.map((i) => (i === ex ? { ...i, qty: i.qty + line.qty } : i));
-  return [...items, line];
+  // Накопление не должно превышать кап позиции (иначе повторными добавлениями
+  // можно раздуть qty до абсурдной суммы в обход per-request валидации).
+  if (ex) return items.map((i) => (i === ex ? { ...i, qty: Math.min(i.qty + line.qty, MAX_LINE_QTY) } : i));
+  return [...items, { ...line, qty: Math.min(line.qty, MAX_LINE_QTY) }];
 }
 
-/** Установить количество позиции; qty<=0 — удалить. ДПО — всегда 1 место (канон). */
-export function setLineQty(items: StoredCartItem[], ref: string, sku: string | null | undefined, qty: number): StoredCartItem[] {
-  const matches = (i: StoredCartItem) => i.ref_id === ref && (i.variant_sku ?? null) === (sku ?? null);
+/**
+ * Установить количество позиции; qty<=0 — удалить. ДПО — всегда 1 место (канон).
+ * type учитывается в матче: одинаковый slug у программы и товара не должен менять
+ * обе строки разом.
+ */
+export function setLineQty(items: StoredCartItem[], ref: string, sku: string | null | undefined, qty: number, type?: "dpo" | "merch"): StoredCartItem[] {
+  const matches = (i: StoredCartItem) => i.ref_id === ref && (i.variant_sku ?? null) === (sku ?? null) && (type === undefined || i.type === type);
   if (qty <= 0) return items.filter((i) => !matches(i));
-  return items.map((i) => (matches(i) ? { ...i, qty: i.type === "dpo" ? 1 : qty } : i));
+  return items.map((i) => (matches(i) ? { ...i, qty: i.type === "dpo" ? 1 : Math.min(qty, MAX_LINE_QTY) } : i));
 }
 
 export function summarizeCart(items: StoredCartItem[]): { items: StoredCartItem[]; count: number; subtotal: number } {

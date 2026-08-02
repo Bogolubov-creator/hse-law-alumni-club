@@ -21,8 +21,12 @@ self.addEventListener("fetch", (e) => {
   if (url.pathname.startsWith("/assets/") || /\.(png|jpe?g|webp|woff2?)$/.test(url.pathname)) {
     e.respondWith(
       caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
+        // Кэшируем только успешные ответы: иначе случайный 404/500 в момент деплоя
+        // «застынет» в кэше навсегда и даст белый экран до смены версии кэша.
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
         return res;
       })),
     );
@@ -49,11 +53,18 @@ self.addEventListener("push", (e) => {
 
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const url = (e.notification.data && e.notification.data.url) || "/";
+  const raw = (e.notification.data && e.notification.data.url) || "/";
+  // Открываем только свой origin: push-payload не должен уводить на внешний адрес
+  // (защита от открытого редиректа через уведомление). Чужой origin → на главную.
+  let path = "/";
+  try {
+    const u = new URL(raw, self.location.origin);
+    if (u.origin === self.location.origin) path = u.pathname + u.search + u.hash;
+  } catch (_) { path = "/"; }
   e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
     for (const c of list) {
-      if ("focus" in c) { c.navigate(url); return c.focus(); }
+      if ("focus" in c) { c.navigate(path); return c.focus(); }
     }
-    return clients.openWindow(url);
+    return clients.openWindow(path);
   }));
 });

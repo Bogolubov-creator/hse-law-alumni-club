@@ -77,9 +77,9 @@ export async function cartRoutes(app: FastifyInstance) {
   app.patch("/cart", async (req, reply) => {
     const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
-    const body = z.object({ ref_id: z.string(), variant_sku: z.string().nullish(), qty: z.number().int().min(0).max(99) }).parse(req.body);
+    const body = z.object({ ref_id: z.string(), variant_sku: z.string().nullish(), qty: z.number().int().min(0).max(99), type: z.enum(["dpo", "merch"]).optional() }).parse(req.body);
     const cart = await loadCart(token);
-    const items = setLineQty(cart?.items ?? [], body.ref_id, body.variant_sku ?? null, body.qty);
+    const items = setLineQty(cart?.items ?? [], body.ref_id, body.variant_sku ?? null, body.qty, body.type);
     await saveCart(token, items);
     return summarizeCart(items);
   });

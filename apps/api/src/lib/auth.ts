@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
+import { timingSafeEqual } from "node:crypto";
 import { readItems, readUsers } from "@directus/sdk";
 import { env } from "../env.js";
 import { directus } from "./directus.js";
@@ -12,8 +13,16 @@ function bearer(req: FastifyRequest): string | null {
   return m ? m[1]! : null;
 }
 
+/** Сравнение секретов в постоянном времени (без утечки по длине/времени). */
+export function safeEqual(a: string, b: string): boolean {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ba.length === bb.length && timingSafeEqual(ba, bb);
+}
+
 export function isServiceToken(req: FastifyRequest): boolean {
-  return bearer(req) === env.DIRECTUS_SERVICE_TOKEN;
+  const t = bearer(req);
+  return !!t && safeEqual(t, env.DIRECTUS_SERVICE_TOKEN);
 }
 
 // Отдельный секрет для админ-токенов (если задан), иначе общий.
@@ -60,19 +69,36 @@ export async function findUserWithRole(email: string): Promise<{ id: string; rol
 
 // ── Админ-сессия (роли editor/admin) ──────────────────────────
 export interface AdminCtx { userId: string; role: string }
+// Роли с доступом к админ-панели (совпадает с ADMIN_ROLES в routes/admin.ts).
+const ADMIN_ROLE_NAMES = ["editor", "admin", "Administrator"];
 export function signAdmin(userId: string, role: string): string {
   return jwt.sign({ sub: userId, role, scope: "admin" }, adminSecret(), { expiresIn: "12h" });
 }
-export function resolveAdmin(req: FastifyRequest): AdminCtx | null {
+/** Актуальная роль аккаунта Directus по id (для ревокации доступа снятого админа). */
+async function roleNameByUserId(userId: string): Promise<string | null> {
+  const rows = (await di.request((readUsers as any)({ filter: { id: { _eq: userId } }, limit: 1, fields: ["role.name", "status"] }))) as any[];
+  if (!rows[0] || rows[0].status !== "active") return null;
+  return (rows[0].role?.name as string) ?? "";
+}
+/**
+ * Контекст админа по JWT. Роль сверяется с Directus на КАЖДЫЙ запрос: у снятого
+ * с должности (роль изменена/аккаунт деактивирован) доступ пропадает сразу, а не
+ * живёт до истечения 12-часового токена (claim роли внутри JWT — только подсказка).
+ */
+export async function resolveAdmin(req: FastifyRequest): Promise<AdminCtx | null> {
   const token = bearer(req);
-  if (!token || token === env.DIRECTUS_SERVICE_TOKEN) return null;
+  if (!token || safeEqual(token, env.DIRECTUS_SERVICE_TOKEN)) return null;
+  let sub: string;
   try {
-    const p = jwt.verify(token, adminSecret(), { algorithms: ["HS256"] }) as { scope?: string; sub?: string; role?: string };
+    const p = jwt.verify(token, adminSecret(), { algorithms: ["HS256"] }) as { scope?: string; sub?: string };
     if (p?.scope !== "admin" || !p?.sub) return null;
-    return { userId: p.sub, role: p.role ?? "" };
+    sub = p.sub;
   } catch {
     return null;
   }
+  const role = await roleNameByUserId(sub);
+  if (!role || !ADMIN_ROLE_NAMES.includes(role)) return null;
+  return { userId: sub, role };
 }
 
 export interface AlumniCtx {
@@ -121,8 +147,8 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
 }
 
 /** Гард админ-маршрута: 401 если нет валидного admin-JWT, иначе контекст. */
-export function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
-  const ctx = resolveAdmin(req);
+export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Promise<AdminCtx | null> {
+  const ctx = await resolveAdmin(req);
   if (!ctx) { reply.code(401).send({ error: "Требуется вход администратора" }); return null; }
   return ctx;
 }

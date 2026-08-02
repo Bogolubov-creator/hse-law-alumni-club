@@ -14,6 +14,10 @@ export class ApiError extends Error {
 export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.status === 401;
 }
+/** true для «доступ запрещён» (нет прав/не верифицирован) — не сеть, показываем текст сервера. */
+export function isForbiddenError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 403;
+}
 
 // 401 при отправленном токене = сессия недействительна. Сообщаем приложению один раз
 // (глобальный слушатель в App очистит токен и уведёт на вход). Если токена не было —
@@ -28,7 +32,12 @@ export async function apiGet<T>(path: string, token?: string, schema?: Parser<T>
   const headers: Record<string, string> = { accept: "application/json" };
   if (token) headers.authorization = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, { headers });
-  if (!res.ok) { signalUnauthorized(res.status, !!token); throw new ApiError(res.status, `API ${res.status}: ${path}`); }
+  if (!res.ok) {
+    signalUnauthorized(res.status, !!token);
+    // Сообщение сервера (403 «нужна верификация» и т.п.) не теряем — иначе выглядит как сбой сети.
+    const err = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, (err as any)?.error || `API ${res.status}: ${path}`);
+  }
   const data = await res.json();
   return schema ? schema.parse(data) : (data as T);
 }

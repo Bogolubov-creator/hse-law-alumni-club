@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { env } from "../env.js";
 
 /**
@@ -28,5 +28,8 @@ export function verifyTgLinkCode(code: string): string | null {
   const hex = Buffer.from(m[1]!, "base64url").toString("hex");
   if (hex.length !== 32) return null;
   const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-  return sig(uuid) === m[2] ? uuid : null;
+  // Сравнение подписи в постоянном времени — без timing-оракула на подбор подписи.
+  const expected = Buffer.from(sig(uuid));
+  const got = Buffer.from(m[2]!);
+  return expected.length === got.length && timingSafeEqual(expected, got) ? uuid : null;
 }

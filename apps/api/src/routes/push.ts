@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, deleteItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
@@ -23,10 +23,15 @@ export async function pushRoutes(app: FastifyInstance) {
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
     if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     const b = subBody.parse(req.body);
-    // Один endpoint — одна запись (переподписка того же браузера не дублирует).
-    const dup = (await di.request((readItems as any)("push_subs", { filter: { endpoint: { _eq: b.endpoint } }, limit: 1, fields: ["id"] }))) as any[];
+    // Один endpoint — одна запись. Браузер (endpoint) принадлежит тому, кто сейчас
+    // авторизован: если endpoint уже числится за другим выпускником (сменился владелец
+    // устройства, либо кто-то заранее занял чужой endpoint), запись переназначается
+    // текущему подписчику, а не молча игнорируется.
+    const dup = (await di.request((readItems as any)("push_subs", { filter: { endpoint: { _eq: b.endpoint } }, limit: 1, fields: ["id", "alumni_id"] }))) as any[];
     if (!dup.length) {
       await di.request((createItem as any)("push_subs", { alumni_id: me.id, endpoint: b.endpoint, keys: b.keys }));
+    } else if (dup[0].alumni_id !== me.id) {
+      await di.request((updateItem as any)("push_subs", dup[0].id, { alumni_id: me.id, keys: b.keys }));
     }
     return { ok: true };
   });

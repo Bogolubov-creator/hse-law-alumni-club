@@ -8,7 +8,7 @@ import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js
 import { extendPodcastSub } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { isYookassaIp } from "../lib/security.js";
-import { sendEmail } from "../lib/notify.js";
+import { sendEmail, notifyOfficeText } from "../lib/notify.js";
 import { withLock } from "../lib/mutex.js";
 
 const di = directus;
@@ -44,10 +44,17 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (order.status === "canceled") return reply.code(400).send({ error: "Заявка отменена" });
     if (order.payment_status === "succeeded") return reply.code(400).send({ error: "Заявка уже оплачена" });
 
-    // Уже есть незавершённый платёж — вернуть его ссылку, не плодить дубли.
+    // Уже есть платёж — свериться с ЮKassa, прежде чем создавать новый.
     if (order.payment_id) {
       const existing = await fetchPayment(order.payment_id).catch(() => null);
-      if (existing?.status === "pending" && existing.confirmation?.confirmation_url) {
+      // Платёж уже прошёл, а вебхук ещё не долетел: не плодим второй платёж — приводим
+      // заявку в согласованное состояние и говорим, что оплачено (вебхук довершит продление).
+      if (existing?.status === "succeeded") {
+        await di.request((updateItem as any)("orders", order.id, { payment_status: "succeeded" }));
+        return reply.code(400).send({ error: "Заявка уже оплачена" });
+      }
+      // Незавершённый платёж (pending/ждёт списания) — вернуть его ссылку, не создавать дубль.
+      if ((existing?.status === "pending" || existing?.status === "waiting_for_capture") && existing.confirmation?.confirmation_url) {
         return { payment_url: existing.confirmation.confirmation_url };
       }
     }
@@ -104,17 +111,39 @@ export async function paymentsRoutes(app: FastifyInstance) {
     const order = rows[0];
     if (!order) return { ok: true };
 
-    if (verified.status === "succeeded" && order.payment_status !== "succeeded") {
-      // Подписку продлеваем ДО отметки succeeded: если пометить оплату раньше и
-      // продление упадёт, ретрай вебхука отсечётся по payment_status — подписка не
-      // выдана при списанных деньгах. Сбой продления здесь → 500 → ЮKassa повторит.
-      if (order.type === "podcast" && order.alumni_id) {
-        await extendPodcastSub(order.alumni_id, 12);
+    if (verified.status === "succeeded") {
+      // Защита: сумма подтверждённого платежа должна совпадать с суммой заявки
+      // (копейки). Расхождение — аномалия: не отмечаем оплаченной, зовём разбор офиса.
+      const paidKop = Math.round(Number(verified.amount?.value ?? "0") * 100);
+      if (paidKop !== order.total_estimate) {
+        audit("payment.amount_mismatch", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, expected: order.total_estimate, got: verified.amount }, req });
+        return { ok: true };
       }
+      // Оплата пришла на уже отменённую офисом заявку — деньги списаны, нужен возврат.
+      // Не «воскрешаем» заявку молча: помечаем оплату, но статус оставляем canceled и
+      // громко зовём офис (аудит + уведомление) инициировать возврат.
+      if (order.status === "canceled") {
+        await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "succeeded", paid_at: new Date().toISOString() }));
+        audit("payment.on_canceled", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, amount: verified.amount }, req });
+        await notifyOfficeText(`⚠️ Оплата ${formatRub(order.total_estimate)} ₽ по ОТМЕНЁННОЙ заявке ${orderNumber} — требуется возврат плательщику.`).catch(() => {});
+        return { ok: true };
+      }
+    }
+    if (verified.status === "succeeded" && order.payment_status !== "succeeded") {
+      // Порядок: сперва отмечаем succeeded (точка идемпотентности), затем выдаём
+      // подписку — но идемпотентно (продлеваем ТОЛЬКО если подписка не активна).
+      // Продажа подписки заблокирована при активной подписке, поэтому каждый оплаченный
+      // podcast-платёж = переход «неактивна → активна». Повторная доставка вебхука уже
+      // видит активную подписку и не продлевает второй раз (защита от двойного продления).
       await di.request((updateItem as any)("orders", order.id, {
         payment_id: verified.id, payment_status: "succeeded", paid_at: new Date().toISOString(),
         status: order.status === "new" ? "confirmed" : order.status, // оплаченная заявка минует ручное подтверждение
       }));
+      if (order.type === "podcast" && order.alumni_id) {
+        const arows = (await di.request(readItems("alumni", { filter: { id: { _eq: order.alumni_id } }, limit: 1, fields: ["podcast_sub_until"] }))) as any[];
+        const active = !!arows[0]?.podcast_sub_until && new Date(arows[0].podcast_sub_until).getTime() > Date.now();
+        if (!active) await extendPodcastSub(order.alumni_id, 12);
+      }
       audit("payment.succeeded", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, amount: verified.amount }, req });
       // Письмо об успешной оплате (fire-and-forget).
       if (order.contact_email && order.contact_email !== "-") {

@@ -29,12 +29,18 @@ if [ -z "${BACKUP_ENCRYPTION_KEY:-}" ]; then
 fi
 export BACKUP_ENCRYPTION_KEY
 
+# Имя БД/пользователя — из .env (как в backup-verify.sh/apply-indexes.sh), а не
+# хардкодом: иначе при смене POSTGRES_USER/DB бэкап тихо ломается на несуществующей БД.
+val() { grep "^$1=" "$REPO_DIR/.env" 2>/dev/null | cut -d= -f2-; }
+PGUSER="${POSTGRES_USER:-$(val POSTGRES_USER)}"; PGUSER="${PGUSER:-club}"
+PGDB="${POSTGRES_DB:-$(val POSTGRES_DB)}"; PGDB="${PGDB:-club}"
+
 mkdir -p "$BACKUP_DIR"
 STAMP="$(date +%F-%H%M)"
 OUT="$BACKUP_DIR/club-$STAMP.sql.gz.enc"
 
 docker compose -f "$REPO_DIR/docker-compose.yml" exec -T postgres \
-  pg_dump -U club -d club --no-owner \
+  pg_dump -U "$PGUSER" -d "$PGDB" --no-owner \
   | gzip \
   | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY -out "$OUT"
 

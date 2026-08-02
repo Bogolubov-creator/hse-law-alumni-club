@@ -59,7 +59,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     // Агрегатные count/sum (Directus считает в БД) вместо полного скана 10 таблиц —
     // под масштаб не тащим тысячи строк в API ради .length.
     const now = new Date().toISOString();
@@ -105,7 +105,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Ручная пуш-рассылка всем подписанным устройствам (анонсы офиса).
   app.post("/admin/push/broadcast", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const ctx = resolveAdmin(req);
+    const ctx = await resolveAdmin(req);
     if (!ctx) return reply.code(401).send({ error: "Требуется вход администратора" });
     const b = z.object({
       title: z.string().min(3).max(80),
@@ -119,7 +119,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/orders", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("orders", {
       sort: ["-created_at"], limit: 100,
       fields: ["id", "number", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "status", "subtotal", "total_estimate", "created_at", "items_json", "address", "comment"],
@@ -127,7 +127,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/orders/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
@@ -149,7 +149,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/members", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const qp = z.object({
       q: z.string().max(100).optional(),
       status: z.enum(["pending", "verified", "rejected"]).optional(),
@@ -217,7 +217,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Продление подписки на подкасты решением офиса (например, оплата по счёту).
   app.post("/admin/members/:id/podcast-sub", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const until = await extendPodcastSub(id, 12);
@@ -226,7 +226,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/members/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
@@ -270,7 +270,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Синхронизация каталога ДПО с hse.ru по запросу офиса (та же логика, что ночной cron).
   app.post("/admin/dpo-sync", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     try {
       const r = await syncDpoCatalog();
       return { ok: true, ...r };
@@ -293,7 +293,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/programs", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("programs", {
       sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "direction", "format", "duration", "price", "status", "enrollment", "source_url", "dates", "document", "description"],
@@ -301,7 +301,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.post("/admin/programs", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const b = programBody.parse(req.body);
     const slug = slugify(b.title);
     const dup = (await di.request(readItems("programs", { filter: { slug: { _eq: slug } }, limit: 1, fields: ["id"] }))) as any[];
@@ -316,7 +316,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/programs/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = programBody.partial().parse(req.body);
     const patch: Record<string, unknown> = { ...b };
@@ -327,7 +327,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.delete("/admin/programs/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("programs", id)); // заявки хранят снимок позиции — не рвутся
     return { ok: true };
@@ -345,7 +345,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/products", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("products", {
       sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "category", "price", "stock", "status", "variants_json", "description"],
@@ -353,7 +353,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.post("/admin/products", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const b = productBody.parse(req.body);
     const slug = slugify(b.title);
     const dup = (await di.request(readItems("products", { filter: { slug: { _eq: slug } }, limit: 1, fields: ["id"] }))) as any[];
@@ -367,7 +367,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/products/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = productBody.partial().parse(req.body);
     await di.request((updateItem as any)("products", id, b));
@@ -375,7 +375,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.delete("/admin/products/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("products", id));
     return { ok: true };
@@ -383,7 +383,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ── Журнал безопасности: чтение аудит-лога ───────────────────────
   app.get("/admin/audit", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { limit } = z.object({ limit: z.coerce.number().int().min(1).max(500).default(300) }).parse(req.query);
     return di.request((readItems as any)("audit_log", {
       sort: ["-created_at"], limit,
@@ -393,7 +393,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ── Выгрузка заявок в CSV (Excel-совместимо: BOM + точка с запятой) ──
   app.get("/admin/orders/export.csv", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const orders = (await di.request((readItems as any)("orders", {
       sort: ["-created_at"], limit: -1,
@@ -441,12 +441,12 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/news", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("news", { sort: ["-published_at"], limit: -1, fields: ["id", "slug", "title", "excerpt", "body", "published_at", "status"] }));
   });
 
   app.post("/admin/news", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const b = newsBody.parse(req.body);
     const slug = slugify(b.title);
     const dup = (await di.request(readItems("news", { filter: { slug: { _eq: slug } }, limit: 1, fields: ["id"] }))) as any[];
@@ -459,7 +459,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/news/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = newsBody.partial().parse(req.body);
     await di.request((updateItem as any)("news", id, b));
@@ -467,7 +467,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.delete("/admin/news/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("news", id));
     return { ok: true };
@@ -484,12 +484,12 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/timeline", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("timeline_items", { sort: ["sort"], limit: -1, fields: ["id", "year", "title", "text", "metric", "sort", "status"] }));
   });
 
   app.post("/admin/timeline", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const b = timelineBody.parse(req.body);
     const all = (await di.request(readItems("timeline_items", { fields: ["sort"], limit: -1 }))) as any[];
     const created = (await di.request((createItem as any)("timeline_items", {
@@ -500,7 +500,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/timeline/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = timelineBody.partial().parse(req.body);
     await di.request((updateItem as any)("timeline_items", id, b));
@@ -508,7 +508,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.delete("/admin/timeline/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("timeline_items", id));
     return { ok: true };
@@ -527,12 +527,12 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/podcasts", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "duration", "is_free", "sort", "status"] }));
   });
 
   app.post("/admin/podcasts", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const b = podcastBody.parse(req.body);
     const all = (await di.request(readItems("podcasts", { fields: ["sort"], limit: -1 }))) as any[];
     const created = (await di.request((createItem as any)("podcasts", {
@@ -545,7 +545,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/podcasts/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = podcastBody.partial().parse(req.body);
     await di.request((updateItem as any)("podcasts", id, b));
@@ -553,7 +553,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.delete("/admin/podcasts/:id", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("podcasts", id));
     return { ok: true };
@@ -569,7 +569,7 @@ export async function adminRoutes(app: FastifyInstance) {
   };
 
   app.get("/admin/pages/:slug", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const page = await pageBlocks(slug);
     if (!page) return reply.code(404).send({ error: "Страница не найдена" });
@@ -589,7 +589,7 @@ export async function adminRoutes(app: FastifyInstance) {
   const ctaBody = z.object({ title: z.string().optional(), text: z.string().optional(), button: z.string().optional() });
 
   app.patch("/admin/pages/:slug", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const body = z.object({ hero: heroBody.optional(), cta: ctaBody.optional() }).parse(req.body);
     const page = await pageBlocks(slug);
@@ -607,7 +607,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Ручное начисление баллов офисом.
   app.post("/admin/members/:id/points", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
       reason: z.enum(["program", "event", "referral", "mentorship", "manual"]).default("manual"),
@@ -621,7 +621,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // 152-ФЗ: офис исполняет запрос на удаление/стирание ПДн участника (без разработчика).
   // Обезличивает профиль и заявки, удаляет аккаунт входа. Необратимо.
   app.post("/admin/members/:id/anonymize", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const ok = await anonymizeAlumni(id);

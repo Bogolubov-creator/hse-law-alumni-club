@@ -135,7 +135,7 @@ export async function eventsRoutes(app: FastifyInstance) {
   });
 
   app.get("/admin/events", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const events = (await di.request((readItems as any)("events", { sort: ["-starts_at"], limit: -1, fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"] }))) as any[];
     const rsvps = (await di.request((readItems as any)("event_rsvps", { limit: -1, fields: ["id", "event_id", "alumni_id", "attended"] }))) as any[];
     const alumniIds = [...new Set(rsvps.map((r) => r.alumni_id))];
@@ -151,7 +151,7 @@ export async function eventsRoutes(app: FastifyInstance) {
   });
 
   app.post("/admin/events", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const b = eventBody.parse(req.body);
     const created = (await di.request((createItem as any)("events", { ...b, description: b.description ?? null, location: b.location ?? null, cover: b.cover ?? null, reg_url: b.reg_url ?? null }))) as any;
@@ -164,7 +164,7 @@ export async function eventsRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/events/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = eventBody.partial().parse(req.body);
@@ -173,7 +173,7 @@ export async function eventsRoutes(app: FastifyInstance) {
   });
 
   app.delete("/admin/events/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("events", id));
@@ -182,7 +182,7 @@ export async function eventsRoutes(app: FastifyInstance) {
 
   // «Был на событии» → авто-начисление баллов события (идемпотентно навсегда).
   app.post("/admin/events/rsvp/:rsvpId/attend", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { rsvpId } = z.object({ rsvpId: z.string() }).parse(req.params);
     const rows = (await di.request((readItems as any)("event_rsvps", { filter: { id: { _eq: rsvpId } }, limit: 1, fields: ["id", "event_id", "alumni_id", "attended"] }))) as any[];

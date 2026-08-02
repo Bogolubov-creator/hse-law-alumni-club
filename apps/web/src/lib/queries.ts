@@ -87,14 +87,16 @@ export function useSubscribePodcasts(token: string | null) {
 
 export function useNewsList(limit?: number) {
   return useQuery({
-    queryKey: ["news", limit ?? "all"],
+    // "list"/"detail" в ключе разводят список и пост: иначе новость со slug "all"
+    // или числовым slug получала бы кэш списка (коллизия ключей ["news", …]).
+    queryKey: ["news", "list", limit ?? "all"],
     queryFn: () => apiGet<NewsItem[]>(`/news${limit ? `?limit=${limit}` : ""}`, undefined, newsListSchema),
   });
 }
 
 export function useNewsPost(slug: string) {
   return useQuery({
-    queryKey: ["news", slug],
+    queryKey: ["news", "detail", slug],
     queryFn: () => apiGet<NewsItem>(`/news/${slug}`, undefined, newsItemSchema),
     enabled: !!slug,
   });

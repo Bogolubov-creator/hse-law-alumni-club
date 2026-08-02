@@ -21,8 +21,10 @@ TG_CHAT="${OFFICE_TG_CHAT_ID:-$(val OFFICE_TG_CHAT_ID)}"
 
 notify() {
   [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT" ] && { echo "$(date -Iseconds) [uptime] TG не настроен: $1"; return; }
-  curl -s -m 10 "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
-    -d chat_id="$TG_CHAT" --data-urlencode text="$1" >/dev/null || true
+  # URL с токеном передаём через stdin-конфиг curl, а не в argv: иначе токен виден
+  # в `ps`/аудит-логах хоста на всё время запроса. printf — builtin, в ps не попадает.
+  printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TG_TOKEN" \
+    | curl -s -m 10 --config - -d chat_id="$TG_CHAT" --data-urlencode text="$1" >/dev/null || true
 }
 
 prev="$(cat "$STATE_FILE" 2>/dev/null || echo ok)"

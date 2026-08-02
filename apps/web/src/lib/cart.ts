@@ -49,7 +49,9 @@ export function useProducts() {
 /** Скидка выпускника (если вошёл и верифицирован) – для справочного бейджа на витринах. */
 export function useMemberDiscount(): number {
   const token = localStorage.getItem(TOKEN_KEY);
-  const q = useQuery({ queryKey: ["me-discount", token], queryFn: () => apiGet<Me>("/me", token!, meSchema), enabled: !!token, retry: false });
+  // Тот же ключ ["me", token], что и useMe: один запрос /me на приложение, без
+  // дубля и рассинхрона бейджа с личным кабинетом.
+  const q = useQuery({ queryKey: ["me", token], queryFn: () => apiGet<Me>("/me", token!, meSchema), enabled: !!token, retry: false });
   return q.data?.level.discount ?? 0;
 }
 

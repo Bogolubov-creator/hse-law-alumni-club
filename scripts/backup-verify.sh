@@ -25,8 +25,9 @@ PGDB="$(val POSTGRES_DB)"; PGDB="${PGDB:-club}"
 fail() {
   echo "$(date -Iseconds) [backup-verify] ОШИБКА: $1" >&2
   if [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ]; then
-    curl -s -m 10 "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
-      -d chat_id="$TG_CHAT" --data-urlencode text="🔴 Проверка бэкапа провалилась: $1" >/dev/null || true
+    # Токен — через stdin-конфиг curl, не в argv (иначе виден в `ps`). printf — builtin.
+    printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TG_TOKEN" \
+      | curl -s -m 10 --config - -d chat_id="$TG_CHAT" --data-urlencode text="🔴 Проверка бэкапа провалилась: $1" >/dev/null || true
   fi
   docker exec "$PG" dropdb -U "$PGUSER" --if-exists club_verify >/dev/null 2>&1 || true
   exit 1

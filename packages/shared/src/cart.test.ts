@@ -31,6 +31,11 @@ describe("addLine", () => {
     items = addLine(items, line({ type: "merch", ref_id: "m", variant_sku: "L" }));
     expect(items).toHaveLength(2);
   });
+  it("мерч: накопление qty не превышает кап 99 (обход per-request валидации)", () => {
+    let items = addLine([], line({ type: "merch", ref_id: "m", variant_sku: "M", qty: 60 }));
+    items = addLine(items, line({ type: "merch", ref_id: "m", variant_sku: "M", qty: 60 }));
+    expect(items[0]!.qty).toBe(99);
+  });
 });
 
 describe("setLineQty", () => {
@@ -47,6 +52,12 @@ describe("setLineQty", () => {
   it("несовпадающий ref — без изменений", () => {
     const items = [line({ ref_id: "a" })];
     expect(setLineQty(items, "z", null, 9)).toEqual(items);
+  });
+  it("type различает одинаковый slug у ДПО и мерча — меняется только нужная строка", () => {
+    const items = [line({ type: "dpo", ref_id: "x" }), line({ type: "merch", ref_id: "x" })];
+    const out = setLineQty(items, "x", null, 4, "merch");
+    expect(out.find((i) => i.type === "merch")!.qty).toBe(4);
+    expect(out.find((i) => i.type === "dpo")!.qty).toBe(1);
   });
 });
 

@@ -126,6 +126,27 @@ describe("вебхук ЮKassa: телу не доверяем", () => {
     expect(r.statusCode).toBe(502);
     expect(db.orders![0]!.payment_status).toBeNull();
   });
+
+  it("сумма платежа не совпадает с заявкой → не оплачиваем, аудит-аномалия", async () => {
+    yk.fetchPayment.mockResolvedValue({ id: "pay-1", status: "succeeded", amount: { value: "10.00", currency: "RUB" }, metadata: { order_number: ORDER } } as any);
+    const app = await build();
+    const r = await webhook(app, YOOKASSA_IP);
+    expect(r.statusCode).toBe(200);
+    expect(db.orders![0]!.payment_status).toBeNull();
+    expect(db.alumni![0]!.podcast_sub_until).toBeNull();
+    expect(db.audit_log!.some((e) => e.event === "payment.amount_mismatch")).toBe(true);
+  });
+
+  it("оплата пришла на отменённую заявку → помечаем оплату, статус остаётся canceled, зовём офис на возврат", async () => {
+    db.orders![0]!.status = "canceled";
+    const app = await build();
+    const r = await webhook(app, YOOKASSA_IP);
+    expect(r.statusCode).toBe(200);
+    expect(db.orders![0]!.payment_status).toBe("succeeded");
+    expect(db.orders![0]!.status).toBe("canceled");
+    expect(db.alumni![0]!.podcast_sub_until).toBeNull(); // подписку не выдаём
+    expect(db.audit_log!.some((e) => e.event === "payment.on_canceled")).toBe(true);
+  });
 });
 
 describe("POST /orders/:number/pay — ссылка на оплату", () => {
@@ -174,5 +195,16 @@ describe("POST /orders/:number/pay — ссылка на оплату", () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/orders/ALU-2026-999999/pay", headers: { authorization: `Bearer ${memberToken()}` } });
     expect(r.statusCode).toBe(404);
+  });
+
+  it("платёж уже прошёл в ЮKassa, а вебхук отстал → второй платёж не создаём, заявку сверяем в succeeded", async () => {
+    db.orders![0]!.payment_id = "pay-1";
+    db.orders![0]!.payment_status = "pending";
+    yk.fetchPayment.mockResolvedValue({ id: "pay-1", status: "succeeded", amount: { value: "1000.00", currency: "RUB" }, metadata: { order_number: ORDER } } as any);
+    const app = await build();
+    const r = await app.inject({ method: "POST", url: `/orders/${ORDER}/pay`, headers: { authorization: `Bearer ${memberToken()}` } });
+    expect(r.statusCode).toBe(400);
+    expect(yk.createPayment).not.toHaveBeenCalled();
+    expect(db.orders![0]!.payment_status).toBe("succeeded");
   });
 });

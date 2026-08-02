@@ -118,6 +118,23 @@ describe("гарды админских маршрутов", () => {
     const r = await app.inject({ method: "GET", url: "/admin/orders", headers: { authorization: `Bearer ${token}` } });
     expect(r.statusCode).toBe(200);
   });
+
+  it("снятый с должности админ теряет доступ сразу (роль сверяется с Directus, не берётся из токена)", async () => {
+    // Токен ещё не истёк и подписан верно, но роль в Directus понижена до alumni.
+    const token = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    db.directus_users!.find((u) => u.id === EDITOR_ID)!.role = { name: "alumni" };
+    const app = await build();
+    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: { authorization: `Bearer ${token}` } });
+    expect(r.statusCode).toBe(401);
+  });
+
+  it("деактивированный аккаунт админа теряет доступ сразу", async () => {
+    const token = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    db.directus_users!.find((u) => u.id === EDITOR_ID)!.status = "suspended";
+    const app = await build();
+    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: { authorization: `Bearer ${token}` } });
+    expect(r.statusCode).toBe(401);
+  });
 });
 
 describe("PATCH /admin/members/:id — изменение данных выпускника", () => {
