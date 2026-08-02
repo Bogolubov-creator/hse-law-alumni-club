@@ -22,16 +22,21 @@ Cron-задачи (decay, dpo-sync, напоминания, ретенция П�
 - Сгенерировать секреты: `POSTGRES_PASSWORD`, `DIRECTUS_KEY`, `DIRECTUS_SECRET`,
   `DIRECTUS_SERVICE_TOKEN`, `AUTH_SECRET` (≥32), `ADMIN_AUTH_SECRET` (отдельный), `ADMIN_PASSWORD`,
   `BACKUP_ENCRYPTION_KEY` — каждый через `openssl rand -hex 32`.
-- `APP_ENV=production` — включает **fail-fast**: API не стартует при плейсхолдер-секретах,
-  `PUBLIC_URL` не `https://`, пустом `ADMIN_AUTH_SECRET`, боте на webhook без секрета.
+- `APP_ENV=production` — включает **fail-fast**. API не стартует, если: секреты выглядят
+  плейсхолдерами; `PUBLIC_URL` не `https://`; пуст `ADMIN_AUTH_SECRET`; бот на webhook без
+  секрета; **пуст `SMTP_HOST`**; SMTP задан без отправителя; **`SEED_DEMO=true`**.
+  Проверки покрыты тестами (`apps/api/src/env.test.ts`) — каждая ветка отдельно.
 - Реальные `WEB_DOMAIN`/`ADMIN_DOMAIN`, валидный `ACME_EMAIL` (не `.local` — Let's Encrypt отклонит),
   `PUBLIC_URL=https://<домен>`, `DIRECTUS_PUBLIC_URL=https://admin.<домен>`,
   `DIRECTUS_CORS_ORIGIN=https://admin.<домен>` (не `true`).
-- `SEED_DEMO` **не задавать** (иначе editor со слабым паролем станет бэкдором).
+- `SEED_DEMO=false` — одним флагом закрываются и демо-контент витрин, и тестовые аккаунты
+  (`TEST_EDITOR_*`, `TEST_ALUMNI_*`); иначе editor со слабым паролем станет бэкдором.
+- **`SMTP_*` обязателен**, а не опционален: без почтового канала не работают восстановление
+  пароля (`/auth/forgot` честно отвечает 503) и подтверждение адреса при регистрации.
 - Завести сотрудникам офиса **личные** аккаунты Directus с ролью `editor` (см. §1.1), а не
   выдавать общий Administrator.
-- Опционально: `TELEGRAM_*`, `SMTP_*`, `OFFICE_TG_*`, `YOOKASSA_*`, `VAPID_*`, `SENTRY_DSN`,
-  `BACKUP_OFFSITE_REMOTE` (rclone-remote для offsite-бэкапа в РФ).
+- Опционально: `TELEGRAM_*`, `OFFICE_TG_*`, `YOOKASSA_*`, `VAPID_*` (пусто = пуши выключены),
+  `SENTRY_DSN`, `BACKUP_OFFSITE_REMOTE` (rclone-remote для offsite-бэкапа в РФ).
 
 > **Важно про web.** `PUBLIC_URL` и `DIRECTUS_PUBLIC_URL` инлайнятся в SPA-бандл **на сборке**
 > (build-args `VITE_SITE_URL`/`VITE_DIRECTUS_URL`). При смене доменов web нужно **пересобрать**.
@@ -68,7 +73,9 @@ Bootstrap создаёт две политики (Directus 11, идемпоте�
 войти нельзя, пока человек не откроет ссылку из письма (24 часа, `/confirm?token=…`).
 Офис получает уведомление о заявке **после** подтверждения — очередь верификации не забивается
 заявками с чужих и несуществующих адресов. Без SMTP поведение прежнее (аккаунт активен сразу),
-иначе на стенде без почты зарегистрироваться было бы невозможно.
+иначе на стенде без почты зарегистрироваться было бы невозможно. **На проде режим «без SMTP»
+недостижим:** `APP_ENV=production` с пустым `SMTP_HOST` прерывает старт, поэтому подтверждение
+почты на боевом стенде включено всегда.
 
 ## 2. Первичный деплой
 
