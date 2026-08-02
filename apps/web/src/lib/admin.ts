@@ -8,6 +8,21 @@ export function adminToken(): string | null {
 export function setAdminToken(t: string) { localStorage.setItem(ADMIN_TOKEN, t); }
 export function clearAdminToken() { localStorage.removeItem(ADMIN_TOKEN); }
 
+/**
+ * Выход из панели: сначала гасим сессию на сервере (иначе токен оставался
+ * годным все 12 часов и «выход» был только очисткой localStorage), потом
+ * убираем токен локально. Сетевой сбой не должен помешать выйти.
+ */
+export async function adminLogout(): Promise<void> {
+  const t = adminToken();
+  if (t) {
+    try {
+      await fetch("/api/auth/admin-logout", { method: "POST", headers: { authorization: `Bearer ${t}` } });
+    } catch { /* офлайн — локальный выход всё равно выполняем */ }
+  }
+  clearAdminToken();
+}
+
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const t = adminToken();
   const hasBody = body !== undefined;
@@ -45,7 +60,7 @@ export type AdminNews = { id: string; slug: string; title: string; excerpt: stri
 export type AdminTimeline = { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string };
 export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
-export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
+export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; payment_status?: string | null; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
 export type Member = {
   id: string; fio: string | null; cohort: string | null; status: string; verification_status: string;
   points_cached: number; level_cached: string; personal_discount: number;
@@ -66,8 +81,21 @@ export type AdminPage = { slug: string; title: string; blocks: { hero?: PageHero
 export function useOverview() {
   return useQuery({ queryKey: ["adm", "overview"], queryFn: () => req<Overview>("GET", "/admin/overview"), retry: false });
 }
-export function useAdminOrders() {
-  return useQuery({ queryKey: ["adm", "orders"], queryFn: () => req<AdminOrder[]>("GET", "/admin/orders"), retry: false });
+export type OrdersPage = { items: AdminOrder[]; total: number; page: number; limit: number };
+export type OrdersQuery = { q?: string; status?: string; payment?: string; page?: number; limit?: number };
+/**
+ * Заявки постранично. Раньше сервер отдавал только последние 100 без пагинации —
+ * сто первая заявка в панели не показывалась вообще.
+ */
+export function useAdminOrders(params: OrdersQuery = {}) {
+  const qs = new URLSearchParams();
+  if (params.q) qs.set("q", params.q);
+  if (params.status) qs.set("status", params.status);
+  if (params.payment) qs.set("payment", params.payment);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.limit) qs.set("limit", String(params.limit));
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return useQuery({ queryKey: ["adm", "orders", params], queryFn: () => req<OrdersPage>("GET", `/admin/orders${suffix}`), retry: false });
 }
 export function useMembers(params: MembersQuery = {}) {
   const qs = new URLSearchParams();

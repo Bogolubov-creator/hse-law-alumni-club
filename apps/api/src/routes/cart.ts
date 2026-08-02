@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { cartItemSchema, addLine, setLineQty, summarizeCart, type StoredCartItem } from "@club/shared";
+import { cartItemSchema, addLine, setLineQty, summarizeCart, cartLineLimitReached, MAX_CART_LINES, type StoredCartItem } from "@club/shared";
 import { directus } from "../lib/directus.js";
 
 const di = directus;
@@ -65,8 +65,28 @@ export async function cartRoutes(app: FastifyInstance) {
     // Программы ВШЭ (source_url) оформляются на маркетплейсе hse.ru, не через сайт.
     if (body.type === "dpo" && info.source_url)
       return reply.code(400).send({ error: "Запись на эту программу — на hse.ru" });
+
+    // Вариант товара сверяем с каталогом. Раньше variant_sku принимался как есть:
+    // в корзину, в заявку и в выгрузку офиса попадал любой выдуманный размер, а
+    // проверка остатков по такому SKU ничего не находила и молча пропускала заказ.
+    if (body.type === "merch") {
+      const variants = info.variants ?? [];
+      const sku = body.variant_sku ?? null;
+      if (variants.length) {
+        if (!sku) return reply.code(400).send({ error: "Выберите вариант товара" });
+        if (!variants.some((v) => v.sku === sku)) return reply.code(400).send({ error: "Такого варианта товара нет" });
+      } else if (sku) {
+        return reply.code(400).send({ error: "У этого товара нет вариантов" });
+      }
+    }
+
     const cart = await loadCart(token);
-    const items = addLine(cart?.items ?? [], {
+    const current = cart?.items ?? [];
+    // Потолок позиций: без него items_json рос без предела (одна сессия — сколько угодно строк).
+    if (cartLineLimitReached(current, { type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null }))
+      return reply.code(409).send({ error: `В корзине уже ${MAX_CART_LINES} позиций — оформите заявку или удалите лишнее` });
+
+    const items = addLine(current, {
       type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null,
       qty: body.qty, price: info.price, title: info.title,
     });

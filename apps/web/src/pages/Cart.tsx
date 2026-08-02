@@ -21,6 +21,9 @@ export default function Cart() {
   const subtotal = cart.data?.subtotal ?? 0;
   // Скидка выпускника — только на ДПО; мерч по базовой цене.
   const dpoSubtotal = items.filter((i) => i.type === "dpo").reduce((s, i) => s + i.price * i.qty, 0);
+  // Доставлять физически нечего, если в корзине только программы ДПО: выбор
+  // способа получения и обязательный адрес в этом случае просто сбивают с толку.
+  const hasShippable = items.some((i) => i.type === "merch");
   const discountAmount = Math.round((dpoSubtotal * discount) / 100);
   const total = subtotal - discountAmount;
   const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
@@ -31,7 +34,9 @@ export default function Cart() {
     try {
       const res = await submitOrder({
         contact_fio: form.contact_fio, contact_phone: form.contact_phone, contact_email: form.contact_email,
-        fulfillment: form.fulfillment, address: form.address || null, comment: form.comment || null, consent_pdn: form.consent,
+        fulfillment: hasShippable ? form.fulfillment : "pickup",
+        address: hasShippable && form.fulfillment === "delivery" ? form.address || null : null,
+        comment: form.comment || null, consent_pdn: form.consent,
         website: form.website, // honeypot — реальный пользователь оставит пустым
       });
       setResult(res);
@@ -138,15 +143,17 @@ export default function Cart() {
                 <Input label="ФИО" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required />
                 <Input label="Телефон" value={form.contact_phone} onChange={(v) => set("contact_phone", v)} required />
                 <Input label="Email" type="email" value={form.contact_email} onChange={(v) => set("contact_email", v)} required />
-                <div>
-                  <Label>Получение</Label>
-                  <div className="mt-1.5 flex gap-2">
-                    {(["pickup", "delivery"] as const).map((f) => (
-                      <button type="button" key={f} onClick={() => set("fulfillment", f)} className={`foc flex-1 rounded-[10px] border py-2.5 text-sm font-medium ${form.fulfillment === f ? "border-ohra bg-ohra text-kost" : "border-[#E5E7EB]"}`}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
-                    ))}
+                {hasShippable && (
+                  <div>
+                    <Label>Получение</Label>
+                    <div className="mt-1.5 flex gap-2">
+                      {(["pickup", "delivery"] as const).map((f) => (
+                        <button type="button" key={f} onClick={() => set("fulfillment", f)} className={`foc flex-1 rounded-[10px] border py-2.5 text-sm font-medium ${form.fulfillment === f ? "border-ohra bg-ohra text-kost" : "border-[#E5E7EB]"}`}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                {form.fulfillment === "delivery" && <Input label="Адрес" value={form.address} onChange={(v) => set("address", v)} required />}
+                )}
+                {hasShippable && form.fulfillment === "delivery" && <Input label="Адрес" value={form.address} onChange={(v) => set("address", v)} required />}
                 <Input label="Комментарий" value={form.comment} onChange={(v) => set("comment", v)} />
                 <label className="flex cursor-pointer items-start gap-2.5 text-[13px] text-grafit-soft">
                   <input type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} required className="mt-0.5" />

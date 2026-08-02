@@ -8,7 +8,7 @@ import { directus } from "../lib/directus.js";
 import { lastOrderSeq } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
-import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
+import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
 import { audit } from "../lib/audit.js";
 
 const di = directus;
@@ -99,6 +99,25 @@ export async function podcastsRoutes(app: FastifyInstance) {
     if (!alumni) return reply.code(401).send({ error: "Войдите в личный кабинет" });
     if (alumni.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     if (subActive(alumni.podcast_sub_until)) return reply.code(400).send({ error: "Подписка уже активна" });
+
+    // Незакрытая заявка на подписку уже есть — возвращаем её, а не плодим новые.
+    // Без этого каждый повторный клик создавал заявку и дёргал офис уведомлением.
+    const pending = (await di.request((readItems as any)("orders", {
+      filter: {
+        alumni_id: { _eq: alumni.id }, type: { _eq: "podcast" },
+        status: { _in: ["new", "in_progress"] },
+        payment_status: { _nin: ["succeeded", "canceled"] },
+      },
+      sort: ["-created_at"], limit: 1, fields: ["number", "payment_id"],
+    }))) as any[];
+    if (pending[0]) {
+      let payment_url: string | undefined;
+      if (paymentsEnabled() && pending[0].payment_id) {
+        const existing = await fetchPayment(pending[0].payment_id).catch(() => null);
+        if (existing?.status === "pending") payment_url = existing.confirmation?.confirmation_url;
+      }
+      return { number: pending[0].number, payment_url, already: true };
+    }
 
     const contacts = alumni.contacts_json ?? {};
     const year = new Date().getFullYear();

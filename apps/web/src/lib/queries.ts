@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, timelineSchema, podcastsResSchema, lkEventsSchema, type Classmate, type TimelineItem, type PodcastsRes, type LkEvent } from "@club/shared";
-import { apiGet, apiPost, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
+import { apiGet, apiPost, apiDelete, retryUnlessClientError, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
 
 export function useLedger(token: string | null) {
   return useQuery({
@@ -54,6 +54,34 @@ export function useAddFriend(token: string | null) {
   });
 }
 
+/**
+ * Подключена ли онлайн-оплата. Тексты витрин раньше утверждали «оплаты на сайте
+ * нет» жёстко — при включении ЮKassa они становились ложью.
+ */
+export function usePaymentsEnabled() {
+  return useQuery({
+    queryKey: ["payments-config"],
+    queryFn: () => apiGet<{ enabled: boolean }>("/payments/config"),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/**
+ * Отклонить входящую заявку, отозвать свою или удалить из друзей.
+ * До этого связь можно было только создать: отклонить входящую было нечем,
+ * и она висела в ленте событий бесконечно.
+ */
+export function useRemoveFriend(token: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (alumniId: string) => apiDelete<{ status: string }>(`/me/friends/${alumniId}`, token ?? undefined),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["classmates"] });
+      qc.invalidateQueries({ queryKey: ["lk-events"] });
+    },
+  });
+}
+
 // «События» вверху ЛК (заявки в друзья, статусы заказов, подписка).
 export function useLkEvents(token: string | null) {
   return useQuery({
@@ -97,6 +125,7 @@ export function useNewsPost(slug: string) {
     queryKey: ["news", slug],
     queryFn: () => apiGet<NewsItem>(`/news/${slug}`, undefined, newsItemSchema),
     enabled: !!slug,
+    retry: retryUnlessClientError, // 404 показываем сразу, а не через три ретрая
   });
 }
 

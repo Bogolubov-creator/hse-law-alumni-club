@@ -7,6 +7,7 @@ import { useToast } from "../components/Toast.js";
 import { LkShell } from "../components/LkShell.js";
 import { useLkTokens, lkSurface } from "../lib/lk-theme.js";
 import { useHead } from "../lib/title.js";
+import { logout as logoutSession } from "../lib/cart.js";
 
 /** Профиль выпускника – порт «Профиль.dc.html» (C). Контакты + история баллов + правила достижений. */
 
@@ -74,7 +75,7 @@ function ProfileBody({ token }: { token: string }) {
   const toggleInterest = (name: string) =>
     setInterests((cur) => cur.includes(name) ? cur.filter((x) => x !== name) : cur.length >= MAX_INTERESTS ? cur : [...cur, name]);
 
-  const logout = () => { localStorage.removeItem(TOKEN_KEY); window.location.assign("/lk"); };
+  const logout = () => { logoutSession(); window.location.assign("/lk"); };
   const toast = useToast();
   const save = async () => {
     setSaveState("saving");

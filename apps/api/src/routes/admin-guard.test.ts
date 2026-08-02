@@ -11,6 +11,7 @@ const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
 
 const EDITOR_ID = "user-editor";
+const ADMIN_ID = "user-admin";
 const ALUMNI_ID = "alumni-1";
 
 /** Маршруты админки, которые обязаны быть закрыты гардом. */
@@ -44,6 +45,7 @@ beforeEach(() => {
   resetDb({
     directus_users: [
       { id: EDITOR_ID, email: "office@example.com", status: "active", role: { name: "editor" } },
+      { id: ADMIN_ID, email: "chief@example.com", status: "active", role: { name: "admin" } },
       { id: "user-outsider", email: "outsider@example.com", status: "active", role: { name: "alumni" } },
     ],
     alumni: [{ id: ALUMNI_ID, user_id: "user-1", fio: "Иван Петров", verification_status: "verified", token_version: 0, points_cached: 0, personal_discount: 0 }],
@@ -121,7 +123,9 @@ describe("гарды админских маршрутов", () => {
 });
 
 describe("PATCH /admin/members/:id — изменение данных выпускника", () => {
-  const adminAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });
+  // Операции с ПДн и деньгами требуют роль admin: у editor только контент витрин.
+  const adminAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });
+  const editorAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });
 
   it("без токена скидку выставить нельзя", async () => {
     const app = await build();
@@ -147,6 +151,60 @@ describe("PATCH /admin/members/:id — изменение данных выпу�
   it("действие админа попадает в аудит", async () => {
     const app = await build();
     await app.inject({ method: "PATCH", url: `/admin/members/${ALUMNI_ID}`, payload: { personal_discount: 5 }, headers: adminAuth() });
-    expect(db.audit_log!.some((e) => String(e.actor).includes(EDITOR_ID))).toBe(true);
+    expect(db.audit_log!.some((e) => String(e.actor).includes(ADMIN_ID))).toBe(true);
+  });
+
+  it("редактору скидку выставить нельзя — 403", async () => {
+    const app = await build();
+    const r = await app.inject({ method: "PATCH", url: `/admin/members/${ALUMNI_ID}`, payload: { personal_discount: 5 }, headers: editorAuth() });
+    expect(r.statusCode).toBe(403);
+    expect(db.alumni![0]!.personal_discount).toBe(0);
+  });
+});
+
+describe("разграничение ролей: editor против admin", () => {
+  const editorAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });
+  const adminAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });
+
+  // ПДн, деньги и необратимые действия: редактор не должен пройти.
+  const FULL_ONLY = [
+    { method: "GET" as const, url: "/admin/orders/export.csv" },
+    { method: "POST" as const, url: `/admin/members/${ALUMNI_ID}/points`, payload: { delta: 100 } },
+    { method: "POST" as const, url: `/admin/members/${ALUMNI_ID}/anonymize` },
+    { method: "POST" as const, url: `/admin/members/${ALUMNI_ID}/podcast-sub` },
+    { method: "POST" as const, url: "/admin/push/broadcast", payload: { title: "Тема", body: "Текст" } },
+  ];
+
+  for (const r of FULL_ONLY) {
+    it(`${r.method} ${r.url} — редактору 403`, async () => {
+      const app = await build();
+      const res = await app.inject({ method: r.method, url: r.url, payload: (r as any).payload, headers: editorAuth() });
+      expect(res.statusCode).toBe(403);
+    });
+  }
+
+  it("контент витрин редактору по-прежнему доступен", async () => {
+    const app = await build();
+    const res = await app.inject({ method: "GET", url: "/admin/news", headers: editorAuth() });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("выгрузка заявок админу доступна", async () => {
+    const app = await build();
+    const res = await app.inject({ method: "GET", url: "/admin/orders/export.csv", headers: adminAuth() });
+    expect(res.statusCode).toBe(200);
+  });
+});
+
+describe("выход из админ-панели гасит сессию", () => {
+  it("после /auth/admin-logout тот же токен больше не работает", async () => {
+    const app = await build();
+    const login = await app.inject({ method: "POST", url: "/auth/admin-login", payload: { email: "office@example.com", password: "ok" } });
+    const token = login.json().token as string;
+    const auth = { authorization: `Bearer ${token}` };
+
+    expect((await app.inject({ method: "GET", url: "/admin/overview", headers: auth })).statusCode).toBe(200);
+    expect((await app.inject({ method: "POST", url: "/auth/admin-logout", headers: auth })).statusCode).toBe(200);
+    expect((await app.inject({ method: "GET", url: "/admin/overview", headers: auth })).statusCode).toBe(401);
   });
 });

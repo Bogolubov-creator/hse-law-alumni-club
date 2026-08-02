@@ -4,6 +4,7 @@ import { z } from "zod";
 import { directus } from "../lib/directus.js";
 import { addPoints, runDecay } from "../lib/engine.js";
 import { isServiceToken, resolveAlumni } from "../lib/auth.js";
+import { audit } from "../lib/audit.js";
 
 const pointsBody = z.object({
   alumni_id: z.string().min(1),
@@ -23,6 +24,8 @@ export async function pointsRoutes(app: FastifyInstance) {
       reason: body.reason, delta: body.delta ?? undefined,
       ref: body.ref ?? null, comment: body.comment ?? null, idempotencyKey: body.idempotency_key ?? null,
     });
+    // Служебное начисление тоже оставляет след: баллы конвертируются в скидку.
+    audit("points.service", { actor: "service", subject: `alumni:${body.alumni_id}`, detail: { reason: body.reason, delta: body.delta ?? null }, req });
     return { ok: true, ...res };
   });
 

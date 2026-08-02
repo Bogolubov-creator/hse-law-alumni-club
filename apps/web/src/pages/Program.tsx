@@ -24,10 +24,12 @@ export default function Program() {
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
 
   useHead({
-    title: p?.title ?? "Программа ДПО",
+    title: q.isError ? "Программа не найдена" : p?.title ?? "Программа ДПО",
     description: p?.description
       ?? (p ? `${p.title}: программа ДПО факультета права НИУ ВШЭ. ${p.duration ?? ""}. Цена выпускника.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/dpo/${slug}`,
+    // Несуществующий слаг: статус остаётся 200 (SPA), закрываем от индексации мета-тегом.
+    noindex: q.isError,
   });
   useJsonLd(
     p && {

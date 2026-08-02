@@ -78,6 +78,26 @@ function ipToInt(ip: string): number | null {
   return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0;
 }
 
+/**
+ * Использованные токены сброса пароля (одноразовость, слой 1). Ссылка живёт
+ * 30 минут, поэтому и запись держим 30 минут — дольше она бессмысленна.
+ * Слой 2 (token_version в самой ссылке) переживает рестарт процесса, см. auth-роут.
+ */
+const usedResetJti = new Map<string, number>();
+const RESET_TTL_MS = 30 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [jti, exp] of usedResetJti) if (exp < now) usedResetJti.delete(jti);
+}, 60_000).unref();
+
+export function resetTokenUsed(jti: string): boolean {
+  const exp = usedResetJti.get(jti);
+  return !!exp && exp > Date.now();
+}
+export function markResetTokenUsed(jti: string): void {
+  usedResetJti.set(jti, Date.now() + RESET_TTL_MS);
+}
+
 /** true, если IPv4-адрес принадлежит официальным подсетям ЮKassa. */
 export function isYookassaIp(ip: string): boolean {
   const addr = ipToInt(ip.replace(/^::ffff:/, "")); // IPv4-mapped IPv6

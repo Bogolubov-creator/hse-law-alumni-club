@@ -169,6 +169,8 @@ export async function eventsRoutes(app: FastifyInstance) {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = eventBody.partial().parse(req.body);
     await di.request((updateItem as any)("events", id, b));
+    // points события конвертируются в баллы участникам — правка должна быть видна.
+    audit("event.patch", { actor: `admin:${ctx.userId}`, subject: `event:${id}`, detail: b, req });
     return { ok: true };
   });
 
@@ -177,6 +179,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("events", id));
+    audit("event.delete", { actor: `admin:${ctx.userId}`, subject: `event:${id}`, req });
     return { ok: true };
   });
 

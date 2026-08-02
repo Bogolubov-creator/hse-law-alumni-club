@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEven
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LEVELS } from "@club/shared";
 import { rub, type Program, type Product, type ProductVariant, type OrderResult, type PodcastItem } from "../lib/api.js";
-import { token, clearToken, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
+import { token, logout as logoutSession, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, useNewsPost, usePodcasts, formatNewsDate } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
@@ -428,6 +428,7 @@ function MobileMerch() {
   const cart = useCart();
   const { add } = useCartMutations();
   const toast = useToast();
+  const nav = useNavigate(); // товар с размерами открываем карточкой, а не кладём вслепую
   const count = cart.data?.count ?? 0;
   const list = products.data ?? [];
 
@@ -452,7 +453,15 @@ function MobileMerch() {
               <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.25, minHeight: 32 }}>{m.title}</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
                 <span style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{rub(m.price)}</span>
-                <button aria-label={`Добавить «${m.title}» в корзину`} onClick={() => add.mutate({ type: "merch", ref_id: m.slug, qty: 1 }, { onSuccess: () => toast(`«${m.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") })} style={{ width: 32, height: 32, borderRadius: 10, border: "none", background: "#EC5A13", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {/* У товара с размерами быстрое добавление вело к заявке без размера:
+                    офис не знал, что везти. Такой товар открываем карточкой выбора,
+                    напрямую кладём только то, у чего вариантов нет. */}
+                <button aria-label={m.variants_json?.length ? `Выбрать размер «${m.title}»` : `Добавить «${m.title}» в корзину`}
+                  onClick={() => {
+                    if (m.variants_json?.length) { nav(`/merch?item=${encodeURIComponent(m.slug)}`); return; }
+                    add.mutate({ type: "merch", ref_id: m.slug, qty: 1 }, { onSuccess: () => toast(`«${m.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") });
+                  }}
+                  style={{ width: 32, height: 32, borderRadius: 10, border: "none", background: "#EC5A13", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
                 </button>
               </div>
@@ -959,7 +968,7 @@ function MobileProfile() {
   const me = useMe(token());
   const toast = useToast();
   const m = me.data;
-  const logout = () => { clearToken(); nav("/", { replace: true }); };
+  const logout = () => { logoutSession(); nav("/", { replace: true }); };
   const copyRef = () => {
     if (!m?.alumni.referral_code) return;
     void navigator.clipboard?.writeText(`${window.location.origin}/join?ref=${m.alumni.referral_code}`);

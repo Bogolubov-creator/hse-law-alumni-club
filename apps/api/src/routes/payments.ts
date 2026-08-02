@@ -104,6 +104,21 @@ export async function paymentsRoutes(app: FastifyInstance) {
     const order = rows[0];
     if (!order) return { ok: true };
 
+    // Сверка суммы: подтверждаем заявку, только если пришло ровно столько, сколько
+    // она стоит. Расхождение (правка заявки между созданием платежа и вебхуком,
+    // подменённая метадата) — не подтверждаем автоматически, зовём офис разбираться.
+    const paidKop = Math.round(Number(verified.amount?.value ?? 0) * 100);
+    const amountMatches = paidKop === Number(order.total_estimate ?? 0);
+    if (verified.status === "succeeded" && !amountMatches) {
+      audit("payment.amount_mismatch", {
+        actor: "yookassa", subject: `order:${orderNumber}`,
+        detail: { payment_id: verified.id, paid_kop: paidKop, expected_kop: order.total_estimate }, req,
+      });
+      req.log.error({ orderNumber, paidKop, expected: order.total_estimate }, "yookassa amount mismatch");
+      await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "review" }));
+      return { ok: true };
+    }
+
     if (verified.status === "succeeded" && order.payment_status !== "succeeded") {
       // Подписку продлеваем ДО отметки succeeded: если пометить оплату раньше и
       // продление упадёт, ретрай вебхука отсечётся по payment_status — подписка не
