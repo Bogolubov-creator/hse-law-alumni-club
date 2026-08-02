@@ -4,6 +4,7 @@ import {
   POINT_RULES, LEVELS, type PointReason,
 } from "@club/shared";
 import { directus } from "./directus.js";
+import { withLock } from "./mutex.js";
 
 const di = directus; // типизированный клиент; касты остаются на записях/реляциях
 
@@ -15,8 +16,19 @@ export interface AddPointsInput {
   idempotencyKey?: string | null;
 }
 
-/** Начисление баллов: запись в ledger (источник правды) + пересчёт кэша + достижения. */
+/**
+ * Начисление баллов: запись в ledger (источник правды) + пересчёт кэша + достижения.
+ * При заданном ключе идемпотентности операция сериализуется мьютексом: проверка
+ * дубля и вставка — это read-then-write, и без лока двойной клик («Был на событии»,
+ * повторная верификация приглашённого) успевал пройти проверку дважды и начислял
+ * баллы два раза.
+ */
 export async function addPoints(alumniId: string, input: AddPointsInput) {
+  if (!input.idempotencyKey) return addPointsUnlocked(alumniId, input);
+  return withLock(`points:${input.idempotencyKey}`, () => addPointsUnlocked(alumniId, input));
+}
+
+async function addPointsUnlocked(alumniId: string, input: AddPointsInput) {
   const ruled = POINT_RULES.find((r) => r.reason === input.reason)?.points ?? 0;
   const delta = input.delta ?? ruled;
 

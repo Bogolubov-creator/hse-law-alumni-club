@@ -13,7 +13,16 @@ const di = directus;
  */
 export async function purgeOldOrders(now = Date.now()): Promise<number> {
   const cutoff = new Date(now - env.ORDER_RETENTION_DAYS * 86400000).toISOString();
-  const filter = { _and: [{ created_at: { _lt: cutoff } }, { contact_email: { _neq: "-" } }] };
+  // «Ещё не обезличенные» = email не равен сентинелу «-». NULL здесь тоже считаем
+  // необработанной строкой: SQL-условие `contact_email != '-'` для NULL не выполняется,
+  // и такая заявка (в которой ПДн могли остаться в ФИО/телефоне/адресе) никогда бы
+  // не попала под ретенцию — то есть хранилась бы дольше срока.
+  const filter = {
+    _and: [
+      { created_at: { _lt: cutoff } },
+      { _or: [{ contact_email: { _null: true } }, { contact_email: { _neq: "-" } }] },
+    ],
+  };
   const n = await count("orders", filter);
   if (!n) return 0;
   await di.request((updateItems as any)("orders", { filter }, {
