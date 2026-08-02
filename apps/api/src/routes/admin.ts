@@ -3,7 +3,7 @@ import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";
 import { slugifyRu, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU } from "@club/shared";
-import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin, requireAdmin } from "../lib/auth.js";
+import { directusCredsValid, findUserWithRole, signAdmin, resolveAdmin, requireAdmin, setAdminCookie, clearAdminCookie } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { syncDpoCatalog } from "../lib/hse-sync.js";
 import { extendPodcastSub, subActive } from "./podcasts.js";
@@ -54,7 +54,23 @@ export async function adminRoutes(app: FastifyInstance) {
     registerLoginSuccess(email);
     registerIpSuccess(req.ip);
     audit("admin.login.ok", { actor: `admin:${user.id}`, req });
-    return { token: signAdmin(user.id, user.role), role: user.role };
+    // Сессия — в httpOnly-cookie (JS её не видит → XSS не украдёт админ-токен).
+    // Тело отдаёт только роль (для UI), сам токен наружу в JS не выходит.
+    setAdminCookie(reply, signAdmin(user.id, user.role));
+    return { role: user.role };
+  });
+
+  // Проверка активной админ-сессии (по cookie) — фронт решает, показать вход или панель.
+  app.get("/auth/admin-session", async (req, reply) => {
+    const ctx = await resolveAdmin(req);
+    if (!ctx) return reply.code(401).send({ error: "Нет сессии" });
+    return { role: ctx.role };
+  });
+
+  // Выход: гасим cookie админ-сессии.
+  app.post("/auth/admin-logout", async (_req, reply) => {
+    clearAdminCookie(reply);
+    return { ok: true };
   });
 
   // Обзор: вся статистика сайта одним запросом.

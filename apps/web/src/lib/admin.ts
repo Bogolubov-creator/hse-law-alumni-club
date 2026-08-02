@@ -1,20 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const ADMIN_TOKEN = "club_admin_token";
-
-export function adminToken(): string | null {
-  return localStorage.getItem(ADMIN_TOKEN);
-}
-export function setAdminToken(t: string) { localStorage.setItem(ADMIN_TOKEN, t); }
-export function clearAdminToken() { localStorage.removeItem(ADMIN_TOKEN); }
+// Админ-сессия живёт в httpOnly-cookie (её ставит сервер на /auth/admin-login).
+// JS токен не видит и не хранит — при XSS его нельзя украсть. Cookie уходит
+// автоматически с каждым same-origin запросом (credentials: "same-origin").
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const t = adminToken();
   const hasBody = body !== undefined;
   const res = await fetch(`/api${path}`, {
     method,
+    credentials: "same-origin", // отправлять cookie админ-сессии
     // content-type только при наличии тела — иначе Fastify падает на пустом JSON
-    headers: { accept: "application/json", ...(hasBody ? { "content-type": "application/json" } : {}), ...(t ? { authorization: `Bearer ${t}` } : {}) },
+    headers: { accept: "application/json", ...(hasBody ? { "content-type": "application/json" } : {}) },
     body: hasBody ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -28,8 +24,15 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   return data as T;
 }
 
-export async function adminLogin(email: string, password: string): Promise<{ token: string; role: string }> {
+export async function adminLogin(email: string, password: string): Promise<{ role: string }> {
   return req("POST", "/auth/admin-login", { email, password });
+}
+/** Проверка активной сессии по cookie (для гейта на входе/перезагрузке). */
+export async function adminSession(): Promise<{ role: string }> {
+  return req("GET", "/auth/admin-session");
+}
+export async function adminLogout(): Promise<void> {
+  await req("POST", "/auth/admin-logout").catch(() => {});
 }
 
 export const adminReq = req;
@@ -89,10 +92,9 @@ export function useAuditLog() {
   return useQuery({ queryKey: ["adm", "audit"], queryFn: () => req<AuditEntry[]>("GET", "/admin/audit?limit=300"), retry: false, refetchInterval: 60_000 });
 }
 
-/** Скачивание CSV с Bearer-токеном (обычная ссылка не передаст авторизацию). */
+/** Скачивание CSV: cookie админ-сессии уходит автоматически (credentials same-origin). */
 export async function downloadOrdersCsv(): Promise<void> {
-  const t = adminToken();
-  const res = await fetch("/api/admin/orders/export.csv", { headers: t ? { authorization: `Bearer ${t}` } : {} });
+  const res = await fetch("/api/admin/orders/export.csv", { credentials: "same-origin" });
   if (!res.ok) throw new Error("Не удалось выгрузить CSV");
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);

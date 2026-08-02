@@ -1,26 +1,26 @@
-import { useEffect, useId, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { LEVELS, loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU } from "@club/shared";
 import { apiGet, apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Achievement, type MyOrder } from "../lib/api.js";
-import { useMe, useMyOrders, useClassmates, useAddFriend, useLkEvents } from "../lib/queries.js";
-import type { Classmate, LkEvent } from "@club/shared";
+import { useMe, useMyOrders, useAddFriend, useLkEvents } from "../lib/queries.js";
+import type { LkEvent } from "@club/shared";
 import Modal from "../components/Modal.js";
 import { LkShell } from "../components/LkShell.js";
 import { useToast } from "../components/Toast.js";
 import { useLkTokens, lkSurface } from "../lib/lk-theme.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
+import { TOKEN_KEY, mono, disp } from "./lk/shared.js";
+import { Community } from "./lk/Community.js";
+import { PushBell } from "./lk/PushBell.js";
+import { NewbieChecklist } from "./lk/NewbieChecklist.js";
 
 
 /**
  * Личный кабинет – порт «Дашборд ЛК.dc.html» (B), данные из /api/me.
  * Логин выпускника → JWT-сессия apps/api. ЛК активен только после верификации.
  */
-
-const TOKEN_KEY = "club_token";
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
-const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
 
 export default function Lk() {
   useHead({ title: "Личный кабинет", noindex: true }); // приватная зона — не индексируем
@@ -369,120 +369,6 @@ function Events({ token }: { token: string }) {
   );
 }
 
-const MATCH_LABEL: Record<Classmate["match"], string> = {
-  both: "выпуск и ОП", cohort: "тот же выпуск", program: "та же ОП",
-};
-const FRIEND_LABEL: Record<Classmate["friend_status"], string> = {
-  none: "В друзья", pending: "Заявка отправлена", incoming: "Принять заявку", accepted: "В друзьях ✓",
-};
-
-function ClassmateAvatar({ c, size }: { c: Classmate; size: number }) {
-  return (
-    <div style={{ position: "relative", width: size, height: size, borderRadius: size * 0.28, flex: "none", overflow: "hidden", background: "linear-gradient(135deg,#2C6E80,#11296B)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: size * 0.4, color: "#FBF3E8" }}>
-      {c.avatar ? <img src={`/api/avatars/${c.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : (c.fio?.trim()?.[0] ?? "?").toUpperCase()}
-    </div>
-  );
-}
-
-/** Мини-профиль однокурсника: фото, уровень, интересы с общими пересечениями. */
-function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myInterests: string[]; token: string; onClose: () => void }) {
-  const t = useLkTokens();
-  const surface = lkSurface(t);
-  const addFriend = useAddFriend(token);
-  const common = new Set(myInterests);
-  return (
-    <Modal onClose={onClose} labelledBy="cm-modal-title" maxWidth={430}>
-      <div style={{ position: "relative", ...surface, padding: "30px 30px 26px", boxShadow: "0 40px 90px -30px rgba(0,0,0,.6)", animation: "g-pop .28s cubic-bezier(.2,.8,.2,1)" }}>
-        <button onClick={onClose} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: 10, border: `1px solid ${t.modalBtnBorder}`, background: "transparent", color: t.muted, cursor: "pointer" }}>✕</button>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <ClassmateAvatar c={c} size={72} />
-          <div style={{ minWidth: 0 }}>
-            <div id="cm-modal-title" style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em", lineHeight: 1.15 }}>{c.fio ?? "Выпускник"}</div>
-            <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 6 }}>Выпуск {c.cohort ?? "–"}{c.edu_program ? ` · ${c.edu_program}` : ""}</div>
-            <div style={{ display: "inline-flex", marginTop: 8, fontSize: 12, fontWeight: 600, padding: "4px 11px", borderRadius: 999, background: t.levelChipBg, color: t.levelChipText }}>{c.level_title}</div>
-          </div>
-        </div>
-        {c.interests.length > 0 && (
-          <div style={{ marginTop: 18 }}>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: t.muted }}>Интересы {c.interests.some((i) => common.has(i)) && <span style={{ color: "#1F8A5B", textTransform: "none" }}>· зелёные — общие с вами</span>}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
-              {c.interests.map((i) => (
-                <span key={i} style={{ fontSize: 12.5, fontWeight: 500, padding: "6px 12px", borderRadius: 999, border: "1.5px solid " + (common.has(i) ? "#1F8A5B" : t.chipBorder), background: common.has(i) ? "rgba(31,138,91,.1)" : t.chipBg, color: common.has(i) ? "#1F8A5B" : t.text }}>{i}</span>
-              ))}
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => addFriend.mutate(c.id)}
-          disabled={addFriend.isPending || c.friend_status === "pending" || c.friend_status === "accepted"}
-          className="foc"
-          style={{ marginTop: 22, width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default", border: "none", background: c.friend_status === "accepted" ? "rgba(31,138,91,.12)" : c.friend_status === "pending" ? t.pendingBg : "#EC5A13", color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? t.muted : "#FBF3E8" }}
-        >
-          {FRIEND_LABEL[c.friend_status]}
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
-/** «Мои однокурсники» — тот же выпуск или ОП; клик по карточке — мини-профиль. */
-function Community({ token, myInterests }: { token: string; myInterests: string[] }) {
-  const t = useLkTokens();
-  const surface = lkSurface(t);
-  const classmates = useClassmates(token);
-  const addFriend = useAddFriend(token);
-  const [sel, setSel] = useState<Classmate | null>(null);
-  const list = classmates.data ?? [];
-  const friendsCount = list.filter((c) => c.friend_status === "accepted").length;
-  if (classmates.isLoading || classmates.isError || list.length === 0) return null;
-
-  return (
-    <div style={{ ...surface, padding: "26px 28px", marginTop: 22 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>Мои однокурсники</div>
-          <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 6 }}>Тот же выпуск или образовательная программа</div>
-        </div>
-        <span style={{ ...mono, fontSize: 12, color: t.muted }}>{list.length} чел. · в друзьях: <b style={{ color: "#1F8A5B" }}>{friendsCount}</b></span>
-      </div>
-      <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
-        {list.map((c) => (
-          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${t.surfaceBorder}`, borderRadius: 16, padding: "14px 16px" }}>
-            {/* Клик по человеку — мини-профиль */}
-            <button onClick={() => setSel(c)} className="foc" style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}>
-              <ClassmateAvatar c={c} size={46} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontWeight: 600, fontSize: 15, lineHeight: 1.2 }}>{c.fio ?? "Выпускник"}</span>
-                <span style={{ display: "block", ...mono, fontSize: 11, color: t.muted, marginTop: 3 }}>
-                  {MATCH_LABEL[c.match]}{c.cohort ? ` · ${c.cohort}` : ""}{c.edu_program ? ` · ${c.edu_program}` : ""}
-                </span>
-                {c.interests.length > 0 && (
-                  <span style={{ display: "block", ...mono, fontSize: 10, color: "#a07d2e", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.interests.join(" · ")}</span>
-                )}
-              </span>
-            </button>
-            <button
-              onClick={() => addFriend.mutate(c.id)}
-              disabled={(addFriend.isPending && addFriend.variables === c.id) || c.friend_status === "pending" || c.friend_status === "accepted"}
-              className="foc"
-              style={{
-                flex: "none", fontWeight: 600, fontSize: 13, padding: "9px 14px", borderRadius: 10, cursor: c.friend_status === "none" || c.friend_status === "incoming" ? "pointer" : "default",
-                border: "1.5px solid " + (c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? t.ghostBtnBorder : "#EC5A13"),
-                background: c.friend_status === "none" || c.friend_status === "incoming" ? "#EC5A13" : t.ghostBtnBg,
-                color: c.friend_status === "accepted" ? "#1F8A5B" : c.friend_status === "pending" ? t.muted : "#FBF3E8",
-              }}
-            >
-              {FRIEND_LABEL[c.friend_status]}
-            </button>
-          </div>
-        ))}
-      </div>
-      {addFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "12px 0 0" }}>Не удалось отправить заявку — попробуйте ещё раз.</p>}
-      {sel && <ClassmateModal c={list.find((x) => x.id === sel.id) ?? sel} myInterests={myInterests} token={token} onClose={() => setSel(null)} />}
-    </div>
-  );
-}
-
 /** «Пригласи однокурсника»: персональная ссылка на анкету + счётчик приглашённых. */
 function Referral({ me }: { me: import("../lib/api.js").Me }) {
   const t = useLkTokens();
@@ -520,87 +406,6 @@ function Referral({ me }: { me: import("../lib/api.js").Me }) {
         <button onClick={copy} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer", flex: "none" }}>Скопировать</button>
         <a href={`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8", flex: "none" }}>↗ В Telegram</a>
       </div>
-    </div>
-  );
-}
-
-/** Кнопка «🔔 Включить уведомления»: подписывает браузер на web-push (заявки в
-    друзья, события, подкасты). Прячется, если пуши не сконфигурированы на
-    сервере или браузер их не умеет (например, Safari без установки на экран). */
-function PushBell() {
-  const t = useLkTokens();
-  const surface = lkSurface(t);
-  const toast = useToast();
-  const [state, setState] = useState<"hidden" | "off" | "on" | "busy">("hidden");
-
-  useEffect(() => {
-    void (async () => {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return;
-      try {
-        const cfg = await apiGet<{ enabled: boolean; key: string | null }>("/push/vapid");
-        if (!cfg.enabled || !cfg.key) return;
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        setState(sub && Notification.permission === "granted" ? "on" : "off");
-      } catch {
-        /* API недоступен — просто не показываем кнопку */
-      }
-    })();
-  }, []);
-
-  if (state === "hidden") return null;
-
-  const b64ToU8 = (b64: string) => {
-    const pad = "=".repeat((4 - (b64.length % 4)) % 4);
-    const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
-    return Uint8Array.from(raw, (c) => c.charCodeAt(0));
-  };
-
-  const enable = async () => {
-    setState("busy");
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") { toast("Уведомления запрещены в браузере", "err"); setState("off"); return; }
-      const cfg = await apiGet<{ enabled: boolean; key: string | null }>("/push/vapid");
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(cfg.key!) });
-      const j = sub.toJSON();
-      await apiPost("/me/push/subscribe", { endpoint: sub.endpoint, keys: j.keys }, undefined, localStorage.getItem(TOKEN_KEY) ?? undefined);
-      setState("on");
-      toast("Уведомления включены ✓");
-    } catch {
-      toast("Не удалось включить уведомления", "err");
-      setState("off");
-    }
-  };
-
-  const disable = async () => {
-    setState("busy");
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await apiPost("/me/push/unsubscribe", { endpoint: sub.endpoint }, undefined, localStorage.getItem(TOKEN_KEY) ?? undefined).catch(() => undefined);
-        await sub.unsubscribe();
-      }
-      setState("off");
-      toast("Уведомления выключены");
-    } catch {
-      setState("on");
-    }
-  };
-
-  return (
-    <div style={{ ...surface, padding: "20px 28px", marginTop: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-      <div>
-        <div style={{ ...disp, fontWeight: 600, fontSize: 17 }}>🔔 Уведомления клуба</div>
-        <div style={{ ...mono, fontSize: 12, color: t.muted, marginTop: 5 }}>Заявки в друзья, новые события и подкасты — сразу на устройство</div>
-      </div>
-      {state === "on" ? (
-        <button onClick={disable} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "1.5px solid #1F8A5B", background: t.ghostBtnBg, color: "#1F8A5B", cursor: "pointer", flex: "none" }}>Включены ✓ (выключить)</button>
-      ) : (
-        <button onClick={enable} disabled={state === "busy"} className="foc" style={{ fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: state === "busy" ? "wait" : "pointer", flex: "none" }}>{state === "busy" ? "Включаем…" : "Включить уведомления"}</button>
-      )}
     </div>
   );
 }
@@ -667,65 +472,6 @@ function NextClubEvent({ token }: { token: string }) {
         </button>
       )}
       <Link to="/events" className="foc" style={{ textDecoration: "none", ...mono, fontSize: 12, color: "#2E6FAE", flex: "none" }}>вся афиша →</Link>
-    </div>
-  );
-}
-
-/** Чек-лист новичка: 4 шага освоиться в клубе. Прячется, когда всё сделано
-    (или после «Скрыть» — localStorage). Состояния собираются из уже
-    существующих источников: /me, /me/tg-link, /events, PushManager. */
-function NewbieChecklist({ me }: { me: import("../lib/api.js").Me }) {
-  const t = useLkTokens();
-  const surface = lkSurface(t);
-  const tok = localStorage.getItem(TOKEN_KEY) ?? "";
-  const [hidden, setHidden] = useState(() => localStorage.getItem("club_checklist_done") === "1");
-  const [pushOn, setPushOn] = useState<boolean | null>(null);
-  const tg = useQuery({ queryKey: ["tg-link"], queryFn: () => apiGet<{ linked: boolean }>("/me/tg-link", tok), staleTime: 60_000 });
-  const evq = useQuery({ queryKey: ["events", tok], queryFn: () => apiGet<{ my_rsvp: boolean; my_attended: boolean }[]>("/events", tok), staleTime: 60_000 });
-
-  useEffect(() => {
-    void (async () => {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) { setPushOn(null); return; }
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        setPushOn(!!(await reg.pushManager.getSubscription()) && Notification.permission === "granted");
-      } catch { setPushOn(null); }
-    })();
-  }, []);
-
-  if (hidden) return null;
-  const profileDone = !!me.alumni.avatar || (me.alumni.interests?.length ?? 0) > 0;
-  const eventDone = (evq.data ?? []).some((e) => e.my_rsvp || e.my_attended);
-  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
-  const items: { label: string; done: boolean; hint: string; action: () => void }[] = [
-    { label: "Заполнить профиль", done: profileDone, hint: "фото или интересы — вас найдут однокурсники", action: () => { window.location.href = "/lk/profile"; } },
-    ...(pushOn === null ? [] : [{ label: "Включить уведомления", done: pushOn, hint: "заявки в друзья и анонсы — сразу на устройство", action: () => scrollTo("push-bell") }]),
-    { label: "Привязать Telegram", done: tg.data?.linked ?? false, hint: "бот покажет баллы и календарь", action: () => scrollTo("tg-link") },
-    { label: "Записаться на событие", done: eventDone, hint: "за участие начисляются баллы", action: () => { window.location.href = "/events"; } },
-  ];
-  const doneCnt = items.filter((i) => i.done).length;
-  if (doneCnt === items.length) {
-    localStorage.setItem("club_checklist_done", "1");
-    return null;
-  }
-  return (
-    <div style={{ ...surface, padding: "22px 28px", marginBottom: 22 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ ...disp, fontWeight: 600, fontSize: 18 }}>Освойтесь в клубе · {doneCnt}/{items.length}</div>
-        <button onClick={() => { localStorage.setItem("club_checklist_done", "1"); setHidden(true); }} className="foc" style={{ ...mono, fontSize: 11, color: t.muted, background: "transparent", border: "none", cursor: "pointer" }}>скрыть</button>
-      </div>
-      <div style={{ height: 6, borderRadius: 999, background: t.progressTrack, overflow: "hidden", marginTop: 12 }}>
-        <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((doneCnt / items.length) * 100)}%`, transition: "width .4s" }} />
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginTop: 16 }}>
-        {items.map((it) => (
-          <button key={it.label} onClick={it.action} disabled={it.done} className="foc"
-            style={{ textAlign: "left", padding: "12px 14px", borderRadius: 12, cursor: it.done ? "default" : "pointer", border: `1.5px solid ${it.done ? "#1F8A5B" : t.ghostBtnBorder}`, background: it.done ? "rgba(31,138,91,.08)" : t.ghostBtnBg, color: t.text }}>
-            <div style={{ fontWeight: 600, fontSize: 13.5, color: it.done ? "#1F8A5B" : t.text }}>{it.done ? "✓ " : "○ "}{it.label}</div>
-            {!it.done && <div style={{ ...mono, fontSize: 11, color: t.muted, marginTop: 5, lineHeight: 1.4 }}>{it.hint}</div>}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

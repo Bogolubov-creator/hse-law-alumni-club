@@ -13,6 +13,43 @@ function bearer(req: FastifyRequest): string | null {
   return m ? m[1]! : null;
 }
 
+// ── Cookie админ-сессии (httpOnly, недоступна JS → безопаснее localStorage при XSS) ──
+export const ADMIN_COOKIE = "admin_session";
+const ADMIN_COOKIE_MAX_AGE = 12 * 3600; // как срок JWT (signAdmin: 12h)
+
+/** Значение cookie по имени из заголовка Cookie (без плагина — парсим сами). */
+function readCookie(req: FastifyRequest, name: string): string | null {
+  const raw = req.headers.cookie;
+  if (!raw) return null;
+  for (const part of raw.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq === -1) continue;
+    if (part.slice(0, eq).trim() === name) return decodeURIComponent(part.slice(eq + 1).trim());
+  }
+  return null;
+}
+
+/** Ставит httpOnly-cookie админ-сессии. Secure — на https (прод); SameSite=Strict — анти-CSRF. */
+export function setAdminCookie(reply: FastifyReply, token: string): void {
+  const secure = env.PUBLIC_URL.startsWith("https://");
+  const attrs = [
+    `${ADMIN_COOKIE}=${encodeURIComponent(token)}`,
+    "HttpOnly",
+    "SameSite=Strict",
+    "Path=/api",
+    `Max-Age=${ADMIN_COOKIE_MAX_AGE}`,
+    secure ? "Secure" : "",
+  ].filter(Boolean);
+  reply.header("Set-Cookie", attrs.join("; "));
+}
+
+/** Гасит cookie админ-сессии (logout). */
+export function clearAdminCookie(reply: FastifyReply): void {
+  const secure = env.PUBLIC_URL.startsWith("https://");
+  const attrs = [`${ADMIN_COOKIE}=`, "HttpOnly", "SameSite=Strict", "Path=/api", "Max-Age=0", secure ? "Secure" : ""].filter(Boolean);
+  reply.header("Set-Cookie", attrs.join("; "));
+}
+
 /** Сравнение секретов в постоянном времени (без утечки по длине/времени). */
 export function safeEqual(a: string, b: string): boolean {
   const ba = Buffer.from(a);
@@ -86,8 +123,9 @@ async function roleNameByUserId(userId: string): Promise<string | null> {
  * живёт до истечения 12-часового токена (claim роли внутри JWT — только подсказка).
  */
 export async function resolveAdmin(req: FastifyRequest): Promise<AdminCtx | null> {
-  const token = bearer(req);
-  if (!token || safeEqual(token, env.DIRECTUS_SERVICE_TOKEN)) return null;
+  // Токен — из httpOnly-cookie (не из Authorization и не из JS-доступного хранилища).
+  const token = readCookie(req, ADMIN_COOKIE);
+  if (!token) return null;
   let sub: string;
   try {
     const p = jwt.verify(token, adminSecret(), { algorithms: ["HS256"] }) as { scope?: string; sub?: string };

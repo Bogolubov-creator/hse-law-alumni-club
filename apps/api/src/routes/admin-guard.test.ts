@@ -39,6 +39,8 @@ async function build(): Promise<FastifyInstance> {
 }
 
 const adminSecret = () => env.ADMIN_AUTH_SECRET || env.AUTH_SECRET;
+/** Заголовок с cookie админ-сессии (сессия теперь в httpOnly-cookie, не в Bearer). */
+const adminCookie = (jwtToken: string) => ({ cookie: `admin_session=${jwtToken}` });
 
 beforeEach(() => {
   resetDb({
@@ -67,13 +69,27 @@ describe("POST /auth/admin-login", () => {
     expect(r.statusCode).toBe(401);
   });
 
-  it("роль editor → токен с областью admin", async () => {
+  it("роль editor → httpOnly-cookie с областью admin, тело без токена", async () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/admin-login", payload: { email: "office@example.com", password: "ok" } });
     expect(r.statusCode).toBe(200);
-    const payload = jwt.verify(r.json().token, adminSecret()) as { scope: string; role: string };
+    expect(r.json().token).toBeUndefined(); // токен наружу в JSON не выходит
+    expect(r.json().role).toBe("editor");
+    const setCookie = String(r.headers["set-cookie"]);
+    expect(setCookie).toContain("admin_session=");
+    expect(setCookie).toContain("HttpOnly");
+    expect(setCookie).toContain("SameSite=Strict");
+    const token = /admin_session=([^;]+)/.exec(setCookie)![1]!;
+    const payload = jwt.verify(decodeURIComponent(token), adminSecret()) as { scope: string; role: string };
     expect(payload.scope).toBe("admin");
     expect(payload.role).toBe("editor");
+  });
+
+  it("logout гасит cookie (Max-Age=0)", async () => {
+    const app = await build();
+    const r = await app.inject({ method: "POST", url: "/auth/admin-logout" });
+    expect(r.statusCode).toBe(200);
+    expect(String(r.headers["set-cookie"])).toContain("Max-Age=0");
   });
 });
 
@@ -98,33 +114,40 @@ describe("гарды админских маршрутов", () => {
     expect(r.statusCode).toBe(401);
   });
 
-  it("токен, подписанный чужим секретом, не проходит", async () => {
+  it("cookie, подписанная чужим секретом, не проходит", async () => {
     const forged = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, "чужой-секрет-подлиннее-32-символов", { expiresIn: "12h" });
     const app = await build();
-    const r = await app.inject({ method: "GET", url: "/admin/overview", headers: { authorization: `Bearer ${forged}` } });
+    const r = await app.inject({ method: "GET", url: "/admin/overview", headers: adminCookie(forged) });
     expect(r.statusCode).toBe(401);
   });
 
   it("истёкшая админ-сессия не проходит", async () => {
     const expired = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: -10 });
     const app = await build();
-    const r = await app.inject({ method: "GET", url: "/admin/overview", headers: { authorization: `Bearer ${expired}` } });
+    const r = await app.inject({ method: "GET", url: "/admin/overview", headers: adminCookie(expired) });
     expect(r.statusCode).toBe(401);
   });
 
-  it("валидная админ-сессия пропускается", async () => {
+  it("Bearer с админ-JWT больше не открывает админку (сессия только в cookie)", async () => {
     const token = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
     const app = await build();
-    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: { authorization: `Bearer ${token}` } });
+    const r = await app.inject({ method: "GET", url: "/admin/overview", headers: { authorization: `Bearer ${token}` } });
+    expect(r.statusCode).toBe(401);
+  });
+
+  it("валидная админ-сессия (cookie) пропускается", async () => {
+    const token = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    const app = await build();
+    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: adminCookie(token) });
     expect(r.statusCode).toBe(200);
   });
 
   it("снятый с должности админ теряет доступ сразу (роль сверяется с Directus, не берётся из токена)", async () => {
-    // Токен ещё не истёк и подписан верно, но роль в Directus понижена до alumni.
+    // Cookie ещё не истекла и подписана верно, но роль в Directus понижена до alumni.
     const token = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
     db.directus_users!.find((u) => u.id === EDITOR_ID)!.role = { name: "alumni" };
     const app = await build();
-    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: { authorization: `Bearer ${token}` } });
+    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: adminCookie(token) });
     expect(r.statusCode).toBe(401);
   });
 
@@ -132,13 +155,13 @@ describe("гарды админских маршрутов", () => {
     const token = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
     db.directus_users!.find((u) => u.id === EDITOR_ID)!.status = "suspended";
     const app = await build();
-    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: { authorization: `Bearer ${token}` } });
+    const r = await app.inject({ method: "GET", url: "/admin/orders", headers: adminCookie(token) });
     expect(r.statusCode).toBe(401);
   });
 });
 
 describe("PATCH /admin/members/:id — изменение данных выпускника", () => {
-  const adminAuth = () => ({ authorization: `Bearer ${jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" })}` });
+  const adminAuth = () => adminCookie(jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" }));
 
   it("без токена скидку выставить нельзя", async () => {
     const app = await build();
