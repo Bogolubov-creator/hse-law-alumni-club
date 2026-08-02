@@ -35,7 +35,7 @@ export async function pushRoutes(app: FastifyInstance) {
       await di.request((updateItem as any)("push_subs", dup[0].id, { alumni_id: me.id, keys: b.keys }));
       audit("push.sub.reassign", { actor: `alumni:${me.id}`, subject: `alumni:${dup[0].alumni_id}`, req });
     } else {
-      // Тот же выпускник, тот же браузер — обновляем ключи (они меняются при переподписке).
+      // Тот же выпускник, тот же браузер – обновляем ключи (они меняются при переподписке).
       await di.request((updateItem as any)("push_subs", dup[0].id, { keys: b.keys }));
     }
     return { ok: true };

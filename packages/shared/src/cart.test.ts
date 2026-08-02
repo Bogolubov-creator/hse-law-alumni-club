@@ -83,7 +83,7 @@ describe("границы корзины (защита от раздувания)
     let items: StoredCartItem[] = [];
     for (let i = 0; i < MAX_CART_LINES; i++) items = addLine(items, merch(`sku-${i}`));
     expect(cartLineLimitReached(items, { type: "merch", ref_id: "robe", variant_sku: "новый" })).toBe(true);
-    // Уже лежащую позицию докладывать можно — потолок про НОВЫЕ строки.
+    // Уже лежащую позицию докладывать можно – потолок про НОВЫЕ строки.
     expect(cartLineLimitReached(items, { type: "merch", ref_id: "robe", variant_sku: "sku-0" })).toBe(false);
   });
 });

@@ -41,7 +41,7 @@ beforeEach(() => {
   });
 });
 
-describe("DELETE /me/friends/:id — отклонить, отозвать, удалить", () => {
+describe("DELETE /me/friends/:id – отклонить, отозвать, удалить", () => {
   it("входящую заявку можно отклонить: связь исчезает", async () => {
     const app = await build();
     await addFriend(app, B, A); // Б позвал меня
@@ -70,7 +70,7 @@ describe("DELETE /me/friends/:id — отклонить, отозвать, уд�
     expect(db.alumni_friends).toHaveLength(0);
   });
 
-  it("удаление идемпотентно: связи нет — это и есть нужное состояние", async () => {
+  it("удаление идемпотентно: связи нет – это и есть нужное состояние", async () => {
     const app = await build();
     const r = await removeFriend(app, A, C);
     expect(r.statusCode).toBe(200);
@@ -86,7 +86,7 @@ describe("DELETE /me/friends/:id — отклонить, отозвать, уд�
 
   it("гонка встречных заявок: обе строки пары убираются", async () => {
     const app = await build();
-    // Две pending-строки в обе стороны — возможны при одновременных заявках.
+    // Две pending-строки в обе стороны – возможны при одновременных заявках.
     db.alumni_friends!.push({ id: "l1", alumni_id: A, friend_id: B, status: "pending" });
     db.alumni_friends!.push({ id: "l2", alumni_id: B, friend_id: A, status: "pending" });
     await removeFriend(app, A, B);
@@ -108,27 +108,27 @@ describe("DELETE /me/friends/:id — отклонить, отозвать, уд�
     expect((db.audit_log ?? []).some((e) => e.event === "friend.remove")).toBe(true);
   });
 
-  it("без токена — 401", async () => {
+  it("без токена – 401", async () => {
     const app = await build();
     const r = await app.inject({ method: "DELETE", url: `/me/friends/${B}` });
     expect(r.statusCode).toBe(401);
   });
 
-  it("неверифицированному — 403", async () => {
+  it("неверифицированному – 403", async () => {
     const app = await build();
     db.alumni![0]!.verification_status = "pending";
     const r = await removeFriend(app, A, B);
     expect(r.statusCode).toBe(403);
   });
 
-  it("нечисловой/не-uuid идентификатор — 400", async () => {
+  it("нечисловой/не-uuid идентификатор – 400", async () => {
     const app = await build();
     const r = await app.inject({ method: "DELETE", url: "/me/friends/не-uuid", headers: auth(A) });
     expect(r.statusCode).toBe(400);
   });
 });
 
-describe("POST /me/friends — прежнее поведение не сломано", () => {
+describe("POST /me/friends – прежнее поведение не сломано", () => {
   it("встречная заявка принимает дружбу", async () => {
     const app = await build();
     await addFriend(app, A, B);

@@ -162,7 +162,7 @@ export async function communityRoutes(app: FastifyInstance) {
    * Отклонить входящую заявку, отозвать свою или удалить из друзей.
    * Одна операция на все три случая: связь пары удаляется целиком в обе стороны
    * (гонка встречных заявок могла создать две строки). Раньше отменить заявку
-   * было нечем — входящая висела в ленте событий вечно.
+   * было нечем – входящая висела в ленте событий вечно.
    */
   app.delete("/me/friends/:alumniId", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
@@ -181,7 +181,7 @@ export async function communityRoutes(app: FastifyInstance) {
         limit: -1, fields: ["id", "status"],
       }),
     )) as { id: string; status: string }[];
-    // Идемпотентно: связи нет — это и есть желаемое состояние.
+    // Идемпотентно: связи нет – это и есть желаемое состояние.
     if (!links.length) return { status: "none" };
     const wasAccepted = links.some((l) => l.status === "accepted");
     for (const l of links) await di.request((deleteItem as any)("alumni_friends", l.id));

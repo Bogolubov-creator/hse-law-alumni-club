@@ -301,7 +301,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28, flexWrap: "wrap" }}>
         <span style={{ ...mono, fontSize: 13, color: t.muted }}>Поделиться профилем:</span>
         <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14, padding: "11px 20px", borderRadius: 12, background: "#2E6FAE", color: "#FBF3E8" }}>↗ Telegram</a>
-        {/* Кнопка «Макс» была нерабочей заглушкой (disabled) — в релиз не берём.
+        {/* Кнопка «Макс» была нерабочей заглушкой (disabled) – в релиз не берём.
             Вернём, когда появится реальная интеграция. */}
       </div>
     </>
@@ -448,7 +448,7 @@ function ClassmateModal({ c, myInterests, token, onClose }: { c: Classmate; myIn
             {removeFriend.isPending ? "…" : undoLabel[c.friend_status]}
           </button>
         )}
-        {removeFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "10px 0 0" }}>Не удалось — попробуйте ещё раз.</p>}
+        {removeFriend.isError && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: "10px 0 0" }}>Не удалось – попробуйте ещё раз.</p>}
       </div>
     </Modal>
   );

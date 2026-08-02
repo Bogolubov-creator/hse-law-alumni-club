@@ -141,8 +141,8 @@ function ProductModal({ product, onClose, onAdd }: { product: Product; onClose: 
           {stock != null && stock <= 0 ? "Нет в наличии" : needsSize ? "Выберите размер" : "В корзину"}
         </button>
         <p className="mt-3 font-mono text-[11px] leading-relaxed text-grafit-soft">
-          Самовывоз в учебном офисе или доставка — выберите при оформлении заказа.{" "}
-          {payments.data?.enabled ? "Оплатить можно онлайн на шаге подтверждения." : "Оплаты на сайте нет — счёт выставит учебный офис."}
+          Самовывоз в учебном офисе или доставка – выберите при оформлении заказа.{" "}
+          {payments.data?.enabled ? "Оплатить можно онлайн на шаге подтверждения." : "Оплаты на сайте нет – счёт выставит учебный офис."}
         </p>
       </div>
     </Modal>

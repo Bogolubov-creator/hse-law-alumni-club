@@ -154,7 +154,7 @@ describe("PATCH /admin/members/:id — изменение данных выпу�
     expect(db.audit_log!.some((e) => String(e.actor).includes(ADMIN_ID))).toBe(true);
   });
 
-  it("редактору скидку выставить нельзя — 403", async () => {
+  it("редактору скидку выставить нельзя – 403", async () => {
     const app = await build();
     const r = await app.inject({ method: "PATCH", url: `/admin/members/${ALUMNI_ID}`, payload: { personal_discount: 5 }, headers: editorAuth() });
     expect(r.statusCode).toBe(403);
@@ -176,7 +176,7 @@ describe("разграничение ролей: editor против admin", () 
   ];
 
   for (const r of FULL_ONLY) {
-    it(`${r.method} ${r.url} — редактору 403`, async () => {
+    it(`${r.method} ${r.url} – редактору 403`, async () => {
       const app = await build();
       const res = await app.inject({ method: r.method, url: r.url, payload: (r as any).payload, headers: editorAuth() });
       expect(res.statusCode).toBe(403);

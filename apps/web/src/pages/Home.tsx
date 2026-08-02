@@ -90,7 +90,7 @@ export default function Home() {
   const [heroIn, setHeroIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false); // мобильный бургер (десктоп не трогаем)
   const cartCount = useCart().data?.count ?? 0; // бейдж корзины в шапке лендинга
-  const paymentsOn = usePaymentsEnabled().data?.enabled ?? false; // текст про оплату — от фичефлага
+  const paymentsOn = usePaymentsEnabled().data?.enabled ?? false; // текст про оплату – от фичефлага
   const news = useNewsList(3);
   // Ближайшие события для блока на главной (тот же /events, что и афиша).
   const eventsQ = useQuery({
@@ -466,7 +466,7 @@ export default function Home() {
           {[
             { to: "/dpo", bg: "#11296B", img: "/assets/dpo-hero.jpg", imgPos: "center", title2: "ДПО", h: "Программы доп. образования", p: "Курсы и интенсивы со скидкой выпускника. Фильтры по направлению, формату и длительности.", meta: "актуальный набор ВШЭ · скидка выпускника", metaColor: "#2E6FAE", cta: "Открыть →", ctaColor: "#11296B", delay: undefined as number | undefined },
             { to: "/merch", bg: "#EC5A13", img: "/assets/merch-hoodie.jpg", imgPos: "center 30%", title2: "Мерч", h: "Фирменный мерч клуба", p: "Одежда и аксессуары с фасеточной Фемидой. Размеры, цвета, самовывоз или доставка.", meta: "новинки сезона", metaColor: "#B5331B", cta: "Открыть →", ctaColor: "#C9450E", delay: 90 },
-            { to: "/podcasts", bg: "#1F8A5B", img: "/assets/themis.jpeg", imgPos: "center", title2: "Подкасты", h: "Подкасты клуба", p: "Разговоры с выпускниками и практиками права. Пробный выпуск открыт всем, остальное — по подписке.", meta: "пробный выпуск бесплатно", metaColor: "#1F8A5B", cta: "Слушать →", ctaColor: "#177049", delay: 180 },
+            { to: "/podcasts", bg: "#1F8A5B", img: "/assets/themis.jpeg", imgPos: "center", title2: "Подкасты", h: "Подкасты клуба", p: "Разговоры с выпускниками и практиками права. Пробный выпуск открыт всем, остальное – по подписке.", meta: "пробный выпуск бесплатно", metaColor: "#1F8A5B", cta: "Слушать →", ctaColor: "#177049", delay: 180 },
           ].map((v) => (
             <Link key={v.to} to={v.to} data-reveal data-reveal-delay={v.delay} data-tilt className="vcard foc" style={{ textDecoration: "none", color: "inherit", borderRadius: 22, overflow: "hidden", border: "1px solid #E5E7EB", background: "#fff", display: "block" }}>
               <div style={{ position: "relative", height: 230, background: `${v.bg} url(${v.img}) ${v.imgPos} / cover no-repeat`, display: "flex", alignItems: "flex-end", padding: 24 }}>
@@ -541,7 +541,7 @@ export default function Home() {
           <span style={{ ...mono, fontSize: 12.5, color: "#6B7280", maxWidth: 560, lineHeight: 1.5 }}>
             {paymentsOn
               ? "Оплатить можно онлайн при оформлении; по программам ДПО учебный офис свяжется и оформит договор."
-              : "Оплаты на сайте нет — заявку на ДПО ведёт учебный офис: он свяжется, выставит счёт и оформит договор."}
+              : "Оплаты на сайте нет – заявку на ДПО ведёт учебный офис: он свяжется, выставит счёт и оформит договор."}
           </span>
         </div>
       </section>

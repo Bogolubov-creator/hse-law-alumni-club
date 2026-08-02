@@ -233,7 +233,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
   it("ссылка сброса срабатывает один раз (jti гасится)", async () => {
     const app = await build();
     // Ссылку собираем той же формы, что уходит в письме (jti + поколение сессий),
-    // но без вызова /auth/forgot — иначе тест полез бы в сеть за SMTP.
+    // но без вызова /auth/forgot – иначе тест полез бы в сеть за SMTP.
     const token = jwt.sign(
       { sub: USER_ID, purpose: "reset", jti: "одноразовый-ключ", ver: 0 },
       env.AUTH_SECRET, { expiresIn: "30m" },
@@ -244,13 +244,13 @@ describe("POST /auth/forgot и /auth/reset", () => {
     const second = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "hijacked-pass" } });
     expect(second.statusCode).toBe(400);
     expect(second.json().error).toMatch(/уже использована/i);
-    // Пароль остался от первого применения — перехват не прошёл.
+    // Пароль остался от первого применения – перехват не прошёл.
     expect(db.directus_users![0]!.password).toBe("firstpass123");
   });
 
   it("ссылка, выпущенная до прошлого сброса, не срабатывает (переживает рестарт)", async () => {
     const app = await build();
-    // ver=0 — поколение сессий на момент выпуска ссылки.
+    // ver=0 – поколение сессий на момент выпуска ссылки.
     const stale = jwt.sign({ sub: USER_ID, purpose: "reset", jti: "старый", ver: 0 }, env.AUTH_SECRET, { expiresIn: "30m" });
     // Кто-то уже сменил пароль: версия выросла, список jti в памяти неактуален.
     db.alumni![0]!.token_version = 1;

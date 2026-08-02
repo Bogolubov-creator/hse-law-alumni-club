@@ -56,7 +56,7 @@ export function useAddFriend(token: string | null) {
 
 /**
  * Подключена ли онлайн-оплата. Тексты витрин раньше утверждали «оплаты на сайте
- * нет» жёстко — при включении ЮKassa они становились ложью.
+ * нет» жёстко – при включении ЮKassa они становились ложью.
  */
 export function usePaymentsEnabled() {
   return useQuery({

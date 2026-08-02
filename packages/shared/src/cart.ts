@@ -23,7 +23,7 @@ export const MAX_CART_LINES = 30;
 /**
  * Добавить позицию: если такая (type+ref+variant) уже есть — увеличить qty, иначе добавить.
  * ДПО — это заявка на одно место: qty всегда 1, повторное добавление не увеличивает.
- * Количество по позиции ограничено MAX_LINE_QTY, число позиций — MAX_CART_LINES.
+ * Количество по позиции ограничено MAX_LINE_QTY, число позиций – MAX_CART_LINES.
  */
 export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCartItem[] {
   const ex = items.find((i) => sameLine(i, line.type, line.ref_id, line.variant_sku));

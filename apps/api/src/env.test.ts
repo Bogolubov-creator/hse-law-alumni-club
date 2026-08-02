@@ -33,7 +33,7 @@ async function errorsFor(overrides: Record<string, string>): Promise<string[]> {
 beforeEach(() => vi.unstubAllEnvs());
 afterEach(() => vi.unstubAllEnvs());
 
-describe("assertProdConfig — корректная прод-конфигурация", () => {
+describe("assertProdConfig – корректная прод-конфигурация", () => {
   it("полный набор переменных проходит без замечаний", async () => {
     expect(await errorsFor({})).toEqual([]);
   });
@@ -44,7 +44,7 @@ describe("assertProdConfig — корректная прод-конфигура�
   });
 });
 
-describe("assertProdConfig — каждая небезопасная настройка ловится", () => {
+describe("assertProdConfig – каждая небезопасная настройка ловится", () => {
   it("плейсхолдер в AUTH_SECRET", async () => {
     const errs = await errorsFor({ AUTH_SECRET: "replace_with_auth_secret_placeholder" });
     expect(errs.some((e) => /AUTH_SECRET/.test(e))).toBe(true);
@@ -55,17 +55,17 @@ describe("assertProdConfig — каждая небезопасная настр�
     expect(errs.some((e) => /DIRECTUS_SERVICE_TOKEN/.test(e))).toBe(true);
   });
 
-  it("пустой ADMIN_AUTH_SECRET — админ-сессии подписывались бы общим ключом", async () => {
+  it("пустой ADMIN_AUTH_SECRET – админ-сессии подписывались бы общим ключом", async () => {
     const errs = await errorsFor({ ADMIN_AUTH_SECRET: "" });
     expect(errs.some((e) => /ADMIN_AUTH_SECRET/.test(e))).toBe(true);
   });
 
-  it("PUBLIC_URL без https — оплата, sitemap и canonical уехали бы по http", async () => {
+  it("PUBLIC_URL без https – оплата, sitemap и canonical уехали бы по http", async () => {
     const errs = await errorsFor({ PUBLIC_URL: "http://club.example.ru" });
     expect(errs.some((e) => /PUBLIC_URL/.test(e))).toBe(true);
   });
 
-  it("бот на webhook без секрета — принимались бы поддельные апдейты", async () => {
+  it("бот на webhook без секрета – принимались бы поддельные апдейты", async () => {
     const errs = await errorsFor({ TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_WEBHOOK_SECRET: "", TELEGRAM_POLLING: "" });
     expect(errs.some((e) => /TELEGRAM_WEBHOOK_SECRET/.test(e))).toBe(true);
   });
@@ -75,7 +75,7 @@ describe("assertProdConfig — каждая небезопасная настр�
     expect(errs.some((e) => /TELEGRAM_WEBHOOK_SECRET/.test(e))).toBe(false);
   });
 
-  it("пустой SMTP_HOST — молча ломались бы сброс пароля и подтверждение адреса", async () => {
+  it("пустой SMTP_HOST – молча ломались бы сброс пароля и подтверждение адреса", async () => {
     const errs = await errorsFor({ SMTP_HOST: "" });
     expect(errs.some((e) => /SMTP_HOST/.test(e))).toBe(true);
   });
@@ -90,7 +90,7 @@ describe("assertProdConfig — каждая небезопасная настр�
     expect(errs.some((e) => /отправитель/i.test(e))).toBe(false);
   });
 
-  it("SEED_DEMO=true — демо-контент и тестовые аккаунты на боевом стенде", async () => {
+  it("SEED_DEMO=true – демо-контент и тестовые аккаунты на боевом стенде", async () => {
     const errs = await errorsFor({ SEED_DEMO: "true" });
     expect(errs.some((e) => /SEED_DEMO/.test(e))).toBe(true);
   });

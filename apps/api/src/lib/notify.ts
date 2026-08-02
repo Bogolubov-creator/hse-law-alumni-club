@@ -3,7 +3,7 @@ import { formatRub } from "@club/shared";
 import { env } from "../env.js";
 
 // SMTP-транспорт создаётся при первой отправке и переиспользуется. Лениво, а не
-// на импорте: источник правды — env.SMTP_HOST в момент запроса, иначе модуль,
+// на импорте: источник правды – env.SMTP_HOST в момент запроса, иначе модуль,
 // загруженный раньше конфигурации, навсегда остался бы «без почты».
 let mailer: ReturnType<typeof nodemailer.createTransport> | null = null;
 function transport(): ReturnType<typeof nodemailer.createTransport> | null {
@@ -20,7 +20,7 @@ function transport(): ReturnType<typeof nodemailer.createTransport> | null {
 }
 
 /**
- * Настроен ли почтовый канал. Роуты, смысл которых — доставить письмо
+ * Настроен ли почтовый канал. Роуты, смысл которых – доставить письмо
  * (восстановление пароля), обязаны это проверять и говорить правду, а не
  * отвечать «письмо отправлено», когда отправлять нечем.
  */

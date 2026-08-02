@@ -44,7 +44,7 @@ beforeEach(() => {
   });
 });
 
-describe("POST /podcasts/subscribe — заявка не задваивается", () => {
+describe("POST /podcasts/subscribe – заявка не задваивается", () => {
   it("первый вызов создаёт заявку и зовёт офис", async () => {
     const app = await build();
     const r = await subscribe(app);
@@ -91,7 +91,7 @@ describe("POST /podcasts/subscribe — заявка не задваиваетс�
     expect(r.json().already).toBeUndefined();
   });
 
-  it("активная подписка — 400, заявка не создаётся", async () => {
+  it("активная подписка – 400, заявка не создаётся", async () => {
     const app = await build();
     db.alumni![0]!.podcast_sub_until = new Date(Date.now() + 86400000).toISOString();
     const r = await subscribe(app);
@@ -99,14 +99,14 @@ describe("POST /podcasts/subscribe — заявка не задваиваетс�
     expect(db.orders).toHaveLength(0);
   });
 
-  it("без токена — 401", async () => {
+  it("без токена – 401", async () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/podcasts/subscribe", payload: {} });
     expect(r.statusCode).toBe(401);
     expect(db.orders).toHaveLength(0);
   });
 
-  it("неверифицированному — 403", async () => {
+  it("неверифицированному – 403", async () => {
     const app = await build();
     db.alumni![0]!.verification_status = "pending";
     const r = await subscribe(app);

@@ -82,9 +82,9 @@ export async function cartRoutes(app: FastifyInstance) {
 
     const cart = await loadCart(token);
     const current = cart?.items ?? [];
-    // Потолок позиций: без него items_json рос без предела (одна сессия — сколько угодно строк).
+    // Потолок позиций: без него items_json рос без предела (одна сессия – сколько угодно строк).
     if (cartLineLimitReached(current, { type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null }))
-      return reply.code(409).send({ error: `В корзине уже ${MAX_CART_LINES} позиций — оформите заявку или удалите лишнее` });
+      return reply.code(409).send({ error: `В корзине уже ${MAX_CART_LINES} позиций – оформите заявку или удалите лишнее` });
 
     const items = addLine(current, {
       type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null,

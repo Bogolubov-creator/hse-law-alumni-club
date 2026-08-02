@@ -12,7 +12,7 @@ const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3 МБ достаточно для 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 /**
- * Реальный тип по сигнатуре файла. Content-Type в multipart присылает клиент —
+ * Реальный тип по сигнатуре файла. Content-Type в multipart присылает клиент –
  * ему верить нельзя: под видом image/png уходил любой файл. Проверяем магические
  * байты и дальше используем ТОЛЬКО определённый здесь тип.
  */
@@ -59,7 +59,7 @@ export async function avatarsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "Это не изображение JPEG, PNG или WebP" });
     }
 
-    // Загрузка в Directus Files сервисным токеном (тип — определённый по сигнатуре).
+    // Загрузка в Directus Files сервисным токеном (тип – определённый по сигнатуре).
     const fd = new FormData();
     fd.append("file", new Blob([new Uint8Array(buf)], { type: realType }), `avatar-${me.id}.${EXT[realType]}`);
     const up = await fetch(`${env.DIRECTUS_URL}/files`, {

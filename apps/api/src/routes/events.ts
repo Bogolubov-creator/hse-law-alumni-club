@@ -169,7 +169,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = eventBody.partial().parse(req.body);
     await di.request((updateItem as any)("events", id, b));
-    // points события конвертируются в баллы участникам — правка должна быть видна.
+    // points события конвертируются в баллы участникам – правка должна быть видна.
     audit("event.patch", { actor: `admin:${ctx.userId}`, subject: `event:${id}`, detail: b, req });
     return { ok: true };
   });

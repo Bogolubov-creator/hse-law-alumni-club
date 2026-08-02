@@ -61,14 +61,14 @@ export function assertProdConfig(): string[] {
   if (!env.PUBLIC_URL.startsWith("https://")) errs.push("PUBLIC_URL должен быть https://<домен> на проде (return_url оплаты, sitemap, canonical)");
   if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_POLLING !== "true" && !env.TELEGRAM_WEBHOOK_SECRET)
     errs.push("бот на webhook без TELEGRAM_WEBHOOK_SECRET — кто угодно сможет слать поддельные апдейты");
-  // Почта — не опция: без неё молча ломаются восстановление пароля и подтверждение
+  // Почта – не опция: без неё молча ломаются восстановление пароля и подтверждение
   // адреса при регистрации (любой занимает чужой email). Стартовать так на проде нельзя.
   if (!env.SMTP_HOST)
-    errs.push("SMTP_HOST пуст — без почты не работают восстановление пароля и подтверждение адреса при регистрации");
+    errs.push("SMTP_HOST пуст – без почты не работают восстановление пароля и подтверждение адреса при регистрации");
   if (env.SMTP_HOST && !env.SMTP_FROM && !env.SMTP_USER)
     errs.push("SMTP настроен, но не задан отправитель (SMTP_FROM или SMTP_USER)");
   // Демо-контент в проде: витрины и лента забиты тестовыми позициями.
   if (env.SEED_DEMO === "true")
-    errs.push("SEED_DEMO=true на проде — демо-новости, события и товары попадут на витрины и в sitemap");
+    errs.push("SEED_DEMO=true на проде – демо-новости, события и товары попадут на витрины и в sitemap");
   return errs;
 }

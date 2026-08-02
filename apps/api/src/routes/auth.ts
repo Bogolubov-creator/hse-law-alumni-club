@@ -183,11 +183,11 @@ export async function authRoutes(app: FastifyInstance) {
   // Ответ всегда одинаковый (не раскрываем существование аккаунта).
   app.post("/auth/forgot", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { email } = z.object({ email: z.string().email() }).parse(req.body);
-    // Без SMTP письмо физически не уйдёт. Раньше роут всё равно отвечал ok —
+    // Без SMTP письмо физически не уйдёт. Раньше роут всё равно отвечал ok –
     // человек ждал ссылку, которой нет. Отвечаем честно и одинаково для всех
-    // адресов (проверка про канал, а не про аккаунт — существование не раскрывается).
+    // адресов (проверка про канал, а не про аккаунт – существование не раскрывается).
     if (!mailEnabled()) {
-      req.log.error("password.forgot: SMTP не настроен — восстановление пароля недоступно");
+      req.log.error("password.forgot: SMTP не настроен – восстановление пароля недоступно");
       return reply.code(503).send({ error: "Восстановление пароля временно недоступно: почтовый канал не настроен. Напишите в учебный офис." });
     }
     const user = await findUserByEmail(email.toLowerCase().trim());
@@ -205,7 +205,7 @@ export async function authRoutes(app: FastifyInstance) {
       await sendEmail(
         email,
         "Восстановление пароля — Клуб выпускников факультета права",
-        `Вы запросили восстановление пароля.\n\nСсылка действует 30 минут и срабатывает один раз:\n${url}\n\nЕсли это были не вы — просто проигнорируйте письмо.`,
+        `Вы запросили восстановление пароля.\n\nСсылка действует 30 минут и срабатывает один раз:\n${url}\n\nЕсли это были не вы – просто проигнорируйте письмо.`,
       );
     }
     return { ok: true }; // одинаково для существующих и несуществующих
@@ -223,15 +223,15 @@ export async function authRoutes(app: FastifyInstance) {
     // Одноразовость, слой 1: jti в списке использованных (переживает повтор в пределах процесса).
     if (payload.jti && resetTokenUsed(payload.jti)) {
       audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
-      return reply.code(400).send({ error: "Ссылка уже использована — запросите новую" });
+      return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     }
     const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: payload.sub } }, limit: 1, fields: ["id", "token_version"] }))) as any[];
     // Одноразовость, слой 2 (переживает рестарт): ссылка выпущена под конкретное
-    // поколение сессий. Первый успешный сброс поднимает token_version — второй
+    // поколение сессий. Первый успешный сброс поднимает token_version – второй
     // переход по той же ссылке видит расхождение и не срабатывает.
     if (linked[0] && payload.ver != null && (linked[0].token_version ?? 0) !== payload.ver) {
       audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
-      return reply.code(400).send({ error: "Ссылка уже использована — запросите новую" });
+      return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     }
     await directus.request((updateUser as any)(payload.sub, { password }));
     // Ревокация всех выданных JWT этого выпускника: старые сессии гаснут.

@@ -18,7 +18,7 @@ export async function adminLogout(): Promise<void> {
   if (t) {
     try {
       await fetch("/api/auth/admin-logout", { method: "POST", headers: { authorization: `Bearer ${t}` } });
-    } catch { /* офлайн — локальный выход всё равно выполняем */ }
+    } catch { /* офлайн – локальный выход всё равно выполняем */ }
   }
   clearAdminToken();
 }
@@ -84,7 +84,7 @@ export function useOverview() {
 export type OrdersPage = { items: AdminOrder[]; total: number; page: number; limit: number };
 export type OrdersQuery = { q?: string; status?: string; payment?: string; page?: number; limit?: number };
 /**
- * Заявки постранично. Раньше сервер отдавал только последние 100 без пагинации —
+ * Заявки постранично. Раньше сервер отдавал только последние 100 без пагинации –
  * сто первая заявка в панели не показывалась вообще.
  */
 export function useAdminOrders(params: OrdersQuery = {}) {

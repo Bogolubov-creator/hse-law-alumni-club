@@ -9,7 +9,7 @@ import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./lib/cart.js";
 
-// Всё, кроме главной, — отдельными чанками. Главная и есть LCP-критичная страница
+// Всё, кроме главной, – отдельными чанками. Главная и есть LCP-критичная страница
 // для поисковика и первого визита; код витрин, юр. страниц и форм входа ей не нужен
 // и раньше ехал в стартовом бандле целиком.
 const News = lazy(() => import("./pages/News.js"));

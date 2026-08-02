@@ -100,11 +100,11 @@ export async function podcastsRoutes(app: FastifyInstance) {
     if (alumni.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     if (subActive(alumni.podcast_sub_until)) return reply.code(400).send({ error: "Подписка уже активна" });
 
-    // Незакрытая заявка на подписку уже есть — возвращаем её, а не плодим новые.
+    // Незакрытая заявка на подписку уже есть – возвращаем её, а не плодим новые.
     // Без этого каждый повторный клик создавал заявку и дёргал офис уведомлением.
     // ВНИМАНИЕ про NULL: `_nin` транслируется в SQL `NOT IN`, а `NULL NOT IN (…)`
     // не даёт совпадения. При выключенной оплате payment_status у новой заявки
-    // как раз NULL — без явной ветки `_null` дедупликация не нашла бы её вовсе.
+    // как раз NULL – без явной ветки `_null` дедупликация не нашла бы её вовсе.
     const pending = (await di.request((readItems as any)("orders", {
       filter: {
         _and: [

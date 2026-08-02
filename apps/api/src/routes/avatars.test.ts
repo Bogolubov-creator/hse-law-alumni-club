@@ -13,7 +13,7 @@ const { env } = await import("../env.js");
 const ME = "alumni-1";
 const token = (id = ME) => jwt.sign({ alumni_id: id, sub: `u-${id}`, ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
 
-// Минимальные валидные заголовки форматов — проверяется именно сигнатура.
+// Минимальные валидные заголовки форматов – проверяется именно сигнатура.
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(32, 1)]);
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 1)]);
 const WEBP = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4, 0), Buffer.from("WEBP"), Buffer.alloc(32, 1)]);
@@ -52,7 +52,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ data: { id: "file-1" } }), { status: 200, headers: { "content-type": "application/json" } })));
 });
 
-describe("POST /me/avatar — тип определяется по содержимому", () => {
+describe("POST /me/avatar – тип определяется по содержимому", () => {
   it("HTML под видом image/png отклоняется", async () => {
     const app = await build();
     const r = await upload(app, HTML, "image/png");
@@ -93,9 +93,9 @@ describe("POST /me/avatar — тип определяется по содерж�
     expect((await upload(app, WEBP, "image/webp", "a.webp")).statusCode).toBe(200);
   });
 
-  it("картинка с чужим заявленным типом всё равно принимается — верим содержимому", async () => {
+  it("картинка с чужим заявленным типом всё равно принимается – верим содержимому", async () => {
     const app = await build();
-    // Клиент соврал в Content-Type, но байты — настоящий PNG.
+    // Клиент соврал в Content-Type, но байты – настоящий PNG.
     const r = await upload(app, PNG, "image/jpeg");
     expect(r.statusCode).toBe(200);
   });
@@ -108,15 +108,15 @@ describe("POST /me/avatar — тип определяется по содерж�
   });
 });
 
-describe("POST /me/avatar — доступ", () => {
-  it("без токена — 401", async () => {
+describe("POST /me/avatar – доступ", () => {
+  it("без токена – 401", async () => {
     const app = await build();
     const m = multipart(PNG, "a.png", "image/png");
     const r = await app.inject({ method: "POST", url: "/me/avatar", headers: m.headers, payload: m.payload });
     expect(r.statusCode).toBe(401);
   });
 
-  it("неверифицированному — 403", async () => {
+  it("неверифицированному – 403", async () => {
     const app = await build();
     db.alumni![0]!.verification_status = "pending";
     const r = await upload(app, PNG, "image/png");

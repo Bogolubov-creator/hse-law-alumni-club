@@ -22,14 +22,14 @@ Cron-задачи (decay, dpo-sync, напоминания, ретенция П�
 - Сгенерировать секреты: `POSTGRES_PASSWORD`, `DIRECTUS_KEY`, `DIRECTUS_SECRET`,
   `DIRECTUS_SERVICE_TOKEN`, `AUTH_SECRET` (≥32), `ADMIN_AUTH_SECRET` (отдельный), `ADMIN_PASSWORD`,
   `BACKUP_ENCRYPTION_KEY` — каждый через `openssl rand -hex 32`.
-- `APP_ENV=production` — включает **fail-fast**. API не стартует, если: секреты выглядят
+- `APP_ENV=production` – включает **fail-fast**. API не стартует, если: секреты выглядят
   плейсхолдерами; `PUBLIC_URL` не `https://`; пуст `ADMIN_AUTH_SECRET`; бот на webhook без
   секрета; **пуст `SMTP_HOST`**; SMTP задан без отправителя; **`SEED_DEMO=true`**.
-  Проверки покрыты тестами (`apps/api/src/env.test.ts`) — каждая ветка отдельно.
+  Проверки покрыты тестами (`apps/api/src/env.test.ts`) – каждая ветка отдельно.
 - Реальные `WEB_DOMAIN`/`ADMIN_DOMAIN`, валидный `ACME_EMAIL` (не `.local` — Let's Encrypt отклонит),
   `PUBLIC_URL=https://<домен>`, `DIRECTUS_PUBLIC_URL=https://admin.<домен>`,
   `DIRECTUS_CORS_ORIGIN=https://admin.<домен>` (не `true`).
-- `SEED_DEMO=false` — одним флагом закрываются и демо-контент витрин, и тестовые аккаунты
+- `SEED_DEMO=false` – одним флагом закрываются и демо-контент витрин, и тестовые аккаунты
   (`TEST_EDITOR_*`, `TEST_ALUMNI_*`); иначе editor со слабым паролем станет бэкдором.
 - **`SMTP_*` обязателен**, а не опционален: без почтового канала не работают восстановление
   пароля (`/auth/forgot` честно отвечает 503) и подтверждение адреса при регистрации.

@@ -63,7 +63,7 @@ describe("POST /me/push/subscribe", () => {
 
   /**
    * Ключевой сценарий: общий компьютер. Раньше дедупликация шла только по
-   * endpoint, поэтому запись оставалась за прежним выпускником — уведомления
+   * endpoint, поэтому запись оставалась за прежним выпускником – уведомления
    * о ЕГО заявках уходили на устройство нового пользователя, а новый их не получал.
    */
   it("на общем устройстве подписка переходит к текущему выпускнику", async () => {
@@ -82,14 +82,14 @@ describe("POST /me/push/subscribe", () => {
     expect((db.audit_log ?? []).some((e) => e.event === "push.sub.reassign")).toBe(true);
   });
 
-  it("без токена — 401", async () => {
+  it("без токена – 401", async () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/me/push/subscribe", payload: { endpoint: ENDPOINT, keys: KEYS } });
     expect(r.statusCode).toBe(401);
     expect(db.push_subs).toHaveLength(0);
   });
 
-  it("неверифицированному — 403", async () => {
+  it("неверифицированному – 403", async () => {
     const app = await build();
     const r = await subscribe(app, "alumni-pending");
     expect(r.statusCode).toBe(403);
@@ -101,7 +101,7 @@ describe("POST /me/push/unsubscribe", () => {
   it("удаляет только свою подписку", async () => {
     const app = await build();
     await subscribe(app, A);
-    // Борис пытается отписать чужой endpoint — своей записи у него нет.
+    // Борис пытается отписать чужой endpoint – своей записи у него нет.
     const r = await app.inject({
       method: "POST", url: "/me/push/unsubscribe",
       headers: { authorization: `Bearer ${tokenFor(B)}` },

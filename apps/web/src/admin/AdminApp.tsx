@@ -248,7 +248,7 @@ function Orders() {
   const list = orders.data?.items ?? [];
   const total = orders.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / ORDERS_PER_PAGE));
-  // Смена запроса/фильтра всегда возвращает на первую страницу — иначе пустой
+  // Смена запроса/фильтра всегда возвращает на первую страницу – иначе пустой
   // экран «страница 7» при выборке из трёх заявок.
   const resetTo = (fn: () => void) => { fn(); setPage(1); };
   const exportCsv = async () => {
@@ -281,8 +281,8 @@ function Orders() {
             <span className="font-mono text-[13px]">
               {rub(o.total_estimate)}
               {/* Вебхук ЮKassa пометил заявку, когда пришедшая сумма не совпала
-                  с суммой заказа. Молча это оставлять нельзя — офис должен видеть. */}
-              {o.payment_status === "review" && <span className="ml-1.5 rounded-full bg-karmin px-2 py-0.5 font-mono text-[10px] text-kost" title="Оплата пришла на другую сумму — проверьте вручную">сумма ≠</span>}
+                  с суммой заказа. Молча это оставлять нельзя – офис должен видеть. */}
+              {o.payment_status === "review" && <span className="ml-1.5 rounded-full bg-karmin px-2 py-0.5 font-mono text-[10px] text-kost" title="Оплата пришла на другую сумму – проверьте вручную">сумма ≠</span>}
               {o.payment_status === "succeeded" && <span className="ml-1.5 font-mono text-[11px] text-[#1F8A5B]">оплачено</span>}
             </span>
             <select aria-label={`Статус заявки ${o.number}`} value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
@@ -497,7 +497,7 @@ const AUDIT_RU: Record<string, { label: string; icon: string; group: string }> =
   "member.points": { label: "Ручное начисление баллов", icon: "⭐", group: "Изменения" },
   "friend.decline": { label: "Отклонена заявка в друзья", icon: "🙅", group: "Изменения" },
   "friend.remove": { label: "Удаление из друзей", icon: "🙅", group: "Изменения" },
-  "payment.amount_mismatch": { label: "Оплата на другую сумму — проверить", icon: "🚨", group: "Платежи" },
+  "payment.amount_mismatch": { label: "Оплата на другую сумму – проверить", icon: "🚨", group: "Платежи" },
   "password.reset.replay": { label: "Повторное использование ссылки сброса", icon: "⛔", group: "Входы" },
   "event.patch": { label: "Изменено событие", icon: "📅", group: "Изменения" },
   "event.delete": { label: "Удалено событие", icon: "🗑️", group: "Изменения" },

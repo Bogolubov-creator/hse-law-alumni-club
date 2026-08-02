@@ -64,7 +64,7 @@ export interface AdminCtx { userId: string; role: string; jti?: string }
 
 /**
  * Отозванные админ-токены (выход из панели). Хранение в памяти процесса:
- * деплой одноинстансный (см. deploy-runbook), а сам токен живёт 12 ч — после
+ * деплой одноинстансный (см. deploy-runbook), а сам токен живёт 12 ч – после
  * рестарта запись не нужна дольше срока жизни токена. Чистим по расписанию.
  */
 const revokedAdminJti = new Map<string, number>();
@@ -158,7 +158,7 @@ export function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
 }
 
 /**
- * Гард операций с ПДн и деньгами: мало быть в панели — нужна роль admin.
+ * Гард операций с ПДн и деньгами: мало быть в панели – нужна роль admin.
  * Редактор (editor) получает 403, а не тихий доступ.
  */
 export function requireFullAdmin(req: FastifyRequest, reply: FastifyReply) {

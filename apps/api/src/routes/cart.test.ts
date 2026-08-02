@@ -36,13 +36,13 @@ beforeEach(() => {
   });
 });
 
-describe("POST /cart — вариант товара сверяется с каталогом", () => {
+describe("POST /cart – вариант товара сверяется с каталогом", () => {
   it("выдуманный SKU отклоняется", async () => {
     const app = await build();
     const r = await add(app, { type: "merch", ref_id: "robe", variant_sku: "robe-XXXL", qty: 1 });
     expect(r.statusCode).toBe(400);
     expect(r.json().error).toMatch(/варианта товара нет/i);
-    // В корзину ничего не попало — иначе заявка ушла бы с несуществующим размером.
+    // В корзину ничего не попало – иначе заявка ушла бы с несуществующим размером.
     expect(db.carts ?? []).toHaveLength(0);
   });
 
@@ -74,7 +74,7 @@ describe("POST /cart — вариант товара сверяется с ка�
   });
 });
 
-describe("POST /cart — границы количества и числа позиций", () => {
+describe("POST /cart – границы количества и числа позиций", () => {
   it("повторные добавления не превышают потолок количества", async () => {
     const app = await build();
     for (let i = 0; i < 4; i++) await add(app, { type: "merch", ref_id: "robe", variant_sku: "robe-M", qty: 99 });
@@ -85,7 +85,7 @@ describe("POST /cart — границы количества и числа по�
 
   it("новая позиция сверх потолка отклоняется явной ошибкой, а не молча", async () => {
     const app = await build();
-    // Забиваем корзину до предела разными «значками» — у товара без вариантов
+    // Забиваем корзину до предела разными «значками» – у товара без вариантов
     // разные строки не создать, поэтому используем разные ref_id из каталога.
     for (let i = 0; i < MAX_CART_LINES; i++) {
       db.products!.push({ id: `x${i}`, slug: `sku-${i}`, title: `Товар ${i}`, price: 1000, stock: 10, status: "published", variants_json: null });
@@ -111,7 +111,7 @@ describe("POST /cart — границы количества и числа по�
   });
 });
 
-describe("POST /cart — прежние правила ДПО не сломаны", () => {
+describe("POST /cart – прежние правила ДПО не сломаны", () => {
   it("повторное добавление программы не увеличивает количество", async () => {
     const app = await build();
     await add(app, { type: "dpo", ref_id: "ip-law", qty: 1 });
@@ -121,13 +121,13 @@ describe("POST /cart — прежние правила ДПО не сломан�
     expect(items[0].qty).toBe(1);
   });
 
-  it("несуществующая позиция — 404", async () => {
+  it("несуществующая позиция – 404", async () => {
     const app = await build();
     const r = await add(app, { type: "merch", ref_id: "нет-такого", qty: 1 });
     expect(r.statusCode).toBe(404);
   });
 
-  it("без сессии корзины — 400", async () => {
+  it("без сессии корзины – 400", async () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/cart", payload: { type: "merch", ref_id: "pin", qty: 1 } });
     expect(r.statusCode).toBe(400);

@@ -106,7 +106,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
 
     // Сверка суммы: подтверждаем заявку, только если пришло ровно столько, сколько
     // она стоит. Расхождение (правка заявки между созданием платежа и вебхуком,
-    // подменённая метадата) — не подтверждаем автоматически, зовём офис разбираться.
+    // подменённая метадата) – не подтверждаем автоматически, зовём офис разбираться.
     const paidKop = Math.round(Number(verified.amount?.value ?? 0) * 100);
     const amountMatches = paidKop === Number(order.total_estimate ?? 0);
     if (verified.status === "succeeded" && !amountMatches) {

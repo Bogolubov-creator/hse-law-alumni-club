@@ -28,7 +28,7 @@ function matchOp(value: any, op: string, operand: any): boolean {
     case "_in": return Array.isArray(operand) && operand.includes(value);
     // _nin повторяет семантику SQL NOT IN: для NULL/undefined сравнение неопределено
     // и строка НЕ попадает в выборку. Иначе тест расходился бы с продом ровно там,
-    // где это опаснее всего — на «ещё не заполненных» полях.
+    // где это опаснее всего – на «ещё не заполненных» полях.
     case "_nin": return value !== null && value !== undefined && Array.isArray(operand) && !operand.includes(value);
     case "_null": return operand ? value === null || value === undefined : value !== null && value !== undefined;
     case "_nnull": return operand ? value !== null && value !== undefined : value === null || value === undefined;

@@ -58,7 +58,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // Выход из панели: гасим конкретную сессию по jti. Без этого админ-токен жил
-  // до истечения 12 ч, и «выход» был чисто клиентским — токен оставался годным.
+  // до истечения 12 ч, и «выход» был чисто клиентским – токен оставался годным.
   app.post("/auth/admin-logout", async (req, reply) => {
     const ctx = resolveAdmin(req);
     if (!ctx) return reply.code(401).send({ error: "Требуется вход администратора" });
@@ -115,7 +115,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Ручная пуш-рассылка всем подписанным устройствам (анонсы офиса).
   app.post("/admin/push/broadcast", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
-    // Рассылка уходит на все устройства сразу и не отзывается — только админ.
+    // Рассылка уходит на все устройства сразу и не отзывается – только админ.
     const ctx = requireFullAdmin(req, reply);
     if (!ctx) return;
     const b = z.object({
@@ -130,7 +130,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // Заявки: страница + total. Раньше отдавались только последние 100 без
-  // пагинации — сто первая заявка исчезала из панели навсегда.
+  // пагинации – сто первая заявка исчезала из панели навсегда.
   app.get("/admin/orders", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
     const qp = z.object({
@@ -248,7 +248,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Продление подписки на подкасты решением офиса (например, оплата по счёту).
   app.post("/admin/members/:id/podcast-sub", async (req, reply) => {
-    // Выдача платной подписки — операция с деньгами, только админ.
+    // Выдача платной подписки – операция с деньгами, только админ.
     const ctx = requireFullAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
@@ -258,7 +258,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   app.patch("/admin/members/:id", async (req, reply) => {
-    // Верификация и персональная скидка — только админ.
+    // Верификация и персональная скидка – только админ.
     const ctx = requireFullAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
@@ -361,7 +361,7 @@ export async function adminRoutes(app: FastifyInstance) {
     delete patch.start;
     if (b.start !== undefined) patch.dates = b.start ? { start: b.start } : null;
     await di.request((updateItem as any)("programs", id, patch));
-    // Цена — деньги: правка фиксируется в журнале с прежним и новым значением.
+    // Цена – деньги: правка фиксируется в журнале с прежним и новым значением.
     audit("program.patch", { actor: `admin:${ctx.userId}`, subject: `program:${id}`, detail: b, req });
     return { ok: true };
   });
@@ -441,7 +441,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ── Выгрузка заявок в CSV (Excel-совместимо: BOM + точка с запятой) ──
   app.get("/admin/orders/export.csv", async (req, reply) => {
-    // Выгрузка содержит ПДн всех заявителей — только админ.
+    // Выгрузка содержит ПДн всех заявителей – только админ.
     const ctx = requireFullAdmin(req, reply);
     if (!ctx) return;
     const orders = (await di.request((readItems as any)("orders", {
@@ -616,7 +616,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = podcastBody.partial().parse(req.body);
     await di.request((updateItem as any)("podcasts", id, b));
-    // is_free снимает пейволл — правку обязательно видно в журнале.
+    // is_free снимает пейволл – правку обязательно видно в журнале.
     audit("podcast.patch", { actor: `admin:${ctx.userId}`, subject: `podcast:${id}`, detail: b, req });
     return { ok: true };
   });
@@ -680,7 +680,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Ручное начисление баллов офисом.
   app.post("/admin/members/:id/points", async (req, reply) => {
-    // Баллы конвертируются в скидку — только админ.
+    // Баллы конвертируются в скидку – только админ.
     const ctx = requireFullAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
@@ -698,7 +698,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // 152-ФЗ: офис исполняет запрос на удаление/стирание ПДн участника (без разработчика).
   // Обезличивает профиль и заявки, удаляет аккаунт входа. Необратимо.
   app.post("/admin/members/:id/anonymize", async (req, reply) => {
-    // Необратимое стирание ПДн — только админ.
+    // Необратимое стирание ПДн – только админ.
     const ctx = requireFullAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
