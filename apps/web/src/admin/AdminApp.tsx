@@ -221,9 +221,9 @@ function PushBroadcast({ subs }: { subs: number }) {
       <div className="font-display text-lg font-semibold">Пуш-рассылка</div>
       <p className="mt-1 font-mono text-[11px] text-grafit-soft">уйдёт на {subs} подписанных устройств · попадает в журнал безопасности</p>
       <div className="mt-3 grid grid-cols-[1fr_1fr_170px] gap-2.5 max-md:grid-cols-1">
-        <input value={f.title} onChange={(e) => setF((s) => ({ ...s, title: e.target.value }))} placeholder="Заголовок (например: Новое событие)" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-sm" />
-        <input value={f.body} onChange={(e) => setF((s) => ({ ...s, body: e.target.value }))} placeholder="Текст уведомления" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-sm" />
-        <input value={f.url} onChange={(e) => setF((s) => ({ ...s, url: e.target.value }))} placeholder="/events" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 font-mono text-sm" />
+        <input aria-label="Заголовок пуш-уведомления" value={f.title} onChange={(e) => setF((s) => ({ ...s, title: e.target.value }))} placeholder="Заголовок (например: Новое событие)" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-sm" />
+        <input aria-label="Текст пуш-уведомления" value={f.body} onChange={(e) => setF((s) => ({ ...s, body: e.target.value }))} placeholder="Текст уведомления" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 text-sm" />
+        <input aria-label="Ссылка, куда ведёт уведомление" value={f.url} onChange={(e) => setF((s) => ({ ...s, url: e.target.value }))} placeholder="/events" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-kost px-3 py-2.5 font-mono text-sm" />
       </div>
       <div className="mt-3 flex items-center gap-3">
         <button disabled={!valid || send.isPending || subs === 0} onClick={() => send.mutate()} className="foc rounded-[11px] bg-ohra px-5 py-2.5 text-sm font-semibold text-kost disabled:opacity-50">{send.isPending ? "Отправляем…" : "Отправить всем"}</button>
@@ -258,7 +258,7 @@ function Orders() {
   return (
     <>
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <input value={q} onChange={(e) => resetTo(() => setQ(e.target.value))} placeholder="Поиск: номер, ФИО, телефон, email…" className="foc w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
+      <input aria-label="Поиск по заявкам" value={q} onChange={(e) => resetTo(() => setQ(e.target.value))} placeholder="Поиск: номер, ФИО, телефон, email…" className="foc w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
       <select value={statusFilter} onChange={(e) => resetTo(() => setStatusFilter(e.target.value))} aria-label="Фильтр по статусу" className="foc rounded-[11px] border-[1.5px] border-[#E5E7EB] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-ohra">
         <option value="">Все статусы</option>
         {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
@@ -285,7 +285,7 @@ function Orders() {
               {o.payment_status === "review" && <span className="ml-1.5 rounded-full bg-karmin px-2 py-0.5 font-mono text-[10px] text-kost" title="Оплата пришла на другую сумму — проверьте вручную">сумма ≠</span>}
               {o.payment_status === "succeeded" && <span className="ml-1.5 font-mono text-[11px] text-[#1F8A5B]">оплачено</span>}
             </span>
-            <select value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
+            <select aria-label={`Статус заявки ${o.number}`} value={o.status} onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${stPill(o.status)}`}>
               {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
             </select>
           </div>
@@ -349,7 +349,7 @@ function Members() {
         ].map((f) => (
           <button key={f.key} onClick={() => setFilter(f.key)} className={`foc rounded-full px-3.5 py-2 text-[13px] font-semibold ${vf === f.key ? "bg-grafit text-kost" : f.key === "pending" && pendingCount ? "border border-ohra bg-[rgba(236,90,19,.1)] text-ohra-deep" : "border border-[#E5E7EB] bg-white"}`}>{f.label}</button>
         ))}
-        <input value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="Поиск: ФИО, год, программа…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
+        <input aria-label="Поиск по выпускникам" value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="Поиск: ФИО, год, программа…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2.5 text-sm outline-none focus:border-ohra" />
         <span className="font-mono text-[12px] text-grafit-soft">всего: {total}</span>
       </div>
       <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
@@ -416,13 +416,13 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
 
         <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Ручные баллы</div>
         <div className="mt-2 flex gap-2">
-          <input value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="напр. 60 или −30" className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
+          <input aria-label="Сколько баллов начислить или списать" value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="напр. 60 или −30" className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
           <button disabled={addPoints.isPending} onClick={() => { const d = parseInt(delta, 10); if (!isNaN(d)) { addPoints.mutate({ id: member.id, delta: d }); setDelta(""); } }} className="foc rounded-[10px] bg-hse-blue px-5 text-sm font-semibold text-kost disabled:opacity-60">Начислить</button>
         </div>
 
         <div className="mt-5 font-mono text-[11px] uppercase text-grafit-soft">Персональная скидка (0–10%)</div>
         <div className="mt-2 flex gap-2">
-          <input value={discount} onChange={(e) => setDiscount(e.target.value)} type="number" min={0} max={10} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
+          <input aria-label="Персональная скидка, %" value={discount} onChange={(e) => setDiscount(e.target.value)} type="number" min={0} max={10} className="foc flex-1 rounded-[10px] border-[1.5px] border-[#E5E7EB] px-3 py-2.5 text-sm outline-none focus:border-ohra" />
           <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: member.id, personal_discount: Math.max(0, Math.min(10, parseInt(discount, 10) || 0)) })} className="foc rounded-[10px] bg-ohra px-5 text-sm font-semibold text-kost disabled:opacity-60">Сохранить</button>
         </div>
 
@@ -526,7 +526,7 @@ function AuditLog() {
         {AUDIT_GROUPS.map((g) => (
           <button key={g} onClick={() => setGroup(g)} className={`foc rounded-full px-3.5 py-2 text-[13px] font-semibold ${group === g ? "bg-grafit text-kost" : "border border-[#E5E7EB] bg-white"}`}>{g}</button>
         ))}
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: email, IP, номер заявки…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2 text-sm outline-none focus:border-ohra" />
+        <input aria-label="Поиск по журналу безопасности" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск: email, IP, номер заявки…" className="foc ml-auto w-72 max-w-full rounded-[11px] border-[1.5px] border-[#E5E7EB] px-3.5 py-2 text-sm outline-none focus:border-ohra" />
       </div>
       <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
         <div className="grid grid-cols-[110px_1fr_1fr_1fr_120px] gap-3 bg-[#FBF7EF] px-6 py-3.5 font-mono text-[11px] uppercase tracking-wide text-grafit-soft">
@@ -607,7 +607,7 @@ function EventsAdmin() {
             <span className="font-mono text-[12px] text-grafit-soft">{fmt(e.starts_at)}</span>
             <span className="min-w-0 flex-1 truncate font-semibold">{e.title}</span>
             <span className="font-mono text-[11px] text-[#a07d2e]">+{e.points} б.</span>
-            <select value={e.status} disabled={patchEvent.isPending} onChange={(ev) => patchEvent.mutate({ id: e.id, status: ev.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${e.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : e.status === "done" ? "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]" : "bg-kost-2 text-grafit-soft"}`}>
+            <select aria-label={`Статус события «${e.title}»`} value={e.status} disabled={patchEvent.isPending} onChange={(ev) => patchEvent.mutate({ id: e.id, status: ev.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${e.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : e.status === "done" ? "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]" : "bg-kost-2 text-grafit-soft"}`}>
               <option value="published">Анонс</option><option value="done">Прошло</option><option value="draft">Черновик</option><option value="canceled">Отменено</option>
             </select>
             <button aria-label={`Редактировать ${e.title}`} onClick={() => setEditing(e)} className="foc h-8 w-8 rounded-[9px] text-grafit-soft hover:bg-kost-2">✎</button>
@@ -715,7 +715,7 @@ function NewsAdmin() {
             <div className="truncate font-semibold">{n.title}</div>
             {n.excerpt && <div className="truncate font-mono text-[11px] text-grafit-soft">{n.excerpt}</div>}
           </div>
-          <select value={n.status} disabled={patchNews.isPending} onChange={(e) => patchNews.mutate({ id: n.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${n.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
+          <select aria-label={`Статус новости «${n.title}»`} value={n.status} disabled={patchNews.isPending} onChange={(e) => patchNews.mutate({ id: n.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${n.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
             <option value="published">Опубликована</option><option value="draft">Черновик</option>
           </select>
           <button aria-label={`Удалить ${n.title}`} onClick={() => setConfirmDel(n)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
@@ -773,7 +773,7 @@ function TimelineAdmin() {
             <div className="truncate font-semibold">{t.title}</div>
             <div className="truncate font-mono text-[11px] text-grafit-soft">{t.text}{t.metric ? ` · ${t.metric}` : ""}</div>
           </div>
-          <select value={t.status} disabled={patchTimeline.isPending} onChange={(e) => patchTimeline.mutate({ id: t.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${t.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
+          <select aria-label={`Статус пункта истории «${t.title}»`} value={t.status} disabled={patchTimeline.isPending} onChange={(e) => patchTimeline.mutate({ id: t.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${t.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
             <option value="published">На сайте</option><option value="draft">Скрыта</option>
           </select>
           <button aria-label={`Удалить ${t.title}`} onClick={() => setConfirmDel(t)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
@@ -842,7 +842,7 @@ function PodcastsAdmin() {
             {p.is_free ? "пробный ✓" : "по подписке"}
           </button>
           <span className="font-mono text-[12px] text-grafit-soft">{p.duration ?? "—"}</span>
-          <select value={p.status} disabled={patchPodcast.isPending} onChange={(e) => patchPodcast.mutate({ id: p.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${p.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
+          <select aria-label={`Статус подкаста «${p.title}»`} value={p.status} disabled={patchPodcast.isPending} onChange={(e) => patchPodcast.mutate({ id: p.id, status: e.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${p.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]"}`}>
             <option value="published">Опубликован</option><option value="draft">Черновик</option>
           </select>
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-karmin hover:bg-[rgba(181,51,27,.08)]">✕</button>
@@ -973,7 +973,7 @@ function PagesAdmin() {
 
 function StatusToggle({ status, onSet, busy }: { status: string; onSet: (s: string) => void; busy: boolean }) {
   return (
-    <select value={status} disabled={busy} onChange={(e) => onSet(e.target.value)} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : status === "draft" ? "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]" : "bg-[rgba(107,114,128,.14)] text-grafit-soft"}`}>
+    <select aria-label="Статус публикации" value={status} disabled={busy} onChange={(e) => onSet(e.target.value)} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${status === "published" ? "bg-[rgba(31,138,91,.14)] text-[#1F8A5B]" : status === "draft" ? "bg-[rgba(46,111,174,.14)] text-[#2E6FAE]" : "bg-[rgba(107,114,128,.14)] text-grafit-soft"}`}>
       {Object.entries(CATALOG_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
     </select>
   );
