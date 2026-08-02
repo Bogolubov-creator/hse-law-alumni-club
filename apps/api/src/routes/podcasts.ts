@@ -5,7 +5,7 @@ import { z } from "zod";
 import { PODCAST_SUB_PRICE_KOP, orderNumber } from "@club/shared";
 import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
-import { lastOrderSeq } from "../lib/order-number.js";
+import { lastOrderSeq, isUniqueViolation } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
@@ -117,7 +117,10 @@ export async function podcastsRoutes(app: FastifyInstance) {
         }));
         created = true;
       } catch (e) {
-        if (attempt === 5) { req.log.error({ err: e }, "podcast sub order failed"); return reply.code(500).send({ error: "Не удалось оформить подписку, попробуйте ещё раз" }); }
+        // Ретрай со следующим номером – только при коллизии уникального номера;
+        // прочий сбой не ретраим (строка могла записаться → дубль подписки-заявки).
+        if (!isUniqueViolation(e)) { req.log.error({ err: e }, "podcast sub order failed (non-unique)"); return reply.code(500).send({ error: "Не удалось оформить подписку, попробуйте ещё раз" }); }
+        if (attempt === 5) { req.log.error({ err: e }, "podcast sub order failed (number exhausted)"); return reply.code(500).send({ error: "Не удалось оформить подписку, попробуйте ещё раз" }); }
       }
     }
 

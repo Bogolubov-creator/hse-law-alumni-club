@@ -109,12 +109,24 @@ export async function runDecay(now = new Date()) {
       limit: -1, fields: ["id", "points_cached", "level_cached"],
     }),
   )) as any[];
+  const MIN_GAP_MS = 27 * 24 * 3600 * 1000; // не чаще раза в ~месяц
   let affected = 0;
   for (const a of stale) {
     try {
-      const delta = decayDelta(a.points_cached ?? 0);
+      // Баланс и дата последнего decay – из ledger (источник правды), а не из
+      // возможно рассинхронизированного points_cached: списываем корректную сумму.
+      const ledger = (await di.request(
+        readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, limit: -1, fields: ["delta", "reason", "created_at"] }),
+      )) as { delta: number; reason: string; created_at: string | null }[];
+      const balance = ledger.reduce((s, r) => s + (r.delta || 0), 0);
+      // Защита от двойного списания: если decay уже был за последние 27 дней
+      // (ручной /decay/run + cron на стыке месяцев), пропускаем. Ключ по месяцу
+      // защищает лишь от повтора в том же календарном месяце.
+      const lastDecayAt = ledger.reduce((max, r) => (r.reason === "decay" && r.created_at && r.created_at > max ? r.created_at : max), "");
+      if (lastDecayAt && now.getTime() - new Date(lastDecayAt).getTime() < MIN_GAP_MS) continue;
+      const delta = decayDelta(balance);
       if (delta >= 0) continue;
-      const before = computeLevel(a.points_cached ?? 0).key;
+      const before = computeLevel(balance).key;
       const res = await addPoints(a.id, { reason: "decay", delta, idempotencyKey: `decay-${a.id}-${ym}`, comment: "Ежемесячный decay за неактивность" });
       affected++;
       if (res.level !== before) console.log(`[decay] alumni ${a.id} просел: ${before} → ${res.level}`);

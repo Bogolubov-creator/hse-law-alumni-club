@@ -8,7 +8,7 @@ import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
 import { audit } from "../lib/audit.js";
 import { lookup, cartSession, type CatalogInfo } from "./cart.js";
-import { lastOrderSeq } from "../lib/order-number.js";
+import { lastOrderSeq, isUniqueViolation } from "../lib/order-number.js";
 
 const di = directus;
 
@@ -131,7 +131,11 @@ export async function ordersRoutes(app: FastifyInstance) {
         await di.request((createItem as any)("orders", { ...base, number }));
         created = true;
       } catch (e) {
-        if (attempt === 5) { req.log.error({ err: e }, "order create failed"); return reply.code(500).send({ error: "Не удалось создать заявку, попробуйте ещё раз" }); }
+        // Ретраим со следующим номером ТОЛЬКО при коллизии уникального номера.
+        // Прочий сбой (таймаут/сеть) не ретраим: строка могла записаться, и повтор
+        // создал бы вторую заявку под другим номером – выходим с ошибкой сразу.
+        if (!isUniqueViolation(e)) { req.log.error({ err: e }, "order create failed (non-unique)"); return reply.code(500).send({ error: "Не удалось создать заявку, попробуйте ещё раз" }); }
+        if (attempt === 5) { req.log.error({ err: e }, "order create failed (number exhausted)"); return reply.code(500).send({ error: "Не удалось создать заявку, попробуйте ещё раз" }); }
       }
     }
 

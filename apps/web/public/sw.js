@@ -1,7 +1,7 @@
 /* Service worker для установки на экран (PWA).
    Стратегия: сеть в приоритете (сайт живой, данные из API), статика /assets –
    из кэша с обновлением в фоне. Никогда не кэшируем /api (персональные данные). */
-const CACHE = "club-v3";
+const CACHE = "club-v4";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/manifest.webmanifest", "/icon-192.png"])));
@@ -33,9 +33,22 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Навигация: сеть, при офлайне – закэшированная оболочка
+  // Навигация: сеть в приоритете, при офлайне – закэшированная оболочка.
+  // Успешный ответ кладём в кэш как свежую оболочку "/" (stale-while-revalidate):
+  // так офлайн-фолбэк всегда указывает на АКТУАЛЬНЫЕ чанки последней сборки, а не
+  // на удалённые деплоем (иначе после релиза без бампа кэша – белый экран).
   if (e.request.mode === "navigate") {
-    e.respondWith(fetch(e.request).catch(() => caches.match("/")));
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put("/", copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match("/")),
+    );
   }
 });
 
