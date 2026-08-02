@@ -13,20 +13,20 @@ describe("addLine", () => {
     expect(items).toHaveLength(1);
     expect(items[0]!.qty).toBe(3);
   });
-  it("ДПО: заявка на одно место — повторное добавление не увеличивает qty", () => {
+  it("ДПО: заявка на одно место – повторное добавление не увеличивает qty", () => {
     let items: StoredCartItem[] = [];
     items = addLine(items, line());
     items = addLine(items, line({ qty: 2 }));
     expect(items).toHaveLength(1);
     expect(items[0]!.qty).toBe(1);
   });
-  it("variant_sku undefined и null — одна позиция", () => {
+  it("variant_sku undefined и null – одна позиция", () => {
     let items = addLine([], line({ type: "merch", ref_id: "m", variant_sku: undefined }));
     items = addLine(items, line({ type: "merch", ref_id: "m", variant_sku: null }));
     expect(items).toHaveLength(1);
     expect(items[0]!.qty).toBe(2);
   });
-  it("разные варианты — разные позиции", () => {
+  it("разные варианты – разные позиции", () => {
     let items = addLine([], line({ type: "merch", ref_id: "m", variant_sku: "M" }));
     items = addLine(items, line({ type: "merch", ref_id: "m", variant_sku: "L" }));
     expect(items).toHaveLength(2);
@@ -49,11 +49,11 @@ describe("setLineQty", () => {
   it("ДПО: qty не поднимается выше 1 даже через прямой PATCH (канон «одно место»)", () => {
     expect(setLineQty([line({ ref_id: "a" })], "a", null, 5)[0]!.qty).toBe(1);
   });
-  it("несовпадающий ref — без изменений", () => {
+  it("несовпадающий ref – без изменений", () => {
     const items = [line({ ref_id: "a" })];
     expect(setLineQty(items, "z", null, 9)).toEqual(items);
   });
-  it("type различает одинаковый slug у ДПО и мерча — меняется только нужная строка", () => {
+  it("type различает одинаковый slug у ДПО и мерча – меняется только нужная строка", () => {
     const items = [line({ type: "dpo", ref_id: "x" }), line({ type: "merch", ref_id: "x" })];
     const out = setLineQty(items, "x", null, 4, "merch");
     expect(out.find((i) => i.type === "merch")!.qty).toBe(4);

@@ -1,4 +1,4 @@
-/** Статус заявки в именительном падеже — для бейджей и списков. */
+/** Статус заявки в именительном падеже – для бейджей и списков. */
 export const ORDER_STATUS_RU: Record<string, string> = {
   new: "Новая",
   in_progress: "В работе",
@@ -7,7 +7,7 @@ export const ORDER_STATUS_RU: Record<string, string> = {
   canceled: "Отменена",
 };
 
-/** Статус в глагольной форме — для уведомлений («Заявка … взята в работу»). */
+/** Статус в глагольной форме – для уведомлений («Заявка … взята в работу»). */
 export const ORDER_STATUS_VERB_RU: Record<string, string> = {
   in_progress: "взята в работу",
   confirmed: "подтверждена",

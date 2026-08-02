@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { cartItemSchema } from "./order";
 
-describe("cartItemSchema.qty — кап количества", () => {
+describe("cartItemSchema.qty – кап количества", () => {
   it("qty по умолчанию = 1", () => {
     const r = cartItemSchema.parse({ type: "merch", ref_id: "hoodie" });
     expect(r.qty).toBe(1);

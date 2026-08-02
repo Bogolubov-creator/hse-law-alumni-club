@@ -1,5 +1,5 @@
-// Сид каталога ДПО — взят из прототипа club-business-law.html.
-// price — в копейках (целое), как в схеме данных.
+// Сид каталога ДПО – взят из прототипа club-business-law.html.
+// price – в копейках (целое), как в схеме данных.
 
 export interface ProgramModuleSeed {
   title: string;
@@ -32,7 +32,7 @@ export interface NewsSeed {
   published_at: string; // ISO
 }
 
-// Сид новостей — тексты из дизайна Главной (тире – en dash, по канону).
+// Сид новостей – тексты из дизайна Главной (тире – en dash, по канону).
 export const NEWS_SEED: NewsSeed[] = [
   {
     slug: "novyy-nabor-dpo-osenyu",
@@ -66,7 +66,7 @@ export interface ProductSeed {
   variants_json: { sku: string; size?: string; color?: string; stock: number }[];
 }
 
-// Сид мерча — из админ-дизайна. price в копейках.
+// Сид мерча – из админ-дизайна. price в копейках.
 export const PRODUCTS_SEED: ProductSeed[] = [
   {
     slug: "hoodie-faculty", title: "Худи с логотипом факультета", category: "Одежда", price: 420_000, stock: 18,
@@ -93,7 +93,7 @@ const DOC_PK = "Удостоверение о повышении квалифи�
 const DOC_PP = "Диплом о профессиональной переподготовке НИУ ВШЭ";
 
 // Каталог отражает реальные программы ДПО факультета права НИУ ВШЭ (orgUnit 22753,
-// набор на 2026). Title/price/format/start/document — по данным hse.ru; длительность
+// набор на 2026). Title/price/format/start/document – по данным hse.ru; длительность
 // без данных в листинге помечена приблизительной и уточняется живой синхронизацией.
 // См. scripts/src/sync-hse-dpo.ts.
 export const PROGRAMS_SEED: ProgramSeed[] = [

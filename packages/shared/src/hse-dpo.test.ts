@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { parseHseDpoCards, humanizeDate, mapHseFormat, parseHsePrice } from "./hse-dpo";
 import { slugifyRu, normalizeTitle } from "./slug";
 
-// Фикстура — фрагмент реальной вёрстки листинга hse.ru (dpob-card), 2 карточки.
+// Фикстура – фрагмент реальной вёрстки листинга hse.ru (dpob-card), 2 карточки.
 const FIXTURE = `
 <div class="dpob-cards__list">
 <div class="dpob-card dpob-cards__item"><div class="dpob-card__heading"><div>
@@ -69,7 +69,7 @@ describe("хелперы hse-dpo", () => {
   it("slugifyRu + normalizeTitle", () => {
     expect(slugifyRu("Нейроправо")).toBe("nejropravo");
     expect(normalizeTitle("Право на английском / Legal English")).toBe("право на английском");
-    // латинский дубль хвостом в скобках — тоже отбрасывается при сопоставлении
+    // латинский дубль хвостом в скобках – тоже отбрасывается при сопоставлении
     expect(normalizeTitle("Французский юридический язык: право, терминология и аргументация (Le français juridique: droit, terminologie et argumentation)"))
       .toBe(normalizeTitle("Французский юридический язык: право, терминология и аргументация"));
   });

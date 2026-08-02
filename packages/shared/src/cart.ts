@@ -16,13 +16,13 @@ export const sameLine = (a: StoredCartItem, type: string, ref: string, sku?: str
   a.type === type && a.ref_id === ref && (a.variant_sku ?? null) === (sku ?? null);
 
 /**
- * Добавить позицию: если такая (type+ref+variant) уже есть — увеличить qty, иначе добавить.
- * ДПО — это заявка на одно место: qty всегда 1, повторное добавление не увеличивает.
+ * Добавить позицию: если такая (type+ref+variant) уже есть – увеличить qty, иначе добавить.
+ * ДПО – это заявка на одно место: qty всегда 1, повторное добавление не увеличивает.
  */
 export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCartItem[] {
   const ex = items.find((i) => sameLine(i, line.type, line.ref_id, line.variant_sku));
   if (line.type === "dpo") {
-    if (ex) return items; // уже в заявке — одно место
+    if (ex) return items; // уже в заявке – одно место
     return [...items, { ...line, qty: 1 }];
   }
   // Накопление не должно превышать кап позиции (иначе повторными добавлениями
@@ -32,7 +32,7 @@ export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCa
 }
 
 /**
- * Установить количество позиции; qty<=0 — удалить. ДПО — всегда 1 место (канон).
+ * Установить количество позиции; qty<=0 – удалить. ДПО – всегда 1 место (канон).
  * type учитывается в матче: одинаковый slug у программы и товара не должен менять
  * обе строки разом.
  */

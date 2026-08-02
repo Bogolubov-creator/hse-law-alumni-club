@@ -35,7 +35,7 @@ const memberToken = () => jwt.sign({ alumni_id: ALUMNI_ID, sub: "user-1", ver: 0
 
 beforeEach(() => {
   resetDb({
-    // Цена в каталоге — 690000 копеек; в корзине специально лежит другая.
+    // Цена в каталоге – 690000 копеек; в корзине специально лежит другая.
     products: [{ id: "p1", slug: "robe", title: "Мантия выпускника", price: 690000, stock: 5, status: "published", variants_json: null }],
     programs: [{ id: "d1", slug: "ip-law", title: "Право ИС", price: 1200000, status: "published", enrollment: "actual", source_url: null }],
     carts: [{ id: "cart-1", session_token: SESSION, items_json: [{ type: "merch", ref_id: "robe", variant_sku: null, qty: 1, price: 1, title: "Мантия выпускника" }] }],
@@ -45,7 +45,7 @@ beforeEach(() => {
   });
 });
 
-describe("POST /orders — предусловия", () => {
+describe("POST /orders – предусловия", () => {
   it("без сессии корзины → 400", async () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/orders", payload: CONTACTS });
@@ -81,12 +81,12 @@ describe("POST /orders — предусловия", () => {
   });
 });
 
-describe("POST /orders — цена и наличие", () => {
+describe("POST /orders – цена и наличие", () => {
   it("цена берётся из каталога, а не из корзины (защита от подмены)", async () => {
     const app = await build();
     const r = await post(app, CONTACTS);
     expect(r.statusCode).toBe(200);
-    // В корзине лежала цена 1 копейка — в заявку она попасть не должна.
+    // В корзине лежала цена 1 копейка – в заявку она попасть не должна.
     expect(r.json().subtotal).toBe(690000);
     expect(db.orders![0]!.subtotal).toBe(690000);
   });
@@ -127,7 +127,7 @@ describe("POST /orders — цена и наличие", () => {
   });
 });
 
-describe("POST /orders — скидка выпускника", () => {
+describe("POST /orders – скидка выпускника", () => {
   it("гость платит полную цену", async () => {
     const app = await build();
     const r = await post(app, CONTACTS);
@@ -155,7 +155,7 @@ describe("POST /orders — скидка выпускника", () => {
     const app = await build();
     const r = await post(app, CONTACTS, { authorization: `Bearer ${memberToken()}` });
     expect(r.json().member_discount).toBe(15);
-    expect(r.json().total_estimate).toBe(690000); // база скидки — только ДПО
+    expect(r.json().total_estimate).toBe(690000); // база скидки – только ДПО
   });
 
   it("непроверенному выпускнику скидка не даётся", async () => {
@@ -181,7 +181,7 @@ describe("POST /orders — скидка выпускника", () => {
   });
 });
 
-describe("POST /orders — создание заявки", () => {
+describe("POST /orders – создание заявки", () => {
   it("выдаёт номер, чистит корзину и пишет аудит", async () => {
     const app = await build();
     const r = await post(app, CONTACTS);

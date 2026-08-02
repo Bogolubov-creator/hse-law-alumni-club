@@ -38,7 +38,7 @@ export async function addPoints(alumniId: string, input: AddPointsInput) {
     await di.request((updateItem as any)("alumni", alumniId, { last_activity_at: new Date().toISOString() }));
   }
   const res = await recompute(alumniId);
-  // Достижения — не критичны: их сбой не должен валить уже зачисленные баллы.
+  // Достижения – не критичны: их сбой не должен валить уже зачисленные баллы.
   try {
     await grantAchievements(alumniId);
   } catch (e) {
@@ -82,7 +82,7 @@ export async function alumniStats(alumniId: string) {
 
 /** Выдать заслуженные достижения, которых ещё нет. */
 export async function grantAchievements(alumniId: string) {
-  // Полная статистика (включая verified/status_level) — иначе часть достижений не выдаётся.
+  // Полная статистика (включая verified/status_level) – иначе часть достижений не выдаётся.
   const stats = await alumniStats(alumniId);
   const earnedKeys = evaluateAchievements(stats);
   if (!earnedKeys.length) return;

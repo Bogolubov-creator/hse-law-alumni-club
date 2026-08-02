@@ -59,12 +59,12 @@ export async function cartRoutes(app: FastifyInstance) {
     const body = cartItemSchema.parse(req.body);
     const info = await lookup(body.type, body.ref_id);
     if (!info) return reply.code(404).send({ error: "Позиция не найдена" });
-    // Набор закрыт — заявка не оформляется (программа в каталоге справочно).
+    // Набор закрыт – заявка не оформляется (программа в каталоге справочно).
     if (body.type === "dpo" && info.enrollment === "nonactual")
       return reply.code(400).send({ error: "Набор на эту программу закрыт" });
     // Программы ВШЭ (source_url) оформляются на маркетплейсе hse.ru, не через сайт.
     if (body.type === "dpo" && info.source_url)
-      return reply.code(400).send({ error: "Запись на эту программу — на hse.ru" });
+      return reply.code(400).send({ error: "Запись на эту программу – на hse.ru" });
     const cart = await loadCart(token);
     const items = addLine(cart?.items ?? [], {
       type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null,

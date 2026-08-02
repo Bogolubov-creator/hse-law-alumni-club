@@ -7,7 +7,7 @@ import type { Descriptor } from "./fake-sdk.js";
  * (гарды, переоценку, идемпотентность), а не моки на каждый вызов.
  *
  * Поддержан тот минимум операторов фильтра, который реально используют роуты.
- * Неизвестный оператор — исключение, а не тихое «ничего не нашлось»: молчаливое
+ * Неизвестный оператор – исключение, а не тихое «ничего не нашлось»: молчаливое
  * расхождение с прод-поведением обесценило бы тест.
  */
 
@@ -33,7 +33,7 @@ function matchOp(value: any, op: string, operand: any): boolean {
     case "_contains": return String(value ?? "").includes(String(operand));
     case "_starts_with": return String(value ?? "").startsWith(String(operand));
     case "_empty": return operand ? !value || (Array.isArray(value) && !value.length) : !!value;
-    default: throw new Error(`fake-directus: оператор ${op} не реализован — добавьте его, иначе тест проверяет не то`);
+    default: throw new Error(`fake-directus: оператор ${op} не реализован – добавьте его, иначе тест проверяет не то`);
   }
 }
 

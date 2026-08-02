@@ -2,7 +2,7 @@ import { readItems } from "@directus/sdk";
 import { directus } from "./directus.js";
 
 /**
- * Последний использованный порядковый номер заявки за год — через индекс по number
+ * Последний использованный порядковый номер заявки за год – через индекс по number
  * (одна строка), без полного скана таблицы orders. Номер: ALU-<год>-<seq 6 цифр>.
  * Дальше orderNumber(year, seq, attempt) даёт seq+1+attempt.
  */

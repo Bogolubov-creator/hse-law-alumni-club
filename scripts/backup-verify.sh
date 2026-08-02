@@ -25,7 +25,7 @@ PGDB="$(val POSTGRES_DB)"; PGDB="${PGDB:-club}"
 fail() {
   echo "$(date -Iseconds) [backup-verify] ОШИБКА: $1" >&2
   if [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ]; then
-    # Токен — через stdin-конфиг curl, не в argv (иначе виден в `ps`). printf — builtin.
+    # Токен – через stdin-конфиг curl, не в argv (иначе виден в `ps`). printf – builtin.
     printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TG_TOKEN" \
       | curl -s -m 10 --config - -d chat_id="$TG_CHAT" --data-urlencode text="🔴 Проверка бэкапа провалилась: $1" >/dev/null || true
   fi
@@ -52,7 +52,7 @@ docker exec "$PG" createdb -U "$PGUSER" club_verify || fail "createdb не ср�
 docker exec -i "$PG" psql -U "$PGUSER" -d club_verify -q -v ON_ERROR_STOP=0 < "$TMP_SQL" >/dev/null 2>&1 \
   || fail "psql не смог восстановить дамп"
 
-# 3) Сверка ключевых таблиц с боевой базой (бэкап ночной — допускаем дрейф)
+# 3) Сверка ключевых таблиц с боевой базой (бэкап ночной – допускаем дрейф)
 for t in alumni events orders points_ledger; do
   live=$(docker exec "$PG" psql -U "$PGUSER" -d "$PGDB" -tAc "select count(*) from $t" 2>/dev/null || echo "-1")
   rest=$(docker exec "$PG" psql -U "$PGUSER" -d club_verify -tAc "select count(*) from $t" 2>/dev/null || echo "-2")

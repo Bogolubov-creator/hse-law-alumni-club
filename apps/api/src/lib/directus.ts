@@ -2,7 +2,7 @@ import { createDirectus, rest, staticToken, readMe, readItems } from "@directus/
 import type { LevelKey, PointReason } from "@club/shared";
 import { env } from "../env.js";
 
-// Типизированная схема коллекций — компилятор ловит опечатки в именах полей.
+// Типизированная схема коллекций – компилятор ловит опечатки в именах полей.
 export interface AlumniRow {
   id: string; user_id: string | null; fio: string | null; cohort: string | null;
   status: string; verification_status: string; points_cached: number; level_cached: LevelKey;

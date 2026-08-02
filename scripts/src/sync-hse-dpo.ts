@@ -36,7 +36,7 @@ async function fetchList(url: string) {
   return parseHseDpoCards(await res.text());
 }
 const actual = await fetchList(SOURCE_URL);
-if (actual.length < 3) throw new Error(`Подозрительно мало карточек (${actual.length}) — синк отменён.`);
+if (actual.length < 3) throw new Error(`Подозрительно мало карточек (${actual.length}) – синк отменён.`);
 const nonactualList = await fetchList(NONACTUAL_URL).catch((e) => { console.error("неактуальный список недоступен:", e.message); return []; });
 const seenIds = new Set(actual.map((c) => c.hseId));
 const cards = [

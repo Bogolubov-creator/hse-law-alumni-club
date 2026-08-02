@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { isYookassaIp, loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess } from "./security.js";
 
-describe("isYookassaIp — подсети вебхука ЮKassa", () => {
+describe("isYookassaIp – подсети вебхука ЮKassa", () => {
   it("адрес внутри /27 (185.71.76.0/27 покрывает .0–.31)", () => {
     expect(isYookassaIp("185.71.76.0")).toBe(true);
     expect(isYookassaIp("185.71.76.5")).toBe(true);
@@ -22,7 +22,7 @@ describe("isYookassaIp — подсети вебхука ЮKassa", () => {
   it("IPv4-mapped IPv6 нормализуется", () => {
     expect(isYookassaIp("::ffff:185.71.76.5")).toBe(true);
   });
-  it("посторонние и мусорные адреса — false", () => {
+  it("посторонние и мусорные адреса – false", () => {
     expect(isYookassaIp("8.8.8.8")).toBe(false);
     expect(isYookassaIp("127.0.0.1")).toBe(false);
     expect(isYookassaIp("not-an-ip")).toBe(false);
@@ -31,14 +31,14 @@ describe("isYookassaIp — подсети вебхука ЮKassa", () => {
   });
 });
 
-describe("login lockout — блокировка аккаунта после серии неудач", () => {
+describe("login lockout – блокировка аккаунта после серии неудач", () => {
   it("неизвестный email не заблокирован", () => {
     expect(loginLocked("nobody@a.test")).toBe(false);
   });
   it("блокируется после 10 неудач, не раньше", () => {
     const email = "lock-a@a.test";
     for (let i = 0; i < 9; i++) registerLoginFail(email);
-    expect(loginLocked(email)).toBe(false); // 9 попыток — ещё не заблокирован
+    expect(loginLocked(email)).toBe(false); // 9 попыток – ещё не заблокирован
     registerLoginFail(email); // 10-я
     expect(loginLocked(email)).toBe(true);
   });
@@ -57,14 +57,14 @@ describe("login lockout — блокировка аккаунта после с�
   });
 });
 
-describe("IP lockout — защита от password spraying (перебор по многим аккаунтам с одного IP)", () => {
+describe("IP lockout – защита от password spraying (перебор по многим аккаунтам с одного IP)", () => {
   it("неизвестный IP не заблокирован", () => {
     expect(ipLoginLocked("203.0.113.7")).toBe(false);
   });
   it("блокируется после 30 неудач, не раньше", () => {
     const ip = "203.0.113.10";
     for (let i = 0; i < 29; i++) registerIpFail(ip);
-    expect(ipLoginLocked(ip)).toBe(false); // 29 — ещё не заблокирован
+    expect(ipLoginLocked(ip)).toBe(false); // 29 – ещё не заблокирован
     registerIpFail(ip); // 30-я
     expect(ipLoginLocked(ip)).toBe(true);
   });

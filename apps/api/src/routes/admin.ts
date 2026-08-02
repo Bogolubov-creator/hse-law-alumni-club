@@ -41,7 +41,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { password } = parsed;
     if (loginLocked(email) || ipLoginLocked(req.ip)) {
       audit("admin.login.locked", { actor: `email:${email}`, req });
-      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте позже" });
+      return reply.code(429).send({ error: "Слишком много неудачных попыток – попробуйте позже" });
     }
     if (!(await directusCredsValid(email, password))) {
       registerLoginFail(email);
@@ -54,13 +54,13 @@ export async function adminRoutes(app: FastifyInstance) {
     registerLoginSuccess(email);
     registerIpSuccess(req.ip);
     audit("admin.login.ok", { actor: `admin:${user.id}`, req });
-    // Сессия — в httpOnly-cookie (JS её не видит → XSS не украдёт админ-токен).
+    // Сессия – в httpOnly-cookie (JS её не видит → XSS не украдёт админ-токен).
     // Тело отдаёт только роль (для UI), сам токен наружу в JS не выходит.
     setAdminCookie(reply, signAdmin(user.id, user.role));
     return { role: user.role };
   });
 
-  // Проверка активной админ-сессии (по cookie) — фронт решает, показать вход или панель.
+  // Проверка активной админ-сессии (по cookie) – фронт решает, показать вход или панель.
   app.get("/auth/admin-session", async (req, reply) => {
     const ctx = await resolveAdmin(req);
     if (!ctx) return reply.code(401).send({ error: "Нет сессии" });
@@ -76,7 +76,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {
     if (!await requireAdmin(req, reply)) return;
-    // Агрегатные count/sum (Directus считает в БД) вместо полного скана 10 таблиц —
+    // Агрегатные count/sum (Directus считает в БД) вместо полного скана 10 таблиц –
     // под масштаб не тащим тысячи строк в API ради .length.
     const now = new Date().toISOString();
     const [
@@ -102,10 +102,10 @@ export async function adminRoutes(app: FastifyInstance) {
       count("podcasts", { status: { _eq: "published" } }),
       count("push_subs"),
     ]);
-    // «Актуальный набор» = опубликованные минус nonactual (null-enrollment — актуальные,
+    // «Актуальный набор» = опубликованные минус nonactual (null-enrollment – актуальные,
     // как на сайте: enrollment !== "nonactual").
     const programs_actual = programs_total - programs_nonactual;
-    // Ближайшее событие — маленькая выборка (1 строка) + count его RSVP.
+    // Ближайшее событие – маленькая выборка (1 строка) + count его RSVP.
     const evRows = (await di.request((readItems as any)("events", {
       filter: { status: { _eq: "published" }, starts_at: { _gte: now } }, sort: ["starts_at"], limit: 1, fields: ["id", "title", "starts_at"],
     }))) as any[];
@@ -149,7 +149,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
     await di.request((updateItem as any)("orders", id, { status }));
     audit("order.status", { actor: `admin:${ctx.userId}`, subject: `order:${id}`, detail: { status }, req });
-    // Уведомления клиенту (письмо + пуш) — один запрос заказа на оба.
+    // Уведомления клиенту (письмо + пуш) – один запрос заказа на оба.
     const verb = ORDER_STATUS_VERB_RU[status] ?? status;
     void (async () => {
       const rows = (await di.request(readItems("orders", { filter: { id: { _eq: id } }, limit: 1, fields: ["number", "contact_email", "contact_fio", "alumni_id"] }))) as any[];
@@ -157,7 +157,7 @@ export async function adminRoutes(app: FastifyInstance) {
       if (!o) return;
       if (o.contact_email && o.contact_email !== "-") {
         await sendEmail(o.contact_email, `Заявка ${o.number}: ${verb}`,
-          `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${verb}.\nДетали — в личном кабинете клуба.\n\n— Клуб выпускников факультета права НИУ ВШЭ`);
+          `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${verb}.\nДетали – в личном кабинете клуба.\n\n– Клуб выпускников факультета права НИУ ВШЭ`);
       }
       if (o.alumni_id) pushToAlumni(o.alumni_id, { title: "Статус заявки", body: `Заявка ${o.number} ${verb}`, url: "/lk" });
     })().catch((e) => req.log.error({ err: e }, "order status notify failed"));
@@ -180,7 +180,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const listOpts = filter ? { filter } : {};
 
     // Страница + total (агрегат count, не скан). Дубли и друзья считаем только по
-    // показанным участникам — без полного скана alumni на каждый заход (масштаб).
+    // показанным участникам – без полного скана alumni на каждый заход (масштаб).
     const pageRows = (await di.request((readItems as any)("alumni", {
       ...listOpts, sort: ["-points_cached", "id"], limit: qp.limit, offset: (qp.page - 1) * qp.limit,
       fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at"],
@@ -260,15 +260,15 @@ export async function adminRoutes(app: FastifyInstance) {
         if (!email) return;
         if (body.verification_status === "verified") {
           await sendEmail(email, "Кабинет выпускника активирован 🎓",
-            "Поздравляем! Учебный офис подтвердил ваш выпуск — личный кабинет клуба активирован.\n\nВас ждут: скидка выпускника на программы ДПО, сообщество однокурсников, подкасты и мерч.\nВойти: " + env.PUBLIC_URL + "/lk\n\n— Клуб выпускников факультета права НИУ ВШЭ");
+            "Поздравляем! Учебный офис подтвердил ваш выпуск – личный кабинет клуба активирован.\n\nВас ждут: скидка выпускника на программы ДПО, сообщество однокурсников, подкасты и мерч.\nВойти: " + env.PUBLIC_URL + "/lk\n\n– Клуб выпускников факультета права НИУ ВШЭ");
         } else {
           await sendEmail(email, "По вашей заявке на вступление",
-            "К сожалению, учебный офис не смог подтвердить данные вашей заявки. Если считаете это ошибкой — ответьте на письмо или свяжитесь с офисом.\n\n— Клуб выпускников факультета права НИУ ВШЭ");
+            "К сожалению, учебный офис не смог подтвердить данные вашей заявки. Если считаете это ошибкой – ответьте на письмо или свяжитесь с офисом.\n\n– Клуб выпускников факультета права НИУ ВШЭ");
         }
       })().catch((e) => req.log.error({ err: e }, "verification email failed"));
     }
 
-    // Рефералка: при верификации приглашённого — +80 баллов рефереру (идемпотентно).
+    // Рефералка: при верификации приглашённого – +80 баллов рефереру (идемпотентно).
     if (body.verification_status === "verified") {
       const rows = (await di.request(readItems("alumni", { filter: { id: { _eq: id } }, limit: 1, fields: ["referred_by"] }))) as any[];
       const referrer = rows[0]?.referred_by;
@@ -345,7 +345,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.delete("/admin/programs/:id", async (req, reply) => {
     if (!await requireAdmin(req, reply)) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    await di.request((deleteItem as any)("programs", id)); // заявки хранят снимок позиции — не рвутся
+    await di.request((deleteItem as any)("programs", id)); // заявки хранят снимок позиции – не рвутся
     return { ok: true };
   });
 
@@ -442,7 +442,7 @@ export async function adminRoutes(app: FastifyInstance) {
     ].join(";"));
 
     audit("orders.export", { actor: `admin:${ctx.userId}`, detail: { count: orders.length }, req });
-    const csv = "﻿" + [header.map(esc).join(";"), ...lines].join("\r\n"); // BOM — кириллица в Excel
+    const csv = "﻿" + [header.map(esc).join(";"), ...lines].join("\r\n"); // BOM – кириллица в Excel
     reply.header("Content-Type", "text/csv; charset=utf-8");
     reply.header("Content-Disposition", `attachment; filename="orders-${new Date().toISOString().slice(0, 10)}.csv"`);
     return csv;

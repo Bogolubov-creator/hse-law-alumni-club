@@ -56,7 +56,7 @@ describe("POST /auth/login", () => {
     expect(r.statusCode).toBe(200);
   });
 
-  it("в токене версия ревокации из профиля — старые сессии гаснут после сброса пароля", async () => {
+  it("в токене версия ревокации из профиля – старые сессии гаснут после сброса пароля", async () => {
     db.alumni![0]!.token_version = 3;
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/login", payload: { email: "ivan@example.com", password: "correct-horse" } });
@@ -139,7 +139,7 @@ describe("POST /auth/register", () => {
   });
 
   it("с настроенным SMTP аккаунт неактивен до подтверждения почты", async () => {
-    // env разбирается один раз при импорте модуля, поэтому vi.stubEnv тут не поможет —
+    // env разбирается один раз при импорте модуля, поэтому vi.stubEnv тут не поможет –
     // подменяем разобранное значение (роут читает env.SMTP_HOST в момент запроса).
     const original = env.SMTP_HOST;
     (env as { SMTP_HOST: string }).SMTP_HOST = "smtp.example.com";
@@ -207,7 +207,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
     expect(known.body).toBe(unknown.body);
   });
 
-  it("сброс пароля поднимает token_version — выданные ранее сессии отзываются", async () => {
+  it("сброс пароля поднимает token_version – выданные ранее сессии отзываются", async () => {
     const token = jwt.sign({ sub: USER_ID, purpose: "reset" }, env.AUTH_SECRET, { expiresIn: "30m" });
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "newstrongpass" } });

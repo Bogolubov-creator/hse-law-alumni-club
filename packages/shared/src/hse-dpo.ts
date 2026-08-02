@@ -1,4 +1,4 @@
-// Парсер листинга ДПО hse.ru (карточки dpob-card) — чистая функция, тестируется на фикстуре.
+// Парсер листинга ДПО hse.ru (карточки dpob-card) – чистая функция, тестируется на фикстуре.
 // Источник: https://www.hse.ru/edu/dpo/?orgUnit=22753 (факультет права).
 
 export interface HseDpoCard {
@@ -16,7 +16,7 @@ export interface HseDpoCard {
 
 const MONTHS_RU_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 
-/** «06.07.2026» → «6 июля 2026». Невалидная дата — как есть. */
+/** «06.07.2026» → «6 июля 2026». Невалидная дата – как есть. */
 export function humanizeDate(ddmmyyyy: string): string {
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(ddmmyyyy.trim());
   if (!m) return ddmmyyyy.trim();
@@ -32,7 +32,7 @@ export function mapHseFormat(raw: string): "online" | "offline" | "blended" {
   return "blended"; // смешанный, гибридный
 }
 
-/** «22 000 ₽» → 2200000 коп. Нечисловое — null. */
+/** «22 000 ₽» → 2200000 коп. Нечисловое – null. */
 export function parseHsePrice(raw: string): number | null {
   const digits = raw.replace(/[^\d]/g, "");
   if (!digits) return null;

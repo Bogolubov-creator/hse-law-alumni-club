@@ -57,7 +57,7 @@ export function formatCalendarReply(
     return [
       "📅 <b>Календарь клуба</b>",
       "",
-      "Ближайших событий пока нет — загляните позже.",
+      "Ближайших событий пока нет – загляните позже.",
       "",
       `🌐 <a href="${esc(publicUrl)}/events">Афиша на сайте</a>`,
     ].join("\n");
@@ -81,12 +81,12 @@ export function formatStartReply(arg: string, linked: boolean, publicUrl: string
     "👋 <b>Клуб выпускников факультета права НИУ ВШЭ</b>",
     "",
     "Команды бота:",
-    "/points — баллы и уровень",
-    "/calendar — ближайшие события",
-    "/help — подсказка",
+    "/points – баллы и уровень",
+    "/calendar – ближайшие события",
+    "/help – подсказка",
   ];
   if (arg) {
-    lines.push("", `🎓 Вы пришли по приглашению — <a href="${esc(joinUrl)}">вступить в клуб</a>`);
+    lines.push("", `🎓 Вы пришли по приглашению – <a href="${esc(joinUrl)}">вступить в клуб</a>`);
   } else {
     lines.push("", `🎓 <a href="${esc(joinUrl)}">Вступить в клуб</a>`);
   }
@@ -104,10 +104,10 @@ export function formatHelpReply(publicUrl: string): string {
   return [
     "ℹ️ <b>Команды бота</b>",
     "",
-    "/start — приветствие и ссылки",
-    "/points — баллы, уровень, скидка",
-    "/calendar — афиша ближайших событий",
-    "/help — эта подсказка",
+    "/start – приветствие и ссылки",
+    "/points – баллы, уровень, скидка",
+    "/calendar – афиша ближайших событий",
+    "/help – эта подсказка",
     "",
     `🌐 Сайт: <a href="${esc(publicUrl)}">${esc(publicUrl)}</a>`,
   ].join("\n");
@@ -117,6 +117,6 @@ export function formatUnlinkedPointsReply(publicUrl: string): string {
   return [
     "🔒 <b>Telegram не привязан</b>",
     "",
-    `Зайдите в <a href="${esc(publicUrl)}/lk">личный кабинет</a> на сайте и нажмите «Привязать Telegram» — после этого /points покажет ваши баллы, уровень и скидку.`,
+    `Зайдите в <a href="${esc(publicUrl)}/lk">личный кабинет</a> на сайте и нажмите «Привязать Telegram» – после этого /points покажет ваши баллы, уровень и скидку.`,
   ].join("\n");
 }

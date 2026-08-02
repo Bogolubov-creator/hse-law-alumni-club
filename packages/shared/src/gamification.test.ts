@@ -53,22 +53,22 @@ describe("decayDelta (−15%)", () => {
 });
 
 describe("evaluateAchievements (набор Claude Design)", () => {
-  it("«Первый шаг» — на первом мероприятии", () => {
+  it("«Первый шаг» – на первом мероприятии", () => {
     expect(evaluateAchievements({ events_attended: 0 })).not.toContain("first_step");
     expect(evaluateAchievements({ events_attended: 1 })).toContain("first_step");
   });
-  it("«Завсегдатай» — на 5 мероприятиях", () => {
+  it("«Завсегдатай» – на 5 мероприятиях", () => {
     expect(evaluateAchievements({ events_attended: 4 })).not.toContain("regular");
     expect(evaluateAchievements({ events_attended: 5 })).toContain("regular");
   });
-  it("«Вечный студент» — 3 программы ДПО", () => {
+  it("«Вечный студент» – 3 программы ДПО", () => {
     expect(evaluateAchievements({ programs_completed: 3 })).toContain("eternal_student");
   });
-  it("«Легенда» — высший уровень (status_level 4)", () => {
+  it("«Легенда» – высший уровень (status_level 4)", () => {
     expect(evaluateAchievements({ status_level: 3 })).not.toContain("legend");
     expect(evaluateAchievements({ status_level: 4 })).toContain("legend");
   });
-  it("«Печать офиса» — верификация", () => {
+  it("«Печать офиса» – верификация", () => {
     expect(evaluateAchievements({ verified: 1 })).toContain("office_seal");
   });
 });

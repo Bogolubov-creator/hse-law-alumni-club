@@ -23,7 +23,7 @@ export async function pushRoutes(app: FastifyInstance) {
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
     if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     const b = subBody.parse(req.body);
-    // Один endpoint — одна запись. Браузер (endpoint) принадлежит тому, кто сейчас
+    // Один endpoint – одна запись. Браузер (endpoint) принадлежит тому, кто сейчас
     // авторизован: если endpoint уже числится за другим выпускником (сменился владелец
     // устройства, либо кто-то заранее занял чужой endpoint), запись переназначается
     // текущему подписчику, а не молча игнорируется.

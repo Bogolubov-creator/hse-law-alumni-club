@@ -10,7 +10,7 @@ import { pushToAlumni } from "../lib/push.js";
 const di = directus;
 
 /**
- * «Сообщество» ЛК: найти своих — однокурсники того же выпуска (cohort)
+ * «Сообщество» ЛК: найти своих – однокурсники того же выпуска (cohort)
  * и/или той же образовательной программы (edu_program) + добавление в друзья.
  * Связь хранится в alumni_friends (pending → accepted); встречная заявка
  * автоматически принимает дружбу.
@@ -34,7 +34,7 @@ export async function communityRoutes(app: FastifyInstance) {
       }),
     )) as { id: string; fio: string | null; cohort: string | null; edu_program: string | null; edu_level: string | null; points_cached: number; interests_json: string[] | null; avatar: string | null }[];
 
-    // Мои связи (в обе стороны) — чтобы отдать статус кнопки «В друзья».
+    // Мои связи (в обе стороны) – чтобы отдать статус кнопки «В друзья».
     const links = (await di.request(
       (readItems as any)("alumni_friends", {
         filter: { _or: [{ alumni_id: { _eq: me.id } }, { friend_id: { _eq: me.id } }] },
@@ -43,7 +43,7 @@ export async function communityRoutes(app: FastifyInstance) {
     )) as { alumni_id: string; friend_id: string; status: string }[];
 
     const statusFor = (otherId: string): "none" | "pending" | "incoming" | "accepted" => {
-      // Пара может иметь две строки (гонка встречных заявок) — accepted и incoming в приоритете.
+      // Пара может иметь две строки (гонка встречных заявок) – accepted и incoming в приоритете.
       const pair = links.filter(
         (l) => (l.alumni_id === me.id && l.friend_id === otherId) || (l.alumni_id === otherId && l.friend_id === me.id),
       );
@@ -77,7 +77,7 @@ export async function communityRoutes(app: FastifyInstance) {
     const monthAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
     const events: Record<string, unknown>[] = [];
 
-    // Входящие заявки в друзья (pending, адресованы мне) — самое важное, сверху.
+    // Входящие заявки в друзья (pending, адресованы мне) – самое важное, сверху.
     const incoming = (await di.request((readItems as any)("alumni_friends", {
       filter: { friend_id: { _eq: me.id }, status: { _eq: "pending" } },
       limit: 20, fields: ["alumni_id", "created_at"], sort: ["-created_at"],
@@ -99,7 +99,7 @@ export async function communityRoutes(app: FastifyInstance) {
     for (const l of incoming) events.push({ kind: "friend_request", from_id: l.alumni_id, from_fio: names.get(l.alumni_id) ?? null, created_at: l.created_at });
     for (const l of acceptedMine) events.push({ kind: "friend_accepted", by_fio: names.get(l.friend_id) ?? null, created_at: l.created_at });
 
-    // Мои заявки со сдвинутым статусом (за месяц; new не показываем — это не событие).
+    // Мои заявки со сдвинутым статусом (за месяц; new не показываем – это не событие).
     const orders = (await di.request((readItems as any)("orders", {
       filter: { alumni_id: { _eq: me.id }, status: { _neq: "new" }, created_at: { _gte: monthAgo } },
       limit: 10, fields: ["number", "status", "payment_status", "created_at"], sort: ["-created_at"],
@@ -130,7 +130,7 @@ export async function communityRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "Выпускник не найден" });
 
     // Все связи пары в обе стороны (limit -1): гонка встречных заявок могла
-    // создать две pending-строки — встречную принимаем в приоритете.
+    // создать две pending-строки – встречную принимаем в приоритете.
     const existing = (await di.request(
       (readItems as any)("alumni_friends", {
         filter: {

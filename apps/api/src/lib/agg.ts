@@ -2,7 +2,7 @@ import { aggregate } from "@directus/sdk";
 import { directus } from "./directus.js";
 
 /**
- * Агрегатные count/sum на стороне Directus/Postgres — считает БД и возвращает
+ * Агрегатные count/sum на стороне Directus/Postgres – считает БД и возвращает
  * число, не таща тысячи строк в API ради .length. Под масштаб (тысячи выпускников).
  */
 export async function count(collection: string, filter?: object): Promise<number> {

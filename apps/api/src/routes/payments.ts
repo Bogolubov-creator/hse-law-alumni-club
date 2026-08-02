@@ -36,7 +36,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (!order) return reply.code(404).send({ error: "Заявка не найдена" });
 
     // Платить может владелец: авторизованный выпускник по alumni_id
-    // или гость с той же корзинной сессией нам недоступен постфактум — поэтому
+    // или гость с той же корзинной сессией нам недоступен постфактум – поэтому
     // гостевые оплаты создаются только сразу при оформлении (см. orders.ts).
     const alumni = await resolveAlumni(req);
     if (!order.alumni_id || !alumni || alumni.id !== order.alumni_id)
@@ -44,16 +44,16 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (order.status === "canceled") return reply.code(400).send({ error: "Заявка отменена" });
     if (order.payment_status === "succeeded") return reply.code(400).send({ error: "Заявка уже оплачена" });
 
-    // Уже есть платёж — свериться с ЮKassa, прежде чем создавать новый.
+    // Уже есть платёж – свериться с ЮKassa, прежде чем создавать новый.
     if (order.payment_id) {
       const existing = await fetchPayment(order.payment_id).catch(() => null);
-      // Платёж уже прошёл, а вебхук ещё не долетел: не плодим второй платёж — приводим
+      // Платёж уже прошёл, а вебхук ещё не долетел: не плодим второй платёж – приводим
       // заявку в согласованное состояние и говорим, что оплачено (вебхук довершит продление).
       if (existing?.status === "succeeded") {
         await di.request((updateItem as any)("orders", order.id, { payment_status: "succeeded" }));
         return reply.code(400).send({ error: "Заявка уже оплачена" });
       }
-      // Незавершённый платёж (pending/ждёт списания) — вернуть его ссылку, не создавать дубль.
+      // Незавершённый платёж (pending/ждёт списания) – вернуть его ссылку, не создавать дубль.
       if ((existing?.status === "pending" || existing?.status === "waiting_for_capture") && existing.confirmation?.confirmation_url) {
         return { payment_url: existing.confirmation.confirmation_url };
       }
@@ -71,12 +71,12 @@ export async function paymentsRoutes(app: FastifyInstance) {
     return { payment_url: url };
   });
 
-  // Webhook уведомлений ЮKassa. Телу не доверяем — статус перепроверяем
+  // Webhook уведомлений ЮKassa. Телу не доверяем – статус перепроверяем
   // прямым запросом к API ЮKassa по payment.id (рекомендация ЮKassa).
   app.post("/payments/yookassa/webhook", { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!paymentsEnabled()) return reply.code(503).send({ ok: false });
     // Слой 1: уведомления принимаем только с официальных подсетей ЮKassa
-    // (слой 2 ниже — верификация статуса прямым запросом к API).
+    // (слой 2 ниже – верификация статуса прямым запросом к API).
     // Локальная разработка (Docker-сеть/localhost) не блокируется.
     const ip = req.ip.replace(/^::ffff:/, "");
     const isLocal = ip === "127.0.0.1" || ip === "::1" || /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip);
@@ -92,14 +92,14 @@ export async function paymentsRoutes(app: FastifyInstance) {
 
     let verified;
     try {
-      verified = await fetchPayment(body.data.object.id); // источник правды — API, не тело вебхука
+      verified = await fetchPayment(body.data.object.id); // источник правды – API, не тело вебхука
     } catch (e) {
       req.log.error({ err: e }, "yookassa verify failed");
       return reply.code(502).send({ ok: false });
     }
 
     const orderNumber = verified.metadata?.order_number;
-    if (!orderNumber) return { ok: true }; // не наш платёж — молча подтверждаем приём
+    if (!orderNumber) return { ok: true }; // не наш платёж – молча подтверждаем приём
 
     // Сериализуем обработку по номеру заявки (мьютекс): конкурентные дубли доставки
     // вебхука ЮKassa не пройдут проверку payment_status одновременно и не продлят
@@ -113,25 +113,25 @@ export async function paymentsRoutes(app: FastifyInstance) {
 
     if (verified.status === "succeeded") {
       // Защита: сумма подтверждённого платежа должна совпадать с суммой заявки
-      // (копейки). Расхождение — аномалия: не отмечаем оплаченной, зовём разбор офиса.
+      // (копейки). Расхождение – аномалия: не отмечаем оплаченной, зовём разбор офиса.
       const paidKop = Math.round(Number(verified.amount?.value ?? "0") * 100);
       if (paidKop !== order.total_estimate) {
         audit("payment.amount_mismatch", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, expected: order.total_estimate, got: verified.amount }, req });
         return { ok: true };
       }
-      // Оплата пришла на уже отменённую офисом заявку — деньги списаны, нужен возврат.
+      // Оплата пришла на уже отменённую офисом заявку – деньги списаны, нужен возврат.
       // Не «воскрешаем» заявку молча: помечаем оплату, но статус оставляем canceled и
       // громко зовём офис (аудит + уведомление) инициировать возврат.
       if (order.status === "canceled") {
         await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "succeeded", paid_at: new Date().toISOString() }));
         audit("payment.on_canceled", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, amount: verified.amount }, req });
-        await notifyOfficeText(`⚠️ Оплата ${formatRub(order.total_estimate)} ₽ по ОТМЕНЁННОЙ заявке ${orderNumber} — требуется возврат плательщику.`).catch(() => {});
+        await notifyOfficeText(`⚠️ Оплата ${formatRub(order.total_estimate)} ₽ по ОТМЕНЁННОЙ заявке ${orderNumber} – требуется возврат плательщику.`).catch(() => {});
         return { ok: true };
       }
     }
     if (verified.status === "succeeded" && order.payment_status !== "succeeded") {
       // Порядок: сперва отмечаем succeeded (точка идемпотентности), затем выдаём
-      // подписку — но идемпотентно (продлеваем ТОЛЬКО если подписка не активна).
+      // подписку – но идемпотентно (продлеваем ТОЛЬКО если подписка не активна).
       // Продажа подписки заблокирована при активной подписке, поэтому каждый оплаченный
       // podcast-платёж = переход «неактивна → активна». Повторная доставка вебхука уже
       // видит активную подписку и не продлевает второй раз (защита от двойного продления).
@@ -150,10 +150,10 @@ export async function paymentsRoutes(app: FastifyInstance) {
         const isPodcast = order.type === "podcast";
         void sendEmail(
           order.contact_email,
-          `Оплата получена — заявка ${orderNumber}`,
+          `Оплата получена – заявка ${orderNumber}`,
           `Здравствуйте, ${order.contact_fio}!\n\nОплата по заявке ${orderNumber} на сумму ${formatRub(order.total_estimate)} ₽ прошла успешно.` +
-            (isPodcast ? "\nПодписка на подкасты клуба активирована на год — приятного прослушивания!" : "\nЗаявка передана учебному офису в работу.") +
-            "\n\n— Клуб выпускников факультета права НИУ ВШЭ",
+            (isPodcast ? "\nПодписка на подкасты клуба активирована на год – приятного прослушивания!" : "\nЗаявка передана учебному офису в работу.") +
+            "\n\n– Клуб выпускников факультета права НИУ ВШЭ",
         ).catch((e) => req.log.error({ err: e, orderNumber }, "payment email failed"));
       }
       req.log.info({ orderNumber }, "yookassa payment succeeded");

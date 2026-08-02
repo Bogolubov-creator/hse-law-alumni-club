@@ -160,7 +160,7 @@ describe("гарды админских маршрутов", () => {
   });
 });
 
-describe("PATCH /admin/members/:id — изменение данных выпускника", () => {
+describe("PATCH /admin/members/:id – изменение данных выпускника", () => {
   const adminAuth = () => adminCookie(jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" }));
 
   it("без токена скидку выставить нельзя", async () => {

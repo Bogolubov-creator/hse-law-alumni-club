@@ -17,7 +17,7 @@ function bearer(req: FastifyRequest): string | null {
 export const ADMIN_COOKIE = "admin_session";
 const ADMIN_COOKIE_MAX_AGE = 12 * 3600; // как срок JWT (signAdmin: 12h)
 
-/** Значение cookie по имени из заголовка Cookie (без плагина — парсим сами). */
+/** Значение cookie по имени из заголовка Cookie (без плагина – парсим сами). */
 function readCookie(req: FastifyRequest, name: string): string | null {
   const raw = req.headers.cookie;
   if (!raw) return null;
@@ -29,7 +29,7 @@ function readCookie(req: FastifyRequest, name: string): string | null {
   return null;
 }
 
-/** Ставит httpOnly-cookie админ-сессии. Secure — на https (прод); SameSite=Strict — анти-CSRF. */
+/** Ставит httpOnly-cookie админ-сессии. Secure – на https (прод); SameSite=Strict – анти-CSRF. */
 export function setAdminCookie(reply: FastifyReply, token: string): void {
   const secure = env.PUBLIC_URL.startsWith("https://");
   const attrs = [
@@ -87,7 +87,7 @@ export async function directusCredsValid(email: string, password: string): Promi
     });
     return r.ok;
   } catch (e) {
-    // Сетевой сбой (Directus недоступен) — не молча: оставляем след в логах.
+    // Сетевой сбой (Directus недоступен) – не молча: оставляем след в логах.
     console.error("[auth] Directus /auth/login недоступен:", (e as Error).message);
     return false;
   }
@@ -120,10 +120,10 @@ async function roleNameByUserId(userId: string): Promise<string | null> {
 /**
  * Контекст админа по JWT. Роль сверяется с Directus на КАЖДЫЙ запрос: у снятого
  * с должности (роль изменена/аккаунт деактивирован) доступ пропадает сразу, а не
- * живёт до истечения 12-часового токена (claim роли внутри JWT — только подсказка).
+ * живёт до истечения 12-часового токена (claim роли внутри JWT – только подсказка).
  */
 export async function resolveAdmin(req: FastifyRequest): Promise<AdminCtx | null> {
-  // Токен — из httpOnly-cookie (не из Authorization и не из JS-доступного хранилища).
+  // Токен – из httpOnly-cookie (не из Authorization и не из JS-доступного хранилища).
   const token = readCookie(req, ADMIN_COOKIE);
   if (!token) return null;
   let sub: string;
@@ -179,7 +179,7 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   )) as (AlumniCtx & { token_version?: number | null })[];
   const alumni = rows[0];
   if (!alumni) return null;
-  // Ревокация: сброс пароля поднимает token_version — старые JWT перестают действовать.
+  // Ревокация: сброс пароля поднимает token_version – старые JWT перестают действовать.
   if ((payload.ver ?? 0) !== (alumni.token_version ?? 0)) return null;
   return alumni;
 }

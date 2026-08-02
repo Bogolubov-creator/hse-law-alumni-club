@@ -12,7 +12,7 @@ import { audit } from "../lib/audit.js";
 import { loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess } from "../lib/security.js";
 import { sendEmail, notifyOfficeText } from "../lib/notify.js";
 
-// Версия политики обработки ПДн (дата редакции) — фиксируется как доказательство согласия.
+// Версия политики обработки ПДн (дата редакции) – фиксируется как доказательство согласия.
 const PDN_POLICY_VERSION = "2026-07-02";
 
 export async function authRoutes(app: FastifyInstance) {
@@ -32,7 +32,7 @@ export async function authRoutes(app: FastifyInstance) {
     }))) as any[];
     const alumni = rows[0];
     if (!alumni) return reply.code(404).send({ error: "Профиль выпускника не привязан к Telegram" });
-    // sub — id аккаунта Directus (как в обычном логине); для непривязанного профиля
+    // sub – id аккаунта Directus (как в обычном логине); для непривязанного профиля
     // остаётся telegram-id, чтобы сессия всё равно была идентифицируемой.
     return { token: signSession(alumni.id, (alumni as any).user_id ?? tgId, (alumni as any).token_version ?? 0), alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });
@@ -40,15 +40,15 @@ export async function authRoutes(app: FastifyInstance) {
   // Логин выпускника: креды проверяет Directus, сессию (JWT с alumni_id) выдаёт apps/api.
   app.post("/auth/login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const parsed = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
-    // Регистрация/восстановление хранят email в нижнем регистре — логин должен
+    // Регистрация/восстановление хранят email в нижнем регистре – логин должен
     // нормализовать так же, иначе «Ivan@Mail.ru» не найдёт «ivan@mail.ru» → ложное 401.
     const email = parsed.email.toLowerCase().trim();
     const { password } = parsed;
     // Блок по аккаунту (перебор пароля к одному email, в т.ч. с многих IP) И по IP
-    // (password spraying: один IP по многим аккаунтам). Оба — поверх per-IP rate-limit.
+    // (password spraying: один IP по многим аккаунтам). Оба – поверх per-IP rate-limit.
     if (loginLocked(email) || ipLoginLocked(req.ip)) {
       audit("login.locked", { actor: `email:${email}`, req });
-      return reply.code(429).send({ error: "Слишком много неудачных попыток — попробуйте позже" });
+      return reply.code(429).send({ error: "Слишком много неудачных попыток – попробуйте позже" });
     }
     if (!(await directusCredsValid(email, password))) {
       registerLoginFail(email);
@@ -56,9 +56,9 @@ export async function authRoutes(app: FastifyInstance) {
       audit("login.fail", { actor: `email:${email}`, req });
       // Неподтверждённую почту Directus отвергает так же, как неверный пароль. Молчать
       // тут вредно (человек не поймёт, почему не пускает), а факт существования аккаунта
-      // и так виден на регистрации — она отвечает 409 «аккаунт уже есть».
+      // и так виден на регистрации – она отвечает 409 «аккаунт уже есть».
       const pending = (await directus.request((readUsers as any)({ filter: { email: { _eq: email }, status: { _eq: "unverified" } }, limit: 1, fields: ["id"] }))) as any[];
-      if (pending[0]) return reply.code(403).send({ error: "Почта не подтверждена — откройте ссылку из письма (проверьте папку «Спам»)" });
+      if (pending[0]) return reply.code(403).send({ error: "Почта не подтверждена – откройте ссылку из письма (проверьте папку «Спам»)" });
       return reply.code(401).send({ error: "Неверная почта или пароль" });
     }
     const user = await findUserByEmail(email);
@@ -79,7 +79,7 @@ export async function authRoutes(app: FastifyInstance) {
     fio: z.string().min(2).max(200),
     email: z.string().email().max(200),
     password: z.string().min(8).max(100),
-    cohort: z.string().regex(/^(19|20)\d{2}$/, "Год выпуска — 4 цифры"),
+    cohort: z.string().regex(/^(19|20)\d{2}$/, "Год выпуска – 4 цифры"),
     edu_level: z.enum(["бакалавриат", "магистратура", "специалитет", "аспирантура"]),
     edu_program: z.string().min(2).max(200),
     interests: z.array(z.string()).optional(),
@@ -93,15 +93,15 @@ export async function authRoutes(app: FastifyInstance) {
     const email = b.email.toLowerCase().trim();
 
     const existing = await findUserByEmail(email);
-    if (existing) return reply.code(409).send({ error: "Аккаунт с этой почтой уже есть — войдите или восстановите пароль" });
+    if (existing) return reply.code(409).send({ error: "Аккаунт с этой почтой уже есть – войдите или восстановите пароль" });
 
     const roles = (await directus.request((readRoles as any)({ filter: { name: { _eq: "alumni" } }, limit: 1, fields: ["id"] }))) as any[];
-    if (!roles[0]) return reply.code(500).send({ error: "Роль выпускника не настроена — обратитесь в учебный офис" });
+    if (!roles[0]) return reply.code(500).send({ error: "Роль выпускника не настроена – обратитесь в учебный офис" });
 
     // Подтверждение почты. Без него любой мог занять чужой адрес: аккаунт создавался
     // сразу активным, а настоящий владелец потом получал «аккаунт уже есть».
     // Включается автоматически при настроенном SMTP; без почтового канала (текущий
-    // BLOCKED-статус) поведение прежнее — иначе зарегистрироваться было бы невозможно.
+    // BLOCKED-статус) поведение прежнее – иначе зарегистрироваться было бы невозможно.
     const confirmRequired = !!env.SMTP_HOST;
     const user = (await directus.request((createUser as any)({
       email, password: b.password, role: roles[0].id,
@@ -128,7 +128,7 @@ export async function authRoutes(app: FastifyInstance) {
       points_cached: 0, level_cached: "graduate", personal_discount: 0,
       referral_code: `RC-${randomBytes(4).toString("hex")}`,
       referred_by: referredBy,
-      // 152-ФЗ: фиксируем факт согласия (доказательство) — когда и какая редакция политики.
+      // 152-ФЗ: фиксируем факт согласия (доказательство) – когда и какая редакция политики.
       consent_at: new Date().toISOString(),
       consent_version: PDN_POLICY_VERSION,
     }));
@@ -139,19 +139,19 @@ export async function authRoutes(app: FastifyInstance) {
       const confirmToken = jwt.sign({ sub: user.id, purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
       await sendEmail(
         email,
-        "Подтвердите почту — Клуб выпускников факультета права",
+        "Подтвердите почту – Клуб выпускников факультета права",
         `Здравствуйте, ${b.fio}!\n\nВы подали заявку на вступление в клуб выпускников факультета права НИУ ВШЭ.\n` +
-          `Подтвердите, что почта ваша — ссылка действует 24 часа:\n${env.PUBLIC_URL}/confirm?token=${encodeURIComponent(confirmToken)}\n\n` +
-          `После подтверждения заявку проверит учебный офис.\n\nЕсли заявку подавали не вы — просто проигнорируйте письмо, аккаунт останется неактивным.`,
+          `Подтвердите, что почта ваша – ссылка действует 24 часа:\n${env.PUBLIC_URL}/confirm?token=${encodeURIComponent(confirmToken)}\n\n` +
+          `После подтверждения заявку проверит учебный офис.\n\nЕсли заявку подавали не вы – просто проигнорируйте письмо, аккаунт останется неактивным.`,
       );
-      // Офис зовём только после подтверждения почты — иначе очередь верификации
+      // Офис зовём только после подтверждения почты – иначе очередь верификации
       // забивается заявками с чужих и несуществующих адресов.
       return { ok: true, pending: true, confirm_required: true };
     }
 
     // 152-ФЗ: не шлём ПДн заявителя в Telegram (зарубежный сервис). Офис смотрит анкету
     // в очереди верификации админ-панели (РФ, под доступом).
-    await notifyOfficeText("🎓 Новая заявка на вступление в клуб — подтвердите в админ-панели (очередь верификации).");
+    await notifyOfficeText("🎓 Новая заявка на вступление в клуб – подтвердите в админ-панели (очередь верификации).");
     return { ok: true, pending: true, confirm_required: false };
   });
 
@@ -163,7 +163,7 @@ export async function authRoutes(app: FastifyInstance) {
     try {
       payload = jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as typeof payload;
     } catch {
-      return reply.code(400).send({ error: "Ссылка недействительна или истекла — подайте заявку заново" });
+      return reply.code(400).send({ error: "Ссылка недействительна или истекла – подайте заявку заново" });
     }
     if (payload.purpose !== "email-confirm" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
 
@@ -173,8 +173,8 @@ export async function authRoutes(app: FastifyInstance) {
 
     await directus.request((updateUser as any)(payload.sub, { status: "active" }));
     audit("email.confirm", { actor: `user:${payload.sub}`, req });
-    // Теперь адрес доказан — зовём офис проверять выпуск.
-    await notifyOfficeText("🎓 Новая заявка на вступление в клуб (почта подтверждена) — очередь верификации в админ-панели.");
+    // Теперь адрес доказан – зовём офис проверять выпуск.
+    await notifyOfficeText("🎓 Новая заявка на вступление в клуб (почта подтверждена) – очередь верификации в админ-панели.");
     return { ok: true };
   });
 
@@ -189,8 +189,8 @@ export async function authRoutes(app: FastifyInstance) {
       audit("password.forgot", { actor: `email:${email}`, req });
       await sendEmail(
         email,
-        "Восстановление пароля — Клуб выпускников факультета права",
-        `Вы запросили восстановление пароля.\n\nСсылка действует 30 минут:\n${url}\n\nЕсли это были не вы — просто проигнорируйте письмо.`,
+        "Восстановление пароля – Клуб выпускников факультета права",
+        `Вы запросили восстановление пароля.\n\nСсылка действует 30 минут:\n${url}\n\nЕсли это были не вы – просто проигнорируйте письмо.`,
       );
     }
     return { ok: true }; // одинаково для существующих и несуществующих
@@ -202,7 +202,7 @@ export async function authRoutes(app: FastifyInstance) {
     try {
       payload = jwt.verify(token, env.AUTH_SECRET, { algorithms: ["HS256"] }) as typeof payload;
     } catch {
-      return reply.code(400).send({ error: "Ссылка недействительна или истекла — запросите новую" });
+      return reply.code(400).send({ error: "Ссылка недействительна или истекла – запросите новую" });
     }
     if (payload.purpose !== "reset" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
     await directus.request((updateUser as any)(payload.sub, { password }));

@@ -29,7 +29,7 @@ if [ -z "${BACKUP_ENCRYPTION_KEY:-}" ]; then
 fi
 export BACKUP_ENCRYPTION_KEY
 
-# Имя БД/пользователя — из .env (как в backup-verify.sh/apply-indexes.sh), а не
+# Имя БД/пользователя – из .env (как в backup-verify.sh/apply-indexes.sh), а не
 # хардкодом: иначе при смене POSTGRES_USER/DB бэкап тихо ломается на несуществующей БД.
 val() { grep "^$1=" "$REPO_DIR/.env" 2>/dev/null | cut -d= -f2-; }
 PGUSER="${POSTGRES_USER:-$(val POSTGRES_USER)}"; PGUSER="${PGUSER:-club}"
@@ -48,13 +48,13 @@ chmod 600 "$OUT"
 echo "OK: $OUT ($(du -h "$OUT" | cut -f1))"
 
 # Offsite-копия (152-ФЗ: резервное хранилище отдельно от сервера БД, в РФ). Если
-# задан rclone-remote в BACKUP_OFFSITE_REMOTE (напр. "ydisk:club-backups") — копируем
+# задан rclone-remote в BACKUP_OFFSITE_REMOTE (напр. "ydisk:club-backups") – копируем
 # туда шифрованный дамп. Без переменной шаг молча пропускается (локальный стенд).
 if [ -n "${BACKUP_OFFSITE_REMOTE:-}" ]; then
   if command -v rclone >/dev/null 2>&1; then
     rclone copy "$OUT" "$BACKUP_OFFSITE_REMOTE" && echo "OFFSITE OK: $BACKUP_OFFSITE_REMOTE"
   else
-    echo "ВНИМАНИЕ: BACKUP_OFFSITE_REMOTE задан, но rclone не установлен — offsite-копия НЕ сделана" >&2
+    echo "ВНИМАНИЕ: BACKUP_OFFSITE_REMOTE задан, но rclone не установлен – offsite-копия НЕ сделана" >&2
   fi
 fi
 

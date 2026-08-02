@@ -27,7 +27,7 @@ export async function telegramRoutes(app: FastifyInstance) {
     }
 
     const update = updateSchema.parse(req.body) as TgUpdate;
-    // Telegram ждёт быстрый 200 — обработку не блокируем.
+    // Telegram ждёт быстрый 200 – обработку не блокируем.
     void handleTelegramUpdate(update, env.TELEGRAM_BOT_TOKEN).catch((e) => {
       app.log.error(e, "telegram webhook handler failed");
     });

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 
-// tg-link тянет env.ts (валидация process.env при импорте) — задаём минимум до импорта.
+// tg-link тянет env.ts (валидация process.env при импорте) – задаём минимум до импорта.
 let makeTgLinkCode: (id: string) => string;
 let verifyTgLinkCode: (code: string) => string | null;
 

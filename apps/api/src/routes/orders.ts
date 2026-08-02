@@ -29,7 +29,7 @@ const createOrderBody = z.object({
 
 export async function ordersRoutes(app: FastifyInstance) {
   // Оформление заявки. Жёсткий лимит: заявка триггерит уведомление офиса и
-  // создание платежа ЮKassa — защищаем от флуда/DoS (аудит H1).
+  // создание платежа ЮKassa – защищаем от флуда/DoS (аудит H1).
   app.post("/orders", { config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async (req, reply) => {
     const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
@@ -41,7 +41,7 @@ export async function ordersRoutes(app: FastifyInstance) {
 
     // Переоценка по каталогу (анти-подмена цены): собрать актуальные цены, затем чистые функции.
     // Позиция, ставшая недоступной, пока лежала в корзине (снята с публикации, удалена,
-    // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает — иначе
+    // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает – иначе
     // заказ уходит по устаревшей цене на то, что больше не продаётся.
     const priceMap = new Map<string, CatalogInfo>();
     const unavailableTitles = new Set<string>();
@@ -56,7 +56,7 @@ export async function ordersRoutes(app: FastifyInstance) {
       }
     }
     // Ни одна позиция молча не выкидывается: если что-то стало недоступным (снято
-    // с публикации, удалено, ДПО ушла на маркетплейс или набор закрыт) — заявку не
+    // с публикации, удалено, ДПО ушла на маркетплейс или набор закрыт) – заявку не
     // создаём и явно сообщаем пользователю, что убрать. Иначе «заказал, а его нет».
     if (unavailableTitles.size) {
       return reply.code(409).send({
@@ -66,8 +66,8 @@ export async function ordersRoutes(app: FastifyInstance) {
     }
     const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
 
-    // Проверка остатков мерча (без атомарного декремента — single-instance, риск
-    // гонки минимален; декремент склада — задача на будущее). Суммируем спрос по
+    // Проверка остатков мерча (без атомарного декремента – single-instance, риск
+    // гонки минимален; декремент склада – задача на будущее). Суммируем спрос по
     // позиции/варианту и сверяем с наличием. Товары без учёта остатков не блокируем.
     const need = new Map<string, number>();
     for (const i of priced) {
@@ -86,7 +86,7 @@ export async function ordersRoutes(app: FastifyInstance) {
         ? info.variants.find((v) => v.sku === sku)?.stock
         : info.stock;
       if (typeof avail === "number" && qty > avail) {
-        insufficient.push(`${info.title}${sku ? ` (${sku})` : ""} — в наличии ${avail}`);
+        insufficient.push(`${info.title}${sku ? ` (${sku})` : ""} – в наличии ${avail}`);
       }
     }
     if (insufficient.length) {
@@ -104,7 +104,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     );
     const { subtotal, total } = computeOrderTotals(priced, discount);
     // Санити-гейт суммы: даже с капом qty защищаемся от переполнения/аномальной
-    // цены в каталоге — не создаём заявку с суммой вне безопасного диапазона.
+    // цены в каталоге – не создаём заявку с суммой вне безопасного диапазона.
     if (!Number.isSafeInteger(subtotal) || !Number.isSafeInteger(total) || total < 0) {
       return reply.code(400).send({ error: "Некорректная сумма заказа" });
     }
@@ -135,7 +135,7 @@ export async function ordersRoutes(app: FastifyInstance) {
       }
     }
 
-    // Точка коммита пройдена — заявка существует. Дальнейшие сбои НЕ выдаём за полный провал.
+    // Точка коммита пройдена – заявка существует. Дальнейшие сбои НЕ выдаём за полный провал.
     try {
       if (cartRows[0]) await di.request((updateItem as any)("carts", cartRows[0].id, { items_json: [] }));
     } catch (e) {
@@ -153,8 +153,8 @@ export async function ordersRoutes(app: FastifyInstance) {
     });
     await confirmApplicant(notice).catch((e) => req.log.error({ err: e, number }, "confirmApplicant threw"));
 
-    // Оплата (ЮKassa) — если подключена: создаём платёж сразу, отдаём ссылку.
-    // Сбой оплаты НЕ роняет заявку — офис свяжется, оплатить можно позже из ЛК.
+    // Оплата (ЮKassa) – если подключена: создаём платёж сразу, отдаём ссылку.
+    // Сбой оплаты НЕ роняет заявку – офис свяжется, оплатить можно позже из ЛК.
     let payment_url: string | undefined;
     if (paymentsEnabled() && total > 0) {
       try {
