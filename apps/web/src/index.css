@@ -131,6 +131,14 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
 @media (max-width: 620px) {
   .v2-row, .v2-row + div a { grid-template-columns: 68px 1fr !important; gap: 16px !important; }
 }
+/* ── Карточка программы v2: адаптив ────────────────────────────────
+   На планшете бланк с ценой уходит наверх: решение принимают по цене
+   и датам, а не по описанию модулей. */
+@media (max-width: 900px) {
+  .v2-prog-page { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .v2-prog-aside { position: static !important; order: -1; }
+}
+
 /* ── Корзина v2: адаптив ───────────────────────────────────────────
    На планшете форма заявки уходит под список позиций, на телефоне запись
    складывается в две строки: тип и название сверху, количество и сумма снизу. */

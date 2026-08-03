@@ -125,7 +125,7 @@ export default function DpoV2() {
 
                 {/* Содержание записи */}
                 <div style={{ minWidth: 0 }}>
-                  <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
+                  <Link to={`/v2/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
                     <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
                   </Link>
                   <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 10, textTransform: "uppercase" }}>
@@ -138,7 +138,7 @@ export default function DpoV2() {
 
                 {/* Действие: своё – в корзину, программа ВШЭ – на маркетплейс */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "stretch", minWidth: 160 }}>
-                  <Link to={`/dpo/${p.slug}`} className="foc" style={{ textAlign: "center", textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", padding: "10px 16px", fontSize: 14, fontWeight: 600 }}>
+                  <Link to={`/v2/dpo/${p.slug}`} className="foc" style={{ textAlign: "center", textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", padding: "10px 16px", fontSize: 14, fontWeight: 600 }}>
                     Подробнее
                   </Link>
                   {external ? (

@@ -16,6 +16,7 @@ import { clearToken } from "./lib/cart.js";
 const HomeV2 = lazy(() => import("./pages/HomeV2.js"));
 const DpoV2 = lazy(() => import("./pages/DpoV2.js"));
 const MerchV2 = lazy(() => import("./pages/MerchV2.js"));
+const ProgramV2 = lazy(() => import("./pages/ProgramV2.js"));
 const CartV2 = lazy(() => import("./pages/CartV2.js"));
 const LkV2 = lazy(() => import("./pages/LkV2.js"));
 const ProfileV2 = lazy(() => import("./pages/ProfileV2.js"));
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/v2" element={<HomeV2 />} />
           <Route path="/v2/dpo" element={<DpoV2 />} />
+          <Route path="/v2/dpo/:slug" element={<ProgramV2 />} />
           <Route path="/v2/merch" element={<MerchV2 />} />
           <Route path="/v2/cart" element={<CartV2 />} />
           <Route path="/v2/lk" element={<LkV2 />} />
