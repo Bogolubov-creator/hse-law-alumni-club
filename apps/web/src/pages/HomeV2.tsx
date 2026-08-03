@@ -1,11 +1,10 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useNewsList, usePage, useTimeline, formatNewsDate } from "../lib/queries.js";
 import { apiGet } from "../lib/api.js";
-import { token, useCart } from "../lib/cart.js";
+import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
-import { VisionToggle } from "../components/Vision.js";
+import { V2Shell, BlankField, mono, disp, text } from "../v2/Shell.js";
 
 /**
  * Главная v2 – вариант A «Реестр» из DESIGN-PLAN §2.1.
@@ -19,30 +18,10 @@ import { VisionToggle } from "../components/Vision.js";
  * Данные настоящие: те же хуки, что и у текущей главной.
  */
 
-/**
- * Текст из админки или запасной. Именно текст, а не `??`: Directus отдаёт
- * незаполненные поля пустой строкой, и `??` её пропускает – в разметку уезжает
- * пустой заголовок вместо запасного.
- */
-const text = (v: string | null | undefined, fallback: string): string => (v && v.trim() ? v : fallback);
-
-const mono: CSSProperties = { fontFamily: "var(--f-data)", fontVariantNumeric: "tabular-nums" };
-const disp: CSSProperties = { fontFamily: "var(--f-display)", letterSpacing: "var(--tr-display)" };
-
 type EventItem = { id: string; title: string; starts_at: string; location?: string | null; format?: string | null; points?: number | null };
 
-/** Сигнатура «поле бланка»: линия и моно-подпись под ней. Только там, где под ней данные. */
-function BlankField({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <span className="blank-field">
-      {children}
-      <span className="blank-field__label">{label}</span>
-    </span>
-  );
-}
-
 /** Запись реестра: узкая моно-колонка слева, содержание справа. */
-function RegistryRow({ mark, title, text, meta, delay }: { mark: string; title: string; text?: string | null; meta?: string | null; delay?: number }) {
+function RegistryRow({ mark, title, text: body, meta, delay }: { mark: string; title: string; text?: string | null; meta?: string | null; delay?: number }) {
   return (
     <div
       className="v2-row"
@@ -56,7 +35,7 @@ function RegistryRow({ mark, title, text, meta, delay }: { mark: string; title: 
       <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-accent-text)", paddingTop: 4 }}>{mark}</span>
       <div style={{ minWidth: 0 }}>
         <div style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.2 }}>{title}</div>
-        {text && <p style={{ margin: "8px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6, maxWidth: "65ch" }}>{text}</p>}
+        {body && <p style={{ margin: "8px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6, maxWidth: "65ch" }}>{body}</p>}
         {meta && <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 10, textTransform: "uppercase" }}>{meta}</div>}
       </div>
     </div>
@@ -74,81 +53,15 @@ export default function HomeV2() {
   const timeline = useTimeline();
   const news = useNewsList(3);
   const events = useQuery({ queryKey: ["events"], queryFn: () => apiGet<EventItem[]>("/events") });
-  const cartCount = useCart().data?.count ?? 0;
   const authed = !!token();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const hero = page.data?.blocks.hero ?? {};
   const cta = page.data?.blocks.cta ?? {};
   const records = timeline.data ?? [];
   const upcoming = (events.data ?? []).slice(0, 2);
 
-  // Тема: следуем системной, но даём переключатель – канон-охра должна быть
-  // проверяема в обоих режимах, а не только в том, что стоит у смотрящего.
-  const [theme, setTheme] = useState<"auto" | "light" | "dark">("auto");
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "auto") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", theme);
-    return () => root.removeAttribute("data-theme");
-  }, [theme]);
-
-  const nav = [
-    { to: "/dpo", label: "ДПО" },
-    { to: "/merch", label: "Мерч" },
-    { to: "/podcasts", label: "Подкасты" },
-    { to: "/events", label: "События" },
-    { to: "/news", label: "Новости" },
-  ];
-
   return (
-    <div style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
-      {/* ── Шапка: одна строка, ≤72px ────────────────────────────── */}
-      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "color-mix(in srgb, var(--c-bg) 88%, transparent)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--c-line)" }}>
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", height: 72, display: "flex", alignItems: "center", gap: 24 }}>
-          <Link to="/v2" className="foc" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
-            <img src="/assets/themis.jpeg" alt="" width={36} height={36} style={{ borderRadius: "var(--r-sm)", objectFit: "cover" }} />
-            <span style={{ ...disp, fontWeight: 800, fontSize: 15, lineHeight: 1.1 }}>
-              Клуб выпускников
-              <span style={{ ...mono, display: "block", fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", fontWeight: 400, marginTop: 3, textTransform: "uppercase" }}>факультет права</span>
-            </span>
-          </Link>
-
-          <nav className="desk-only" style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-            {nav.map((n) => (
-              <Link key={n.to} to={n.to} className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>{n.label}</Link>
-            ))}
-            <Link to="/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
-              Корзина{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: 11 }}>{cartCount}</span>}
-            </Link>
-            <button
-              onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-              aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-              className="foc"
-              style={{ marginLeft: 4, border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text-2)", borderRadius: "var(--r-sm)", padding: "7px 10px", cursor: "pointer", ...mono, fontSize: 11, letterSpacing: "var(--tr-data)" }}
-            >
-              {theme === "dark" ? "СВЕТ" : "ТЕМА"}
-            </button>
-            <VisionToggle compact />
-            <Link to={authed ? "/lk" : "/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
-              {authed ? "Кабинет" : "Вступить"}
-            </Link>
-          </nav>
-
-          <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc mob-only" style={{ marginLeft: "auto", width: 44, height: 44, borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)", fontSize: 18, cursor: "pointer" }}>
-            {menuOpen ? "✕" : "☰"}
-          </button>
-        </div>
-
-        {menuOpen && (
-          <nav className="mob-only" style={{ flexDirection: "column", borderTop: "1px solid var(--c-line)", padding: "8px 20px 18px" }}>
-            {[...nav, { to: "/cart", label: "Корзина" }, { to: authed ? "/lk" : "/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
-              <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
-            ))}
-          </nav>
-        )}
-      </header>
-
+    <V2Shell>
       <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         {/* ── Герой: асимметричный сплит, единственный момент сборки ── */}
         <section style={{ paddingTop: 72, paddingBottom: 56 }}>
@@ -292,16 +205,6 @@ export default function HomeV2() {
         </section>
       </main>
 
-      <footer style={{ marginTop: 72, borderTop: "1px solid var(--c-line)", padding: "34px 28px 46px" }}>
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
-          <span>© 2026 Клуб выпускников факультета права Вышки</span>
-          <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-            <Link to="/privacy" className="foc" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
-            <Link to="/confidential" className="foc" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
-            <Link to="/requisites" className="foc" style={{ color: "inherit" }}>Реквизиты</Link>
-          </span>
-        </div>
-      </footer>
-    </div>
+    </V2Shell>
   );
 }
