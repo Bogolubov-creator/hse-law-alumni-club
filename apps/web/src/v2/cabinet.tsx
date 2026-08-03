@@ -2,6 +2,7 @@ import { type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
 import { mono, disp } from "./Shell.js";
+import { Mark } from "./Mark.js";
 
 /**
  * Общие примитивы кабинета v2 (DESIGN.md): плотность 7, движения нет,
@@ -92,7 +93,9 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
     <div style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-line)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto", padding: "0 20px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <Link to="/v2" className="foc" style={{ ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>Клуб</Link>
+          <Link to="/v2" className="foc" style={{ display: "flex", alignItems: "center", gap: 9, ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>
+            <Mark kind="scales" size={26} style={{ color: "var(--c-accent-text)" }} />Клуб
+          </Link>
           <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {NAV.map((n) => {
               const on = (active === "lk" && n.to === "/v2/lk") || (active === "profile" && n.to === "/v2/lk/profile");

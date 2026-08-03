@@ -7,6 +7,7 @@ import { logout as logoutSession } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
 import { BlankField, mono, disp } from "../v2/Shell.js";
+import { Mark } from "../v2/Mark.js";
 import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
 
 /**
@@ -51,7 +52,8 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
       <VisionCorner />
       <form onSubmit={submit} style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32 }}>
         <Link to="/v2" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
-        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "18px 0 0" }}>Вход для выпускников</h1>
+        <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 20 }} />
+        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "14px 0 0" }}>Вход для выпускников</h1>
         <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
           Доступ открывается после верификации учебным офисом.
         </p>

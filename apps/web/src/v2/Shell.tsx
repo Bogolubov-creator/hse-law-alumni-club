@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { token, useCart } from "../lib/cart.js";
 import { VisionToggle } from "../components/Vision.js";
+import { Mark } from "./Mark.js";
 
 /**
  * Общая оболочка v2: шапка и подвал для всех страниц нового языка.
@@ -57,7 +58,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "color-mix(in srgb, var(--c-bg) 88%, transparent)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--c-line)" }}>
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", height: 72, display: "flex", alignItems: "center", gap: 24 }}>
           <Link to="/v2" className="foc" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
-            <img src="/assets/themis.jpeg" alt="" width={36} height={36} style={{ borderRadius: "var(--r-sm)", objectFit: "cover" }} />
+            <Mark kind="scales" size={34} style={{ color: "var(--c-accent-text)" }} />
             <span style={{ ...disp, fontWeight: 800, fontSize: 15, lineHeight: 1.1 }}>
               Клуб выпускников
               <span style={{ ...mono, display: "block", fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", fontWeight: 400, marginTop: 3, textTransform: "uppercase" }}>факультет права</span>
@@ -68,7 +69,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>{n.label}</Link>
             ))}
-            <Link to="/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
+            <Link to="/v2/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
               Корзина{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: 11 }}>{cartCount}</span>}
             </Link>
             <button
@@ -92,7 +93,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
         {menuOpen && (
           <nav className="mob-only" style={{ flexDirection: "column", borderTop: "1px solid var(--c-line)", padding: "8px 20px 18px" }}>
-            {[...NAV, { to: "/cart", label: "Корзина" }, { to: authed ? "/v2/lk" : "/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
+            {[...NAV, { to: "/v2/cart", label: "Корзина" }, { to: authed ? "/v2/lk" : "/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
             ))}
           </nav>
