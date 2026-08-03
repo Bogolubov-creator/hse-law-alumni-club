@@ -19,7 +19,7 @@ const vLabel = (v: ProductVariant) => [v.size, v.color].filter(Boolean).join(" �
 /** Остаток на складе: это данные, а не украшение, поэтому моноширинный и точный. */
 function Stock({ n }: { n: number | null | undefined }) {
   if (typeof n !== "number") return null;
-  const tone = n <= 0 ? "var(--c-danger)" : n <= 3 ? "var(--c-accent-text)" : "var(--c-text-3)";
+  const tone = n <= 0 ? "var(--c-danger-text)" : n <= 3 ? "var(--c-accent-text)" : "var(--c-text-3)";
   return (
     <span style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: tone, textTransform: "uppercase" }}>
       {n <= 0 ? "нет в наличии" : n <= 3 ? `осталось ${n}` : `в наличии ${n}`}

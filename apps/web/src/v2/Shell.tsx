@@ -79,8 +79,8 @@ export function V2Shell({ children }: { children: ReactNode }) {
             >
               {theme === "dark" ? "СВЕТ" : "ТЕМА"}
             </button>
-            <VisionToggle compact />
-            <Link to={authed ? "/lk" : "/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
+            <VisionToggle compact v2 />
+            <Link to={authed ? "/v2/lk" : "/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
               {authed ? "Кабинет" : "Вступить"}
             </Link>
           </nav>
@@ -92,7 +92,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
         {menuOpen && (
           <nav className="mob-only" style={{ flexDirection: "column", borderTop: "1px solid var(--c-line)", padding: "8px 20px 18px" }}>
-            {[...NAV, { to: "/cart", label: "Корзина" }, { to: authed ? "/lk" : "/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
+            {[...NAV, { to: "/cart", label: "Корзина" }, { to: authed ? "/v2/lk" : "/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
             ))}
           </nav>

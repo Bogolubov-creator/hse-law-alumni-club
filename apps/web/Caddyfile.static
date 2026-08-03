@@ -12,7 +12,9 @@
 	# та же оболочка (React покажет «Страница не найдена»), но со статусом 404:
 	# иначе любой несуществующий адрес отвечал 200, и поисковики считали его
 	# полноценной страницей (soft-404 и мусор в индексе).
-	@spa path / /v2 /v2/* /news /news/* /dpo /dpo/* /merch /podcasts /events /cart /join /forgot /reset /confirm /privacy /confidential /requisites /lk /lk/* /admin /admin/*
+	# v2 перечислен поимённо, а не как /v2/*: динамических сегментов там нет,
+	# и вайлдкард отдавал 200 на любой несуществующий адрес внутри /v2.
+	@spa path / /v2 /v2/dpo /v2/merch /v2/lk /news /news/* /dpo /dpo/* /merch /podcasts /events /cart /join /forgot /reset /confirm /privacy /confidential /requisites /lk /lk/* /admin /admin/*
 	handle @spa {
 		# no-cache на ВСЕХ адресах оболочки, а не только на «/». Раньше заголовок
 		# стоял лишь для / и /index.html, поэтому у зашедшего по прямой ссылке

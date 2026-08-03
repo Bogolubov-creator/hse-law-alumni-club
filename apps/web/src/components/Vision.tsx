@@ -1,7 +1,13 @@
 import { useVision, setVision } from "../lib/a11y.js";
 
-/** Кнопка-переключатель «Версия для слабовидящих» (в шапке). */
-export function VisionToggle({ compact = false }: { compact?: boolean }) {
+/**
+ * Кнопка-переключатель «Версия для слабовидящих» (в шапке).
+ *
+ * `v2` переводит кнопку на семантические токены: в тёмной теме зашитый
+ * bg-white светился белой плашкой на графите. Старый фронт остаётся на
+ * Tailwind-классах – там тёмной темы нет и менять нечего.
+ */
+export function VisionToggle({ compact = false, v2 = false }: { compact?: boolean; v2?: boolean }) {
   const v = useVision();
   return (
     <button
@@ -9,7 +15,8 @@ export function VisionToggle({ compact = false }: { compact?: boolean }) {
       aria-pressed={v.on}
       aria-label="Версия для слабовидящих"
       title="Версия для слабовидящих"
-      className="foc rounded-[10px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-[13px] font-medium leading-none"
+      className={v2 ? "foc" : "foc rounded-[10px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-[13px] font-medium leading-none"}
+      style={v2 ? { borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text-2)", padding: "7px 10px", fontSize: 13, lineHeight: 1, cursor: "pointer" } : undefined}
     >
       <span aria-hidden>👁</span>{!compact && <span className="ml-1.5 align-middle">Для слабовидящих</span>}
     </button>

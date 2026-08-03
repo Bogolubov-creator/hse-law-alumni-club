@@ -119,7 +119,7 @@ export default function DpoV2() {
                     <div style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
                   )}
                   {discount > 0 && (
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-ok)", marginTop: 6, textTransform: "uppercase" }}>−{discount}% выпускнику</div>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-ok-text)", marginTop: 6, textTransform: "uppercase" }}>−{discount}% выпускнику</div>
                   )}
                 </div>
 
@@ -132,7 +132,7 @@ export default function DpoV2() {
                     {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration].filter(Boolean).join(" · ")}
                   </div>
                   {closed && (
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-danger)", marginTop: 8, textTransform: "uppercase" }}>набор закрыт</div>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-danger-text)", marginTop: 8, textTransform: "uppercase" }}>набор закрыт</div>
                   )}
                 </div>
 
