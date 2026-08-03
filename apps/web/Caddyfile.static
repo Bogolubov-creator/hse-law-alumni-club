@@ -15,7 +15,7 @@
 	# v2 перечислен поимённо, а не как /v2/*: вайлдкард отдавал 200 на любой
 	# несуществующий адрес внутри /v2. Исключение – /v2/dpo/*: там слаг
 	# программы, перечислить его нельзя (как и в /dpo/* у v1).
-	@spa path / /v2 /v2/dpo /v2/dpo/* /v2/merch /v2/cart /v2/news /v2/news/* /v2/events /v2/podcasts /v2/lk /v2/lk/profile /news /news/* /dpo /dpo/* /merch /podcasts /events /cart /join /forgot /reset /confirm /privacy /confidential /requisites /lk /lk/* /admin /admin/*
+	@spa path / /v2 /v2/dpo /v2/dpo/* /v2/merch /v2/cart /v2/news /v2/news/* /v2/events /v2/podcasts /v2/join /v2/forgot /v2/reset /v2/confirm /v2/privacy /v2/confidential /v2/requisites /v2/lk /v2/lk/profile /news /news/* /dpo /dpo/* /merch /podcasts /events /cart /join /forgot /reset /confirm /privacy /confidential /requisites /lk /lk/* /admin /admin/*
 	handle @spa {
 		# no-cache на ВСЕХ адресах оболочки, а не только на «/». Раньше заголовок
 		# стоял лишь для / и /index.html, поэтому у зашедшего по прямой ссылке

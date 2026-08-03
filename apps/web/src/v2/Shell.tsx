@@ -81,7 +81,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
               {theme === "dark" ? "СВЕТ" : "ТЕМА"}
             </button>
             <VisionToggle compact v2 />
-            <Link to={authed ? "/v2/lk" : "/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
+            <Link to={authed ? "/v2/lk" : "/v2/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
               {authed ? "Кабинет" : "Вступить"}
             </Link>
           </nav>
@@ -93,7 +93,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
         {menuOpen && (
           <nav className="mob-only" style={{ flexDirection: "column", borderTop: "1px solid var(--c-line)", padding: "8px 20px 18px" }}>
-            {[...NAV, { to: "/v2/cart", label: "Корзина" }, { to: authed ? "/v2/lk" : "/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
+            {[...NAV, { to: "/v2/cart", label: "Корзина" }, { to: authed ? "/v2/lk" : "/v2/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
             ))}
           </nav>
@@ -106,9 +106,9 @@ export function V2Shell({ children }: { children: ReactNode }) {
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
           <span>© 2026 Клуб выпускников факультета права Вышки</span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-            <Link to="/privacy" className="foc" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
-            <Link to="/confidential" className="foc" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
-            <Link to="/requisites" className="foc" style={{ color: "inherit" }}>Реквизиты</Link>
+            <Link to="/v2/privacy" className="foc" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
+            <Link to="/v2/confidential" className="foc" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
+            <Link to="/v2/requisites" className="foc" style={{ color: "inherit" }}>Реквизиты</Link>
           </span>
         </div>
       </footer>

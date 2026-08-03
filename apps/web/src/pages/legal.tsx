@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import SiteShell from "../components/SiteShell.js";
 import { useHead } from "../lib/title.js";
+import { V2Shell, mono, disp } from "../v2/Shell.js";
 
 /**
  * Юридические страницы (152-ФЗ): политика обработки ПДн, политика
@@ -23,27 +24,53 @@ export const OWNER = {
   site: "https://pravo.hse.ru",
 } as const;
 
-// Один общий каркас юридической страницы: читаемый текст ≥ 14px (норма – не менее 12px).
-function LegalShell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
+/**
+ * Один общий каркас юридической страницы: читаемый текст >= 14px.
+ *
+ * `v2` меняет ТОЛЬКО оболочку и оформление. Сам юридический текст остаётся в
+ * одном экземпляре: две копии политики обработки ПДн неминуемо разошлись бы,
+ * и одна из них стала бы неверной.
+ */
+function LegalShell({ title, updated, v2, children }: { title: string; updated: string; v2?: boolean; children: ReactNode }) {
   // Свой title/description/canonical (иначе canonical «залипнет» на главной из index.html).
-  useHead({ title, description: `${title} – Клуб выпускников факультета права НИУ ВШЭ.` });
+  useHead({
+    title,
+    description: `${title} – Клуб выпускников факультета права НИУ ВШЭ.`,
+    ...(v2 ? { canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/${title.includes("Реквизиты") ? "requisites" : title.includes("конфиденц") ? "confidential" : "privacy"}`, noindex: true } : {}),
+  });
+
+  const body = (
+    <>
+      <h1 className={v2 ? undefined : "font-display text-3xl font-bold tracking-tight"} style={v2 ? { ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.14, margin: 0 } : undefined}>{title}</h1>
+      <p className={v2 ? undefined : "mt-2 font-mono text-[12px] text-grafit-soft"}
+        style={v2 ? { ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: "var(--c-text-3)", margin: "12px 0 0" } : undefined}>
+        редакция от {updated}
+      </p>
+      <div className="legal mt-8 space-y-4 [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6"
+        style={v2 ? { paddingTop: 22, marginTop: 22, borderTop: "1px solid var(--c-line-strong)", color: "var(--c-text-2)" } : undefined}>
+        {children}
+      </div>
+    </>
+  );
+
+  if (v2) {
+    return (
+      <V2Shell>
+        <main style={{ maxWidth: 820, margin: "0 auto", padding: "48px 28px 0", fontSize: "var(--t-body)", lineHeight: 1.7 }}>{body}</main>
+      </V2Shell>
+    );
+  }
   return (
     <SiteShell>
-      <main className="mx-auto max-w-[820px] px-7 py-12 text-[15px] leading-relaxed">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-2 font-mono text-[12px] text-grafit-soft">Редакция от {updated}</p>
-        <div className="legal mt-8 space-y-4 [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6">
-          {children}
-        </div>
-      </main>
+      <main className="mx-auto max-w-[820px] px-7 py-12 text-[15px] leading-relaxed">{body}</main>
     </SiteShell>
   );
 }
 
 /** Политика обработки персональных данных (152-ФЗ). */
-export function Privacy() {
+export function Privacy({ v2 }: { v2?: boolean } = {}) {
   return (
-    <LegalShell title="Политика обработки персональных данных" updated="2 июля 2026 года">
+    <LegalShell title="Политика обработки персональных данных" updated="2 июля 2026 года" v2={v2}>
       <p>
         Настоящая Политика определяет порядок обработки персональных данных пользователей сайта
         Клуба выпускников факультета права {OWNER.shortName} (далее – «Сайт») и меры по их защите.
@@ -123,9 +150,9 @@ export function Privacy() {
 }
 
 /** Политика конфиденциальности. */
-export function Confidential() {
+export function Confidential({ v2 }: { v2?: boolean } = {}) {
   return (
-    <LegalShell title="Политика конфиденциальности" updated="2 июля 2026 года">
+    <LegalShell title="Политика конфиденциальности" updated="2 июля 2026 года" v2={v2}>
       <p>
         Настоящая Политика конфиденциальности описывает, как {OWNER.shortName} ({OWNER.unit})
         обеспечивает конфиденциальность информации пользователей сайта Клуба выпускников.
@@ -162,7 +189,7 @@ export function Confidential() {
 }
 
 /** Реквизиты владельца сайта (информация об операторе). */
-export function Requisites() {
+export function Requisites({ v2 }: { v2?: boolean } = {}) {
   const row = (k: string, v: string) => (
     <div className="flex flex-wrap gap-2 border-b border-[#f0ece2] py-3">
       <span className="w-56 flex-none font-mono text-[12px] uppercase tracking-wide text-grafit-soft">{k}</span>
@@ -170,7 +197,7 @@ export function Requisites() {
     </div>
   );
   return (
-    <LegalShell title="Реквизиты" updated="2 июля 2026 года">
+    <LegalShell title="Реквизиты" updated="2 июля 2026 года" v2={v2}>
       <p>Информация о владельце сайта Клуба выпускников факультета права.</p>
       <div className="mt-6 rounded-[18px] border border-[#E5E7EB] bg-white px-6 py-3">
         {row("Полное наименование", OWNER.name)}

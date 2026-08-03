@@ -72,8 +72,8 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         </button>
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "var(--t-small)" }}>
-          <Link to="/join" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
-          <Link to="/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
+          <Link to="/v2/join" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
+          <Link to="/v2/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
         </div>
       </form>
     </main>

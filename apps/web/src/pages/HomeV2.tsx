@@ -82,11 +82,11 @@ export default function HomeV2() {
               </div>
 
               <div className="v2-enter" style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", marginTop: 30, ["--enter-delay" as string]: "120ms" }}>
-                <Link to={authed ? "/lk" : "/join"} className="foc" style={{ textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: "var(--r-md)" }}>
+                <Link to={authed ? "/v2/lk" : "/v2/join"} className="foc" style={{ textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: "var(--r-md)" }}>
                   {authed ? "Мой кабинет" : text(hero.cta_primary, "Вступить в клуб")}
                 </Link>
                 {!authed && (
-                  <Link to="/lk" className="foc" style={{ textDecoration: "none", color: "var(--c-accent-text)", fontWeight: 600, fontSize: 15 }}>Уже в клубе – войти →</Link>
+                  <Link to="/v2/lk" className="foc" style={{ textDecoration: "none", color: "var(--c-accent-text)", fontWeight: 600, fontSize: 15 }}>Уже в клубе – войти →</Link>
                 )}
               </div>
 
@@ -122,8 +122,8 @@ export default function HomeV2() {
           <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h2)", margin: "0 0 22px" }}>Что доступно выпускнику</h2>
           <div className="v2-two" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
             {[
-              { to: "/dpo", img: "/assets/dpo-hero.jpg", title: "Программы ДПО", text: "Курсы и интенсивы факультета с ценой выпускника. Фильтры по направлению, формату и длительности.", label: "цена выпускника · каталог вшэ" },
-              { to: "/merch", img: "/assets/merch-hoodie.jpg", title: "Мерч клуба", text: "Одежда и аксессуары с фасеточной Фемидой. Размеры, остатки, самовывоз или доставка.", label: "склад · размеры в наличии" },
+              { to: "/v2/dpo", img: "/assets/dpo-hero.jpg", title: "Программы ДПО", text: "Курсы и интенсивы факультета с ценой выпускника. Фильтры по направлению, формату и длительности.", label: "цена выпускника · каталог вшэ" },
+              { to: "/v2/merch", img: "/assets/merch-hoodie.jpg", title: "Мерч клуба", text: "Одежда и аксессуары с фасеточной Фемидой. Размеры, остатки, самовывоз или доставка.", label: "склад · размеры в наличии" },
             ].map((c) => (
               <Link key={c.to} to={c.to} className="foc v2-card" style={{ textDecoration: "none", color: "inherit", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--c-bg-raised)", display: "block" }}>
                 <div style={{ height: 208, background: `var(--c-bg-sunken) url(${c.img}) center / cover no-repeat` }} />
@@ -200,7 +200,7 @@ export default function HomeV2() {
           <p style={{ margin: "16px 0 0", fontSize: "var(--t-body)", lineHeight: 1.6, maxWidth: "56ch", opacity: 0.82 }}>
             {text(cta.text, "Учебный офис сверит выпуск с реестром факультета и откроет кабинет. Взносов нет.")}
           </p>
-          <Link to="/join" className="foc" style={{ display: "inline-block", marginTop: 28, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 16, padding: "16px 34px", borderRadius: "var(--r-md)" }}>
+          <Link to="/v2/join" className="foc" style={{ display: "inline-block", marginTop: 28, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 16, padding: "16px 34px", borderRadius: "var(--r-md)" }}>
             {text(cta.button, "Подать заявку")}
           </Link>
         </section>

@@ -197,7 +197,7 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
 
       <p style={{ fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-3)", margin: "6px 0 0" }}>
         Сохраняя, вы даёте согласие на обработку персональных данных –{" "}
-        <Link to="/privacy" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
+        <Link to="/v2/privacy" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
       </p>
       {err && <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0" }}>{err}</p>}
 

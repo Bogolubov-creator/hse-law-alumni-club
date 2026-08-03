@@ -313,7 +313,7 @@ export default function CartV2() {
                   style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
                 <span>
                   Даю согласие на обработку персональных данных в соответствии с{" "}
-                  <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
+                  <Link to="/v2/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
                 </span>
               </label>
 

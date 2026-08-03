@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const KEY = "club_cookie_consent";
 
@@ -10,6 +10,9 @@ const KEY = "club_cookie_consent";
 export default function CookieBanner() {
   const [accepted, setAccepted] = useState(() => localStorage.getItem(KEY) === "1");
   const ref = useRef<HTMLDivElement>(null);
+  // Баннер общий для обеих версий, поэтому и политику показывает «свою»:
+  // со страницы v2 ссылка в старый интерфейс – это разрыв.
+  const v2 = useLocation().pathname.startsWith("/v2");
 
   /**
    * Пока баннер висит, он закрывает низ страницы – а внизу профиля стоят права
@@ -46,7 +49,7 @@ export default function CookieBanner() {
       <p style={{ flex: 1, minWidth: 260, margin: 0 }}>
         Мы используем cookies для работы корзины, личного кабинета и статистики. Продолжая
         пользоваться сайтом, вы соглашаетесь с{" "}
-        <Link to="/privacy" style={{ color: "#E3C272", textDecoration: "underline" }}>политикой обработки персональных данных</Link>.
+        <Link to={v2 ? "/v2/privacy" : "/privacy"} style={{ color: "#E3C272", textDecoration: "underline" }}>политикой обработки персональных данных</Link>.
       </p>
       {/* Тёмный текст на охре: 5,12:1 против 3,16:1 у светлого. То же решение,
           что уже принято для главной кнопки сайта – согласие по 152-ФЗ тем более

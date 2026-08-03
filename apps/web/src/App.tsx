@@ -21,6 +21,10 @@ const NewsV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.
 const NewsPostV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsPostV2 })));
 const EventsV2 = lazy(() => import("./pages/EventsV2.js"));
 const PodcastsV2 = lazy(() => import("./pages/PodcastsV2.js"));
+const JoinV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.JoinV2 })));
+const ForgotV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ForgotV2 })));
+const ResetV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ResetV2 })));
+const ConfirmEmailV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ConfirmEmailV2 })));
 const CartV2 = lazy(() => import("./pages/CartV2.js"));
 const LkV2 = lazy(() => import("./pages/LkV2.js"));
 const ProfileV2 = lazy(() => import("./pages/ProfileV2.js"));
@@ -93,6 +97,13 @@ export default function App() {
           <Route path="/v2/news/:slug" element={<NewsPostV2 />} />
           <Route path="/v2/events" element={<EventsV2 />} />
           <Route path="/v2/podcasts" element={<PodcastsV2 />} />
+          <Route path="/v2/join" element={<JoinV2 />} />
+          <Route path="/v2/forgot" element={<ForgotV2 />} />
+          <Route path="/v2/reset" element={<ResetV2 />} />
+          <Route path="/v2/confirm" element={<ConfirmEmailV2 />} />
+          <Route path="/v2/privacy" element={<Privacy v2 />} />
+          <Route path="/v2/confidential" element={<Confidential v2 />} />
+          <Route path="/v2/requisites" element={<Requisites v2 />} />
           <Route path="/v2/lk" element={<LkV2 />} />
           <Route path="/v2/lk/profile" element={<ProfileV2 />} />
           <Route path="/news" element={<News />} />
