@@ -33,9 +33,9 @@ export function BlankField({ children, label }: { children: ReactNode; label: st
 const NAV = [
   { to: "/v2/dpo", label: "ДПО" },
   { to: "/v2/merch", label: "Мерч" },
-  { to: "/podcasts", label: "Подкасты" },
-  { to: "/events", label: "События" },
-  { to: "/news", label: "Новости" },
+  { to: "/v2/podcasts", label: "Подкасты" },
+  { to: "/v2/events", label: "События" },
+  { to: "/v2/news", label: "Новости" },
 ];
 
 export function V2Shell({ children }: { children: ReactNode }) {

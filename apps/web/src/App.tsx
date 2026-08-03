@@ -17,6 +17,10 @@ const HomeV2 = lazy(() => import("./pages/HomeV2.js"));
 const DpoV2 = lazy(() => import("./pages/DpoV2.js"));
 const MerchV2 = lazy(() => import("./pages/MerchV2.js"));
 const ProgramV2 = lazy(() => import("./pages/ProgramV2.js"));
+const NewsV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsV2 })));
+const NewsPostV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsPostV2 })));
+const EventsV2 = lazy(() => import("./pages/EventsV2.js"));
+const PodcastsV2 = lazy(() => import("./pages/PodcastsV2.js"));
 const CartV2 = lazy(() => import("./pages/CartV2.js"));
 const LkV2 = lazy(() => import("./pages/LkV2.js"));
 const ProfileV2 = lazy(() => import("./pages/ProfileV2.js"));
@@ -85,6 +89,10 @@ export default function App() {
           <Route path="/v2/dpo/:slug" element={<ProgramV2 />} />
           <Route path="/v2/merch" element={<MerchV2 />} />
           <Route path="/v2/cart" element={<CartV2 />} />
+          <Route path="/v2/news" element={<NewsV2 />} />
+          <Route path="/v2/news/:slug" element={<NewsPostV2 />} />
+          <Route path="/v2/events" element={<EventsV2 />} />
+          <Route path="/v2/podcasts" element={<PodcastsV2 />} />
           <Route path="/v2/lk" element={<LkV2 />} />
           <Route path="/v2/lk/profile" element={<ProfileV2 />} />
           <Route path="/news" element={<News />} />

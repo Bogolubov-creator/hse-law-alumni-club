@@ -153,7 +153,7 @@ export default function HomeV2() {
           <section style={{ paddingTop: 64 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
               <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h2)", margin: 0 }}>Ближайшие события</h2>
-              <Link to="/events" className="foc" style={{ color: "var(--c-link)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}>Вся афиша и запись →</Link>
+              <Link to="/v2/events" className="foc" style={{ color: "var(--c-link)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}>Вся афиша и запись →</Link>
             </div>
             <div style={{ borderBottom: "1px solid var(--c-line)" }}>
               {upcoming.map((e) => (
@@ -174,12 +174,12 @@ export default function HomeV2() {
           <section style={{ paddingTop: 64 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
               <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h2)", margin: 0 }}>Что в клубе сейчас</h2>
-              <Link to="/news" className="foc" style={{ color: "var(--c-link)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}>Все новости →</Link>
+              <Link to="/v2/news" className="foc" style={{ color: "var(--c-link)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}>Все новости →</Link>
             </div>
             <div style={{ borderBottom: "1px solid var(--c-line)" }}>
               {(news.data ?? []).map((n) => (
                 <div key={n.slug} style={{ borderTop: "1px solid var(--c-line)" }}>
-                  <Link to={`/news/${n.slug}`} className="foc" style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: 24, padding: "22px 0", textDecoration: "none", color: "inherit" }}>
+                  <Link to={`/v2/news/${n.slug}`} className="foc" style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: 24, padding: "22px 0", textDecoration: "none", color: "inherit" }}>
                     <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-accent-text)", paddingTop: 4 }}>
                       {n.published_at ? formatNewsDate(n.published_at).replace(/ г\.$/, "") : ""}
                     </span>
