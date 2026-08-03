@@ -51,13 +51,28 @@ const EVENTS = [
 ];
 
 /** Подменяем только личные ручки; остальное идёт на живой стек как обычно. */
+/**
+ * Тестовая сессия: токен-заглушка и выключенный service worker.
+ *
+ * SW отключаем не для красоты: мобильный проект Playwright бежит на WebKit
+ * (девайс iPhone 13), а там запросы, прошедшие через активный service worker,
+ * до page.route() не доходят – перехват мутаций молча пролетает на живой API.
+ * Прод это не затрагивает: sw.js и так не трогает /api (см. public/sw.js).
+ */
+async function stubSession(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem("club_token", "e2e-stub-token");
+    Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
+  });
+}
+
 async function mockCabinet(page: Page, over: Partial<Record<"me" | "orders" | "classmates" | "events", unknown>> = {}) {
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   await page.route("**/api/me", (r) => r.fulfill(json(over.me ?? ME)));
   await page.route("**/api/me/orders", (r) => r.fulfill(json(over.orders ?? ORDERS)));
   await page.route("**/api/me/classmates", (r) => r.fulfill(json(over.classmates ?? CLASSMATES)));
   await page.route("**/api/me/events", (r) => r.fulfill(json(over.events ?? EVENTS)));
-  await page.addInitScript(() => localStorage.setItem("club_token", "e2e-stub-token"));
+  await stubSession(page);
 }
 
 test.describe("Кабинет v2", () => {
@@ -122,7 +137,7 @@ test.describe("Кабинет v2", () => {
   });
 
   test("сорванный запрос показывает ошибку с повтором, а не пустой экран", async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("club_token", "e2e-stub-token"));
+    await stubSession(page);
     await page.route("**/api/me", (r) => r.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
     await page.goto("/v2/lk");
 
@@ -131,7 +146,7 @@ test.describe("Кабинет v2", () => {
   });
 
   test("истёкшая сессия возвращает к воротам и стирает токен", async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("club_token", "e2e-stub-token"));
+    await stubSession(page);
     await page.route("**/api/me", (r) => r.fulfill({ status: 401, contentType: "application/json", body: "{}" }));
     await page.goto("/v2/lk");
 

@@ -101,7 +101,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
       {children}
 
-      <footer style={{ marginTop: 72, borderTop: "1px solid var(--c-line)", padding: "34px 28px 46px" }}>
+      <footer style={{ marginTop: 72, borderTop: "1px solid var(--c-line)", padding: "34px 28px 46px", paddingBottom: "calc(46px + var(--cookie-h, 0px))" }}>
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
           <span>© 2026 Клуб выпускников факультета права Вышки</span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>

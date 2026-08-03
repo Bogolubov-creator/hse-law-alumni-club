@@ -1,12 +1,13 @@
-import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU, type Classmate, type LkEvent } from "@club/shared";
 import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Me, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../lib/queries.js";
 import { logout as logoutSession } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
-import { VisionCorner, VisionToggle } from "../components/Vision.js";
+import { VisionCorner } from "../components/Vision.js";
 import { BlankField, mono, disp } from "../v2/Shell.js";
+import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
 
 /**
  * Личный кабинет v2. Режим отличается от внешнего контура (DESIGN.md):
@@ -23,58 +24,6 @@ import { BlankField, mono, disp } from "../v2/Shell.js";
  *
  * Живёт на /v2/lk рядом со старым кабинетом, чтобы их можно было сравнить.
  */
-
-const TOKEN_KEY = "club_token";
-
-const label: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase", color: "var(--c-text-3)",
-};
-const field: CSSProperties = {
-  width: "100%", marginTop: 7, padding: "12px 14px", borderRadius: "var(--r-md)",
-  border: "1px solid var(--c-line)", background: "var(--c-bg)", color: "var(--c-text)",
-  fontSize: 15, fontFamily: "inherit",
-};
-/** Действие. Один акцент на весь кабинет – охра с тёмным текстом (5,12:1). */
-const action: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
-  padding: "8px 14px", borderRadius: "var(--r-sm)", border: "none",
-  background: "var(--c-accent)", color: "var(--c-on-accent)", cursor: "pointer",
-};
-const actionGhost: CSSProperties = {
-  ...action, background: "transparent", color: "var(--c-text-2)", border: "1px solid var(--c-line)",
-};
-
-/** Строка удостоверения: подпись слева, значение справа, разделитель – линия. */
-function DataRow({ name, value, accent }: { name: string; value: string; accent?: boolean }) {
-  return (
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
-      <span style={label}>{name}</span>
-      <span style={{ ...mono, fontSize: 15, fontWeight: 500, color: accent ? "var(--c-accent-text)" : "var(--c-text)" }}>{value}</span>
-    </div>
-  );
-}
-
-function Section({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
-  return (
-    <section style={{ marginTop: 34 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, flexWrap: "wrap", marginBottom: 10 }}>
-        <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>{title}</h2>
-        {note && <span style={label}>{note}</span>}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-/** Инициал в плашке – когда аватара нет. */
-function Initial({ fio, size, radius }: { fio: string | null | undefined; size: number; radius: string }) {
-  return (
-    <div aria-hidden style={{ width: size, height: size, flexShrink: 0, borderRadius: radius, background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: Math.round(size / 2.6), color: "var(--c-text-2)" }}>
-      {(fio ?? "").trim().charAt(0).toUpperCase() || "?"}
-    </div>
-  );
-}
 
 /* ── Вход ─────────────────────────────────────────────────────────── */
 
@@ -347,46 +296,31 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   }, [expired, onLogout]);
 
   return (
-    <div style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
-      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-line)" }}>
-        <div style={{ maxWidth: 1040, margin: "0 auto", padding: "0 20px", height: 64, display: "flex", alignItems: "center", gap: 14 }}>
-          <Link to="/v2" className="foc" style={{ ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>Клуб</Link>
-          <span style={{ ...label, fontSize: 10 }}>кабинет</span>
-          <nav style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-            <Link to="/lk/profile" className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", padding: "8px 10px" }}>профиль</Link>
-            {/* В шапке, а не плавающим углом: VisionCorner накрывал «выйти» на телефоне */}
-            <VisionToggle compact v2 />
-            <button onClick={onLogout} className="foc" style={{ ...actionGhost, padding: "8px 12px" }}>выйти</button>
-          </nav>
+    <CabinetShell active="lk" onLogout={onLogout}>
+      {me.isLoading && <p style={{ ...label, margin: 0 }}>загружаем кабинет…</p>}
+
+      {me.isError && !expired && (
+        <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 24 }}>
+          <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>кабинет сейчас недоступен</p>
+          <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Не удалось получить данные. Попробуйте ещё раз.</p>
+          <button onClick={() => me.refetch()} className="foc" style={{ ...action, marginTop: 14, padding: "10px 16px", borderRadius: "var(--r-md)" }}>повторить</button>
         </div>
-      </header>
+      )}
 
-      <main style={{ maxWidth: 1040, margin: "0 auto", padding: "26px 20px 64px" }}>
-        {me.isLoading && <p style={{ ...label, margin: 0 }}>загружаем кабинет…</p>}
-
-        {me.isError && !expired && (
-          <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 24 }}>
-            <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>кабинет сейчас недоступен</p>
-            <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Не удалось получить данные. Попробуйте ещё раз.</p>
-            <button onClick={() => me.refetch()} className="foc" style={{ ...action, marginTop: 14, padding: "10px 16px", borderRadius: "var(--r-md)" }}>повторить</button>
+      {me.data && (
+        <div className="lkv2-grid" style={{ display: "grid", gridTemplateColumns: "330px 1fr", gap: 28, alignItems: "start" }}>
+          <div className="lkv2-aside" style={{ position: "sticky", top: 88 }}>
+            <Identity me={me.data} />
           </div>
-        )}
-
-        {me.data && (
-          <div className="lkv2-grid" style={{ display: "grid", gridTemplateColumns: "330px 1fr", gap: 28, alignItems: "start" }}>
-            <div className="lkv2-aside" style={{ position: "sticky", top: 88 }}>
-              <Identity me={me.data} />
-            </div>
-            <div>
-              <EventsFeed token={token} />
-              <Orders token={token} />
-              <Achievements me={me.data} />
-              <Community token={token} />
-            </div>
+          <div>
+            <EventsFeed token={token} />
+            <Orders token={token} />
+            <Achievements me={me.data} />
+            <Community token={token} />
           </div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </CabinetShell>
   );
 }
 

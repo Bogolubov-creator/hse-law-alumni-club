@@ -17,6 +17,7 @@ const HomeV2 = lazy(() => import("./pages/HomeV2.js"));
 const DpoV2 = lazy(() => import("./pages/DpoV2.js"));
 const MerchV2 = lazy(() => import("./pages/MerchV2.js"));
 const LkV2 = lazy(() => import("./pages/LkV2.js"));
+const ProfileV2 = lazy(() => import("./pages/ProfileV2.js"));
 const News = lazy(() => import("./pages/News.js"));
 const NewsPost = lazy(() => import("./pages/NewsPost.js"));
 const Dpo = lazy(() => import("./pages/Dpo.js"));
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="/v2/dpo" element={<DpoV2 />} />
           <Route path="/v2/merch" element={<MerchV2 />} />
           <Route path="/v2/lk" element={<LkV2 />} />
+          <Route path="/v2/lk/profile" element={<ProfileV2 />} />
           <Route path="/news" element={<News />} />
           <Route path="/news/:slug" element={<NewsPost />} />
           <Route path="/admin/*" element={<AdminApp />} />
