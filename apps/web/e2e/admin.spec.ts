@@ -175,11 +175,23 @@ test.describe("Админ-панель", () => {
     }
   });
 
-  test("пуш-рассылка заблокирована, пока нет подписчиков", async ({ page }) => {
+  test("пуш-рассылка заблокирована и называет причину", async ({ page }) => {
     await mockAdmin(page);
     await page.goto("/admin");
-    await expect(page.getByRole("button", { name: "Отправить всем" })).toBeDisabled();
-    await expect(page.getByText("подписчиков пока нет")).toBeVisible();
+    // Изменено сознательно при редизайне: раньше кнопка молчала бледной охрой,
+    // а причину приходилось искать подписью рядом. Теперь она на самой кнопке.
+    await expect(page.getByRole("button", { name: "Подписчиков пока нет" })).toBeDisabled();
+  });
+
+  test("с подписчиками кнопка сначала просит заполнить поля", async ({ page }) => {
+    await mockAdmin(page, { overview: { ...OVERVIEW, push_subs_count: 12 } });
+    await page.goto("/admin");
+    const btn = page.getByRole("button", { name: "Заполните заголовок и текст" });
+    await expect(btn).toBeDisabled();
+
+    await page.getByLabel("Заголовок пуш-уведомления").fill("Новое событие");
+    await page.getByLabel("Текст пуш-уведомления").fill("Встреча выпуска в пятницу");
+    await expect(page.getByRole("button", { name: "Отправить всем" })).toBeEnabled();
   });
 
   test("выход гасит сессию и возвращает на вход", async ({ page }) => {

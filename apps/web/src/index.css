@@ -7,21 +7,13 @@ body {
   @apply bg-kost text-grafit font-body antialiased;
 }
 
-/* Хелперы админки (порт из Админка.dc.html) */
 ::selection { background: #ec5a13; color: #fbf3e8; }
 .foc:focus-visible { outline: 3px solid #ec5a13; outline-offset: 2px; border-radius: 8px; }
-.arow { transition: background 0.15s; }
-.arow:hover { background: #fbf7ef; }
-@keyframes g-pop {
-  from { opacity: 0; transform: translateY(14px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
-@media (max-width: 920px) {
-  .a-shell { grid-template-columns: 1fr !important; }
-  .a-side { position: static !important; height: auto !important; flex-direction: row !important; overflow-x: auto !important; }
-}
+/* .arow / .a-shell / .a-side и анимация g-pop убраны вместе со старой вёрсткой
+   админки: подсветка строки была зашита светлым #fbf7ef и в тёмной теме
+   вспыхивала белым. */
 @media (prefers-reduced-motion: reduce) {
-  .arow, [class] { animation: none !important; transition: none !important; }
+  [class] { animation: none !important; transition: none !important; }
 }
 
 /* Главная: маркиза + адаптив (порт из Главная.dc.html) */
@@ -131,6 +123,39 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
 @media (max-width: 620px) {
   .v2-row, .v2-row + div a { grid-template-columns: 68px 1fr !important; gap: 16px !important; }
 }
+/* ── Админ-панель: адаптив ─────────────────────────────────────────
+   На узком экране боковая колонка перестаёт быть колонкой: она
+   разворачивается в строку вкладок сверху и не липнет. */
+@media (max-width: 900px) {
+  .adm-grid { grid-template-columns: 1fr !important; }
+  .adm-aside {
+    position: static !important;
+    height: auto !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center;
+    border-right: none !important;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .adm-aside > button { border-left: none !important; }
+  .adm-two, .adm-push { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 620px) {
+  .adm-stats { grid-template-columns: 1fr 1fr !important; }
+}
+/* Широкие описи заявок и выпускников на узком экране складываются в две
+   строки: шапка колонок теряет смысл и убирается. */
+@media (max-width: 1000px) {
+  .adm-order-head, .adm-member-head { display: none !important; }
+  .adm-order { grid-template-columns: 1fr auto !important; row-gap: 6px !important; }
+  .adm-order > :nth-child(1) { grid-column: 1 / -1; }
+  .adm-order > :nth-child(3) { grid-column: 1 / -1; }
+  .adm-order-items { padding-left: 0 !important; }
+  .adm-member { grid-template-columns: 1fr auto !important; row-gap: 6px !important; }
+  .adm-member > :nth-child(1) { grid-column: 1 / -1; }
+  .adm-member > :nth-child(2) { order: 2; }
+}
+
 /* ── Оболочка приложения v2 на телефоне ────────────────────────────
    Панель вкладок фиксирована внизу, поэтому её высоту нужно знать всем,
    кто рисует что-то у нижнего края: подвалу, кабинету и cookie-баннеру.
