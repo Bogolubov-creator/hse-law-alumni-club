@@ -4,7 +4,6 @@ import { useNewsList, usePage, useTimeline, formatNewsDate } from "../lib/querie
 import { apiGet } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
-import { Mark } from "../v2/Mark.js";
 import { V2Shell, BlankField, mono, disp, text } from "../v2/Shell.js";
 
 /**
@@ -95,10 +94,18 @@ export default function HomeV2() {
               </div>
             </div>
 
-            {/* Знак клуба: Фемида вектором, графит на охре – 5,12:1 */}
+            {/* Фемида клуба. Знак-монолиния (Mark) остаётся в шапках и на входах,
+                но в герое он читался как схематичная фигура – здесь стоит сама
+                иллюстрация, та же, что на первой версии. */}
             <div className="v2-enter v2-hero-art" style={{ ["--enter-delay" as string]: "40ms" }}>
-              <div style={{ position: "relative", aspectRatio: "1 / 1", borderRadius: "var(--r-lg)", background: "var(--c-accent)", display: "grid", placeItems: "center", color: "var(--c-on-accent)" }}>
-                <Mark kind="themis" size="72%" title="Фемида с весами – знак клуба выпускников факультета права" style={{ height: "auto" }} />
+              <div style={{ position: "relative", aspectRatio: "1 / 1", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--c-accent)" }}>
+                <img
+                  src="/assets/themis.jpeg"
+                  alt="Фемида с весами и мечом – знак клуба выпускников факультета права"
+                  width={560}
+                  height={560}
+                  style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+                />
               </div>
             </div>
           </div>
