@@ -131,6 +131,22 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
 @media (max-width: 620px) {
   .v2-row, .v2-row + div a { grid-template-columns: 68px 1fr !important; gap: 16px !important; }
 }
+/* ── Оболочка приложения v2 на телефоне ────────────────────────────
+   Панель вкладок фиксирована внизу, поэтому её высоту нужно знать всем,
+   кто рисует что-то у нижнего края: подвалу, кабинету и cookie-баннеру.
+   На десктопе переменная равна нулю и ничего не сдвигает. */
+@media (max-width: 768px) {
+  :root { --tabs-h: calc(56px + env(safe-area-inset-bottom, 0px)); }
+  /* Баннер поднимается над вкладками, иначе перекрывает «корзину» и «кабинет» */
+  [role="dialog"][aria-label="Использование cookies"] {
+    bottom: calc(16px + var(--tabs-h, 0px)) !important;
+  }
+}
+/* В установленном приложении «резинка» за панелью выглядит поломкой */
+@media (display-mode: standalone) {
+  .v2-tabs { padding-bottom: max(env(safe-area-inset-bottom, 0px), 6px); }
+}
+
 /* ── Карточка программы v2: адаптив ────────────────────────────────
    На планшете бланк с ценой уходит наверх: решение принимают по цене
    и датам, а не по описанию модулей. */

@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { token, useCart } from "../lib/cart.js";
 import { VisionToggle } from "../components/Vision.js";
+import { MobileTabs } from "./MobileTabs.js";
 import { Mark } from "./Mark.js";
 
 /**
@@ -93,7 +94,14 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
         {menuOpen && (
           <nav className="mob-only" style={{ flexDirection: "column", borderTop: "1px solid var(--c-line)", padding: "8px 20px 18px" }}>
-            {[...NAV, { to: "/v2/cart", label: "Корзина" }, { to: authed ? "/v2/lk" : "/v2/join", label: authed ? "Личный кабинет" : "Вступить в клуб" }].map((n) => (
+            {/* Главная, витрины, корзина и кабинет живут во вкладках снизу –
+                в меню остаётся только контент и вступление */}
+            {[
+              { to: "/v2/podcasts", label: "Подкасты" },
+              { to: "/v2/events", label: "События" },
+              { to: "/v2/news", label: "Новости" },
+              ...(authed ? [] : [{ to: "/v2/join", label: "Вступить в клуб" }]),
+            ].map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
             ))}
           </nav>
@@ -102,7 +110,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
       {children}
 
-      <footer style={{ marginTop: 72, borderTop: "1px solid var(--c-line)", padding: "34px 28px 46px", paddingBottom: "calc(46px + var(--cookie-h, 0px))" }}>
+      <footer style={{ marginTop: 72, borderTop: "1px solid var(--c-line)", padding: "34px 28px 46px", paddingBottom: "calc(46px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
           <span>© 2026 Клуб выпускников факультета права Вышки</span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
@@ -112,6 +120,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
           </span>
         </div>
       </footer>
+      <MobileTabs />
     </div>
   );
 }
