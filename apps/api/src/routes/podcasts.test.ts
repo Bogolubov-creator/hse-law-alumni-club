@@ -210,3 +210,72 @@ describe("GET /podcasts/:id/audio – источники аудио", () => {
     vi.unstubAllGlobals();
   });
 });
+
+/**
+ * Учёт прослушиваний. Считает сервер при выдаче аудио: счётчик, который шлёт
+ * браузер, накручивается одной строкой в консоли.
+ */
+describe("Учёт прослушиваний", () => {
+  const PID = "22222222-2222-4222-8222-222222222222";
+  const FILE = "13a8c2fc-f5ba-4f04-95fc-10e23c37cab6";
+
+  const play = async (app: FastifyInstance, headers?: Record<string, string>) => {
+    const list = await app.inject({ method: "GET", url: "/podcasts" });
+    const url = list.json().items[0].audio_url as string;
+    return app.inject({ method: "GET", url: url.replace(/^\/api/, ""), headers });
+  };
+
+  beforeEach(() => {
+    db.podcasts = [{ id: PID, title: "Пробный", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
+    db.podcast_plays = [];
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1]), {
+      status: 200, headers: { "content-type": "audio/mpeg" },
+    })));
+  });
+
+  it("первое прослушивание записывается", async () => {
+    const app = await build();
+    await play(app);
+    expect(db.podcast_plays).toHaveLength(1);
+    expect(db.podcast_plays![0]!.podcast_id).toBe(PID);
+    vi.unstubAllGlobals();
+  });
+
+  it("повторное обращение в том же окне не задваивает счётчик", async () => {
+    const app = await build();
+    await play(app);
+    await play(app);
+    await play(app);
+    expect(db.podcast_plays).toHaveLength(1);
+    vi.unstubAllGlobals();
+  });
+
+  /**
+   * При перемотке плеер шлёт десятки Range-запросов. Если считать каждый,
+   * статистика покажет не слушателей, а сетевую активность.
+   */
+  it("перемотка не считается прослушиванием", async () => {
+    const app = await build();
+    await play(app, { range: "bytes=5000000-5001000" });
+    expect(db.podcast_plays).toHaveLength(0);
+    vi.unstubAllGlobals();
+  });
+
+  it("у бесплатного выпуска слушатель не записывается – его личность неизвестна", async () => {
+    const app = await build();
+    await play(app);
+    expect(db.podcast_plays![0]!.alumni_id).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it("сбой учёта не ломает выдачу аудио", async () => {
+    const app = await build();
+    // Коллекция недоступна – слушатель всё равно должен получить файл
+    const orig = db.podcast_plays;
+    Object.defineProperty(db, "podcast_plays", { get() { throw new Error("нет прав"); }, configurable: true });
+    const r = await play(app);
+    expect(r.statusCode).toBe(200);
+    Object.defineProperty(db, "podcast_plays", { value: orig, writable: true, configurable: true });
+    vi.unstubAllGlobals();
+  });
+});

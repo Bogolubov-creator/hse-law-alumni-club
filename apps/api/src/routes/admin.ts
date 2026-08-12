@@ -67,6 +67,61 @@ export async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  /**
+   * Подписки на подкасты: кто подписан, до какой даты, кто скоро истекает.
+   * Отдельная ручка, а не фильтр по выпускникам: офису нужен срез именно по
+   * подпискам, с сортировкой по дате окончания и статистикой прослушиваний.
+   */
+  app.get("/admin/podcast-subs", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const now = new Date().toISOString();
+    const soon = new Date(Date.now() + 30 * 86400000).toISOString();
+
+    const subs = (await di.request((readItems as any)("alumni", {
+      filter: { podcast_sub_until: { _nnull: true } },
+      sort: ["podcast_sub_until"], limit: -1,
+      fields: ["id", "fio", "cohort", "podcast_sub_until", "podcast_reminder_sent", "contacts_json"],
+    }))) as any[];
+
+    const active = subs.filter((a) => a.podcast_sub_until > now);
+    const items = active.map((a) => ({
+      id: a.id, fio: a.fio, cohort: a.cohort,
+      until: a.podcast_sub_until,
+      days_left: Math.ceil((new Date(a.podcast_sub_until).getTime() - Date.now()) / 86400000),
+      reminded: !!a.podcast_reminder_sent,
+      email: a.contacts_json?.email ?? null,
+    }));
+
+    // Прослушивания: сводка по выпускам. Пишет их сервер при выдаче аудио,
+    // поэтому цифры отражают реальные обращения, а не клики по странице.
+    const plays = (await di.request((readItems as any)("podcast_plays", {
+      limit: -1, fields: ["podcast_id", "alumni_id", "created_at"],
+    }))) as any[];
+    const podcasts = (await di.request((readItems as any)("podcasts", {
+      limit: -1, sort: ["sort"], fields: ["id", "title", "is_free"],
+    }))) as any[];
+
+    const monthAgo = Date.now() - 30 * 86400000;
+    const byPodcast = podcasts.map((p) => {
+      const mine = plays.filter((x) => x.podcast_id === p.id);
+      return {
+        id: p.id, title: p.title, is_free: !!p.is_free,
+        plays: mine.length,
+        listeners: new Set(mine.map((x) => x.alumni_id ?? "гость")).size,
+        plays_30d: mine.filter((x) => new Date(x.created_at).getTime() >= monthAgo).length,
+      };
+    }).sort((a, b) => b.plays - a.plays);
+
+    return {
+      active: items.length,
+      expiring_30d: active.filter((a) => a.podcast_sub_until <= soon).length,
+      expired: subs.length - active.length,
+      items,
+      plays_total: plays.length,
+      by_podcast: byPodcast,
+    };
+  });
+
   // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;

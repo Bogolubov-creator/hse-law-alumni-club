@@ -56,6 +56,34 @@ async function streamAudio(reply: any, fileId: string, range: string | undefined
   return reply.send(Readable.fromWeb(res.body as any));
 }
 
+/** Не чаще одной записи на связку «выпуск + слушатель» за это время. */
+const PLAY_DEDUP_MS = 6 * 3600 * 1000;
+
+/**
+ * Отметить прослушивание выпуска.
+ *
+ * Пишет сервер, а не браузер: счётчик, который шлёт фронт, накручивается
+ * одной строкой в консоли. `holder` – это alumni-id подписчика либо "free"
+ * у пробного выпуска, тогда слушателя мы не знаем и пишем без него.
+ *
+ * Дедупликация по окну: один человек, вернувшийся к выпуску через час,
+ * не должен считаться дважды.
+ */
+async function recordPlay(podcastId: string, holder: string): Promise<void> {
+  const alumniId = holder === "free" ? null : holder;
+  const since = new Date(Date.now() - PLAY_DEDUP_MS).toISOString();
+  const recent = (await di.request((readItems as any)("podcast_plays", {
+    filter: {
+      podcast_id: { _eq: podcastId },
+      created_at: { _gte: since },
+      ...(alumniId ? { alumni_id: { _eq: alumniId } } : { alumni_id: { _null: true } }),
+    },
+    limit: 1, fields: ["id"],
+  }))) as any[];
+  if (recent.length) return;
+  await di.request((createItem as any)("podcast_plays", { podcast_id: podcastId, alumni_id: alumniId }));
+}
+
 // ── Подписанные ссылки на аудио ────────────────────────────────────
 // Реальный audio_url наружу не отдаётся никогда. Клиент получает
 // /api/podcasts/:id/audio?h=<holder>&exp=<unix>&sig=HMAC(id.holder.exp).
@@ -133,6 +161,13 @@ export async function podcastsRoutes(app: FastifyInstance) {
       const a = (await di.request(readItems("alumni", { filter: { id: { _eq: q.data.h } }, limit: 1, fields: ["podcast_sub_until"] }))) as any[];
       if (!subActive(a[0]?.podcast_sub_until)) return reply.code(403).send({ error: "Подписка неактивна" });
     }
+    // Учёт прослушивания. Считаем начало воспроизведения, а не каждый кусок:
+    // при перемотке плеер шлёт десятки Range-запросов, и без этого счётчик
+    // показывал бы не слушателей, а сетевую активность.
+    if (!req.headers.range || /^bytes=0-/.test(req.headers.range)) {
+      void recordPlay(id, q.data.h).catch(() => undefined); // учёт не должен ломать выдачу
+    }
+
     // Файл, залитый в Directus, отдаём через прокси: хранилище закрыто от
     // публики, и открывать его нельзя – там же лежат аватары выпускников.
     // Внешний URL (сторонний хостинг) по-прежнему отдаётся редиректом.
@@ -226,6 +261,8 @@ export async function extendPodcastSub(alumniId: string, months = 12): Promise<s
   const base = current && current.getTime() > Date.now() ? current : new Date();
   base.setMonth(base.getMonth() + months);
   const until = base.toISOString();
-  await di.request((updateItem as any)("alumni", alumniId, { podcast_sub_until: until }));
+  // Флаг напоминания сбрасываем при каждом продлении: иначе выпускник получил
+  // бы предупреждение об окончании один раз в жизни, а на следующий год – нет.
+  await di.request((updateItem as any)("alumni", alumniId, { podcast_sub_until: until, podcast_reminder_sent: false }));
   return until;
 }

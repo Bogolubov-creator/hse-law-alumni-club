@@ -113,6 +113,18 @@ export function useAdminProducts() {
   return useQuery({ queryKey: ["adm", "products"], queryFn: () => req<AdminProduct[]>("GET", "/admin/products"), retry: false });
 }
 export type AuditEntry = { id: string; event: string; actor: string | null; subject: string | null; detail: Record<string, unknown> | null; ip: string | null; created_at: string | null };
+export type PodcastSub = { id: string; fio: string | null; cohort: string | null; until: string; days_left: number; reminded: boolean; email: string | null };
+export type PodcastPlays = { id: string; title: string; is_free: boolean; plays: number; listeners: number; plays_30d: number };
+export type PodcastSubs = {
+  active: number; expiring_30d: number; expired: number;
+  items: PodcastSub[]; plays_total: number; by_podcast: PodcastPlays[];
+};
+
+/** Подписки на подкасты и статистика прослушиваний – один срез для офиса. */
+export function usePodcastSubs() {
+  return useQuery({ queryKey: ["adm", "podcast-subs"], queryFn: () => req<PodcastSubs>("GET", "/admin/podcast-subs"), retry: false });
+}
+
 export function useAuditLog() {
   return useQuery({ queryKey: ["adm", "audit"], queryFn: () => req<AuditEntry[]>("GET", "/admin/audit?limit=300"), retry: false, refetchInterval: 60_000 });
 }

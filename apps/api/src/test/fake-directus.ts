@@ -102,7 +102,10 @@ export async function request(desc: Descriptor): Promise<any> {
       return row ? project(row, desc.query?.fields) : null;
     }
     case "createItem": {
-      const row = { id: randomUUID(), ...desc.data };
+      // created_at в Directus заполняется само (special: date-created). Без этого
+      // фильтры по времени в фейке молча не находили ничего, и логика, которая
+      // на них опирается (например дедупликация прослушиваний), выглядела рабочей.
+      const row = { id: randomUUID(), created_at: new Date().toISOString(), ...desc.data };
       // Уникальность номера заявки: в БД это UNIQUE-индекс, роут рассчитывает на отказ.
       if (desc.collection === "orders" && table("orders").some((r) => r.number === row.number)) {
         throw new Error("duplicate key value violates unique constraint (orders.number)");
@@ -111,7 +114,7 @@ export async function request(desc: Descriptor): Promise<any> {
       return { ...row };
     }
     case "createItems": {
-      const rows = (desc.data as Row[]).map((d) => ({ id: randomUUID(), ...d }));
+      const rows = (desc.data as Row[]).map((d) => ({ id: randomUUID(), created_at: new Date().toISOString(), ...d }));
       table(desc.collection!).push(...rows);
       return rows.map((r) => ({ ...r }));
     }

@@ -22,6 +22,7 @@ import { telegramRoutes } from "./routes/telegram.js";
 import { registerBotCommands } from "./lib/telegram-bot.js";
 import { startTelegramPolling } from "./lib/telegram-polling.js";
 import { runDecay } from "./lib/engine.js";
+import { runPodcastSubReminders } from "./lib/podcast-reminders.js";
 import { runEventReminders } from "./lib/event-reminders.js";
 import { runRetention } from "./lib/retention.js";
 import { initSentry } from "./lib/sentry.js";
@@ -124,6 +125,14 @@ cronTasks.push(cron.schedule("0 10 * * *", () => {
   runEventReminders()
     .then((r) => { if (r.events) app.log.info(r, "event reminders sent"); })
     .catch((e) => app.log.error(e, "event reminders failed"));
+}));
+
+// Подписка на подкасты заканчивается через 10 дней (11:00). Идемпотентно:
+// флаг снимается при продлении, поэтому напоминание уходит раз за период.
+cronTasks.push(cron.schedule("0 11 * * *", () => {
+  runPodcastSubReminders()
+    .then((r) => { if (r.due) app.log.info(r, "podcast sub reminders sent"); })
+    .catch((e) => app.log.error(e, "podcast sub reminders failed"));
 }));
 
 // Ретенция ПДн (04:00): обезличить старые заявки, подчистить аудит (152-ФЗ).

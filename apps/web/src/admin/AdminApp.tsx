@@ -10,7 +10,7 @@ import { mono, disp, label, action, actionGhost, field, Panel, PanelTitle, Pill,
 
 const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
-  adminLogin, adminToken, setAdminToken, adminLogout,
+  adminLogin, adminToken, setAdminToken, adminLogout, usePodcastSubs,
   useOverview, useAdminOrders, useMembers, useAdminMutations,
   useAdminPrograms, useAdminProducts, useAdminPage, useAdminNews, useAdminTimeline, useAdminPodcasts, useAdminEvents,
   useAuditLog, downloadOrdersCsv, adminReq,
@@ -28,7 +28,7 @@ const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled"];
 const VERIF: Record<string, string> = { pending: "На проверке", verified: "Верифицирован", rejected: "Отклонён" };
 const LEVEL_RU: Record<string, string> = { graduate: "Выпускник", friend: "Друг клуба", expert: "Знаток", ambassador: "Амбассадор" };
 
-type Section = "overview" | "orders" | "members" | "content" | "audit";
+type Section = "overview" | "orders" | "members" | "subs" | "content" | "audit";
 
 export default function AdminApp() {
   useHead({ title: "Админ-панель", noindex: true }); // офисная зона – не индексируем
@@ -81,10 +81,11 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { key: "overview", label: "Обзор" },
     { key: "orders", label: "Заявки", badge: ov.data?.new_orders },
     { key: "members", label: "Выпускники", badge: ov.data?.pending_verifications },
+    { key: "subs", label: "Подписки" },
     { key: "content", label: "Контент" },
     { key: "audit", label: "Журнал" },
   ];
-  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", content: "Контент", audit: "Журнал безопасности" };
+  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", subs: "Подписки на подкасты", content: "Контент", audit: "Журнал безопасности" };
 
   // На вход выкидываем ТОЛЬКО при 401 (истёкшая сессия). Прочие ошибки (5xx/сеть)
   // не должны маскироваться под разлогин – показываем ретрай в основной области.
@@ -134,6 +135,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         {section === "overview" && <Overview onGo={setSection} />}
         {section === "orders" && <Orders />}
         {section === "members" && <Members />}
+        {section === "subs" && <PodcastSubs />}
         {section === "content" && <Content />}
         {section === "audit" && <AuditLog />}
       </main>
@@ -565,6 +567,80 @@ function Fact({ name, value }: { name: string; value: string }) {
       <span style={{ ...label, flexShrink: 0 }}>{name}</span>
       <span style={{ ...mono, fontSize: 12, textAlign: "right", overflowWrap: "anywhere" }}>{value}</span>
     </div>
+  );
+}
+
+/**
+ * Подписки на подкасты и статистика прослушиваний.
+ *
+ * Прослушивания считает сервер при выдаче аудио, поэтому цифры отражают
+ * реальные обращения к файлу. Видеовыпуски RuTube сюда не попадают: запись
+ * отдаёт чужой плеер, и обращений к ней мы не видим.
+ */
+function PodcastSubs() {
+  const q = usePodcastSubs();
+  const d = q.data;
+
+  if (q.isLoading) return <p style={{ ...label, margin: 0 }}>загружаем…</p>;
+  if (q.isError) {
+    return (
+      <Panel>
+        <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>данные не загрузились</p>
+        <button onClick={() => q.refetch()} className="foc" style={{ ...action, marginTop: 14 }}>Повторить</button>
+      </Panel>
+    );
+  }
+
+  return (
+    <>
+      <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "0 28px" }}>
+        <Stat name="Активных подписок" value={d?.active ?? 0} accent />
+        <Stat name="Истекают за 30 дней" value={d?.expiring_30d ?? 0} accent={!!d?.expiring_30d} />
+        <Stat name="Истёкших" value={d?.expired ?? 0} />
+        <Stat name="Прослушиваний всего" value={d?.plays_total ?? 0} />
+      </div>
+
+      <div className="adm-two" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 20, marginTop: 26 }}>
+        <Panel>
+          <PanelTitle right={<span style={label}>по дате окончания</span>}>Подписчики</PanelTitle>
+          {!d?.items.length && <p style={{ ...label, margin: 0, textTransform: "none", letterSpacing: 0 }}>Активных подписок нет.</p>}
+          {d?.items.map((s) => (
+            <Row key={s.id} cols="1fr 108px auto">
+              <span style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>{s.fio ?? "Выпускник"}</span>
+                {s.cohort && <span style={{ ...label, fontSize: 10, marginLeft: 8 }}>выпуск {s.cohort}</span>}
+              </span>
+              <span style={{ ...mono, fontSize: 12, color: "var(--c-text-3)" }}>{new Date(s.until).toLocaleDateString("ru-RU")}</span>
+              {/* Оставшиеся дни – главное, по чему офис решает, звонить ли */}
+              <span style={{ ...mono, fontSize: 12, whiteSpace: "nowrap", color: s.days_left <= 10 ? "var(--c-danger-text)" : "var(--c-text)" }}>
+                {s.days_left} дн.{s.reminded ? " · напомнили" : ""}
+              </span>
+            </Row>
+          ))}
+          {!!d?.items.length && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
+        </Panel>
+
+        <Panel>
+          <PanelTitle right={<span style={label}>за 30 дней · всего</span>}>Прослушивания</PanelTitle>
+          {!d?.by_podcast.length && <p style={{ ...label, margin: 0, textTransform: "none", letterSpacing: 0 }}>Выпусков нет.</p>}
+          {d?.by_podcast.map((p) => (
+            <Row key={p.id} cols="1fr auto">
+              <span style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>{p.title}</span>
+                <span style={{ ...label, fontSize: 10, display: "block", marginTop: 3 }}>
+                  {p.is_free ? "бесплатный" : "по подписке"} · слушателей {p.listeners}
+                </span>
+              </span>
+              <span style={{ ...mono, fontSize: 13, whiteSpace: "nowrap" }}>{p.plays_30d} · {p.plays}</span>
+            </Row>
+          ))}
+          {!!d?.by_podcast.length && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
+          <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "14px 0 0", lineHeight: 1.5 }}>
+            Считаются обращения к аудио на стороне сервера. Видеовыпуски RuTube сюда не попадают – их отдаёт чужой плеер.
+          </p>
+        </Panel>
+      </div>
+    </>
   );
 }
 

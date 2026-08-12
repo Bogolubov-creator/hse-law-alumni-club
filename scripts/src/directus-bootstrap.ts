@@ -153,7 +153,7 @@ const COLLECTIONS = [
   "levels", "point_rules", "achievements", "alumni", "points_ledger",
   "alumni_achievements", "alumni_friends", "pages", "news", "programs", "products",
   "carts", "orders", "offers", "referrals", "timeline_items", "podcasts", "audit_log",
-  "events", "event_rsvps", "push_subs",
+  "events", "event_rsvps", "push_subs", "podcast_plays",
 ];
 log("== Коллекции ==");
 for (const c of COLLECTIONS) await ensureCollection(c);
@@ -198,6 +198,7 @@ await ensureField("alumni", "contacts_json", json());
 await ensureField("alumni", "edu_program", str());
 await ensureField("alumni", "edu_level", str());
 await ensureField("alumni", "interests_json", json());
+await ensureField("alumni", "podcast_reminder_sent", bool(false)); // напоминание об окончании подписки уже отправлено
 await ensureField("alumni", "podcast_sub_until", ts()); // подписка на подкасты активна до этой даты
 await ensureField("alumni", "avatar", str()); // uuid файла в Directus (раздача через /api/avatars/:id)
 await ensureField("alumni", "referral_code", str(true));
@@ -262,6 +263,12 @@ await ensureField("podcasts", "description", txt());
 await ensureField("podcasts", "cover", str()); // URL/путь обложки
 await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.) либо uuid файла в Directus
 await ensureField("podcasts", "video_url", str()); // ссылка RuTube: выпуск показывается видеоплеером
+
+// podcast_plays – факт прослушивания. Пишется сервером при выдаче аудио,
+// поэтому счётчик нельзя накрутить из браузера.
+await ensureM2O("podcast_plays", "podcast_id", "podcasts", "CASCADE");
+await ensureM2O("podcast_plays", "alumni_id", "alumni", "SET NULL");
+await ensureField("podcast_plays", "created_at", ts("date-created"));
 await ensureField("podcasts", "duration", str()); // «43 мин»
 await ensureField("podcasts", "is_free", bool(false)); // пробный выпуск – доступен без подписки
 await ensureField("podcasts", "sort", int());

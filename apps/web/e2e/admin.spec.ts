@@ -51,6 +51,18 @@ const MEMBERS = {
   }],
 };
 
+const SUBS = {
+  active: 2, expiring_30d: 1, expired: 5, plays_total: 37,
+  items: [
+    { id: "m1", fio: "Кондратьев Сергей Андреевич", cohort: "2019", until: "2026-08-20T00:00:00.000Z", days_left: 8, reminded: true, email: "k@example.com" },
+    { id: "m2", fio: "Орлова Мария Петровна", cohort: "2021", until: "2027-02-01T00:00:00.000Z", days_left: 173, reminded: false, email: null },
+  ],
+  by_podcast: [
+    { id: "p1", title: "Правовая грамотность с Виолеттой Трубиной", is_free: true, plays: 24, listeners: 19, plays_30d: 11 },
+    { id: "p2", title: "Право и карьера", is_free: false, plays: 13, listeners: 9, plays_30d: 4 },
+  ],
+};
+
 /** Панель за админ-логином: кладём токен и подменяем ручки. */
 async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
   await page.addInitScript(() => {
@@ -64,6 +76,7 @@ async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
   await page.route("**/api/admin/members**", (r) =>
     r.request().method() === "GET" ? r.fulfill(json(over.members ?? MEMBERS)) : r.fulfill(json({ ok: true })));
   await page.route("**/api/admin/audit**", (r) => r.fulfill(json([]))); // ручка отдаёт массив, не страницу
+  await page.route("**/api/admin/podcast-subs", (r) => r.fulfill(json(over.subs ?? SUBS)));
   // Остальные разделы контента – пустыми списками, чтобы не падали
   for (const p of ["programs", "products", "news", "timeline", "podcasts", "events"]) {
     await page.route(`**/api/admin/${p}**`, (r) =>
@@ -167,12 +180,37 @@ test.describe("Админ-панель", () => {
     for (const [btn, heading] of [
       ["Выпускники", "Выпускники"],
       ["Контент", "Контент"],
+      ["Подписки", "Подписки на подкасты"],
       ["Журнал", "Журнал безопасности"],
       ["Обзор", "Обзор"],
     ] as const) {
       await page.getByRole("button", { name: new RegExp(btn) }).click();
       await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
     }
+  });
+
+  test("подписки: видно, у кого заканчивается и что уже напомнили", async ({ page }) => {
+    await mockAdmin(page);
+    await page.goto("/admin");
+    await page.getByRole("button", { name: /Подписки/ }).click();
+
+    await expect(page.getByRole("heading", { level: 1, name: "Подписки на подкасты" })).toBeVisible();
+    await expect(page.getByText("Активных подписок")).toBeVisible();
+    await expect(page.getByText("Кондратьев Сергей Андреевич")).toBeVisible();
+    // Осталось меньше десяти дней – по этому офис решает, звонить ли
+    await expect(page.getByText(/8 дн\. · напомнили/)).toBeVisible();
+  });
+
+  test("подписки: статистика прослушиваний и оговорка про видео", async ({ page }) => {
+    await mockAdmin(page);
+    await page.goto("/admin");
+    await page.getByRole("button", { name: /Подписки/ }).click();
+
+    await expect(page.getByText("Прослушивания", { exact: true })).toBeVisible();
+    await expect(page.getByText("11 · 24")).toBeVisible();
+    await expect(page.getByText(/слушателей 19/)).toBeVisible();
+    // Видео отдаёт чужой плеер – офис не должен думать, что цифры полные
+    await expect(page.getByText(/Видеовыпуски RuTube сюда не попадают/)).toBeVisible();
   });
 
   test("пуш-рассылка заблокирована и называет причину", async ({ page }) => {
