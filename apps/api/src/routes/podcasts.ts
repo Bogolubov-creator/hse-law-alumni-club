@@ -17,6 +17,45 @@ export function subActive(until: string | null | undefined): boolean {
   return !!until && new Date(until).getTime() > Date.now();
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Отдача аудио из хранилища Directus через наш прокси.
+ *
+ * Хранилище закрыто от публики (роль Public не читает файлы), и открывать его
+ * нельзя: там же лежат аватары выпускников – это персональные данные. Поэтому
+ * файл тянется сервисным токеном, как это уже сделано для аватаров.
+ *
+ * Range пробрасывается в обе стороны: без него плеер не умеет перематывать
+ * и вынужден тянуть весь выпуск целиком, а это десятки мегабайт. Тело
+ * передаётся потоком – класть часовой подкаст в память нельзя.
+ */
+async function streamAudio(reply: any, fileId: string, range: string | undefined) {
+  const res = await fetch(`${env.DIRECTUS_URL}/assets/${fileId}`, {
+    headers: {
+      authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}`,
+      ...(range ? { range } : {}),
+    },
+  });
+  if (!res.ok || !res.body) return reply.code(404).send({ error: "Выпуск не найден" });
+
+  // Тип из белого списка: что бы ни оказалось в хранилище, наружу оно не уйдёт
+  // как text/html.
+  const upstream = (res.headers.get("content-type") ?? "").split(";")[0]!.trim();
+  reply.code(res.status === 206 ? 206 : 200);
+  reply.header("Content-Type", upstream.startsWith("audio/") ? upstream : "audio/mpeg");
+  reply.header("Accept-Ranges", "bytes");
+  reply.header("X-Content-Type-Options", "nosniff");
+  // Подписанная ссылка живёт 2 часа, поэтому кэш только приватный и короткий.
+  reply.header("Cache-Control", "private, max-age=3600");
+  for (const h of ["content-length", "content-range"]) {
+    const v = res.headers.get(h);
+    if (v) reply.header(h, v);
+  }
+  const { Readable } = await import("node:stream");
+  return reply.send(Readable.fromWeb(res.body as any));
+}
+
 // ── Подписанные ссылки на аудио ────────────────────────────────────
 // Реальный audio_url наружу не отдаётся никогда. Клиент получает
 // /api/podcasts/:id/audio?h=<holder>&exp=<unix>&sig=HMAC(id.holder.exp).
@@ -90,6 +129,10 @@ export async function podcastsRoutes(app: FastifyInstance) {
       const a = (await di.request(readItems("alumni", { filter: { id: { _eq: q.data.h } }, limit: 1, fields: ["podcast_sub_until"] }))) as any[];
       if (!subActive(a[0]?.podcast_sub_until)) return reply.code(403).send({ error: "Подписка неактивна" });
     }
+    // Файл, залитый в Directus, отдаём через прокси: хранилище закрыто от
+    // публики, и открывать его нельзя – там же лежат аватары выпускников.
+    // Внешний URL (сторонний хостинг) по-прежнему отдаётся редиректом.
+    if (UUID_RE.test(podcast.audio_url)) return streamAudio(reply, podcast.audio_url, req.headers.range);
     return reply.redirect(podcast.audio_url, 302);
   });
 
