@@ -127,10 +127,12 @@ test.describe("События v2", () => {
 const PODCASTS = {
   subscribed: false, sub_until: null, price: 399900,
   items: [
-    { id: "pd1", title: "Пробный выпуск: зачем клубу подкаст", description: "О чём будем говорить.", cover: null, duration: "42 мин", is_free: true, audio_url: "/api/podcasts/pd1/audio" },
-    { id: "pd2", title: "Договорная работа в 2026", description: "Практика и споры.", cover: null, duration: "58 мин", is_free: false, audio_url: null },
+    { id: "pd1", title: "Пробный выпуск: зачем клубу подкаст", description: "О чём будем говорить.", cover: null, duration: "42 мин", is_free: true, audio_url: "/api/podcasts/pd1/audio", video_url: null },
+    { id: "pd2", title: "Договорная работа в 2026", description: "Практика и споры.", cover: null, duration: "58 мин", is_free: false, audio_url: null, video_url: null },
   ],
 };
+
+const RUTUBE_SRC = "https://rutube.ru/play/embed/a1b2c3d4e5f60718293a4b5c6d7e8f90";
 
 test.describe("Подкасты v2", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
@@ -165,6 +167,33 @@ test.describe("Подкасты v2", () => {
 
     await expect(page.getByText(/подписка активна/)).toBeVisible();
     await expect(page.getByRole("link", { name: "Войти в кабинет" })).toHaveCount(0);
+  });
+
+  test("видеовыпуск показывается плеером RuTube вместо аудио", async ({ page }) => {
+    await page.route("**/api/podcasts", (r) => r.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({ ...PODCASTS, items: [{ ...PODCASTS.items[0], title: "Видеовыпуск клуба", video_url: RUTUBE_SRC }] }),
+    }));
+    await page.goto("/v2/podcasts");
+
+    const frame = page.locator("iframe");
+    await expect(frame).toHaveAttribute("src", RUTUBE_SRC);
+    await expect(frame).toHaveAttribute("title", /Видеовыпуск клуба/);
+    // Видео вытесняет аудио: два плеера на один выпуск – это шум
+    await expect(page.locator("audio")).toHaveCount(0);
+  });
+
+  test("закрытому выпуску не отдаётся ни аудио, ни видео", async ({ page }) => {
+    // Сервер уже не прислал ссылок – страница обязана показать замок, а не пустоту
+    await page.route("**/api/podcasts", (r) => r.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({ ...PODCASTS, items: [{ ...PODCASTS.items[1], video_url: null }] }),
+    }));
+    await page.goto("/v2/podcasts");
+
+    await expect(page.locator("iframe")).toHaveCount(0);
+    await expect(page.locator("audio")).toHaveCount(0);
+    await expect(page.getByText(/доступно по подписке/)).toBeVisible();
   });
 
   test("на телефоне разделы не едут вбок", async ({ page }) => {

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import SiteShell from "../components/SiteShell.js";
 import { rub, type PodcastItem } from "../lib/api.js";
 import { EpisodePlayer } from "../components/EpisodePlayer.js";
+import { VideoEmbed } from "../components/VideoEmbed.js";
 import { token } from "../lib/cart.js";
 import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
@@ -104,7 +105,10 @@ export default function Podcasts() {
                 </div>
               </div>
               <div className="border-t border-[#f0ece2] px-5 py-4">
-                {p.audio_url ? (
+                {/* Видеовыпуск: если есть запись на RuTube, показываем её вместо аудио */}
+                {p.video_url ? (
+                  <VideoEmbed src={p.video_url} title={p.title} />
+                ) : p.audio_url ? (
                   <EpisodePlayer id={p.id} src={p.audio_url} />
                 ) : (
                   <div className="flex items-center gap-3 font-mono text-[12px] text-grafit-soft">

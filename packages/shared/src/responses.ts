@@ -22,6 +22,7 @@ export const podcastItemSchema = z.object({
   cover: z.string().nullable(), duration: z.string().nullable(),
   is_free: z.boolean().optional(), // пробный выпуск – слушается без подписки
   audio_url: z.string().nullable().optional(), // подписанная ссылка; null без доступа
+  video_url: z.string().nullable().optional(), // ссылка RuTube; null без доступа
 });
 export const podcastsResSchema = z.object({
   items: z.array(podcastItemSchema),

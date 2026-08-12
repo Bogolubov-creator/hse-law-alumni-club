@@ -260,7 +260,8 @@ await ensureField("timeline_items", "status", enumf(["draft", "published"], "pub
 await ensureField("podcasts", "title", str());
 await ensureField("podcasts", "description", txt());
 await ensureField("podcasts", "cover", str()); // URL/путь обложки
-await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.)
+await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.) либо uuid файла в Directus
+await ensureField("podcasts", "video_url", str()); // ссылка RuTube: выпуск показывается видеоплеером
 await ensureField("podcasts", "duration", str()); // «43 мин»
 await ensureField("podcasts", "is_free", bool(false)); // пробный выпуск – доступен без подписки
 await ensureField("podcasts", "sort", int());

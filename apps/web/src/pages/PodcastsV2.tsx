@@ -4,6 +4,7 @@ import { token } from "../lib/cart.js";
 import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
 import { EpisodePlayer } from "../components/EpisodePlayer.js";
+import { VideoEmbed } from "../components/VideoEmbed.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 
 /**
@@ -122,7 +123,10 @@ export default function PodcastsV2() {
                 )}
 
                 <div style={{ marginTop: 14 }}>
-                  {p.audio_url ? (
+                  {/* Видеовыпуск: если есть запись на RuTube, показываем её вместо аудио */}
+                  {p.video_url ? (
+                    <VideoEmbed src={p.video_url} title={p.title} v2 />
+                  ) : p.audio_url ? (
                     <EpisodePlayer id={p.id} src={p.audio_url} v2 />
                   ) : (
                     <div style={{ ...label, fontSize: 10, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: "1px dashed var(--c-line)", borderRadius: "var(--r-md)" }}>

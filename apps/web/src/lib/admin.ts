@@ -58,7 +58,7 @@ export type Overview = {
 };
 export type AdminNews = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string };
 export type AdminTimeline = { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string };
-export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
+export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; video_url?: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; payment_status?: string | null; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
 export type Member = {

@@ -2,7 +2,7 @@ import { useId, useState, useEffect, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
 import { rub } from "../lib/api.js";
-import { computeLevel, ORDER_STATUS_RU } from "@club/shared";
+import { computeLevel, ORDER_STATUS_RU, rutubeEmbed } from "@club/shared";
 import { useHead } from "../lib/title.js";
 import { VisionToggle } from "../components/Vision.js";
 import { Mark } from "../v2/Mark.js";
@@ -972,13 +972,17 @@ function PodcastsAdmin() {
   );
 }
 
-function PodcastForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: { title: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null }) => void }) {
-  const [f, setF] = useState({ title: "", description: "", cover: "", audio_url: "", duration: "" });
+function PodcastForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: { title: string; description?: string | null; cover?: string | null; audio_url?: string | null; video_url?: string | null; duration?: string | null }) => void }) {
+  const [f, setF] = useState({ title: "", description: "", cover: "", audio_url: "", video_url: "", duration: "" });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
-  const valid = f.title.trim().length >= 3;
+  // Ссылку на видео проверяем сразу: в поле легко вставить не тот адрес,
+  // и тогда выпуск молча остался бы без плеера.
+  const video = f.video_url.trim() ? rutubeEmbed(f.video_url.trim()) : null;
+  const videoBad = !!f.video_url.trim() && !video;
+  const valid = f.title.trim().length >= 3 && !videoBad;
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (valid) onSave({ title: f.title.trim(), description: f.description.trim() || null, cover: f.cover.trim() || null, audio_url: f.audio_url.trim() || null, duration: f.duration.trim() || null });
+    if (valid) onSave({ title: f.title.trim(), description: f.description.trim() || null, cover: f.cover.trim() || null, audio_url: f.audio_url.trim() || null, video_url: f.video_url.trim() || null, duration: f.duration.trim() || null });
   };
   return (
     <Modal onClose={onClose} labelledBy="pod-form-title" maxWidth={520}>
@@ -991,6 +995,18 @@ function PodcastForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
           <div className="grid grid-cols-[1fr_120px] gap-3">
             <FormField label="Аудио (ссылка на mp3)" value={f.audio_url} onChange={(v) => set("audio_url", v)} ph="https://…/episode.mp3" />
             <FormField label="Длительность" value={f.duration} onChange={(v) => set("duration", v)} ph="42 мин" />
+          </div>
+          <div>
+            <FormField label="Видео RuTube" value={f.video_url} onChange={(v) => set("video_url", v)} ph="https://rutube.ru/video/…" />
+            {videoBad ? (
+              <p role="alert" style={{ ...mono, fontSize: 11, color: "var(--c-danger-text)", margin: "6px 0 0", lineHeight: 1.5 }}>
+                Не похоже на ссылку RuTube. Скопируйте адрес из адресной строки: rutube.ru/video/… или приватную rutube.ru/video/private/…?p=…
+              </p>
+            ) : video ? (
+              <p style={{ ...label, fontSize: 10, margin: "6px 0 0", textTransform: "none", letterSpacing: 0 }}>
+                Ссылка распознана{video.private ? " · видео из закрытой папки" : ""}. Если заполнено, выпуск показывается видеоплеером вместо аудио.
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="mt-5 flex gap-2">

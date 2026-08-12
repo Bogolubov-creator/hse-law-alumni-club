@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { PODCAST_SUB_PRICE_KOP, orderNumber } from "@club/shared";
+import { PODCAST_SUB_PRICE_KOP, orderNumber, rutubeEmbed } from "@club/shared";
 import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
 import { lastOrderSeq } from "../lib/order-number.js";
@@ -94,7 +94,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     const subscribed = subActive(until);
     const rows = (await di.request(readItems("podcasts", {
       filter: { status: { _eq: "published" } }, sort: ["sort"], limit: -1,
-      fields: ["id", "title", "description", "cover", "duration", "is_free", "audio_url"],
+      fields: ["id", "title", "description", "cover", "duration", "is_free", "audio_url", "video_url"],
     }))) as any[];
     return {
       // Реальный audio_url не покидает сервер: доступным выпускам выдаётся
@@ -105,6 +105,10 @@ export async function podcastsRoutes(app: FastifyInstance) {
         audio_url: p.audio_url && (p.is_free || subscribed)
           ? signedAudioPath(p.id, p.is_free ? "free" : alumni!.id)
           : null,
+        // Ссылку на видео подписать нельзя – она чужая. Поэтому просто не
+        // отдаём её тем, кому выпуск не открыт: в закрытой папке RuTube
+        // защита ровно в том, что ссылку не публикуют.
+        video_url: p.video_url && (p.is_free || subscribed) ? rutubeEmbed(p.video_url)?.src ?? null : null,
       })),
       subscribed,
       sub_until: subscribed ? until : null,
