@@ -15,8 +15,8 @@ import { VisionToggle } from "../components/Vision.js";
  */
 
 const THEMIS = "/assets/themis.jpeg";
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
-const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
+const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
+const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
 
 // 3×2 сетки → 12 треугольных осколков (как _heroShards в дизайне).
 function heroShards() {
@@ -310,7 +310,7 @@ export default function Home() {
     // становится auto), и тогда position:sticky внутри цепляется за него, а не за окно –
     // из-за этого не липли ни шапка, ни пин-секция «Истории». clip режет так же, но
     // скролл-порт не создаёт.
-    <div ref={rootRef} style={{ background: "#FBF3E8", color: "#14181F", fontFamily: "'Onest', system-ui, sans-serif", overflowX: "clip" }}>
+    <div ref={rootRef} style={{ background: "#FBF3E8", color: "#14181F", fontFamily: "'HSE Sans', system-ui, sans-serif", overflowX: "clip" }}>
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(12px)", background: "rgba(251,243,232,.82)", borderBottom: "1px solid #E5E7EB" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "13px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>

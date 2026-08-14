@@ -61,7 +61,7 @@ function Field({ name, value, onChange, type = "text", required, ph }: {
   return (
     <div style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
       {/* Помечаем необязательное, а не обязательное: обязательных тут почти все,
-          а звёздочка в Martian Mono рисуется снежинкой и читается как украшение. */}
+а звёздочки у почти всех полей превратились бы в шум. */}
       <label htmlFor={id} style={{ ...label, display: "block" }}>
         {name}{!required && <span style={{ textTransform: "none", letterSpacing: 0, opacity: 0.75 }}> · необязательно</span>}
       </label>

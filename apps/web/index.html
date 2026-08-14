@@ -80,12 +80,12 @@
         ]
       }
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;800&family=Onest:wght@400;500;600;700;800&family=Martian+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Шрифты со своего домена, а не с fonts.googleapis.com: нет внешней
+         зависимости и IP посетителя не уходит в Google (см. public/fonts/fonts.css). -->
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <!-- Начертания первого экрана грузим заранее, чтобы заголовок не переписывался -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Regular.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Black.woff2" />
   </head>
   <body>
     <div id="root"></div>

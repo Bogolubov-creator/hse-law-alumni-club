@@ -20,8 +20,8 @@ const ANDROID = isAndroid();
  */
 
 const INK = "#14181F";
-const disp: CSSProperties = { fontFamily: "'Unbounded', system-ui, sans-serif" };
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
+const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
+const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
 const CARD: CSSProperties = { background: "#fff", border: "1px solid #ECE6DA", borderRadius: 20 };
 const HEADER: CSSProperties = {
   position: "sticky", top: 0, zIndex: 3,
@@ -389,7 +389,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   const brd = on ? (ANDROID ? "#14181F" : "#EC5A13") : "#E4DCCC";
   const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "#fff";
   const col = on ? (ANDROID ? "#FBF3E8" : "#C9450E") : INK;
-  return <button onClick={onClick} style={{ flexShrink: 0, fontFamily: "'Onest'", fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + brd, background: bg, color: col, cursor: "pointer" }}>{children}</button>;
+  return <button onClick={onClick} style={{ flexShrink: 0, fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + brd, background: bg, color: col, cursor: "pointer" }}>{children}</button>;
 }
 
 // ── Подкасты ─────────────────────────────────────────────────────────
@@ -479,8 +479,8 @@ const roundLight: CSSProperties = { width: 40, height: 40, borderRadius: 12, bor
 const secTitle: CSSProperties = { ...disp, fontWeight: 600, fontSize: 15, marginBottom: 8 };
 const factChip: CSSProperties = { ...mono, fontSize: 10.5, color: INK, background: "#fff", border: "1px solid #ECE6DA", padding: "7px 11px", borderRadius: 9 };
 const stickyBar: CSSProperties = { flexShrink: 0, padding: "12px 20px calc(env(safe-area-inset-bottom, 0px) + 16px)", background: "#FBF3E8", borderTop: "1px solid #EFE7D8", display: "flex", gap: 11 };
-const primaryBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "none", background: "#EC5A13", color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: "0 12px 24px -12px rgba(236,90,19,.8)" };
-const ghostBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "1.5px solid #14181F", background: "#fff", color: INK, fontFamily: "'Onest'", fontWeight: 700, fontSize: 15, cursor: "pointer" };
+const primaryBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "none", background: "#EC5A13", color: "#FBF3E8", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: "0 12px 24px -12px rgba(236,90,19,.8)" };
+const ghostBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "1.5px solid #14181F", background: "#fff", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" };
 const BackWhite = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
 const BackInk = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
 
@@ -496,7 +496,15 @@ function MobileProgram() {
   const cart = useCart();
   const toast = useToast();
   const p = q.data;
-  useHead({ title: p?.title ?? "Программа ДПО", description: p?.description ?? undefined, canonical: typeof window !== "undefined" ? `${window.location.origin}/dpo/${slug}` : undefined });
+  // Несуществующий слаг отдаётся оболочкой SPA с кодом 200, поэтому закрываем
+  // от индексации мета-тегом – как на десктопной версии. Мобильную версию
+  // Google индексирует в первую очередь, и без этого в выдачу уходил бы soft-404.
+  useHead({
+    title: q.isError ? "Программа не найдена" : p?.title ?? "Программа ДПО",
+    description: p?.description ?? undefined,
+    canonical: typeof window !== "undefined" ? `${window.location.origin}/dpo/${slug}` : undefined,
+    noindex: q.isError,
+  });
   const count = cart.data?.count ?? 0;
   const mem = p ? Math.round(p.price * (1 - discount / 100)) : 0;
   const modules = (Array.isArray(p?.modules) && p!.modules) || [];
@@ -509,7 +517,7 @@ function MobileProgram() {
     });
   };
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 200, overflow: "hidden", background: "linear-gradient(150deg,#1e2942,#11296B 60%,#0f1c3f)" }}>
           <img src="/assets/themis.jpeg" alt="" style={{ position: "absolute", right: -30, bottom: -30, width: 190, height: 190, objectFit: "cover", opacity: .16, transform: "rotate(8deg)" }} />
@@ -563,7 +571,7 @@ function MobileProgram() {
 }
 
 function CartField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "#fff", padding: "0 15px", fontFamily: "'Onest'", fontSize: 15, color: INK, outline: "none" }} />;
+  return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "#fff", padding: "0 15px", fontFamily: "'HSE Sans', system-ui, sans-serif", fontSize: 15, color: INK, outline: "none" }} />;
 }
 
 function MobileCart() {
@@ -593,19 +601,19 @@ function MobileCart() {
 
   if (result) {
     return (
-      <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+      <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
         <div style={{ width: 96, height: 96, borderRadius: 99, background: "linear-gradient(140deg,#2C6E80,#15375E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 46px -20px rgba(21,55,94,.8)" }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#FBF3E8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg></div>
         <div style={{ ...disp, fontWeight: 800, fontSize: 24, marginTop: 26 }}>Заявка отправлена</div>
         <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "#C9450E", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
         <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
         {result.payment_url && <a href={result.payment_url} style={{ ...primaryBtn, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", padding: "0 26px", background: "#1F8A5B", boxShadow: "none" }}>Оплатить онлайн</a>}
-        <button onClick={() => nav("/")} style={{ marginTop: 22, height: 52, padding: "0 34px", borderRadius: 15, border: "none", background: INK, color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>На главную</button>
+        <button onClick={() => nav("/")} style={{ marginTop: 22, height: 52, padding: "0 34px", borderRadius: 15, border: "none", background: INK, color: "#FBF3E8", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>На главную</button>
       </div>
     );
   }
 
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <header style={{ ...HEADER, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 12px" }}>
         <button onClick={() => nav(-1)} aria-label="Назад" style={roundLight}>{BackInk}</button>
         <div style={{ ...disp, fontWeight: 800, fontSize: 21, letterSpacing: "-.01em" }}>Заявка</div>
@@ -658,7 +666,7 @@ function MobileCart() {
               <CartField label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} />
               <div style={{ display: "flex", gap: 9 }}>
                 {(["pickup", "delivery"] as const).map((f) => (
-                  <button type="button" key={f} onClick={() => set("fulfillment", f)} style={{ flex: 1, height: 46, borderRadius: 13, cursor: "pointer", fontFamily: "'Onest'", fontWeight: 600, fontSize: 13.5, border: "1.5px solid " + (form.fulfillment === f ? "#EC5A13" : "#E4DCCC"), background: "#fff", color: INK }}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
+                  <button type="button" key={f} onClick={() => set("fulfillment", f)} style={{ flex: 1, height: 46, borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, border: "1.5px solid " + (form.fulfillment === f ? "#EC5A13" : "#E4DCCC"), background: "#fff", color: INK }}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
                 ))}
               </div>
               {form.fulfillment === "delivery" && <CartField label="Адрес доставки" value={form.address} onChange={(v) => set("address", v)} />}
@@ -682,11 +690,16 @@ function MobileNewsPost() {
   const nav = useNavigate();
   const post = useNewsPost(slug);
   const d = post.data;
-  useHead({ title: d?.title ?? "Новость", description: d?.excerpt ?? undefined, canonical: typeof window !== "undefined" ? `${window.location.origin}/news/${slug}` : undefined });
+  useHead({
+    title: post.isError ? "Новость не найдена" : d?.title ?? "Новость",
+    description: d?.excerpt ?? undefined,
+    canonical: typeof window !== "undefined" ? `${window.location.origin}/news/${slug}` : undefined,
+    noindex: post.isError,
+  });
   // Оттенок героя – стабильный по slug (как цветные карточки ленты).
   const tint = NEWS_TINTS[Math.abs([...slug].reduce((s, c) => s + c.charCodeAt(0), 0)) % NEWS_TINTS.length];
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 150, background: tint, overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 2px,transparent 2px 14px)" }} />
@@ -737,7 +750,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
 
   if (q.isLoading) return <div style={{ height: "100dvh", background: "#14181F" }}><Loader /></div>;
   if (!item) return (
-    <div style={{ height: "100dvh", background: "#14181F", color: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#14181F", color: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <p style={{ ...mono, fontSize: 13 }}>Выпуск не найден</p>
       <button onClick={() => nav("/podcasts")} style={{ ...primaryBtn, flex: "none", padding: "0 26px", height: 48 }}>К списку</button>
     </div>
@@ -756,7 +769,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
     a.currentTime = Math.max(0, Math.min(dur, ((e.clientX - r.left) / r.width) * dur));
   };
   return (
-    <div style={{ height: "100dvh", background: "linear-gradient(180deg,#1a2338 0%,#14181F 60%,#0f131a 100%)", display: "flex", flexDirection: "column", color: "#FBF3E8", overflow: "hidden", fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "linear-gradient(180deg,#1a2338 0%,#14181F 60%,#0f131a 100%)", display: "flex", flexDirection: "column", color: "#FBF3E8", overflow: "hidden", fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 14px) 16px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button onClick={() => nav("/podcasts")} aria-label="Назад" style={{ ...roundDark, background: "rgba(251,243,232,.12)", backdropFilter: "none", WebkitBackdropFilter: "none" }}>{BackWhite}</button>
         <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "rgba(251,243,232,.55)" }}>{locked ? "ПО ПОДПИСКЕ" : "СЕЙЧАС ИГРАЕТ"}</span>
@@ -831,7 +844,7 @@ function MobileMerchItem({ slug }: { slug: string }) {
     });
   };
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 300, overflow: "hidden", background: m?.images?.[0] ? `#EDE4D2 url(${m.images[0]}) center/cover no-repeat` : tint }}>
           {!m?.images?.[0] && <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 9px,transparent 9px 19px)" }} />}
@@ -851,7 +864,7 @@ function MobileMerchItem({ slug }: { slug: string }) {
                   {variants.map((v) => {
                     const on = sku === v.sku;
                     const label = [v.size, v.color].filter(Boolean).join(" · ") || v.sku;
-                    return <button key={v.sku} disabled={v.stock <= 0} aria-pressed={on} onClick={() => setSku(v.sku)} style={{ minWidth: 52, height: 48, padding: "0 12px", borderRadius: 13, cursor: "pointer", fontFamily: "'Onest'", fontWeight: 600, fontSize: 15, border: "1.5px solid " + (on ? "#EC5A13" : "#E4DCCC"), background: on ? "rgba(236,90,19,.08)" : "#fff", color: INK, opacity: v.stock <= 0 ? .4 : 1 }}>{label}</button>;
+                    return <button key={v.sku} disabled={v.stock <= 0} aria-pressed={on} onClick={() => setSku(v.sku)} style={{ minWidth: 52, height: 48, padding: "0 12px", borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, border: "1.5px solid " + (on ? "#EC5A13" : "#E4DCCC"), background: on ? "rgba(236,90,19,.08)" : "#fff", color: INK, opacity: v.stock <= 0 ? .4 : 1 }}>{label}</button>;
                   })}
                 </div>
               </div>
@@ -903,7 +916,7 @@ function MobileAch() {
   const list = me.data?.achievements ?? [];
   const earned = list.filter((a) => a.earned).length;
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <OverlayHeader title="Достижения" sub={me.data ? `${earned}/${list.length} · ${me.data.level.points} баллов` : undefined} onBack={() => nav("/")} />
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         {me.isLoading && <Loader />}
@@ -937,7 +950,7 @@ function MobileLedger() {
   const me = useMe(token());
   const ledger = useLedger(token());
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <OverlayHeader title="История баллов" sub={me.data ? `Баланс · ${me.data.level.points} баллов` : undefined} onBack={() => nav("/")} />
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         {ledger.isLoading && <Loader />}
@@ -980,7 +993,7 @@ function MobileProfile() {
     </Link>
   );
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'Onest', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <OverlayHeader title="Профиль" onBack={() => nav("/")} />
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         {me.isLoading && <Loader />}
@@ -1024,7 +1037,7 @@ function MobileProfile() {
               {row(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>, "Уведомления и Telegram-бот", "/lk")}
               {row(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>, "Юридические документы", "/privacy", true)}
             </div>
-            <button onClick={logout} style={{ height: 50, borderRadius: 14, border: "1px solid #E4DCCC", background: "#fff", color: "#B5331B", fontFamily: "'Onest'", fontWeight: 600, fontSize: 14.5, cursor: "pointer" }}>Выйти из аккаунта</button>
+            <button onClick={logout} style={{ height: 50, borderRadius: 14, border: "1px solid #E4DCCC", background: "#fff", color: "#B5331B", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14.5, cursor: "pointer" }}>Выйти из аккаунта</button>
           </div>
         )}
       </div>
@@ -1053,7 +1066,7 @@ export default function MobileApp() {
   if (screen === "profile") return <MobileProfile />;
   const active = TABS.some((t) => t.to === pathname) ? pathname : "/";
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#FBF3E8", color: INK, fontFamily: "'Onest', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#FBF3E8", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", overflow: "hidden" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
         {pathname === "/news" ? <MobileFeed />
           : pathname === "/dpo" ? <MobileDpo />

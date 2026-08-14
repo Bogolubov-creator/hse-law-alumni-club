@@ -65,9 +65,12 @@
   --c-on-accent: var(--p-ink);
 
   /* ── Типографика ─────────────────────────────────────────────── */
-  --f-display: "Unbounded", system-ui, sans-serif;
-  --f-body: "Onest", system-ui, sans-serif;
-  --f-data: "Martian Mono", ui-monospace, monospace;
+  /* Фирменные шрифты НИУ ВШЭ из брендбука университета. Моноширинного у ВШЭ
+     нет, поэтому данные реестра набираются системным моно – он есть везде и
+     не требует загрузки. */
+  --f-display: "HSE Sans", system-ui, sans-serif;
+  --f-body: "HSE Sans", system-ui, sans-serif;
+  --f-data: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
 
   --t-caption: 12px;
   --t-small: 14px;

@@ -1381,8 +1381,8 @@ function ProductForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
 
 /**
  * Поле формы. Одно на все семь форм контента, поэтому оформление меняется здесь.
- * Обязательность звёздочкой не помечаем – в Martian Mono она рисуется
- * снежинкой; помечаем наоборот, необязательное.
+ * Помечаем не обязательные поля, а необязательные: звёздочка у половины полей
+ * – это шум, а «необязательно» у меньшинства сразу говорит, что можно пропустить.
  */
 function FormField({ label: name, value, onChange, ph, required, textarea }: { label: string; value: string; onChange: (v: string) => void; ph?: string; required?: boolean; textarea?: boolean }) {
   const id = useId();

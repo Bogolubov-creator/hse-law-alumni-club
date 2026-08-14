@@ -12,8 +12,8 @@ import { logout as logoutSession } from "../lib/cart.js";
 /** Профиль выпускника – порт «Профиль.dc.html» (C). Контакты + история баллов + правила достижений. */
 
 const TOKEN_KEY = "club_token";
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
-const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
+const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
+const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
 
 
 const REASON_TEXT: Record<string, string> = {
@@ -168,7 +168,7 @@ function ProfileContent({
                 {data.alumni.avatar
                   ? <img src={`/api/avatars/${data.alumni.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   : (data.alumni.fio?.trim()?.[0] ?? "В").toUpperCase()}
-                <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "rgba(20,24,31,.65)", color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 600, fontSize: 10, padding: "3px 0", textAlign: "center" }}>
+                <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "rgba(20,24,31,.65)", color: "#FBF3E8", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, padding: "3px 0", textAlign: "center" }}>
                   {avatarBusy ? "…" : data.alumni.avatar ? "Сменить" : "Фото"}
                 </span>
               </button>
