@@ -41,6 +41,11 @@ const schema = z.object({
   SEED_DEMO: z.string().default(""),
   ORDER_RETENTION_DAYS: z.coerce.number().int().positive().default(1095), // 3 года – срок хранения заявок (152-ФЗ)
   AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(365),  // 1 год – срок хранения аудита
+  // Глобальный потолок запросов с одного IP в минуту. Настраиваемый, потому что
+  // за университетским NAT с одного адреса выходит целый корпус: при рассылке о
+  // наборе легко упереться и получить 429 всем сразу. Чувствительные операции
+  // защищены отдельными лимитами по маршрутам (логин 5, регистрация 3, оплата 10).
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(1000),
 });
 
 export const env = schema.parse(process.env);
