@@ -143,7 +143,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-/** Оставлен как псевдоним Panel: он ещё используется в разделах контента.*/
+/** Оставлен как псевдоним Panel: он ещё используется в разделах контента. */
 function Card({ children }: { children: React.ReactNode }) {
   return <Panel>{children}</Panel>;
 }
