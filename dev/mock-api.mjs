@@ -163,7 +163,7 @@ const PROGRAMS = [
     document: "Удостоверение о повышении квалификации",
   },
   {
-    id: "p-006", slug: "semeynoe-nasledstvenное-pravo",
+    id: "p-006", slug: "semeynoe-nasledstvennoe-pravo",
     title: "Семейное и наследственное право: практика",
     direction: "Частноправовая практика", format: "offline", duration: "3 месяца · 72 ак. ч.",
     price: 5_800_000, enrollment: "nonactual", source_url: null,
