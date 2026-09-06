@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  esc,
   parseCommand,
   formatPointsReply,
   formatCalendarReply,
@@ -8,6 +9,20 @@ import {
 } from "./telegram-bot-text";
 
 const URL = "http://localhost";
+
+describe("esc", () => {
+  it("экранирует все 4 спецсимвола HTML", () => {
+    expect(esc(`&<>"`)).toBe("&amp;&lt;&gt;&quot;");
+  });
+
+  it("экранирует комбинации, амперсанд – первым (без двойного экранирования)", () => {
+    expect(esc(`<a href="x?a=1&b=2">&`)).toBe("&lt;a href=&quot;x?a=1&amp;b=2&quot;&gt;&amp;");
+  });
+
+  it("обычный текст проходит без изменений", () => {
+    expect(esc("Иван Петров")).toBe("Иван Петров");
+  });
+});
 
 describe("parseCommand", () => {
   it("разбирает /start@bot с аргументом", () => {
@@ -35,6 +50,20 @@ describe("formatPointsReply", () => {
     const text = formatPointsReply({ fio: "Алина", verification_status: "pending", points_cached: 0, personal_discount: 0 }, URL);
     expect(text).toContain("на проверке");
     expect(text).not.toContain("Уровень:");
+  });
+
+  it("отклонённому честно говорит об отказе, а не «на проверке»", () => {
+    const text = formatPointsReply({ fio: "Олег", verification_status: "rejected", points_cached: 0, personal_discount: 0 }, URL);
+    expect(text).toContain("Заявка отклонена");
+    expect(text).toContain("учебный офис");
+    expect(text).not.toContain("на проверке");
+    expect(text).not.toContain("Уровень:");
+  });
+
+  it("экранирует HTML в ФИО", () => {
+    const text = formatPointsReply({ fio: `<b>Иван "X"</b>`, verification_status: "verified", points_cached: 10, personal_discount: 0 }, URL);
+    expect(text).toContain("&lt;b&gt;Иван &quot;X&quot;&lt;/b&gt;");
+    expect(text).not.toContain(`<b>Иван`);
   });
 });
 

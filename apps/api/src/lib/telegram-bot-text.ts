@@ -1,7 +1,11 @@
 import { levelInfo } from "@club/shared";
 
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/**
+ * Экранирование для HTML-ответов бота (parse_mode=HTML). Кавычки тоже –
+ * значения подставляются и внутрь атрибутов href="...".
+ */
+export function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function fmtEventDate(iso: string): string {
@@ -26,6 +30,16 @@ export function formatPointsReply(
   alumni: { fio: string | null; verification_status: string; points_cached: number; personal_discount: number },
   publicUrl: string,
 ): string {
+  if (alumni.verification_status === "rejected") {
+    return [
+      "❌ <b>Заявка отклонена</b>",
+      "",
+      `${esc(alumni.fio ?? "Выпускник")}, учебный офис не смог подтвердить ваш выпуск.`,
+      "Если это ошибка – напишите нам через сайт клуба, и мы разберёмся.",
+      "",
+      `🌐 <a href="${esc(publicUrl)}">Сайт клуба</a>`,
+    ].join("\n");
+  }
   if (alumni.verification_status !== "verified") {
     return [
       "⏳ <b>Профиль на проверке</b>",

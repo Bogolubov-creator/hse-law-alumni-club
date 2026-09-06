@@ -36,4 +36,31 @@ describe("tg-link", () => {
   it("коды разных выпускников различаются", () => {
     expect(makeTgLinkCode(UUID)).not.toBe(makeTgLinkCode("00000000-0000-4000-8000-000000000000"));
   });
+
+  describe("TTL 24 часа", () => {
+    const NOW = Math.floor(Date.now() / 1000);
+
+    it("код, выданный только что, валиден (roundtrip с явным временем)", () => {
+      expect(verifyTgLinkCode(makeTgLinkCode(UUID, NOW), NOW)).toBe(UUID);
+    });
+
+    it("код на границе TTL ещё валиден, старше 24ч – нет", () => {
+      expect(verifyTgLinkCode(makeTgLinkCode(UUID, NOW - 24 * 3600), NOW)).toBe(UUID);
+      expect(verifyTgLinkCode(makeTgLinkCode(UUID, NOW - 24 * 3600 - 1), NOW)).toBeNull();
+    });
+
+    it("код «из будущего» дальше допуска сдвига часов (5 мин) отклоняется", () => {
+      expect(verifyTgLinkCode(makeTgLinkCode(UUID, NOW + 6 * 60), NOW)).toBeNull();
+      // а небольшой сдвиг часов вперёд – нормальная ситуация
+      expect(verifyTgLinkCode(makeTgLinkCode(UUID, NOW + 4 * 60), NOW)).toBe(UUID);
+    });
+
+    it("подделка timestamp ломает подпись", () => {
+      const code = makeTgLinkCode(UUID, NOW);
+      // timestamp – символы 23–28 (после «l» и 22 символов uuid)
+      const i = 25;
+      const tampered = code.slice(0, i) + (code[i] === "A" ? "B" : "A") + code.slice(i + 1);
+      expect(verifyTgLinkCode(tampered, NOW)).toBeNull();
+    });
+  });
 });

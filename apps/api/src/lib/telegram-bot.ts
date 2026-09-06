@@ -1,8 +1,10 @@
 import { readItems, updateItem } from "@directus/sdk";
 import { directus } from "./directus.js";
 import { env } from "../env.js";
+import { audit } from "./audit.js";
 import { verifyTgLinkCode } from "./tg-link.js";
 import {
+  esc,
   parseCommand,
   formatPointsReply,
   formatCalendarReply,
@@ -76,9 +78,13 @@ export async function buildBotReply(cmd: string, arg: string, tgId: string): Pro
         if (owner[0]) {
           // Один Telegram – один аккаунт: снимаем этот tgId с прочих записей.
           const others = (await di.request((readItems as any)("alumni", { filter: { telegram_id: { _eq: tgId }, id: { _neq: linkId } }, limit: -1, fields: ["id"] }))) as any[];
-          for (const o of others) await di.request((updateItem as any)("alumni", o.id, { telegram_id: null }));
+          for (const o of others) {
+            await di.request((updateItem as any)("alumni", o.id, { telegram_id: null }));
+            audit("alumni.tg_unlink_reassigned", { actor: `alumni:${linkId}`, subject: `alumni:${o.id}`, detail: { telegram_id: tgId } });
+          }
           await di.request((updateItem as any)("alumni", linkId, { telegram_id: tgId }));
-          return `✅ Telegram привязан к аккаунту <b>${owner[0].fio ?? "выпускника"}</b>.\n\nТеперь /points покажет ваши баллы, а /calendar отметит события, куда вы записаны.`;
+          audit("alumni.tg_link", { actor: `alumni:${linkId}`, subject: `alumni:${linkId}`, detail: { telegram_id: tgId } });
+          return `✅ Telegram привязан к аккаунту <b>${esc(owner[0].fio ?? "выпускника")}</b>.\n\nТеперь /points покажет ваши баллы, а /calendar отметит события, куда вы записаны.`;
         }
       }
       const linked = !!(await findAlumniByTelegram(tgId));
@@ -112,6 +118,9 @@ export async function tgSendMessage(chatId: number, text: string, token: string)
 export async function handleTelegramUpdate(update: TgUpdate, token: string): Promise<void> {
   const msg = update.message;
   if (!msg?.text || !msg.from?.id) return;
+  // Команды – только в личке: в группах и каналах молча игнорируем,
+  // чтобы не спамить чат и не светить персональные данные посторонним.
+  if (msg.chat.type !== "private") return;
   const { cmd, arg } = parseCommand(msg.text);
   if (!cmd) return;
   const reply = await buildBotReply(cmd, arg, String(msg.from.id));
