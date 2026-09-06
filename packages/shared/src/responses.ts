@@ -90,6 +90,7 @@ export const alumniBriefSchema = z.object({
   interests: z.array(z.string()).optional(),
   avatar: z.string().nullable().optional(), // uuid файла → /api/avatars/{id}
   referral_code: z.string().nullable().optional(), // код для «пригласи однокурсника»
+  joined_at: z.string().nullable().optional(), // дата вступления в клуб (для клубной карты)
   referrals_verified: z.number().optional(),
   referrals_pending: z.number().optional(),
 });

@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
 import { mono, disp } from "./Shell.js";
-import { Mark } from "./Mark.js";
 
 /**
  * Общие примитивы кабинета v2 (DESIGN.md): плотность 7, движения нет,
@@ -95,7 +94,8 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-line)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto", padding: "0 20px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <Link to="/v2" className="foc" style={{ display: "flex", alignItems: "center", gap: 9, ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>
-            <Mark kind="scales" size={26} style={{ color: "var(--c-accent-text)" }} />Клуб
+            <img src="/brand/emblem.jpg" alt="Эмблема клуба" width={26} height={26}
+              style={{ borderRadius: "50%", objectFit: "cover", transform: "scale(1.1)", flexShrink: 0 }} />Клуб
           </Link>
           <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {NAV.map((n) => {

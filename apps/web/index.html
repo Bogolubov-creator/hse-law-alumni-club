@@ -7,7 +7,7 @@
     <meta name="description" content="Клуб выпускников факультета права НИУ ВШЭ: программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
     <!-- PWA: установка на экран телефона как приложение -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#11296B" />
+    <meta name="theme-color" content="#0F2D69" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-180.png" />
@@ -16,11 +16,11 @@
     <meta name="apple-mobile-web-app-title" content="Клуб права" />
     <link rel="canonical" href="%SITE_URL%/" />
     <!-- Превью ссылки в мессенджерах (абсолютные URL – их читают скрейперы без JS) -->
-    <meta property="og:title" content="Клуб выпускников факультета права НИУ ВШЭ" />
-    <meta property="og:description" content="Программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
+    <meta property="og:title" content="Клуб выпускников факультета права Вышки" />
+    <meta property="og:description" content="Реестр выпускников факультета права НИУ ВШЭ: статус, скидка на ДПО, события, сообщество." />
     <meta property="og:url" content="%SITE_URL%/" />
-    <!-- Превью-карточка 1200×630 (apps/web/public/og-card.png) – широкий формат для мессенджеров. -->
-    <meta property="og:image" content="%SITE_URL%/og-card.png" />
+    <!-- Превью-карточка 1200×630 (apps/web/public/brand/og-image.jpg) – широкий формат для мессенджеров. -->
+    <meta property="og:image" content="%SITE_URL%/brand/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Клуб выпускников факультета права НИУ ВШЭ" />
@@ -28,9 +28,9 @@
     <meta property="og:site_name" content="Клуб выпускников факультета права НИУ ВШЭ" />
     <meta property="og:locale" content="ru_RU" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Клуб выпускников факультета права НИУ ВШЭ" />
-    <meta name="twitter:description" content="Программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
-    <meta name="twitter:image" content="%SITE_URL%/og-card.png" />
+    <meta name="twitter:title" content="Клуб выпускников факультета права Вышки" />
+    <meta name="twitter:description" content="Реестр выпускников факультета права НИУ ВШЭ: статус, скидка на ДПО, события, сообщество." />
+    <meta name="twitter:image" content="%SITE_URL%/brand/og-image.jpg" />
     <meta name="robots" content="index, follow" />
     <!-- Structured data: организация + сайт (schema.org). Виден всем краулерам, включая non-JS. -->
     <script type="application/ld+json">
@@ -43,7 +43,7 @@
             "name": "Клуб выпускников факультета права НИУ ВШЭ",
             "url": "%SITE_URL%/",
             "logo": "%SITE_URL%/icon-512.png",
-            "image": "%SITE_URL%/og-card.png",
+            "image": "%SITE_URL%/brand/og-image.jpg",
             "sameAs": ["https://t.me/pravohse"],
             "email": "pravo@hse.ru",
             "telephone": "+7-495-771-32-32",
@@ -86,6 +86,24 @@
     <!-- Начертания первого экрана грузим заранее, чтобы заголовок не переписывался -->
     <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Regular.woff2" />
     <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Black.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESlab-Black.woff2" />
+    <!-- Палитра оформления v2 до первого рендера, чтобы не было вспышки другой
+         палитры. Оверрайд для QA и спецпроектов: ?palette=strict|warm (паттерн
+         как у ?platform= в lib/use-mobile.ts) – запоминается в localStorage;
+         без параметра читается сохранённое, иначе умолчание strict (выбор
+         директивы 2026-09 по сравнению вариантов, см. tokens.css). -->
+    <script>
+      (function () {
+        var root = document.documentElement;
+        try {
+          var q = new URLSearchParams(location.search).get("palette");
+          if (q === "strict" || q === "warm") localStorage.setItem("club_palette", q);
+          root.dataset.palette = localStorage.getItem("club_palette") === "warm" ? "warm" : "strict";
+        } catch (e) {
+          root.dataset.palette = "strict";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

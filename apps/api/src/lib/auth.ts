@@ -119,6 +119,7 @@ export interface AlumniCtx {
   podcast_sub_until: string | null;
   avatar: string | null;
   referral_code: string | null;
+  joined_at: string | null;
 }
 
 export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null> {
@@ -140,7 +141,7 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   const rows = (await di.request(
     readItems("alumni", {
       filter: { id: { _eq: payload.alumni_id } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version"],
+      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version", "joined_at"],
     }),
   )) as (AlumniCtx & { token_version?: number | null })[];
   const alumni = rows[0];

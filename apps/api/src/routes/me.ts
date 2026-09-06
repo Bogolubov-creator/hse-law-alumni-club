@@ -63,7 +63,7 @@ export async function meRoutes(app: FastifyInstance) {
       alumni: {
         fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {},
         edu_program: a.edu_program, edu_level: a.edu_level, interests: a.interests_json ?? [], avatar: a.avatar,
-        referral_code: a.referral_code,
+        referral_code: a.referral_code, joined_at: a.joined_at,
         referrals_verified: referred.filter((r) => r.verification_status === "verified").length,
         referrals_pending: referred.filter((r) => r.verification_status === "pending").length,
       },
