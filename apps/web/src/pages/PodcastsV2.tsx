@@ -47,6 +47,7 @@ export default function PodcastsV2() {
     <V2Shell>
       <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
+          slabTitle
           eyebrow="фонотека · подкасты"
           title="Разговоры о праве и практике"
           lead="Выпускники, преподаватели и практики права. Пробный выпуск открыт всем, остальное – по годовой подписке."

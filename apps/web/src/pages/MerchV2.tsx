@@ -129,6 +129,7 @@ export default function MerchV2() {
     <V2Shell>
       <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
+          slabTitle
           eyebrow="витрина · мерч"
           title="Одежда и аксессуары клуба"
           lead="Фирменные вещи с фасеточной Фемидой. Самовывоз в учебном офисе или доставка, выбирается при оформлении."

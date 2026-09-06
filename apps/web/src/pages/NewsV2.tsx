@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useNewsList, useNewsPost, formatNewsDate } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { V2Shell, ShowcaseHead, mono, disp, slab } from "../v2/Shell.js";
 
 /**
  * Новости v2: список (/v2/news) и публикация (/v2/news/:slug).
@@ -34,6 +34,7 @@ export function NewsV2() {
     <V2Shell>
       <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
+          slabTitle
           eyebrow="хроника · новости"
           title="Что в клубе сейчас"
           lead="События, программы, партнёрства и жизнь сообщества выпускников факультета права."
@@ -116,7 +117,7 @@ export function NewsPostV2() {
         {d && (
           <article style={{ paddingTop: 26, paddingBottom: 20 }}>
             <div style={label}>{formatNewsDate(d.published_at)}</div>
-            <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: "12px 0 0" }}>{d.title}</h1>
+            <h1 className="v2-title" style={{ ...slab, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: "12px 0 0" }}>{d.title}</h1>
             {d.excerpt && (
               <p style={{ margin: "18px 0 0", fontSize: "var(--t-lead)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{d.excerpt}</p>
             )}

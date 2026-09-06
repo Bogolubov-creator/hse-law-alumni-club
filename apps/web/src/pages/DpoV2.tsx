@@ -66,6 +66,7 @@ export default function DpoV2() {
     <V2Shell>
       <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
+          slabTitle
           eyebrow="витрина · дпо"
           title="Программы по праву с ценой выпускника"
           lead="Каталог программ дополнительного образования факультета. Цена выпускника применяется автоматически после верификации."
