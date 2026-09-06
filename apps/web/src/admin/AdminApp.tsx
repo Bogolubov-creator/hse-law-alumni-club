@@ -259,8 +259,7 @@ function PushBroadcast({ subs }: { subs: number }) {
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 14 }}>
         {/* Заблокированная кнопка называет причину, а не молчит бледной охрой */}
         <button disabled={blocked} onClick={() => send.mutate()} className="foc"
-          style={blocked
-            ? { ...actionGhost, cursor: send.isPending ? "wait" : "not-allowed", color: "var(--c-text-3)" }
+          style={blocked ? { ...actionGhost, cursor: send.isPending ? "wait" : "not-allowed", color: "var(--c-text-3)" }
             : action}>
           {send.isPending ? "Отправляем…" : subs === 0 ? "Подписчиков пока нет" : !valid ? "Заполните заголовок и текст" : "Отправить всем"}
         </button>
