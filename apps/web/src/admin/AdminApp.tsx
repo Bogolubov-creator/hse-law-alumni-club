@@ -251,8 +251,11 @@ function PushBroadcast({ subs }: { subs: number }) {
       <div className="adm-push" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 170px", gap: 10, paddingTop: 12, borderTop: "1px solid var(--c-line)" }}>
         <input aria-label="Заголовок пуш-уведомления" value={f.title} onChange={(e) => setF((s) => ({ ...s, title: e.target.value }))} placeholder="Заголовок (например: Новое событие)" className="foc" style={field} />
         <input aria-label="Текст пуш-уведомления" value={f.body} onChange={(e) => setF((s) => ({ ...s, body: e.target.value }))} placeholder="Текст уведомления" className="foc" style={field} />
-        <input aria-label="Ссылка, куда ведёт уведомление" value={f.url} onChange={(e) => setF((s) => ({ ...s, url: e.target.value }))} placeholder="/events" className="foc" style={{ ...field, ...mono }} />
+        <input aria-label="Ссылка, куда ведёт уведомление" value={f.url} onChange={(e) => setF((s) => ({ ...s, url: e.target.value }))} placeholder="/events" title="Ссылка ведёт на десктопную версию страницы" className="foc" style={{ ...field, ...mono }} />
       </div>
+      <p style={{ ...label, margin: "8px 0 0", textTransform: "none", letterSpacing: 0, lineHeight: 1.5 }}>
+        Ссылка ведёт на десктопную версию страницы – на телефоне она откроется без мобильной оболочки.
+      </p>
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 14 }}>
         {/* Заблокированная кнопка называет причину, а не молчит бледной охрой */}
         <button disabled={blocked} onClick={() => send.mutate()} className="foc"
