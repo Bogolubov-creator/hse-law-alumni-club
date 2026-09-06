@@ -6,13 +6,16 @@ import { useToast } from "../components/Toast.js";
 import { apiGet, apiPost } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
-import { fmtEventDate, fmtEventDateFull, gcalUrl, type ClubEvent } from "../lib/events.js";
+import { fmtEventDate, fmtEventDateFull, gcalUrl, isPastEvent, periodEndTs, type ClubEvent, type EventPeriod } from "../lib/events.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 
 /**
  * События v2 (/v2/events) – афиша как реестр: дата моноширинной колонкой
  * слева, содержание справа. Карточек с обложкой на пол-экрана нет: решение
  * «идти или нет» принимают по дате, формату и месту, а не по картинке.
+ *
+ * Быстрые пресеты периода («сегодня», «7 дней», «30 дней») и фильтр формата
+ * работают на клиенте поверх уже загруженной афиши – серверных round-trip нет.
  *
  * Обложка показывается в модалке – там она уместна и не соревнуется с датой.
  *
@@ -30,6 +33,34 @@ const chip = {
   padding: "4px 9px", borderRadius: 999, border: "1px solid var(--c-line)", color: "var(--c-text-2)",
 };
 
+/** Чип-переключатель фильтра: активный – заливка акцентом, неактивный – обводка. */
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className="foc"
+      style={{
+        ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
+        padding: "7px 12px", borderRadius: 999, cursor: "pointer",
+        border: `1px solid ${active ? "var(--c-accent)" : "var(--c-line)"}`,
+        background: active ? "var(--c-accent)" : "transparent",
+        color: active ? "var(--c-on-accent)" : "var(--c-text-2)",
+        transition: "background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+const PERIODS: { id: EventPeriod; title: string }[] = [
+  { id: "all", title: "все" },
+  { id: "today", title: "сегодня" },
+  { id: "week", title: "7 дней" },
+  { id: "month", title: "30 дней" },
+];
+
 export default function EventsV2() {
   useHead({
     title: "События и встречи клуба",
@@ -42,6 +73,8 @@ export default function EventsV2() {
   const toast = useToast();
   const qc = useQueryClient();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [period, setPeriod] = useState<EventPeriod>("all");
+  const [format, setFormat] = useState<"all" | "offline" | "online">("all");
 
   const events = useQuery({
     queryKey: ["events", t],
@@ -55,9 +88,17 @@ export default function EventsV2() {
 
   const now = Date.now();
   const list = events.data ?? [];
-  const upcoming = list.filter((e) => new Date(e.starts_at).getTime() >= now && e.status === "published");
-  const past = list.filter((e) => new Date(e.starts_at).getTime() < now || e.status === "done");
+  const upcoming = list.filter((e) => !isPastEvent(e, now) && e.status === "published");
+  const past = list.filter((e) => isPastEvent(e, now));
   const opened = openId ? list.find((e) => e.id === openId) ?? null : null;
+  const openedPast = opened ? isPastEvent(opened, now) : false;
+
+  const filtersActive = period !== "all" || format !== "all";
+  const end = periodEndTs(period, new Date(now));
+  const shown = upcoming
+    .filter((e) => end === null || new Date(e.starts_at).getTime() <= end)
+    .filter((e) => format === "all" || e.format === format);
+  const resetFilters = () => { setPeriod("all"); setFormat("all"); };
 
   /** Кнопка записи – одна и та же в строке афиши и в модалке. */
   const rsvpButton = (e: ClubEvent, isPast: boolean) => {
@@ -117,11 +158,17 @@ export default function EventsV2() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 12 }}>
           {e.location && <span style={{ ...label, fontSize: 10 }}>{e.location}</span>}
           {e.points > 0 && <span style={{ ...chip, color: "var(--c-status)", borderColor: "var(--c-status)" }}>+{e.points} баллов</span>}
+          {e.my_rsvp && !isPast && <span style={{ ...chip, color: "var(--c-ok-text)", borderColor: "var(--c-ok-text)" }}>вы записаны</span>}
+          {e.my_attended && <span style={{ ...chip, color: "var(--c-ok-text)", borderColor: "var(--c-ok-text)" }}>вы участвовали</span>}
           <span style={{ ...label, fontSize: 10 }}>{e.going > 0 ? `пойдут: ${e.going}` : "будьте первым"}</span>
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center" }}>{rsvpButton(e, isPast)}</div>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        {isPast
+          ? <span style={{ ...label, color: "var(--c-text-3)", whiteSpace: "nowrap" }}>прошло</span>
+          : rsvpButton(e, false)}
+      </div>
     </article>
   );
 
@@ -129,13 +176,30 @@ export default function EventsV2() {
     <V2Shell>
       <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
+          slabTitle
           eyebrow="календарь · события"
           title="События и встречи клуба"
           lead="Нетворкинги, лекции и встречи выпусков. Записывайтесь заранее – за участие начисляются баллы клуба."
-          count={upcoming.length ? `ближайших ${upcoming.length}` : undefined}
+          count={
+            events.isLoading
+              ? "загружаем афишу"
+              : upcoming.length
+                ? `ближайших ${upcoming.length}${filtersActive ? ` · показано ${shown.length}` : ""}`
+                : undefined
+          }
         />
 
-        {events.isLoading && <p style={{ ...label, margin: 0 }}>загружаем афишу…</p>}
+        {/* Быстрые пресеты периода и формат – фильтрация по starts_at на клиенте */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", paddingBottom: 22, borderBottom: "1px solid var(--c-line)" }}>
+          {PERIODS.map((p) => (
+            <FilterChip key={p.id} active={period === p.id} onClick={() => setPeriod(p.id)}>{p.title}</FilterChip>
+          ))}
+          <span aria-hidden style={{ width: 1, height: 18, background: "var(--c-line)", margin: "0 4px" }} />
+          <FilterChip active={format === "offline"} onClick={() => setFormat((f) => (f === "offline" ? "all" : "offline"))}>очно</FilterChip>
+          <FilterChip active={format === "online"} onClick={() => setFormat((f) => (f === "online" ? "all" : "online"))}>онлайн</FilterChip>
+        </div>
+
+        {events.isLoading && <p style={{ ...label, margin: 0, paddingTop: 22 }}>загружаем афишу…</p>}
 
         {events.isError && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
@@ -144,12 +208,21 @@ export default function EventsV2() {
           </div>
         )}
 
-        {upcoming.map((e) => row(e, false))}
-        {upcoming.length > 0 && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
+        {shown.map((e) => row(e, false))}
+        {shown.length > 0 && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
 
-        {!events.isLoading && !events.isError && upcoming.length === 0 && (
+        {!events.isLoading && !events.isError && shown.length === 0 && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
-            <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Ближайших событий пока нет – загляните позже или следите за новостями.</p>
+            {filtersActive ? (
+              <>
+                <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>На выбранный период событий нет.</p>
+                <button onClick={resetFilters} className="foc" style={{ marginTop: 16, border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "12px 20px", fontWeight: 600, cursor: "pointer" }}>
+                  Сбросить фильтры
+                </button>
+              </>
+            ) : (
+              <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Ближайших событий пока нет – загляните позже или следите за новостями.</p>
+            )}
           </div>
         )}
 
@@ -174,7 +247,10 @@ export default function EventsV2() {
               <div style={{ padding: 26 }}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   <span style={chip}>{opened.format === "online" ? "онлайн" : "очно"}</span>
+                  {openedPast && <span style={chip}>прошло</span>}
                   {opened.points > 0 && <span style={{ ...chip, color: "var(--c-status)", borderColor: "var(--c-status)" }}>+{opened.points} баллов за участие</span>}
+                  {opened.my_rsvp && !openedPast && <span style={{ ...chip, color: "var(--c-ok-text)", borderColor: "var(--c-ok-text)" }}>вы записаны</span>}
+                  {opened.my_attended && <span style={{ ...chip, color: "var(--c-ok-text)", borderColor: "var(--c-ok-text)" }}>вы участвовали</span>}
                 </div>
                 <h3 id="ev2-modal-title" style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{opened.title}</h3>
 
@@ -197,8 +273,8 @@ export default function EventsV2() {
                 )}
 
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 20 }}>
-                  {rsvpButton(opened, new Date(opened.starts_at).getTime() < now || opened.status === "done")}
-                  {opened.reg_url && (
+                  {rsvpButton(opened, openedPast)}
+                  {!openedPast && opened.reg_url && (
                     <a href={opened.reg_url} target="_blank" rel="noopener noreferrer" className="foc"
                       style={{ ...label, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-sm)", padding: "8px 14px" }}>
                       регистрация ↗
@@ -208,9 +284,11 @@ export default function EventsV2() {
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--c-line)" }}>
-                  <span style={{ ...label, fontSize: 10 }}>в календарь</span>
-                  <a href={`/api/events/${opened.id}.ics`} className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>.ics</a>
-                  <a href={gcalUrl(opened)} target="_blank" rel="noopener noreferrer" className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>google ↗</a>
+                  <span style={{ ...label, fontSize: 10 }}>сохранить в календарь</span>
+                  <a href={`/api/events/${opened.id}.ics`} className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>Файл .ics для Apple/Outlook</a>
+                  {!openedPast && (
+                    <a href={gcalUrl(opened)} target="_blank" rel="noopener noreferrer" className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>Google Календарь ↗</a>
+                  )}
                 </div>
               </div>
             </div>

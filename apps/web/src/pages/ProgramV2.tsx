@@ -4,7 +4,7 @@ import { FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../l
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, mono, disp } from "../v2/Shell.js";
+import { V2Shell, mono, disp, slab } from "../v2/Shell.js";
 
 /**
  * Карточка программы ДПО v2 (/v2/dpo/:slug).
@@ -101,10 +101,12 @@ export default function ProgramV2() {
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
             {/* ── Содержание записи ── */}
             <div style={{ minWidth: 0 }}>
-              <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1>
+              <h1 className="v2-title" style={{ ...slab, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1>
 
               <div style={{ ...label, marginTop: 16 }}>
-                {[FORMAT_LABEL[p.format] ?? p.format, p.duration, totalHours > 0 ? `${totalHours} ак. ч.` : null]
+                {/* totalHours сюда не добавляем: часы уже приходят внутри
+                    p.duration («6 месяцев · 144 ак. ч.») – был дубль «… · 144 ак. ч. · 144 ак. ч.» */}
+                {[FORMAT_LABEL[p.format] ?? p.format, p.duration]
                   .filter(Boolean).join(" · ")}
               </div>
               {p.enrollment === "nonactual" && (

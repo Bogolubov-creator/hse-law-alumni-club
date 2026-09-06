@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS, type Achievement, type LedgerEntry } from "@club/shared";
 import { apiPatch, apiPost, isAuthError, type Me } from "../lib/api.js";
 import { useMe, useLedger } from "../lib/queries.js";
@@ -170,7 +170,7 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
           onChange={(v) => setContacts((c) => ({ ...c, [f.key]: v }))} />
       ))}
 
-      <div style={{ padding: "14px 0", borderTop: "1px solid var(--c-line)" }}>
+      <div id="interests" style={{ padding: "14px 0", borderTop: "1px solid var(--c-line)" }}>
         <div style={label}>интересы в праве · выбрано {interests.length} из {MAX_INTERESTS}</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
           {LEGAL_INTERESTS.map((name) => {
@@ -199,6 +199,14 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
         Сохраняя, вы даёте согласие на обработку персональных данных –{" "}
         <Link to="/v2/privacy" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
       </p>
+
+      {/* Push-подписка и бот живут в кабинете (там же сессия и контекст) –
+          здесь только навигация, чтобы не дублировать логику. */}
+      <div style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)", marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "baseline" }}>
+        <span style={label}>также в кабинете:</span>
+        <Link to="/v2/lk#push-bell" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>push-уведомления →</Link>
+        <Link to="/v2/lk#tg-link" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>telegram-бот →</Link>
+      </div>
       {err && <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0" }}>{err}</p>}
 
       <button onClick={save} disabled={state === "saving"} className="foc"
@@ -345,10 +353,21 @@ function DataRights({ token }: { token: string }) {
 function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
   const me = useMe(token);
   const expired = me.isError && isAuthError(me.error);
+  const { hash } = useLocation();
 
   useEffect(() => {
     if (expired) onLogout();
   }, [expired, onLogout]);
+
+  // Якорь #interests из кабинета («Могу помочь» → /v2/lk/profile#interests):
+  // блок дорисовывается после /me, поэтому скроллим с задержкой.
+  useEffect(() => {
+    if (!hash || !me.data) return;
+    const t = setTimeout(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ block: "center" });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [hash, me.data]);
 
   return (
     <CabinetShell active="profile" onLogout={onLogout}>
