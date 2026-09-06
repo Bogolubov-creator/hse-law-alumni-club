@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type CSSProperties, type FormEvent, type Re
 import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPost } from "../lib/api.js";
+import { saveRef, readRef, clearRef } from "../lib/ref.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
 import { mono, disp } from "../v2/Shell.js";
@@ -107,6 +108,9 @@ export function JoinV2() {
   const [authed, setAuthed] = useState(() => !!localStorage.getItem(TOKEN_KEY));
   const [params] = useSearchParams();
   const ref = params.get("ref") ?? "";
+  // Код из URL запоминаем: при повторном визите без ?ref= приглашение
+  // подставится из localStorage (см. lib/ref.ts).
+  useEffect(() => { saveRef(ref || null); }, [ref]);
   const [f, setF] = useState({ fio: "", email: "", password: "", cohort: "", edu_level: "магистратура", edu_program: "", consent: false, website: "" });
   const [interests, setInterests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -130,10 +134,11 @@ export function JoinV2() {
       const res = await apiPost<{ confirm_required?: boolean }>("/auth/register", {
         fio: f.fio, email: f.email, password: f.password, cohort: f.cohort,
         edu_level: f.edu_level, edu_program: f.edu_program, interests,
-        ref: ref || undefined,
+        ref: ref || readRef() || undefined,
         consent_pdn: f.consent,
         website: f.website, // honeypot
       });
+      clearRef(); // приглашение использовано – не тащим его в следующие заявки
       setNeedConfirm(!!res?.confirm_required);
       setDone(true);
     } catch (e) {

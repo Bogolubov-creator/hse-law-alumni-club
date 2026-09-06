@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type FormEvent, type ReactNode } from "reac
 import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
 import { apiPost } from "../lib/api.js";
+import { saveRef, readRef, clearRef } from "../lib/ref.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
 
@@ -56,6 +57,9 @@ export function Join() {
   const [authed, setAuthed] = useState(() => !!localStorage.getItem("club_token"));
   const [params] = useSearchParams();
   const ref = params.get("ref") ?? ""; // реферальный код пригласившего
+  // Код из URL запоминаем: если человек вернётся к анкете позже без ?ref=,
+  // приглашение подставится из localStorage (см. lib/ref.ts).
+  useEffect(() => { saveRef(ref || null); }, [ref]);
   const [f, setF] = useState({ fio: "", email: "", password: "", cohort: "", edu_level: "магистратура", edu_program: "", consent: false, website: "" });
   const [interests, setInterests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -77,9 +81,10 @@ export function Join() {
       const res = await apiPost<{ confirm_required?: boolean }>("/auth/register", {
         fio: f.fio, email: f.email, password: f.password, cohort: f.cohort,
         edu_level: f.edu_level, edu_program: f.edu_program, interests,
-        ref: ref || undefined,
+        ref: ref || readRef() || undefined,
         consent_pdn: f.consent, website: f.website,
       });
+      clearRef(); // приглашение использовано – не тащим его в следующие заявки
       setNeedConfirm(!!res?.confirm_required);
       setDone(true);
     } catch (e) {
