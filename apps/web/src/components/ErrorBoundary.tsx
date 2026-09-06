@@ -47,7 +47,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           </p>
           <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <button onClick={() => window.location.reload()} style={{ background: "#EC5A13", color: "#FBF3E8", border: 0, borderRadius: 11, padding: "12px 22px", fontWeight: 600, cursor: "pointer", fontSize: 15 }}>Обновить страницу</button>
-            <a href="/" style={{ border: "1.5px solid #E5E7EB", borderRadius: 11, padding: "12px 22px", fontWeight: 600, textDecoration: "none", color: "inherit", fontSize: 15 }}>На главную</a>
+            {/* «Домой» – в тот же контур, откуда пришёл человек: внешний v1
+                или /v2. Иначе ошибка в v2 неожиданно выбрасывала на старый сайт. */}
+            <a href={window.location.pathname.startsWith("/v2") ? "/v2" : "/"} style={{ border: "1.5px solid #E5E7EB", borderRadius: 11, padding: "12px 22px", fontWeight: 600, textDecoration: "none", color: "inherit", fontSize: 15 }}>На главную</a>
           </div>
         </div>
       </div>

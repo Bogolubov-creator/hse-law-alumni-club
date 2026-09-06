@@ -46,7 +46,10 @@ export default function CookieBanner() {
       background: "#14181F", color: "#FBF3E8", borderRadius: 16, padding: "16px 20px",
       boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)", fontSize: 13.5, lineHeight: 1.5,
     }}>
-      <p style={{ flex: 1, minWidth: 260, margin: 0 }}>
+      {/* min-width ограничена шириной баннера: в версии для слабовидящих
+          CSS-zoom уменьшает эффективную ширину окна (390px при zoom 1.5 –
+          это ~260 CSS px), и жёсткие 260px выталкивали абзац за вьюпорт. */}
+      <p style={{ flex: 1, minWidth: "min(260px, 100%)", margin: 0, overflowWrap: "break-word" }}>
         Мы используем cookies для работы корзины, личного кабинета и статистики. Продолжая
         пользоваться сайтом, вы соглашаетесь с{" "}
         <Link to={v2 ? "/v2/privacy" : "/privacy"} style={{ color: "#E3C272", textDecoration: "underline" }}>политикой обработки персональных данных</Link>.

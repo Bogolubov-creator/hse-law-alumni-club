@@ -92,6 +92,16 @@ export function useLkEvents(token: string | null) {
   });
 }
 
+// Публичные счётчики клуба для главной (GET /stats, apps/api/src/routes/events.ts).
+export type ClubStats = { alumni: number; events: number; programs: number };
+export function useStats() {
+  return useQuery({
+    queryKey: ["stats"],
+    queryFn: () => apiGet<ClubStats>("/stats"),
+    staleTime: 5 * 60_000, // API кэширует ответ на 5 минут – фронту нет смысла дёргать чаще
+  });
+}
+
 // «История» на главной (редактируется в админ-панели).
 export function useTimeline() {
   return useQuery({ queryKey: ["timeline"], queryFn: () => apiGet<TimelineItem[]>("/timeline", undefined, timelineSchema) });

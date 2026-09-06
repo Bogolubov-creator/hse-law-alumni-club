@@ -2,9 +2,13 @@
    Стратегия: сеть в приоритете (сайт живой, данные из API), статика /assets –
    из кэша с обновлением в фоне. Никогда не кэшируем /api (персональные данные). */
 const CACHE = "club-v3";
+// Офлайн-оболочка хранится отдельно для каждой версии интерфейса: иначе с /v2/*
+// офлайн-фолбэк отдавал главную V1 и молча переключал версию.
+const SHELL_V1 = "/";
+const SHELL_V2 = "/v2";
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/manifest.webmanifest", "/icon-192.png"])));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll([SHELL_V1, SHELL_V2, "/manifest.webmanifest", "/icon-192.png"])));
   self.skipWaiting();
 });
 
@@ -36,16 +40,18 @@ self.addEventListener("fetch", (e) => {
   // Кэшируем только 200: неизвестный адрес отдаёт ту же оболочку с кодом 404,
   // и она не должна стать офлайн-заглушкой для всего сайта.
   if (e.request.mode === "navigate") {
+    const shell = url.pathname.startsWith("/v2") ? SHELL_V2 : SHELL_V1;
     e.respondWith(
       fetch(e.request)
         .then((res) => {
           if (res.ok) {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put("/", copy)).catch(() => {});
+            caches.open(CACHE).then((c) => c.put(shell, copy)).catch(() => {});
           }
           return res;
         })
-        .catch(() => caches.match("/")),
+        // Сначала точный путь (вдруг он в precache), затем оболочка своей версии.
+        .catch(() => caches.match(e.request).then((hit) => hit || caches.match(shell))),
     );
   }
 });

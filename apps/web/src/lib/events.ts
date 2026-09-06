@@ -16,6 +16,27 @@ export const fmtEventDate = (iso: string) =>
 export const fmtEventDateFull = (iso: string) =>
   new Date(iso).toLocaleString("ru-RU", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
+/** Пресеты периода афиши v2: фильтрация будущих событий по starts_at на клиенте. */
+export type EventPeriod = "all" | "today" | "week" | "month";
+
+/** Верхняя граница периода (timestamp); null – без ограничения. «Сегодня» – до конца текущих локальных суток. */
+export function periodEndTs(period: EventPeriod, now: Date): number | null {
+  switch (period) {
+    case "today": {
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      return end.getTime();
+    }
+    case "week": return now.getTime() + 7 * 24 * 3600 * 1000;
+    case "month": return now.getTime() + 30 * 24 * 3600 * 1000;
+    default: return null;
+  }
+}
+
+/** Событие в прошлом: дата старта раньше now или статус done. Записаться на такое нельзя. */
+export const isPastEvent = (e: ClubEvent, nowTs: number) =>
+  new Date(e.starts_at).getTime() < nowTs || e.status === "done";
+
 /** Ссылка «добавить в Google Календарь» (2 часа по умолчанию, как в .ics). */
 export function gcalUrl(e: ClubEvent): string {
   const dt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
