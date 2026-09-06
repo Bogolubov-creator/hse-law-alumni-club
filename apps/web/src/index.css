@@ -51,6 +51,13 @@ body {
   .mob-only { display: flex !important; }
   .desk-only { display: none !important; }
 }
+/* Режим слабовидящих: масштаб сделан CSS-свойством zoom, а оно не влияет
+   на медиа-запросы – при zoom 1.8 окно 1440px для @media остаётся «широким»,
+   хотя реальная раскладка идёт в ~800px и шапка переполняется. Поэтому
+   брейкпоинт бургера поднимаем классом .v2-vis-narrow, который Shell.tsx
+   выставляет по эффективной ширине (innerWidth / zoom). */
+.v2-vis-narrow .desk-only { display: none !important; }
+.v2-vis-narrow .mob-only { display: flex !important; }
 
 /* ── PWA/мобильная полировка (десктоп не затрагивается) ── */
 html { -webkit-text-size-adjust: 100%; }
@@ -90,6 +97,10 @@ html.vis *:not(svg):not(path):not(.vis-active) {
   text-shadow: none !important;
 }
 html.vis a, html.vis a * { color: var(--vis-link) !important; text-decoration: underline !important; }
+/* При крупном zoom колонки сеток сжимаются до десятков пикселей, и длинные
+   слова выталкивают текст за вьюпорт. anywhere (не break-word) важен именно
+   здесь: только он уменьшает min-content грид-треков и flex-элементов. */
+html.vis { overflow-wrap: anywhere; }
 html.vis button, html.vis input, html.vis select, html.vis textarea,
 html.vis .vis-btn {
   background: var(--vis-bg) !important;
