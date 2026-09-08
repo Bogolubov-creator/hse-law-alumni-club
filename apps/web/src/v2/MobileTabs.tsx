@@ -84,13 +84,13 @@ export function MobileTabs() {
               </svg>
               {badge > 0 && (
                 <span style={{
-                  ...mono, position: "absolute", top: -5, right: -8, minWidth: 15, height: 15,
+                  ...mono, position: "absolute", top: -6, right: -9, minWidth: 17, height: 17,
                   borderRadius: 999, background: "var(--c-accent)", color: "var(--c-on-accent)",
-                  fontSize: 9, lineHeight: "15px", textAlign: "center", padding: "0 3px",
+                  fontSize: "var(--t-micro)", lineHeight: "17px", textAlign: "center", padding: "0 3px",
                 }}>{badge}</span>
               )}
             </span>
-            <span style={{ ...mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase" }}>{t.label}</span>
+            <span style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "normal", textTransform: "none" }}>{t.label}</span>
           </Link>
         );
       })}

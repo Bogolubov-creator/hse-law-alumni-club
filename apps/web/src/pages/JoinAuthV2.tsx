@@ -23,12 +23,12 @@ const TOKEN_KEY = "club_token";
 
 const label: CSSProperties = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase", color: "var(--c-text-3)",
+  textTransform: "none", color: "var(--c-text-3)",
 };
 
 const input: CSSProperties = {
   width: "100%", marginTop: 7, padding: "12px 14px", borderRadius: "var(--r-md)",
-  border: "1px solid var(--c-line)", background: "var(--c-bg)", color: "var(--c-text)",
+  border: "1px solid var(--c-line-control)", background: "var(--c-bg)", color: "var(--c-text)",
   fontSize: 15, fontFamily: "inherit",
 };
 
@@ -39,15 +39,15 @@ const primary: CSSProperties = {
 };
 
 const ghost: CSSProperties = {
-  ...primary, background: "transparent", color: "var(--c-text)", border: "1px solid var(--c-line)",
+  ...primary, background: "transparent", color: "var(--c-text)", border: "1px solid var(--c-line-control)",
 };
 
 /** Общая оболочка экранов входа: знак, заголовок, карточка, юр-ссылки под ней. */
 function AuthShell({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
-    <div style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
+    <main id="main" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
       <VisionCorner />
-      <div style={{ width: "100%", maxWidth: 520, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32 }}>
+      <div style={{ width: "100%", maxWidth: 520, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
         <Link to="/v2" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
         <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 18 }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{title}</h1>
@@ -60,7 +60,7 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
         <Link to="/v2/confidential" className="foc" style={{ color: "var(--c-text-3)" }}>Конфиденциальность</Link>
         <Link to="/v2/requisites" className="foc" style={{ color: "var(--c-text-3)" }}>Реквизиты</Link>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -97,7 +97,7 @@ const EDU_LEVELS = ["бакалавриат", "магистратура", "сп�
 export function JoinV2() {
   useHead({
     title: "Вступить в клуб",
-    description: "Заявка в клуб выпускников факультета права НИУ ВШЭ: подтвердите выпуск и получите статус, скидку на ДПО и доступ к сообществу.",
+    description: "Заявка в клуб выпускников факультета права Вышки: подтвердите выпуск и получите статус, скидку на ДПО и доступ к сообществу.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/join`,
     noindex: true,
   });
@@ -209,9 +209,9 @@ export function JoinV2() {
                 <button key={name} type="button" onClick={() => toggleInterest(name)} aria-pressed={on}
                   disabled={!on && full} className="foc"
                   style={{
-                    ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
+                    ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                     padding: "7px 12px", borderRadius: 999,
-                    border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line)"}`,
+                    border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line-control)"}`,
                     background: on ? "var(--c-accent)" : "transparent",
                     color: on ? "var(--c-on-accent)" : "var(--c-text-2)",
                     opacity: !on && full ? 0.4 : 1,
@@ -239,7 +239,7 @@ export function JoinV2() {
           style={{
             ...primary, width: "100%", marginTop: 16,
             ...(busy || !f.consent
-              ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line)", cursor: busy ? "wait" : "not-allowed" }
+              ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line-control)", cursor: busy ? "wait" : "not-allowed" }
               : {}),
           }}>
           {busy ? "Отправляем…" : f.consent ? "Подать заявку на вступление" : "Нужно согласие на обработку данных"}

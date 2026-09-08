@@ -1,14 +1,16 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import { randomUUID } from "node:crypto";
+import { commitCheckout, findCheckout, checkoutKey, digest, saveReceipt } from "../lib/checkout-store.js";
+import type { FastifyInstance } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { effectiveDiscount, computeOrderTotals, orderNumber, repriceItems } from "@club/shared";
+import { effectiveDiscount, computeOrderTotals, repriceItems } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
 import { audit } from "../lib/audit.js";
 import { lookup, cartSession, type CatalogInfo } from "./cart.js";
-import { lastOrderSeq, isUniqueViolation } from "../lib/order-number.js";
+
 
 const di = directus;
 
@@ -34,6 +36,13 @@ export async function ordersRoutes(app: FastifyInstance) {
     const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = createOrderBody.parse(req.body);
+    if (body.fulfillment === "delivery" && !body.address?.trim()) return reply.code(400).send({ error: "Укажите адрес доставки" });
+    const alumni = await resolveAlumni(req);
+    const suppliedKey = req.headers["idempotency-key"];
+    const key = checkoutKey(token, suppliedKey === undefined ? randomUUID() : z.string().uuid().parse(suppliedKey));
+    const requestHash = digest(JSON.stringify({ body, alumni: alumni?.id ?? null }));
+    const previous = await findCheckout(key, requestHash);
+    if (previous) return previous;
 
     const cartRows = (await di.request(readItems("carts", { filter: { session_token: { _eq: token } }, limit: 1, fields: ["id", "items_json"] }))) as any[];
     const items = (cartRows[0]?.items_json as any[]) ?? [];
@@ -96,7 +105,6 @@ export async function ordersRoutes(app: FastifyInstance) {
       });
     }
 
-    const alumni = await resolveAlumni(req);
     const discount = effectiveDiscount(
       !!alumni && alumni.verification_status === "verified",
       alumni?.points_cached ?? 0,
@@ -118,33 +126,12 @@ export async function ordersRoutes(app: FastifyInstance) {
       contact_fio: body.contact_fio, contact_phone: body.contact_phone, contact_email: body.contact_email,
       fulfillment: body.fulfillment, address: body.address ?? null, comment: body.comment ?? null,
       consent_pdn: true, status: "new",
+      payment_status: paymentsEnabled() && total > 0 ? "pending" : null,
     };
 
-    // Уникальный номер с повтором при гонке (поле number уникально в БД).
-    const year = new Date().getFullYear();
-    const baseSeq = await lastOrderSeq(year);
-    let number = "";
-    let created = false;
-    for (let attempt = 0; attempt < 6 && !created; attempt++) {
-      number = orderNumber(year, baseSeq, attempt);
-      try {
-        await di.request((createItem as any)("orders", { ...base, number }));
-        created = true;
-      } catch (e) {
-        // Ретраим со следующим номером ТОЛЬКО при коллизии уникального номера.
-        // Прочий сбой (таймаут/сеть) не ретраим: строка могла записаться, и повтор
-        // создал бы вторую заявку под другим номером – выходим с ошибкой сразу.
-        if (!isUniqueViolation(e)) { req.log.error({ err: e }, "order create failed (non-unique)"); return reply.code(500).send({ error: "Не удалось создать заявку, попробуйте ещё раз" }); }
-        if (attempt === 5) { req.log.error({ err: e }, "order create failed (number exhausted)"); return reply.code(500).send({ error: "Не удалось создать заявку, попробуйте ещё раз" }); }
-      }
-    }
-
-    // Точка коммита пройдена – заявка существует. Дальнейшие сбои НЕ выдаём за полный провал.
-    try {
-      if (cartRows[0]) await di.request((updateItem as any)("carts", cartRows[0].id, { items_json: [] }));
-    } catch (e) {
-      req.log.error({ err: e, number }, "order created but cart not cleared");
-    }
+    const committed = await commitCheckout({ session: token, key, requestHash, cartId: cartRows[0].id, cartItems: items, base });
+    if (committed.replay) return committed.replay;
+    const number = committed.number;
 
     const notice = {
       number, contact_fio: body.contact_fio, contact_phone: body.contact_phone, contact_email: body.contact_email,
@@ -158,13 +145,13 @@ export async function ordersRoutes(app: FastifyInstance) {
     await confirmApplicant(notice).catch((e) => req.log.error({ err: e, number }, "confirmApplicant threw"));
 
     // Оплата (ЮKassa) – если подключена: создаём платёж сразу, отдаём ссылку.
-    // Сбой оплаты НЕ роняет заявку – офис свяжется, оплатить можно позже из ЛК.
+    // Неоднозначный сбой оплаты сохраняет pending до сверки офисом с провайдером.
     let payment_url: string | undefined;
     if (paymentsEnabled() && total > 0) {
       try {
         const payment = await createPayment({
           amountKop: total,
-          description: `Заявка ${number} · Клуб выпускников факультета права НИУ ВШЭ`,
+          description: `Заявка ${number} · Клуб выпускников факультета права Вышки`,
           orderNumber: number,
           customerEmail: body.contact_email,
         });
@@ -177,7 +164,9 @@ export async function ordersRoutes(app: FastifyInstance) {
     }
 
     audit("order.created", { actor: alumni ? `alumni:${alumni.id}` : "guest", subject: `order:${number}`, detail: { total, discount, type }, req });
-    return { number, status: "new", member_discount: discount, subtotal, total_estimate: total, notified, payment_url };
+    const receipt = { number, status: "new", member_discount: discount, subtotal, total_estimate: total, notified, payment_url };
+    await saveReceipt(key, receipt).catch(() => req.log.error({ number }, "receipt update failed after commit"));
+    return receipt;
   });
 
   // Заявки выпускника.
@@ -186,7 +175,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     if (!alumni) return reply.code(401).send({ error: "Не авторизован" });
     return di.request(readItems("orders", {
       filter: { alumni_id: { _eq: alumni.id } }, sort: ["-created_at"], limit: 50,
-      fields: ["number", "type", "status", "subtotal", "member_discount", "total_estimate", "created_at"],
+      fields: ["number", "type", "status", "subtotal", "member_discount", "total_estimate", "created_at", "items_json", "fulfillment", "payment_status"],
     }));
   });
 }

@@ -79,7 +79,7 @@ const REASONS = [
 
 export default function Home() {
   useHead({
-    description: "Клуб выпускников факультета права НИУ ВШЭ: личный кабинет со статусом, скидка выпускника на ДПО, события, подкасты, мерч и сообщество.",
+    description: "Клуб выпускников факультета права Вышки: личный кабинет со статусом, скидка выпускника на ДПО, события, подкасты, мерч и сообщество.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/`,
   });
   const rootRef = useRef<HTMLDivElement>(null);
@@ -318,7 +318,7 @@ export default function Home() {
             <img src={THEMIS} alt="Логотип клуба" width={42} height={42} style={{ borderRadius: 10, objectFit: "cover", flex: "none" }} />
             <div style={{ lineHeight: 1.05 }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: 16, letterSpacing: "-0.01em" }}>Клуб выпускников</div>
-              <div style={{ ...mono, fontSize: 10, color: "#6B7280", letterSpacing: ".08em", marginTop: 2 }}>факультета права Вышки</div>
+              <div style={{ ...mono, fontSize: 10, color: "#5C6470", letterSpacing: ".08em", marginTop: 2 }}>факультета права Вышки</div>
             </div>
           </a>
           <nav className="desk-only" style={{ display: "flex", alignItems: "center", gap: 28 }}>
@@ -359,7 +359,7 @@ export default function Home() {
             <Link to="/news" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Новости</Link>
             <Link to="/cart" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "#14181F", fontWeight: 600, fontSize: 16, padding: "14px 12px", borderRadius: 12 }}>Корзина{cartCount > 0 ? ` · ${cartCount}` : ""}</Link>
             <Link to="/lk" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 16px", borderRadius: 12, background: "#EC5A13", color: "#FBF3E8", textAlign: "center", marginTop: 6 }}>{token() ? "Личный кабинет" : "Войти в ЛК"}</Link>
-            {!token() && <Link to="/join" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 16px", borderRadius: 12, border: "1.5px solid #EC5A13", color: "#C9450E", textAlign: "center", marginTop: 8 }}>Вступить в клуб</Link>}
+            {!token() && <Link to="/join" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 16px", borderRadius: 12, border: "1.5px solid #EC5A13", color: "#C24009", textAlign: "center", marginTop: 8 }}>Вступить в клуб</Link>}
           </nav>
         )}
       </header>
@@ -370,7 +370,7 @@ export default function Home() {
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, ...mono, fontSize: 12, letterSpacing: ".1em", color: "#B5331B", background: "rgba(181,51,27,.1)", border: "1px solid rgba(181,51,27,.25)", padding: "6px 13px", borderRadius: 999 }}>● {hero.badge ?? "Сообщество выпускников факультета права"}</div>
             <h1 className="h-xl" style={{ ...disp, fontWeight: 800, fontSize: 62, lineHeight: 1.03, letterSpacing: "-0.015em", margin: "22px 0 0", textWrap: "balance" } as CSSProperties}>{hero.title_pre ?? "Статус выпускника, который"} <span style={{ color: "#EC5A13" }}>{hero.title_accent ?? "работает"}</span></h1>
-            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>{hero.subtitle ?? "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка выпускника на ДПО, новости и менторы – всё в одном месте."}</p>
+            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#3a3f49", maxWidth: 500, margin: "24px 0 0" }}>{hero.subtitle ?? "Клуб выпускников факультета права Вышки: личный кабинет с уровнями, скидка выпускника на ДПО, новости и менторы – всё в одном месте."}</p>
             {/* Порядок действий по аудитории: гостю первым делом «Вступить в клуб»
                 (раньше главной кнопкой был вход – для гостя без аккаунта это тупик),
                 вошедшему – его кабинет. Вход остаётся текстовой ссылкой. */}
@@ -381,7 +381,7 @@ export default function Home() {
                 <Link to="/join" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", boxShadow: "0 12px 28px -12px rgba(236,90,19,.85)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_primary ?? "Вступить в клуб"}</Link>
               )}
               <a href="#kak" data-mag className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, border: "1.5px solid #14181F", color: "#14181F", transition: "transform .25s cubic-bezier(.2,.8,.2,1)" }}>{hero.cta_secondary ?? "Как это работает"}</a>
-              {!token() && <Link to="/lk" className="foc" style={{ fontWeight: 600, fontSize: 15, color: "#C9450E", textDecoration: "none" }}>Уже в клубе – войти →</Link>}
+              {!token() && <Link to="/lk" className="foc" style={{ fontWeight: 600, fontSize: 15, color: "#C24009", textDecoration: "none" }}>Уже в клубе – войти →</Link>}
             </div>
             <div style={{ display: "flex", gap: 38, marginTop: 46, flexWrap: "wrap" }}>
               {/* Счётчики клуба из /api/stats. Слоты и подписи фиксированы: пока данные
@@ -389,15 +389,15 @@ export default function Home() {
                   (раньше подмена «выпуска/уровня» → «выпускников/событий» дёргала вёрстку). */}
               <div>
                 <div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st ? st.alumni : <StatSkeleton />}</div>
-                <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{st ? plural(st.alumni, "выпускник", "выпускника", "выпускников") : "выпускников"}<br />в клубе</div>
+                <div style={{ ...mono, fontSize: 12, color: "#5C6470", marginTop: 8, letterSpacing: ".05em" }}>{st ? plural(st.alumni, "выпускник", "выпускника", "выпускников") : "выпускников"}<br />в клубе</div>
               </div>
               <div style={{ width: 1, background: "#E5E7EB" }} />
               <div>
                 <div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em" }}>{st ? st.events : <StatSkeleton />}</div>
-                <div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>{st ? plural(st.events, "событие", "события", "событий") : "событий"}<br />в календаре</div>
+                <div style={{ ...mono, fontSize: 12, color: "#5C6470", marginTop: 8, letterSpacing: ".05em" }}>{st ? plural(st.events, "событие", "события", "событий") : "событий"}<br />в календаре</div>
               </div>
               <div style={{ width: 1, background: "#E5E7EB" }} />
-              <div data-count="5"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em", color: "#EC5A13" }}><span data-count="5">0</span>%</div><div style={{ ...mono, fontSize: 12, color: "#6B7280", marginTop: 8, letterSpacing: ".05em" }}>скидка<br />выпускникам</div></div>
+              <div data-count="5"><div style={{ ...disp, fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-0.02em", color: "#EC5A13" }}><span data-count="5">0</span>%</div><div style={{ ...mono, fontSize: 12, color: "#5C6470", marginTop: 8, letterSpacing: ".05em" }}>скидка<br />выпускникам</div></div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -461,11 +461,11 @@ export default function Home() {
       <section id="vitriny" style={{ maxWidth: 1180, margin: "0 auto", padding: "88px 28px 20px" }}>
         <div data-reveal style={{ ...mono, fontSize: 12, letterSpacing: ".16em", color: "#EC5A13", textTransform: "uppercase" }}>Витрины клуба</div>
         <h2 data-reveal style={{ ...disp, fontWeight: 600, fontSize: 40, letterSpacing: "-0.01em", margin: "10px 0 6px" }}>Что доступно выпускнику</h2>
-        <p data-reveal style={{ color: "#6B7280", fontSize: 16, maxWidth: 540, margin: "0 0 34px" }}>Витрины ведут к общей корзине и заявке – оплату ведёт учебный офис.</p>
+        <p data-reveal style={{ color: "#5C6470", fontSize: 16, maxWidth: 540, margin: "0 0 34px" }}>Витрины ведут к общей корзине и заявке – оплату ведёт учебный офис.</p>
         <div className="three-col" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 26 }}>
           {[
             { to: "/dpo", bg: "#11296B", img: "/assets/dpo-hero.jpg", imgPos: "center", title2: "ДПО", h: "Программы доп. образования", p: "Курсы и интенсивы со скидкой выпускника. Фильтры по направлению, формату и длительности.", meta: "актуальный набор ВШЭ · скидка выпускника", metaColor: "#2E6FAE", cta: "Открыть →", ctaColor: "#11296B", delay: undefined as number | undefined },
-            { to: "/merch", bg: "#EC5A13", img: "/assets/merch-hoodie.jpg", imgPos: "center 30%", title2: "Мерч", h: "Фирменный мерч клуба", p: "Одежда и аксессуары с фасеточной Фемидой. Размеры, цвета, самовывоз или доставка.", meta: "новинки сезона", metaColor: "#B5331B", cta: "Открыть →", ctaColor: "#C9450E", delay: 90 },
+            { to: "/merch", bg: "#EC5A13", img: "/assets/merch-hoodie.jpg", imgPos: "center 30%", title2: "Мерч", h: "Фирменный мерч клуба", p: "Одежда и аксессуары с фасеточной Фемидой. Размеры, цвета, самовывоз или доставка.", meta: "новинки сезона", metaColor: "#B5331B", cta: "Открыть →", ctaColor: "#C24009", delay: 90 },
             { to: "/podcasts", bg: "#1F8A5B", img: "/assets/themis.jpeg", imgPos: "center", title2: "Подкасты", h: "Подкасты клуба", p: "Разговоры с выпускниками и практиками права. Пробный выпуск открыт всем, остальное – по подписке.", meta: "пробный выпуск бесплатно", metaColor: "#1F8A5B", cta: "Слушать →", ctaColor: "#177049", delay: 180 },
           ].map((v) => (
             <Link key={v.to} to={v.to} data-reveal data-reveal-delay={v.delay} data-tilt className="vcard foc" style={{ textDecoration: "none", color: "inherit", borderRadius: 22, overflow: "hidden", border: "1px solid #E5E7EB", background: "#fff", display: "block" }}>
@@ -475,7 +475,7 @@ export default function Home() {
               </div>
               <div style={{ padding: 24 }}>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em" }}>{v.h}</div>
-                <p style={{ color: "#6B7280", fontSize: 15, lineHeight: 1.5, margin: "10px 0 0" }}>{v.p}</p>
+                <p style={{ color: "#5C6470", fontSize: 15, lineHeight: 1.5, margin: "10px 0 0" }}>{v.p}</p>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18 }}>
                   <span style={{ ...mono, fontSize: 12, color: v.metaColor }}>{v.meta}</span>
                   <span style={{ fontWeight: 600, color: v.ctaColor }}>{v.cta}</span>
@@ -505,13 +505,13 @@ export default function Home() {
                   <div style={{ display: "flex", height: 8 }}><i style={{ flex: 1, background: "#EC5A13" }} /><i style={{ flex: 1, background: "#11296B" }} /><i style={{ flex: 1, background: "#C49A45" }} /><i style={{ flex: 1, background: "#2E6FAE" }} /></div>
                 )}
                 <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", flex: 1 }}>
-                  <div style={{ ...mono, fontSize: 11.5, color: "#C9450E", textTransform: "uppercase", letterSpacing: ".08em" }}>
+                  <div style={{ ...mono, fontSize: 11.5, color: "#C24009", textTransform: "uppercase", letterSpacing: ".08em" }}>
                     {new Date(e.starts_at).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })} · {e.format === "online" ? "онлайн" : "очно"}
                   </div>
                   <div style={{ ...disp, fontWeight: 600, fontSize: 19, letterSpacing: "-0.01em", marginTop: 10, lineHeight: 1.25 }}>{e.title}</div>
-                  {e.location && <p style={{ ...mono, fontSize: 12, color: "#6B7280", margin: "10px 0 0" }}>📍 {e.location}</p>}
+                  {e.location && <p style={{ ...mono, fontSize: 12, color: "#5C6470", margin: "10px 0 0" }}>📍 {e.location}</p>}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", paddingTop: 16 }}>
-                    <span style={{ ...mono, fontSize: 12, color: "#6B7280" }}>{e.going > 0 ? `пойдут: ${e.going}` : "будьте первым!"}</span>
+                    <span style={{ ...mono, fontSize: 12, color: "#5C6470" }}>{e.going > 0 ? `пойдут: ${e.going}` : "будьте первым!"}</span>
                     {e.points > 0 && <span style={{ ...mono, fontSize: 12, color: "#a07d2e" }}>+{e.points} баллов</span>}
                   </div>
                 </div>
@@ -538,7 +538,7 @@ export default function Home() {
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, marginTop: 26 }}>
           <Link to="/join" className="foc" style={{ textDecoration: "none", fontWeight: 600, fontSize: 16, padding: "14px 28px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8" }}>Подать заявку</Link>
-          <span style={{ ...mono, fontSize: 12.5, color: "#6B7280", maxWidth: 560, lineHeight: 1.5 }}>
+          <span style={{ ...mono, fontSize: 12.5, color: "#5C6470", maxWidth: 560, lineHeight: 1.5 }}>
             {paymentsOn
               ? "Оплатить можно онлайн при оформлении; по программам ДПО учебный офис свяжется и оформит договор."
               : "Оплаты на сайте нет – заявку на ДПО ведёт учебный офис: он свяжется, выставит счёт и оформит договор."}
@@ -555,7 +555,7 @@ export default function Home() {
             <div key={r.num} data-reveal data-reveal-delay={r.delay} style={{ padding: 28, borderRadius: 18, border: "1px solid #E5E7EB", background: "#fff" }}>
               <div style={{ ...mono, fontSize: 13, color: r.color, fontWeight: 500 }}>{r.num}</div>
               <div style={{ ...disp, fontWeight: 600, fontSize: 21, letterSpacing: "-0.01em", marginTop: 16, lineHeight: 1.2 }}>{r.title}</div>
-              <p style={{ color: "#6B7280", fontSize: 15, lineHeight: 1.55, margin: "12px 0 0" }}>{r.text}</p>
+              <p style={{ color: "#5C6470", fontSize: 15, lineHeight: 1.55, margin: "12px 0 0" }}>{r.text}</p>
             </div>
           ))}
         </div>
@@ -581,9 +581,9 @@ export default function Home() {
                 <span style={{ ...mono, fontSize: 11, color: "#8a6d28" }}>[ новость ]</span>
               </div>
               <div style={{ padding: 20 }}>
-                <div style={{ ...mono, fontSize: 11, color: "#6B7280", letterSpacing: ".05em" }}>{formatNewsDate(n.published_at)}</div>
+                <div style={{ ...mono, fontSize: 11, color: "#5C6470", letterSpacing: ".05em" }}>{formatNewsDate(n.published_at)}</div>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 17, letterSpacing: "-0.01em", marginTop: 10, lineHeight: 1.25 }}>{n.title}</div>
-                <p style={{ color: "#6B7280", fontSize: 14, lineHeight: 1.5, margin: "10px 0 0" }}>{n.excerpt}</p>
+                <p style={{ color: "#5C6470", fontSize: 14, lineHeight: 1.5, margin: "10px 0 0" }}>{n.excerpt}</p>
                 <div style={{ fontWeight: 600, color: "#2E6FAE", fontSize: 14, marginTop: 14 }}>Читать →</div>
               </div>
             </Link>
@@ -615,7 +615,7 @@ export default function Home() {
           </div>
           <div style={{ display: "flex", gap: 64, flexWrap: "wrap" }}>
             <div>
-              <div style={{ ...mono, fontSize: 11, color: "#6B7280", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 16 }}>Навигация</div>
+              <div style={{ ...mono, fontSize: 11, color: "#5C6470", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 16 }}>Навигация</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                 <a href="#istoriya" className="foc" style={{ color: "#FBF3E8", textDecoration: "none", fontSize: 15 }}>История</a>
                 <a href="#vitriny" className="foc" style={{ color: "#FBF3E8", textDecoration: "none", fontSize: 15 }}>Витрины</a>
@@ -623,7 +623,7 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <div style={{ ...mono, fontSize: 11, color: "#6B7280", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 16 }}>Контакты</div>
+              <div style={{ ...mono, fontSize: 11, color: "#5C6470", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 16 }}>Контакты</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                 <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "#E3C272", textDecoration: "none", fontSize: 15 }}>t.me/pravohse</a>
                 <a href="https://pravo.hse.ru/businessandlaw/alumni" target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "#E3C272", textDecoration: "none", fontSize: 15 }}>pravo.hse.ru/…/alumni</a>
@@ -645,10 +645,10 @@ export default function Home() {
             <Link to="/confidential" className="foc" style={{ color: "#9aa3b2", textDecoration: "underline", textUnderlineOffset: 3 }}>Политика конфиденциальности</Link>
             <Link to="/requisites" className="foc" style={{ color: "#9aa3b2", textDecoration: "underline", textUnderlineOffset: 3 }}>Реквизиты</Link>
           </div>
-          <p style={{ fontSize: 12, lineHeight: 1.6, color: "#6B7280", margin: "12px 0 0" }}>
+          <p style={{ fontSize: 12, lineHeight: 1.6, color: "#5C6470", margin: "12px 0 0" }}>
             НИУ «Высшая школа экономики», факультет права · ОГРН 1027739630401 · ИНН 7714030726 · 101000, г. Москва, ул. Мясницкая, д. 20 · pravo@hse.ru · +7 (495) 771-32-32
           </p>
-          <div style={{ ...mono, fontSize: 11, color: "#6B7280", marginTop: 12 }}>© 2026 Клуб выпускников факультета права Вышки</div>
+          <div style={{ ...mono, fontSize: 11, color: "#5C6470", marginTop: 12 }}>© 2026 Клуб выпускников факультета права Вышки</div>
         </div>
       </footer>
     </div>

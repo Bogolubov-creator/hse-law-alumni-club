@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
-const BASE = "Клуб выпускников факультета права НИУ ВШЭ";
-const BASE_DESC = "Клуб выпускников факультета права НИУ ВШЭ: программы ДПО со скидкой выпускника, мерч, подкасты и сообщество.";
+const BASE = "Клуб выпускников факультета права Вышки";
+const BASE_DESC = "Клуб выпускников факультета права Вышки: программы ДПО со скидкой выпускника, мерч, подкасты и сообщество.";
 
 function upsertMeta(key: "name" | "property", val: string, content: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${key}="${val}"]`);

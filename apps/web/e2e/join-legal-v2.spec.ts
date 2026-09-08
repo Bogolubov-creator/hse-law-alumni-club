@@ -178,9 +178,9 @@ test.describe("Юридические страницы v2", () => {
 
   test("реквизиты оператора не потерялись при переносе", async ({ page }) => {
     await page.goto("/v2/requisites");
-    await expect(page.getByText("1027739630401")).toBeVisible(); // ОГРН
-    await expect(page.getByText("7714030726")).toBeVisible();    // ИНН
-    await expect(page.getByText(/Мясницкая/)).toBeVisible();
+    await expect(page.getByText("1257700005551")).toBeVisible(); // ОГРН
+    await expect(page.getByText("9707041865")).toBeVisible();    // ИНН
+    await expect(page.getByText(/Большая Черкизовская/)).toBeVisible();
   });
 });
 

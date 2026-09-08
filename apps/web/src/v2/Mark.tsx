@@ -115,8 +115,8 @@ export function Lockup({ size = 36, mono, disp }: { size?: number; mono: CSSProp
       <Mark kind="scales" size={size} style={{ color: "var(--c-accent-text)" }} />
       <span style={{ ...disp, fontWeight: 800, fontSize: 15, lineHeight: 1.1 }}>
         Клуб выпускников
-        <span style={{ ...mono, display: "block", fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", fontWeight: 400, marginTop: 3, textTransform: "uppercase" }}>
-          факультет права
+        <span style={{ ...mono, display: "block", fontSize: "var(--t-micro)", letterSpacing: "0.1em", color: "var(--c-text-3)", fontWeight: 400, marginTop: 3, textTransform: "uppercase" }}>
+          факультета права Вышки
         </span>
       </span>
     </>

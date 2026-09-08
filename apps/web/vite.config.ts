@@ -30,8 +30,10 @@ export default defineConfig({
   server: {
     port: Number(process.env.PORT) || 5173,
     proxy: {
+      "/robots.txt": { target: process.env.API_PROXY_TARGET || "http://localhost:3000", changeOrigin: true },
+      "/sitemap.xml": { target: process.env.API_PROXY_TARGET || "http://localhost:3000", changeOrigin: true },
       "/api": {
-        target: "http://localhost:3000",
+        target: process.env.API_PROXY_TARGET || "http://localhost:3000",
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ""),
       },

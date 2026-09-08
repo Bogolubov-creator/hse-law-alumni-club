@@ -11,10 +11,10 @@ export interface ClubEvent {
 }
 
 export const fmtEventDate = (iso: string) =>
-  new Date(iso).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 export const fmtEventDateFull = (iso: string) =>
-  new Date(iso).toLocaleString("ru-RU", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 /** Ссылка «добавить в Google Календарь» (2 часа по умолчанию, как в .ics). */
 export function gcalUrl(e: ClubEvent): string {

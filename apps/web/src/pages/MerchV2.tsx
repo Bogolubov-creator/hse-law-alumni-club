@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import ProductImage from "../components/ProductImage.js";
 import { useHead } from "../lib/title.js";
 import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
@@ -21,13 +23,13 @@ function Stock({ n }: { n: number | null | undefined }) {
   if (typeof n !== "number") return null;
   const tone = n <= 0 ? "var(--c-danger-text)" : n <= 3 ? "var(--c-accent-text)" : "var(--c-text-3)";
   return (
-    <span style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: tone, textTransform: "uppercase" }}>
+    <span style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: tone, textTransform: "none" }}>
       {n <= 0 ? "нет в наличии" : n <= 3 ? `осталось ${n}` : `в наличии ${n}`}
     </span>
   );
 }
 
-function SizeDialog({ product, onClose }: { product: Product; onClose: () => void }) {
+export function SizeDialog({ product, onClose }: { product: Product; onClose: () => void }) {
   const { add } = useCartMutations();
   const toast = useToast();
   const variants = product.variants_json ?? [];
@@ -37,7 +39,7 @@ function SizeDialog({ product, onClose }: { product: Product; onClose: () => voi
 
   const chosen = variants.find((v) => v.sku === sku);
   const stock = hasVariants ? chosen?.stock : product.stock;
-  const maxQty = typeof stock === "number" ? Math.max(1, stock) : 99;
+  const maxQty = typeof stock === "number" ? Math.min(99, Math.max(1, stock)) : 99;
   const needsSize = hasVariants && !sku;
 
   const submit = () => {
@@ -50,15 +52,15 @@ function SizeDialog({ product, onClose }: { product: Product; onClose: () => voi
   return (
     <Modal onClose={onClose} labelledBy="merch-v2-title" maxWidth={440}>
       <div style={{ background: "var(--c-bg-raised)", color: "var(--c-text)", borderRadius: "var(--r-lg)", padding: 28, position: "relative" }}>
-        <button onClick={onClose} aria-label="Закрыть" className="foc" style={{ position: "absolute", top: 16, right: 16, width: 34, height: 34, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
+        <button onClick={onClose} aria-label="Закрыть" className="foc" style={{ display: "block", marginLeft: "auto", marginBottom: 12, width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}><svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" style={{ margin: "auto" }}><path d="M6 6l12 12M6 18L18 6"/></svg></button>
 
-        <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: "var(--c-text-3)" }}>{product.category}</div>
+        <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: "var(--c-text-3)" }}>{product.category}</div>
         <h2 id="merch-v2-title" style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: "8px 0 0" }}>{product.title}</h2>
         <div style={{ ...mono, fontSize: 20, fontWeight: 500, marginTop: 12 }}>{rub(product.price)}</div>
 
         {hasVariants && (
           <div style={{ marginTop: 22 }}>
-            <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: "var(--c-text-3)" }}>
+            <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: "var(--c-text-3)" }}>
               {variants.some((v) => v.size) ? "Размер" : "Вариант"}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
@@ -86,12 +88,12 @@ function SizeDialog({ product, onClose }: { product: Product; onClose: () => voi
 
         <div style={{ marginTop: 14 }}><Stock n={stock} /></div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 20 }}>
-          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: "var(--c-text-3)" }}>Количество</span>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 20 }}>
+          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: "var(--c-text-3)" }}>Количество</span>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button aria-label="Уменьшить" onClick={() => setQty((q) => Math.max(1, q - 1))} className="foc" style={{ width: 34, height: 34, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)", cursor: "pointer" }}>−</button>
+            <button aria-label="Уменьшить" onClick={() => setQty((q) => Math.max(1, q - 1))} className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer" }}>−</button>
             <span style={{ ...mono, minWidth: 22, textAlign: "center" }} aria-live="polite">{qty}</span>
-            <button aria-label="Увеличить" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty} className="foc" style={{ width: 34, height: 34, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)", cursor: "pointer", opacity: qty >= maxQty ? 0.4 : 1 }}>+</button>
+            <button aria-label="Увеличить" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty} className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", opacity: qty >= maxQty ? 0.4 : 1 }}>+</button>
           </div>
         </div>
 
@@ -111,11 +113,14 @@ function SizeDialog({ product, onClose }: { product: Product; onClose: () => voi
 export default function MerchV2() {
   useHead({
     title: "Мерч клуба",
-    description: "Фирменная одежда и аксессуары клуба выпускников факультета права НИУ ВШЭ.",
+    description: "Фирменная одежда и аксессуары клуба выпускников факультета права Вышки.",
     noindex: true, // превью нового языка витрин
   });
   const products = useProducts();
-  const [cat, setCat] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const cat = params.get("category");
+  const layout = params.get("view") === "list" ? "list" : "grid";
+  const change = (key: string, value: string | null) => setParams((previous) => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); return next; });
   const [open, setOpen] = useState<Product | null>(null);
 
   const catalog = products.data ?? [];
@@ -127,7 +132,7 @@ export default function MerchV2() {
 
   return (
     <V2Shell>
-      <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
           eyebrow="витрина · мерч"
           title="Одежда и аксессуары клуба"
@@ -139,11 +144,11 @@ export default function MerchV2() {
           {[null, ...categories].map((c) => (
             <button
               key={c ?? "all"}
-              onClick={() => setCat(c)}
+              onClick={() => change("category", c)}
               aria-pressed={cat === c}
               className="foc"
               style={{
-                ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
+                ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                 padding: "7px 12px", borderRadius: 999, cursor: "pointer",
                 border: `1px solid ${cat === c ? "var(--c-accent)" : "var(--c-line)"}`,
                 background: cat === c ? "var(--c-accent)" : "transparent",
@@ -155,18 +160,20 @@ export default function MerchV2() {
           ))}
         </div>
 
+        <div className="club-view-toggle" role="group" aria-label="Вид каталога" style={{ display: "flex", gap: 12, marginBlock: 22 }}><button className="foc" aria-pressed={layout === "grid"} onClick={() => change("view", "grid")}>Сетка</button><button className="foc" aria-pressed={layout === "list"} onClick={() => change("view", "list")}>Список</button></div>
+        {products.isError && <p role="alert">Не удалось загрузить товары. <button onClick={() => products.refetch()}>Повторить</button></p>}
         {products.isLoading && (
-          <div style={{ padding: "56px 0", ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", textTransform: "uppercase" }}>загружаем склад…</div>
+          <div style={{ padding: "56px 0", ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", textTransform: "none" }}>загружаем склад…</div>
         )}
 
-        {!products.isLoading && list.length === 0 && (
+        {!products.isLoading && !products.isError && list.length === 0 && (
           <div style={{ padding: "56px 0" }}>
             <p style={{ ...disp, fontSize: "var(--t-h3)", fontWeight: 600, margin: 0 }}>{cat ? "В этой категории пока пусто" : "Каталог пока пуст"}</p>
             <p style={{ margin: "10px 0 0", color: "var(--c-text-2)" }}>{cat ? "Снимите фильтр, чтобы увидеть весь склад." : "Товары появятся, как только учебный офис их добавит."}</p>
           </div>
         )}
 
-        <div>
+        <div className={`club-merch-${layout}`}>
           {list.map((p) => {
             const stock = totalStock(p);
             const sizes = (p.variants_json ?? []).filter((v) => v.stock > 0).map(vLabel);
@@ -174,23 +181,14 @@ export default function MerchV2() {
             // идёт от данных, иначе просим выбрать размер там, где размеров нет.
             const hasSizes = (p.variants_json ?? []).some((v) => !!v.size);
             return (
-              <article key={p.id} className="v2-row v2-prog" style={{ display: "grid", gridTemplateColumns: "150px 96px 1fr auto", gap: 22, alignItems: "center", padding: "20px 0", borderTop: "1px solid var(--c-line)" }}>
+              <article key={p.id} className="club-merch-item" style={{ display: "grid", gridTemplateColumns: "150px 96px 1fr auto", gap: 22, alignItems: "center", padding: "20px 0", borderTop: "1px solid var(--c-line)" }}>
                 <div style={{ ...mono, fontSize: 17, fontWeight: 500 }}>{rub(p.price)}</div>
 
-                {p.images?.[0] ? (
-                  <img src={p.images[0]} alt="" width={96} height={72} style={{ width: 96, height: 72, borderRadius: "var(--r-md)", objectFit: "cover" }} />
-                ) : (
-                  <div
-                    aria-hidden
-                    style={{ width: 96, height: 72, borderRadius: "var(--r-md)", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 9, letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", textTransform: "uppercase" }}
-                  >
-                    без фото
-                  </div>
-                )}
+                <Link to={`/v2/merch/${p.slug}`} className="foc club-merch-image"><ProductImage src={p.images?.[0]} title={p.title} /></Link>
 
                 <div style={{ minWidth: 0 }}>
-                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
-                  <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 8, textTransform: "uppercase" }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}><Link className="foc" to={`/v2/merch/${p.slug}`} style={{ color: "inherit", textDecoration: "none" }}>{p.title}</Link></h2>
+                  <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 8, textTransform: "none" }}>
                     {p.category}{sizes.length ? ` · ${sizes.join(" / ")}` : ""}
                   </div>
                   <div style={{ marginTop: 6 }}><Stock n={stock} /></div>
@@ -210,7 +208,7 @@ export default function MerchV2() {
         </div>
 
         {list.length > 0 && (
-          <div style={{ borderTop: "1px solid var(--c-line)", paddingTop: 20, ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", textTransform: "uppercase" }}>
+          <div style={{ borderTop: "1px solid var(--c-line)", paddingTop: 20, ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", textTransform: "none" }}>
             показано позиций: {list.length}
           </div>
         )}

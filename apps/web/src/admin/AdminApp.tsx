@@ -1,3 +1,4 @@
+import SupportAdmin from "./SupportAdmin.js";
 import { useId, useState, useEffect, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
@@ -28,7 +29,7 @@ const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled"];
 const VERIF: Record<string, string> = { pending: "На проверке", verified: "Верифицирован", rejected: "Отклонён" };
 const LEVEL_RU: Record<string, string> = { graduate: "Выпускник", friend: "Друг клуба", expert: "Знаток", ambassador: "Амбассадор" };
 
-type Section = "overview" | "orders" | "members" | "subs" | "content" | "audit";
+type Section = "overview" | "orders" | "members" | "subs" | "content" | "audit" | "support";
 
 export default function AdminApp() {
   useHead({ title: "Админ-панель", noindex: true }); // офисная зона – не индексируем
@@ -50,8 +51,8 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
   return (
-    <main style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <form onSubmit={submit} style={{ width: "100%", maxWidth: 400, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32 }}>
+    <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <form onSubmit={submit} style={{ width: "100%", maxWidth: 400, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
         <Mark kind="scales" size={38} style={{ color: "var(--c-accent-text)" }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "16px 0 0" }}>Панель учебного офиса</h1>
         <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "8px 0 0", lineHeight: 1.5 }}>
@@ -84,8 +85,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { key: "subs", label: "Подписки" },
     { key: "content", label: "Контент" },
     { key: "audit", label: "Журнал" },
+    { key: "support", label: "Поддержка" },
   ];
-  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", subs: "Подписки на подкасты", content: "Контент", audit: "Журнал безопасности" };
+  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", subs: "Подписки на подкасты", content: "Контент", audit: "Журнал безопасности", support: "Поддержка" };
 
   // На вход выкидываем ТОЛЬКО при 401 (истёкшая сессия). Прочие ошибки (5xx/сеть)
   // не должны маскироваться под разлогин – показываем ретрай в основной области.
@@ -124,7 +126,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
       </aside>
 
       {/* Низ панели не должен уезжать под cookie-баннер */}
-      <main style={{ minWidth: 0, padding: "26px 32px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px))" }}>
+      <main id="main" style={{ minWidth: 0, padding: "26px 32px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px))" }}>
         <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", margin: "0 0 22px" }}>{titles[section]}</h1>
         {ov.isError && (
           <p role="alert" style={{ margin: "0 0 20px", padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-danger-text)", ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>
@@ -138,6 +140,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         {section === "subs" && <PodcastSubs />}
         {section === "content" && <Content />}
         {section === "audit" && <AuditLog />}
+        {section === "support" && <SupportAdmin />}
       </main>
     </div>
   );
@@ -184,7 +187,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
             Последние заявки
           </PanelTitle>
           {(orders.data?.items ?? []).slice(0, 5).map((o) => (
-            <Row key={o.id} cols="104px 1fr auto">
+            <Row key={o.id} cols="104px minmax(0, 1fr) auto">
               <span style={{ ...label, fontSize: 10 }}>{o.number}</span>
               <span style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.contact_fio}</span>
               <Pill status={o.status}>{ORDER_STATUS_RU[o.status]}</Pill>
@@ -200,7 +203,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
             <div key={m.id} style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{m.fio}</div>
               <div style={{ ...label, fontSize: 10, marginTop: 3 }}>выпуск {m.cohort}</div>
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                 <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc" style={{ ...action, flex: 1, textAlign: "center" }}>Подтвердить</button>
                 <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center", color: "var(--c-danger-text)", borderColor: "var(--c-danger-text)" }}>Отклонить</button>
               </div>
@@ -428,7 +431,7 @@ function Members() {
               <span style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.fio}</span>
               {m.duplicate && (
                 <span title="Возможный дубль: тот же ФИО и год выпуска"
-                  style={{ ...mono, flexShrink: 0, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-status)", border: "1px solid var(--c-status)", borderRadius: 999, padding: "2px 7px" }}>дубль?</span>
+                  style={{ ...mono, flexShrink: 0, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-status-text)", border: "1px solid var(--c-status)", borderRadius: 999, padding: "2px 7px" }}>дубль?</span>
               )}
             </span>
             <span style={{ ...mono, fontSize: 12, color: "var(--c-text-3)" }}>{m.cohort}</span>
@@ -484,7 +487,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
     <Modal onClose={onClose} labelledBy="member-modal-title" maxWidth={460}>
       <div style={{ position: "relative", background: "var(--c-bg-raised)", color: "var(--c-text)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 26 }}>
         <button onClick={onClose} aria-label="Закрыть" className="foc"
-          style={{ position: "absolute", right: 16, top: 16, width: 34, height: 34, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}>✕</button>
+          style={{ position: "absolute", right: 16, top: 16, width: 34, height: 34, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}>✕</button>
 
         <h2 id="member-modal-title" style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: 0, paddingRight: 40 }}>{member.fio}</h2>
         <div style={{ ...label, fontSize: 10, marginTop: 8 }}>
@@ -545,7 +548,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
               <p style={{ ...mono, fontSize: 11, lineHeight: 1.6, color: "var(--c-text-3)", margin: 0 }}>
                 Профиль, контакты, фото и заявки будут обезличены, аккаунт входа удалён. Необратимо.
               </p>
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                 <button disabled={anonymizeMember.isPending} onClick={() => anonymizeMember.mutate(member.id)} className="foc"
                   style={{ ...action, flex: 1, padding: "11px 18px", background: "var(--c-danger)", color: "#fff" }}>
                   {anonymizeMember.isPending ? "Удаляем…" : "Подтвердить удаление"}
@@ -796,7 +799,7 @@ function EventsAdmin() {
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-mono text-[12px] text-[var(--c-text-3)]">{fmt(e.starts_at)}</span>
             <span className="min-w-0 flex-1 truncate font-semibold">{e.title}</span>
-            <span className="font-mono text-[11px] text-[var(--c-status)]">+{e.points} б.</span>
+            <span className="font-mono text-[11px] text-[var(--c-status-text)]">+{e.points} б.</span>
             <select aria-label={`Статус события «${e.title}»`} value={e.status} disabled={patchEvent.isPending} onChange={(ev) => patchEvent.mutate({ id: e.id, status: ev.target.value })} className={`foc rounded-full border-none px-3 py-1.5 font-mono text-[11px] ${e.status === "published" ? "bg-[rgba(31,138,91,.14)] text-[var(--c-ok-text)]" : e.status === "done" ? "bg-[rgba(46,111,174,.14)] text-[var(--c-link)]" : "bg-[var(--c-bg-sunken)] text-[var(--c-text-3)]"}`}>
               <option value="published">Анонс</option><option value="done">Прошло</option><option value="draft">Черновик</option><option value="canceled">Отменено</option>
             </select>

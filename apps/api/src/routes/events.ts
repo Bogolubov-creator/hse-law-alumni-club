@@ -80,7 +80,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     const end = new Date(start.getTime() + 2 * 3600 * 1000); // 2 часа по умолчанию
     const esc = (t: string) => t.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
     const lines = [
-      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Клуб выпускников факультета права НИУ ВШЭ//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Клуб выпускников факультета права Вышки//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
       "BEGIN:VEVENT",
       `UID:event-${ev.id}@club-pravo-hse`,
       `DTSTAMP:${dt(new Date())}`,

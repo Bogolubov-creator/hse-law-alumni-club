@@ -49,6 +49,8 @@ export const programSchema = z.object({
   // Есть source_url → программа ВШЭ: запись и оплата на маркетплейсе hse.ru.
   // Нет → собственная программа клуба: заявка и оплата через сайт.
   source_url: z.string().nullable().optional(),
+  dates: z.object({ start: z.string().optional() }).nullable().optional(),
+  document: z.string().nullable().optional(),
 });
 export const programsSchema = z.array(programSchema);
 export const programModuleSchema = z.object({ title: z.string(), hours: z.number().optional(), points: z.array(z.string()).optional() });
@@ -123,6 +125,9 @@ export const orderResultSchema = z.object({
   payment_url: z.string().optional(), // ссылка на оплату ЮKassa (если оплата подключена)
 });
 export const myOrderSchema = z.object({
+  items_json: z.array(cartLineSchema.extend({ type: z.enum(["dpo", "merch", "podcast"]) })).nullish(),
+  fulfillment: z.string().nullish(),
+  payment_status: z.string().nullish(),
   number: z.string(), type: z.string(), status: z.string(), subtotal: z.number(), member_discount: z.number(), total_estimate: z.number(), created_at: z.string(),
 });
 export const myOrdersSchema = z.array(myOrderSchema);

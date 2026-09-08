@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        ohra: { DEFAULT: "#EC5A13", deep: "#C9450E" },
+        ohra: { DEFAULT: "#EC5A13", deep: "#C24009" },
         karmin: "#B5331B",
         kobalt: { DEFAULT: "#15375E", br: "#2E6FAE" },
         stal: "#2C6E80",

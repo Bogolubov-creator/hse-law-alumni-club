@@ -168,3 +168,18 @@ test.describe("Программа v2", () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 });
+
+test('сбой API программы отличим от 404 и повтор восстанавливает содержание', async ({page}) => {
+  let available=false;
+  await page.route('**/api/programs/test-program',r=>r.fulfill({status:available?200:503,contentType:'application/json',body:JSON.stringify(available?BASE:{error:'temporarily unavailable'})}));
+  await page.goto('/v2/dpo/test-program');
+  await expect(page.getByRole('heading',{name:'Не удалось загрузить программу'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Программа не найдена'})).not.toBeVisible();
+  await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/program-api-error.png',fullPage:true});
+  available=true;await page.getByRole('button',{name:'Повторить загрузку'}).click();
+  await expect(page.getByRole('heading',{level:1,name:BASE.title})).toBeVisible();
+  await page.setViewportSize({width:390,height:844});
+  const heading=await page.locator('h1').boundingBox();const price=await page.locator('.v2-prog-aside').boundingBox();
+  expect(heading!.y+heading!.height).toBeLessThanOrEqual(price!.y);
+  await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/program-title-before-price.png',fullPage:true});
+});

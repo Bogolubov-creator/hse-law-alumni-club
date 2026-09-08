@@ -1,10 +1,11 @@
+import { programStart } from "../lib/program-date.js";
 import { useState, type CSSProperties } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../lib/api.js";
+import { ApiError, FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../lib/api.js";
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, mono, disp } from "../v2/Shell.js";
+import { V2Shell, mono, disp, pageTitle } from "../v2/Shell.js";
 
 /**
  * Карточка программы ДПО v2 (/v2/dpo/:slug).
@@ -24,7 +25,7 @@ import { V2Shell, mono, disp } from "../v2/Shell.js";
 
 const label: CSSProperties = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase", color: "var(--c-text-3)",
+  textTransform: "none", color: "var(--c-text-3)",
 };
 
 /** Поле бланка: подпись слева, значение справа, разделитель – линия. */
@@ -54,6 +55,7 @@ export default function ProgramV2() {
   const [open, setOpen] = useState(0);
 
   const p = q.data;
+  const notFound = q.error instanceof ApiError && q.error.status === 404;
   // Та же математика, что на сервере (order-calc): округлённая скидка в копейках.
   const priced = p ? p.price - Math.round((p.price * discount) / 100) : 0;
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];
@@ -61,7 +63,7 @@ export default function ProgramV2() {
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
 
   useHead({
-    title: q.isError ? "Программа не найдена" : p?.title ?? "Программа ДПО",
+    title: q.isError ? (notFound ? "Программа не найдена" : "Не удалось загрузить программу") : p?.title ?? "Программа ДПО",
     description: p?.description ?? (p ? `${p.title}: программа ДПО факультета права НИУ ВШЭ с ценой выпускника.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/dpo/${slug}`,
     noindex: true,
@@ -77,7 +79,7 @@ export default function ProgramV2() {
 
   return (
     <V2Shell>
-      <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <nav style={{ ...label, paddingTop: 28 }} aria-label="Хлебные крошки">
           <Link to="/v2/dpo" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>витрина дпо</Link>
           {p?.direction && <> · {p.direction}</>}
@@ -87,10 +89,11 @@ export default function ProgramV2() {
 
         {q.isError && (
           <div style={{ padding: "56px 0" }}>
-            <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h2)", margin: 0 }}>Программа не найдена</h1>
+            <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h2)", margin: 0 }}>{notFound ? "Программа не найдена" : "Не удалось загрузить программу"}</h1>
             <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", maxWidth: 520, lineHeight: 1.55 }}>
-              Такой записи в каталоге нет – возможно, набор завершён и программа снята.
+              {notFound ? "Такой записи в каталоге нет – возможно, набор завершён и программа снята." : "Сервер временно недоступен. Повторите загрузку."}
             </p>
+            {!notFound && <button className="foc" onClick={() => q.refetch()}>Повторить загрузку</button>}
             <Link to="/v2/dpo" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
               Весь каталог программ
             </Link>
@@ -98,10 +101,11 @@ export default function ProgramV2() {
         )}
 
         {p && (
+          <>
+          <div style={{ paddingTop: 24, maxWidth: "58ch" }}><h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1></div>
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
             {/* ── Содержание записи ── */}
             <div style={{ minWidth: 0 }}>
-              <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1>
 
               <div style={{ ...label, marginTop: 16 }}>
                 {[FORMAT_LABEL[p.format] ?? p.format, p.duration, totalHours > 0 ? `${totalHours} ак. ч.` : null]
@@ -183,7 +187,7 @@ export default function ProgramV2() {
                         </span>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{t.name}</div>
-                          {t.role && <div style={{ ...label, fontSize: 10, marginTop: 3 }}>{t.role}</div>}
+                          {t.role && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 3 }}>{t.role}</div>}
                         </div>
                       </div>
                     ))}
@@ -209,7 +213,7 @@ export default function ProgramV2() {
                 </div>
 
                 <div style={{ marginTop: 16 }}>
-                  {p.dates?.start && <Fact name="старт" value={p.dates.start} />}
+                  {p.dates?.start && <Fact name="старт" value={programStart(p.dates.start)} />}
                   <Fact name="длительность" value={p.duration} />
                   <Fact name="формат" value={FORMAT_LABEL[p.format] ?? p.format} />
                   {totalHours > 0 && <Fact name="объём" value={`${totalHours} ак. ч.`} />}
@@ -222,7 +226,7 @@ export default function ProgramV2() {
                   <>
                     <div style={{ marginTop: 18, padding: "13px 16px", borderRadius: "var(--r-md)", border: "1px dashed var(--c-line)", textAlign: "center", color: "var(--c-text-3)", fontWeight: 600 }}>Набор закрыт</div>
                     {p.source_url && (
-                      <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ display: "block", marginTop: 8, padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", textAlign: "center", color: "var(--c-text-2)", fontWeight: 600, textDecoration: "none" }}>Страница на hse.ru →</a>
+                      <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ display: "block", marginTop: 8, padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", textAlign: "center", color: "var(--c-text-2)", fontWeight: 600, textDecoration: "none" }}>Страница на hse.ru →</a>
                     )}
                     <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "12px 0 0", lineHeight: 1.5 }}>
                       Набор завершён. Каталог обновляется с hse.ru автоматически – следите за новым набором.
@@ -242,17 +246,18 @@ export default function ProgramV2() {
                       Оставить заявку
                     </button>
                     <button disabled={add.isPending} onClick={addToCart} className="foc"
-                      style={{ width: "100%", marginTop: 8, padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)", fontWeight: 600, fontSize: 15, cursor: add.isPending ? "wait" : "pointer" }}>
+                      style={{ width: "100%", marginTop: 8, padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, fontSize: 15, cursor: add.isPending ? "wait" : "pointer" }}>
                       Положить в корзину
                     </button>
                     <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "12px 0 0", lineHeight: 1.5 }}>
-                      Программа клуба: заявка не списывает деньги, менеджер свяжется и подтвердит детали.
+                      Программа клуба: учебный офис подтвердит детали и пришлёт ссылку на оплату.
                     </p>
                   </>
                 )}
               </div>
             </aside>
           </div>
+          </>
         )}
       </main>
     </V2Shell>

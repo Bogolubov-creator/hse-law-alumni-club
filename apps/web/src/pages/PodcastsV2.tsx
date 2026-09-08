@@ -20,13 +20,13 @@ import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 
 const label = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase" as const, color: "var(--c-text-3)",
+  textTransform: "none" as const, color: "var(--c-text-3)",
 };
 
 export default function PodcastsV2() {
   useHead({
     title: "Подкасты клуба",
-    description: "Подкасты клуба выпускников факультета права НИУ ВШЭ: разговоры с выпускниками, преподавателями и практиками права.",
+    description: "Подкасты клуба выпускников факультета права Вышки: разговоры с выпускниками, преподавателями и практиками права.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/podcasts`,
     noindex: true,
   });
@@ -45,7 +45,7 @@ export default function PodcastsV2() {
 
   return (
     <V2Shell>
-      <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
           eyebrow="фонотека · подкасты"
           title="Разговоры о праве и практике"
@@ -85,7 +85,7 @@ export default function PodcastsV2() {
         )}
 
         {subscribe.isSuccess && !subscribe.data.payment_url && (
-          <p role="status" style={{ ...label, color: "var(--c-status)", textTransform: "none", letterSpacing: 0, margin: "14px 0 0", lineHeight: 1.5 }}>
+          <p role="status" style={{ ...label, color: "var(--c-status-text)", textTransform: "none", letterSpacing: 0, margin: "14px 0 0", lineHeight: 1.5 }}>
             Заявка {subscribe.data.number} оформлена – менеджер учебного офиса свяжется для оплаты, после чего подписка включится.
           </p>
         )}
@@ -107,7 +107,7 @@ export default function PodcastsV2() {
             <article key={p.id} className="v2-row" style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
               <div>
                 <div style={{ ...mono, fontSize: 17, fontWeight: 500, color: "var(--c-text)" }}>{String(i + 1).padStart(2, "0")}</div>
-                {p.duration && <div style={{ ...label, fontSize: 10, marginTop: 6 }}>{p.duration}</div>}
+                {p.duration && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 6 }}>{p.duration}</div>}
                 {p.cover && (
                   <img src={p.cover} alt="" width={56} height={56} loading="lazy"
                     style={{ width: 56, height: 56, marginTop: 10, borderRadius: "var(--r-sm)", objectFit: "cover" }}
@@ -116,7 +116,7 @@ export default function PodcastsV2() {
               </div>
 
               <div style={{ minWidth: 0 }}>
-                {p.is_free && <div style={{ ...label, fontSize: 10, color: "var(--c-ok-text)", marginBottom: 6 }}>пробный выпуск · бесплатно</div>}
+                {p.is_free && <div style={{ ...label, fontSize: "var(--t-micro)", color: "var(--c-ok-text)", marginBottom: 6 }}>пробный выпуск · бесплатно</div>}
                 <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}>{p.title}</h2>
                 {p.description && (
                   <p style={{ margin: "9px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: "62ch" }}>{p.description}</p>
@@ -129,7 +129,7 @@ export default function PodcastsV2() {
                   ) : p.audio_url ? (
                     <EpisodePlayer id={p.id} src={p.audio_url} v2 />
                   ) : (
-                    <div style={{ ...label, fontSize: 10, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: "1px dashed var(--c-line)", borderRadius: "var(--r-md)" }}>
+                    <div style={{ ...label, fontSize: "var(--t-micro)", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: "1px dashed var(--c-line)", borderRadius: "var(--r-md)" }}>
                       <span aria-hidden>🔒</span> доступно по подписке {priceRub} в год
                     </div>
                   )}
@@ -142,7 +142,7 @@ export default function PodcastsV2() {
 
         {data && items.length === 0 && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
-            <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Выпусков пока нет – скоро появятся.</p>
+            <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Выпусков пока нет. О новых напишем в новостях клуба.</p>
           </div>
         )}
       </main>

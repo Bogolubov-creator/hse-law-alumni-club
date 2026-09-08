@@ -78,7 +78,7 @@ export function formatCalendarReply(
 export function formatStartReply(arg: string, linked: boolean, publicUrl: string): string {
   const joinUrl = arg ? `${publicUrl}/join?ref=${encodeURIComponent(arg)}` : `${publicUrl}/join`;
   const lines = [
-    "👋 <b>Клуб выпускников факультета права НИУ ВШЭ</b>",
+    "👋 <b>Клуб выпускников факультета права Вышки</b>",
     "",
     "Команды бота:",
     "/points – баллы и уровень",

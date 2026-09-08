@@ -46,16 +46,15 @@ export default function CookieBanner() {
       background: "#14181F", color: "#FBF3E8", borderRadius: 16, padding: "16px 20px",
       boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)", fontSize: 13.5, lineHeight: 1.5,
     }}>
-      <p style={{ flex: 1, minWidth: 260, margin: 0 }}>
-        Мы используем cookies для работы корзины, личного кабинета и статистики. Продолжая
-        пользоваться сайтом, вы соглашаетесь с{" "}
-        <Link to={v2 ? "/v2/privacy" : "/privacy"} style={{ color: "#E3C272", textDecoration: "underline" }}>политикой обработки персональных данных</Link>.
+      <p style={{ flex: "1 1 260px", minWidth: 0, margin: 0 }}>
+        Сайт сохраняет в браузере корзину, сессию входа и выбранные настройки. Подробнее – в{" "}
+        <Link to={v2 ? "/v2/privacy" : "/privacy"} className="foc" style={{ color: "#E3C272", textDecoration: "underline" }}>политике обработки персональных данных</Link>.
       </p>
       {/* Тёмный текст на охре: 5,12:1 против 3,16:1 у светлого. То же решение,
           что уже принято для главной кнопки сайта – согласие по 152-ФЗ тем более
           должно быть читаемым. */}
       <button onClick={accept} className="foc" style={{
-        flex: "none", fontWeight: 600, fontSize: 14, padding: "11px 26px", borderRadius: 11,
+        flex: "none", fontWeight: 600, fontSize: 14, minHeight: 44, padding: "11px 26px", borderRadius: 11,
         border: "none", background: "#EC5A13", color: "#14181F", cursor: "pointer",
       }}>
         Принять

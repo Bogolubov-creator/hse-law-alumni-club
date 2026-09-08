@@ -42,13 +42,8 @@ export type TaggedCard = HseDpoCard & { enrollment: Enrollment };
 export async function fetchHseDpo(): Promise<TaggedCard[]> {
   const actual = await fetchList(BASE_URL);
   if (actual.length < 3) throw new Error(`hse.ru: подозрительно мало карточек (${actual.length}) – синк отменён, каталог не тронут`);
-  // Неактуальный список вторичен: его сбой не должен ронять весь синк.
-  let nonactual: HseDpoCard[] = [];
-  try {
-    nonactual = await fetchList(NONACTUAL_URL);
-  } catch (e) {
-    console.error("[dpo-sync] неактуальный список недоступен:", (e as Error).message);
-  }
+  // Архивировать можно только при доступности обоих источников.
+  const nonactual = await fetchList(NONACTUAL_URL);
   const seen = new Set(actual.map((c) => c.hseId));
   return [
     ...actual.map((c) => ({ ...c, enrollment: "actual" as const })),
@@ -62,15 +57,15 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
   const cards = await fetchHseDpo();
 
   const existing = (await di.request((readItems as any)("programs", {
-    limit: -1, fields: ["id", "slug", "title", "status", "source_url", "duration"],
-  }))) as { id: string; slug: string; title: string; status: string; source_url: string | null; duration: string | null }[];
+    limit: -1, fields: ["id", "slug", "title", "status", "source_url", "duration", "price"],
+  }))) as { id: string; slug: string; title: string; status: string; source_url: string | null; duration: string | null; price: number }[];
 
   const byHseId = new Map<string, (typeof existing)[number]>();
   for (const r of existing) {
-    const m = r.source_url && /\/dpo\/(\d+)/.exec(r.source_url);
+    const m = r.source_url && /^https:\/\/(?:www\.)?hse\.ru\/edu\/dpo\/(\d+)/.exec(r.source_url);
     if (m) byHseId.set(m[1]!, r);
   }
-  const byTitle = new Map(existing.map((r) => [normalizeTitle(r.title), r]));
+  const byTitle = new Map(existing.filter((r) => !!r.source_url && /^https:\/\/(?:www\.)?hse\.ru\/edu\/dpo\/\d+/.test(r.source_url)).map((r) => [normalizeTitle(r.title), r]));
   const slugs = new Set(existing.map((r) => r.slug));
 
   let created = 0, updated = 0, archived = 0;
@@ -81,13 +76,13 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
     if (match && !matchedIds.has(match.id)) {
       matchedIds.add(match.id);
       const patch: Record<string, unknown> = {
-        price: c.priceKop,
+        ...(c.priceKop > 0 ? { price: c.priceKop } : {}),
         format: c.format,
-        dates: c.start ? { start: c.start } : null,
+        ...(c.start ? { dates: { start: c.start } } : {}),
         document: DOC_BY_TYPE[c.type],
         source_url: c.url,
         enrollment: c.enrollment,
-        status: "published",
+        status: c.priceKop > 0 || match.price > 0 ? "published" : "draft",
       };
       if (c.duration) patch.duration = c.duration; // нет на сайте – оставляем прежнюю
       await di.request((updateItem as any)("programs", match.id, patch));
@@ -103,7 +98,7 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
         price: c.priceKop, dates: c.start ? { start: c.start } : null,
         document: DOC_BY_TYPE[c.type], source_url: c.url,
         enrollment: c.enrollment,
-        description: null, status: "published",
+        description: null, status: c.priceKop > 0 ? "published" : "draft",
       }));
       created++;
     }
@@ -111,7 +106,7 @@ export async function syncDpoCatalog(): Promise<DpoSyncResult> {
 
   // В архив – только управляемые синком (source_url задан) и пропавшие из ОБОИХ списков.
   for (const r of existing) {
-    if (r.source_url && !matchedIds.has(r.id) && r.status !== "archived") {
+    if ([...byHseId.values()].some((managed) => managed.id === r.id) && !matchedIds.has(r.id) && r.status !== "archived") {
       await di.request((updateItem as any)("programs", r.id, { status: "archived" }));
       archived++;
     }

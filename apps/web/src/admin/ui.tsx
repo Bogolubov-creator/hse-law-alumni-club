@@ -16,31 +16,11 @@ import { type CSSProperties, type ReactNode } from "react";
  * были бы уже не косметические расхождения, а разное поведение инструмента.
  */
 
-export const mono: CSSProperties = { fontFamily: "var(--f-data)", fontVariantNumeric: "tabular-nums" };
-export const disp: CSSProperties = { fontFamily: "var(--f-display)", letterSpacing: "var(--tr-display)" };
-
-/** Моно-подпись реестра. */
-export const label: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase", color: "var(--c-text-3)",
-};
-
-/** Действие. Один акцент на всю панель – охра с тёмным текстом (5,12:1). */
-export const action: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
-  padding: "9px 15px", borderRadius: "var(--r-sm)", border: "none",
-  background: "var(--c-accent)", color: "var(--c-on-accent)", cursor: "pointer",
-};
-
-export const actionGhost: CSSProperties = {
-  ...action, background: "transparent", color: "var(--c-text-2)", border: "1px solid var(--c-line)",
-};
-
-/** Поле ввода. */
-export const field: CSSProperties = {
-  padding: "10px 13px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)",
-  background: "var(--c-bg)", color: "var(--c-text)", fontSize: 14, fontFamily: "inherit",
-};
+// Определения общие с витринами и кабинетом – в styles/primitives.ts.
+import { mono, disp, label } from "../styles/primitives.js";
+export { mono, disp, label, action, actionGhost } from "../styles/primitives.js";
+/** Поле панели плотнее кабинетного: ввод с клавиатуры, а не с телефона. */
+export { fieldCompact as field } from "../styles/primitives.js";
 
 /** Блок-запись. Рамка, а не тень: тень в плотном списке превращается в грязь. */
 export function Panel({ children, style }: { children: ReactNode; style?: CSSProperties }) {

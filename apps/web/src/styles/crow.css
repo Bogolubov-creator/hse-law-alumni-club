@@ -1,0 +1,30 @@
+.community-portrait.community-portrait-crow { padding: 0; align-items: center; overflow: hidden; }
+.crow-welcome { width: 100%; padding: 8px 20px 24px; color: white; }
+.crow-illustration { position: relative; width: 100%; aspect-ratio: 1400 / 1465; isolation: isolate; }
+.crow-halo { position: absolute; inset: 20% 12% 10%; border-radius: 48% 48% 12% 12%; background: #f0c74d; transform: rotate(-7deg); z-index: -1; }
+.crow-rig { position: absolute; inset: 0; }
+.crow-rig img { max-width: none; height: auto; }
+.crow-rest { display: block; width: 100%; height: auto; }
+.crow-welcome-copy { position: relative; }
+.crow-welcome-copy p { margin: 0 0 6px; font: 500 25px/1.15 var(--f-display, var(--f-body)); }
+.crow-welcome-copy > span { font: 400 14px/1.5 var(--f-body); }
+.crow-controls { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 16px; }
+.crow-controls button { padding: 6px 0; min-height: 36px; border: 0; border-bottom: 1px solid #ffffff80; background: transparent; color: white; font: 500 12px/1.4 var(--f-body); cursor: pointer; }
+.crow-controls button:disabled { opacity: .55; cursor: default; }
+@media (prefers-reduced-motion: no-preference) {
+  .crow-rig [data-part="arm"] { animation: crow-wave 2.6s ease-in-out both; }
+  .crow-rig [data-part="head"], .crow-rig [data-part="jaw"] { animation: crow-nod 2.6s ease-in-out both; }
+  .crow-rig [data-part="eyeL"], .crow-rig [data-part="eyeR"] { animation: crow-blink 2.6s linear both; }
+  .crow-rig [data-part] { animation-play-state: inherit; }
+}
+@keyframes crow-wave { 0%, 100% { transform: none; } 22%, 48%, 74% { transform: translate(3%, -4%) rotate(-32deg); } 35%, 61% { transform: translate(3%, -4%) rotate(-15deg); } }
+@keyframes crow-nod { 0%, 100% { transform: none; } 35%, 65% { transform: rotate(-3deg); } }
+@keyframes crow-blink { 0%, 42%, 48%, 100% { transform: scaleY(1); } 45% { transform: scaleY(.1); } }
+@media (max-width: 700px) {
+  .crow-welcome { display: grid; grid-template-columns: 130px minmax(0, 1fr); align-items: center; gap: 8px; padding: 12px; }
+  .crow-welcome-copy p { font-size: 21px; }
+  .crow-welcome-copy > span { font-size: 13px; }
+  .crow-controls { margin-top: 8px; gap: 2px 12px; }
+}
+.community-portrait-crow .crow-welcome-copy p { color: #fff; font: 500 25px/1.2 var(--f-body); margin: 0 0 6px; }
+@media (max-width: 700px) { .community-portrait-crow .crow-welcome-copy p { font-size: 20px; } }

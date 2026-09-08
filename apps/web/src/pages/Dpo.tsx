@@ -66,15 +66,15 @@ export default function Dpo() {
 
   return (
     <SiteShell>
-      <main className="mx-auto max-w-[1180px] px-7 py-12">
+      <main id="main" className="mx-auto max-w-[1180px] px-7 py-12">
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Витрина · ДПО</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Программы по праву со скидкой выпускника</h1>
         <p className="mt-3 max-w-[600px] text-grafit-soft">Каталог программ дополнительного образования факультета права. Цена выпускника применяется автоматически после верификации в личном кабинете.</p>
 
         {/* НАБОР: актуальный / все (как на hse.ru) */}
         <div className="mt-7 flex flex-wrap gap-2">
-          <button onClick={() => setShowAll(false)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${!showAll ? "bg-hse-blue text-kost" : "border border-[#E5E7EB] bg-white"}`}>Актуальный набор · {actualCount}</button>
-          <button onClick={() => setShowAll(true)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${showAll ? "bg-hse-blue text-kost" : "border border-[#E5E7EB] bg-white"}`}>Все программы · {catalog.length}</button>
+          <button onClick={() => setShowAll(false)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${!showAll ? "bg-hse-blue text-kost" : "border border-[#7C828C] bg-white"}`}>Актуальный набор · {actualCount}</button>
+          <button onClick={() => setShowAll(true)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${showAll ? "bg-hse-blue text-kost" : "border border-[#7C828C] bg-white"}`}>Все программы · {catalog.length}</button>
         </div>
 
         {/* ПОИСК */}
@@ -118,7 +118,7 @@ export default function Dpo() {
         {programs.isError && <p className="mt-8 font-mono text-sm text-karmin">Не удалось загрузить программы. Обновите страницу.</p>}
 
         {!programs.isLoading && list.length === 0 ? (
-          <div className="mt-10 rounded-[18px] border border-[#E5E7EB] bg-white p-12 text-center">
+          <div className="mt-10 rounded-[18px] border border-[#7C828C] bg-white p-12 text-center">
             <div className="mx-auto h-12 w-12 rotate-45 rounded-[12px] bg-kost-2" />
             <h3 className="mt-5 font-display text-xl font-semibold">Под фильтры ничего не нашлось</h3>
             <p className="mt-2 text-grafit-soft">Попробуйте изменить направление, формат или длительность.</p>
@@ -127,7 +127,7 @@ export default function Dpo() {
         ) : (
           <div className="two-col mt-7 grid grid-cols-3 gap-5">
             {list.map((p) => (
-              <div key={p.id} className="flex flex-col overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+              <div key={p.id} className="flex flex-col overflow-hidden rounded-[18px] border border-[#7C828C] bg-white">
                 <div className="flex h-2"><i className="flex-1 bg-ohra" /><i className="flex-1 bg-hse-blue" /><i className="flex-1 bg-latun" /><i className="flex-1 bg-stal" /></div>
                 <div className="flex flex-1 flex-col p-5">
                   <div className="font-mono text-[11px] uppercase tracking-wide text-ohra-deep">{p.direction}</div>

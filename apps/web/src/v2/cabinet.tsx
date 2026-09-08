@@ -2,7 +2,8 @@ import { type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
-import { mono, disp } from "./Shell.js";
+import { mono, disp, label, actionGhost } from "../styles/primitives.js";
+export { label, field, action, actionGhost } from "../styles/primitives.js";
 import { Mark } from "./Mark.js";
 
 /**
@@ -14,29 +15,6 @@ import { Mark } from "./Mark.js";
  */
 
 export const TOKEN_KEY = "club_token";
-
-/** Моно-подпись реестра: разрядка, верхний регистр, третичный цвет. */
-export const label: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase", color: "var(--c-text-3)",
-};
-
-export const field: CSSProperties = {
-  width: "100%", marginTop: 7, padding: "12px 14px", borderRadius: "var(--r-md)",
-  border: "1px solid var(--c-line)", background: "var(--c-bg)", color: "var(--c-text)",
-  fontSize: 15, fontFamily: "inherit",
-};
-
-/** Действие. Один акцент на весь кабинет – охра с тёмным текстом (5,12:1). */
-export const action: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
-  padding: "8px 14px", borderRadius: "var(--r-sm)", border: "none",
-  background: "var(--c-accent)", color: "var(--c-on-accent)", cursor: "pointer",
-};
-
-export const actionGhost: CSSProperties = {
-  ...action, background: "transparent", color: "var(--c-text-2)", border: "1px solid var(--c-line)",
-};
 
 /** Строка удостоверения: подпись слева, значение справа, разделитель – линия. */
 export function DataRow({ name, value, accent }: { name: string; value: string; accent?: boolean }) {
@@ -77,7 +55,14 @@ export function Initial({ fio, size, radius }: { fio: string | null | undefined;
 export function Progress({ value, target, done }: { value: number; target: number; done: boolean }) {
   const pct = done ? 100 : target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
-    <div style={{ height: 3, background: "var(--c-line)", borderRadius: 2, overflow: "hidden" }}>
+    <div
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={done ? "Достижение получено" : `Прогресс: ${value} из ${target}`}
+      style={{ height: 3, background: "var(--c-line)", borderRadius: 2, overflow: "hidden" }}
+    >
       <div style={{ height: "100%", width: `${pct}%`, background: done ? "var(--c-ok-text)" : "var(--c-accent)" }} />
     </div>
   );
@@ -91,9 +76,9 @@ const NAV = [
 /** Шапка кабинета: одна на все приватные экраны v2. */
 export function CabinetShell({ active, onLogout, children }: { active: "lk" | "profile"; onLogout: () => void; children: ReactNode }) {
   return (
-    <div style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
+    <div className="cabinet-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-line)" }}>
-        <div style={{ maxWidth: 1040, margin: "0 auto", padding: "0 20px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 20px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <Link to="/v2" className="foc" style={{ display: "flex", alignItems: "center", gap: 9, ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>
             <Mark kind="scales" size={26} style={{ color: "var(--c-accent-text)" }} />Клуб
           </Link>
@@ -114,9 +99,10 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
           </div>
         </div>
       </header>
+      <nav className="cabinet-club-nav" aria-label="Разделы клуба">{[["/v2", "Главная"], ["/v2/news", "Новости"], ["/v2/events", "События"], ["/v2/dpo", "ДПО"], ["/v2/merch", "Мерч"], ["/v2/podcasts", "Подкасты"], ["/v2/cart", "Корзина"], ["/v2/support", "Поддержка"]].map(([to, title]) => <Link className="foc" key={to} to={to!}>{title}</Link>)}</nav>
 
       {/* Низ не должен уезжать под cookie-баннер: внизу профиля права по 152-ФЗ */}
-      <main style={{ maxWidth: 1040, margin: "0 auto", padding: "26px 20px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>{children}</main>
+      <main id="main" style={{ maxWidth: 1180, margin: "0 auto", padding: "26px 20px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>{children}</main>
       <MobileTabs />
     </div>
   );

@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useNewsList, useNewsPost, formatNewsDate } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 
 /**
  * Новости v2: список (/v2/news) и публикация (/v2/news/:slug).
@@ -17,13 +17,13 @@ import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 
 const label = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase" as const, color: "var(--c-text-3)",
+  textTransform: "none" as const, color: "var(--c-text-3)",
 };
 
 export function NewsV2() {
   useHead({
     title: "Новости клуба",
-    description: "Новости клуба выпускников факультета права НИУ ВШЭ: события, программы, партнёрства и жизнь сообщества.",
+    description: "Новости клуба выпускников факультета права Вышки: события, программы, партнёрства и жизнь сообщества.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news`,
     noindex: true,
   });
@@ -32,7 +32,7 @@ export function NewsV2() {
 
   return (
     <V2Shell>
-      <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
           eyebrow="хроника · новости"
           title="Что в клубе сейчас"
@@ -52,7 +52,7 @@ export function NewsV2() {
 
         {!news.isLoading && !news.isError && list.length === 0 && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
-            <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Публикаций пока нет – заглядывайте позже.</p>
+            <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Публикаций пока нет. Ближайшие встречи клуба – в разделе «События».</p>
           </div>
         )}
 
@@ -85,7 +85,7 @@ export function NewsPostV2() {
 
   useHead({
     title: post.isError ? "Новость не найдена" : d?.title ?? "Новость",
-    description: d?.excerpt ?? (d ? `${d.title} – новость клуба выпускников факультета права НИУ ВШЭ.` : null),
+    description: d?.excerpt ?? (d ? `${d.title} – новость клуба выпускников факультета права Вышки.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news/${slug}`,
     noindex: true,
   });
@@ -94,7 +94,7 @@ export function NewsPostV2() {
 
   return (
     <V2Shell>
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: 720, margin: "0 auto", padding: "0 28px" }}>
         <nav style={{ ...label, paddingTop: 28 }}>
           <Link to="/v2/news" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>← все новости</Link>
         </nav>
@@ -116,7 +116,7 @@ export function NewsPostV2() {
         {d && (
           <article style={{ paddingTop: 26, paddingBottom: 20 }}>
             <div style={label}>{formatNewsDate(d.published_at)}</div>
-            <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: "12px 0 0" }}>{d.title}</h1>
+            <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: "12px 0 0" }}>{d.title}</h1>
             {d.excerpt && (
               <p style={{ margin: "18px 0 0", fontSize: "var(--t-lead)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{d.excerpt}</p>
             )}

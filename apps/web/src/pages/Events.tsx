@@ -12,7 +12,7 @@ import { fmtEventDate as fmtDate, fmtEventDateFull as fmtDateFull, gcalUrl, type
 
 /** Календарь событий клуба: афиша + «Пойду» (RSVP), клик по карточке – детали. */
 export default function Events() {
-  useHead({ title: "События и встречи клуба", description: "Афиша клуба выпускников факультета права НИУ ВШЭ: нетворкинги, лекции и встречи выпусков. Запись заранее, за участие баллы клуба." });
+  useHead({ title: "События и встречи клуба", description: "Афиша клуба выпускников факультета права Вышки: нетворкинги, лекции и встречи выпусков. Запись заранее, за участие баллы клуба." });
   const t = token();
   const toast = useToast();
   const qc = useQueryClient();
@@ -52,7 +52,7 @@ export default function Events() {
         location: e.format === "online"
           ? { "@type": "VirtualLocation", url: e.reg_url || `${origin}/events` }
           : { "@type": "Place", name: e.location || "Факультет права НИУ ВШЭ", address: e.location || "Москва, ул. Мясницкая, д. 20" },
-        organizer: { "@type": "Organization", name: "Клуб выпускников факультета права НИУ ВШЭ", url: `${origin}/` },
+        organizer: { "@type": "Organization", name: "Клуб выпускников факультета права Вышки", url: `${origin}/` },
         image: e.cover || `${origin}/og-card.png`,
         url: e.reg_url || `${origin}/events`,
       },
@@ -80,7 +80,7 @@ export default function Events() {
       key={e.id} role="button" tabIndex={0} aria-label={`Подробнее: ${e.title}`}
       onClick={() => setOpenId(e.id)}
       onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpenId(e.id); } }}
-      className="foc flex cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white transition-shadow hover:shadow-[0_10px_30px_-14px_rgba(17,41,107,.35)]"
+      className="foc flex cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[#7C828C] bg-white transition-shadow hover:shadow-[0_10px_30px_-14px_rgba(17,41,107,.35)]"
       style={{ opacity: isPast ? 0.65 : 1 }}
     >
       {e.cover ? (
@@ -107,7 +107,7 @@ export default function Events() {
 
   return (
     <SiteShell>
-      <main className="mx-auto max-w-[1180px] px-7 py-12">
+      <main id="main" className="mx-auto max-w-[1180px] px-7 py-12">
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Календарь клуба</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">События и встречи</h1>
         <p className="mt-3 max-w-[600px] text-grafit-soft">Нетворкинги, лекции и встречи выпусков. Запишитесь заранее – за участие начисляются баллы клуба.</p>
@@ -119,7 +119,7 @@ export default function Events() {
           <div className="two-col mt-8 grid grid-cols-2 gap-5">{upcoming.map((e) => card(e, false))}</div>
         )}
         {!events.isLoading && upcoming.length === 0 && (
-          <div className="mt-8 rounded-[18px] border border-[#E5E7EB] bg-white p-10 text-center">
+          <div className="mt-8 rounded-[18px] border border-[#7C828C] bg-white p-10 text-center">
             <p className="text-grafit-soft">Ближайших событий пока нет – загляните позже или следите за новостями.</p>
           </div>
         )}

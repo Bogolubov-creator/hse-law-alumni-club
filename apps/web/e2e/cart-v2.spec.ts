@@ -114,7 +114,7 @@ test.describe("Корзина v2", () => {
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Оформить заявку" }).click();
 
-    await expect(page.getByRole("heading", { name: "Учебный офис получил заявку" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Заявка в работе у учебного офиса" })).toBeVisible();
     await expect(page.getByText("ORD-000999")).toBeVisible();
 
     const body = sent as unknown as Record<string, unknown>;

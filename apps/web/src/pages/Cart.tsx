@@ -51,7 +51,7 @@ export default function Cart() {
   if (result) {
     return (
       <SiteShell>
-        <main className="mx-auto max-w-[620px] px-7 py-16 text-center">
+        <main id="main" className="mx-auto max-w-[620px] px-7 py-16 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(31,138,91,.14)] text-3xl text-[#1F8A5B]">✓</div>
           <h1 className="mt-5 font-display text-3xl font-bold">Заявка отправлена</h1>
           <p className="mt-3 text-grafit-soft">Номер вашей заявки – <b className="font-mono text-grafit">{result.number}</b>. Менеджер учебного офиса свяжется с вами по указанным контактам, чтобы подтвердить детали.{result.payment_url ? " Оплатить заявку можно онлайн – кнопка ниже." : " Оплата – через учебный офис после подтверждения."}</p>
@@ -60,7 +60,7 @@ export default function Cart() {
               Заявка сохранена, но автоматическое уведомление офиса не прошло. Пожалуйста, продублируйте заявку в Telegram <a className="underline" href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer">@pravohse</a> – так офис точно увидит её.
             </p>
           )}
-          <div className="mx-auto mt-6 max-w-[360px] rounded-[16px] border border-[#E5E7EB] bg-white p-5 text-left font-mono text-[13px]">
+          <div className="mx-auto mt-6 max-w-[360px] rounded-[16px] border border-[#7C828C] bg-white p-5 text-left font-mono text-[13px]">
             <Row k="Сумма (справочно)" v={rub(result.subtotal)} />
             {result.subtotal > result.total_estimate && <Row k="Скидка выпускника (ДПО)" v={`−${result.member_discount}%`} />}
             <Row k="Итого (оценочно)" v={rub(result.total_estimate)} bold />
@@ -81,17 +81,17 @@ export default function Cart() {
 
   return (
     <SiteShell>
-      <main className="mx-auto max-w-[1180px] px-7 py-12">
+      <main id="main" className="mx-auto max-w-[1180px] px-7 py-12">
         <h1 className="font-display text-4xl font-bold tracking-tight">Корзина</h1>
         {cart.isLoading && <p className="mt-8 font-mono text-sm text-grafit-soft">Загрузка…</p>}
         {cart.isError && (
-          <div className="mt-8 rounded-[18px] border border-[#E5E7EB] bg-white p-8 text-center">
+          <div className="mt-8 rounded-[18px] border border-[#7C828C] bg-white p-8 text-center">
             <p className="font-mono text-sm text-karmin">Не удалось загрузить корзину. Проверьте соединение и попробуйте снова.</p>
             <button onClick={() => cart.refetch()} className="foc mt-4 rounded-[12px] bg-ohra px-6 py-3 font-semibold text-kost">Повторить</button>
           </div>
         )}
         {!cart.isLoading && !cart.isError && items.length === 0 && (
-          <div className="mt-8 rounded-[18px] border border-[#E5E7EB] bg-white p-10 text-center">
+          <div className="mt-8 rounded-[18px] border border-[#7C828C] bg-white p-10 text-center">
             <h2 className="font-display text-2xl font-bold">Корзина пуста</h2>
             <p className="mt-2 text-grafit-soft">Выберите программу ДПО со скидкой выпускника или брендированную одежду клуба.</p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
@@ -106,7 +106,7 @@ export default function Cart() {
             {/* ITEMS */}
             <div className="flex flex-col gap-3">
               {items.map((it) => (
-                <div key={`${it.ref_id}-${it.variant_sku ?? ""}`} className="flex items-center gap-4 rounded-[16px] border border-[#E5E7EB] bg-white p-4">
+                <div key={`${it.ref_id}-${it.variant_sku ?? ""}`} className="flex items-center gap-4 rounded-[16px] border border-[#7C828C] bg-white p-4">
                   <span className={`rounded-full px-2.5 py-1 font-mono text-[10px] ${it.type === "dpo" ? "bg-[rgba(17,41,107,.1)] text-hse-blue" : "bg-[rgba(236,90,19,.14)] text-ohra-deep"}`}>{it.type === "dpo" ? "ДПО" : "Одежда"}</span>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold leading-tight">{it.title}</div>
@@ -128,7 +128,7 @@ export default function Cart() {
             </div>
 
             {/* SUMMARY + CHECKOUT */}
-            <form onSubmit={submit} className="h-fit rounded-[18px] border border-[#E5E7EB] bg-white p-6">
+            <form onSubmit={submit} className="h-fit rounded-[18px] border border-[#7C828C] bg-white p-6">
               <div className="space-y-1.5 font-mono text-[13px]">
                 <Row k="Подытог" v={rub(subtotal)} />
                 {discountAmount > 0 && <Row k={`Скидка выпускника (ДПО) −${discount}%`} v={`−${rub(discountAmount)}`} />}

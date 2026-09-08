@@ -93,7 +93,7 @@ test.describe("События v2", () => {
       status: 200, contentType: "application/json", body: JSON.stringify([EVENT]),
     }));
     await page.goto("/v2/events");
-    await page.getByRole("button", { name: /Подробнее: Встреча выпуска/ }).click();
+    await page.getByRole("button", { name: "Быстрый просмотр" }).click();
 
     // Заголовок есть и в строке афиши, и в модалке – смотрим именно модалку
     await expect(page.locator("#ev2-modal-title")).toHaveText("Встреча выпуска: нетворкинг");
@@ -176,9 +176,16 @@ test.describe("Подкасты v2", () => {
     }));
     await page.goto("/v2/podcasts");
 
+    let videoRequests = 0;
+    await page.route("https://rutube.ru/**", async route => { videoRequests++; await route.fulfill({ contentType: "text/html", body: "<p>Тестовый плеер</p>" }); });
     const frame = page.locator("iframe");
+    await expect(frame).toHaveCount(0);
+    expect(videoRequests).toBe(0);
+    await page.getByRole("button", { name: "Загрузить видео с RuTube" }).click();
     await expect(frame).toHaveAttribute("src", RUTUBE_SRC);
     await expect(frame).toHaveAttribute("title", /Видеовыпуск клуба/);
+    await expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
+    await expect.poll(() => videoRequests).toBe(1);
     // Видео вытесняет аудио: два плеера на один выпуск – это шум
     await expect(page.locator("audio")).toHaveCount(0);
   });

@@ -11,9 +11,10 @@ const queryClient = new QueryClient({
 });
 
 // PWA: сервис-воркер для установки на экран телефона (только в проде).
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
+const serviceWorker = navigator.serviceWorker;
+if (serviceWorker && import.meta.env.PROD) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => { /* не критично */ });
+    serviceWorker.register("/sw.js").catch(() => { /* не критично */ });
   });
 }
 

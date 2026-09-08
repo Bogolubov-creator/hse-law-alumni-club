@@ -9,6 +9,7 @@ import { lastOrderSeq } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
+import { withCartLock } from "../lib/checkout-store.js";
 import { audit } from "../lib/audit.js";
 
 const di = directus;
@@ -182,6 +183,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     if (alumni.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     if (subActive(alumni.podcast_sub_until)) return reply.code(400).send({ error: "Подписка уже активна" });
 
+    return withCartLock(`podcast:${alumni.id}`, async () => {
     // Незакрытая заявка на подписку уже есть – возвращаем её, а не плодим новые.
     // Без этого каждый повторный клик создавал заявку и дёргал офис уведомлением.
     // ВНИМАНИЕ про NULL: `_nin` транслируется в SQL `NOT IN`, а `NULL NOT IN (…)`
@@ -208,7 +210,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     }
 
     const contacts = alumni.contacts_json ?? {};
-    const year = new Date().getFullYear();
+    const year = Number(new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow", year: "numeric" }));
     const baseSeq = await lastOrderSeq(year);
     let number = "";
     let created = false;
@@ -221,6 +223,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
           subtotal: PODCAST_SUB_PRICE_KOP, member_discount: 0, total_estimate: PODCAST_SUB_PRICE_KOP,
           contact_fio: alumni.fio ?? "Выпускник", contact_phone: contacts.phone ?? "-", contact_email: contacts.email ?? "-",
           fulfillment: "pickup", consent_pdn: true, status: "new",
+          payment_status: paymentsEnabled() ? "pending" : null,
         }));
         created = true;
       } catch (e) {
@@ -251,6 +254,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     }
     audit("podcast.sub.request", { actor: `alumni:${alumni.id}`, subject: `order:${number}`, detail: { payment: !!payment_url }, req });
     return { number, payment_url };
+    });
   });
 }
 

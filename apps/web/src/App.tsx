@@ -1,3 +1,4 @@
+import { SupportDock } from "./components/SupportDock.js";
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { useIsMobile } from "./lib/use-mobile.js";
@@ -13,8 +14,11 @@ import { clearToken } from "./lib/cart.js";
 // для поисковика и первого визита; код витрин, юр. страниц и форм входа ей не нужен
 // и раньше ехал в стартовом бандле целиком.
 // Главная v2 – вариант «Реестр». Живёт рядом со старой, чтобы их сравнить.
+const SupportV2 = lazy(() => import("./pages/SupportV2.js"));
+const SupportConsent = lazy(() => import("./pages/SupportV2.js").then(m => ({ default: m.SupportConsent })));
 const HomeV2 = lazy(() => import("./pages/HomeV2.js"));
 const DpoV2 = lazy(() => import("./pages/DpoV2.js"));
+const ProductV2 = lazy(() => import("./pages/ProductV2.js"));
 const MerchV2 = lazy(() => import("./pages/MerchV2.js"));
 const ProgramV2 = lazy(() => import("./pages/ProgramV2.js"));
 const NewsV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsV2 })));
@@ -82,20 +86,26 @@ export default function App() {
   }, []);
   return (
     <>
+      {import.meta.env.VITE_LOCAL_REVIEW === "true" && <div className="club-local-notice">Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</div>}
       <VisionPanel />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         {mobileTakeover ? <MobileApp /> : (
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/support" element={<SupportV2 />} />
+          <Route path="/v2/support" element={<SupportV2 />} />
+          <Route path="/v2/support/consent" element={<SupportConsent />} />
           <Route path="/v2" element={<HomeV2 />} />
           <Route path="/v2/dpo" element={<DpoV2 />} />
           <Route path="/v2/dpo/:slug" element={<ProgramV2 />} />
           <Route path="/v2/merch" element={<MerchV2 />} />
+          <Route path="/v2/merch/:slug" element={<ProductV2 />} />
           <Route path="/v2/cart" element={<CartV2 />} />
           <Route path="/v2/news" element={<NewsV2 />} />
           <Route path="/v2/news/:slug" element={<NewsPostV2 />} />
           <Route path="/v2/events" element={<EventsV2 />} />
+          <Route path="/v2/events/:eventId" element={<EventsV2 />} />
           <Route path="/v2/podcasts" element={<PodcastsV2 />} />
           <Route path="/v2/join" element={<JoinV2 />} />
           <Route path="/v2/forgot" element={<ForgotV2 />} />
@@ -129,6 +139,7 @@ export default function App() {
         )}
       </Suspense>
       </ErrorBoundary>
+      <SupportDock />
       <CookieBanner />
       <InstallPrompt />
     </>

@@ -16,11 +16,15 @@
   --p-blue: #11296b;         /* синий Вышки, институциональный якорь */
 
   /* Законное расширение из дизайн-кита */
-  --p-ohra-deep: #c9450e;    /* охра для текста и hover: контраст на кости */
+  /* Охра для текста. #c9450e замерен как 4,40:1 на кости – это провал AA на
+     0,1 пункта, а ею набраны год записи и ссылки-действия. #c24009 даёт
+     4,74:1 на кости и 5,21:1 на белом при том же узнаваемом тоне. */
+  --p-ohra-deep: #c24009;    /* охра для текста и hover: контраст на кости */
   --p-karmin: #b5331b;       /* ошибка, отказ верификации */
   --p-blue-bright: #2e6fae;  /* ссылки и данные на тёмном */
   --p-steel: #2c6e80;        /* вторичный холодный, нейтральные статусы */
-  --p-brass: #c49a45;        /* статус, уровень, награда */
+  --p-brass: #c49a45;        /* статус, уровень, награда – как заливка */
+  --p-brass-deep: #856419;   /* латунь-текст на светлом: 4,98:1 на кости */
   --p-brass-light: #e3c272;  /* статус на тёмном */
   --p-green: #1f8a5b;        /* подтверждено, верифицирован – как заливка */
   /* Статусные цвета как текст: базовые тона проваливают AA на мелкой моно-подписи
@@ -30,12 +34,22 @@
   --p-karmin-light: #ff8a70; /* кармин-текст на тёмном: 7.73:1 на графите */
   --p-ink: #14181f;          /* графит: основной текст и тёмная поверхность */
   --p-ink-soft: #272c38;     /* вторичный текст */
-  --p-ink-mute: #6b7280;     /* третичный текст, подписи */
-  --p-paper: #fbf3e8;        /* кость: основной фон */
-  --p-paper-2: #f2e3cf;      /* вторичная поверхность */
+  /* Третичный текст. #6b7280 давал 4,39:1 на кости – провал AA на моно-подписи,
+     которой набран весь реестр. #5c6470 даёт 5,44:1 на кости и 5,98:1 на белом. */
+  --p-ink-mute: #5c6470;     /* третичный текст, подписи */
+  --p-paper: #ffffff;        /* белый: основной фон */
+  --p-paper-2: #f3f5f7;      /* вторичная поверхность */
   --p-line: #e5e7eb;         /* разделители */
+  /* Граница элемента управления – не то же, что разделитель. 1.4.11 требует
+     3:1 для контура, по которому поле или кнопку вообще опознают; #e5e7eb даёт
+     1,13:1 на кости. Разделителю реестра эта планка не нужна: он декоративный
+     и ничего не опознаёт, поэтому тон остаётся тихим. */
+  --p-line-control: #7c828c; /* 3,52:1 на кости, 3,87:1 на белом */
 
   /* ── Слой 2. Семантика ───────────────────────────────────────── */
+  --c-surface-warm: color-mix(in srgb, var(--p-ohra) 14%, var(--c-bg));
+  --c-surface-blue: color-mix(in srgb, var(--p-blue) 8%, var(--c-bg));
+  --c-surface-green: color-mix(in srgb, var(--p-steel) 10%, var(--c-bg));
   --c-bg: var(--p-paper);
   --c-bg-raised: #ffffff;
   --c-bg-sunken: var(--p-paper-2);
@@ -57,7 +71,10 @@
      тон как текст не проходит AA, а текстовый как заливка теряет узнаваемость. */
   --c-ok-text: var(--p-green-deep);
   --c-danger-text: var(--p-karmin);
+  /* Латунь той же природы: как текст базовый тон даёт 2,37:1 на кости. */
+  --c-status-text: var(--p-brass-deep);
   --c-line: var(--p-line);
+  --c-line-control: var(--p-line-control);
   --c-line-strong: rgb(20 24 31 / 0.14);
 
   /* Контраст: тёмный текст на охряной кнопке даёт 4.6:1 против 3.1:1 у светлого.
@@ -65,30 +82,43 @@
   --c-on-accent: var(--p-ink);
 
   /* ── Типографика ─────────────────────────────────────────────── */
-  /* Фирменные шрифты НИУ ВШЭ из брендбука университета. Моноширинного у ВШЭ
-     нет, поэтому данные реестра набираются системным моно – он есть везде и
-     не требует загрузки. */
-  --f-display: "HSE Sans", system-ui, sans-serif;
+  /* HSE Slab 400 для титулов, HSE Sans для текста и данных.
+     Табличные цифры решают выравнивание без моноширинного шрифта. */
+  --f-display: "HSE Slab", Georgia, serif;
+  --f-head: "HSE Sans", system-ui, sans-serif;
   --f-body: "HSE Sans", system-ui, sans-serif;
-  --f-data: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --f-data: "HSE Sans", system-ui, sans-serif;
 
-  --t-caption: 12px;
+  /* Основные подписи – 14px, служебные значения – не меньше 12px. */
+  --t-micro: 12px;
+  --t-caption: 14px;
   --t-small: 14px;
   --t-body: 16px;
-  --t-lead: 20px;
-  --t-h3: clamp(22px, 2.2vw, 28px);
-  --t-h2: clamp(28px, 4vw, 40px);
-  --t-h1: clamp(34px, 7vw, 64px);
+  /* Лид тянется: 20px на широком экране – это голос вступления, но на 375px
+     он даёт пять строк и выталкивает кнопку под баннер cookie. */
+  --t-lead: clamp(17px, 1.6vw, 20px);
+  --t-h3: clamp(21px, 1.8vw, 25px);
+  --t-h2: clamp(26px, 3vw, 32px);
+  /* Титул главной и титул витрины – разные объекты. Один размер на все
+     страницы уравнивал главную с корзиной и съедал первый экран каталога. */
+  --t-h1: clamp(32px, 6vw, 60px);
+  --t-h1-page: clamp(27px, 3.2vw, 40px);
 
   --tr-display: -0.01em;
-  --tr-data: 0.16em;
+  --tr-data: 0em;
 
   /* ── Форма, ритм, движение ───────────────────────────────────── */
   --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 18px;
+  --r-md: 8px;
+  --r-lg: 12px;
   --space: 4px;
   --container: 1180px;
+
+  /* Вертикальный ритм страницы. До этого отступы стояли числами по месту, и
+     шапка витрины уводила первую запись каталога на 693px из 900. */
+  --rh-head-top: clamp(26px, 3.4vw, 44px);
+  --rh-head-bottom: clamp(16px, 1.8vw, 24px);
+  --rh-section: clamp(40px, 5vw, 72px);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --dur-fast: 140ms;
@@ -116,9 +146,11 @@
     --c-anchor: #6f9bd8;
     --c-link: var(--p-blue-bright);
     --c-status: var(--p-brass-light);
+    --c-status-text: var(--p-brass-light);
     --c-ok-text: var(--p-green-light);
     --c-danger-text: var(--p-karmin-light);
     --c-line: rgb(251 243 232 / 0.14);
+    --c-line-control: rgb(251 243 232 / 0.46);
     --c-line-strong: rgb(251 243 232 / 0.28);
   }
 }
@@ -135,19 +167,18 @@
   --c-accent-text: #ff7a3d;
   --c-anchor: #6f9bd8;
   --c-status: var(--p-brass-light);
+  --c-status-text: var(--p-brass-light);
   --c-ok-text: var(--p-green-light);
   --c-danger-text: var(--p-karmin-light);
   --c-line: rgb(251 243 232 / 0.14);
+  --c-line-control: rgb(251 243 232 / 0.46);
   --c-line-strong: rgb(251 243 232 / 0.28);
 }
 
-/* ── Сигнатура: «поле бланка» ──────────────────────────────────────
-   Тонкая линия с моноширинной подписью под ней – типографика официального
-   бланка. Появляется только там, где под ней есть данные из реестра;
-   это не разделитель и не украшение (DESIGN-PLAN §3). */
+/* Значение с пояснением. Историческое имя компонента сохранено для совместимости. */
 .blank-field {
   display: block;
-  border-bottom: 1.5px solid var(--c-line-strong);
+  border-bottom: none;
   padding-bottom: 6px;
 }
 .blank-field__label {
@@ -156,31 +187,17 @@
   font-family: var(--f-data);
   font-size: var(--t-caption);
   letter-spacing: var(--tr-data);
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--c-text-3);
   font-variant-numeric: tabular-nums;
 }
 
-/* Данные из реестра всегда моноширинные и не прыгают при обновлении. */
+/* Табличные цифры сохраняют ширину при обновлении значений. */
 .data {
   font-family: var(--f-data);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--tr-data);
 }
 
-/* Сборка героя: единственный оркестрованный момент на странице (DESIGN-PLAN §4).
-   Анимируются только transform и opacity. */
-@media (prefers-reduced-motion: no-preference) {
-  .v2-enter {
-    opacity: 0;
-    transform: translateY(14px);
-    animation: v2-rise 300ms var(--ease-out) forwards;
-    animation-delay: var(--enter-delay, 0ms);
-  }
-}
-@keyframes v2-rise {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
+/* Порядок слоёв: оболочка < панели < согласие < меню < модалка < уведомления. */
+:root { --layer-modal: 500; --layer-toast: 600; }

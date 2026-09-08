@@ -1,5 +1,6 @@
+import { CabinetClubOverview } from "../components/CabinetClubOverview.js";
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU, type Classmate, type LkEvent } from "@club/shared";
 import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Me, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../lib/queries.js";
@@ -49,9 +50,9 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
   };
 
   return (
-    <main style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+    <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <VisionCorner />
-      <form onSubmit={submit} style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32 }}>
+      <form onSubmit={submit} style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
         <Link to="/v2" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
         <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 20 }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "14px 0 0" }}>Вход для выпускников</h1>
@@ -72,7 +73,7 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
           {busy ? "Входим…" : "Войти в кабинет"}
         </button>
 
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "var(--t-small)" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "var(--t-small)" }}>
           <Link to="/v2/join" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
           <Link to="/v2/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
         </div>
@@ -85,14 +86,14 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
 
 function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => void }) {
   return (
-    <main style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <div style={{ ...label, color: "var(--c-status)" }}>заявка принята</div>
+    <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
+      <div style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
+        <div style={{ ...label, color: "var(--c-status-text)" }}>заявка принята</div>
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "12px 0 0" }}>Ожидает верификации</h1>
         <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
           {alumni.fio ?? "Выпускник"}, учебный офис сверяет ваш выпуск с реестром факультета. Кабинет откроется после подтверждения.
         </p>
-        <button onClick={onBack} className="foc" style={{ width: "100%", marginTop: 22, padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад</button>
+        <button onClick={onBack} className="foc" style={{ width: "100%", marginTop: 22, padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад</button>
       </div>
       <MobileTabs />
     </main>
@@ -135,7 +136,7 @@ function Identity({ me }: { me: Me }) {
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--c-line)" }}>
           <div style={label}>код приглашения</div>
           <div style={{ ...mono, fontSize: 17, fontWeight: 500, marginTop: 6, letterSpacing: "0.08em", overflowWrap: "anywhere" }}>{a.referral_code}</div>
-          <div style={{ ...mono, fontSize: 11, color: "var(--c-text-3)", marginTop: 8 }}>
+          <div style={{ ...mono, fontSize: "var(--t-micro)", color: "var(--c-text-3)", marginTop: 8 }}>
             приведено: {a.referrals_verified ?? 0} · ждут проверки: {a.referrals_pending ?? 0}
           </div>
         </div>
@@ -147,6 +148,7 @@ function Identity({ me }: { me: Me }) {
 /* ── Разделы ──────────────────────────────────────────────────────── */
 
 function EventsFeed({ token }: { token: string }) {
+  const [showAll, setShowAll] = useState(false);
   const events = useLkEvents(token);
   const addFriend = useAddFriend(token);
   const removeFriend = useRemoveFriend(token);
@@ -154,8 +156,8 @@ function EventsFeed({ token }: { token: string }) {
   if (!list.length) return null;
 
   return (
-    <Section title="Требует внимания">
-      {list.map((e: LkEvent, i) => {
+    <Section title="Уведомления">
+      {(showAll ? list : list.slice(0, 3)).map((e: LkEvent, i) => {
         if (e.kind === "friend_request") {
           return (
             <div key={`fr-${e.from_id}-${i}`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -178,55 +180,66 @@ function EventsFeed({ token }: { token: string }) {
           <div key={`ev-${i}`} style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{line}</div>
         );
       })}
+      {list.length > 3 && <button className="foc" style={{ ...actionGhost, marginTop: 14 }} onClick={() => setShowAll(v => !v)}>{showAll ? "Свернуть уведомления" : `Все уведомления (${list.length})`}</button>}
     </Section>
   );
 }
 
-function Orders({ token }: { token: string }) {
+function Orders({ token, compact = false }: { token: string; compact?: boolean }) {
   const orders = useMyOrders(token);
   const list = orders.data ?? [];
   return (
     <Section title="Мои заявки" note={list.length ? `всего ${list.length}` : undefined}>
       {orders.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
-      {!orders.isLoading && list.length === 0 && (
+      {orders.isError && <p role="alert">Не удалось загрузить заявки. <button onClick={() => orders.refetch()}>Повторить</button></p>}
+      {!orders.isLoading && !orders.isError && list.length === 0 && (
         <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
           Заявок пока нет. <Link to="/v2/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Посмотреть программы ДПО →</Link>
         </p>
       )}
-      {list.map((o: MyOrder) => (
-        <div key={o.number} className="lkv2-order" style={{ display: "grid", gridTemplateColumns: "150px 1fr auto", gap: 16, alignItems: "center", padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
-          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)" }}>{o.number}</span>
-          <span style={{ fontSize: "var(--t-body)" }}>{ORDER_STATUS_RU[o.status] ?? o.status}</span>
-          <span style={{ ...mono, fontSize: 15, fontWeight: 500 }}>{rub(o.total_estimate)}</span>
-        </div>
+      {(compact ? list.slice(0, 3) : list).map((o: MyOrder) => (
+        <details key={o.number} style={{ padding: "16px 0", borderTop: "1px solid var(--c-line)", overflowWrap: "anywhere" }}>
+          <summary className="foc" style={{ cursor: "pointer", padding: "8px 0", lineHeight: 1.6 }}><strong>{o.number}</strong> · {ORDER_STATUS_RU[o.status] ?? o.status} · {rub(o.total_estimate)}</summary>
+          <p>Создана: {new Date(o.created_at).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} (Москва)</p>
+          {!!o.items_json?.length && <ul>{o.items_json.map((item, i) => <li key={i} style={{ marginBlock: 12 }}>{item.title}{item.variant_sku && ` · ${item.variant_sku}`} · {item.qty} шт. × {rub(item.price)}</li>)}</ul>}
+          <p>До скидки: {rub(o.subtotal)}. Скидка на ДПО: {o.member_discount}%.</p>
+          <p>Получение: {o.fulfillment === "delivery" ? "Доставка" : "Самовывоз"}. {o.payment_status === "succeeded" ? "Оплата подтверждена" : "Оплата не подтверждена"}.</p>
+        </details>
       ))}
+      {compact && list.length > 3 && <Link to="/v2/lk?section=orders" className="foc" style={{ display: "inline-block", marginTop: 18, color: "var(--c-text)", textUnderlineOffset: 4 }}>Все заявки ({list.length})</Link>}
     </Section>
   );
 }
 
 function Achievements({ me }: { me: Me }) {
-  const earned = me.achievements.filter((a) => a.earned);
-  const inProgress = me.achievements.filter((a) => !a.earned).slice(0, 4);
+  const [view, setView] = useState<"all" | "earned">("all");
+  const earned = me.achievements.filter(a => a.earned);
+  const list = view === "earned" ? earned : me.achievements;
   if (!me.achievements.length) return null;
-
-  return (
-    <Section title="Достижения" note={`получено ${earned.length} из ${me.achievements.length}`}>
-      {earned.map((a) => (
-        <div key={a.key} style={{ display: "grid", gridTemplateColumns: "26px 1fr auto", gap: 14, alignItems: "center", padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
-          <span aria-hidden style={{ fontSize: 17 }}>{a.icon}</span>
-          <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{a.title}</span>
-          <span style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-ok-text)", textTransform: "uppercase" }}>получено</span>
-        </div>
-      ))}
-      {inProgress.map((a) => (
-        <div key={a.key} style={{ display: "grid", gridTemplateColumns: "26px 1fr auto", gap: 14, alignItems: "center", padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
-          <span aria-hidden style={{ fontSize: 17, filter: "grayscale(1)", opacity: 0.6 }}>{a.icon}</span>
-          <span style={{ fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{a.title}</span>
-          <span style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{a.current} / {a.target}</span>
-        </div>
-      ))}
-    </Section>
-  );
+  return <Section title="Достижения" note={`получено ${earned.length} из ${me.achievements.length}`}>
+    <div className="club-awards-intro">
+      <div><h3>Ваша коллекция клуба</h3><p>Встречи, учёба и участие в жизни сообщества становятся частью вашей истории.</p></div>
+      <div className="club-awards-total"><strong>{earned.length}<span> / {me.achievements.length}</span></strong><span>достижений получено</span></div>
+    </div>
+    <div className="club-awards-switch" role="group" aria-label="Показать достижения">
+      <button className="foc" aria-pressed={view === "all"} onClick={() => setView("all")}>Все достижения ({me.achievements.length})</button>
+      <button className="foc" aria-pressed={view === "earned"} onClick={() => setView("earned")}>Полученные ({earned.length})</button>
+    </div>
+    <p className="club-awards-hint">{view === "all" ? "Общий каталог для всех участников. Нажмите на знак, чтобы узнать условия." : "Здесь собраны ваши полученные достижения."}</p>
+    {list.length === 0 && <div className="club-awards-empty"><h3>Коллекция ещё впереди</h3><p>Посмотрите общий каталог и выберите, с чего начнёте.</p><button className="foc" onClick={() => setView("all")}>Посмотреть все достижения</button></div>}
+    <div className="club-achievement-list">
+      {list.map(a => <details key={a.key} data-achievement={a.key} className={`club-award ${a.earned ? "is-earned" : ""}`}>
+        <summary className="foc">
+          <span className="club-award-medal" aria-hidden="true"><span>{a.icon}</span></span>
+          <h3>{a.title}</h3>
+          <span className="club-award-status">{a.earned ? "получено" : `${a.current} / ${a.target}`}</span>
+          <progress value={a.current} max={Math.max(1, a.target)} aria-label={`Прогресс: ${a.title}`} />
+          <span className="club-award-disclosure">Условия <span aria-hidden="true">+</span></span>
+        </summary>
+        <div className="club-award-description"><p>{a.description}</p><span>{a.kind}: {a.current} / {a.target}</span></div>
+      </details>)}
+    </div>
+  </Section>;
 }
 
 const FRIEND_LABEL: Record<Classmate["friend_status"], string> = {
@@ -257,7 +270,7 @@ function Community({ token }: { token: string }) {
               : <Initial fio={c.fio} size={36} radius="var(--r-sm)" />}
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: "var(--t-body)", fontWeight: 500, overflowWrap: "anywhere" }}>{c.fio ?? "Выпускник"}</div>
-              <div style={{ ...label, fontSize: 10, marginTop: 3 }}>
+              <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 3 }}>
                 {[c.cohort ? `выпуск ${c.cohort}` : null, c.level_title].filter(Boolean).join(" · ")}
               </div>
             </div>
@@ -292,6 +305,8 @@ function Community({ token }: { token: string }) {
 /* ── Каркас ───────────────────────────────────────────────────────── */
 
 function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
+  const [sectionParams, setSectionParams] = useSearchParams();
+  const section = sectionParams.get("section") ?? "overview";
   const me = useMe(token);
   const expired = me.isError && isAuthError(me.error);
 
@@ -314,15 +329,18 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
       )}
 
       {me.data && (
-        <div className="lkv2-grid" style={{ display: "grid", gridTemplateColumns: "330px 1fr", gap: 28, alignItems: "start" }}>
+        <div className="lkv2-grid" style={{ display: "grid", gridTemplateColumns: "300px minmax(0, 1fr)", gap: 28, alignItems: "start" }}>
           <div className="lkv2-aside" style={{ position: "sticky", top: 88 }}>
-            <Identity me={me.data} />
+            <div className="club-identity-desktop"><Identity me={me.data} /></div><details className="club-identity-mobile"><summary>{me.data.alumni.fio}<span>Статус, баллы и приглашение</span></summary><Identity me={me.data} /></details>
           </div>
           <div>
-            <EventsFeed token={token} />
-            <Orders token={token} />
-            <Achievements me={me.data} />
-            <Community token={token} />
+            <nav aria-label="Разделы кабинета" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+              {[["overview", "Обзор"], ["orders", "Мои заявки"], ["community", "Сообщество"], ["achievements", "Достижения"]].map(([key, title]) => <button key={key} className="foc" aria-pressed={section === key} style={section === key ? action : actionGhost} onClick={() => setSectionParams({ section: key! })}>{title}</button>)}
+            </nav>
+            {section === "overview" && <><CabinetClubOverview me={me.data} token={token} /><EventsFeed token={token} /></>}
+            {(section === "overview" || section === "orders") && <Orders token={token} compact={section === "overview"} />}
+            {section === "achievements" && <Achievements me={me.data} />}
+            {section === "community" && <Community token={token} />}
           </div>
         </div>
       )}

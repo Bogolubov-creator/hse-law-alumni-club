@@ -19,7 +19,9 @@ const RATES = [1, 1.25, 1.5, 2] as const;
 export function EpisodePlayer({ id, src, v2 = false }: { id: string; src: string; v2?: boolean }) {
   const ref = useRef<HTMLAudioElement>(null);
   const lastSave = useRef(0);
+  const metadataReady = useRef(false);
   const refreshing = useRef(false);
+  const autoRetried = useRef(false);
   const [liveSrc, setLiveSrc] = useState(src);
   const [stale, setStale] = useState<string | null>(null);
   const [rate, setRate] = useState(1);
@@ -57,10 +59,11 @@ export function EpisodePlayer({ id, src, v2 = false }: { id: string; src: string
     const saved = Number(localStorage.getItem(posKey) || 0);
     // Не восстанавливаем, если дослушано почти до конца – начинаем заново.
     if (el && saved > 5 && saved < (el.duration || Infinity) - 5) el.currentTime = saved;
+    metadataReady.current = true;
   };
   const savePos = () => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || !metadataReady.current || el.readyState < 1) return;
     const now = Date.now();
     if (now - lastSave.current < 5000) return; // пишем не чаще раза в 5 секунд
     lastSave.current = now;
@@ -81,22 +84,26 @@ export function EpisodePlayer({ id, src, v2 = false }: { id: string; src: string
           preload="none"
           src={liveSrc}
           className="min-w-0 flex-1"
+          onEmptied={() => { metadataReady.current = false; }}
           onLoadedMetadata={restore}
           onTimeUpdate={savePos}
           onPause={() => { lastSave.current = 0; savePos(); }}
-          onError={() => void refreshSrc()}
+          onError={() => {
+            if (autoRetried.current) setStale("Не удалось загрузить аудио. Проверьте соединение и повторите.");
+            else { autoRetried.current = true; void refreshSrc(); }
+          }}
         />
         <button
           onClick={cycleRate}
           title="Скорость воспроизведения"
           aria-label={`Скорость воспроизведения ×${rate}`}
-          className={v2 ? "foc" : "foc flex-none rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 font-mono text-[12px] font-semibold"}
-          style={v2 ? { flex: "none", borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text-2)", padding: "8px 12px", fontFamily: "var(--f-data)", fontSize: 12, fontWeight: 600, cursor: "pointer" } : undefined}
+          className={v2 ? "foc" : "foc flex-none rounded-[10px] border border-[#7C828C] bg-white px-3 py-2 font-mono text-[12px] font-semibold"}
+          style={v2 ? { flex: "none", borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", padding: "8px 12px", fontFamily: "var(--f-data)", fontSize: 12, fontWeight: 600, cursor: "pointer" } : undefined}
         >
           ×{rate}
         </button>
       </div>
-      {stale && <p role="alert" className={v2 ? undefined : "font-mono text-[11px] text-karmin"} style={v2 ? { fontFamily: "var(--f-data)", fontSize: 11, color: "var(--c-danger-text)", margin: 0 } : undefined}>{stale}</p>}
+      {stale && <div><p role="alert" className={v2 ? undefined : "font-mono text-[11px] text-karmin"} style={v2 ? { fontFamily: "var(--f-data)", fontSize: 11, color: "var(--c-danger-text)", margin: 0 } : undefined}>{stale}</p><button className="foc" onClick={() => { autoRetried.current = true; void refreshSrc(); }}>Повторить загрузку</button></div>}
     </div>
   );
 }

@@ -1,0 +1,13 @@
+import { useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { adminReq } from "../lib/admin.js";
+import { action, actionGhost, field } from "../styles/primitives.js";
+import { topics, type Ticket } from "../pages/SupportV2.js";
+function Reply({ ticket, refresh }: { ticket: Ticket; refresh: ()=>void }) {
+ const [message,setMessage]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
+ const save=async(status: "answered"|"closed")=>{setBusy(true);setError("");try{await adminReq("PATCH",`/admin/support/${ticket.id}`,{status,...(message.trim()?{message:message.trim()}:{})});setMessage("");refresh();}catch(e){setError((e as Error).message)}finally{setBusy(false)}};
+ return <details style={{padding:"20px 0",borderTop:"1px solid var(--c-line)"}}><summary className="foc" style={{cursor:"pointer",overflowWrap:"anywhere"}}>{topics[ticket.topic]} · {ticket.id.slice(0,8)} · {({open:"Ожидает ответа",answered:"Ответ отправлен",closed:"Закрыто"} as Record<string,string>)[ticket.status]}</summary>
+ {ticket.messages.map((m,i)=><article key={i} className="club-support-message"><strong>{m.author==="support"?"Поддержка":"Посетитель"}</strong><p style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{m.text}</p></article>)}
+ <form onSubmit={(e:FormEvent)=>{e.preventDefault();void save("answered")}}><label>Ответ посетителю<textarea style={field} minLength={5} maxLength={4000} required value={message} onChange={e=>setMessage(e.target.value)}/></label><div className="club-support-actions"><button disabled={busy} style={action}>Отправить ответ</button><button type="button" disabled={busy} style={actionGhost} onClick={()=>void save("closed")}>Закрыть обращение</button></div></form>{error&&<p role="alert">{error}</p>}</details>;
+}
+export default function SupportAdmin(){const [page,setPage]=useState(1);const q=useQuery({queryKey:["admin-support",page],queryFn:()=>adminReq<Ticket[]>("GET",`/admin/support?page=${page}`)});return <section><h2>Обращения в поддержку</h2><p>Ответы сохраняются в переписке на сайте. Email и сторонние мессенджеры не используются.</p>{q.isLoading&&<p>Загружаем…</p>}{q.isError&&<p role="alert">{q.error.message} <button onClick={()=>q.refetch()}>Повторить</button></p>}{q.data?.map(t=><Reply key={t.id} ticket={t} refresh={()=>void q.refetch()}/>)}{q.data?.length===0&&<p>Обращений нет</p>}<div className="club-support-actions"><button style={actionGhost} disabled={page===1} onClick={()=>setPage(p=>p-1)}>Назад</button><span>Страница {page}</span><button style={actionGhost} disabled={!q.data||q.data.length<30} onClick={()=>setPage(p=>p+1)}>Далее</button></div></section>}

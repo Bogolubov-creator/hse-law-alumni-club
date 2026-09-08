@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useHead } from "../lib/title.js";
 import { rub, type CartLine, type OrderResult } from "../lib/api.js";
 import { useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
 
 /**
@@ -21,12 +21,12 @@ import { Mark } from "../v2/Mark.js";
 
 const label = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "uppercase" as const, color: "var(--c-text-3)",
+  textTransform: "none" as const, color: "var(--c-text-3)",
 };
 
 const field = {
   width: "100%", marginTop: 7, padding: "12px 14px", borderRadius: "var(--r-md)",
-  border: "1px solid var(--c-line)", background: "var(--c-bg)", color: "var(--c-text)",
+  border: "1px solid var(--c-line-control)", background: "var(--c-bg)", color: "var(--c-text)",
   fontSize: 15, fontFamily: "inherit",
 };
 
@@ -85,12 +85,12 @@ function Empty({ title, children }: { title: string; children: ReactNode }) {
 function Submitted({ result }: { result: OrderResult }) {
   return (
     <V2Shell>
-      <main style={{ maxWidth: 620, margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: 620, margin: "0 auto", padding: "0 28px" }}>
         <div style={{ paddingTop: 64 }}>
           <Mark kind="scales" size={44} style={{ color: "var(--c-accent-text)" }} />
           <div style={{ ...label, color: "var(--c-ok-text)", marginTop: 20 }}>заявка принята</div>
-          <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: "12px 0 0" }}>
-            Учебный офис получил заявку
+          <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: "12px 0 0" }}>
+            Заявка в работе у учебного офиса
           </h1>
 
           {/* Номер – главные данные экрана, поэтому он крупный и моноширинный */}
@@ -100,8 +100,8 @@ function Submitted({ result }: { result: OrderResult }) {
           </div>
 
           <p style={{ margin: "20px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
-            Менеджер свяжется с вами по указанным контактам и подтвердит детали.
-            {result.payment_url ? " Оплатить можно сразу, кнопкой ниже." : " Оплата – через учебный офис после подтверждения."}
+            Учебный офис свяжется с вами по указанным контактам и подтвердит детали.
+            {result.payment_url && " Оплатить можно сразу, кнопкой ниже."}
           </p>
 
           {/* Уведомление офиса не прошло – это надо сказать, а не спрятать */}
@@ -191,11 +191,11 @@ export default function CartV2() {
 
   return (
     <V2Shell>
-      <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
           eyebrow="корзина · заявка"
           title="Заявка в учебный офис"
-          lead="Заявка не списывает деньги: менеджер подтвердит детали, а оплата пройдёт после подтверждения. Скидка выпускника применяется к программам ДПО автоматически."
+          lead="Учебный офис подтвердит состав и сумму заявки и пришлёт ссылку на оплату. Скидка выпускника подставляется к программам ДПО сама."
           count={items.length ? `позиций ${items.length} · на сумму ${rub(total)}` : undefined}
         />
 
@@ -211,7 +211,7 @@ export default function CartV2() {
         {!cart.isLoading && !cart.isError && items.length === 0 && (
           <Empty title="В корзине пока пусто">
             <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", maxWidth: 520, lineHeight: 1.55 }}>
-              Выберите программу ДПО – цена выпускника применится сама – или одежду клуба.
+              Выберите программу ДПО или одежду клуба. Цена выпускника подставится в заявку сама.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 20 }}>
               <Link to="/v2/dpo" className="foc" style={{ ...primary, textDecoration: "none", display: "inline-block" }}>Программы ДПО</Link>
@@ -233,20 +233,20 @@ export default function CartV2() {
 
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: "var(--t-body)", fontWeight: 500, lineHeight: 1.3 }}>{it.title}</div>
-                    {it.variant_sku && <div style={{ ...label, fontSize: 10, marginTop: 4 }}>{it.variant_sku}</div>}
+                    {it.variant_sku && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 4 }}>{it.variant_sku}</div>}
                   </div>
 
                   {it.type === "dpo" ? (
-                    <span style={{ ...label, fontSize: 10 }}>1 место</span>
+                    <span style={{ ...label, fontSize: "var(--t-micro)" }}>1 место</span>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <button aria-label={`Уменьшить количество: ${it.title}`} disabled={setQty.isPending}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })}
-                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>−</button>
+                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>−</button>
                       <span aria-live="polite" style={{ ...mono, minWidth: 24, textAlign: "center", fontSize: 15 }}>{it.qty}</span>
                       <button aria-label={`Увеличить количество: ${it.title}`} disabled={setQty.isPending || it.qty >= 99}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })}
-                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>+</button>
+                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>+</button>
                     </div>
                   )}
 
@@ -254,7 +254,7 @@ export default function CartV2() {
 
                   <button aria-label={`Убрать из корзины: ${it.title}`} disabled={setQty.isPending}
                     onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: 0 })}
-                    className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
+                    className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
                 </article>
               ))}
 
@@ -290,7 +290,7 @@ export default function CartV2() {
                       return (
                         <button type="button" key={f} onClick={() => set("fulfillment", f)} aria-pressed={on} className="foc"
                           style={{
-                            ...mono, flex: 1, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
+                            ...mono, flex: 1, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                             padding: "10px 8px", borderRadius: "var(--r-sm)", cursor: "pointer",
                             border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line)"}`,
                             background: on ? "var(--c-accent)" : "transparent",
@@ -325,14 +325,11 @@ export default function CartV2() {
                 style={{
                   ...primary, width: "100%", marginTop: 16,
                   ...(busy || !form.consent
-                    ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line)", cursor: busy ? "wait" : "not-allowed" }
+                    ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line-control)", cursor: busy ? "wait" : "not-allowed" }
                     : {}),
                 }}>
                 {busy ? "Отправляем…" : form.consent ? "Оформить заявку" : "Нужно согласие на обработку данных"}
               </button>
-              <p style={{ ...label, fontSize: 10, textTransform: "none", letterSpacing: 0, margin: "10px 0 0", lineHeight: 1.5 }}>
-                Деньги сейчас не списываются.
-              </p>
             </form>
           </div>
         )}

@@ -28,7 +28,7 @@ export function useCart() {
 
 export function useCartMutations() {
   const qc = useQueryClient();
-  const invalidate = (d: CartSummary) => qc.setQueryData(["cart"], d);
+  const invalidate = (d: CartSummary) => { localStorage.removeItem(`club_checkout:${cartSession()}`); qc.setQueryData(["cart"], d); };
   return {
     add: useMutation({ mutationFn: (v: { type: "dpo" | "merch"; ref_id: string; variant_sku?: string | null; qty?: number }) => cartFetch<CartSummary>("POST", v, cartSummarySchema), onSuccess: invalidate }),
     setQty: useMutation({ mutationFn: (v: { ref_id: string; variant_sku?: string | null; qty: number }) => cartFetch<CartSummary>("PATCH", v, cartSummarySchema), onSuccess: invalidate }),
@@ -73,11 +73,16 @@ export function logout(): void {
 }
 
 export async function submitOrder(body: unknown): Promise<import("./api.js").OrderResult> {
-  const headers: Record<string, string> = { accept: "application/json", "content-type": "application/json", "x-cart-session": cartSession() };
+  const keyName = `club_checkout:${cartSession()}`;
+  const key = localStorage.getItem(keyName) ?? crypto.randomUUID();
+  localStorage.setItem(keyName, key);
+  const headers: Record<string, string> = { accept: "application/json", "content-type": "application/json", "x-cart-session": cartSession(), "idempotency-key": key };
   const t = token();
   if (t) headers.authorization = `Bearer ${t}`;
   const res = await fetch("/api/orders", { method: "POST", headers, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as any)?.error || `API ${res.status}`);
-  return orderResultSchema.parse(data);
+  const result = orderResultSchema.parse(data);
+  localStorage.removeItem(keyName);
+  return result;
 }

@@ -1,3 +1,4 @@
+import { changeOrderStatus } from "../lib/checkout-store.js";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
@@ -217,7 +218,8 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
-    await di.request((updateItem as any)("orders", id, { status }));
+    const changed = await changeOrderStatus(id, status);
+    if (!changed) return { ok: true, status };
     audit("order.status", { actor: `admin:${ctx.userId}`, subject: `order:${id}`, detail: { status }, req });
     // Уведомления клиенту (письмо + пуш) – один запрос заказа на оба.
     const verb = ORDER_STATUS_VERB_RU[status] ?? status;
@@ -227,7 +229,7 @@ export async function adminRoutes(app: FastifyInstance) {
       if (!o) return;
       if (o.contact_email && o.contact_email !== "-") {
         await sendEmail(o.contact_email, `Заявка ${o.number}: ${verb}`,
-          `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${verb}.\nДетали – в личном кабинете клуба.\n\n– Клуб выпускников факультета права НИУ ВШЭ`);
+          `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${verb}.\nДетали – в личном кабинете клуба.\n\n– Клуб выпускников факультета права Вышки`);
       }
       if (o.alumni_id) pushToAlumni(o.alumni_id, { title: "Статус заявки", body: `Заявка ${o.number} ${verb}`, url: "/lk" });
     })().catch((e) => req.log.error({ err: e }, "order status notify failed"));
@@ -332,10 +334,10 @@ export async function adminRoutes(app: FastifyInstance) {
         if (!email) return;
         if (body.verification_status === "verified") {
           await sendEmail(email, "Кабинет выпускника активирован 🎓",
-            "Поздравляем! Учебный офис подтвердил ваш выпуск – личный кабинет клуба активирован.\n\nВас ждут: скидка выпускника на программы ДПО, сообщество однокурсников, подкасты и мерч.\nВойти: " + env.PUBLIC_URL + "/lk\n\n– Клуб выпускников факультета права НИУ ВШЭ");
+            "Поздравляем! Учебный офис подтвердил ваш выпуск – личный кабинет клуба активирован.\n\nВас ждут: скидка выпускника на программы ДПО, сообщество однокурсников, подкасты и мерч.\nВойти: " + env.PUBLIC_URL + "/lk\n\n– Клуб выпускников факультета права Вышки");
         } else {
           await sendEmail(email, "По вашей заявке на вступление",
-            "К сожалению, учебный офис не смог подтвердить данные вашей заявки. Если считаете это ошибкой – ответьте на письмо или свяжитесь с офисом.\n\n– Клуб выпускников факультета права НИУ ВШЭ");
+            "К сожалению, учебный офис не смог подтвердить данные вашей заявки. Если считаете это ошибкой – ответьте на письмо или свяжитесь с офисом.\n\n– Клуб выпускников факультета права Вышки");
         }
       })().catch((e) => req.log.error({ err: e }, "verification email failed"));
     }

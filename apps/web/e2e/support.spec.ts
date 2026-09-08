@@ -1,0 +1,26 @@
+import {test,expect} from '@playwright/test';
+import {readFileSync,mkdirSync} from 'node:fs';
+const vars=Object.fromEntries(readFileSync('/Users/macbook/alumni-staged-evidence/local.env','utf8').split('\n').filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
+test('поддержка: посетитель, ответ администратора, повторный вход и удаление',async({page,context,request},info)=>{
+ test.setTimeout(60000);const out='/Users/macbook/alumni-staged-evidence/support';mkdirSync(out,{recursive:true});
+ await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});
+ await page.goto('/v2');await page.getByRole('link',{name:'Обратиться в поддержку'}).click();
+ const outgoing:string[]=[];page.on('request',r=>{if(new URL(r.url()).origin!==new URL(page.url()).origin)outgoing.push(r.url())});
+ await expect(page.getByRole('button',{name:'Отправить обращение',exact:true})).toBeDisabled();
+ await page.getByLabel('Сообщение',{exact:true}).fill('Тестовый вопрос <img src=x onerror=alert(1)>');
+ await page.getByRole('checkbox').check();
+ await page.getByRole('button',{name:'Отправить обращение',exact:true}).click();
+ await expect(page.getByText('Ожидает ответа',{exact:false})).toBeVisible();
+ await page.getByText("Код доступа к обращению",{exact:true}).click();
+ const code=await page.getByRole('textbox',{name:'Ваш код доступа'}).inputValue();const [id,key]=code.split('.');expect(key.length).toBe(64);expect(page.url()).not.toContain(key);
+ await page.screenshot({path:`${out}/visitor-${info.project.name}.png`,fullPage:true});expect(await page.locator('img[src="x"]').count()).toBe(0);
+ const login=await request.post('/api/auth/admin-login',{data:{email:vars.ADMIN_EMAIL,password:vars.ADMIN_PASSWORD}});expect(login.ok()).toBeTruthy();const {token}=await login.json();
+ const admin=await context.newPage();await admin.goto('/admin');await admin.evaluate(t=>localStorage.setItem('club_admin_token',t),token);await admin.reload();await admin.locator('aside').getByRole('button',{name:'Поддержка',exact:true}).click();
+ const detail=admin.locator('details').filter({has:admin.locator('summary').filter({hasText:id.slice(0,8)})});await detail.locator('summary').click();await detail.getByLabel('Ответ посетителю').fill('Тестовый ответ сотрудника поддержки');
+ await Promise.all([admin.waitForResponse(r=>r.url().endsWith(`/admin/support/${id}`)&&r.request().method()==='PATCH'&&r.ok()),detail.getByRole('button',{name:'Отправить ответ'}).click()]);await admin.screenshot({path:`${out}/admin-${info.project.name}.png`,fullPage:true});
+ await page.reload();await page.getByText('Уже есть обращение',{exact:true}).click();await page.getByRole('button',{name:'Открыть обращение',exact:true}).click();await expect(page.getByText('Тестовый ответ сотрудника поддержки',{exact:true})).toBeVisible();
+ await page.screenshot({path:`${out}/answered-${info.project.name}.png`,fullPage:true});
+ expect((await request.get(`/api/support/${id}`,{headers:{'x-support-key':'0'.repeat(64)}})).status()).toBe(404);
+ await page.getByText('Отозвать согласие и удалить переписку',{exact:true}).click();await page.getByRole('button',{name:'Удалить обращение',exact:true}).click();await expect(page.locator('main').getByRole('status')).toHaveText('Обращение и переписка удалены');
+ expect((await request.get(`/api/support/${id}`,{headers:{'x-support-key':key}})).status()).toBe(404);expect(outgoing).toEqual([]);await admin.close();
+});

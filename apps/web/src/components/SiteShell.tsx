@@ -21,6 +21,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   return (
     <div className="min-h-screen bg-kost font-body text-grafit">
+      <a href="#main" className="skip">К содержанию страницы</a>
       <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-kost/85 backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-7 py-3.5">
           <Link to="/" className="foc flex items-center gap-3">
@@ -48,7 +49,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <Link to="/cart" aria-label="Корзина" className="foc relative rounded-[11px] bg-grafit px-3.5 py-2.5 font-semibold text-kost">
               🛒{count > 0 && <span className="absolute -right-1.5 -top-1.5 rounded-full bg-ohra px-1.5 font-mono text-[11px] text-kost">{count}</span>}
             </Link>
-            <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc rounded-[11px] border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-lg leading-none">
+            <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc rounded-[11px] border border-[#7C828C] bg-white px-3.5 py-2.5 text-lg leading-none">
               {menuOpen ? "✕" : "☰"}
             </button>
           </div>

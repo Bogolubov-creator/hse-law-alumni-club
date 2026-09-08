@@ -13,7 +13,7 @@ import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
  * подписке (3 999 ₽/год): без неё карточки видны, но вместо плеера – замок и CTA.
  */
 export default function Podcasts() {
-  useHead({ title: "Подкасты клуба", description: "Подкасты клуба выпускников факультета права НИУ ВШЭ: разговоры с выпускниками, преподавателями и практиками права. Пробный выпуск бесплатно." });
+  useHead({ title: "Подкасты клуба", description: "Подкасты клуба выпускников факультета права Вышки: разговоры с выпускниками, преподавателями и практиками права. Пробный выпуск бесплатно." });
   const t = token();
   const q = usePodcasts(t);
   const subscribe = useSubscribePodcasts(t);
@@ -25,11 +25,11 @@ export default function Podcasts() {
   useJsonLd(data?.items?.length ? {
     "@context": "https://schema.org",
     "@type": "PodcastSeries",
-    name: "Подкасты клуба выпускников факультета права НИУ ВШЭ",
+    name: "Подкасты клуба выпускников факультета права Вышки",
     description: "Разговоры с выпускниками, преподавателями и практиками права.",
     url: `${origin}/podcasts`,
     inLanguage: "ru-RU",
-    publisher: { "@type": "Organization", name: "Клуб выпускников факультета права НИУ ВШЭ", url: `${origin}/` },
+    publisher: { "@type": "Organization", name: "Клуб выпускников факультета права Вышки", url: `${origin}/` },
     hasPart: data.items.slice(0, 30).map((p) => ({
       "@type": "PodcastEpisode",
       name: p.title,
@@ -49,7 +49,7 @@ export default function Podcasts() {
 
   return (
     <SiteShell>
-      <main className="mx-auto max-w-[1180px] px-7 py-12">
+      <main id="main" className="mx-auto max-w-[1180px] px-7 py-12">
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Витрина · Подкасты</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Подкасты клуба</h1>
         <p className="mt-3 max-w-[620px] text-grafit-soft">
@@ -92,7 +92,7 @@ export default function Podcasts() {
 
         <div className="two-col mt-8 grid grid-cols-2 gap-5">
           {data?.items.map((p: PodcastItem) => (
-            <div key={p.id} className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+            <div key={p.id} className="overflow-hidden rounded-[18px] border border-[#7C828C] bg-white">
               <div className="flex gap-5 p-5">
                 {p.cover
                   ? <img src={p.cover} alt={`Обложка подкаста «${p.title}»`} className="h-24 w-24 flex-none rounded-[14px] object-cover" />

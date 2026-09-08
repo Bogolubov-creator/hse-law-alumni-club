@@ -74,7 +74,7 @@ export default function Program() {
 
   return (
     <SiteShell>
-      <main className="mx-auto max-w-[1180px] px-7 py-12">
+      <main id="main" className="mx-auto max-w-[1180px] px-7 py-12">
         <div className="font-mono text-xs text-grafit-soft">
           <Link to="/dpo" className="foc text-ohra-deep">Витрина ДПО</Link>{p ? <> / {p.direction}</> : null}
         </div>
@@ -107,7 +107,7 @@ export default function Program() {
                     {modules.map((m, i) => {
                       const open = openM === i;
                       return (
-                        <div key={i} className="overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white">
+                        <div key={i} className="overflow-hidden rounded-[14px] border border-[#7C828C] bg-white">
                           <button onClick={() => setOpenM(open ? -1 : i)} aria-expanded={open} className="foc flex w-full items-center gap-3 px-4 py-3.5 text-left">
                             <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-kost-2 font-mono text-[12px] font-semibold text-hse-blue">{i + 1}</span>
                             <span className="flex-1 font-semibold leading-tight">{m.title}</span>
@@ -131,7 +131,7 @@ export default function Program() {
                   <h2 className="font-display text-lg font-semibold">Преподаватели</h2>
                   <div className="mt-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
                     {teachers.map((t, i) => (
-                      <div key={i} className="flex items-center gap-3 rounded-[14px] border border-[#E5E7EB] bg-white p-4">
+                      <div key={i} className="flex items-center gap-3 rounded-[14px] border border-[#7C828C] bg-white p-4">
                         <div className="flex h-12 w-12 flex-none items-center justify-center rounded-[12px] font-display text-lg font-extrabold text-kost" style={{ background: AVATAR_BG[i % AVATAR_BG.length] }}>{t.name.trim()[0]?.toUpperCase()}</div>
                         <div className="min-w-0">
                           <div className="font-semibold leading-tight">{t.name}</div>
@@ -146,7 +146,7 @@ export default function Program() {
 
             {/* RIGHT – sticky */}
             <aside className="h-fit max-md:order-first md:sticky md:top-[82px]">
-              <div className="overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white">
+              <div className="overflow-hidden rounded-[18px] border border-[#7C828C] bg-white">
                 <div className="flex h-2"><i className="flex-1 bg-ohra" /><i className="flex-1 bg-hse-blue" /><i className="flex-1 bg-latun" /><i className="flex-1 bg-stal" /><i className="flex-1 bg-karmin" /></div>
                 <div className="p-6">
                   {/* Скидка выпускника действует на все программы ДПО, включая ВШЭ. */}

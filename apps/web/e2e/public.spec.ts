@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 
 test("главная отдаётся и содержит бренд клуба", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveTitle(/Клуб выпускников факультета права НИУ ВШЭ/);
+  await expect(page).toHaveTitle(/Клуб выпускников факультета права Вышки/);
   await expect(page.getByText("Клуб выпускников").first()).toBeVisible();
 });
 

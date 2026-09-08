@@ -115,7 +115,7 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
         </div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
           <span style={label}>статус</span>
-          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: a.verification_status === "verified" ? "var(--c-ok-text)" : "var(--c-status)" }}>
+          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: a.verification_status === "verified" ? "var(--c-ok-text)" : "var(--c-status-text)" }}>
             {a.verification_status === "verified" ? "подтверждён" : "на проверке"}
           </span>
         </div>
@@ -180,7 +180,7 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
                 /* Лимит выбран – невыбранные гасим, но не прячем: иначе непонятно, куда делся список */
                 disabled={!on && full} className="foc"
                 style={{
-                  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
+                  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                   padding: "7px 12px", borderRadius: 999,
                   border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line)"}`,
                   background: on ? "var(--c-accent)" : "transparent",
@@ -249,7 +249,7 @@ function Rules({ me }: { me: Me }) {
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
               <span style={{ fontSize: "var(--t-body)", fontWeight: b.earned ? 500 : 400, color: b.earned ? "var(--c-text)" : "var(--c-text-2)" }}>{b.title}</span>
-              <span style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", textTransform: "uppercase", whiteSpace: "nowrap", color: b.earned ? "var(--c-ok-text)" : "var(--c-text-3)" }}>
+              <span style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", textTransform: "none", whiteSpace: "nowrap", color: b.earned ? "var(--c-ok-text)" : "var(--c-text-3)" }}>
                 {b.earned ? "получено" : `${b.current} / ${b.target}`}
               </span>
             </div>
