@@ -27,11 +27,23 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * нельзя: там же лежат аватары выпускников – это персональные данные. Поэтому
  * файл тянется сервисным токеном, как это уже сделано для аватаров.
  *
+ * UUID из podcast.audio_url не должен совпадать с alumni.avatar: иначе редактор
+ * мог бы опубликовать чужой аватар как «пробный выпуск» и обойти /avatars gate.
+ * Не-audio Content-Type отвергаем, а не переименовываем в audio/mpeg.
+ *
  * Range пробрасывается в обе стороны: без него плеер не умеет перематывать
  * и вынужден тянуть весь выпуск целиком, а это десятки мегабайт. Тело
  * передаётся потоком – класть часовой подкаст в память нельзя.
  */
 async function streamAudio(reply: any, fileId: string, range: string | undefined) {
+  // Не отдаём файлы, которые являются чьим-то аватаром (PII / обход /avatars).
+  const avatarHits = (await di.request((readItems as any)("alumni", {
+    filter: { avatar: { _eq: fileId } },
+    limit: 1,
+    fields: ["id"],
+  }))) as any[];
+  if (avatarHits.length) return reply.code(404).send({ error: "Выпуск не найден" });
+
   const res = await fetch(`${env.DIRECTUS_URL}/assets/${fileId}`, {
     headers: {
       authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}`,
@@ -40,11 +52,11 @@ async function streamAudio(reply: any, fileId: string, range: string | undefined
   });
   if (!res.ok || !res.body) return reply.code(404).send({ error: "Выпуск не найден" });
 
-  // Тип из белого списка: что бы ни оказалось в хранилище, наружу оно не уйдёт
-  // как text/html.
   const upstream = (res.headers.get("content-type") ?? "").split(";")[0]!.trim();
+  if (!upstream.startsWith("audio/")) return reply.code(404).send({ error: "Выпуск не найден" });
+
   reply.code(res.status === 206 ? 206 : 200);
-  reply.header("Content-Type", upstream.startsWith("audio/") ? upstream : "audio/mpeg");
+  reply.header("Content-Type", upstream);
   reply.header("Accept-Ranges", "bytes");
   reply.header("X-Content-Type-Options", "nosniff");
   // Подписанная ссылка живёт 2 часа, поэтому кэш только приватный и короткий.

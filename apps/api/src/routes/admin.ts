@@ -658,10 +658,24 @@ export async function adminRoutes(app: FastifyInstance) {
     return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "video_url", "duration", "is_free", "sort", "status"] }));
   });
 
+  /** UUID аудио не должен совпадать с alumni.avatar – иначе публичный прокси обходит /avatars. */
+  const rejectAvatarAsAudio = async (audioUrl: string | null | undefined, reply: any): Promise<boolean> => {
+    if (!audioUrl || !UUID_RE.test(audioUrl)) return false;
+    const hits = (await di.request((readItems as any)("alumni", {
+      filter: { avatar: { _eq: audioUrl } },
+      limit: 1,
+      fields: ["id"],
+    }))) as any[];
+    if (!hits.length) return false;
+    reply.code(400).send({ error: "Этот файл – аватар выпускника, его нельзя указать как аудио выпуска" });
+    return true;
+  };
+
   app.post("/admin/podcasts", async (req, reply) => {
     const ctx = requireAdmin(req, reply);
     if (!ctx) return;
     const b = podcastBody.parse(req.body);
+    if (await rejectAvatarAsAudio(b.audio_url, reply)) return;
     const all = (await di.request(readItems("podcasts", { fields: ["sort"], limit: -1 }))) as any[];
     const created = (await di.request((createItem as any)("podcasts", {
       ...b, description: b.description ?? null, cover: b.cover ?? null,
@@ -678,6 +692,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = podcastBody.partial().parse(req.body);
+    if (await rejectAvatarAsAudio(b.audio_url, reply)) return;
     await di.request((updateItem as any)("podcasts", id, b));
     // is_free снимает пейволл – правку обязательно видно в журнале.
     audit("podcast.patch", { actor: `admin:${ctx.userId}`, subject: `podcast:${id}`, detail: b, req });

@@ -165,6 +165,32 @@ describe("GET /podcasts/:id/audio – источники аудио", () => {
     vi.unstubAllGlobals();
   });
 
+  it("UUID аватара выпускника не отдаётся через аудио-прокси", async () => {
+    const app = await build();
+    db.alumni![0]!.avatar = FILE;
+    db.podcasts = [{ id: PID, title: "Утечка", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const r = await signed(app);
+    expect(r.statusCode).toBe(404);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("не-audio файл из хранилища не маскируется под audio/mpeg", async () => {
+    const app = await build();
+    db.podcasts = [{ id: PID, title: "Картинка", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), {
+      status: 200,
+      headers: { "content-type": "image/jpeg", "content-length": "3" },
+    })));
+
+    const r = await signed(app);
+    expect(r.statusCode).toBe(404);
+    vi.unstubAllGlobals();
+  });
+
   it("перемотка пробрасывается в хранилище и возвращает 206", async () => {
     const app = await build();
     db.podcasts = [{ id: PID, title: "Свой файл", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
