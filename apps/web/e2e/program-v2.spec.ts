@@ -151,18 +151,19 @@ test.describe("Программа v2", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/dpo\/test-program$/);
   });
 
-  test("на телефоне бланк с ценой уходит наверх, прокрутки вбок нет", async ({ page }) => {
+  // <768px отдаёт MobileApp; адаптив ProgramV2 (aside order:-1) – на 768..900.
+  test("на планшете бланк с ценой уходит над описанием, прокрутки вбок нет", async ({ page }) => {
     await mockProgram(page);
-    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setViewportSize({ width: 820, height: 900 });
     await page.goto("/dpo/test-program");
 
     await expect(page.getByText("90 000 ₽")).toBeVisible();
-    const [priceY, titleY] = await page.evaluate(() => {
+    const [priceY, bodyY] = await page.evaluate(() => {
       const price = [...document.querySelectorAll("aside *")].find((e) => e.textContent?.includes("90 000"));
-      const h1 = document.querySelector("h1");
-      return [price?.getBoundingClientRect().top ?? 0, h1?.getBoundingClientRect().top ?? 0];
+      const body = document.querySelector(".v2-prog-page > div");
+      return [price?.getBoundingClientRect().top ?? 0, body?.getBoundingClientRect().top ?? 0];
     });
-    expect(priceY).toBeLessThan(titleY);
+    expect(priceY).toBeLessThan(bodyY);
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
@@ -178,7 +179,8 @@ test('сбой API программы отличим от 404 и повтор в
   await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/program-api-error.png',fullPage:true});
   available=true;await page.getByRole('button',{name:'Повторить загрузку'}).click();
   await expect(page.getByRole('heading',{level:1,name:BASE.title})).toBeVisible();
-  await page.setViewportSize({width:390,height:844});
+  // Планшетный брейкпоинт ProgramV2: заголовок выше бланка, бланк выше модулей.
+  await page.setViewportSize({width:820,height:900});
   const heading=await page.locator('h1').boundingBox();const price=await page.locator('.v2-prog-aside').boundingBox();
   expect(heading!.y+heading!.height).toBeLessThanOrEqual(price!.y);
   await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/program-title-before-price.png',fullPage:true});
