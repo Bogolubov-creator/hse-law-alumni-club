@@ -66,7 +66,7 @@ export default function ProgramV2() {
     title: q.isError ? (notFound ? "Программа не найдена" : "Не удалось загрузить программу") : p?.title ?? "Программа ДПО",
     description: p?.description ?? (p ? `${p.title}: программа ДПО факультета права НИУ ВШЭ с ценой выпускника.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/dpo/${slug}`,
-    noindex: false,
+    noindex: q.isError || !p,
   });
 
   const addToCart = () =>

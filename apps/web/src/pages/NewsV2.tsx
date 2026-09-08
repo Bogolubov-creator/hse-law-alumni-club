@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useNewsList, useNewsPost, formatNewsDate } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
+import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 
 /**
@@ -102,6 +103,37 @@ export function NewsPostV2() {
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news/${slug}`,
     noindex: post.isError || !d,
   });
+  useJsonLd(
+    d && {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "NewsArticle",
+          headline: d.title,
+          description: d.excerpt ?? undefined,
+          articleBody: d.body ?? undefined,
+          image: `${siteOrigin()}/og-card.png`,
+          datePublished: d.published_at ?? undefined,
+          dateModified: d.published_at ?? undefined,
+          inLanguage: "ru-RU",
+          mainEntityOfPage: `${siteOrigin()}/news/${slug}`,
+          author: { "@type": "Organization", name: "Клуб выпускников факультета права Вышки" },
+          publisher: {
+            "@type": "Organization",
+            name: "Клуб выпускников факультета права Вышки",
+            logo: { "@type": "ImageObject", url: `${siteOrigin()}/icon-512.png` },
+          },
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Новости", item: `${siteOrigin()}/news` },
+            { "@type": "ListItem", position: 2, name: d.title, item: `${siteOrigin()}/news/${slug}` },
+          ],
+        },
+      ],
+    },
+  );
 
   const paragraphs = (d?.body ?? "").split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 
