@@ -633,14 +633,20 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ── Подкасты ──────────────────────────────────────────────────────
-  // Ссылки на медиа обязаны быть http(s): значение уходит в 302-редирект плеера
-  // и в img-src страницы, произвольная строка там не нужна.
-  const mediaUrl = z.string().url().max(500).refine((u) => /^https?:\/\//i.test(u), "Ссылка должна начинаться с http:// или https://");
+  // Обложка: только http(s). Аудио: http(s) для внешнего хоста либо UUID
+  // файла Directus (стрим через /api/podcasts/:id/audio).
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const httpUrl = z.string().url().max(500).refine((u) => /^https?:\/\//i.test(u), "Ссылка должна начинаться с http:// или https://");
+  const audioRef = z.string().max(500).refine(
+    (u) => /^https?:\/\//i.test(u) || UUID_RE.test(u),
+    "Укажите https://…/file.mp3 или UUID файла Directus",
+  );
   const podcastBody = z.object({
     title: z.string().min(3),
     description: z.string().nullish(),
-    cover: mediaUrl.nullish().or(z.literal("").transform(() => null)),
-    audio_url: mediaUrl.nullish().or(z.literal("").transform(() => null)),
+    cover: httpUrl.nullish().or(z.literal("").transform(() => null)),
+    audio_url: audioRef.nullish().or(z.literal("").transform(() => null)),
+    video_url: httpUrl.nullish().or(z.literal("").transform(() => null)),
     duration: z.string().nullish(),
     is_free: z.boolean().optional(), // пробный выпуск (без подписки)
     sort: z.number().int().optional(),
@@ -649,7 +655,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get("/admin/podcasts", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "duration", "is_free", "sort", "status"] }));
+    return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "video_url", "duration", "is_free", "sort", "status"] }));
   });
 
   app.post("/admin/podcasts", async (req, reply) => {
@@ -659,7 +665,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const all = (await di.request(readItems("podcasts", { fields: ["sort"], limit: -1 }))) as any[];
     const created = (await di.request((createItem as any)("podcasts", {
       ...b, description: b.description ?? null, cover: b.cover ?? null,
-      audio_url: b.audio_url ?? null, duration: b.duration ?? null,
+      audio_url: b.audio_url ?? null, video_url: b.video_url ?? null, duration: b.duration ?? null,
       sort: b.sort ?? Math.max(0, ...all.map((p) => p.sort || 0)) + 1,
     }))) as any;
     if (b.status === "published") pushToAll({ title: "Новый подкаст 🎧", body: b.title, url: "/podcasts" });

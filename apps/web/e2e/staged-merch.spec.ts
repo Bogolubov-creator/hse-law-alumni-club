@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 for (const width of [320, 360, 390, 768, 1024, 1280, 1440]) test(`merch detail and variant ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 });
-  await page.goto('/v2/merch');
+  await page.goto('/merch');
   await page.getByRole('button', { name: 'Принять', exact: true }).click();
   await expect(page.locator('.club-merch-item').first()).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
@@ -25,6 +25,6 @@ for (const width of [320, 360, 390, 768, 1024, 1280, 1440]) test(`merch detail a
   await page.screenshot({ path: `/Users/macbook/alumni-staged-evidence/screenshots/stage3-merch-dialog-${width}.png` });
   await Promise.all([page.waitForResponse(r => r.url().endsWith('/api/cart') && r.request().method() === 'POST' && r.ok()), add.click()]);
   await expect(dialog).not.toBeVisible();
-  await page.goto('/v2/cart');
+  await page.goto('/cart');
   await expect(page.getByText('Корзина пуста', { exact: true })).not.toBeVisible();
 });

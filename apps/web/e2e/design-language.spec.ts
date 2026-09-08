@@ -12,7 +12,7 @@ import { test, expect, type Page } from "@playwright/test";
 const NAME = "Клуб выпускников факультета права Вышки";
 
 /** Витрины и главная. Кабинет и админка живут по своим правилам плотности. */
-const PUBLIC_V2 = ["/v2", "/v2/dpo", "/v2/merch", "/v2/podcasts", "/v2/events", "/v2/news", "/v2/cart"];
+const PUBLIC_V2 = ["/", "/dpo", "/merch", "/podcasts", "/events", "/news", "/cart"];
 
 async function stubSw(page: Page) {
   await page.addInitScript(() => {
@@ -96,21 +96,21 @@ const minFontSize = (page: Page) => page.evaluate(() =>
 
 test.describe("Название клуба", () => {
   test("в заголовке вкладки стоит ровно зафиксированное имя", async ({ page }) => {
-    await page.goto("/v2");
+    await page.goto("/");
     await expect(page).toHaveTitle(new RegExp(NAME.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     // Ни «НИУ ВШЭ», ни «Вышки» в кавычках – три варианта имени уже были
     expect(await page.title()).not.toContain("НИУ ВШЭ");
   });
 
   test("локап в шапке читается как полное имя клуба", async ({ page }) => {
-    await page.goto("/v2");
+    await page.goto("/");
     const lockup = page.getByRole("link", { name: /Клуб выпускников/ }).first();
     await expect(lockup).toContainText("Клуб выпускников");
     await expect(lockup).toContainText(/факультета права Вышки/i);
   });
 
   test("подвал называет клуб так же, как шапка", async ({ page }) => {
-    await page.goto("/v2");
+    await page.goto("/");
     await expect(page.getByText(`© 2026 ${NAME}`)).toBeVisible();
   });
 });
@@ -128,7 +128,7 @@ test.describe("Контраст и нижняя граница шкалы", () =
 
   test("тёмная тема держит тот же порог", async ({ page }) => {
     await stubSw(page);
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     expect(await contrastFailures(page)).toEqual([]);
   });
@@ -136,15 +136,15 @@ test.describe("Контраст и нижняя граница шкалы", () =
 
 test.describe("Иерархия титулов", () => {
   test("титул главной крупнее титула витрины", async ({ page }) => {
-    await page.goto("/v2");
+    await page.goto("/");
     const home = await page.locator("h1").first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     const showcase = await page.locator("h1").first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
     expect(home).toBeGreaterThan(showcase);
   });
 
   test("титул набран фирменной плитой, а не тем же гротеском, что текст", async ({ page }) => {
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     const h1 = page.locator("h1").first();
     await expect(h1).toHaveCSS("font-family", /HSE Slab/);
     // Плита есть только в 400 и 900: промежуточные веса браузер синтезирует
@@ -156,7 +156,7 @@ test.describe("Иерархия титулов", () => {
 
 test.describe("Один акцент на действие", () => {
   test("уход на hse.ru не тяжелее внутреннего перехода", async ({ page }) => {
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     await page.waitForLoadState("networkidle");
     const external = page.getByRole("link", { name: /Запись на hse\.ru/ }).first();
     if (await external.count()) {

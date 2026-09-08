@@ -77,3 +77,7 @@ Web build прошёл, 18 браузерных проверок кабинет�
 Этапы 0–5: локальная полировка cutover – канон на `/` (не `/v2`), MobileApp takeover, SupportDock скрыт на mobile shell, PWA SW `club-v4`, охра/Фемида, URL-фильтры ДПО и афиши, скидка только на ДПО, achievements `view=`, club nav `aria-current`, оператор ОГРН 1257700005551, checkout save≠notify.
 
 Этап 7 (приёмка без живых интеграций): документ [acceptance-cutover-2026-09-08.md](./acceptance-cutover-2026-09-08.md). Typecheck shared/web/api – 0 ошибок. Unit: shared 68 pass; API 226 pass, 13 gated skip (PG). Playwright matrix не гонялся. Стенд :5173/:5274 не отвечал. Итог матрицы cutover: Pass (code/docs) 28, Pass (unit this run) 6, Deferred 12, Gap 0. SMTP, ЮKassa, Telegram, push, Safari/физическое устройство – deferred. Исторические доказательства по `/v2` остаются в acceptance.md.
+
+## Сборка 09.09.2026 · подкасты и готовность к публикации
+
+Стенд `alumni-staged-comparison` поднят (Directus :8255, API :3200, preview :5274). Загружены 7 выпусков «Правовая грамотность» (пробный – Данюков). E2E переведены на канон `/`. Admin принимает UUID аудио. Документ: [acceptance-cutover-2026-09-09.md](./acceptance-cutover-2026-09-09.md). Production не деплоился. SMTP/ЮKassa/Telegram/push – deferred (блокер live, не локальной подготовки).

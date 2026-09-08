@@ -100,7 +100,7 @@ export function NewsPostV2() {
     title: post.isError ? "Новость не найдена" : d?.title ?? "Новость",
     description: d?.excerpt ?? (d ? `${d.title} – новость клуба выпускников факультета права Вышки.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news/${slug}`,
-    noindex: false,
+    noindex: post.isError || !d,
   });
 
   const paragraphs = (d?.body ?? "").split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);

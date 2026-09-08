@@ -1072,7 +1072,7 @@ function PodcastForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
           <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
           <FormField label="Картинка (ссылка или /assets/…)" value={f.cover} onChange={(v) => set("cover", v)} ph="/assets/dpo-hero.jpg" />
           <div className="grid grid-cols-[1fr_120px] gap-3">
-            <FormField label="Аудио (ссылка на mp3)" value={f.audio_url} onChange={(v) => set("audio_url", v)} ph="https://…/episode.mp3" />
+            <FormField label="Аудио (https или UUID файла Directus)" value={f.audio_url} onChange={(v) => set("audio_url", v)} ph="https://…/episode.mp3 или UUID" />
             <FormField label="Длительность" value={f.duration} onChange={(v) => set("duration", v)} ph="42 мин" />
           </div>
           <div>

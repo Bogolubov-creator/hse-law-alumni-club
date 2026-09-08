@@ -4,7 +4,7 @@ const vars=Object.fromEntries(readFileSync('/Users/macbook/alumni-staged-evidenc
 test('поддержка: посетитель, ответ администратора, повторный вход и удаление',async({page,context,request},info)=>{
  test.setTimeout(60000);const out='/Users/macbook/alumni-staged-evidence/support';mkdirSync(out,{recursive:true});
  await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});
- await page.goto('/v2');await page.getByRole('link',{name:'Обратиться в поддержку'}).click();
+ await page.goto('/');await page.getByRole('link',{name:'Обратиться в поддержку'}).click();
  const outgoing:string[]=[];page.on('request',r=>{if(new URL(r.url()).origin!==new URL(page.url()).origin)outgoing.push(r.url())});
  await expect(page.getByRole('button',{name:'Отправить обращение',exact:true})).toBeDisabled();
  await page.getByLabel('Сообщение',{exact:true}).fill('Тестовый вопрос <img src=x onerror=alert(1)>');

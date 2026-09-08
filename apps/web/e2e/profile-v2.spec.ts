@@ -60,14 +60,14 @@ async function mockProfile(page: Page, over: Partial<Record<"me" | "ledger", unk
 
 test.describe("Профиль v2", () => {
   test("гостя уводит на вход, а не показывает пустую форму", async ({ page }) => {
-    await page.goto("/v2/lk/profile");
+    await page.goto("/lk/profile");
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
-    await expect(page).toHaveURL(/\/v2\/lk$/);
+    await expect(page).toHaveURL(/\/lk$/);
   });
 
   test("контакты, история баллов и правила достижений заполнены данными", async ({ page }) => {
     await mockProfile(page);
-    await page.goto("/v2/lk/profile");
+    await page.goto("/lk/profile");
 
     // Удостоверение
     await expect(page.getByText("Кондратьев Сергей Андреевич")).toBeVisible();
@@ -101,7 +101,7 @@ test.describe("Профиль v2", () => {
       sent = r.request().postDataJSON();
       return r.fulfill({ status: 200, contentType: "application/json", body: "{}" });
     });
-    await page.goto("/v2/lk/profile");
+    await page.goto("/lk/profile");
 
     await page.getByLabel("почта").fill("new@mail.ru");
     await page.getByRole("button", { name: "сохранить" }).click();
@@ -117,7 +117,7 @@ test.describe("Профиль v2", () => {
     const chosen = ["Корпоративное право", "M&A и сделки", "Гражданское право", "Публичное право",
       "Налоговое право", "Банкротство", "Разрешение споров", "Арбитраж и медиация"];
     await mockProfile(page, { me: { ...ME, alumni: { ...ME.alumni, interests: chosen } } });
-    await page.goto("/v2/lk/profile");
+    await page.goto("/lk/profile");
 
     await expect(page.getByText("выбрано 8 из 8")).toBeVisible();
     await expect(page.getByRole("button", { name: chosen[0] })).toBeEnabled();
@@ -126,7 +126,7 @@ test.describe("Профиль v2", () => {
 
   test("152-ФЗ: удаление требует точного слова подтверждения", async ({ page }) => {
     await mockProfile(page);
-    await page.goto("/v2/lk/profile");
+    await page.goto("/lk/profile");
 
     await expect(page.getByRole("button", { name: "скачать мои данные (json)" })).toBeVisible();
     await page.getByRole("button", { name: "удалить мой аккаунт" }).click();
@@ -145,7 +145,7 @@ test.describe("Профиль v2", () => {
   test("истёкшая сессия возвращает ко входу и стирает токен", async ({ page }) => {
     await stubSession(page);
     await page.route("**/api/me", (r) => r.fulfill({ status: 401, contentType: "application/json", body: "{}" }));
-    await page.goto("/v2/lk/profile");
+    await page.goto("/lk/profile");
 
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem("club_token"))).toBeNull();
@@ -154,7 +154,7 @@ test.describe("Профиль v2", () => {
   test("на телефоне профиль складывается в колонку без горизонтальной прокрутки", async ({ page }) => {
     await mockProfile(page);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2/lk/profile");
+    await page.goto("/lk/profile");
 
     await expect(page.getByLabel("фио")).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

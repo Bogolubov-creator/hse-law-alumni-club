@@ -627,10 +627,11 @@ await ensureSeed("events", "title", [
   { title: "Открытая лекция: карьера юриста в 2027", description: "Партнёры и инхаус-руководители о том, куда движется рынок юридических услуг.", starts_at: "2026-10-02T19:00:00+03:00", location: "Онлайн (ссылка придёт участникам)", format: "online", points: 60, status: "published" },
 ]);
 
-// Демо-подкасты (доступ по подписке)
+// Демо-подкасты (samplelib) – только draft. Реальные выпуски грузить скриптом
+// load-pravovaya-gramotnost (локальный Directus) или вручную по deploy-runbook.
 await ensureSeed("podcasts", "title", [
-  { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "published", is_free: true },
-  { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "published" },
+  { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "draft", is_free: true },
+  { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "draft" },
 ]);
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
 

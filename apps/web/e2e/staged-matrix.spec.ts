@@ -10,7 +10,7 @@ test('full template matrix',async({page,request},testInfo)=>{
  const adminLogin=await request.post('/api/auth/admin-login',{data:{email:vars.ADMIN_EMAIL,password:vars.ADMIN_PASSWORD}});expect(adminLogin.ok()).toBe(true);const admin=(await adminLogin.json()).token;
  await page.addInitScript(({user,admin})=>{localStorage.setItem('club_token',user);localStorage.setItem('club_admin_token',admin);localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')},{user,admin});
  const programs=await request.get('/api/programs').then(r=>r.json());const products=await request.get('/api/products').then(r=>r.json());const news=await request.get('/api/news').then(r=>r.json());const events=await request.get('/api/events').then(r=>r.json());
- const routes=['/v2','/v2/dpo',`/v2/dpo/${programs[0].slug}`,'/v2/merch',`/v2/merch/${products[0].slug}`,'/v2/news',`/v2/news/${news[0].slug}`,'/v2/events',`/v2/events/${events[0].id}`,'/v2/podcasts','/v2/cart','/v2/join','/v2/forgot','/v2/lk','/v2/lk?section=community','/v2/lk?section=achievements','/v2/lk/profile','/v2/privacy','/v2/confidential','/v2/requisites'];
+ const routes=['/','/dpo',`/dpo/${programs[0].slug}`,'/merch',`/merch/${products[0].slug}`,'/news',`/news/${news[0].slug}`,'/events',`/events/${events[0].id}`,'/podcasts','/cart','/join','/forgot','/lk','/lk?section=community','/lk?section=achievements','/lk/profile','/privacy','/confidential','/requisites'];
  const rows:unknown[]=[];const errors:string[]=[];const failedResponses:{url:string;status:number}[]=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('response',r=>{if(r.status()>=400)failedResponses.push({url:new URL(r.url()).pathname,status:r.status()})});

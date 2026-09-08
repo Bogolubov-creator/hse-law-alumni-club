@@ -11,7 +11,7 @@ test('local private media and actual admin order status',async({page,request},in
  const file=JSON.parse(readFileSync('/Users/macbook/alumni-staged-evidence/local-audio.json','utf8')).file;
  expect((await request.get(`http://localhost:8255/assets/${file}`)).status()).toBe(403);
  await page.addInitScript(({user,admin})=>{localStorage.setItem('club_token',user);localStorage.setItem('club_admin_token',admin);localStorage.setItem('club_cookie_consent','1')},{user:auth.token,admin:admin.token});
- await page.goto('/v2/podcasts');const audio=page.locator('audio').first();
+ await page.goto('/podcasts');const audio=page.locator('audio').first();
  await audio.evaluate((a:HTMLAudioElement)=>a.load());await expect.poll(()=>audio.evaluate((a:HTMLAudioElement)=>a.readyState)).toBeGreaterThanOrEqual(1);
  expect(await audio.evaluate((a:HTMLAudioElement)=>a.duration)).toBeCloseTo(15);
  await audio.evaluate((a:HTMLAudioElement)=>a.play());await expect.poll(()=>audio.evaluate((a:HTMLAudioElement)=>a.currentTime)).toBeGreaterThan(0);

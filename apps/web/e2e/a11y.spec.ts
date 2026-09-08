@@ -10,10 +10,10 @@ import { test, expect, type Page } from "@playwright/test";
  * работает она агрессивным переопределением всего подряд.
  */
 
-const V2 = ["/v2", "/v2/dpo", "/v2/cart", "/v2/join"];
+const V2 = ["/", "/dpo", "/cart", "/join"];
 /** Экраны входа обходятся без ссылки-пропуска: повторяющегося блока навигации
  *  там нет, пропускать нечего – требование 2.4.1 к ним не применяется. */
-const V2_WITH_NAV = ["/v2", "/v2/dpo", "/v2/cart"];
+const V2_WITH_NAV = ["/", "/dpo", "/cart"];
 
 async function stubSw(page: Page) {
   await page.addInitScript(() => {
@@ -81,7 +81,7 @@ test.describe("1.4.11 Контраст нетекстовых элементов
   for (const theme of ["light", "dark"] as const) {
     test(`контур полей и кнопок различим, тема ${theme}`, async ({ page }) => {
       await stubSw(page);
-      await page.goto("/v2/join");
+      await page.goto("/join");
       await page.locator("#main").waitFor();
       await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
       const bad = await page.evaluate(`(() => {
@@ -122,7 +122,7 @@ test.describe("Версия для слабовидящих", () => {
     test(`${s.name}: обводка фокуса различима`, async ({ page, browserName }) => {
       test.skip(browserName === "webkit", "Tab в WebKit требует Full Keyboard Access");
       await stubSw(page);
-      await page.goto("/v2/dpo");
+      await page.goto("/dpo");
       await enableVision(page);
       await page.evaluate((k) => document.documentElement.setAttribute("data-vis-scheme", k), s.key);
       // Только клавиатура: программный focus() не включает :focus-visible,
@@ -148,7 +148,7 @@ test.describe("Версия для слабовидящих", () => {
 
   test("все органы управления панели получают обводку фокуса", async ({ page }) => {
     await stubSw(page);
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     await enableVision(page);
     const without = await page.evaluate(() =>
       [...document.querySelectorAll<HTMLElement>(".vis-bar button, .vis-bar a, .vis-bar select")]
@@ -163,7 +163,7 @@ test.describe("Версия для слабовидящих", () => {
    */
   test("у диалога остаётся непрозрачный фон", async ({ page }) => {
     await stubSw(page);
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     await enableVision(page);
     const d = await page.evaluate(() => {
       const el = document.querySelector('[role="dialog"]');
@@ -205,7 +205,7 @@ test.describe("1.3.1 Структура страницы", () => {
 test.describe("Доступ к версии для слабовидящих", () => {
   test("режим включается и с телефона, и с десктопа", async ({ page }) => {
     await stubSw(page);
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     await enableVision(page);
     await expect(page.locator("html.vis")).toHaveCount(1);
     await expect(page.locator(".vis-bar")).toBeVisible();

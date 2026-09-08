@@ -39,20 +39,20 @@ async function mockProgram(page: Page, over: Record<string, unknown> = {}) {
 
 test.describe("Программа v2", () => {
   test("реальная программа каталога открывается из витрины", async ({ page }) => {
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     const row = page.locator("article.v2-prog")
       .filter({ has: page.getByRole("button", { name: "В корзину" }) }).first();
     const title = (await row.locator("h2").innerText()).trim();
     await row.getByRole("link", { name: "Подробнее" }).click();
 
-    await expect(page).toHaveURL(/\/v2\/dpo\/[a-z0-9-]+$/);
+    await expect(page).toHaveURL(/\/dpo\/[a-z0-9-]+$/);
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
     await expect(page.getByRole("link", { name: "витрина дпо" })).toBeVisible();
   });
 
   test("модули раскрываются и схлопываются, пункты без раскрытия не кликаются", async ({ page }) => {
     await mockProgram(page);
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
 
     await expect(page.getByText("3 модуля · 48 ак. ч.")).toBeVisible();
 
@@ -74,7 +74,7 @@ test.describe("Программа v2", () => {
 
   test("преподаватели показаны, роль необязательна", async ({ page }) => {
     await mockProgram(page);
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
     await expect(page.getByText("Орлова Мария Петровна")).toBeVisible();
     await expect(page.getByText("к.ю.н., доцент")).toBeVisible();
     await expect(page.getByText("Гаврилов Илья Олегович")).toBeVisible();
@@ -82,7 +82,7 @@ test.describe("Программа v2", () => {
 
   test("бланк программы показывает данные, по которым принимают решение", async ({ page }) => {
     await mockProgram(page);
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
     await expect(page.getByText("90 000 ₽")).toBeVisible();
     await expect(page.getByText("1 октября 2026")).toBeVisible();
     await expect(page.getByText("Удостоверение о повышении квалификации")).toBeVisible();
@@ -91,7 +91,7 @@ test.describe("Программа v2", () => {
 
   test("своя программа предлагает заявку, а не сторонний сайт", async ({ page }) => {
     await mockProgram(page);
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
 
     await expect(page.getByRole("link", { name: /hse\.ru/ })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Оставить заявку" })).toBeEnabled();
@@ -104,7 +104,7 @@ test.describe("Программа v2", () => {
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
     });
-    await page.goto("/v2/dpo");
+    await page.goto("/dpo");
     const row = page.locator("article.v2-prog")
       .filter({ has: page.getByRole("button", { name: "В корзину" }) }).first();
     const title = (await row.locator("h2").innerText()).trim();
@@ -114,13 +114,13 @@ test.describe("Программа v2", () => {
       page.waitForResponse((r) => r.url().includes("/api/cart") && r.request().method() !== "GET" && r.ok()),
       page.getByRole("button", { name: "Оставить заявку" }).click(),
     ]);
-    await expect(page).toHaveURL(/\/v2\/cart$/);
+    await expect(page).toHaveURL(/\/cart$/);
     await expect(page.getByText(title, { exact: true })).toBeVisible();
   });
 
   test("программа ВШЭ уводит на маркетплейс, а не в корзину", async ({ page }) => {
     await mockProgram(page, { source_url: "https://hse.ru/edu/dpo/test" });
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
 
     const link = page.getByRole("link", { name: /Записаться на hse\.ru/ });
     await expect(link).toHaveAttribute("href", "https://hse.ru/edu/dpo/test");
@@ -130,7 +130,7 @@ test.describe("Программа v2", () => {
 
   test("закрытый набор не даёт оформить заявку", async ({ page }) => {
     await mockProgram(page, { enrollment: "nonactual" });
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
 
     await expect(page.getByText("Набор закрыт", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Оставить заявку" })).toHaveCount(0);
@@ -138,7 +138,7 @@ test.describe("Программа v2", () => {
   });
 
   test("несуществующая программа объясняет это и не индексируется", async ({ page }) => {
-    await page.goto("/v2/dpo/takoj-programmy-net");
+    await page.goto("/dpo/takoj-programmy-net");
     await expect(page.getByRole("heading", { name: "Программа не найдена" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Весь каталог программ" })).toBeVisible();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
@@ -146,7 +146,7 @@ test.describe("Программа v2", () => {
 
   test("canonical ведёт на индексируемую страницу v1", async ({ page }) => {
     await mockProgram(page);
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
     // Превью не должно конкурировать в выдаче с настоящей карточкой
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/dpo\/test-program$/);
   });
@@ -154,7 +154,7 @@ test.describe("Программа v2", () => {
   test("на телефоне бланк с ценой уходит наверх, прокрутки вбок нет", async ({ page }) => {
     await mockProgram(page);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2/dpo/test-program");
+    await page.goto("/dpo/test-program");
 
     await expect(page.getByText("90 000 ₽")).toBeVisible();
     const [priceY, titleY] = await page.evaluate(() => {
@@ -172,7 +172,7 @@ test.describe("Программа v2", () => {
 test('сбой API программы отличим от 404 и повтор восстанавливает содержание', async ({page}) => {
   let available=false;
   await page.route('**/api/programs/test-program',r=>r.fulfill({status:available?200:503,contentType:'application/json',body:JSON.stringify(available?BASE:{error:'temporarily unavailable'})}));
-  await page.goto('/v2/dpo/test-program');
+  await page.goto('/dpo/test-program');
   await expect(page.getByRole('heading',{name:'Не удалось загрузить программу'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Программа не найдена'})).not.toBeVisible();
   await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/program-api-error.png',fullPage:true});

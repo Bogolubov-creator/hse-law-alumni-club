@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 const out = '/Users/macbook/alumni-staged-evidence/screenshots';
 for (const width of [320, 360, 390, 768, 1024, 1280, 1440, 1920]) test(`public shell and event ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 });
-  for (const route of ['/v2', '/v2/events']) {
+  for (const route of ['/', '/events']) {
     await page.goto(route);
     await page.waitForLoadState('networkidle');
     await page.evaluate(() => document.fonts.ready);
@@ -27,7 +27,7 @@ for (const width of [320, 360, 390, 768, 1024, 1280, 1440, 1920]) test(`public s
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Быстрый просмотр' }).first()).toBeFocused();
   await page.locator('.club-event-row h3 a').first().click();
-  await expect(page).toHaveURL(/\/v2\/events\/.+/);
+  await expect(page).toHaveURL(/\/events\/.+/);
   await page.reload();
   await expect(page.locator('h1')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);

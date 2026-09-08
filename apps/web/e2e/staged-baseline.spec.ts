@@ -5,7 +5,7 @@ mkdirSync(out,{recursive:true});
 for(const width of [390,1440]) for(const candidate of ['a','b']) test(`${candidate} baseline ${width}`,async({page})=>{
   await page.setViewportSize({width,height:900});
   const base=candidate==='a'?'http://localhost:5273':'http://127.0.0.1:5373';
-  const routes=candidate==='a'?['/','/v2','/v2/dpo','/v2/merch','/v2/events','/v2/lk']:['/','/dpo','/shop','/events','/cabinet'];
+  const routes=candidate==='a'?['/','/','/dpo','/merch','/events','/lk']:['/','/dpo','/shop','/events','/cabinet'];
   if(candidate==='b') await page.goto('http://127.0.0.1:5398');
   const findings=[];
   for(const route of routes){

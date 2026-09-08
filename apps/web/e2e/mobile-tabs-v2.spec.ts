@@ -1,11 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * Оболочка приложения v2 на телефоне: нижняя панель вкладок.
+ * Нижняя панель вкладок V2Shell (MobileTabs).
  *
- * Главная проверка тут – не «панель нарисовалась», а «панель ничего не
- * перекрыла»: фиксированный элемент внизу легко съедает последнюю строку
- * страницы, и человек не может нажать то, что под ним.
+ * После cutover ключевые маршруты (`/`, `/dpo`, `/merch`, `/news`, `/podcasts`, `/cart`)
+ * на телефоне отдаёт MobileApp – у него своя оболочка. Эти тесты проверяют
+ * MobileTabs на страницах без takeover: `/events`, `/lk`, `/join`.
  */
 
 async function stubSw(page: Page) {
@@ -21,7 +21,7 @@ test.describe("Панель вкладок v2", () => {
 
   test("на телефоне панель есть, на десктопе её нет", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2");
+    await page.goto("/events");
     await expect(tabs(page)).toBeVisible();
     await expect(tabs(page).getByRole("link")).toHaveCount(5);
 
@@ -31,46 +31,36 @@ test.describe("Панель вкладок v2", () => {
 
   test("текущий раздел помечен для экранного диктора, а не только цветом", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2/dpo");
-    await expect(tabs(page).getByRole("link", { name: "дпо" })).toHaveAttribute("aria-current", "page");
+    await page.goto("/lk");
+    await expect(tabs(page).getByRole("link", { name: "кабинет" })).toHaveAttribute("aria-current", "page");
     await expect(tabs(page).getByRole("link", { name: "главная" })).not.toHaveAttribute("aria-current", "page");
-  });
-
-  test("карточка программы держит вкладку ДПО активной", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2/dpo/takoj-programmy-net");
-    await expect(tabs(page).getByRole("link", { name: "дпо" })).toHaveAttribute("aria-current", "page");
   });
 
   test("панель переносит между разделами", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2");
-    await tabs(page).getByRole("link", { name: "мерч" }).click();
-    await expect(page).toHaveURL(/\/v2\/merch$/);
+    await page.goto("/events");
     await tabs(page).getByRole("link", { name: "кабинет" }).click();
-    await expect(page).toHaveURL(/\/v2\/lk$/);
+    await expect(page).toHaveURL(/\/lk$/);
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
+    await expect(tabs(page)).toBeVisible();
   });
 
   test("панель есть и в кабинете – из приватной зоны не выпадаешь", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2/lk");
+    await page.goto("/lk");
     await expect(tabs(page)).toBeVisible();
     await expect(tabs(page).getByRole("link", { name: "кабинет" })).toHaveAttribute("aria-current", "page");
   });
 
   test("панель не перекрывает низ страницы", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2");
-    // Принимаем cookies: иначе баннер тоже висит внизу и мешает измерению
+    await page.goto("/events");
     await page.getByRole("button", { name: "Принять" }).click();
 
     const last = page.locator("footer a").last();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await expect(last).toBeVisible();
 
-    // Настоящая проверка: под последней ссылкой в этой точке именно она,
-    // а не панель вкладок. toBeVisible() такого не ловит.
     const box = (await last.boundingBox())!;
     const covered = await page.evaluate(([x, y]) => {
       const el = document.elementFromPoint(x, y);
@@ -78,13 +68,13 @@ test.describe("Панель вкладок v2", () => {
     }, [box.x + box.width / 2, box.y + box.height / 2]);
     expect(covered, "низ страницы уехал под панель вкладок").toBe(false);
 
-    await last.click(); // и она действительно нажимается
-    await expect(page).toHaveURL(/\/v2\/requisites$/);
+    await last.click();
+    await expect(page).toHaveURL(/\/(requisites|support|privacy|confidential)$/);
   });
 
   test("cookie-баннер поднят над панелью и его кнопка нажимается", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2");
+    await page.goto("/events");
     const accept = page.getByRole("button", { name: "Принять" });
     const box = (await accept.boundingBox())!;
     const covered = await page.evaluate(([x, y]) => {
@@ -99,7 +89,7 @@ test.describe("Панель вкладок v2", () => {
 
   test("в меню шапки нет того, что уже есть во вкладках", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2");
+    await page.goto("/events");
     await page.getByRole("button", { name: "Открыть меню" }).click();
 
     const menu = page.locator("header nav.mob-only");
@@ -113,7 +103,7 @@ test.describe("Панель вкладок v2", () => {
       body: JSON.stringify({ items: [], count: 3, subtotal: 0 }),
     }));
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2");
+    await page.goto("/events");
     await expect(tabs(page).getByRole("link", { name: "корзина" }).getByText("3")).toBeVisible();
   });
 });

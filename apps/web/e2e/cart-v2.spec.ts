@@ -27,7 +27,7 @@ async function stubSw(page: Page) {
  * первую строку нельзя, порядок каталога задаётся в админке.
  */
 async function addProgram(page: Page): Promise<string> {
-  await page.goto("/v2/dpo");
+  await page.goto("/dpo");
   const row = page.locator("article.v2-prog")
     .filter({ has: page.getByRole("button", { name: "В корзину" }) })
     .first();
@@ -52,15 +52,15 @@ test.describe("Корзина v2", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("пустая корзина ведёт в витрины v2, а не в старые", async ({ page }) => {
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
     await expect(page.getByRole("heading", { name: "В корзине пока пусто" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Программы ДПО" })).toHaveAttribute("href", "/v2/dpo");
-    await expect(page.getByRole("link", { name: "Одежда клуба" })).toHaveAttribute("href", "/v2/merch");
+    await expect(page.getByRole("link", { name: "Программы ДПО" })).toHaveAttribute("href", "/dpo");
+    await expect(page.getByRole("link", { name: "Одежда клуба" })).toHaveAttribute("href", "/merch");
   });
 
   test("добавленная программа попадает в опись, суммы сходятся", async ({ page }) => {
     const title = await addProgram(page);
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
 
     await expect(page.getByText(title, { exact: true })).toBeVisible();
     await expect(page.getByText("1 место")).toBeVisible();
@@ -74,7 +74,7 @@ test.describe("Корзина v2", () => {
 
   test("выбор получения не показывается, когда доставлять нечего", async ({ page }) => {
     await addProgram(page);
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
     // В корзине одни программы – самовывоз/доставка и адрес только сбивали бы с толку
     await expect(page.getByRole("button", { name: "самовывоз" })).toHaveCount(0);
     await expect(page.getByText("адрес доставки")).toHaveCount(0);
@@ -82,14 +82,14 @@ test.describe("Корзина v2", () => {
 
   test("позицию можно убрать, корзина становится пустой", async ({ page }) => {
     const title = await addProgram(page);
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
     await page.getByRole("button", { name: `Убрать из корзины: ${title}` }).click();
     await expect(page.getByRole("heading", { name: "В корзине пока пусто" })).toBeVisible();
   });
 
   test("без согласия на обработку данных заявку не отправить", async ({ page }) => {
     await addProgram(page);
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
 
     const submit = page.getByRole("button", { name: "Нужно согласие на обработку данных" });
     await expect(submit).toBeDisabled();
@@ -107,7 +107,7 @@ test.describe("Корзина v2", () => {
       return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ORDER) });
     });
 
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
     await page.getByLabel("фио").fill("Орлова Мария Петровна");
     await page.getByLabel("телефон").fill("+7 916 000-00-00");
     await page.getByLabel("почта").fill("orlova@example.com");
@@ -132,7 +132,7 @@ test.describe("Корзина v2", () => {
       body: JSON.stringify({ ...ORDER, notified: { channel: "telegram", ok: false } }),
     }));
 
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
     await page.getByLabel("фио").fill("Орлова Мария Петровна");
     await page.getByLabel("телефон").fill("+7 916 000-00-00");
     await page.getByLabel("почта").fill("orlova@example.com");
@@ -149,7 +149,7 @@ test.describe("Корзина v2", () => {
       status: 400, contentType: "application/json", body: JSON.stringify({ error: "Проверьте телефон" }),
     }));
 
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
     await page.getByLabel("фио").fill("Орлова Мария Петровна");
     await page.getByLabel("телефон").fill("нет");
     await page.getByLabel("почта").fill("orlova@example.com");
@@ -163,7 +163,7 @@ test.describe("Корзина v2", () => {
   test("на телефоне корзина складывается без горизонтальной прокрутки", async ({ page }) => {
     await addProgram(page);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2/cart");
+    await page.goto("/cart");
 
     await expect(page.getByLabel("фио")).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

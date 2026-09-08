@@ -27,7 +27,7 @@ test.describe("Вступление в клуб v2", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("без согласия на обработку данных заявку не отправить", async ({ page }) => {
-    await page.goto("/v2/join");
+    await page.goto("/join");
     const submit = page.getByRole("button", { name: "Нужно согласие на обработку данных" });
     await expect(submit).toBeDisabled();
 
@@ -36,7 +36,7 @@ test.describe("Вступление в клуб v2", () => {
   });
 
   test("год выпуска принимает только цифры и не длиннее четырёх", async ({ page }) => {
-    await page.goto("/v2/join");
+    await page.goto("/join");
     await page.getByLabel("год выпуска").fill("20a19999");
     await expect(page.getByLabel("год выпуска")).toHaveValue("2019");
   });
@@ -47,7 +47,7 @@ test.describe("Вступление в клуб v2", () => {
       sent = r.request().postDataJSON();
       return r.fulfill({ status: 200, contentType: "application/json", body: "{}" });
     });
-    await page.goto("/v2/join");
+    await page.goto("/join");
     await fillForm(page);
     await page.getByRole("button", { name: "Подать заявку на вступление" }).click();
 
@@ -64,7 +64,7 @@ test.describe("Вступление в клуб v2", () => {
     await page.route("**/api/auth/register", (r) => r.fulfill({
       status: 200, contentType: "application/json", body: JSON.stringify({ confirm_required: true }),
     }));
-    await page.goto("/v2/join");
+    await page.goto("/join");
     await fillForm(page);
     await page.getByRole("button", { name: "Подать заявку на вступление" }).click();
 
@@ -77,7 +77,7 @@ test.describe("Вступление в клуб v2", () => {
     await page.route("**/api/auth/register", (r) => r.fulfill({
       status: 409, contentType: "application/json", body: JSON.stringify({ error: "Такая почта уже зарегистрирована" }),
     }));
-    await page.goto("/v2/join");
+    await page.goto("/join");
     await fillForm(page);
     await page.getByRole("button", { name: "Подать заявку на вступление" }).click();
 
@@ -86,7 +86,7 @@ test.describe("Вступление в клуб v2", () => {
   });
 
   test("пришедшему по приглашению это объясняют", async ({ page }) => {
-    await page.goto("/v2/join?ref=SK-2019-4471");
+    await page.goto("/join?ref=SK-2019-4471");
     await expect(page.getByText(/по приглашению однокурсника/)).toBeVisible();
   });
 
@@ -95,10 +95,10 @@ test.describe("Вступление в клуб v2", () => {
       localStorage.setItem("club_token", "stub");
       Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
     });
-    await page.goto("/v2/join");
+    await page.goto("/join");
 
     await expect(page.getByRole("heading", { name: "Вы уже в клубе" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "В личный кабинет" })).toHaveAttribute("href", "/v2/lk");
+    await expect(page.getByRole("link", { name: "В личный кабинет" })).toHaveAttribute("href", "/lk");
     await expect(page.getByLabel("фио")).toHaveCount(0);
 
     // Выход возвращает анкету – заявку можно подать за другого человека
@@ -112,7 +112,7 @@ test.describe("Восстановление пароля v2", () => {
 
   test("ответ не раскрывает, существует ли аккаунт", async ({ page }) => {
     await page.route("**/api/auth/forgot", (r) => r.fulfill({ status: 404, contentType: "application/json", body: "{}" }));
-    await page.goto("/v2/forgot");
+    await page.goto("/forgot");
     await page.getByLabel("почта").fill("net-takogo@example.com");
     await page.getByRole("button", { name: "Прислать ссылку" }).click();
 
@@ -121,15 +121,15 @@ test.describe("Восстановление пароля v2", () => {
   });
 
   test("ссылка без токена честно называет причину", async ({ page }) => {
-    await page.goto("/v2/reset");
+    await page.goto("/reset");
     await expect(page.getByRole("heading", { name: "Ссылка неполная" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Запросить новую" })).toHaveAttribute("href", "/v2/forgot");
+    await expect(page.getByRole("link", { name: "Запросить новую" })).toHaveAttribute("href", "/forgot");
   });
 
   test("несовпадающие пароли не уходят на сервер", async ({ page }) => {
     let called = false;
     await page.route("**/api/auth/reset", (r) => { called = true; return r.fulfill({ status: 200, contentType: "application/json", body: "{}" }); });
-    await page.goto("/v2/reset?token=abc");
+    await page.goto("/reset?token=abc");
     await page.getByLabel("новый пароль").fill("verylongpassword");
     await page.getByLabel("повторите пароль").fill("другой-пароль");
     await page.getByRole("button", { name: "Сохранить пароль" }).click();
@@ -143,15 +143,15 @@ test.describe("Подтверждение почты v2", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("адрес без токена – это неполная ссылка, а не провал", async ({ page }) => {
-    await page.goto("/v2/confirm");
+    await page.goto("/confirm");
     await expect(page.getByRole("heading", { name: "Ссылка неполная" })).toBeVisible();
   });
 
   test("подтверждённая почта ведёт в кабинет v2", async ({ page }) => {
     await page.route("**/api/auth/confirm", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
-    await page.goto("/v2/confirm?token=abc");
+    await page.goto("/confirm?token=abc");
     await expect(page.getByRole("heading", { name: "Почта подтверждена" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Войти в кабинет" })).toHaveAttribute("href", "/v2/lk");
+    await expect(page.getByRole("link", { name: "Войти в кабинет" })).toHaveAttribute("href", "/lk");
   });
 });
 
@@ -159,9 +159,9 @@ test.describe("Юридические страницы v2", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   const pages = [
-    { url: "/v2/privacy", heading: "Политика обработки персональных данных", canonical: /\/privacy$/ },
-    { url: "/v2/confidential", heading: "Политика конфиденциальности", canonical: /\/confidential$/ },
-    { url: "/v2/requisites", heading: "Реквизиты", canonical: /\/requisites$/ },
+    { url: "/privacy", heading: "Политика обработки персональных данных", canonical: /\/privacy$/ },
+    { url: "/confidential", heading: "Политика конфиденциальности", canonical: /\/confidential$/ },
+    { url: "/requisites", heading: "Реквизиты", canonical: /\/requisites$/ },
   ];
 
   for (const p of pages) {
@@ -177,7 +177,7 @@ test.describe("Юридические страницы v2", () => {
   }
 
   test("реквизиты оператора не потерялись при переносе", async ({ page }) => {
-    await page.goto("/v2/requisites");
+    await page.goto("/requisites");
     await expect(page.getByText("1257700005551")).toBeVisible(); // ОГРН
     await expect(page.getByText("9707041865")).toBeVisible();    // ИНН
     await expect(page.getByText(/Большая Черкизовская/)).toBeVisible();
@@ -185,21 +185,17 @@ test.describe("Юридические страницы v2", () => {
 });
 
 /**
- * Сторож изоляции: НИ ОДНА ссылка на страницах v2 не должна вести в старый фронт.
- *
- * Проверка по всей странице, а не только по шапке и подвалу: ровно так в герое
- * главной проскочила кнопка «Вступить в клуб», которая вела в /join – то есть
- * самая заметная кнопка сайта роняла человека в старый интерфейс.
+ * Сторож изоляции: после cutover канон на `/`. Ссылки не должны вести в `/legacy/*`.
  */
-const V1_PATH = /^\/(privacy|confidential|requisites|news|events|podcasts|dpo|merch|cart|lk|join|forgot|reset|confirm)(\/|$)/;
+const LEGACY_PATH = /^\/legacy(\/|$)/;
 
-for (const url of ["/v2", "/v2/dpo", "/v2/merch", "/v2/cart", "/v2/news", "/v2/events", "/v2/podcasts", "/v2/join", "/v2/privacy"]) {
-  test(`на ${url} нет ссылок в старый фронт`, async ({ page }) => {
+for (const url of ["/", "/dpo", "/merch", "/cart", "/news", "/events", "/podcasts", "/join", "/privacy"]) {
+  test(`на ${url} нет ссылок в legacy-фронт`, async ({ page }) => {
     await stubSw(page);
     await page.goto(url);
     await expect(page.locator("h1")).toBeVisible();
     const hrefs = await page.locator("a[href]").evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute("href") ?? ""));
-    const v1 = hrefs.filter((h) => V1_PATH.test(h));
-    expect(v1, `${url} ведёт в v1: ${[...new Set(v1)].join(", ")}`).toEqual([]);
+    const legacy = hrefs.filter((h) => LEGACY_PATH.test(h));
+    expect(legacy, `${url} ведёт в legacy: ${[...new Set(legacy)].join(", ")}`).toEqual([]);
   });
 }

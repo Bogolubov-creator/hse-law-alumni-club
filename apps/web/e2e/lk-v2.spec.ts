@@ -77,7 +77,7 @@ async function mockCabinet(page: Page, over: Partial<Record<"me" | "orders" | "c
 
 test.describe("Кабинет v2", () => {
   test("гостю показываются ворота, а не данные", async ({ page }) => {
-    await page.goto("/v2/lk");
+    await page.goto("/lk");
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Войти в кабинет" })).toBeVisible();
     // Ни одного раздела кабинета быть не должно
@@ -86,7 +86,7 @@ test.describe("Кабинет v2", () => {
 
   test("удостоверение, заявки, достижения и однокурсники на месте", async ({ page }) => {
     await mockCabinet(page);
-    await page.goto("/v2/lk");
+    await page.goto("/lk");
 
     await expect(page.getByRole("navigation", { name: "Разделы кабинета" })).toBeVisible();
     const mobileIdentity = page.locator(".club-identity-mobile");
@@ -133,7 +133,7 @@ test.describe("Кабинет v2", () => {
       classmates: [],
       events: [],
     });
-    await page.goto("/v2/lk");
+    await page.goto("/lk");
 
     await expect(page.getByText("Заявок пока нет.")).toBeVisible();
     await expect(page.getByRole("link", { name: /Посмотреть программы ДПО/ })).toBeVisible();
@@ -147,7 +147,7 @@ test.describe("Кабинет v2", () => {
   test("сорванный запрос показывает ошибку с повтором, а не пустой экран", async ({ page }) => {
     await stubSession(page);
     await page.route("**/api/me", (r) => r.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
-    await page.goto("/v2/lk");
+    await page.goto("/lk");
 
     await expect(page.getByText("кабинет сейчас недоступен")).toBeVisible();
     await expect(page.getByRole("button", { name: "повторить" })).toBeVisible();
@@ -156,7 +156,7 @@ test.describe("Кабинет v2", () => {
   test("истёкшая сессия возвращает к воротам и стирает токен", async ({ page }) => {
     await stubSession(page);
     await page.route("**/api/me", (r) => r.fulfill({ status: 401, contentType: "application/json", body: "{}" }));
-    await page.goto("/v2/lk");
+    await page.goto("/lk");
 
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem("club_token"))).toBeNull();
@@ -165,7 +165,7 @@ test.describe("Кабинет v2", () => {
   test("на телефоне кабинет складывается в колонку без горизонтальной прокрутки", async ({ page }) => {
     await mockCabinet(page);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/v2/lk");
+    await page.goto("/lk");
 
     await expect(page.locator(".club-identity-mobile summary")).toContainText("Кондратьев Сергей Андреевич");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -177,7 +177,7 @@ test.describe("Кабинет v2", () => {
 test("все заявки доступны из компактного обзора", async ({ page }) => {
   const orders = Array.from({ length: 6 }, (_, i) => ({ ...ORDERS[0], number: "HISTORY-" + i }));
   await mockCabinet(page, { orders, events: [] });
-  await page.goto("/v2/lk");
+  await page.goto("/lk");
   await expect(page.getByText("HISTORY-2", { exact: true })).toBeVisible();
   await expect(page.getByText("HISTORY-3", { exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "Все заявки (6)", exact: true }).click();
@@ -188,7 +188,7 @@ test("все заявки доступны из компактного обзо�
 });
 test("уведомления раскрываются без потери действий", async ({ page }) => {
   await mockCabinet(page, { events: [EVENTS[1], EVENTS[1], EVENTS[1], EVENTS[0]] });
-  await page.goto("/v2/lk");
+  await page.goto("/lk");
   await page.getByRole("button", { name: "Все уведомления (4)", exact: true }).click();
   await expect(page.getByRole("button", { name: "Принять заявку в друзья – Белов Роман Игоревич" })).toBeVisible();
 });
@@ -196,7 +196,7 @@ test("уведомления раскрываются без потери дей
 test('общий каталог достижений целиком и в одном порядке при разном прогрессе', async ({ page }, info) => {
   const achievements = Array.from({ length: 10 }, (_, i) => ({ key: `common_${i}`, title: `Достижение ${i + 1}`, description: `Общее условие ${i + 1}`, icon: '★', kind: 'мероприятия', target: i + 1, current: 0, earned: false, star: false }));
   await mockCabinet(page, { me: { ...ME, achievements } });
-  await page.goto('/v2/lk?section=achievements');
+  await page.goto('/lk?section=achievements');
   await expect(page.locator('[data-achievement]')).toHaveCount(10);
   await page.getByRole('button', { name: 'Полученные (0)', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Коллекция ещё впереди' })).toBeVisible();
@@ -219,15 +219,15 @@ test('общий каталог достижений целиком и в одн
 
 test('из кабинета доступны все разделы клуба и возврат из новостей', async ({ page }) => {
   await mockCabinet(page);
-  await page.goto('/v2/lk');
+  await page.goto('/lk');
   const nav = page.getByRole('navigation', { name: 'Разделы клуба', exact: true });
   for (const [name, route] of [['Новости','news'],['События','events'],['ДПО','dpo'],['Мерч','merch'],['Подкасты','podcasts'],['Корзина','cart'],['Поддержка','support']]) {
-    await expect(nav.getByRole('link',{name,exact:true})).toHaveAttribute('href', `/v2/${route}`);
+    await expect(nav.getByRole('link',{name,exact:true})).toHaveAttribute('href', `/${route}`);
   }
   await expect(page.getByRole('heading',{name:'Ближайшая встреча',exact:true})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Новости клуба',exact:true})).toBeVisible();
   await nav.getByRole('link',{name:'Новости',exact:true}).click();
-  await expect(page).toHaveURL(/\/v2\/news$/);
+  await expect(page).toHaveURL(/\/news$/);
   await page.goBack();
   await expect(page.getByRole('heading',{name:'Мой кабинет',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();

@@ -3,7 +3,7 @@ import { writeFileSync } from 'node:fs';
 test('built service worker and local performance samples',async({browser},info)=>{
  test.skip(info.project.name!=='desktop','Замер Chromium, один одинаковый desktop viewport.');test.setTimeout(60000);
  const rows=[];
- for(const [candidate,url] of [['A-dev','http://localhost:5273/v2'],['B-dev','http://127.0.0.1:5373/'],['A-build','http://localhost:5274/v2']]){
+ for(const [candidate,url] of [['A-dev','http://localhost:5273/'],['B-dev','http://127.0.0.1:5373/'],['A-build','http://localhost:5274/']]){
   const context=await browser.newContext({serviceWorkers:"allow",viewport:{width:1440,height:900},reducedMotion:'reduce'});const page=await context.newPage();
   await page.addInitScript(()=>{(window as any).__perf={lcp:0,cls:0};new PerformanceObserver(list=>{for(const e of list.getEntries())(window as any).__perf.lcp=e.startTime}).observe({type:'largest-contentful-paint',buffered:true});new PerformanceObserver(list=>{for(const e of list.getEntries() as any)if(!e.hadRecentInput)(window as any).__perf.cls+=e.value}).observe({type:'layout-shift',buffered:true})});
   await page.goto(url!);await page.waitForLoadState('networkidle');await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(700);

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bootstrap": "tsx src/directus-bootstrap.ts"
+    "bootstrap": "tsx src/directus-bootstrap.ts",
+    "load-pravovaya-gramotnost": "tsx src/load-pravovaya-gramotnost.ts"
   },
   "dependencies": {
     "@club/shared": "workspace:*",
