@@ -11,11 +11,9 @@ const isStandalone = () =>
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
 /**
- * Ненавязчивое приглашение установить сайт как приложение:
- *  • Android/Chrome – кнопка «Установить» вызывает системный диалог;
- *  • iOS/Safari – подсказка «Поделиться → На экран „Домой“» (другого пути у Apple нет).
- * Показывается один раз (закрыл – больше не беспокоим), только после принятия
- * cookie-баннера и никогда внутри уже установленного приложения.
+ * Приглашение установить сайт как приложение.
+ * На телефоне поднимаем над нижней таб-панелью MobileApp (~64px + safe-area),
+ * чтобы не перекрывать навигацию.
  */
 export default function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -31,7 +29,6 @@ export default function InstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", onBip);
 
-    // Не наваливаемся сразу и не спорим с cookie-баннером.
     const timer = window.setInterval(() => {
       if (localStorage.getItem(COOKIE_KEY) === "1") {
         window.clearInterval(timer);
@@ -45,7 +42,6 @@ export default function InstallPrompt() {
     return () => { window.removeEventListener("beforeinstallprompt", onBip); window.clearInterval(timer); };
   }, []);
 
-  // Android без события установки (уже установлено/не поддерживается) – молчим.
   if (!show || isStandalone() || (!ios && !deferred)) return null;
 
   const dismiss = () => { localStorage.setItem(DISMISS_KEY, "1"); setShow(false); };
@@ -59,12 +55,15 @@ export default function InstallPrompt() {
 
   return (
     <div role="dialog" aria-label="Установка приложения" className="mob-only" style={{
-      position: "fixed", left: 16, right: 16, bottom: `calc(16px + env(safe-area-inset-bottom, 0px))`, zIndex: 290,
-      maxWidth: 560, margin: "0 auto", alignItems: "center", gap: 14, flexWrap: "wrap",
+      position: "fixed", left: 16, right: 16,
+      bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+      zIndex: 290,
+      maxWidth: 560, margin: "0 auto",
+      display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
       background: "#11296B", color: "#FBF3E8", borderRadius: 16, padding: "14px 18px",
       boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)", fontSize: 13.5, lineHeight: 1.45,
     }}>
-      <span style={{ fontSize: 22, flex: "none" }}>📲</span>
+      <span style={{ fontSize: 22, flex: "none" }} aria-hidden>📲</span>
       <p style={{ flex: 1, minWidth: 200, margin: 0 }}>
         {ios
           ? <>Добавьте клуб на экран телефона: нажмите <b>Поделиться</b> <span aria-hidden>⎋</span> → <b>«На экран „Домой“»</b> – сайт откроется как приложение.</>

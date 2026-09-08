@@ -8,7 +8,7 @@ import { VideoEmbed } from "../components/VideoEmbed.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 
 /**
- * Подкасты v2 (/v2/podcasts) – выпуски как записи фонотеки: номер и
+ * Подкасты v2 (/podcasts) – выпуски как записи фонотеки: номер и
  * длительность моноширинной колонкой слева, название и плеер справа.
  *
  * Обложки не выносим в крупные плитки: у части выпусков их нет, и сетка
@@ -28,7 +28,7 @@ export default function PodcastsV2() {
     title: "Подкасты клуба",
     description: "Подкасты клуба выпускников факультета права Вышки: разговоры с выпускниками, преподавателями и практиками права.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/podcasts`,
-    noindex: true,
+    noindex: false,
   });
 
   const t = token();
@@ -70,7 +70,7 @@ export default function PodcastsV2() {
                 {subscribe.isPending ? "Оформляем…" : "Оформить подписку"}
               </button>
             ) : (
-              <Link to="/v2/lk" className="foc"
+              <Link to="/lk" className="foc"
                 style={{ flex: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15, textDecoration: "none" }}>
                 Войти в кабинет
               </Link>

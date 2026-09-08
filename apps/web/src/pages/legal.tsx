@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import SiteShell from "../components/SiteShell.js";
 import { useHead } from "../lib/title.js";
 import { V2Shell, mono, disp } from "../v2/Shell.js";
@@ -128,8 +129,10 @@ export function Privacy({ v2 }: { v2?: boolean } = {}) {
         <li>обжаловать действия Оператора в Роскомнадзоре или суде.</li>
       </ul>
       <p>
-        Запросы направляйте почтой по адресу Оператора. Срок ответа – 10 рабочих
-        дней с момента обращения.
+        Запросы направляйте почтой по адресу Оператора ({OWNER.contact})
+        или через раздел{" "}
+        <Link to="/support">поддержки сайта</Link> (тема «Персональные данные»).
+        Срок ответа – 10 рабочих дней с момента обращения.
       </p>
     </LegalShell>
   );

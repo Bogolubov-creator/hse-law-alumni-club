@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
 import { mono, disp, label, actionGhost } from "../styles/primitives.js";
@@ -69,22 +69,23 @@ export function Progress({ value, target, done }: { value: number; target: numbe
 }
 
 const NAV = [
-  { to: "/v2/lk", label: "кабинет" },
-  { to: "/v2/lk/profile", label: "профиль" },
+  { to: "/lk", label: "кабинет" },
+  { to: "/lk/profile", label: "профиль" },
 ];
 
 /** Шапка кабинета: одна на все приватные экраны v2. */
 export function CabinetShell({ active, onLogout, children }: { active: "lk" | "profile"; onLogout: () => void; children: ReactNode }) {
+  const { pathname } = useLocation();
   return (
     <div className="cabinet-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-line)" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 20px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <Link to="/v2" className="foc" style={{ display: "flex", alignItems: "center", gap: 9, ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>
+          <Link to="/" className="foc" style={{ display: "flex", alignItems: "center", gap: 9, ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>
             <Mark kind="scales" size={26} style={{ color: "var(--c-accent-text)" }} />Клуб
           </Link>
           <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {NAV.map((n) => {
-              const on = (active === "lk" && n.to === "/v2/lk") || (active === "profile" && n.to === "/v2/lk/profile");
+              const on = (active === "lk" && n.to === "/lk") || (active === "profile" && n.to === "/lk/profile");
               return (
                 <Link key={n.to} to={n.to} className="foc" aria-current={on ? "page" : undefined}
                   style={{ ...label, textDecoration: "none", padding: "8px 10px", color: on ? "var(--c-text)" : "var(--c-text-3)", borderBottom: `2px solid ${on ? "var(--c-accent)" : "transparent"}` }}>
@@ -99,7 +100,10 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
           </div>
         </div>
       </header>
-      <nav className="cabinet-club-nav" aria-label="Разделы клуба">{[["/v2", "Главная"], ["/v2/news", "Новости"], ["/v2/events", "События"], ["/v2/dpo", "ДПО"], ["/v2/merch", "Мерч"], ["/v2/podcasts", "Подкасты"], ["/v2/cart", "Корзина"], ["/v2/support", "Поддержка"]].map(([to, title]) => <Link className="foc" key={to} to={to!}>{title}</Link>)}</nav>
+      <nav className="cabinet-club-nav" aria-label="Разделы клуба">{[["/", "Главная"], ["/news", "Новости"], ["/events", "События"], ["/dpo", "ДПО"], ["/merch", "Мерч"], ["/podcasts", "Подкасты"], ["/cart", "Корзина"], ["/support", "Поддержка"]].map(([to, title]) => {
+        const current = to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
+        return <Link className="foc" key={to} to={to!} aria-current={current ? "page" : undefined}>{title}</Link>;
+      })}</nav>
 
       {/* Низ не должен уезжать под cookie-баннер: внизу профиля права по 152-ФЗ */}
       <main id="main" style={{ maxWidth: 1180, margin: "0 auto", padding: "26px 20px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>{children}</main>

@@ -8,7 +8,7 @@ import { useHead } from "../lib/title.js";
 import { V2Shell, mono, disp, pageTitle } from "../v2/Shell.js";
 
 /**
- * Карточка программы ДПО v2 (/v2/dpo/:slug).
+ * Карточка программы ДПО v2 (/dpo/:slug).
  *
  * Язык реестра: модули – нумерованные записи с моно-колонкой слева, а не
  * гармошка из карточек; преподаватели – записи, а не плитки с градиентами.
@@ -66,7 +66,7 @@ export default function ProgramV2() {
     title: q.isError ? (notFound ? "Программа не найдена" : "Не удалось загрузить программу") : p?.title ?? "Программа ДПО",
     description: p?.description ?? (p ? `${p.title}: программа ДПО факультета права НИУ ВШЭ с ценой выпускника.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/dpo/${slug}`,
-    noindex: true,
+    noindex: false,
   });
 
   const addToCart = () =>
@@ -75,13 +75,13 @@ export default function ProgramV2() {
   // «Оставить заявку» – положить и сразу перейти к оформлению.
   const leaveRequest = () =>
     p && add.mutate({ type: "dpo", ref_id: p.slug },
-      { onSuccess: () => navigate("/v2/cart"), onError: () => toast("Не удалось добавить", "err") });
+      { onSuccess: () => navigate("/cart"), onError: () => toast("Не удалось добавить", "err") });
 
   return (
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <nav style={{ ...label, paddingTop: 28 }} aria-label="Хлебные крошки">
-          <Link to="/v2/dpo" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>витрина дпо</Link>
+          <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>витрина дпо</Link>
           {p?.direction && <> · {p.direction}</>}
         </nav>
 
@@ -94,7 +94,7 @@ export default function ProgramV2() {
               {notFound ? "Такой записи в каталоге нет – возможно, набор завершён и программа снята." : "Сервер временно недоступен. Повторите загрузку."}
             </p>
             {!notFound && <button className="foc" onClick={() => q.refetch()}>Повторить загрузку</button>}
-            <Link to="/v2/dpo" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/dpo" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
               Весь каталог программ
             </Link>
           </div>

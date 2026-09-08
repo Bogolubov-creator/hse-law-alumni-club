@@ -8,8 +8,8 @@ import { mono, disp } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
 
 /**
- * Воронка входа v2: /v2/join – заявка на вступление, /v2/forgot – запрос ссылки,
- * /v2/reset – новый пароль, /v2/confirm – подтверждение почты.
+ * Воронка входа v2: /join – заявка на вступление, /forgot – запрос ссылки,
+ * /reset – новый пароль, /confirm – подтверждение почты.
  *
  * Язык описи, как в корзине и профиле: моно-подпись над полем, разделитель –
  * линия. Помечаем не обязательные поля, а необязательные: здесь обязательны
@@ -48,7 +48,7 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
     <main id="main" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
       <VisionCorner />
       <div style={{ width: "100%", maxWidth: 520, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <Link to="/v2" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
+        <Link to="/" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
         <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 18 }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{title}</h1>
         {sub && <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>{sub}</p>}
@@ -56,9 +56,9 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
       </div>
       {/* 152-ФЗ: юр-документы доступны и с экранов входа */}
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px 18px", marginTop: 20, fontSize: "var(--t-small)" }}>
-        <Link to="/v2/privacy" className="foc" style={{ color: "var(--c-text-3)" }}>Политика обработки ПДн</Link>
-        <Link to="/v2/confidential" className="foc" style={{ color: "var(--c-text-3)" }}>Конфиденциальность</Link>
-        <Link to="/v2/requisites" className="foc" style={{ color: "var(--c-text-3)" }}>Реквизиты</Link>
+        <Link to="/privacy" className="foc" style={{ color: "var(--c-text-3)" }}>Политика обработки ПДн</Link>
+        <Link to="/confidential" className="foc" style={{ color: "var(--c-text-3)" }}>Конфиденциальность</Link>
+        <Link to="/requisites" className="foc" style={{ color: "var(--c-text-3)" }}>Реквизиты</Link>
       </div>
     </main>
   );
@@ -147,7 +147,7 @@ export function JoinV2() {
     return (
       <AuthShell title="Вы уже в клубе" sub="Анкета вступления нужна только новым выпускникам. Если подаёте заявку за другого человека, сначала выйдите из аккаунта.">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
-          <Link to="/v2/lk" className="foc" style={primary}>В личный кабинет</Link>
+          <Link to="/lk" className="foc" style={primary}>В личный кабинет</Link>
           <button onClick={() => { localStorage.removeItem(TOKEN_KEY); setAuthed(false); }} className="foc" style={ghost}>
             Выйти и заполнить анкету
           </button>
@@ -158,19 +158,29 @@ export function JoinV2() {
 
   if (done && needConfirm) {
     return (
-      <AuthShell title="Проверьте почту" sub={`Мы отправили письмо на ${f.email}. Ссылка из него действует сутки. После подтверждения заявку проверит учебный офис – обычно 1–2 рабочих дня.`}>
+      <AuthShell title="Проверьте почту" sub={`Мы отправили письмо на ${f.email}. Ссылка действует сутки.`}>
+        <ol style={{ margin: "18px 0 0", paddingLeft: 20, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
+          <li><strong>Сейчас:</strong> подтвердите почту по ссылке из письма.</li>
+          <li><strong>Затем:</strong> учебный офис сверит выпуск (обычно 1–2 рабочих дня).</li>
+          <li><strong>После верификации:</strong> откроются кабинет, скидка на ДПО и сообщество.</li>
+        </ol>
         <Note>Письма нет? Загляните в «Спам» – иногда оно попадает туда.</Note>
-        <Link to="/v2" className="foc" style={{ ...ghost, marginTop: 20 }}>На главную</Link>
+        <Link to="/" className="foc" style={{ ...ghost, marginTop: 20 }}>На главную</Link>
       </AuthShell>
     );
   }
 
   if (done) {
     return (
-      <AuthShell title="Заявка отправлена" sub="Учебный офис сверит данные с реестром выпускников и активирует кабинет. Обычно это занимает 1–2 рабочих дня.">
+      <AuthShell title="Заявка отправлена" sub="Статус: ожидает проверки учебным офисом.">
+        <ol style={{ margin: "18px 0 0", paddingLeft: 20, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
+          <li>Офис сверит данные с реестром выпускников факультета.</li>
+          <li>Обычно это занимает 1–2 рабочих дня.</li>
+          <li>После подтверждения войдите в кабинет – откроются скидка на ДПО и разделы клуба.</li>
+        </ol>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
-          <Link to="/v2/lk" className="foc" style={primary}>Войти в кабинет</Link>
-          <Link to="/v2" className="foc" style={ghost}>На главную</Link>
+          <Link to="/lk" className="foc" style={primary}>Войти в кабинет</Link>
+          <Link to="/" className="foc" style={ghost}>На главную</Link>
         </div>
       </AuthShell>
     );
@@ -229,7 +239,7 @@ export function JoinV2() {
             style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
           <span>
             Даю согласие на обработку персональных данных –{" "}
-            <Link to="/v2/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>
+            <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>
           </span>
         </label>
 
@@ -246,7 +256,7 @@ export function JoinV2() {
         </button>
 
         <p style={{ textAlign: "center", margin: "14px 0 0", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
-          Уже в клубе? <Link to="/v2/lk" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Войти</Link>
+          Уже в клубе? <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Войти</Link>
         </p>
       </form>
     </AuthShell>
@@ -275,7 +285,7 @@ export function ForgotV2() {
       {sent ? (
         <>
           <Note tone="ok">Если такой аккаунт существует, письмо со ссылкой уже отправлено. Проверьте почту и папку «Спам».</Note>
-          <Link to="/v2/lk" className="foc" style={{ ...primary, marginTop: 20 }}>К входу</Link>
+          <Link to="/lk" className="foc" style={{ ...primary, marginTop: 20 }}>К входу</Link>
         </>
       ) : (
         <form onSubmit={submit} style={{ marginTop: 18 }}>
@@ -319,14 +329,14 @@ export function ResetV2() {
   if (!token) {
     return (
       <AuthShell title="Ссылка неполная" sub="Откройте ссылку из письма целиком или запросите новую.">
-        <Link to="/v2/forgot" className="foc" style={{ ...primary, marginTop: 20 }}>Запросить новую</Link>
+        <Link to="/forgot" className="foc" style={{ ...primary, marginTop: 20 }}>Запросить новую</Link>
       </AuthShell>
     );
   }
   if (done) {
     return (
       <AuthShell title="Пароль обновлён" sub="Теперь войдите с новым паролем.">
-        <Link to="/v2/lk" className="foc" style={{ ...primary, marginTop: 20 }}>Войти в кабинет</Link>
+        <Link to="/lk" className="foc" style={{ ...primary, marginTop: 20 }}>Войти в кабинет</Link>
       </AuthShell>
     );
   }
@@ -369,7 +379,7 @@ export function ConfirmEmailV2() {
     // Ссылка без токена – это неполный адрес, а не провал подтверждения.
     return (
       <AuthShell title={token ? "Не удалось подтвердить" : "Ссылка неполная"} sub={err ?? "Ссылка недействительна или истекла."}>
-        <Link to="/v2/join" className="foc" style={{ ...primary, marginTop: 20 }}>Подать заявку заново</Link>
+        <Link to="/join" className="foc" style={{ ...primary, marginTop: 20 }}>Подать заявку заново</Link>
       </AuthShell>
     );
   }
@@ -377,8 +387,8 @@ export function ConfirmEmailV2() {
   return (
     <AuthShell title="Почта подтверждена" sub="Заявка ушла в учебный офис – он сверит данные с реестром выпускников и активирует кабинет. Обычно 1–2 рабочих дня.">
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
-        <Link to="/v2/lk" className="foc" style={primary}>Войти в кабинет</Link>
-        <Link to="/v2" className="foc" style={ghost}>На главную</Link>
+        <Link to="/lk" className="foc" style={primary}>Войти в кабинет</Link>
+        <Link to="/" className="foc" style={ghost}>На главную</Link>
       </div>
     </AuthShell>
   );

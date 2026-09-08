@@ -12,7 +12,7 @@ export default function CookieBanner() {
   const ref = useRef<HTMLDivElement>(null);
   // Баннер общий для обеих версий, поэтому и политику показывает «свою»:
   // со страницы v2 ссылка в старый интерфейс – это разрыв.
-  const v2 = useLocation().pathname.startsWith("/v2");
+  const v2 = useLocation().pathname.startsWith("/");
 
   /**
    * Пока баннер висит, он закрывает низ страницы – а внизу профиля стоят права
@@ -48,7 +48,7 @@ export default function CookieBanner() {
     }}>
       <p style={{ flex: "1 1 260px", minWidth: 0, margin: 0 }}>
         Сайт сохраняет в браузере корзину, сессию входа и выбранные настройки. Подробнее – в{" "}
-        <Link to={v2 ? "/v2/privacy" : "/privacy"} className="foc" style={{ color: "#E3C272", textDecoration: "underline" }}>политике обработки персональных данных</Link>.
+        <Link to={v2 ? "/privacy" : "/privacy"} className="foc" style={{ color: "#E3C272", textDecoration: "underline" }}>политике обработки персональных данных</Link>.
       </p>
       {/* Тёмный текст на охре: 5,12:1 против 3,16:1 у светлого. То же решение,
           что уже принято для главной кнопки сайта – согласие по 152-ФЗ тем более

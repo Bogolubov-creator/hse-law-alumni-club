@@ -515,6 +515,12 @@ button[aria-disabled="true"],
 .cabinet-latest-news h3 a { color: var(--c-text); text-decoration: none; }
 .cabinet-latest-news h3 a:hover { text-decoration: underline; }
 .cabinet-latest-news p { color: var(--c-text-2); margin: 8px 0; line-height: 1.6; }
+.cabinet-achievements-teaser { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-top: 22px; padding: 16px 24px; background: var(--c-surface-blue); border-radius: 8px; }
+.cabinet-achievements-teaser strong { display: block; font-size: 17px; }
+.cabinet-achievements-teaser span { display: block; margin-top: 4px; font-size: 14px; color: var(--c-text-2); }
+.cabinet-achievements-teaser-links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; }
+.cabinet-achievements-teaser-links a { color: var(--c-accent-text); font-weight: 600; text-underline-offset: 4px; }
+.cabinet-club-nav a[aria-current="page"] { background: var(--c-bg); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
 .cabinet-opportunities { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 26px; margin-top: 20px; padding: 10px 24px; background: var(--c-surface-warm); border-radius: 8px; }
 .cabinet-opportunities a { display: grid; gap: 10px; padding: 20px 0; color: var(--c-text); text-decoration: none; }
 .cabinet-opportunities strong { font-size: 18px; }

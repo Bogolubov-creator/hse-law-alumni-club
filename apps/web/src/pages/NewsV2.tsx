@@ -4,15 +4,13 @@ import { useHead } from "../lib/title.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 
 /**
- * Новости v2: список (/v2/news) и публикация (/v2/news/:slug).
+ * Новости v2: список (/news) и публикация (/news/:slug).
  *
  * Список – хроника реестра: дата моноширинной колонкой слева, заголовок и
  * лид справа, разделитель – линия. Плашки-заглушки «[ новость ]» из v1 не
  * переносятся: под ними нет данных, а рисовать пустое место незачем.
  *
- * SEO: обе страницы noindex, canonical ведёт на v1 – там же живёт разметка
- * NewsArticle. Дублировать её на превью нельзя: получились бы две статьи
- * на одну публикацию.
+ * SEO: канонические URL /news и /news/:slug (этап 0 cutover).
  */
 
 const label = {
@@ -25,7 +23,7 @@ export function NewsV2() {
     title: "Новости клуба",
     description: "Новости клуба выпускников факультета права Вышки: события, программы, партнёрства и жизнь сообщества.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news`,
-    noindex: true,
+    noindex: false,
   });
   const news = useNewsList();
   const list = news.data ?? [];
@@ -57,17 +55,32 @@ export function NewsV2() {
         )}
 
         <div>
-          {list.map((n) => (
-            <article key={n.id} className="v2-row" style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
-              <div style={{ ...label }}>{formatNewsDate(n.published_at)}</div>
+          {list.map((item, i) => (
+            <article
+              key={item.id}
+              className={i === 0 ? "v2-row club-news-featured" : "v2-row"}
+              style={{
+                display: "grid",
+                gridTemplateColumns: i === 0 ? "1fr" : "150px 1fr",
+                gap: 24,
+                alignItems: "start",
+                padding: i === 0 ? "28px 24px" : "22px 0",
+                marginBottom: i === 0 ? 12 : 0,
+                borderTop: i === 0 ? "none" : "1px solid var(--c-line)",
+                borderRadius: i === 0 ? 12 : 0,
+                background: i === 0 ? "var(--c-surface-blue, var(--c-bg-sunken))" : undefined,
+              }}
+            >
+              {i !== 0 && <div style={{ ...label }}>{formatNewsDate(item.published_at)}</div>}
               <div style={{ minWidth: 0 }}>
-                <Link to={`/v2/news/${n.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
-                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}>{n.title}</h2>
+                {i === 0 && <div style={{ ...label, marginBottom: 10 }}>{formatNewsDate(item.published_at)} · главная публикация</div>}
+                <Link to={`/news/${item.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: i === 0 ? "clamp(26px, 3vw, 34px)" : "var(--t-h3)", lineHeight: 1.18, margin: 0 }}>{item.title}</h2>
                 </Link>
-                {n.excerpt && (
-                  <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: "62ch" }}>{n.excerpt}</p>
+                {item.excerpt && (
+                  <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: i === 0 ? "var(--t-lead)" : "var(--t-body)", lineHeight: 1.55, maxWidth: i === 0 ? "68ch" : "62ch" }}>{item.excerpt}</p>
                 )}
-                <Link to={`/v2/news/${n.slug}`} className="foc" style={{ display: "inline-block", marginTop: 10, ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>читать →</Link>
+                <Link to={`/news/${item.slug}`} className="foc" style={{ display: "inline-block", marginTop: 10, ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>читать →</Link>
               </div>
             </article>
           ))}
@@ -87,7 +100,7 @@ export function NewsPostV2() {
     title: post.isError ? "Новость не найдена" : d?.title ?? "Новость",
     description: d?.excerpt ?? (d ? `${d.title} – новость клуба выпускников факультета права Вышки.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news/${slug}`,
-    noindex: true,
+    noindex: false,
   });
 
   const paragraphs = (d?.body ?? "").split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
@@ -96,7 +109,7 @@ export function NewsPostV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: 720, margin: "0 auto", padding: "0 28px" }}>
         <nav style={{ ...label, paddingTop: 28 }}>
-          <Link to="/v2/news" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>← все новости</Link>
+          <Link to="/news" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>← все новости</Link>
         </nav>
 
         {post.isLoading && <p style={{ ...label, paddingTop: 40 }}>загружаем публикацию…</p>}
@@ -107,7 +120,7 @@ export function NewsPostV2() {
             <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55 }}>
               Такой публикации нет – возможно, адрес устарел.
             </p>
-            <Link to="/v2/news" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/news" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
               Все новости
             </Link>
           </div>

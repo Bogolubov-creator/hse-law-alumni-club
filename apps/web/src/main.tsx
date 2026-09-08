@@ -10,9 +10,10 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
 
-// PWA: сервис-воркер для установки на экран телефона (только в проде).
+// PWA: сервис-воркер (прод или явный VITE_ENABLE_SW=true на стенде).
 const serviceWorker = navigator.serviceWorker;
-if (serviceWorker && import.meta.env.PROD) {
+const enableSw = import.meta.env.PROD || import.meta.env.VITE_ENABLE_SW === "true";
+if (serviceWorker && enableSw) {
   window.addEventListener("load", () => {
     serviceWorker.register("/sw.js").catch(() => { /* не критично */ });
   });

@@ -36,11 +36,11 @@ interface Tab { to: string; label: string; icon: keyof typeof ICONS; match: (p: 
  * читать, а не действовать, и держать его под большим пальцем незачем.
  */
 const TABS: Tab[] = [
-  { to: "/v2", label: "главная", icon: "home", match: (p) => p === "/v2" },
-  { to: "/v2/dpo", label: "дпо", icon: "dpo", match: (p) => p.startsWith("/v2/dpo") },
-  { to: "/v2/merch", label: "мерч", icon: "merch", match: (p) => p.startsWith("/v2/merch") },
-  { to: "/v2/cart", label: "корзина", icon: "cart", match: (p) => p.startsWith("/v2/cart") },
-  { to: "/v2/lk", label: "кабинет", icon: "lk", match: (p) => p.startsWith("/v2/lk") },
+  { to: "/", label: "главная", icon: "home", match: (p) => p === "/" },
+  { to: "/dpo", label: "дпо", icon: "dpo", match: (p) => p.startsWith("/dpo") },
+  { to: "/merch", label: "мерч", icon: "merch", match: (p) => p.startsWith("/merch") },
+  { to: "/cart", label: "корзина", icon: "cart", match: (p) => p.startsWith("/cart") },
+  { to: "/lk", label: "кабинет", icon: "lk", match: (p) => p.startsWith("/lk") },
 ];
 
 export function MobileTabs() {
@@ -65,12 +65,12 @@ export function MobileTabs() {
         const on = t.match(pathname);
         // Кабинет у гостя ведёт на вход – он и есть экран кабинета для неавторизованного
         const to = t.to;
-        const badge = t.to === "/v2/cart" ? cartCount : 0;
+        const badge = t.to === "/cart" ? cartCount : 0;
         return (
           <Link
             key={t.to} to={to} className="foc"
             aria-current={on ? "page" : undefined}
-            aria-label={t.to === "/v2/lk" && !authed ? "Кабинет – вход" : undefined}
+            aria-label={t.to === "/lk" && !authed ? "Кабинет – вход" : undefined}
             style={{
               flex: 1, minHeight: 56, display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center", gap: 3,

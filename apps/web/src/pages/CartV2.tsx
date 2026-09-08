@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useHead } from "../lib/title.js";
 import { rub, type CartLine, type OrderResult } from "../lib/api.js";
-import { useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
+import { useCart, useMemberDiscount, useCartMutations, submitOrder, token } from "../lib/cart.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
 
 /**
- * Корзина v2 (/v2/cart) – заявка в учебный офис на языке реестра.
+ * Корзина v2 (/cart) – заявка в учебный офис на языке реестра.
  *
  * Режим смешанный и это осознанно: оболочка внешняя (V2Shell), потому что
  * корзина – часть публичного пути, а вот сама страница строгая, как опись:
@@ -100,8 +100,11 @@ function Submitted({ result }: { result: OrderResult }) {
           </div>
 
           <p style={{ margin: "20px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
-            Учебный офис свяжется с вами по указанным контактам и подтвердит детали.
+            Заявка <strong>сохранена</strong> в системе (номер выше). Учебный офис свяжется по указанным контактам.
             {result.payment_url && " Оплатить можно сразу, кнопкой ниже."}
+          </p>
+          <p style={{ margin: "10px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
+            Сохранение заявки и доставка уведомления офису – разные шаги: заявка уже у вас в кабинете даже если письмо/Telegram временно не ушли.
           </p>
 
           {/* Уведомление офиса не прошло – это надо сказать, а не спрятать */}
@@ -127,8 +130,8 @@ function Submitted({ result }: { result: OrderResult }) {
           )}
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
-            <Link to="/v2/lk" className="foc" style={{ ...ghost, borderColor: "var(--c-accent)" }}>В личный кабинет</Link>
-            <Link to="/v2" className="foc" style={ghost}>На главную</Link>
+            <Link to="/lk" className="foc" style={{ ...ghost, borderColor: "var(--c-accent)" }}>В личный кабинет</Link>
+            <Link to="/" className="foc" style={ghost}>На главную</Link>
           </div>
         </div>
       </main>
@@ -195,7 +198,7 @@ export default function CartV2() {
         <ShowcaseHead
           eyebrow="корзина · заявка"
           title="Заявка в учебный офис"
-          lead="Учебный офис подтвердит состав и сумму заявки и пришлёт ссылку на оплату. Скидка выпускника подставляется к программам ДПО сама."
+          lead="Учебный офис подтвердит состав и сумму. Скидка клуба – только на ДПО и только после верификации выпуска. На мерч скидка не действует."
           count={items.length ? `позиций ${items.length} · на сумму ${rub(total)}` : undefined}
         />
 
@@ -211,11 +214,11 @@ export default function CartV2() {
         {!cart.isLoading && !cart.isError && items.length === 0 && (
           <Empty title="В корзине пока пусто">
             <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", maxWidth: 520, lineHeight: 1.55 }}>
-              Выберите программу ДПО или одежду клуба. Цена выпускника подставится в заявку сама.
+              Выберите программу ДПО или мерч клуба. Скидка выпускника применяется только к ДПО после верификации.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 20 }}>
-              <Link to="/v2/dpo" className="foc" style={{ ...primary, textDecoration: "none", display: "inline-block" }}>Программы ДПО</Link>
-              <Link to="/v2/merch" className="foc" style={ghost}>Одежда клуба</Link>
+              <Link to="/dpo" className="foc" style={{ ...primary, textDecoration: "none", display: "inline-block" }}>Программы ДПО</Link>
+              <Link to="/merch" className="foc" style={ghost}>Одежда клуба</Link>
             </div>
           </Empty>
         )}
@@ -262,6 +265,18 @@ export default function CartV2() {
                 <Total name="подытог" value={rub(subtotal)} />
                 {discountAmount > 0 && <Total name={`скидка выпускника (дпо) −${discount}%`} value={`−${rub(discountAmount)}`} tone="ok" />}
                 <Total name="итого (справочно)" value={rub(total)} strong />
+                {items.some((i) => i.type === "dpo") && discountAmount === 0 && (
+                  <p style={{ margin: "12px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
+                    {token()
+                      ? "Скидка на ДПО откроется после верификации выпуска учебным офисом."
+                      : <>Скидка на ДПО – для подтверждённых выпускников. <Link to="/join" className="foc" style={{ color: "var(--c-accent-text)" }}>Вступить</Link> или <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)" }}>войти</Link>.</>}
+                  </p>
+                )}
+                {items.some((i) => i.type === "merch") && (
+                  <p style={{ margin: "8px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
+                    На мерч клубная скидка не распространяется – в сумме он идёт по базовой цене.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -313,7 +328,7 @@ export default function CartV2() {
                   style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
                 <span>
                   Даю согласие на обработку персональных данных в соответствии с{" "}
-                  <Link to="/v2/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
+                  <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
                 </span>
               </label>
 

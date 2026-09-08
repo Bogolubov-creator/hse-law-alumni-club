@@ -33,11 +33,11 @@ export function BlankField({ children, label }: { children: ReactNode; label: st
 }
 
 const NAV = [
-  { to: "/v2/dpo", label: "ДПО" },
-  { to: "/v2/merch", label: "Мерч" },
-  { to: "/v2/podcasts", label: "Подкасты" },
-  { to: "/v2/events", label: "События" },
-  { to: "/v2/news", label: "Новости" },
+  { to: "/dpo", label: "ДПО" },
+  { to: "/merch", label: "Мерч" },
+  { to: "/podcasts", label: "Подкасты" },
+  { to: "/events", label: "События" },
+  { to: "/news", label: "Новости" },
 ];
 
 export function V2Shell({ children }: { children: ReactNode }) {
@@ -60,7 +60,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
       <a href="#main" className="skip">К содержанию страницы</a>
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "color-mix(in srgb, var(--c-bg) 88%, transparent)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--c-line)" }}>
         <div className="club-header-inner" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", height: 72, display: "flex", alignItems: "center", gap: 24 }}>
-          <Link to="/v2" className="foc" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
+          <Link to="/" className="foc" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
             <Mark kind="scales" size={34} style={{ color: "var(--c-accent-text)" }} />
             <span style={{ ...disp, fontWeight: 800, fontSize: 15, lineHeight: 1.1 }}>
               Клуб выпускников
@@ -72,7 +72,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>{n.label}</Link>
             ))}
-            <Link to="/v2/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
+            <Link to="/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
               Корзина{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>}
             </Link>
             <button
@@ -84,7 +84,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /></svg>
             </button>
             <VisionToggle compact v2 />
-            <Link to={authed ? "/v2/lk" : "/v2/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
+            <Link to={authed ? "/lk" : "/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
               {authed ? "Кабинет" : "Вступить"}
             </Link>
           </nav>
@@ -100,11 +100,11 @@ export function V2Shell({ children }: { children: ReactNode }) {
                 в меню остаётся только контент и вступление */}
             {[
               ...NAV,
-              { to: "/v2/cart", label: "Корзина" },
-              { to: "/v2/lk", label: "Личный кабинет" },
-              ...(authed ? [] : [{ to: "/v2/join", label: "Вступить в клуб" }]),
+              { to: "/cart", label: "Корзина" },
+              { to: "/lk", label: "Личный кабинет" },
+              ...(authed ? [] : [{ to: "/join", label: "Вступить в клуб" }]),
             ].map((n) => (
-              <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className={["/v2/dpo", "/v2/merch", "/v2/cart", "/v2/lk"].includes(n.to) ? "foc club-tablet-link" : "foc"} style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
+              <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className={["/dpo", "/merch", "/cart", "/lk"].includes(n.to) ? "foc club-tablet-link" : "foc"} style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
             ))}
 
             {/* Тема и версия для слабовидящих жили только в десктопной строке –
@@ -130,9 +130,10 @@ export function V2Shell({ children }: { children: ReactNode }) {
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
           <span>© 2026 Клуб выпускников факультета права Вышки</span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-            <Link to="/v2/privacy" className="foc tap" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
-            <Link to="/v2/confidential" className="foc tap" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
-            <Link to="/v2/requisites" className="foc tap" style={{ color: "inherit" }}>Реквизиты</Link>
+            <Link to="/privacy" className="foc tap" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
+            <Link to="/confidential" className="foc tap" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
+            <Link to="/requisites" className="foc tap" style={{ color: "inherit" }}>Реквизиты</Link>
+            <Link to="/support" className="foc tap" style={{ color: "inherit" }}>Поддержка</Link>
           </span>
         </div>
       </footer>

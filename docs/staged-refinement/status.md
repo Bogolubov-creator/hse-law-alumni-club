@@ -71,3 +71,9 @@ Web build прошёл, 18 браузерных проверок кабинет�
 В общей оболочке кабинета и профиля добавлены восемь прямых ссылок на разделы клуба. Обзор дополнен компонентом CabinetClubOverview: ближайшая опубликованная встреча, новости из общего API, возможности участника и ссылка на редактирование профиля. Данные не дублируются в статических карточках; загрузка, ошибка с повтором и пустые состояния предусмотрены. Формы профиля и личные разделы сохранены.
 
 Плагин frontend-design применён для композиции. Web build прошёл. 66 браузерных сценариев кабинета, профиля, новостей, событий и подкастов прошли в Chromium и мобильном WebKit; новый тест проверяет ссылки на все разделы, переход к новостям и Back. Лог: cabinet-navigation-tests.log. Выполнен вход тестовым участником через настоящий локальный API; desktop/mobile снимки cabinet-navigation-desktop.png и cabinet-navigation-mobile.png просмотрены, на390px горизонтального переполнения нет. Production не менялся.
+
+## Сборка Bob 08.09.2026
+
+Этапы 0–5: локальная полировка cutover – канон на `/` (не `/v2`), MobileApp takeover, SupportDock скрыт на mobile shell, PWA SW `club-v4`, охра/Фемида, URL-фильтры ДПО и афиши, скидка только на ДПО, achievements `view=`, club nav `aria-current`, оператор ОГРН 1257700005551, checkout save≠notify.
+
+Этап 7 (приёмка без живых интеграций): документ [acceptance-cutover-2026-09-08.md](./acceptance-cutover-2026-09-08.md). Typecheck shared/web/api – 0 ошибок. Unit: shared 68 pass; API 226 pass, 13 gated skip (PG). Playwright matrix не гонялся. Стенд :5173/:5274 не отвечал. Итог матрицы cutover: Pass (code/docs) 28, Pass (unit this run) 6, Deferred 12, Gap 0. SMTP, ЮKassa, Telegram, push, Safari/физическое устройство – deferred. Исторические доказательства по `/v2` остаются в acceptance.md.

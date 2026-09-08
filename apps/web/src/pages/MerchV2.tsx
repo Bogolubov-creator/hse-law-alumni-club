@@ -114,7 +114,7 @@ export default function MerchV2() {
   useHead({
     title: "Мерч клуба",
     description: "Фирменная одежда и аксессуары клуба выпускников факультета права Вышки.",
-    noindex: true, // превью нового языка витрин
+    /* indexable: канон */
   });
   const products = useProducts();
   const [params, setParams] = useSearchParams();
@@ -184,10 +184,10 @@ export default function MerchV2() {
               <article key={p.id} className="club-merch-item" style={{ display: "grid", gridTemplateColumns: "150px 96px 1fr auto", gap: 22, alignItems: "center", padding: "20px 0", borderTop: "1px solid var(--c-line)" }}>
                 <div style={{ ...mono, fontSize: 17, fontWeight: 500 }}>{rub(p.price)}</div>
 
-                <Link to={`/v2/merch/${p.slug}`} className="foc club-merch-image"><ProductImage src={p.images?.[0]} title={p.title} /></Link>
+                <Link to={`/merch/${p.slug}`} className="foc club-merch-image"><ProductImage src={p.images?.[0]} title={p.title} /></Link>
 
                 <div style={{ minWidth: 0 }}>
-                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}><Link className="foc" to={`/v2/merch/${p.slug}`} style={{ color: "inherit", textDecoration: "none" }}>{p.title}</Link></h2>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}><Link className="foc" to={`/merch/${p.slug}`} style={{ color: "inherit", textDecoration: "none" }}>{p.title}</Link></h2>
                   <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 8, textTransform: "none" }}>
                     {p.category}{sizes.length ? ` · ${sizes.join(" / ")}` : ""}
                   </div>

@@ -10,7 +10,7 @@ import { BlankField, mono, disp } from "../v2/Shell.js";
 import { CabinetShell, Section, Initial, Progress, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
 
 /**
- * Профиль выпускника v2 (/v2/lk/profile) – тот же режим, что и кабинет:
+ * Профиль выпускника v2 (/lk/profile) – тот же режим, что и кабинет:
  * плотность 7, движения нет, один акцент. Форма собрана как опись: подпись
  * реестра слева, поле справа, разделитель – линия, а не рамка карточки.
  *
@@ -197,7 +197,7 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
 
       <p style={{ fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-3)", margin: "6px 0 0" }}>
         Сохраняя, вы даёте согласие на обработку персональных данных –{" "}
-        <Link to="/v2/privacy" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
+        <Link to="/privacy" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
       </p>
       {err && <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0" }}>{err}</p>}
 
@@ -294,7 +294,7 @@ function DataRights({ token }: { token: string }) {
       await apiPost("/me/delete", { confirm: "УДАЛИТЬ" }, undefined, token);
       localStorage.removeItem(TOKEN_KEY);
       toast("Аккаунт и данные удалены");
-      setTimeout(() => window.location.assign("/v2"), 900);
+      setTimeout(() => window.location.assign("/"), 900);
     } catch (e) {
       toast((e as Error).message, "err");
       setBusy(false);
@@ -382,6 +382,6 @@ function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
 export default function ProfileV2() {
   useHead({ title: "Профиль", noindex: true });
   const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) return <Navigate to="/v2/lk" replace />;
-  return <Body token={token} onLogout={() => { logoutSession(); window.location.assign("/v2/lk"); }} />;
+  if (!token) return <Navigate to="/lk" replace />;
+  return <Body token={token} onLogout={() => { logoutSession(); window.location.assign("/lk"); }} />;
 }

@@ -25,7 +25,7 @@ import { MobileTabs } from "../v2/MobileTabs.js";
  * только текст статуса и только через -text-токены: заливочные тона не
  * проходят AA на мелкой моно-подписи.
  *
- * Живёт на /v2/lk рядом со старым кабинетом, чтобы их можно было сравнить.
+ * Живёт на /lk рядом со старым кабинетом, чтобы их можно было сравнить.
  */
 
 /* ── Вход ─────────────────────────────────────────────────────────── */
@@ -53,7 +53,7 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <VisionCorner />
       <form onSubmit={submit} style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <Link to="/v2" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
+        <Link to="/" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
         <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 20 }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "14px 0 0" }}>Вход для выпускников</h1>
         <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
@@ -74,8 +74,8 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         </button>
 
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "var(--t-small)" }}>
-          <Link to="/v2/join" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
-          <Link to="/v2/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
+          <Link to="/join" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
+          <Link to="/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
         </div>
       </form>
       {/* Без панели экран входа – тупик: во вкладках «кабинет» ведёт сюда */}
@@ -88,12 +88,20 @@ function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => 
   return (
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <div style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <div style={{ ...label, color: "var(--c-status-text)" }}>заявка принята</div>
+        <div style={{ ...label, color: "var(--c-status-text)" }}>статус · pending</div>
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "12px 0 0" }}>Ожидает верификации</h1>
         <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
-          {alumni.fio ?? "Выпускник"}, учебный офис сверяет ваш выпуск с реестром факультета. Кабинет откроется после подтверждения.
+          {alumni.fio ?? "Выпускник"}, учебный офис сверяет выпуск с реестром факультета.
         </p>
-        <button onClick={onBack} className="foc" style={{ width: "100%", marginTop: 22, padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад</button>
+        <ul style={{ margin: "16px 0 0", paddingLeft: 18, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
+          <li>Кабинет, баллы и скидка на ДПО откроются после подтверждения.</li>
+          <li>Заявки из корзины уже можно подавать – скидка подтянется после верификации.</li>
+          <li>Обычно проверка занимает 1–2 рабочих дня.</li>
+        </ul>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 22 }}>
+          <Link to="/dpo" className="foc" style={{ ...action, textAlign: "center", textDecoration: "none" }}>Смотреть программы ДПО</Link>
+          <button onClick={onBack} className="foc" style={{ width: "100%", padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад ко входу</button>
+        </div>
       </div>
       <MobileTabs />
     </main>
@@ -129,6 +137,7 @@ function Identity({ me }: { me: Me }) {
         <DataRow name="уровень" value={l.level_title} />
         <DataRow name="баллы" value={String(l.points)} accent />
         <DataRow name="скидка выпускника" value={`${l.discount}%`} accent />
+        <div style={{ ...label, marginTop: 4, color: "var(--c-text-3)" }}>скидка действует только на программы ДПО</div>
         {l.next_level && <DataRow name={`до «${l.next_level}»`} value={String(l.to_next)} />}
       </div>
 
@@ -194,7 +203,7 @@ function Orders({ token, compact = false }: { token: string; compact?: boolean }
       {orders.isError && <p role="alert">Не удалось загрузить заявки. <button onClick={() => orders.refetch()}>Повторить</button></p>}
       {!orders.isLoading && !orders.isError && list.length === 0 && (
         <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
-          Заявок пока нет. <Link to="/v2/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Посмотреть программы ДПО →</Link>
+          Заявок пока нет. <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Посмотреть программы ДПО →</Link>
         </p>
       )}
       {(compact ? list.slice(0, 3) : list).map((o: MyOrder) => (
@@ -206,16 +215,37 @@ function Orders({ token, compact = false }: { token: string; compact?: boolean }
           <p>Получение: {o.fulfillment === "delivery" ? "Доставка" : "Самовывоз"}. {o.payment_status === "succeeded" ? "Оплата подтверждена" : "Оплата не подтверждена"}.</p>
         </details>
       ))}
-      {compact && list.length > 3 && <Link to="/v2/lk?section=orders" className="foc" style={{ display: "inline-block", marginTop: 18, color: "var(--c-text)", textUnderlineOffset: 4 }}>Все заявки ({list.length})</Link>}
+      {compact && list.length > 3 && <Link to="/lk?section=orders" className="foc" style={{ display: "inline-block", marginTop: 18, color: "var(--c-text)", textUnderlineOffset: 4 }}>Все заявки ({list.length})</Link>}
     </Section>
   );
 }
 
 function Achievements({ me }: { me: Me }) {
-  const [view, setView] = useState<"all" | "earned">("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view: "all" | "earned" = searchParams.get("view") === "earned" ? "earned" : "all";
+  const setView = (next: "all" | "earned") => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("section", "achievements");
+    nextParams.set("view", next);
+    setSearchParams(nextParams, { replace: true });
+  };
   const earned = me.achievements.filter(a => a.earned);
   const list = view === "earned" ? earned : me.achievements;
-  if (!me.achievements.length) return null;
+
+  if (!me.achievements.length) {
+    return (
+      <Section title="Достижения">
+        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14, lineHeight: 1.6 }}>
+          Каталог достижений появится после верификации и участия в жизни клуба – встречи, ДПО и активность в сообществе.
+        </p>
+        <p style={{ margin: "14px 0 0", display: "flex", flexWrap: "wrap", gap: 14, fontSize: "var(--t-small)" }}>
+          <Link to="/events" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Афиша событий →</Link>
+          <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Программы ДПО →</Link>
+        </p>
+      </Section>
+    );
+  }
+
   return <Section title="Достижения" note={`получено ${earned.length} из ${me.achievements.length}`}>
     <div className="club-awards-intro">
       <div><h3>Ваша коллекция клуба</h3><p>Встречи, учёба и участие в жизни сообщества становятся частью вашей истории.</p></div>
@@ -335,7 +365,25 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
           </div>
           <div>
             <nav aria-label="Разделы кабинета" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
-              {[["overview", "Обзор"], ["orders", "Мои заявки"], ["community", "Сообщество"], ["achievements", "Достижения"]].map(([key, title]) => <button key={key} className="foc" aria-pressed={section === key} style={section === key ? action : actionGhost} onClick={() => setSectionParams({ section: key! })}>{title}</button>)}
+              {[["overview", "Обзор"], ["orders", "Мои заявки"], ["community", "Сообщество"], ["achievements", "Достижения"]].map(([key, title]) => (
+                <button
+                  key={key}
+                  className="foc"
+                  aria-pressed={section === key}
+                  style={section === key ? action : actionGhost}
+                  onClick={() => {
+                    if (key === "achievements") {
+                      const next = new URLSearchParams();
+                      next.set("section", "achievements");
+                      const currentView = sectionParams.get("view");
+                      next.set("view", currentView === "earned" ? "earned" : "all");
+                      setSectionParams(next, { replace: true });
+                    } else {
+                      setSectionParams({ section: key! }, { replace: true });
+                    }
+                  }}
+                >{title}</button>
+              ))}
             </nav>
             {section === "overview" && <><CabinetClubOverview me={me.data} token={token} /><EventsFeed token={token} /></>}
             {(section === "overview" || section === "orders") && <Orders token={token} compact={section === "overview"} />}

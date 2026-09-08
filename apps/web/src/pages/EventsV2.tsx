@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { apiGet, apiPost } from "../lib/api.js";
@@ -26,15 +26,18 @@ export default function EventsV2() {
     title: "События и встречи клуба",
     description: "Афиша клуба выпускников факультета права Вышки: нетворкинги, лекции и встречи выпусков.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/events`,
-    noindex: true,
+    noindex: false,
   });
 
   const { eventId } = useParams<{ eventId: string }>();
   const t = token();
   const toast = useToast();
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
-  const [format, setFormat] = useState("all");
+  const [params, setParams] = useSearchParams();
+  const search = params.get("q") ?? "";
+  const format = params.get("format") || "all";
+  const setSearch = (value: string) => setParams((prev) => { const n = new URLSearchParams(prev); if (value) n.set("q", value); else n.delete("q"); return n; }, { replace: true });
+  const setFormat = (value: string) => setParams((prev) => { const n = new URLSearchParams(prev); if (value && value !== "all") n.set("format", value); else n.delete("format"); return n; }, { replace: true });
   const matches = (e: ClubEvent) => (format === "all" || e.format === format) && `${e.title} ${e.location || ""}`.toLocaleLowerCase("ru").includes(search.trim().toLocaleLowerCase("ru"));
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -59,9 +62,9 @@ export default function EventsV2() {
     if (isPast) return null;
     if (!t) {
       return (
-        <Link to="/v2/lk" onClick={(ev) => ev.stopPropagation()} className="foc"
+        <Link to="/join" onClick={(ev) => ev.stopPropagation()} className="foc"
           style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-sm)", padding: "8px 14px", whiteSpace: "normal" }}>
-          войти, чтобы записаться
+          вступить, чтобы записаться
         </Link>
       );
     }
@@ -103,7 +106,7 @@ export default function EventsV2() {
       </div>
 
       <div style={{ minWidth: 0 }}>
-        <h3 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}><Link to={`/v2/events/${e.id}`} className="foc" style={{ color: "inherit", textDecoration: "none" }}>{e.title}</Link></h3>
+        <h3 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}><Link to={`/events/${e.id}`} className="foc" style={{ color: "inherit", textDecoration: "none" }}>{e.title}</Link></h3>
         {e.description && (
           <p style={{ margin: "9px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.5, maxWidth: "58ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{e.description}</p>
         )}
@@ -142,7 +145,13 @@ export default function EventsV2() {
           <label>Поиск по афише<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Название или место" /></label>
           <label>Формат<select value={format} onChange={e=>setFormat(e.target.value)}><option value="all">Все форматы</option><option value="online">Онлайн</option><option value="offline">Очно</option></select></label>
         </form>
-        <div key={`${search}:${format}`} className="club-agenda-results">{upcoming.map((e) => row(e, false))}</div>
+        <div key={`${search}:${format}`} className="club-agenda-results">
+          {upcoming.map((e, i) => (
+            <div key={e.id} className={i === 0 ? "club-event-featured" : undefined} style={i === 0 ? { background: "var(--c-surface-warm, var(--c-bg-sunken))", borderRadius: 12, padding: "8px 20px 4px", marginBottom: 8 } : undefined}>
+              {row(e, false)}
+            </div>
+          ))}
+        </div>
         {upcoming.length > 0 && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
 
         {!events.isLoading && !events.isError && upcoming.length === 0 && (
@@ -165,11 +174,11 @@ export default function EventsV2() {
         </>}
         {eventId && events.isLoading && <p role="status">Загружаем событие…</p>}
         {eventId && events.isError && <p role="alert">Не удалось загрузить событие. <button onClick={() => events.refetch()}>Повторить</button></p>}
-        {eventId && events.isSuccess && !opened && <><h1>Событие не найдено</h1><Link to="/v2/events">Вернуться к афише</Link></>}
+        {eventId && events.isSuccess && !opened && <><h1>Событие не найдено</h1><Link to="/events">Вернуться к афише</Link></>}
         {opened && (
           <EventSurface detail={!!eventId} onClose={() => setOpenId(null)}>
             <div style={{ background: "var(--c-bg-raised)", color: "var(--c-text)", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--c-line)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: 20 }}><Link className="foc" to={eventId ? "/v2/events" : `/v2/events/${opened.id}`}>{eventId ? "← Вся афиша" : "Открыть страницу события"}</Link>{!eventId && <button className="foc" onClick={() => setOpenId(null)} style={{ ...label, padding: 12, border: "1px solid var(--c-line-control)", background: "transparent", borderRadius: 8 }}>Закрыть</button>}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: 20 }}><Link className="foc" to={eventId ? "/events" : `/events/${opened.id}`}>{eventId ? "← Вся афиша" : "Открыть страницу события"}</Link>{!eventId && <button className="foc" onClick={() => setOpenId(null)} style={{ ...label, padding: 12, border: "1px solid var(--c-line-control)", background: "transparent", borderRadius: 8 }}>Закрыть</button>}</div>
               {opened.cover && (
                 <img src={opened.cover} alt={`Афиша: ${opened.title}`} style={{ display: "block", width: "100%", maxHeight: 240, objectFit: "cover" }}
                   onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />

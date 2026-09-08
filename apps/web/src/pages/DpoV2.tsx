@@ -13,7 +13,7 @@ export default function DpoV2() {
   useHead({
     title: "Программы ДПО",
     description: "Каталог программ дополнительного образования факультета права НИУ ВШЭ с ценой выпускника.",
-    noindex: true, // превью нового языка витрин
+    /* indexable: канон */
   });
   const programs = usePrograms();
   const discount = useMemberDiscount();
@@ -55,8 +55,8 @@ export default function DpoV2() {
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
           eyebrow="витрина · дпо"
-          title="Программы по праву с ценой выпускника"
-          lead="Каталог программ дополнительного образования факультета. Цена выпускника действует, когда учебный офис подтвердит ваш выпуск."
+          title="Программы дополнительного образования"
+          lead="Содержание, формат и ближайшие старты – в каждой карточке. Цена выпускника открывается после подтверждения выпуска учебным офисом."
           count={programs.isLoading ? "загружаем каталог" : `в каталоге ${catalog.length} · актуальный набор ${actual.length}`}
         />
 
@@ -101,20 +101,9 @@ export default function DpoV2() {
                 className="v2-prog club-program-row"
                 style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 150px 160px", gap: 24, alignItems: "start", padding: "24px 0", borderTop: "1px solid var(--c-line)" }}
               >
-                {/* Цена сопоставляется с содержанием программы. */}
-                <div className="club-program-price">
-                  <div style={{ ...mono, fontSize: 21, whiteSpace: "nowrap", fontWeight: 500, color: discount > 0 ? "var(--c-accent-text)" : "var(--c-text)" }}>{rub(priced)}</div>
-                  {discount > 0 && (
-                    <div style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
-                  )}
-                  {discount > 0 && (
-                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-ok-text)", marginTop: 6, textTransform: "none" }}>−{discount}% выпускнику</div>
-                  )}
-                </div>
-
-                {/* Содержание записи */}
+                {/* Содержание сначала (для чтения и a11y), цена – рядом. */}
                 <div className="club-program-description" style={{ minWidth: 0 }}>
-                  <Link to={`/v2/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
+                  <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
                     <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
                   </Link>
                   <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 10, textTransform: "none" }}>
@@ -126,10 +115,20 @@ export default function DpoV2() {
                   )}
                 </div>
 
+                <div className="club-program-price">
+                  <div style={{ ...mono, fontSize: 21, whiteSpace: "nowrap", fontWeight: 500, color: discount > 0 ? "var(--c-accent-text)" : "var(--c-text)" }}>{rub(priced)}</div>
+                  {discount > 0 && (
+                    <div style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
+                  )}
+                  {discount > 0 && (
+                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-ok-text)", marginTop: 6, textTransform: "none" }}>−{discount}% выпускнику</div>
+                  )}
+                </div>
+
                 {/* Действие: своё – в корзину, программа ВШЭ – на маркетплейс */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "stretch", minWidth: 160 }}>
                   <label style={{ display: "flex", gap: 8, minHeight: 44, alignItems: "center" }}><input type="checkbox" checked={selected.includes(p.slug)} disabled={!selected.includes(p.slug) && selected.length >= 3} onChange={() => toggleCompare(p.slug)} aria-label={`Сравнить: ${p.title}`} />Сравнить</label>
-                  <Link to={`/v2/dpo/${p.slug}`} className="foc tap" style={{ textAlign: "center", textDecoration: "none", color: "var(--c-text)", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-md)", padding: "10px 16px", fontSize: 14, fontWeight: 600 }}>
+                  <Link to={`/dpo/${p.slug}`} className="foc tap" style={{ textAlign: "center", textDecoration: "none", color: "var(--c-text)", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-md)", padding: "10px 16px", fontSize: 14, fontWeight: 600 }}>
                     Подробнее
                   </Link>
                   {external ? (
