@@ -33,13 +33,14 @@ const input: CSSProperties = {
 };
 
 const primary: CSSProperties = {
-  border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)",
-  borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15,
-  cursor: "pointer", textDecoration: "none", display: "inline-block", textAlign: "center",
+  border: "1px solid var(--c-accent)", background: "var(--c-accent)", color: "var(--c-on-accent)",
+  borderRadius: 999, padding: "13px 22px", minHeight: 44, fontWeight: 600, fontSize: 15,
+  cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", textAlign: "center",
 };
 
 const ghost: CSSProperties = {
-  ...primary, background: "transparent", color: "var(--c-text)", border: "1px solid var(--c-line-control)",
+  ...primary, background: "var(--c-bg)", color: "var(--c-accent-text)",
+  border: "1px solid color-mix(in srgb, var(--c-accent) 35%, transparent)",
 };
 
 /** Общая оболочка экранов входа: знак, заголовок, карточка, юр-ссылки под ней. */

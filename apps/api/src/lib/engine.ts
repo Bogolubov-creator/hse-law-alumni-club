@@ -78,6 +78,7 @@ async function counts(alumniId: string) {
   return {
     programs_completed: by("program"), events_attended: by("event"),
     mentorship_count: by("mentorship"), referrals_count: by("referral"),
+    orders_count: by("order"),
   };
 }
 

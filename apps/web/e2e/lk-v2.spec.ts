@@ -213,7 +213,7 @@ test('общий каталог достижений целиком и в одн
   await expect(page.locator('[data-achievement="common_9"]')).toBeVisible();
   await page.getByRole('button', { name: 'Все достижения (10)', exact: true }).click();
   await expect(page.locator('[data-achievement]')).toHaveCount(10);
-  await page.getByRole('button', { name: 'Принять', exact: true }).click();
+  await page.getByRole('button', { name: 'Принять все', exact: true }).click();
   await page.screenshot({ path: `/Users/macbook/alumni-staged-evidence/achievements-${info.project.name}.png`, fullPage: true });
 });
 

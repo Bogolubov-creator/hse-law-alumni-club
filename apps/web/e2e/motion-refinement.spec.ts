@@ -4,11 +4,11 @@ const out='/Users/macbook/alumni-staged-evidence/motion';
 test.beforeEach(async({page})=>{mkdirSync(out,{recursive:true});await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});});
 test('первый экран движется, reduced motion сохраняет содержание без анимации',async({page},info)=>{
  await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/');
- const portrait=page.locator('.community-portrait');await expect(portrait).toBeVisible();
- expect(await portrait.evaluate(e=>getComputedStyle(e).animationName)).toBe('club-portrait-open');
+ const grain=page.locator('.vestnik-grain');await expect(page.locator('.vestnik-themis')).toBeVisible();await expect(grain).toBeVisible();
+ expect(await grain.evaluate(e=>getComputedStyle(e).animationName)).toMatch(/vestnik-grain-drift/);
  await page.evaluate(()=>document.getAnimations().forEach(a=>{a.pause();a.currentTime=150}));await page.screenshot({path:`${out}/intro-moving-${info.project.name}.png`});
- await page.evaluate(()=>document.getAnimations().forEach(a=>a.finish()));await page.screenshot({path:`${out}/intro-settled-${info.project.name}.png`});
- await page.emulateMedia({reducedMotion:'reduce'});expect(await portrait.evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
+ await page.evaluate(()=>document.getAnimations().forEach(a=>{try{a.finish()}catch{a.cancel()}}));await page.screenshot({path:`${out}/intro-settled-${info.project.name}.png`});
+ await page.emulateMedia({reducedMotion:'reduce'});expect(await grain.evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
  await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.getByRole('link',{name:'Вступить в клуб',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });

@@ -2,15 +2,17 @@ import { SupportDock } from "./components/SupportDock.js";
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useIsMobile } from "./lib/use-mobile.js";
+import { useIsPwaShell } from "./lib/use-pwa.js";
 import Stub from "./pages/Stub.js";
 import CookieBanner from "./components/CookieBanner.js";
 import InstallPrompt from "./components/InstallPrompt.js";
+import { PwaShell } from "./components/PwaShell.js";
 import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./lib/cart.js";
 
 // Канон (этап 0): публичное лицо – бывший v2. Legacy UI под /legacy.
-// На телефоне (<768px) для ключевых маршрутов остаётся MobileApp (native shell + табы).
+// На телефоне (<768px) и в установленном PWA для ключевых маршрутов – MobileApp.
 
 const SupportV2 = lazy(() => import("./pages/SupportV2.js"));
 const SupportConsent = lazy(() => import("./pages/SupportV2.js").then(m => ({ default: m.SupportConsent })));
@@ -65,7 +67,9 @@ export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isMobile = useIsMobile();
-  const mobileTakeover = isMobile && (
+  const isPwa = useIsPwaShell();
+  const appShell = (isMobile || isPwa) && !pathname.startsWith("/admin");
+  const mobileTakeover = appShell && (
     MOBILE_APP_ROUTES.has(pathname)
     || pathname.startsWith("/dpo/")
     || pathname.startsWith("/news/")
@@ -85,7 +89,7 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <PwaShell>
       {import.meta.env.VITE_LOCAL_REVIEW === "true" && <div className="club-local-notice">Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</div>}
       <VisionPanel />
       <ErrorBoundary>
@@ -143,9 +147,9 @@ export default function App() {
         )}
       </Suspense>
       </ErrorBoundary>
-      {!mobileTakeover && <SupportDock />}
+      <SupportDock />
       <CookieBanner />
       <InstallPrompt />
-    </>
+    </PwaShell>
   );
 }

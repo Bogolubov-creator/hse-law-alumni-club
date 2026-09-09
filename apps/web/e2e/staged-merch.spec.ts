@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 for (const width of [320, 360, 390, 768, 1024, 1280, 1440]) test(`merch detail and variant ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 });
   await page.goto('/merch');
-  await page.getByRole('button', { name: 'Принять', exact: true }).click();
+  await page.getByRole('button', { name: 'Принять все', exact: true }).click();
   await expect(page.locator('.club-merch-item').first()).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
   await page.evaluate(() => window.scrollTo(0, 0));

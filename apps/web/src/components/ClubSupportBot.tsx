@@ -414,6 +414,14 @@ export function ClubSupportBot({ open, onClose }: Props) {
         <Link to="/support" className="club-bot-human" onClick={onClose}>
           Написать человеку
         </Link>
+        <a
+          className="club-bot-human"
+          href={`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || "pravohse_alumni_bot"}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Telegram @{import.meta.env.VITE_TELEGRAM_BOT_USERNAME || "pravohse_alumni_bot"}
+        </a>
       </div>
     </div>
   );

@@ -133,6 +133,22 @@ export async function request(desc: Descriptor): Promise<any> {
     case "aggregate": {
       const rows = table(desc.collection!).filter((r) => matchFilter(r, desc.query?.query?.filter));
       const agg = desc.query?.aggregate ?? {};
+      const groupBy = desc.query?.groupBy as string[] | undefined;
+      if (groupBy?.length && agg.count) {
+        const buckets = new Map<string, Row & { count: string }>();
+        for (const r of rows) {
+          const key = groupBy.map((g) => String(r[g] ?? "")).join("\0");
+          const prev = buckets.get(key);
+          if (prev) {
+            prev.count = String(Number(prev.count) + 1);
+          } else {
+            const base: Row & { count: string } = { count: "1" };
+            for (const g of groupBy) base[g] = r[g] ?? null;
+            buckets.set(key, base);
+          }
+        }
+        return [...buckets.values()];
+      }
       if (agg.count) return [{ count: String(rows.length) }];
       if (agg.sum) {
         const field = Array.isArray(agg.sum) ? agg.sum[0] : agg.sum;

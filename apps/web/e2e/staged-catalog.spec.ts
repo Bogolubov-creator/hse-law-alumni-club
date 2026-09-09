@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 for (const width of [320, 360, 390, 768, 1024, 1280, 1440]) test(`catalog comparison ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 });
   await page.goto('/dpo');
-  await page.getByRole('button', { name: 'Принять', exact: true }).click();
+  await page.getByRole('button', { name: 'Принять все', exact: true }).click();
   await expect(page.locator('.club-program-row').first()).toBeVisible();
   await page.getByRole('checkbox', { name: /^Сравнить:/ }).nth(0).click();
   await expect(page.getByRole('checkbox', { name: /^Сравнить:/ }).nth(0)).toBeChecked();

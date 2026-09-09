@@ -4,6 +4,7 @@ import { token, useCart } from "../lib/cart.js";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
 import { Mark } from "./Mark.js";
+import { openCookieSettings } from "../lib/cookie-consent.js";
 
 /**
  * Общая оболочка v2: шапка и подвал для всех страниц нового языка.
@@ -134,6 +135,9 @@ export function V2Shell({ children }: { children: ReactNode }) {
             <Link to="/confidential" className="foc tap" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
             <Link to="/requisites" className="foc tap" style={{ color: "inherit" }}>Реквизиты</Link>
             <Link to="/support" className="foc tap" style={{ color: "inherit" }}>Поддержка</Link>
+            <button type="button" className="foc tap" style={{ color: "inherit", background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" }} onClick={() => openCookieSettings()}>
+              Cookies
+            </button>
           </span>
         </div>
       </footer>

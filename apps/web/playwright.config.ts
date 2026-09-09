@@ -27,5 +27,8 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     // Мобильная оболочка (<768px): проверяем native app-shell.
     { name: "mobile", use: { ...devices["iPhone 13"] } },
+    // Safari / WebKit – приёмка перед релизом (движок близок к iOS Safari).
+    { name: "safari", use: { ...devices["Desktop Safari"] } },
+    { name: "iphone-safari", use: { ...devices["iPhone 13"], defaultBrowserType: "webkit" } },
   ],
 });

@@ -81,6 +81,62 @@ export type AdminPage = { slug: string; title: string; blocks: { hero?: PageHero
 export function useOverview() {
   return useQuery({ queryKey: ["adm", "overview"], queryFn: () => req<Overview>("GET", "/admin/overview"), retry: false });
 }
+
+export type AnalyticsRange = "7d" | "30d" | "90d";
+export type AnalyticsBucket = { key: string; count: number };
+export type Analytics = {
+  range: AnalyticsRange;
+  since: string;
+  generated_at: string;
+  pulse: {
+    joins: number; verified_in_range: number; registers: number;
+    orders_created: number; orders_new: number; orders_paid: number;
+    rsvps: number; podcast_plays: number; achievements_granted: number;
+    friendships_new: number; push_subs_new: number;
+    referrals_ledger: number; referrals_alumni: number;
+    login_ok: number; login_fail: number; login_locked: number;
+    support_open: number | null; support_created: number | null;
+  };
+  snapshot: { alumni_count: number; alumni_verified: number; verified_ratio: number };
+  orders: { by_type: AnalyticsBucket[]; by_status: AnalyticsBucket[]; paid_sum_kop: number };
+  community: {
+    points_by_reason: AnalyticsBucket[];
+    achievements_top: Array<{ achievement_id: string; key: string; title: string; count: number }>;
+  };
+  engagement: {
+    events_top: Array<{ event_id: string; title: string; rsvps: number; attended: number }>;
+    podcasts_top: Array<{ podcast_id: string; title: string; plays: number; listeners: number }>;
+  };
+  support: {
+    open: number | null; created_in_range: number | null;
+    by_status: Array<{ status: string; count: number }>;
+    by_topic: Array<{ topic: string; count: number }>;
+  };
+};
+
+export function useAnalytics(range: AnalyticsRange) {
+  return useQuery({
+    queryKey: ["adm", "analytics", range],
+    queryFn: () => req<Analytics>("GET", `/admin/analytics?range=${range}`),
+    retry: false,
+  });
+}
+
+/** CSV аналитики за выбранное окно (без ПДн). */
+export async function downloadAnalyticsCsv(range: AnalyticsRange): Promise<void> {
+  const t = adminToken();
+  const res = await fetch(`/api/admin/analytics/export.csv?range=${range}`, { headers: t ? { authorization: `Bearer ${t}` } : {} });
+  if (!res.ok) throw new Error("Не удалось выгрузить аналитику");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `analytics-${range}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 export type OrdersPage = { items: AdminOrder[]; total: number; page: number; limit: number };
 export type OrdersQuery = { q?: string; status?: string; payment?: string; page?: number; limit?: number };
 /**

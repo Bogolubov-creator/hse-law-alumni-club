@@ -112,6 +112,15 @@ HSE Moscow, Russia», разработчик – Letterhead Studio, дизайн
 прежними, пока v2 не выкатывается. Растровый `assets/themis.jpeg` продолжает
 жить на страницах v1 и не трогается.
 
+**PWA-оболочка.** В `display-mode: standalone` (и QA `?pwa=1`) включается
+`PwaShell`: phone-column на широком экране, класс `html.pwa-shell`, mobile-chrome
+вместо desk-nav. Ключевые маршруты идут через `MobileApp`. Offline fallback –
+`/offline.html` в SW `club-v5`. Админка без рамки.
+
+**Кнопки (как dpo-pravo-hse).** CTA – пилюли `border-radius: 999px`, primary
+заливка акцента / secondary обводка акцента, отклик `scale(0.97)` на `:active`.
+Классы `.club-btn`, примитивы `action` / `actionGhost`.
+
 ---
 
 ## Сигнатура: «поле бланка»
@@ -515,3 +524,24 @@ Oxford: входы в кабинет, мероприятия и сообщест
 ### Уточнение заказчика: Фемида на главной
 
 На первом экране возвращена Фемида с исходной подписью. Ворона остаётся в кнопке поддержки. Компонент приветствия сохранён для дальнейшего использования, но на главной не отображается.
+
+## Вестник (2026-09-09)
+
+Новый визуальный мир главной `/` поверх канона (HSE Sans/Slab, охра, знак весов). Community-лендинг с круглой врезкой и тремя equal shortcuts заменён на атмосферный hero портала.
+
+| | |
+|---|---|
+| Режим | redesign `/` only (IA, API, копирайт-смысл сохранены) |
+| DESIGN_VARIANCE | 8 |
+| MOTION_INTENSITY | 8 – gpt-taste: grain drift, marquee, scrub folio, Themis scale/fade |
+| VISUAL_DENSITY | 3 |
+| Hero | Artistic Asymmetry: **бренд клуба** (hero-level), H1 ≤3 строки, CTA; Фемида full-bleed atmosphere |
+| Anti-patterns | равные карточки в первом viewport; inset circle portrait; meta-labels SECTION; AI-purple; **мачта «журнал / выпуск №»** |
+
+**Уточнение заказчика (2026-09-09):** это портал клуба выпускников, не журнал. Строка «Вестник · выпуск 09 · сентябрь…» снята; имя продукта в первом экране – «Клуб выпускников факультета права Вышки».
+
+Конфликт gpt-taste / emil для `/` закрыт выбором заказчика: **живой micro-motion**. Кабинет и формы без фоновых циклов. `prefers-reduced-motion: reduce` гасит grain/marquee и GSAP scrub.
+
+**Угловая ворона (2026-09-09):** launcher FAQ-бота как на dpo-pravo-hse – idle + follow-cursor + один askQ; синяя пилюля снята. Режим `prefers-reduced-motion` / `html.vis` – статичная поза или текстовая кнопка «Поддержка».
+
+Superdesign cloud в сессии без auth; init + 3 локальных компа в `.superdesign/comps/`, выбран **A** (`PICK.md`).

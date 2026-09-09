@@ -241,6 +241,10 @@
 .club-bot-foot {
   padding: 0 14px 12px;
   flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
 }
 
 .club-bot-human {

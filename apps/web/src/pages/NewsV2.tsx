@@ -81,7 +81,7 @@ export function NewsV2() {
                 {item.excerpt && (
                   <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: i === 0 ? "var(--t-lead)" : "var(--t-body)", lineHeight: 1.55, maxWidth: i === 0 ? "68ch" : "62ch" }}>{item.excerpt}</p>
                 )}
-                <Link to={`/news/${item.slug}`} className="foc" style={{ display: "inline-block", marginTop: 10, ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>читать →</Link>
+                <Link to={`/news/${item.slug}`} className="foc" style={{ display: "inline-block", marginTop: 10, ...label, color: "var(--c-link)", textDecoration: "none" }}>читать →</Link>
               </div>
             </article>
           ))}

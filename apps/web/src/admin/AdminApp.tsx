@@ -1,4 +1,5 @@
 import SupportAdmin from "./SupportAdmin.js";
+import AnalyticsAdmin from "./AnalyticsAdmin.js";
 import { useId, useState, useEffect, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Modal from "../components/Modal.js";
@@ -29,7 +30,7 @@ const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled"];
 const VERIF: Record<string, string> = { pending: "На проверке", verified: "Верифицирован", rejected: "Отклонён" };
 const LEVEL_RU: Record<string, string> = { graduate: "Выпускник", friend: "Друг клуба", expert: "Знаток", ambassador: "Амбассадор" };
 
-type Section = "overview" | "orders" | "members" | "subs" | "content" | "audit" | "support";
+type Section = "overview" | "analytics" | "orders" | "members" | "subs" | "content" | "audit" | "support";
 
 export default function AdminApp() {
   useHead({ title: "Админ-панель", noindex: true }); // офисная зона – не индексируем
@@ -80,6 +81,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   const ov = useOverview();
   const nav: { key: Section; label: string; badge?: number }[] = [
     { key: "overview", label: "Обзор" },
+    { key: "analytics", label: "Аналитика" },
     { key: "orders", label: "Заявки", badge: ov.data?.new_orders },
     { key: "members", label: "Выпускники", badge: ov.data?.pending_verifications },
     { key: "subs", label: "Подписки" },
@@ -87,7 +89,16 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { key: "audit", label: "Журнал" },
     { key: "support", label: "Поддержка" },
   ];
-  const titles: Record<Section, string> = { overview: "Обзор", orders: "Заявки и заказы", members: "Выпускники", subs: "Подписки на подкасты", content: "Контент", audit: "Журнал безопасности", support: "Поддержка" };
+  const titles: Record<Section, string> = {
+    overview: "Обзор",
+    analytics: "Аналитика",
+    orders: "Заявки и заказы",
+    members: "Выпускники",
+    subs: "Подписки на подкасты",
+    content: "Контент",
+    audit: "Журнал безопасности",
+    support: "Поддержка",
+  };
 
   // На вход выкидываем ТОЛЬКО при 401 (истёкшая сессия). Прочие ошибки (5xx/сеть)
   // не должны маскироваться под разлогин – показываем ретрай в основной области.
@@ -135,6 +146,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
           </p>
         )}
         {section === "overview" && <Overview onGo={setSection} />}
+        {section === "analytics" && <AnalyticsAdmin />}
         {section === "orders" && <Orders />}
         {section === "members" && <Members />}
         {section === "subs" && <PodcastSubs />}

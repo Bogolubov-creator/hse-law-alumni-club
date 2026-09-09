@@ -21,6 +21,8 @@ const GUARDED = [
   { method: "GET" as const, url: "/admin/orders" },
   { method: "GET" as const, url: "/admin/members" },
   { method: "GET" as const, url: "/admin/audit" },
+  { method: "GET" as const, url: "/admin/analytics" },
+  { method: "GET" as const, url: "/admin/analytics/export.csv" },
 ];
 
 function stubDirectusLogin(valid: (email: string, password: string) => boolean) {

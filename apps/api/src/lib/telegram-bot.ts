@@ -2,6 +2,7 @@ import { readItems, updateItem } from "@directus/sdk";
 import { directus } from "./directus.js";
 import { env } from "../env.js";
 import { verifyTgLinkCode } from "./tg-link.js";
+import { answerTelegramFaq } from "./site-faq-telegram.js";
 import {
   parseCommand,
   formatPointsReply,
@@ -113,7 +114,12 @@ export async function handleTelegramUpdate(update: TgUpdate, token: string): Pro
   const msg = update.message;
   if (!msg?.text || !msg.from?.id) return;
   const { cmd, arg } = parseCommand(msg.text);
-  if (!cmd) return;
+  if (!cmd) {
+    // Свободный текст – тот же FAQ, что у вороны на сайте.
+    const faq = await answerTelegramFaq(msg.text);
+    if (faq) await tgSendMessage(msg.chat.id, faq, token);
+    return;
+  }
   const reply = await buildBotReply(cmd, arg, String(msg.from.id));
   if (reply) await tgSendMessage(msg.chat.id, reply, token);
 }

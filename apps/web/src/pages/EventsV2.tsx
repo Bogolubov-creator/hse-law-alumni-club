@@ -147,7 +147,7 @@ export default function EventsV2() {
         </form>
         <div key={`${search}:${format}`} className="club-agenda-results">
           {upcoming.map((e, i) => (
-            <div key={e.id} className={i === 0 ? "club-event-featured" : undefined} style={i === 0 ? { background: "var(--c-surface-warm, var(--c-bg-sunken))", borderRadius: 12, padding: "8px 20px 4px", marginBottom: 8 } : undefined}>
+            <div key={e.id} className={i === 0 ? "club-event-featured" : undefined} style={i === 0 ? { background: "var(--c-bg-sunken)", borderRadius: 12, padding: "8px 20px 4px", marginBottom: 8 } : undefined}>
               {row(e, false)}
             </div>
           ))}

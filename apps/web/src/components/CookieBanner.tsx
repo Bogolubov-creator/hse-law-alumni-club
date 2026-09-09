@@ -1,64 +1,81 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-
-const KEY = "club_cookie_consent";
+import { Link } from "react-router-dom";
+import {
+  COOKIE_SETTINGS_EVENT,
+  hasCookieChoice,
+  type CookieConsent,
+  writeCookieConsent,
+} from "../lib/cookie-consent.js";
 
 /**
- * Cookie-баннер (152-ФЗ): показывается при первом визите, скрывается по «Принять».
- * Выбор хранится в localStorage – баннер не навязывается повторно.
+ * Баннер cookies по 152-ФЗ (ст. 9): информирование + свободный выбор.
+ * Кнопки «Только необходимые» и «Принять все» равнозначны на первом экране.
+ * Сайт сейчас не грузит аналитику/рекламу до согласия; «Принять все» резервирует
+ * право на необязательные cookies, если они появятся позже.
  */
 export default function CookieBanner() {
-  const [accepted, setAccepted] = useState(() => localStorage.getItem(KEY) === "1");
+  const [visible, setVisible] = useState(() => !hasCookieChoice());
   const ref = useRef<HTMLDivElement>(null);
-  // Баннер общий для обеих версий, поэтому и политику показывает «свою»:
-  // со страницы v2 ссылка в старый интерфейс – это разрыв.
-  const v2 = useLocation().pathname.startsWith("/");
+
+  useEffect(() => {
+    const reopen = () => setVisible(true);
+    window.addEventListener(COOKIE_SETTINGS_EVENT, reopen);
+    return () => window.removeEventListener(COOKIE_SETTINGS_EVENT, reopen);
+  }, []);
 
   /**
-   * Пока баннер висит, он закрывает низ страницы – а внизу профиля стоят права
-   * по 152-ФЗ («скачать мои данные», «удалить мой аккаунт»). До согласия на
-   * cookies воспользоваться ими было физически нельзя: клик уходил в баннер.
-   *
-   * Публикуем высоту в --cookie-h, а отступ добавляют сами оболочки страниц.
-   * Отступ на body не годится: он открывает фон документа, и под тёмной темой
-   * v2 внизу появлялась светлая полоса.
+   * Пока баннер висит, он закрывает низ страницы – права по 152-ФЗ в профиле
+   * не должны оказаться под ним. Высота уходит в --cookie-h для оболочек.
    */
   useEffect(() => {
     const el = ref.current;
     const root = document.documentElement;
-    if (accepted || !el) return;
+    if (!visible || !el) {
+      root.style.removeProperty("--cookie-h");
+      return;
+    }
     const apply = () => root.style.setProperty("--cookie-h", `${el.offsetHeight + 32}px`);
     apply();
-    const ro = new ResizeObserver(apply); // высота меняется при переносе текста
+    const ro = new ResizeObserver(apply);
     ro.observe(el);
-    return () => { ro.disconnect(); root.style.removeProperty("--cookie-h"); };
-  }, [accepted]);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--cookie-h");
+    };
+  }, [visible]);
 
-  if (accepted) return null;
-  const accept = () => {
-    localStorage.setItem(KEY, "1");
-    setAccepted(true);
+  if (!visible) return null;
+
+  const choose = (value: CookieConsent) => {
+    writeCookieConsent(value);
+    setVisible(false);
   };
+
   return (
-    <div ref={ref} role="dialog" aria-label="Использование cookies" style={{
-      position: "fixed", left: 16, right: 16, bottom: "calc(16px + env(safe-area-inset-bottom, 0px))", zIndex: 300, maxWidth: 720, margin: "0 auto",
-      display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap",
-      background: "#14181F", color: "#FBF3E8", borderRadius: 16, padding: "16px 20px",
-      boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)", fontSize: 13.5, lineHeight: 1.5,
-    }}>
-      <p style={{ flex: "1 1 260px", minWidth: 0, margin: 0 }}>
-        Сайт сохраняет в браузере корзину, сессию входа и выбранные настройки. Подробнее – в{" "}
-        <Link to={v2 ? "/privacy" : "/privacy"} className="foc" style={{ color: "#E3C272", textDecoration: "underline" }}>политике обработки персональных данных</Link>.
+    <div
+      ref={ref}
+      role="dialog"
+      aria-modal="false"
+      aria-label="Использование cookies"
+      className="club-cookie-banner"
+    >
+      <p className="club-cookie-banner__text">
+        Сайт использует необходимые файлы cookies и локальное хранилище браузера: корзина,
+        сессия входа, выбранные настройки и ваш выбор по cookies. Рекламных и аналитических
+        счётчиков сейчас нет. Подробнее – в{" "}
+        <Link to="/privacy#cookies" className="foc club-cookie-banner__link">
+          политике обработки персональных данных
+        </Link>
+        . Выбор можно изменить в любой момент ссылкой «Cookies» в подвале.
       </p>
-      {/* Тёмный текст на охре: 5,12:1 против 3,16:1 у светлого. То же решение,
-          что уже принято для главной кнопки сайта – согласие по 152-ФЗ тем более
-          должно быть читаемым. */}
-      <button onClick={accept} className="foc" style={{
-        flex: "none", fontWeight: 600, fontSize: 14, minHeight: 44, padding: "11px 26px", borderRadius: 11,
-        border: "none", background: "#EC5A13", color: "#14181F", cursor: "pointer",
-      }}>
-        Принять
-      </button>
+      <div className="club-cookie-banner__actions">
+        <button type="button" className="foc club-cookie-banner__btn club-cookie-banner__btn--secondary" onClick={() => choose("essential")}>
+          Только необходимые
+        </button>
+        <button type="button" className="foc club-cookie-banner__btn club-cookie-banner__btn--primary" onClick={() => choose("all")}>
+          Принять все
+        </button>
+      </div>
     </div>
   );
 }

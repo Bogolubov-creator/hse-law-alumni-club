@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { hasCookieChoice } from "../lib/cookie-consent.js";
 
 const DISMISS_KEY = "club_pwa_dismiss";
-const COOKIE_KEY = "club_cookie_consent";
 
 /** Событие Chrome/Android для программного вызова установки PWA. */
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
@@ -30,7 +30,7 @@ export default function InstallPrompt() {
     window.addEventListener("beforeinstallprompt", onBip);
 
     const timer = window.setInterval(() => {
-      if (localStorage.getItem(COOKIE_KEY) === "1") {
+      if (hasCookieChoice()) {
         window.clearInterval(timer);
         window.setTimeout(() => {
           if (isIos()) setIos(true);
@@ -63,18 +63,17 @@ export default function InstallPrompt() {
       background: "#11296B", color: "#FBF3E8", borderRadius: 16, padding: "14px 18px",
       boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)", fontSize: 13.5, lineHeight: 1.45,
     }}>
-      <span style={{ fontSize: 22, flex: "none" }} aria-hidden>📲</span>
       <p style={{ flex: 1, minWidth: 200, margin: 0 }}>
         {ios
-          ? <>Добавьте клуб на экран телефона: нажмите <b>Поделиться</b> <span aria-hidden>⎋</span> → <b>«На экран „Домой“»</b> – сайт откроется как приложение.</>
+          ? <>Добавьте клуб на экран телефона: нажмите <b>Поделиться</b> → <b>«На экран „Домой“»</b> – сайт откроется как приложение.</>
           : <>Установите клуб как приложение – быстрый запуск с главного экрана, без адресной строки.</>}
       </p>
       {!ios && (
-        <button onClick={install} className="foc" style={{ flex: "none", fontWeight: 600, fontSize: 14, padding: "10px 20px", borderRadius: 11, border: "none", background: "#EC5A13", color: "#FBF3E8", cursor: "pointer" }}>
+        <button onClick={install} className="foc club-btn club-btn--primary" style={{ flex: "none" }}>
           Установить
         </button>
       )}
-      <button onClick={dismiss} aria-label="Скрыть" className="foc" style={{ flex: "none", width: 34, height: 34, borderRadius: 10, border: "1px solid rgba(251,243,232,.25)", background: "transparent", color: "#FBF3E8", cursor: "pointer" }}>✕</button>
+      <button onClick={dismiss} aria-label="Скрыть" className="foc" style={{ flex: "none", width: 34, height: 34, borderRadius: 999, border: "1px solid rgba(251,243,232,.25)", background: "transparent", color: "#FBF3E8", cursor: "pointer" }}>✕</button>
     </div>
   );
 }

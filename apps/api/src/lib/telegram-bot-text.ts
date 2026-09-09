@@ -84,6 +84,8 @@ export function formatStartReply(arg: string, linked: boolean, publicUrl: string
     "/points – баллы и уровень",
     "/calendar – ближайшие события",
     "/help – подсказка",
+    "",
+    "Можно просто написать вопрос про клуб или ДПО – отвечу по сайту.",
   ];
   if (arg) {
     lines.push("", `🎓 Вы пришли по приглашению – <a href="${esc(joinUrl)}">вступить в клуб</a>`);
@@ -109,7 +111,11 @@ export function formatHelpReply(publicUrl: string): string {
     "/calendar – афиша ближайших событий",
     "/help – эта подсказка",
     "",
+    "Или напишите вопрос текстом – отвечу по сайту клуба и программам ДПО",
+    "(вступление, подкасты, мерч, скидка выпускника).",
+    "",
     `🌐 Сайт: <a href="${esc(publicUrl)}">${esc(publicUrl)}</a>`,
+    `💬 Поддержка: <a href="${esc(publicUrl)}/support">${esc(publicUrl)}/support</a>`,
   ].join("\n");
 }
 

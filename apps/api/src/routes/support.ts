@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { z, ZodError } from "zod";
 import { checkoutPool } from "../lib/checkout-store.js";
 import { env } from "../env.js";
-import { requireFullAdmin } from "../lib/auth.js";
+import { requireAdmin, requireFullAdmin } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
 
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -67,14 +67,47 @@ export async function supportRoutes(app: FastifyInstance) {
     return { ok: true };
   });
   app.get("/admin/support", async (req, reply) => {
-    const ctx = requireFullAdmin(req, reply); if (!ctx) return;
+    // Тикеты – ПДн, но офис (editor) ведёт переписку; полный admin – для анонимизации/денег.
+    const ctx = requireAdmin(req, reply); if (!ctx) return reply;
     const { page } = z.object({ page: z.coerce.number().int().min(1).default(1) }).parse(req.query);
     const { rows } = await checkoutPool().query("SELECT id,topic,messages,status,created_at,expires_at FROM club_support_tickets WHERE expires_at>now() ORDER BY updated_at DESC LIMIT 30 OFFSET $1", [(page-1)*30]);
     audit("support.read", { actor: `admin:${ctx.userId}` });
     return rows;
   });
+  /** Статус FAQ/Telegram – чтение для офиса (editor+admin), без ПДн. */
+  app.get("/admin/bot-status", async (req, reply) => {
+    const ctx = requireAdmin(req, reply); if (!ctx) return reply;
+    const { BOT_FAQ } = await import("@club/shared");
+    const username = env.TELEGRAM_BOT_USERNAME || "pravohse_alumni_bot";
+    let openApprox: number | null = null;
+    try {
+      if (env.CHECKOUT_DATABASE_URL) {
+        const { rows } = await checkoutPool().query(
+          "SELECT count(*)::int AS n FROM club_support_tickets WHERE expires_at>now() AND status='open'",
+        );
+        openApprox = rows[0]?.n ?? 0;
+      }
+    } catch {
+      openApprox = null;
+    }
+    const cfg = supportConfig();
+    return {
+      telegram: {
+        username,
+        tokenConfigured: !!env.TELEGRAM_BOT_TOKEN,
+        polling: env.TELEGRAM_POLLING === "true",
+        link: `https://t.me/${username}`,
+      },
+      siteFaq: {
+        answers: BOT_FAQ.answers.length,
+        gaps: BOT_FAQ.gaps.length,
+        note: "Ворона на сайте и @pravohse_alumni_bot отвечают одним FAQ; каталог ДПО – из API.",
+      },
+      tickets: { enabled: cfg.enabled, draft: cfg.draft, openApprox },
+    };
+  });
   app.patch("/admin/support/:id", async (req, reply) => {
-    const ctx = requireFullAdmin(req, reply); if (!ctx) return;
+    const ctx = requireAdmin(req, reply); if (!ctx) return reply;
     const { id } = idSchema.parse(req.params);
     const data = z.object({ message: message.optional(), status: z.enum(["answered", "closed"]) }).strict().refine(v=>v.status==="closed"||!!v.message).parse(req.body);
     const addition = data.message ? [{ author: "support", text: data.message, at: new Date().toISOString() }] : [];

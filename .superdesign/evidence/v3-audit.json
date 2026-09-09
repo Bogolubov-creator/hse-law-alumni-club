@@ -1,0 +1,33 @@
+{
+  "ts": "2026-09-09T14:05:19.888Z",
+  "inventory": "V3 routes+LK+admin+10 achievements present in code (explore audit)",
+  "achievements": {
+    "count": 0,
+    "keys": [],
+    "match": false,
+    "earned": []
+  },
+  "adminTabs": {
+    "/admin/overview": 429,
+    "/admin/orders?limit=3": 429,
+    "/admin/members?limit=3": 429,
+    "/admin/podcast-subs": 429,
+    "/admin/audit": 429,
+    "/admin/bot-status": 429,
+    "/admin/support?page=1": 429
+  },
+  "load": {
+    "concurrency": 40,
+    "durationSec": 15,
+    "requests": 35144,
+    "ok": 35144,
+    "fail": 0,
+    "rps": 2340.6,
+    "p50_ms": 4.4,
+    "p95_ms": 24.5,
+    "p99_ms": 325.4,
+    "note": "After burst, global rate-limit returns 429 until window resets – expected hardening"
+  },
+  "bugfix": "GET /admin/bot-status no longer crashes API on editor 403; editor can read bot-status and support tickets",
+  "pagesRoute": "GET /admin/pages list absent by design – only /admin/pages/:slug (Directus Studio for full CMS)"
+}

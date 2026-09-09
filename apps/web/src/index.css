@@ -72,6 +72,69 @@ button, a, input, select, textarea { touch-action: manipulation; } /* без 300
   html { overscroll-behavior-y: none; }
 }
 
+/* ── PWA-оболочка (установленное приложение / ?pwa=1) ───────────────
+   Phone-column на широком экране, мобильная навигация вместо desk-chrome. */
+html.pwa-shell {
+  overscroll-behavior-y: none;
+}
+html.pwa-shell body {
+  background: #1c1916;
+}
+.pwa-shell-root {
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: flex;
+  justify-content: center;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(236, 90, 19, 0.18), transparent 55%),
+    #1c1916;
+}
+.pwa-shell-stage {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  min-height: 100svh;
+  background: var(--c-bg, #fbf3e8);
+  color: var(--c-text, #14181f);
+  position: relative;
+  box-shadow: 0 0 0 1px rgba(251, 243, 232, 0.06), 0 24px 80px -28px rgba(0, 0, 0, 0.65);
+  overflow-x: clip;
+}
+@media (max-width: 480px) {
+  html.pwa-shell body,
+  .pwa-shell-root {
+    background: var(--c-bg, #fbf3e8);
+  }
+  .pwa-shell-root {
+    display: block;
+  }
+  .pwa-shell-stage {
+    max-width: none;
+    box-shadow: none;
+  }
+}
+/* В оболочке приложения всегда мобильный хром, даже на широком viewport */
+html.pwa-shell .mob-only { display: flex !important; }
+html.pwa-shell .desk-only { display: none !important; }
+html.pwa-shell {
+  --tabs-h: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+html.pwa-shell .club-cookie-banner,
+html.pwa-shell [role="dialog"][aria-label="Использование cookies"],
+html.pwa-shell [role="dialog"][aria-label="Установка приложения"] {
+  left: max(16px, calc(50% - 215px + 16px));
+  right: max(16px, calc(50% - 215px + 16px));
+  bottom: calc(16px + var(--tabs-h, 0px)) !important;
+}
+@media (max-width: 480px) {
+  html.pwa-shell .club-cookie-banner,
+  html.pwa-shell [role="dialog"][aria-label="Использование cookies"],
+  html.pwa-shell [role="dialog"][aria-label="Установка приложения"] {
+    left: 16px;
+    right: 16px;
+  }
+}
+
 /* ─────────────── Версия для слабовидящих (ГОСТ Р 52872) ───────────────
    Агрессивное переопределение: заменяем дизайн простой высококонтрастной
    раскладкой. Масштаб – через zoom, цвета – через переменные схемы. */
@@ -195,9 +258,123 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
    Панель вкладок фиксирована внизу, поэтому её высоту нужно знать всем,
    кто рисует что-то у нижнего края: подвалу, кабинету и cookie-баннеру.
    На десктопе переменная равна нулю и ничего не сдвигает. */
+/* Cookie-баннер (152-ФЗ): фиксированная шторка, две равнозначные кнопки выбора. */
+.club-cookie-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 300;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: #14181f;
+  color: #fbf3e8;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.55);
+  font-size: 13.5px;
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+.club-cookie-banner__text {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+}
+.club-cookie-banner__link {
+  color: #e3c272;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.club-cookie-banner__actions {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+.club-cookie-banner__btn {
+  font-weight: 600;
+  font-size: 14px;
+  min-height: 44px;
+  min-width: 11.5rem;
+  padding: 11px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.club-cookie-banner__btn--secondary {
+  border: 1px solid rgba(251, 243, 232, 0.45);
+  background: transparent;
+  color: #fbf3e8;
+}
+.club-cookie-banner__btn--primary {
+  border: 1px solid #ec5a13;
+  background: #ec5a13;
+  color: #14181f;
+}
+
+/* CTA-пилюли как на dpo-pravo-hse (mobile-cta). */
+.club-btn {
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 13px 18px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: var(--f-body, "HSE Sans", system-ui, sans-serif);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.club-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.club-btn--primary {
+  background: var(--c-accent, #ec5a13);
+  border-color: var(--c-accent, #ec5a13);
+  color: var(--c-on-accent, #14181f);
+}
+.club-btn--secondary {
+  background: var(--c-bg, #fbf3e8);
+  color: var(--c-accent-text, #c24009);
+  border-color: color-mix(in srgb, var(--c-accent, #ec5a13) 35%, transparent);
+}
+.club-btn--block {
+  width: 100%;
+}
+.club-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .club-btn {
+    transition: none;
+  }
+  .club-btn:not(:disabled):active {
+    transform: none;
+  }
+}
+
 @media (max-width: 768px) {
   :root { --tabs-h: calc(56px + env(safe-area-inset-bottom, 0px)); }
   /* Баннер поднимается над вкладками, иначе перекрывает «корзину» и «кабинет» */
+  .club-cookie-banner,
   [role="dialog"][aria-label="Использование cookies"] {
     bottom: calc(16px + var(--tabs-h, 0px)) !important;
   }

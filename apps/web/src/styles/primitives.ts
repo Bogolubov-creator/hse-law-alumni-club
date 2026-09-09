@@ -44,26 +44,37 @@ export const label: CSSProperties = {
   color: "var(--c-text-3)",
 };
 
-/** Действие. Один акцент на весь проект – охра с тёмным текстом (5,12:1). */
+/**
+ * Действие – пилюля как на dpo-pravo-hse (border-radius 999, padding ~13×18).
+ * Акцент охра с тёмным текстом (5,12:1), не белый на охре.
+ */
 export const action: CSSProperties = {
-  ...mono,
-  fontSize: "var(--t-caption)",
-  letterSpacing: "var(--tr-data)",
+  fontFamily: "var(--f-body)",
+  fontSize: 15,
+  fontWeight: 600,
+  letterSpacing: "normal",
   textTransform: "none",
-  padding: "9px 15px",
-  borderRadius: "var(--r-sm)",
-  border: "none",
+  padding: "13px 18px",
+  minHeight: 44,
+  borderRadius: 999,
+  border: "1px solid var(--c-accent)",
   background: "var(--c-accent)",
   color: "var(--c-on-accent)",
   cursor: "pointer",
+  textAlign: "center",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
 };
 
-/** Второстепенное действие: та же геометрия, обводка вместо заливки. */
+/** Второстепенное действие: та же пилюля, обводка акцента (как secondary на ДПО). */
 export const actionGhost: CSSProperties = {
   ...action,
-  background: "transparent",
-  color: "var(--c-text-2)",
-  border: "1px solid var(--c-line-control)",
+  background: "var(--c-bg)",
+  color: "var(--c-accent-text)",
+  border: "1px solid color-mix(in srgb, var(--c-accent) 35%, transparent)",
 };
 
 /** Поле ввода. Просторное: формы кабинета и заявки, куда вводят с телефона. */

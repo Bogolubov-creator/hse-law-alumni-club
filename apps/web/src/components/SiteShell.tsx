@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { CLUB_OPERATOR } from "@club/shared";
 import { useCart, token } from "../lib/cart.js";
+import { openCookieSettings } from "../lib/cookie-consent.js";
 import { VisionToggle } from "./Vision.js";
 
 const NAV = [
@@ -82,9 +84,12 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <Link to="/privacy" className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost">Политика обработки персональных данных</Link>
             <Link to="/confidential" className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost">Политика конфиденциальности</Link>
             <Link to="/requisites" className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost">Реквизиты</Link>
+            <button type="button" onClick={() => openCookieSettings()} className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost bg-transparent border-0 p-0 cursor-pointer text-inherit" style={{ font: "inherit" }}>
+              Cookies
+            </button>
           </div>
           <p className="mt-3 text-[12px] leading-relaxed">
-            НИУ «Высшая школа экономики», факультет права · ОГРН 1027739630401 · ИНН 7714030726 · 101000, г. Москва, ул. Мясницкая, д. 20 · pravo@hse.ru · +7 (495) 771-32-32
+            {CLUB_OPERATOR.shortName} · ОГРН {CLUB_OPERATOR.ogrn} · ИНН {CLUB_OPERATOR.inn} · {CLUB_OPERATOR.address}
           </p>
         </div>
       </footer>

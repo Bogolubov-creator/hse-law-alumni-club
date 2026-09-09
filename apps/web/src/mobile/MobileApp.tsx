@@ -273,8 +273,8 @@ function GuestHome() {
         <p style={{ fontSize: 15, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 300 }}>
           Войдите, чтобы открыть карту выпускника – баллы, уровень и скидку на программы ДПО.
         </p>
-        <Link to="/lk" style={{ marginTop: 24, width: "100%", maxWidth: 300, height: 52, borderRadius: 15, background: "#EC5A13", color: "#14181F", ...disp, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", boxShadow: "0 14px 28px -14px rgba(236,90,19,.85)" }}>Войти в кабинет</Link>
-        <Link to="/join" style={{ marginTop: 12, width: "100%", maxWidth: 300, height: 52, borderRadius: 15, border: "1.5px solid #14181F", color: INK, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: "#fff" }}>Вступить в клуб</Link>
+        <Link to="/lk" className="club-btn club-btn--primary club-btn--block foc" style={{ marginTop: 24, maxWidth: 300 }}>Войти в кабинет</Link>
+        <Link to="/join" className="club-btn club-btn--secondary club-btn--block foc" style={{ marginTop: 10, maxWidth: 300 }}>Вступить в клуб</Link>
         <div style={{ ...mono, fontSize: 11, color: "#6E675A", marginTop: 20 }}>Витрины ниже открыты всем →</div>
       </div>
     </div>
@@ -479,8 +479,19 @@ const roundLight: CSSProperties = { width: 40, height: 40, borderRadius: 12, bor
 const secTitle: CSSProperties = { ...disp, fontWeight: 600, fontSize: 15, marginBottom: 8 };
 const factChip: CSSProperties = { ...mono, fontSize: 10.5, color: INK, background: "#fff", border: "1px solid #ECE6DA", padding: "7px 11px", borderRadius: 9 };
 const stickyBar: CSSProperties = { flexShrink: 0, padding: "12px 20px calc(env(safe-area-inset-bottom, 0px) + 16px)", background: "#FBF3E8", borderTop: "1px solid #EFE7D8", display: "flex", gap: 11 };
-const primaryBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "none", background: "#EC5A13", color: "#14181F", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: "0 12px 24px -12px rgba(236,90,19,.8)" };
-const ghostBtn: CSSProperties = { flex: 1, height: 52, borderRadius: 15, border: "1.5px solid #14181F", background: "#fff", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" };
+/* Пилюли как на dpo-pravo-hse; цвет – охра клуба. */
+const primaryBtn: CSSProperties = {
+  flex: 1, minHeight: 48, padding: "13px 18px", borderRadius: 999,
+  border: "1px solid #EC5A13", background: "#EC5A13", color: "#14181F",
+  fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15,
+  cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
+  textDecoration: "none", boxSizing: "border-box",
+};
+const secondaryBtn: CSSProperties = {
+  ...primaryBtn,
+  background: "#fff", color: "#C24009", border: "1px solid rgba(236,90,19,.35)",
+};
+const ghostBtn: CSSProperties = { ...secondaryBtn };
 const BackWhite = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
 const BackInk = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
 
@@ -607,7 +618,7 @@ function MobileCart() {
         <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "#C24009", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
         <div style={{ fontSize: 14, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
         {result.payment_url && <a href={result.payment_url} style={{ ...primaryBtn, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", padding: "0 26px", background: "#1F8A5B", boxShadow: "none" }}>Оплатить онлайн</a>}
-        <button onClick={() => nav("/")} style={{ marginTop: 22, height: 52, padding: "0 34px", borderRadius: 15, border: "none", background: INK, color: "#FBF3E8", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>На главную</button>
+        <button onClick={() => nav("/")} style={{ ...secondaryBtn, marginTop: 22, flex: "none", padding: "13px 34px", color: INK, borderColor: "rgba(20,24,31,.25)" }}>На главную</button>
       </div>
     );
   }
@@ -717,7 +728,7 @@ function MobileNewsPost() {
                 <p key={i} style={{ fontSize: 14.5, lineHeight: 1.6, color: "#3a3f49", margin: 0 }}>{para}</p>
               ))}
             </div>
-            <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" style={{ marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", gap: 9, height: 50, borderRadius: 14, background: "#15375E", color: "#FBF3E8", fontWeight: 600, fontSize: 14, textDecoration: "none" }}>Открыть в Telegram · t.me/pravohse</a>
+            <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="club-btn club-btn--block foc" style={{ marginTop: 20, background: "#15375E", borderColor: "#15375E", color: "#FBF3E8" }}>Открыть в Telegram · t.me/pravohse</a>
           </div>
         )}
       </div>
@@ -1037,7 +1048,7 @@ function MobileProfile() {
               {row(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5C6470" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>, "Уведомления и Telegram-бот", "/lk")}
               {row(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5C6470" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>, "Юридические документы", "/privacy", true)}
             </div>
-            <button onClick={logout} style={{ height: 50, borderRadius: 14, border: "1px solid #E4DCCC", background: "#fff", color: "#B5331B", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14.5, cursor: "pointer" }}>Выйти из аккаунта</button>
+            <button onClick={logout} className="club-btn club-btn--secondary club-btn--block foc" style={{ color: "#B5331B", borderColor: "#E4DCCC" }}>Выйти из аккаунта</button>
           </div>
         )}
       </div>

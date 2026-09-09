@@ -55,7 +55,7 @@ test.describe("Панель вкладок v2", () => {
   test("панель не перекрывает низ страницы", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/events");
-    await page.getByRole("button", { name: "Принять" }).click();
+    await page.getByRole("button", { name: "Принять все" }).click();
 
     const last = page.locator("footer a").last();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -75,7 +75,7 @@ test.describe("Панель вкладок v2", () => {
   test("cookie-баннер поднят над панелью и его кнопка нажимается", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/events");
-    const accept = page.getByRole("button", { name: "Принять" });
+    const accept = page.getByRole("button", { name: "Принять все" });
     const box = (await accept.boundingBox())!;
     const covered = await page.evaluate(([x, y]) => {
       const el = document.elementFromPoint(x, y);

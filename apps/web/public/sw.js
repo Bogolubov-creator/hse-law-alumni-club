@@ -1,9 +1,10 @@
 /* Service worker PWA.
    Сеть в приоритете для HTML; статика – cache-first.
    /api никогда не кэшируем (персональные данные). */
-const CACHE = "club-v4";
+const CACHE = "club-v5";
 const PRECACHE = [
   "/",
+  "/offline.html",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
@@ -61,7 +62,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Навигация: сеть → обновить оболочку; офлайн → /
+  // Навигация: сеть → обновить оболочку; офлайн → / или offline.html
   if (e.request.mode === "navigate") {
     e.respondWith(
       fetch(e.request)
@@ -72,7 +73,9 @@ self.addEventListener("fetch", (e) => {
           }
           return res;
         })
-        .catch(() => caches.match("/").then((r) => r || caches.match("/manifest.webmanifest"))),
+        .catch(() =>
+          caches.match("/").then((r) => r || caches.match("/offline.html")),
+        ),
     );
   }
 });

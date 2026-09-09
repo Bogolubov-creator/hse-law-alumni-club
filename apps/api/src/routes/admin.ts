@@ -16,6 +16,7 @@ import { anonymizeAlumni } from "../lib/anonymize.js";
 import { readUsers } from "@directus/sdk";
 import { env } from "../env.js";
 import { count, sum, groupCount } from "../lib/agg.js";
+import { analyticsToCsv, buildAdminAnalytics, parseAnalyticsRange } from "../lib/admin-analytics.js";
 
 /** E-mail выпускника по alumni_id (через привязанный аккаунт). */
 async function alumniEmail(alumniId: string): Promise<string | null> {
@@ -169,11 +170,30 @@ export async function adminRoutes(app: FastifyInstance) {
     };
   });
 
+  /** Продуктовая аналитика за 7/30/90 дней – агрегаты без ПДн. */
+  app.get("/admin/analytics", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return reply;
+    const { range: raw } = z.object({ range: z.enum(["7d", "30d", "90d"]).default("30d") }).parse(req.query);
+    return buildAdminAnalytics(parseAnalyticsRange(raw));
+  });
+
+  app.get("/admin/analytics/export.csv", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return reply;
+    const { range: raw } = z.object({ range: z.enum(["7d", "30d", "90d"]).default("30d") }).parse(req.query);
+    const range = parseAnalyticsRange(raw);
+    const data = await buildAdminAnalytics(range);
+    const ctx = resolveAdmin(req);
+    if (ctx) audit("analytics.export", { actor: `admin:${ctx.userId}`, detail: { range }, req });
+    reply.header("Content-Type", "text/csv; charset=utf-8");
+    reply.header("Content-Disposition", `attachment; filename="analytics-${range}-${new Date().toISOString().slice(0, 10)}.csv"`);
+    return analyticsToCsv(data);
+  });
+
   // Ручная пуш-рассылка всем подписанным устройствам (анонсы офиса).
   app.post("/admin/push/broadcast", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     // Рассылка уходит на все устройства сразу и не отзывается – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const b = z.object({
       title: z.string().min(3).max(80),
       body: z.string().min(3).max(200),
@@ -307,7 +327,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/admin/members/:id/podcast-sub", async (req, reply) => {
     // Выдача платной подписки – операция с деньгами, только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const until = await extendPodcastSub(id, 12);
     audit("podcast.sub.grant", { actor: `admin:${ctx.userId}`, subject: `alumni:${id}`, detail: { until }, req });
@@ -317,7 +337,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.patch("/admin/members/:id", async (req, reply) => {
     // Верификация и персональная скидка – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
       verification_status: z.enum(["pending", "verified", "rejected"]).optional(),
@@ -500,7 +520,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get("/admin/orders/export.csv", async (req, reply) => {
     // Выгрузка содержит ПДн всех заявителей – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const orders = (await di.request((readItems as any)("orders", {
       sort: ["-created_at"], limit: -1,
       fields: ["number", "created_at", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "address", "items_json", "subtotal", "member_discount", "total_estimate", "status", "payment_status", "comment"],
@@ -760,7 +780,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/admin/members/:id/points", async (req, reply) => {
     // Баллы конвертируются в скидку – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
       reason: z.enum(["program", "event", "referral", "mentorship", "manual"]).default("manual"),
@@ -778,7 +798,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/admin/members/:id/anonymize", async (req, reply) => {
     // Необратимое стирание ПДн – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const ok = await anonymizeAlumni(id);
     if (!ok) return reply.code(404).send({ error: "Участник не найден" });
