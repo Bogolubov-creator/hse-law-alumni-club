@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -7,6 +8,10 @@ const SITE_URL = (process.env.VITE_SITE_URL || "http://localhost").replace(/\/$/
 
 // В dev /api проксируется на локальный apps/api; в проде этим занимается Caddy.
 export default defineConfig({
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
+  },
   plugins: [
     react(),
     {

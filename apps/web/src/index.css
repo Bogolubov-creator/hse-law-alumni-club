@@ -411,7 +411,7 @@ button[aria-disabled="true"],
 .club-identity-desktop > div, .club-identity-mobile > div { background: var(--c-surface-warm) !important; }
 
 /* Поддержка и место для маскота учитывают вкладки, cookies и безопасную область. */
-.club-support-dock { position: fixed; right: 18px; bottom: calc(18px + var(--tabs-h, 0px) + var(--cookie-h, 0px)); z-index: 40; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 12px 16px; border-radius: 28px; background: var(--p-blue); color: white; text-decoration: none; border: 1px solid white; font: 600 15px var(--f-body); }
+.club-support-dock { position: fixed; right: 18px; bottom: calc(18px + var(--tabs-h, 0px) + var(--cookie-h, 0px)); z-index: 40; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 12px 16px; border-radius: 28px; background: var(--p-blue); color: white; text-decoration: none; border: 1px solid white; font: 600 15px var(--f-body); cursor: pointer; }
 .club-support-page { max-width: 820px; padding: 40px 24px; margin: auto; line-height: 1.65; }
 .club-support-page h1 { font-size: var(--t-h1-page); line-height: 1.2; margin: 0 0 22px; }
 .club-support-page h2 { font-size: var(--t-h3); margin: 22px 0; }
