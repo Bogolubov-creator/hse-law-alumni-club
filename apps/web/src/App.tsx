@@ -83,6 +83,7 @@ export default function App() {
   return (
     <PwaShell>
       {import.meta.env.VITE_LOCAL_REVIEW === "true" && <div className="club-local-notice">Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</div>}
+      {import.meta.env.VITE_MIRROR === "true" && <div className="club-local-notice">Публичное зеркало · без кабинета, заявок и оплаты · данные из сидов каталога</div>}
       <VisionPanel />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>

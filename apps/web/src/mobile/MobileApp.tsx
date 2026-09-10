@@ -4,6 +4,7 @@ import { LEVELS } from "@club/shared";
 import { rub, type Program, type Product, type ProductVariant, type OrderResult, type PodcastItem } from "../lib/api.js";
 import { token, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, useNewsPost, usePodcasts, formatNewsDate } from "../lib/queries.js";
+import { publicUrl } from "../lib/public-url.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
 import { isAndroid } from "../lib/use-mobile.js";
@@ -107,7 +108,7 @@ function MobileHome() {
     <div style={{ paddingBottom: 16 }}>
       <header style={{ ...HEADER, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/assets/themis.jpeg" alt="" width={36} height={36} style={{ borderRadius: 10, objectFit: "cover", boxShadow: "0 3px 10px -3px rgba(236,90,19,.7)" }} />
+          <img src={publicUrl("assets/themis.jpeg")} alt="" width={36} height={36} style={{ borderRadius: 10, objectFit: "cover", boxShadow: "0 3px 10px -3px rgba(236,90,19,.7)" }} />
           <div style={{ lineHeight: 1.2 }}>
             <div style={{ ...disp, fontWeight: 700, fontSize: 13 }}>Клуб выпускников</div>
             <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", color: "#6E675A" }}>ФАКУЛЬТЕТА ПРАВА ВЫШКИ</div>
@@ -127,7 +128,7 @@ function MobileHome() {
       <div style={{ padding: "14px 20px 2px" }}>
         <Link to="/lk" style={{ display: "block", borderRadius: 24, position: "relative", overflow: "hidden", background: "linear-gradient(152deg,#1e2942 0%,#14181F 54%,#0f1c3f 100%)", boxShadow: "0 28px 52px -28px rgba(17,41,107,.95)", textDecoration: "none" }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: 24, border: "1px solid rgba(196,154,69,.42)", pointerEvents: "none" }} />
-          <img src="/assets/themis.jpeg" alt="" style={{ position: "absolute", right: -34, top: -22, width: 196, height: 196, objectFit: "cover", opacity: .15, borderRadius: 22, transform: "rotate(7deg)" }} />
+          <img src={publicUrl("assets/themis.jpeg")} alt="" style={{ position: "absolute", right: -34, top: -22, width: 196, height: 196, objectFit: "cover", opacity: .15, borderRadius: 22, transform: "rotate(7deg)" }} />
           <div style={{ position: "relative", padding: "20px 20px 18px", color: "#FBF3E8" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".24em", color: "rgba(227,194,114,.92)" }}>КАРТА ВЫПУСКНИКА</span>
@@ -265,7 +266,7 @@ function GuestHome() {
   return (
     <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 30px", textAlign: "center" }}>
-        <img src="/assets/themis.jpeg" alt="" width={76} height={76} style={{ borderRadius: 20, objectFit: "cover", boxShadow: "0 14px 30px -12px rgba(236,90,19,.7)" }} />
+        <img src={publicUrl("assets/themis.jpeg")} alt="" width={76} height={76} style={{ borderRadius: 20, objectFit: "cover", boxShadow: "0 14px 30px -12px rgba(236,90,19,.7)" }} />
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", margin: "22px 0 0" }}>Клуб выпускников</h1>
         <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "#6E675A", marginTop: 6 }}>ФАКУЛЬТЕТА ПРАВА ВЫШКИ</div>
         <p style={{ fontSize: 15, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 300 }}>
@@ -529,7 +530,7 @@ function MobileProgram() {
     <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 200, overflow: "hidden", background: "linear-gradient(150deg,#1e2942,#11296B 60%,#0f1c3f)" }}>
-          <img src="/assets/themis.jpeg" alt="" style={{ position: "absolute", right: -30, bottom: -30, width: 190, height: 190, objectFit: "cover", opacity: .16, transform: "rotate(8deg)" }} />
+          <img src={publicUrl("assets/themis.jpeg")} alt="" style={{ position: "absolute", right: -30, bottom: -30, width: 190, height: 190, objectFit: "cover", opacity: .16, transform: "rotate(8deg)" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(20,24,31,.15),rgba(20,24,31,.86))" }} />
           <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 14px)", left: 16, right: 16, display: "flex", justifyContent: "space-between" }}>
             <button onClick={() => nav("/dpo")} aria-label="Назад" style={roundDark}>{BackWhite}</button>
@@ -786,7 +787,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 30px", minHeight: 0 }}>
         <div style={{ width: 210, height: 210, borderRadius: 28, background: item.cover ? `#11296B url(${item.cover}) center/cover` : "linear-gradient(145deg,#20325c,#11296B)", position: "relative", overflow: "hidden", boxShadow: "0 40px 70px -30px rgba(0,0,0,.8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {!item.cover && <img src="/assets/themis.jpeg" alt="" style={{ position: "absolute", right: -24, bottom: -24, width: 150, height: 150, objectFit: "cover", opacity: .22, transform: "rotate(8deg)" }} />}
+          {!item.cover && <img src={publicUrl("assets/themis.jpeg")} alt="" style={{ position: "absolute", right: -24, bottom: -24, width: 150, height: 150, objectFit: "cover", opacity: .22, transform: "rotate(8deg)" }} />}
           {!locked && (
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 64, position: "relative" }}>
               {["#E3C272", "#EC5A13", "#E3C272", "#EC5A13"].map((c, i) => (

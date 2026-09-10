@@ -6,11 +6,11 @@
     <title>Клуб выпускников факультета права Вышки</title>
     <meta name="description" content="Клуб выпускников факультета права Вышки: программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
     <!-- PWA: установка на экран телефона как приложение -->
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
     <meta name="theme-color" content="#EC5A13" />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" href="/icon-192.png" />
-    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="icon" href="%BASE_URL%favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="%BASE_URL%icon-192.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icon-180.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -84,10 +84,10 @@
     </script>
     <!-- Шрифты со своего домена, а не с fonts.googleapis.com: нет внешней
          зависимости и IP посетителя не уходит в Google (см. public/fonts/fonts.css). -->
-    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <link rel="stylesheet" href="%BASE_URL%fonts/fonts.css" />
     <!-- Начертания первого экрана грузим заранее, чтобы заголовок не переписывался -->
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Regular.woff2" />
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Black.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/HSESans-Regular.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/HSESans-Black.woff2" />
   </head>
   <body>
     <div id="root"></div>

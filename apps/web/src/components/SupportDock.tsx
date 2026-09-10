@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ClubSupportBot } from "./ClubSupportBot.js";
 import { crowMascotApi } from "../mascot/crow-mascot.js";
+import { publicUrl } from "../lib/public-url.js";
 import "./CrowSupportLauncher.css";
 
 type CrowInstance = {
@@ -57,7 +58,7 @@ export function SupportDock() {
       document.body.appendChild(viBtn);
 
       crow = crowMascotApi.mount({
-        assetPath: "/assets/crow/",
+        assetPath: publicUrl("assets/crow/"),
         anchor: "bottom-right",
         width,
         zIndex: 40,

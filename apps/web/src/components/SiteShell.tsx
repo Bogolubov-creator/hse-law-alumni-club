@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { CLUB_OPERATOR } from "@club/shared";
 import { useCart, token } from "../lib/cart.js";
 import { openCookieSettings } from "../lib/cookie-consent.js";
+import { publicUrl } from "../lib/public-url.js";
 import { VisionToggle } from "./Vision.js";
 
 const NAV = [
@@ -27,7 +28,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-kost/85 backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-7 py-3.5">
           <Link to="/" className="foc flex items-center gap-3">
-            <img src="/assets/themis.jpeg" alt="" width={38} height={38} className="rounded-[10px] object-cover" />
+            <img src={publicUrl("assets/themis.jpeg")} alt="" width={38} height={38} className="rounded-[10px] object-cover" />
             <div className="leading-none">
               <div className="font-display text-[15px] font-extrabold tracking-tight">Клуб выпускников</div>
               <div className="mt-0.5 font-mono text-[10px] tracking-wider text-grafit-soft">факультета права Вышки</div>

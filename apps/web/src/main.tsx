@@ -4,26 +4,31 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.js";
 import { ToastProvider } from "./components/Toast.js";
+import { installMirrorFetch } from "./lib/mirror.js";
+import { isMirror, publicUrl, routerBasename } from "./lib/public-url.js";
 import "./index.css";
+
+installMirrorFetch();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
 
-// PWA: сервис-воркер (прод или явный VITE_ENABLE_SW=true на стенде).
+// PWA: на зеркале Pages SW отключён (чужой кэш ломает base path).
 const serviceWorker = navigator.serviceWorker;
-const enableSw = import.meta.env.PROD || import.meta.env.VITE_ENABLE_SW === "true";
+const enableSw =
+  !isMirror &&
+  (import.meta.env.PROD || import.meta.env.VITE_ENABLE_SW === "true");
 if (serviceWorker && enableSw) {
   window.addEventListener("load", () => {
-    serviceWorker.register("/sw.js").catch(() => { /* не критично */ });
+    serviceWorker.register(publicUrl("sw.js")).catch(() => { /* не критично */ });
   });
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      {/* future-флаги v7 больше не нужны: с React Router 7 это поведение по умолчанию. */}
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename()}>
         <ToastProvider>
           <App />
         </ToastProvider>
