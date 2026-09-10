@@ -6,19 +6,38 @@ import { useVision, setVision } from "../lib/a11y.js";
  * `v2` переводит кнопку на семантические токены: в тёмной теме зашитый
  * bg-white светился белой плашкой на графите. Старый фронт остаётся на
  * Tailwind-классах – там тёмной темы нет и менять нечего.
+ * `compact` в v2 совпадает по размеру с кнопкой темы (`.club-chrome-icon-btn`).
  */
 export function VisionToggle({ compact = false, v2 = false }: { compact?: boolean; v2?: boolean }) {
   const v = useVision();
+  if (v2 && compact) {
+    return (
+      <button
+        type="button"
+        onClick={() => setVision({ on: !v.on })}
+        aria-pressed={v.on}
+        aria-label="Версия для слабовидящих"
+        title="Версия для слабовидящих"
+        className="foc club-chrome-icon-btn"
+      >
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
+    );
+  }
   return (
     <button
+      type="button"
       onClick={() => setVision({ on: !v.on })}
       aria-pressed={v.on}
       aria-label="Версия для слабовидящих"
       title="Версия для слабовидящих"
       className={v2 ? "foc" : "foc rounded-[10px] border border-[#7C828C] bg-white px-2.5 py-2 text-[13px] font-medium leading-none"}
-      style={v2 ? { borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", padding: "7px 10px", fontSize: 13, lineHeight: 1, cursor: "pointer" } : undefined}
+      style={v2 ? { borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", padding: "7px 10px", fontSize: 13, lineHeight: 1, cursor: "pointer", display: "inline-flex", alignItems: "center", minHeight: 40 } : undefined}
     >
-      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ display: "inline-block", verticalAlign: "middle" }}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>{!compact && <span className="ml-1.5 align-middle">Для слабовидящих</span>}
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ display: "inline-block", verticalAlign: "middle" }}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>{!compact && <span className="ml-1.5 align-middle">Для слабовидящих</span>}
     </button>
   );
 }

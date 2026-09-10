@@ -1,10 +1,11 @@
 import { SupportDock } from "./components/SupportDock.js";
 import { lazy, Suspense, useEffect } from "react";
-import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation, Link } from "react-router-dom";
 import { useIsMobile } from "./lib/use-mobile.js";
 import { useIsPwaShell } from "./lib/use-pwa.js";
 import Stub from "./pages/Stub.js";
 import CookieBanner from "./components/CookieBanner.js";
+import { ChannelInvite } from "./components/ChannelInvite.js";
 import { PageViewBeacon } from "./components/PageViewBeacon.js";
 import InstallPrompt from "./components/InstallPrompt.js";
 import { PwaShell } from "./components/PwaShell.js";
@@ -83,7 +84,15 @@ export default function App() {
   return (
     <PwaShell>
       {import.meta.env.VITE_LOCAL_REVIEW === "true" && <div className="club-local-notice">Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</div>}
-      {import.meta.env.VITE_MIRROR === "true" && <div className="club-local-notice">Публичное зеркало · без кабинета, заявок и оплаты · данные из сидов каталога</div>}
+      {import.meta.env.VITE_MIRROR === "true" && (
+        <div className="club-local-notice">
+          Публичное зеркало · демо-данные ·{" "}
+          <Link to="/lk" className="foc" style={{ color: "inherit", fontWeight: 600 }}>кабинет</Link>
+          {" · "}
+          <Link to="/admin" className="foc" style={{ color: "inherit", fontWeight: 600 }}>админка</Link>
+          {" · сохранение отключено"}
+        </div>
+      )}
       <VisionPanel />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
@@ -125,6 +134,7 @@ export default function App() {
       </Suspense>
       </ErrorBoundary>
       <SupportDock />
+      <ChannelInvite />
       <PageViewBeacon />
       <CookieBanner />
       <InstallPrompt />

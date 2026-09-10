@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { LEGAL_INTERESTS, MAX_INTERESTS, type Achievement, type LedgerEntry } from "@club/shared";
+import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR, type Achievement, type LedgerEntry } from "@club/shared";
 import { apiPatch, apiPost, isAuthError, type Me } from "../lib/api.js";
 import { useMe, useLedger } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
@@ -196,7 +196,7 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
       </div>
 
       <p style={{ fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-3)", margin: "6px 0 0" }}>
-        Сохраняя, вы даёте согласие на обработку персональных данных –{" "}
+        Сохраняя, вы даёте согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} –{" "}
         <Link to="/privacy" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
       </p>
       {err && <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0" }}>{err}</p>}

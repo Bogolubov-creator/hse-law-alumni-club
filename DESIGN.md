@@ -545,3 +545,17 @@ Oxford: входы в кабинет, мероприятия и сообщест
 **Угловая ворона (2026-09-09):** launcher FAQ-бота как на dpo-pravo-hse – idle + follow-cursor + один askQ; синяя пилюля снята. Режим `prefers-reduced-motion` / `html.vis` – статичная поза или текстовая кнопка «Поддержка».
 
 Superdesign cloud в сессии без auth; init + 3 локальных компа в `.superdesign/comps/`, выбран **A** (`PICK.md`).
+
+## Витрина ДПО – атмосферный подъём (2026-09-10)
+
+Режим: **preserve** IA/фильтры/корзина; визуальный подъём под ритм [dpo-pravo-hse](https://itspecr.github.io/dpo-pravo-hse/) без копирования синей заливки CTA.
+
+| | |
+|---|---|
+| DESIGN_VARIANCE | 6 – реестр сохранён, мачта асимметрична по атмосфере |
+| MOTION_INTENSITY | 4 – один вход мачты + hover строк/CTA; **emil** частотный гейт (не perpetual micro-motion главной) |
+| VISUAL_DENSITY | 4 |
+| Цвет | охра = действие; HSE `--p-blue` = veil/meta/фильтры; внешняя «Запись на hse.ru» – текстовая ссылка якоря |
+| Мачта | компактная, фото `assets/dpo-hero.jpg` + синий veil; не full-bleed hero лендинга |
+
+Файлы: `apps/web/src/pages/DpoV2.tsx`, `apps/web/src/styles/dpo-vitrine.css`. На телефоне MobileApp – лёгкий синий wash шапки витрины.

@@ -4,6 +4,12 @@ export function publicUrl(path: string): string {
   return `${import.meta.env.BASE_URL}${clean}`;
 }
 
+/** http(s)/data/blob – как есть; относительные пути сайта – через `publicUrl`. */
+export function mediaUrl(src: string): string {
+  if (/^(https?:|data:|blob:)/i.test(src)) return src;
+  return publicUrl(src);
+}
+
 /** Basename для React Router: без завершающего слэша; корень → undefined. */
 export function routerBasename(): string | undefined {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");

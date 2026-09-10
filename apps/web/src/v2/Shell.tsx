@@ -1,10 +1,12 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { CLUB_OPERATOR } from "@club/shared";
 import { token, useCart } from "../lib/cart.js";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
 import { Mark } from "./Mark.js";
 import { openCookieSettings } from "../lib/cookie-consent.js";
+import { TELEGRAM_CHANNEL } from "../config/social.js";
 
 /**
  * Общая оболочка v2: шапка и подвал для всех страниц нового языка.
@@ -77,10 +79,13 @@ export function V2Shell({ children }: { children: ReactNode }) {
               Корзина{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>}
             </Link>
             <button
+              type="button"
               onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
               aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-              className="foc"
-              style={{ marginLeft: 4, border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", borderRadius: "var(--r-sm)", padding: "7px 10px", cursor: "pointer", ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)" }}
+              title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+              aria-pressed={theme === "dark"}
+              className="foc club-chrome-icon-btn"
+              style={{ marginLeft: 4 }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /></svg>
             </button>
@@ -112,14 +117,15 @@ export function V2Shell({ children }: { children: ReactNode }) {
                 на телефоне режим по ГОСТ было физически нечем включить. */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, paddingTop: 12, borderTop: "1px solid var(--c-line)" }}>
               <button
+                type="button"
                 onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
                 aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-                className="foc tap"
-                style={{ border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", borderRadius: "var(--r-sm)", padding: "9px 14px", cursor: "pointer", ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)" }}
+                aria-pressed={theme === "dark"}
+                className="foc tap club-chrome-icon-btn"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /></svg>
               </button>
-              <VisionToggle v2 />
+              <VisionToggle compact v2 />
             </div>
           </nav>
         )}
@@ -128,17 +134,23 @@ export function V2Shell({ children }: { children: ReactNode }) {
       {children}
 
       <footer style={{ marginTop: "var(--rh-section)", borderTop: "1px solid var(--c-line)", padding: "34px 28px 46px", paddingBottom: "calc(46px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
-          <span>© 2026 Клуб выпускников факультета права Вышки</span>
-          <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-            <Link to="/privacy" className="foc tap" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
-            <Link to="/confidential" className="foc tap" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
-            <Link to="/requisites" className="foc tap" style={{ color: "inherit" }}>Реквизиты</Link>
-            <Link to="/support" className="foc tap" style={{ color: "inherit" }}>Поддержка</Link>
-            <button type="button" className="foc tap" style={{ color: "inherit", background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" }} onClick={() => openCookieSettings()}>
-              Cookies
-            </button>
-          </span>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between" }}>
+            <span>© 2026 Клуб выпускников факультета права Вышки</span>
+            <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
+              <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc tap" style={{ color: "inherit" }}>{TELEGRAM_CHANNEL.handle}</a>
+              <Link to="/privacy" className="foc tap" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
+              <Link to="/confidential" className="foc tap" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
+              <Link to="/requisites" className="foc tap" style={{ color: "inherit" }}>Реквизиты</Link>
+              <Link to="/support" className="foc tap" style={{ color: "inherit" }}>Поддержка</Link>
+              <button type="button" className="foc tap" style={{ color: "inherit", background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" }} onClick={() => openCookieSettings()}>
+                Cookies
+              </button>
+            </span>
+          </div>
+          <p style={{ margin: "14px 0 0", fontSize: "var(--t-caption)", lineHeight: 1.55, maxWidth: "72ch" }}>
+            {CLUB_OPERATOR.shortName} · ОГРН {CLUB_OPERATOR.ogrn} · ИНН {CLUB_OPERATOR.inn} · {CLUB_OPERATOR.address}
+          </p>
         </div>
       </footer>
       <MobileTabs />

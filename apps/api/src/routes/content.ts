@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { readItems } from "@directus/sdk";
 import { z } from "zod";
+import { PRODUCTS_SEED } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 
@@ -107,13 +108,23 @@ export async function contentRoutes(app: FastifyInstance) {
     return rows[0];
   });
 
-  // Каталог мерча.
-  app.get("/products", async () =>
-    directus.request(readItems("products", {
+  // Каталог мерча. Пустые images подставляем из сида – на стенде худи когда-то
+  // привязали вручную, а сид/V3 зеркало до этого не отдавали пути.
+  app.get("/products", async () => {
+    const rows = (await directus.request(readItems("products", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "category", "price", "images", "variants_json", "stock", "description"],
-    })),
-  );
+    }))) as { slug: string; images: unknown }[];
+    const seedImages = new Map(
+      PRODUCTS_SEED.filter((p) => p.images?.length).map((p) => [p.slug, p.images as string[]]),
+    );
+    return rows.map((row) => {
+      const cur = Array.isArray(row.images) ? row.images : [];
+      if (cur.length) return row;
+      const fallback = seedImages.get(row.slug);
+      return fallback ? { ...row, images: fallback } : row;
+    });
+  });
 
   // «История» на главной – редактируется в админ-панели.
   app.get("/timeline", async () =>

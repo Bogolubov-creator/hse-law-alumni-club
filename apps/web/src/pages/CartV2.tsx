@@ -1,11 +1,13 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { CLUB_OPERATOR } from "@club/shared";
 import { useHead } from "../lib/title.js";
 import { rub, type CartLine, type OrderResult } from "../lib/api.js";
 import { useCart, useMemberDiscount, useCartMutations, submitOrder, token } from "../lib/cart.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
+import { TELEGRAM_CHANNEL } from "../config/social.js";
 
 /**
  * Корзина v2 (/cart) – заявка в учебный офис на языке реестра.
@@ -111,7 +113,7 @@ function Submitted({ result }: { result: OrderResult }) {
           {!result.notified.ok && (
             <p role="alert" style={{ margin: "18px 0 0", padding: "14px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-danger-text)", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>
               Заявка сохранена, но автоматическое уведомление офиса не прошло. Продублируйте её в Telegram{" "}
-              <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>@pravohse</a> – так офис точно увидит заявку.
+              <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>{TELEGRAM_CHANNEL.handle}</a> – так офис точно увидит заявку.
             </p>
           )}
 
@@ -327,7 +329,7 @@ export default function CartV2() {
                 <input type="checkbox" checked={form.consent} required onChange={(e) => set("consent", e.target.checked)}
                   style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
                 <span>
-                  Даю согласие на обработку персональных данных в соответствии с{" "}
+                  Даю согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} в соответствии с{" "}
                   <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
                 </span>
               </label>

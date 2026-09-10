@@ -4,6 +4,7 @@ import { CLUB_OPERATOR } from "@club/shared";
 import { useCart, token } from "../lib/cart.js";
 import { openCookieSettings } from "../lib/cookie-consent.js";
 import { publicUrl } from "../lib/public-url.js";
+import { TELEGRAM_CHANNEL } from "../config/social.js";
 import { VisionToggle } from "./Vision.js";
 
 const NAV = [
@@ -77,7 +78,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <span>© 2026 Клуб выпускников факультета права Вышки</span>
             <span className="flex flex-wrap gap-4">
               {!authed && <Link to="/join" className="foc font-semibold text-latun-br underline underline-offset-2">Вступить в клуб</Link>}
-              <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc text-latun-br">t.me/pravohse</a>
+              <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc text-latun-br">{TELEGRAM_CHANNEL.handle}</a>
             </span>
           </div>
           {/* 152-ФЗ: юридические документы + информация о владельце на каждой странице */}

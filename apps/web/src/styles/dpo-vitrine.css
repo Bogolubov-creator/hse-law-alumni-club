@@ -1,0 +1,428 @@
+/**
+ * Витрина ДПО (/dpo): атмосферный мачта-блок и лаконичные цветовые моменты.
+ * Переводит ритм лендинга dpo-pravo-hse (синий veil + золотой CTA) в токены клуба:
+ * охра = действие, HSE blue = институциональный акцент, без чужой синей заливки CTA.
+ *
+ * Motion: один вход мачты + hover на CTA. Частотный гейт (emil), не perpetual micro-motion.
+ */
+
+.club-dpo-vitrine {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.club-dpo-masthead {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-bottom: 1px solid var(--c-line);
+  background: color-mix(in srgb, var(--p-blue) 14%, var(--c-bg));
+}
+
+.club-dpo-masthead__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.club-dpo-masthead__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 68% 28%;
+  filter: grayscale(0.12) contrast(1.06) saturate(0.92);
+  opacity: 0.52;
+}
+
+.club-dpo-masthead__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--c-bg) 92%, transparent) 0%,
+      color-mix(in srgb, var(--c-bg) 72%, transparent) 38%,
+      color-mix(in srgb, var(--p-blue) 34%, transparent) 70%,
+      color-mix(in srgb, var(--p-blue) 46%, transparent) 100%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--c-bg) 8%, transparent) 0%,
+      color-mix(in srgb, var(--c-bg) 55%, transparent) 100%
+    );
+}
+
+.club-dpo-masthead__inner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: clamp(22px, 3vw, 36px) 28px clamp(18px, 2.2vw, 28px);
+}
+
+.club-dpo-eyebrow {
+  margin: 0;
+  font-family: var(--f-data);
+  font-size: var(--t-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-accent-text);
+}
+
+.club-dpo-masthead h1 {
+  margin: 14px 0 0;
+  max-width: 22ch;
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: var(--t-h1-page);
+  line-height: 1.12;
+  letter-spacing: var(--tr-display);
+  color: var(--c-text);
+}
+
+.club-dpo-lead {
+  margin: 16px 0 0;
+  max-width: 52ch;
+  font-size: var(--t-lead);
+  line-height: 1.5;
+  color: var(--c-text-2);
+}
+
+.club-dpo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--p-blue) 22%, var(--c-line));
+}
+
+.club-dpo-meta__item {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.club-dpo-meta__value {
+  font-family: var(--f-display);
+  font-size: clamp(22px, 2.4vw, 28px);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--c-anchor);
+  font-variant-numeric: tabular-nums;
+}
+
+.club-dpo-meta__label {
+  font-family: var(--f-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-data);
+  color: var(--c-text-3);
+  text-transform: none;
+}
+
+.club-dpo-body {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 28px clamp(48px, 6vw, 80px);
+}
+
+.club-dpo-vitrine .club-catalog-filters {
+  margin-top: 8px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--p-blue) 7%, var(--c-bg)) 0%,
+      color-mix(in srgb, var(--p-ohra) 5%, var(--c-bg)) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--p-blue) 12%, var(--c-line));
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.club-dpo-vitrine .club-catalog-filters label {
+  font-size: 14px;
+  color: var(--c-text-2);
+}
+
+.club-dpo-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 20px;
+  margin: 18px 0 6px;
+  font-size: var(--t-small);
+  color: var(--c-text-2);
+}
+
+.club-dpo-status strong {
+  font-weight: 600;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.club-dpo-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 168px;
+  gap: 24px;
+  align-items: start;
+  padding: 28px 0 28px 14px;
+  border-top: 1px solid var(--c-line);
+  transition:
+    background-color 0.28s var(--ease-out),
+    box-shadow 0.28s var(--ease-out);
+}
+
+.club-dpo-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 3px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 0.28s var(--ease-out);
+}
+
+.club-dpo-row:first-of-type {
+  border-top-color: color-mix(in srgb, var(--p-blue) 16%, var(--c-line));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .club-dpo-row:hover {
+    background: color-mix(in srgb, var(--p-ohra) 5%, var(--c-bg));
+  }
+  .club-dpo-row:hover::before {
+    background: var(--c-accent);
+  }
+  .club-dpo-row:hover h2 {
+    color: var(--c-accent-text);
+  }
+}
+
+.club-dpo-row h2 {
+  transition: color 0.28s var(--ease-out);
+}
+
+.club-dpo-row__price {
+  font-family: var(--f-data);
+  font-size: 22px;
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.club-dpo-row__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  min-width: 160px;
+}
+
+.club-dpo-row__actions .club-btn {
+  width: 100%;
+}
+
+.club-dpo-row__compare {
+  display: flex;
+  gap: 8px;
+  min-height: 44px;
+  align-items: center;
+  font-size: 14px;
+  color: var(--c-text-2);
+}
+
+.club-dpo-external {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-anchor);
+  text-decoration: none;
+  border-radius: 999px;
+  background: transparent;
+  border: 0;
+}
+
+.club-dpo-external:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.club-dpo-closed {
+  text-align: center;
+  color: var(--c-text-3);
+  border: 1px dashed var(--c-line);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+.club-dpo-empty,
+.club-dpo-loading,
+.club-dpo-error {
+  margin: 28px 0;
+  padding: 28px 24px;
+  border-radius: 14px;
+  border: 1px solid var(--c-line);
+}
+
+.club-dpo-loading {
+  background: color-mix(in srgb, var(--p-blue) 6%, var(--c-bg));
+  color: var(--c-text-3);
+  font-family: var(--f-data);
+  font-size: var(--t-caption);
+}
+
+.club-dpo-loading__bars {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.club-dpo-loading__bar {
+  height: 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-blue) 12%, var(--c-bg-sunken));
+  transform-origin: left center;
+}
+
+.club-dpo-loading__bar:nth-child(2) { width: 78%; }
+.club-dpo-loading__bar:nth-child(3) { width: 62%; }
+
+.club-dpo-empty {
+  background: color-mix(in srgb, var(--p-ohra) 6%, var(--c-bg));
+  border-color: color-mix(in srgb, var(--p-ohra) 18%, var(--c-line));
+}
+
+.club-dpo-empty h2 {
+  margin: 0;
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: var(--t-h3);
+}
+
+.club-dpo-empty p {
+  margin: 10px 0 0;
+  color: var(--c-text-2);
+}
+
+.club-dpo-error {
+  background: color-mix(in srgb, var(--p-karmin) 8%, var(--c-bg));
+  border-color: color-mix(in srgb, var(--p-karmin) 22%, var(--c-line));
+}
+
+.club-dpo-foot {
+  border-top: 1px solid var(--c-line);
+  padding-top: 18px;
+  margin-top: 8px;
+  font-family: var(--f-data);
+  font-size: var(--t-caption);
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Один оркестрированный вход мачты */
+@media (prefers-reduced-motion: no-preference) {
+  .club-dpo-masthead__inner > * {
+    animation: club-dpo-rise 420ms var(--ease-out) both;
+  }
+  .club-dpo-masthead__inner > *:nth-child(1) { animation-delay: 0ms; }
+  .club-dpo-masthead__inner > *:nth-child(2) { animation-delay: 48ms; }
+  .club-dpo-masthead__inner > *:nth-child(3) { animation-delay: 96ms; }
+  .club-dpo-masthead__inner > *:nth-child(4) { animation-delay: 140ms; }
+
+  .club-dpo-loading__bar {
+    animation: club-dpo-pulse 1.2s var(--ease-out) infinite alternate;
+  }
+  .club-dpo-loading__bar:nth-child(2) { animation-delay: 80ms; }
+  .club-dpo-loading__bar:nth-child(3) { animation-delay: 160ms; }
+}
+
+@keyframes club-dpo-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes club-dpo-pulse {
+  from { opacity: 0.55; transform: scaleX(0.98); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@media (max-width: 900px) {
+  .club-dpo-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+    padding-left: 12px;
+  }
+  .club-dpo-row__actions {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    min-width: 0 !important;
+  }
+  .club-dpo-row__actions .club-btn,
+  .club-dpo-external,
+  .club-dpo-closed {
+    width: auto;
+    flex: 1 1 140px;
+  }
+  .club-dpo-masthead__photo {
+    object-position: 55% 30%;
+    opacity: 0.4;
+  }
+}
+
+@media (max-width: 620px) {
+  .club-dpo-masthead__inner,
+  .club-dpo-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .club-dpo-meta {
+    gap: 14px 20px;
+  }
+}
+
+/* Тёмная тема: veil чуть плотнее, синий якорь читается */
+:root[data-theme="dark"] .club-dpo-masthead {
+  background: color-mix(in srgb, var(--p-blue) 22%, var(--c-bg));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .club-dpo-masthead {
+    background: color-mix(in srgb, var(--p-blue) 22%, var(--c-bg));
+  }
+}
+
+html.vis .club-dpo-masthead__atmosphere {
+  display: none;
+}
+html.vis .club-dpo-masthead {
+  background: var(--vis-bg, var(--c-bg)) !important;
+}
+html.vis .club-dpo-row:hover {
+  background: transparent;
+}
+html.vis .club-dpo-row:hover::before {
+  background: var(--vis-fg, currentColor);
+}
+html.vis .club-dpo-row:hover h2 {
+  color: inherit;
+}

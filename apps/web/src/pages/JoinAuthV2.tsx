@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
+import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR } from "@club/shared";
 import { apiPost } from "../lib/api.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
@@ -239,7 +239,7 @@ export function JoinV2() {
           <input type="checkbox" checked={f.consent} required onChange={(e) => set("consent", e.target.checked)}
             style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
           <span>
-            Даю согласие на обработку персональных данных –{" "}
+            Даю согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} –{" "}
             <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>
           </span>
         </label>

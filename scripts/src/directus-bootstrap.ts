@@ -23,6 +23,7 @@ import {
   updateUser,
   readItems,
   createItems,
+  updateItem,
 } from "@directus/sdk";
 import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, PRODUCTS_SEED, NEWS_SEED } from "@club/shared";
 
@@ -634,6 +635,26 @@ await ensureSeed("podcasts", "title", [
   { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "draft" },
 ]);
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
+// Дозаполнение images у уже созданных товаров: ensureSeed не обновляет строки,
+// а на живом стенде худи когда-то привязали вручную (a66558f) – в сидах путей не было.
+{
+  const want = new Map(
+    PRODUCTS_SEED.filter((p) => p.images?.length).map((p) => [p.slug, p.images as string[]]),
+  );
+  const rows = (await client.request(
+    (readItems as any)("products", { fields: ["id", "slug", "images"], limit: -1 }),
+  )) as { id: string; slug: string; images: unknown }[];
+  let patched = 0;
+  for (const row of rows) {
+    const imgs = want.get(row.slug);
+    if (!imgs) continue;
+    const cur = Array.isArray(row.images) ? row.images : [];
+    if (cur.length) continue;
+    await client.request((updateItem as any)("products", row.id, { images: imgs }));
+    patched += 1;
+  }
+  if (patched) log(`  products images backfill: ${patched}`);
+}
 
 // Профиль для тестового выпускника (если ещё нет)
 const alumniRows = (await client.request(

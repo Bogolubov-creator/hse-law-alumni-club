@@ -180,7 +180,13 @@ test.describe("Юридические страницы v2", () => {
     await page.goto("/requisites");
     await expect(page.getByText("1257700005551")).toBeVisible(); // ОГРН
     await expect(page.getByText("9707041865")).toBeVisible();    // ИНН
+    await expect(page.getByText("771801001")).toBeVisible();     // КПП
     await expect(page.getByText(/Большая Черкизовская/)).toBeVisible();
+    await expect(page.getByText(/Спиваков Алексей Игоревич/)).toBeVisible();
+    await expect(page.getByRole("link", { name: /Rusprofile/i })).toHaveAttribute(
+      "href",
+      "https://www.rusprofile.ru/id/1257700005551",
+    );
   });
 });
 

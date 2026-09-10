@@ -64,12 +64,17 @@ export interface ProductSeed {
   price: number; // копейки
   stock: number;
   variants_json: { sku: string; size?: string; color?: string; stock: number }[];
+  /** Пути/URL фото в apps/web/public – то, чего не хватало V3 vs живой стенд/V1. */
+  images?: string[] | null;
 }
 
 // Сид мерча – из админ-дизайна. price в копейках.
+// Фото: hoodie – assets/merch-hoodie.jpg (a66558f); shopper – фасеточная Фемида
+// (assets/themis.jpeg = design-export). Мантия – отдельного кадра в репо нет.
 export const PRODUCTS_SEED: ProductSeed[] = [
   {
     slug: "hoodie-faculty", title: "Худи с логотипом факультета", category: "Одежда", price: 420_000, stock: 18,
+    images: ["/assets/merch-hoodie.jpg"],
     variants_json: [
       { sku: "hoodie-graphite-M", size: "M", color: "графит", stock: 6 },
       { sku: "hoodie-graphite-L", size: "L", color: "графит", stock: 7 },
@@ -78,6 +83,7 @@ export const PRODUCTS_SEED: ProductSeed[] = [
   },
   {
     slug: "shopper-themis", title: "Шоппер с Фемидой", category: "Аксессуары", price: 120_000, stock: 30,
+    images: ["/assets/themis.jpeg"],
     variants_json: [{ sku: "shopper-kost", color: "кост", stock: 30 }],
   },
   {

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { LEVELS } from "@club/shared";
+import { LEVELS, CLUB_OPERATOR } from "@club/shared";
 import { rub, type Program, type Product, type ProductVariant, type OrderResult, type PodcastItem } from "../lib/api.js";
 import { token, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, useNewsPost, usePodcasts, formatNewsDate } from "../lib/queries.js";
-import { publicUrl } from "../lib/public-url.js";
+import { publicUrl, mediaUrl } from "../lib/public-url.js";
+import { TELEGRAM_CHANNEL } from "../config/social.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
 import { isAndroid } from "../lib/use-mobile.js";
@@ -309,7 +310,7 @@ function MobileFeed() {
   const news = useNewsList();
   return (
     <div>
-      <ScreenHeader title="Лента" sub="Новости клуба · t.me/pravohse" />
+      <ScreenHeader title="Лента" sub={`Новости клуба · ${TELEGRAM_CHANNEL.handle}`} />
       <div style={{ padding: "8px 20px 16px", display: "flex", flexDirection: "column", gap: 15 }}>
         {news.isLoading && <Loader />}
         {news.isError && <p style={{ ...mono, fontSize: 13, color: "#C24009" }}>Не удалось загрузить новости.</p>}
@@ -349,9 +350,10 @@ function MobileDpo() {
 
   return (
     <div>
-      <header style={{ ...HEADER, padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 12px" }}>
-        <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: 0 }}>Программы ДПО</h1>
-        <div style={{ fontSize: 13, color: "#5C6470", marginTop: 2 }}>Скидка выпускника на программы ДПО</div>
+      <header style={{ ...HEADER, padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px", background: "linear-gradient(180deg, rgba(17,41,107,.08), transparent 88%)", borderBottom: "1px solid rgba(17,41,107,.1)" }}>
+        <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#C24009", fontWeight: 600 }}>Витрина ДПО</div>
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: "8px 0 0" }}>Программы ДПО</h1>
+        <div style={{ fontSize: 13, color: "#5C6470", marginTop: 4, lineHeight: 1.45 }}>Скидка выпускника на программы факультета права</div>
         <div className="noscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px 2px" }}>
           <Chip on={!dir} onClick={() => setDir(null)}>Все</Chip>
           {dirs.map((d) => <Chip key={d} on={dir === d} onClick={() => setDir(dir === d ? null : d)}>{d}</Chip>)}
@@ -444,7 +446,7 @@ function MobileMerch() {
         {list.map((m: Product, i) => (
           <div key={m.id} style={{ ...CARD, borderRadius: 18, overflow: "hidden", boxShadow: "0 12px 28px -28px rgba(20,24,31,.5)" }}>
             <Link to={`/merch?item=${encodeURIComponent(m.slug)}`} aria-label={m.title} style={{ display: "block" }}>
-              <div style={{ height: 120, position: "relative", overflow: "hidden", background: m.images?.[0] ? `#fff url(${m.images[0]}) center/cover` : MERCH_TINTS[i % MERCH_TINTS.length] }}>
+              <div style={{ height: 120, position: "relative", overflow: "hidden", background: m.images?.[0] ? `#fff url(${mediaUrl(m.images[0])}) center/cover` : MERCH_TINTS[i % MERCH_TINTS.length] }}>
                 {!m.images?.[0] && <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 7px,transparent 7px 15px)" }} />}
               </div>
             </Link>
@@ -682,7 +684,7 @@ function MobileCart() {
               {form.fulfillment === "delivery" && <CartField label="Адрес доставки" value={form.address} onChange={(v) => set("address", v)} />}
               <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 12.5, color: "#3a3f49", lineHeight: 1.45, marginTop: 2, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} required style={{ width: 20, height: 20, margin: 0, flexShrink: 0, accentColor: "#EC5A13" }} />
-                <span>Согласен на обработку персональных данных согласно <Link to="/privacy" target="_blank" style={{ color: "#C24009" }}>политике</Link> (152-ФЗ).</span>
+                <span>Согласен на обработку персональных данных оператору {CLUB_OPERATOR.shortName} согласно <Link to="/privacy" target="_blank" style={{ color: "#C24009" }}>политике</Link> (152-ФЗ).</span>
               </label>
             </div>
             <button type="submit" disabled={busy || !form.consent} style={{ ...primaryBtn, height: 54, opacity: busy || !form.consent ? 0.6 : 1 }}>{busy ? "Отправляем…" : "Отправить заявку"}</button>
@@ -727,7 +729,7 @@ function MobileNewsPost() {
                 <p key={i} style={{ fontSize: 14.5, lineHeight: 1.6, color: "#3a3f49", margin: 0 }}>{para}</p>
               ))}
             </div>
-            <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="club-btn club-btn--block foc" style={{ marginTop: 20, background: "#15375E", borderColor: "#15375E", color: "#FBF3E8" }}>Открыть в Telegram · t.me/pravohse</a>
+            <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="club-btn club-btn--block foc" style={{ marginTop: 20, background: "#15375E", borderColor: "#15375E", color: "#FBF3E8" }}>Открыть в Telegram · {TELEGRAM_CHANNEL.handle}</a>
           </div>
         )}
       </div>
@@ -856,7 +858,7 @@ function MobileMerchItem({ slug }: { slug: string }) {
   return (
     <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
-        <div style={{ position: "relative", height: 300, overflow: "hidden", background: m?.images?.[0] ? `#EDE4D2 url(${m.images[0]}) center/cover no-repeat` : tint }}>
+        <div style={{ position: "relative", height: 300, overflow: "hidden", background: m?.images?.[0] ? `#EDE4D2 url(${mediaUrl(m.images[0])}) center/cover no-repeat` : tint }}>
           {!m?.images?.[0] && <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 9px,transparent 9px 19px)" }} />}
           <button onClick={() => nav("/merch")} aria-label="Назад" style={{ ...roundDark, position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 14px)", left: 16 }}>{BackWhite}</button>
         </div>

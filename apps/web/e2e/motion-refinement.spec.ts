@@ -23,7 +23,14 @@ test('афиша фильтрует название, место и формат
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
 test('оператор в реквизитах и согласии одинаковый',async({page,request},info)=>{
- await page.goto('/requisites');await expect(page.locator('main')).toContainText('1257700005551');await expect(page.locator('main')).toContainText('9707041865');await expect(page.locator('main')).not.toContainText('7714030726');
+ await page.goto('/requisites');
+ await expect(page.locator('main')).toContainText('1257700005551');
+ await expect(page.locator('main')).toContainText('9707041865');
+ await expect(page.locator('main')).toContainText('Спиваков Алексей Игоревич');
+ await expect(page.locator('main')).toContainText('72293692');
+ await expect(page.locator('main')).not.toContainText('7714030726');
  await page.screenshot({path:`${out}/operator-${info.project.name}.png`});
- const config=await (await request.get('/api/support/config')).json();expect(config.consent).toContain('Автономная некоммерческая организация');expect(config.consent).toContain('Большая Черкизовская');
+ const config=await (await request.get('/api/support/config')).json();
+ expect(config.consent).toContain('Автономная некоммерческая организация');
+ expect(config.consent).toContain('Большая Черкизовская');
 });
