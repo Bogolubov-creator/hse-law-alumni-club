@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { seedClientStorage, stubSw } from "./harness.js";
 
 /**
  * Админ-панель офиса.
@@ -65,9 +66,10 @@ const SUBS = {
 
 /** Панель за админ-логином: кладём токен и подменяем ручки. */
 async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
+  await seedClientStorage(page);
+  await stubSw(page);
   await page.addInitScript(() => {
     localStorage.setItem("club_admin_token", "e2e-admin-stub");
-    Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
   });
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   await page.route("**/api/admin/overview", (r) => r.fulfill(json(over.overview ?? OVERVIEW)));
@@ -86,9 +88,8 @@ async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
 
 test.describe("Админ-панель", () => {
   test("без токена показывается вход, а не данные", async ({ page }) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
-    });
+    await seedClientStorage(page);
+    await stubSw(page);
     await page.goto("/admin");
     await expect(page.getByRole("button", { name: "Войти" })).toBeVisible();
     await expect(page.getByText("Новые заявки")).toHaveCount(0);
@@ -248,9 +249,10 @@ test.describe("Админ-панель", () => {
   });
 
   test("истёкшая сессия возвращает на вход, а сетевая ошибка – нет", async ({ page }) => {
+    await seedClientStorage(page);
+    await stubSw(page);
     await page.addInitScript(() => {
       localStorage.setItem("club_admin_token", "e2e-admin-stub");
-      Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
     });
     await page.route("**/api/admin/overview", (r) => r.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
     await page.goto("/admin");

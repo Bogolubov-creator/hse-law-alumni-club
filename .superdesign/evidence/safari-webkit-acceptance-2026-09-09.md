@@ -1,29 +1,23 @@
-# Приёмка Safari / iPhone · 09.09.2026
+# Приёмка Safari / iPhone · 10.09.2026
 
-## Что сделано
+## Фаза 1 – зелёный критичный набор
 
-1. В [apps/web/playwright.config.ts](../../apps/web/playwright.config.ts) добавлены проекты:
-   - `safari` – Desktop Safari (WebKit)
-   - `iphone-safari` – iPhone 13 + WebKit
-2. Прогон на стенде `http://127.0.0.1:5274` (preview → API с analytics):
-   ```
-   E2E_BASE_URL=http://127.0.0.1:5274 pnpm exec playwright test \
-     --project=safari --project=iphone-safari \
-     e2e/public.spec.ts e2e/a11y.spec.ts e2e/pwa-shell.spec.ts \
-     e2e/mobile-tabs-v2.spec.ts e2e/lk-v2.spec.ts e2e/admin.spec.ts \
-     --workers=2
-   ```
-3. Итог прогона (~28.6 мин): **46 passed**, **14 skipped**, **60 failed**.
-4. Повтор одиночного `public.spec` на safari (без параллели): **pass** – бренд на главной виден.
+1. Хелпер [apps/web/e2e/harness.ts](../../apps/web/e2e/harness.ts): `seedClientStorage` (`club_cookie_consent=all`, `club_pwa_dismiss=1`), `stubSw`, `preparePage`.
+2. Подключён в: `public`, `a11y`, `lk-v2`, `admin`, `mobile-tabs-v2`, `pwa-shell`. Cookie-диалог в a11y / mobile-tabs отдельно – без seed.
+3. `isMobile` skips: SiteShell / Vision / hero `#top` / `#kak` на MobileApp-маршрутах.
+4. Скрипт: `pnpm -C apps/web e2e:safari` → safari + iphone-safari, `--workers=1`.
+5. Каталог/новости в `public.spec` – stub (Safari-приёмка не зависит от падения Directus). `sitemap.xml` – skip, если CMS недоступен.
 
-## Интерпретация
+### Прогон 10.09.2026
 
-- Движок WebKit **подключён к CI-приёмке** и реально гоняется (не только Chromium).
-- Массовые fail в полном параллельном прогоне связаны с:
-  - cookie-баннером, перехватывающим клики («Загрузка» / диалог cookies в снимках);
-  - MobileApp takeover на `iphone-safari` при ожиданиях desktop-разметки (a11y landmarks);
-  - таймаутами/гонами под нагрузкой workers=2.
-- Это **не** замена ручной проверке на физическом iPhone/Safari (VoiceOver, notch, PWA Add to Home Screen, push).
+```
+E2E_BASE_URL=http://127.0.0.1:5274 pnpm -C apps/web e2e:safari
+PLAYWRIGHT_BROWSERS_PATH=$HOME/Library/Caches/ms-playwright
+```
+
+Итог (~1.0 мин): **99 passed**, **21 skipped**, **0 failed**.
+
+Осознанные skip: WebKit Tab / Full Keyboard Access; desktop landmarks на MobileApp; hero/якоря на iphone; sitemap без Directus.
 
 ## Чеклист физического iPhone (ещё вручную)
 
@@ -35,4 +29,6 @@
 | Cookie «Принять все» / «Только необходимые» | Pending |
 | VoiceOver точечно (skip link, вкладки) | Pending |
 
-Повтор локально: `pnpm -C apps/web exec playwright test --project=safari --project=iphone-safari --workers=1` после dismiss cookies в фикстурах.
+## Архив (09.09.2026)
+
+До харнесса: 46 passed / 14 skipped / 60 failed (~28 мин, workers=2) – cookie-баннер, MobileApp vs desktop a11y, параллель.

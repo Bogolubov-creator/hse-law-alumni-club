@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { seedClientStorage } from "./harness.js";
 
 /**
  * Кабинет v2 (/v2/lk).
@@ -60,6 +61,7 @@ const EVENTS = [
  * Прод это не затрагивает: sw.js и так не трогает /api (см. public/sw.js).
  */
 async function stubSession(page: Page) {
+  await seedClientStorage(page);
   await page.addInitScript(() => {
     localStorage.setItem("club_token", "e2e-stub-token");
     Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
@@ -77,6 +79,7 @@ async function mockCabinet(page: Page, over: Partial<Record<"me" | "orders" | "c
 
 test.describe("Кабинет v2", () => {
   test("гостю показываются ворота, а не данные", async ({ page }) => {
+    await seedClientStorage(page);
     await page.goto("/lk");
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Войти в кабинет" })).toBeVisible();
@@ -194,26 +197,26 @@ test("уведомления раскрываются без потери дей
 });
 
 test('общий каталог достижений целиком и в одном порядке при разном прогрессе', async ({ page }, info) => {
-  const achievements = Array.from({ length: 10 }, (_, i) => ({ key: `common_${i}`, title: `Достижение ${i + 1}`, description: `Общее условие ${i + 1}`, icon: '★', kind: 'мероприятия', target: i + 1, current: 0, earned: false, star: false }));
+  const ACH_N = 16;
+  const achievements = Array.from({ length: ACH_N }, (_, i) => ({ key: `common_${i}`, title: `Достижение ${i + 1}`, description: `Общее условие ${i + 1}`, icon: '★', kind: 'мероприятия', target: i + 1, current: 0, earned: false, star: false }));
   await mockCabinet(page, { me: { ...ME, achievements } });
   await page.goto('/lk?section=achievements');
-  await expect(page.locator('[data-achievement]')).toHaveCount(10);
+  await expect(page.locator('[data-achievement]')).toHaveCount(ACH_N);
   await page.getByRole('button', { name: 'Полученные (0)', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Коллекция ещё впереди' })).toBeVisible();
   await page.getByRole('button', { name: 'Посмотреть все достижения', exact: true }).click();
-  await page.locator('[data-achievement="common_9"] summary').click();
-  await expect(page.getByText('Общее условие 10', { exact: true })).toBeVisible();
+  await page.locator(`[data-achievement="common_${ACH_N - 1}"] summary`).click();
+  await expect(page.getByText(`Общее условие ${ACH_N}`, { exact: true })).toBeVisible();
   const before = await page.locator('[data-achievement]').evaluateAll(els => els.map(e => e.getAttribute('data-achievement')));
-  await page.route('**/api/me', r => r.fulfill({ json: { ...ME, achievements: achievements.map((a, i) => ({ ...a, earned: i === 9, current: i === 9 ? 10 : 0 })) } }));
+  await page.route('**/api/me', r => r.fulfill({ json: { ...ME, achievements: achievements.map((a, i) => ({ ...a, earned: i === ACH_N - 1, current: i === ACH_N - 1 ? ACH_N : 0 })) } }));
   await page.reload();
-  await expect(page.locator('[data-achievement="common_9"]')).toContainText('получено');
+  await expect(page.locator(`[data-achievement="common_${ACH_N - 1}"]`)).toContainText('получено');
   expect(await page.locator('[data-achievement]').evaluateAll(els => els.map(e => e.getAttribute('data-achievement')))).toEqual(before);
   await page.getByRole('button', { name: 'Полученные (1)', exact: true }).click();
   await expect(page.locator('[data-achievement]')).toHaveCount(1);
-  await expect(page.locator('[data-achievement="common_9"]')).toBeVisible();
-  await page.getByRole('button', { name: 'Все достижения (10)', exact: true }).click();
-  await expect(page.locator('[data-achievement]')).toHaveCount(10);
-  await page.getByRole('button', { name: 'Принять все', exact: true }).click();
+  await expect(page.locator(`[data-achievement="common_${ACH_N - 1}"]`)).toBeVisible();
+  await page.getByRole('button', { name: `Все достижения (${ACH_N})`, exact: true }).click();
+  await expect(page.locator('[data-achievement]')).toHaveCount(ACH_N);
   await page.screenshot({ path: `/Users/macbook/alumni-staged-evidence/achievements-${info.project.name}.png`, fullPage: true });
 });
 

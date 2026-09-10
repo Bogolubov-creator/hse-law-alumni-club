@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { preparePage, stubSw } from "./harness.js";
 
 /**
  * Доступность: WCAG 2.1 AA на публичном контуре.
@@ -15,11 +16,8 @@ const V2 = ["/", "/dpo", "/cart", "/join"];
  *  там нет, пропускать нечего – требование 2.4.1 к ним не применяется. */
 const V2_WITH_NAV = ["/", "/dpo", "/cart"];
 
-async function stubSw(page: Page) {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
-  });
-}
+/** Маршруты, которые на <768px отдаёт MobileApp (не SiteShell / Vision в шапке). */
+const MOBILE_APP_PATHS = new Set(["/", "/dpo", "/cart"]);
 
 /** Композит цвета с учётом прозрачности: полупрозрачный контур смешивается с фоном. */
 const CONTRAST_FN = `
@@ -57,7 +55,7 @@ test.describe("2.4.1 Пропуск блоков", () => {
 
   for (const path of V2_WITH_NAV) {
     test(`${path} – первая остановка табуляции ведёт к содержанию`, async ({ page }) => {
-      await stubSw(page);
+      await preparePage(page);
       await page.goto(path);
       await page.locator("#main").waitFor();
       await page.keyboard.press("Tab");
@@ -80,7 +78,7 @@ test.describe("2.4.1 Пропуск блоков", () => {
 test.describe("1.4.11 Контраст нетекстовых элементов", () => {
   for (const theme of ["light", "dark"] as const) {
     test(`контур полей и кнопок различим, тема ${theme}`, async ({ page }) => {
-      await stubSw(page);
+      await preparePage(page);
       await page.goto("/join");
       await page.locator("#main").waitFor();
       await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
@@ -119,9 +117,10 @@ test.describe("Версия для слабовидящих", () => {
    * и пользуются при слабом зрении.
    */
   for (const s of schemes) {
-    test(`${s.name}: обводка фокуса различима`, async ({ page, browserName }) => {
+    test(`${s.name}: обводка фокуса различима`, async ({ page, browserName, isMobile }) => {
       test.skip(browserName === "webkit", "Tab в WebKit требует Full Keyboard Access");
-      await stubSw(page);
+      test.skip(!!isMobile, "на телефоне /dpo – MobileApp без Vision в шапке SiteShell");
+      await preparePage(page);
       await page.goto("/dpo");
       await enableVision(page);
       await page.evaluate((k) => document.documentElement.setAttribute("data-vis-scheme", k), s.key);
@@ -146,8 +145,9 @@ test.describe("Версия для слабовидящих", () => {
     });
   }
 
-  test("все органы управления панели получают обводку фокуса", async ({ page }) => {
-    await stubSw(page);
+  test("все органы управления панели получают обводку фокуса", async ({ page, isMobile }) => {
+    test.skip(!!isMobile, "на телефоне /dpo – MobileApp без Vision в шапке SiteShell");
+    await preparePage(page);
     await page.goto("/dpo");
     await enableVision(page);
     const without = await page.evaluate(() =>
@@ -160,8 +160,10 @@ test.describe("Версия для слабовидящих", () => {
   /**
    * Универсальное правило версии снимает фон со всего подряд. Диалогу это
    * оставляло текст висеть поверх страницы: cookie-баннер накрывал фильтры.
+   * Согласие специально НЕ гасим – нужен живой dialog.
    */
-  test("у диалога остаётся непрозрачный фон", async ({ page }) => {
+  test("у диалога остаётся непрозрачный фон", async ({ page, isMobile }) => {
+    test.skip(!!isMobile, "на телефоне /dpo – MobileApp без Vision в шапке SiteShell");
     await stubSw(page);
     await page.goto("/dpo");
     await enableVision(page);
@@ -179,8 +181,9 @@ test.describe("Версия для слабовидящих", () => {
 
 test.describe("1.3.1 Структура страницы", () => {
   for (const path of V2) {
-    test(`${path} – ориентиры и заголовки на месте`, async ({ page }) => {
-      await stubSw(page);
+    test(`${path} – ориентиры и заголовки на месте`, async ({ page, isMobile }) => {
+      test.skip(!!isMobile && MOBILE_APP_PATHS.has(path), "MobileApp: другая иерархия ориентиров, не SiteShell");
+      await preparePage(page);
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       const s = await page.evaluate(() => {
@@ -203,9 +206,11 @@ test.describe("1.3.1 Структура страницы", () => {
 });
 
 test.describe("Доступ к версии для слабовидящих", () => {
-  test("режим включается и с телефона, и с десктопа", async ({ page }) => {
-    await stubSw(page);
-    await page.goto("/dpo");
+  test("режим включается и с телефона, и с десктопа", async ({ page, isMobile }) => {
+    // На узком viewport /events остаётся SiteShell (не MobileApp takeover).
+    const path = isMobile ? "/events" : "/dpo";
+    await preparePage(page);
+    await page.goto(path);
     await enableVision(page);
     await expect(page.locator("html.vis")).toHaveCount(1);
     await expect(page.locator(".vis-bar")).toBeVisible();

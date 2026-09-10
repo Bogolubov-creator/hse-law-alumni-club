@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { seedClientStorage, stubSw } from "./harness.js";
 
 /**
  * Нижняя панель вкладок V2Shell (MobileTabs).
@@ -8,16 +9,13 @@ import { test, expect, type Page } from "@playwright/test";
  * MobileTabs на страницах без takeover: `/events`, `/lk`, `/join`.
  */
 
-async function stubSw(page: Page) {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
-  });
-}
-
 const tabs = (page: Page) => page.getByRole("navigation", { name: "Основные разделы" });
 
 test.describe("Панель вкладок v2", () => {
-  test.beforeEach(async ({ page }) => { await stubSw(page); });
+  test.beforeEach(async ({ page }) => {
+    await stubSw(page);
+    await seedClientStorage(page);
+  });
 
   test("на телефоне панель есть, на десктопе её нет", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -55,7 +53,6 @@ test.describe("Панель вкладок v2", () => {
   test("панель не перекрывает низ страницы", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/events");
-    await page.getByRole("button", { name: "Принять все" }).click();
 
     const last = page.locator("footer a").last();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -70,21 +67,6 @@ test.describe("Панель вкладок v2", () => {
 
     await last.click();
     await expect(page).toHaveURL(/\/(requisites|support|privacy|confidential)$/);
-  });
-
-  test("cookie-баннер поднят над панелью и его кнопка нажимается", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/events");
-    const accept = page.getByRole("button", { name: "Принять все" });
-    const box = (await accept.boundingBox())!;
-    const covered = await page.evaluate(([x, y]) => {
-      const el = document.elementFromPoint(x, y);
-      return !!el?.closest(".v2-tabs");
-    }, [box.x + box.width / 2, box.y + box.height / 2]);
-    expect(covered, "кнопка согласия перекрыта панелью").toBe(false);
-
-    await accept.click();
-    await expect(accept).toHaveCount(0);
   });
 
   test("в меню шапки нет того, что уже есть во вкладках", async ({ page }) => {
@@ -105,5 +87,27 @@ test.describe("Панель вкладок v2", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/events");
     await expect(tabs(page).getByRole("link", { name: "корзина" }).getByText("3")).toBeVisible();
+  });
+});
+
+/** Баннер специально не гасим – проверяем z-index над вкладками. */
+test.describe("Панель вкладок v2 · cookie-баннер", () => {
+  test.beforeEach(async ({ page }) => {
+    await stubSw(page);
+  });
+
+  test("cookie-баннер поднят над панелью и его кнопка нажимается", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/events");
+    const accept = page.getByRole("button", { name: "Принять все" });
+    const box = (await accept.boundingBox())!;
+    const covered = await page.evaluate(([x, y]) => {
+      const el = document.elementFromPoint(x, y);
+      return !!el?.closest(".v2-tabs");
+    }, [box.x + box.width / 2, box.y + box.height / 2]);
+    expect(covered, "кнопка согласия перекрыта панелью").toBe(false);
+
+    await accept.click();
+    await expect(accept).toHaveCount(0);
   });
 });
