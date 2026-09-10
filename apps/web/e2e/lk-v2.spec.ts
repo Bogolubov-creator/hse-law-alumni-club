@@ -21,6 +21,7 @@ const ME = {
     edu_program: "Публичное право",
     edu_level: "магистратура",
     interests: ["арбитраж", "антимонопольное"],
+    contacts: { phone: "+79001234567", telegram: "@kondratiev" },
     avatar: null,
     referral_code: "SK-2019-4471",
     referrals_verified: 3,
@@ -74,6 +75,8 @@ async function mockCabinet(page: Page, over: Partial<Record<"me" | "orders" | "c
   await page.route("**/api/me/orders", (r) => r.fulfill(json(over.orders ?? ORDERS)));
   await page.route("**/api/me/classmates", (r) => r.fulfill(json(over.classmates ?? CLASSMATES)));
   await page.route("**/api/me/events", (r) => r.fulfill(json(over.events ?? EVENTS)));
+  await page.route("**/api/events", (r) => r.fulfill(json([])));
+  await page.route("**/api/news**", (r) => r.fulfill(json([])));
   await stubSession(page);
 }
 
@@ -102,6 +105,10 @@ test.describe("Кабинет v2", () => {
     await expect(identity.getByText("480", { exact: true })).toBeVisible();
     await expect(identity.getByText("10%", { exact: true })).toBeVisible();
     await expect(identity.getByText("SK-2019-4471")).toBeVisible();
+
+    // Обзор: одно явное следующее действие (star-достижение)
+    await expect(page.locator(".cabinet-next-action")).toContainText("Следующее достижение: Пятеро однокурсников");
+    await expect(page.locator(".cabinet-next-action").getByRole("link", { name: /К прогрессу/ })).toBeVisible();
 
     // Заявки: номер и посчитанная сумма
     await expect(page.getByRole("heading", { name: "Мои заявки" })).toBeVisible();
