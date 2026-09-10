@@ -1,8 +1,9 @@
 .club-bot-panel {
   position: fixed;
   right: 16px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabs-h, 0px) + var(--cookie-h, 0px));
-  z-index: 45;
+  /* --tabs-h уже с safe-area */
+  bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px));
+  z-index: 50;
   width: min(380px, calc(100vw - 32px));
   max-height: min(70vh, 560px);
   display: flex;

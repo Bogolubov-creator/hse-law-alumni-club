@@ -350,12 +350,14 @@ html.vis .club-cookie-banner__btn--primary {
   color: var(--vis-bg, #fff) !important;
 }
 
-/* Приглашение в Telegram-канал (после cookies; место слева от вороны). */
+/* Приглашение в Telegram-канал (после cookies; место слева от вороны).
+   --tabs-h уже включает safe-area – не дублируем env(safe-area).
+   z-index: crow 40/41 < invite 45 < tabs 200 < install 290 < cookie 300. */
 .club-channel-invite {
   position: fixed;
   z-index: 45;
   right: max(18px, calc(18px + 200px + 16px));
-  bottom: calc(18px + var(--tabs-h, 0px) + var(--cookie-h, 0px) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(18px + var(--tabs-h, 0px) + var(--cookie-h, 0px));
   width: min(320px, calc(100vw - 36px - 120px));
   padding: 14px 16px 16px;
   border-radius: var(--r-lg, 16px);
@@ -429,10 +431,21 @@ html.vis .club-cookie-banner__btn--primary {
 }
 @media (max-width: 1023px) {
   .club-channel-invite {
+    /* Ворона на телефоне 96×~100: оставляем правый карман, invite слева. */
     right: max(12px, calc(12px + 96px + 12px));
     width: min(280px, calc(100vw - 24px - 108px));
   }
   .club-channel-invite__text { display: none; }
+}
+/* Узкий телефон: рядом с вороной не хватает ширины – ставим invite над ней. */
+@media (max-width: 420px) {
+  .club-channel-invite {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    /* Высота угловой вороны (~100) + зазор, чтобы не накрывать hit-зону. */
+    bottom: calc(12px + var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--crow-h, 108px));
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .club-channel-invite { animation: none; }
@@ -493,10 +506,14 @@ html.vis .club-cookie-banner__btn--primary {
 }
 
 @media (max-width: 768px) {
-  :root { --tabs-h: calc(56px + env(safe-area-inset-bottom, 0px)); }
-  /* Баннер поднимается над вкладками, иначе перекрывает «корзину» и «кабинет» */
+  :root {
+    --tabs-h: calc(56px + env(safe-area-inset-bottom, 0px));
+    --crow-h: 108px; /* SupportDock: 96px wide × 1465/1400 */
+  }
+  /* Баннер и install поднимаются над вкладками; crow/invite читают --cookie-h */
   .club-cookie-banner,
-  [role="dialog"][aria-label="Согласие на использование cookies"] {
+  [role="dialog"][aria-label="Согласие на использование cookies"],
+  [role="dialog"][aria-label="Установка приложения"] {
     bottom: calc(16px + var(--tabs-h, 0px)) !important;
   }
 }

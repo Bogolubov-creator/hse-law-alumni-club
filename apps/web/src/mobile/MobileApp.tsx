@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { LEVELS, CLUB_OPERATOR } from "@club/shared";
-import { rub, type Program, type Product, type ProductVariant, type OrderResult, type PodcastItem } from "../lib/api.js";
+import { rub, FORMAT_LABEL, type Program, type Product, type ProductVariant, type OrderResult, type PodcastItem } from "../lib/api.js";
 import { token, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, useNewsPost, usePodcasts, formatNewsDate } from "../lib/queries.js";
+import { programStart } from "../lib/program-date.js";
 import { publicUrl, mediaUrl } from "../lib/public-url.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 import { useToast } from "../components/Toast.js";
@@ -343,43 +344,156 @@ function MobileDpo() {
   useHead({ title: "Программы ДПО со скидкой выпускника", description: "Каталог программ ДПО факультета права НИУ ВШЭ со скидкой выпускника." });
   const programs = usePrograms();
   const discount = useMemberDiscount();
+  const { add } = useCartMutations();
+  const toast = useToast();
   const [dir, setDir] = useState<string | null>(null);
-  const list = programs.data ?? [];
-  const dirs = useMemo(() => [...new Set(list.map((p) => p.direction).filter(Boolean))], [list]);
-  const shown = dir ? list.filter((p) => p.direction === dir) : list;
+  const [showAll, setShowAll] = useState(false);
+  const catalog = programs.data ?? [];
+  const actual = useMemo(() => catalog.filter((p) => p.enrollment !== "nonactual"), [catalog]);
+  const pool = showAll ? catalog : actual;
+  const dirs = useMemo(() => [...new Set(pool.map((p) => p.direction).filter(Boolean))], [pool]);
+  const shown = dir ? pool.filter((p) => p.direction === dir) : pool;
+
+  const addToCart = (p: Program) =>
+    add.mutate(
+      { type: "dpo", ref_id: p.slug },
+      { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") },
+    );
 
   return (
     <div>
-      <header style={{ ...HEADER, padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px", background: "linear-gradient(180deg, rgba(17,41,107,.08), transparent 88%)", borderBottom: "1px solid rgba(17,41,107,.1)" }}>
-        <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#C24009", fontWeight: 600 }}>Витрина ДПО</div>
+      {/* Без фото-мачты десктопа: лаконичный blue wash + eyebrow, чтобы не убивать скролл. */}
+      <header style={{ ...HEADER, padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px", background: "linear-gradient(180deg, rgba(17,41,107,.1), rgba(17,41,107,.03) 55%, transparent 100%)", borderBottom: "1px solid rgba(17,41,107,.1)" }}>
+        <p style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#C24009", fontWeight: 600, margin: 0 }}>Витрина ДПО</p>
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: "8px 0 0" }}>Программы ДПО</h1>
-        <div style={{ fontSize: 13, color: "#5C6470", marginTop: 4, lineHeight: 1.45 }}>Скидка выпускника на программы факультета права</div>
+        <p style={{ fontSize: 13, color: "#5C6470", margin: "6px 0 0", lineHeight: 1.45 }}>
+          Содержание, формат и старты – в каждой записи. Цена выпускника после подтверждения офисом.
+        </p>
+        <div style={{ display: "flex", gap: 14, marginTop: 14, flexWrap: "wrap" }} aria-live="polite">
+          <div>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 18 }}>{programs.isLoading ? "…" : catalog.length}</div>
+            <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>в каталоге</div>
+          </div>
+          <div>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 18 }}>{programs.isLoading ? "…" : actual.length}</div>
+            <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>актуальный набор</div>
+          </div>
+          {discount > 0 && (
+            <div>
+              <div style={{ ...disp, fontWeight: 700, fontSize: 18, color: "#C24009" }}>−{discount}%</div>
+              <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>скидка выпускника</div>
+            </div>
+          )}
+        </div>
         <div className="noscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px 2px" }}>
           <Chip on={!dir} onClick={() => setDir(null)}>Все</Chip>
           {dirs.map((d) => <Chip key={d} on={dir === d} onClick={() => setDir(dir === d ? null : d)}>{d}</Chip>)}
         </div>
       </header>
-      <div style={{ padding: "12px 20px 16px", display: "flex", flexDirection: "column", gap: 13 }}>
-        {programs.isLoading && <Loader />}
+      <div style={{ padding: "12px 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ ...mono, fontSize: 12, color: "#6E675A" }} role="status">
+          {programs.isLoading ? "Загружаем каталог…" : <>Найдено программ: <strong style={{ color: INK }}>{shown.length}</strong></>}
+        </div>
+
+        {programs.isError && (
+          <div role="alert" style={{ ...CARD, padding: "18px 16px" }}>
+            <p style={{ margin: 0, fontSize: 14 }}>Каталог не загрузился.</p>
+            <button type="button" className="foc club-btn club-btn--secondary" style={{ marginTop: 14 }} onClick={() => programs.refetch()}>
+              Повторить загрузку
+            </button>
+          </div>
+        )}
+
+        {programs.isLoading && (
+          <div aria-busy="true" style={{ ...mono, fontSize: 13, color: "#6E675A", padding: "8px 0 4px" }}>
+            загружаем каталог…
+            <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ height: 88, borderRadius: 16, background: "linear-gradient(90deg,#F2E9DC 0%,#FBF3E8 50%,#F2E9DC 100%)", opacity: 0.85 - i * 0.15 }} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!programs.isLoading && !programs.isError && shown.length === 0 && (
+          <div style={{ ...CARD, padding: "22px 18px", textAlign: "center" }}>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 17 }}>По выбранным условиям программ нет</div>
+            <p style={{ fontSize: 13.5, color: "#5C6470", margin: "8px 0 0", lineHeight: 1.5 }}>
+              Снимите фильтр направления или посмотрите весь каталог, включая закрытый набор.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, alignItems: "stretch" }}>
+              {dir && (
+                <button type="button" className="foc club-btn club-btn--secondary" onClick={() => setDir(null)}>
+                  Сбросить направление
+                </button>
+              )}
+              {!showAll && (
+                <button type="button" className="foc club-btn club-btn--primary" onClick={() => { setShowAll(true); setDir(null); }}>
+                  Показать весь каталог
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {shown.map((p: Program) => {
-          const mem = Math.round(p.price * (1 - discount / 100));
+          const closed = p.enrollment === "nonactual";
+          const external = !!p.source_url;
+          const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
+          const meta = [p.direction, FORMAT_LABEL[p.format] ?? FMT_RU[p.format] ?? p.format, p.duration].filter(Boolean).join(" · ");
           return (
-            <Link key={p.id} to={`/dpo/${p.slug}`} style={{ ...CARD, padding: "16px 17px", boxShadow: "0 14px 32px -28px rgba(20,24,31,.5)", textDecoration: "none", color: INK }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ ...mono, fontSize: 9, letterSpacing: ".06em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>{FMT_RU[p.format] ?? p.format}</span>
-                <span style={{ ...mono, fontSize: 10, color: "#6E675A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.direction}</span>
+            <article key={p.id} style={{ ...CARD, padding: "16px 17px", boxShadow: "0 14px 32px -28px rgba(20,24,31,.5)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <span style={{ ...mono, fontSize: 9, letterSpacing: ".06em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>
+                  {FORMAT_LABEL[p.format] ?? FMT_RU[p.format] ?? p.format}
+                </span>
+                {closed && <span style={{ ...mono, fontSize: 10, color: "#B5331B" }}>набор закрыт</span>}
               </div>
-              <div style={{ ...disp, fontWeight: 600, fontSize: 16.5, lineHeight: 1.2, marginTop: 11 }}>{p.title}</div>
-              {p.duration && <div style={{ ...mono, fontSize: 10.5, color: "#6E675A", marginTop: 8 }}>{p.duration}</div>}
-              <div style={{ display: "flex", alignItems: "baseline", gap: 9, marginTop: 13 }}>
-                <span style={{ ...disp, fontWeight: 700, fontSize: 18, color: "#EC5A13" }}>{rub(mem)}</span>
-                {discount > 0 && <span style={{ ...mono, fontSize: 12, color: "#B8B0A0", textDecoration: "line-through" }}>{rub(p.price)}</span>}
-                {discount > 0 && <span style={{ marginLeft: "auto", ...mono, fontSize: 11, color: "#C24009" }}>−{discount}%</span>}
+              <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: INK }}>
+                <h2 style={{ ...disp, fontWeight: 600, fontSize: 16.5, lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
+              </Link>
+              {meta && <div style={{ ...mono, fontSize: 11, color: "#6E675A", marginTop: 8, lineHeight: 1.35 }}>{meta}</div>}
+              <p style={{ fontSize: 13, color: "#5C6470", margin: "8px 0 0", lineHeight: 1.45 }}>
+                {p.dates?.start ? `Начало: ${programStart(p.dates.start)}` : "Дата начала уточняется"}
+                {p.document ? ` · ${p.document}` : ""}
+              </p>
+              <div style={{ marginTop: 14 }}>
+                <div style={{ ...disp, fontWeight: 700, fontSize: 20, color: discount > 0 ? "#C24009" : INK }}>{rub(priced)}</div>
+                {discount > 0 && (
+                  <>
+                    <div style={{ ...mono, fontSize: 12, color: "#B8B0A0", textDecoration: "line-through", marginTop: 3 }}>{rub(p.price)}</div>
+                    <div style={{ ...mono, fontSize: 11, color: "#1F8A5B", marginTop: 4 }}>−{discount}% выпускнику</div>
+                  </>
+                )}
               </div>
-            </Link>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+                <Link to={`/dpo/${p.slug}`} className="foc tap club-btn club-btn--secondary club-btn--block">
+                  Подробнее
+                </Link>
+                {external ? (
+                  <a href={p.source_url!} target="_blank" rel="noopener noreferrer" className="foc tap club-btn club-btn--block" style={{ background: "transparent", borderColor: "transparent", color: "#11296B", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                    Запись на hse.ru ↗
+                  </a>
+                ) : closed ? (
+                  <span style={{ ...mono, fontSize: 12, color: "#6E675A", textAlign: "center", padding: "12px 0", border: "1px dashed #E4DCCC", borderRadius: 999 }}>Набор закрыт</span>
+                ) : (
+                  <button type="button" onClick={() => addToCart(p)} disabled={add.isPending} className="foc tap club-btn club-btn--primary club-btn--block">
+                    В корзину
+                  </button>
+                )}
+              </div>
+            </article>
           );
         })}
-        {!programs.isLoading && shown.length === 0 && <p style={{ ...mono, fontSize: 13, color: "#6E675A" }}>Нет программ в этом направлении.</p>}
+
+        {shown.length > 0 && (
+          <div style={{ ...mono, fontSize: 11, color: "#6E675A", textAlign: "center", paddingTop: 4 }}>
+            Показано программ: {shown.length}
+            {!showAll && catalog.length > actual.length && (
+              <> · <button type="button" onClick={() => setShowAll(true)} style={{ background: "none", border: "none", color: "#C24009", cursor: "pointer", font: "inherit", textDecoration: "underline" }}>включая закрытый набор</button></>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
