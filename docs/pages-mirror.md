@@ -47,3 +47,12 @@ pnpm --filter @club/web preview:mirror
 Workflow в `club-pravo-hse-mirror` чекаутит этот репозиторий, собирает
 `build:mirror` и публикует артефакт через `actions/deploy-pages`
 (как у `dpo-pravo-hse-mirror`, но со сборкой, а не копированием чужого `gh-pages`).
+
+Dispatch: `source_ref=codex/v3-backlog-polish` (или тег/SHA), чтобы на Pages
+попали актуальные PWA/mobile/perf с PR #23.
+
+## Overnight Phase 6 · открытые хвосты (11.09.2026)
+
+Зеркало не закрывает: банковские реквизиты (TBD / нет в Rusprofile), фото
+`graduate-robe`, live `/programs` без здорового Directus в e2e, опциональные
+chip-фильтры ДПО, Admin JWT в `localStorage`, ручной A2HS на устройстве.

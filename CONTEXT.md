@@ -272,3 +272,10 @@ MVP собран и проходил многоагентное ревью (бе
 Осознанно отложено (по продуктовому решению): загрузка аватара, тёмная тема,
 3-шаговый мастер оформления корзины, in-app CRUD в админке (сейчас → Directus Studio),
 цветовой селектор мерча.
+
+**Overnight Phase 6 (11.09.2026) – хвосты:** банковские реквизиты TBD (нет в
+Rusprofile); фото `graduate-robe` отсутствует; e2e live `/programs` нуждается в
+здоровом Directus; опционально – chip-фильтры ДПО; Admin JWT всё ещё в
+`localStorage`; A2HS на реальном устройстве – вручную. Зеркало Pages:
+https://bogolubov-creator.github.io/club-pravo-hse-mirror/ (`docs/pages-mirror.md`).
+

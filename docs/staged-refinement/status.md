@@ -81,3 +81,14 @@ Web build прошёл, 18 браузерных проверок кабинет�
 ## Сборка 09.09.2026 · подкасты и готовность к публикации
 
 Стенд `alumni-staged-comparison` поднят (Directus :8255, API :3200, preview :5274). Загружены 7 выпусков «Правовая грамотность» (пробный – Данюков). E2E переведены на канон `/`. Admin принимает UUID аудио. Документ: [acceptance-cutover-2026-09-09.md](./acceptance-cutover-2026-09-09.md). Production не деплоился. SMTP/ЮKassa/Telegram/push – deferred (блокер live, не локальной подготовки).
+
+## Overnight Phase 6 · OPS wrap-up (11.09.2026)
+
+Остатки после ночных фаз 1–6 (ветка `codex/v3-backlog-polish`, PR #23):
+
+- Банковские реквизиты – всё ещё TBD (в открытой карточке Rusprofile нет).
+- Фото `graduate-robe` – отсутствует.
+- Живой API `/programs` в e2e – нужен здоровый Directus.
+- Опционально позже: chip-фильтры ДПО.
+- Admin JWT – по-прежнему в `localStorage` (замечание security review).
+- Real-device A2HS – только ручная проверка.
