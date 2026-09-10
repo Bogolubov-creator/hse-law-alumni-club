@@ -70,12 +70,14 @@ test("плеер подкаста открывается с элементами
   await expect(control.first()).toBeVisible();
 });
 
-test("гость по ссылке на приватный оверлей не попадает в тупик", async ({ page }) => {
-  // Регрессия: ?screen=profile у гостя раньше рендерил пустой экран без выхода.
+test("гость по ссылке на старый ?screen= попадает во вход кабинета", async ({ page }) => {
+  // Soft-cutover: /?screen=* → /lk… (канон). Без токена Profile редиректит на Gate.
   for (const screen of ["profile", "ach", "ledger"]) {
     await page.goto(`/?screen=${screen}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("link", { name: /Войти в кабинет/ })).toBeVisible();
-    await expect(page.locator("nav").last()).toBeVisible();
+    await expect(page).toHaveURL(/\/lk/);
+    await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Войти в кабинет/ })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Основные разделы" })).toBeVisible();
   }
 });
 

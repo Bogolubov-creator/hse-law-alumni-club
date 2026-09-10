@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { LEVELS } from "@club/shared";
 import { rub, type Program, type Product, type ProductVariant, type OrderResult, type PodcastItem } from "../lib/api.js";
-import { token, logout as logoutSession, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
+import { token, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, useNewsPost, usePodcasts, formatNewsDate } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
@@ -12,11 +12,9 @@ import { isAndroid } from "../lib/use-mobile.js";
 const ANDROID = isAndroid();
 
 /**
- * Мобильная native-app-оболочка (порт «Клуб выпускников.dc.html» из Claude Design).
- * Включается на телефонах (<768px, см. useIsMobile) вместо десктоп-сайта: нижние
- * табы + экраны на РЕАЛЬНЫХ данных. Экран выбирается по маршруту (deep-link/SEO/назад).
- * Детальные слайд-оверлеи (программа/плеер/оформление/профиль) – стадия 2, пока ведут
- * на существующие маршруты.
+ * Мобильная оболочка витрин (порт Claude Design): табы Карта/Лента/ДПО/Подкасты/Мерч.
+ * Кабинет – канон `/lk` + MobileTabs (не параллельные `?screen=` оверлеи).
+ * Старые закладки `/?screen=profile|ach|ledger` редиректят в `/lk…`.
  */
 
 const INK = "#14181F";
@@ -115,7 +113,7 @@ function MobileHome() {
             <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", color: "#6E675A" }}>ФАКУЛЬТЕТА ПРАВА ВЫШКИ</div>
           </div>
         </div>
-        <Link to="/?screen=profile" aria-label="Профиль" style={{ width: 40, height: 40, borderRadius: 12, border: "1px solid #ECE6DA", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Link to="/lk/profile" aria-label="Профиль" style={{ width: 40, height: 40, borderRadius: 12, border: "1px solid #ECE6DA", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
         </Link>
       </header>
@@ -127,7 +125,7 @@ function MobileHome() {
 
       {/* Карта выпускника */}
       <div style={{ padding: "14px 20px 2px" }}>
-        <Link to="/?screen=profile" style={{ display: "block", borderRadius: 24, position: "relative", overflow: "hidden", background: "linear-gradient(152deg,#1e2942 0%,#14181F 54%,#0f1c3f 100%)", boxShadow: "0 28px 52px -28px rgba(17,41,107,.95)", textDecoration: "none" }}>
+        <Link to="/lk" style={{ display: "block", borderRadius: 24, position: "relative", overflow: "hidden", background: "linear-gradient(152deg,#1e2942 0%,#14181F 54%,#0f1c3f 100%)", boxShadow: "0 28px 52px -28px rgba(17,41,107,.95)", textDecoration: "none" }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: 24, border: "1px solid rgba(196,154,69,.42)", pointerEvents: "none" }} />
           <img src="/assets/themis.jpeg" alt="" style={{ position: "absolute", right: -34, top: -22, width: 196, height: 196, objectFit: "cover", opacity: .15, borderRadius: 22, transform: "rotate(7deg)" }} />
           <div style={{ position: "relative", padding: "20px 20px 18px", color: "#FBF3E8" }}>
@@ -179,7 +177,7 @@ function MobileHome() {
         <div style={{ padding: "16px 0 2px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 20px 11px" }}>
             <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Достижения · {m.achievements.filter((a) => a.earned).length}/{m.achievements.length}</span>
-            <Link to="/?screen=ach" style={{ ...mono, fontSize: 11, color: "#C24009" }}>Все →</Link>
+            <Link to="/lk?section=achievements" style={{ ...mono, fontSize: 11, color: "#C24009" }}>Все →</Link>
           </div>
           <div className="noscroll" style={{ display: "flex", gap: 14, overflowX: "auto", padding: "4px 20px 6px" }}>
             {m.achievements.map((a) => {
@@ -200,10 +198,10 @@ function MobileHome() {
 
       {/* Быстрые действия */}
       <div style={{ padding: "14px 20px 2px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
-        <QuickAction to="/?screen=ledger" label="История баллов" tint="rgba(236,90,19,.12)" stroke="#C24009" icon={<><path d="M3 3v18h18" /><path d="M7 14l4-4 3 3 5-6" /></>} />
+        <QuickAction to="/lk/profile#ledger" label="История баллов" tint="rgba(236,90,19,.12)" stroke="#C24009" icon={<><path d="M3 3v18h18" /><path d="M7 14l4-4 3 3 5-6" /></>} />
         <QuickAction onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/join?ref=${m.alumni.referral_code ?? ""}`); toast("Ссылка приглашения скопирована ✓"); }} label="Пригласить друга" tint="rgba(44,110,128,.12)" stroke="#2C6E80" icon={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M17 3.13a4 4 0 0 1 0 7.75" /></>} />
         <QuickAction to="/dpo" label="Программы ДПО" tint="rgba(17,41,107,.1)" stroke="#11296B" icon={<><path d="M3 8l9-4 9 4-9 4-9-4z" /><path d="M7 10.5V15c0 1 2.2 2.2 5 2.2s5-1.2 5-2.2v-4.5" /></>} />
-        <QuickAction to="/?screen=profile" label="Профиль" tint="rgba(196,154,69,.16)" stroke="#B78A2E" icon={<><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>} />
+        <QuickAction to="/lk/profile" label="Профиль" tint="rgba(196,154,69,.16)" stroke="#B78A2E" icon={<><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>} />
       </div>
 
       {/* Последнее – история баллов */}
@@ -211,7 +209,7 @@ function MobileHome() {
         <div style={{ padding: "16px 20px 2px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10 }}>
             <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Последнее</span>
-            <Link to="/?screen=ledger" style={{ ...mono, fontSize: 11, color: "#C24009" }}>Вся история →</Link>
+            <Link to="/lk/profile#ledger" style={{ ...mono, fontSize: 11, color: "#C24009" }}>Вся история →</Link>
           </div>
           <div style={{ ...CARD, borderRadius: 18, overflow: "hidden" }}>
             {ledger.data.slice(0, 3).map((l, i) => (
@@ -895,165 +893,12 @@ function MobileMerchItem({ slug }: { slug: string }) {
   );
 }
 
-// ── Оверлеи ЛК: достижения / журнал / профиль (/?screen=…) ───────────
-/** Экран «сессия недоступна» для приватных оверлеев (истёк/отозван токен). */
-function OverlaySignIn() {
-  return (
-    <div style={{ padding: "60px 34px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-      <div style={{ width: 72, height: 72, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }} aria-hidden>🔐</div>
-      <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Нужен вход</div>
-      <div style={{ fontSize: 13.5, color: "#5C6470", marginTop: 6, lineHeight: 1.5 }}>Сессия истекла или недоступна – войдите, чтобы открыть этот раздел.</div>
-      <Link to="/lk" style={{ ...primaryBtn, flex: "none", marginTop: 20, padding: "0 26px", height: 48, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Войти в кабинет</Link>
-    </div>
-  );
-}
-
-function OverlayHeader({ title, sub, onBack }: { title: string; sub?: string; onBack: () => void }) {
-  return (
-    <header style={{ ...HEADER, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 12px" }}>
-      <button onClick={onBack} aria-label="Назад" style={roundLight}>{BackInk}</button>
-      <div>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{title}</div>
-        {sub && <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 1 }}>{sub}</div>}
-      </div>
-    </header>
-  );
-}
-
-function MobileAch() {
-  useHead({ title: "Достижения", noindex: true });
-  const nav = useNavigate();
-  const me = useMe(token());
-  const list = me.data?.achievements ?? [];
-  const earned = list.filter((a) => a.earned).length;
-  return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
-      <OverlayHeader title="Достижения" sub={me.data ? `${earned}/${list.length} · ${me.data.level.points} баллов` : undefined} onBack={() => nav("/")} />
-      <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
-        {me.isLoading && <Loader />}
-        {me.isError && <OverlaySignIn />}
-        <div style={{ padding: "14px 20px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>
-          {list.map((a) => {
-            const active = a.earned || a.star;
-            const bg = a.earned ? "linear-gradient(140deg,#2C6E80,#11296B)" : a.star ? "#EC5A13" : "#EDE4D3";
-            return (
-              <div key={a.key} style={{ ...CARD, borderRadius: 18, padding: "16px 14px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", opacity: active ? 1 : .55 }}>
-                <div style={{ width: 56, height: 56, transform: "rotate(45deg)", borderRadius: 15, background: bg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: a.earned ? "0 10px 22px -10px rgba(17,41,107,.6)" : "none", marginTop: 6 }}>
-                  <span style={{ transform: "rotate(-45deg)", fontSize: 20, lineHeight: 1, color: active ? "#FBF3E8" : "#b8a98a" }}>{a.icon}</span>
-                </div>
-                <div style={{ ...disp, fontWeight: 600, fontSize: 13, marginTop: 16 }}>{a.title}</div>
-                <div style={{ fontSize: 11, color: "#5C6470", lineHeight: 1.35, marginTop: 5 }}>{a.description}</div>
-                <div style={{ ...mono, fontSize: 9, letterSpacing: ".08em", textTransform: "uppercase", color: a.earned ? "#1F8A5B" : "#6E675A", marginTop: 9 }}>
-                  {a.earned ? "Получено" : a.target > 0 ? `${a.current} / ${a.target}` : "Закрыто"}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MobileLedger() {
-  useHead({ title: "История баллов", noindex: true });
-  const nav = useNavigate();
-  const me = useMe(token());
-  const ledger = useLedger(token());
-  return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
-      <OverlayHeader title="История баллов" sub={me.data ? `Баланс · ${me.data.level.points} баллов` : undefined} onBack={() => nav("/")} />
-      <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
-        {ledger.isLoading && <Loader />}
-        {(ledger.isError || me.isError) && <OverlaySignIn />}
-        {ledger.data?.length === 0 && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#6E675A" }}>Пока нет начислений.</p>}
-        <div style={{ padding: "12px 20px 40px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {(ledger.data ?? []).map((l, i) => {
-            const plus = l.delta >= 0;
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 13, ...CARD, borderRadius: 15, padding: "14px 15px" }}>
-                <span style={{ width: 40, height: 40, borderRadius: 12, background: plus ? "rgba(31,138,91,.12)" : "rgba(181,51,27,.1)", color: plus ? "#1F8A5B" : "#B5331B", ...mono, fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{plus ? "+" : ""}{l.delta}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 500, fontSize: 14 }}>{REASON_RU[l.reason] ?? l.reason}</div>
-                  <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>{formatNewsDate(l.created_at)}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MobileProfile() {
-  useHead({ title: "Профиль", noindex: true });
-  const nav = useNavigate();
-  const me = useMe(token());
-  const toast = useToast();
-  const m = me.data;
-  const logout = () => { logoutSession(); nav("/", { replace: true }); };
-  const copyRef = () => {
-    if (!m?.alumni.referral_code) return;
-    void navigator.clipboard?.writeText(`${window.location.origin}/join?ref=${m.alumni.referral_code}`);
-    toast("Ссылка приглашения скопирована ✓");
-  };
-  const row = (icon: ReactNode, label: string, to: string, last = false) => (
-    <Link to={to} style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 16px", borderBottom: last ? "none" : "1px solid #F3EDE1", textDecoration: "none", color: INK }}>
-      {icon}<span style={{ flex: 1, fontSize: 14.5 }}>{label}</span><span style={{ color: "#C4BCAC" }}>›</span>
-    </Link>
-  );
-  return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
-      <OverlayHeader title="Профиль" onBack={() => nav("/")} />
-      <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
-        {me.isLoading && <Loader />}
-        {me.isError && <OverlaySignIn />}
-        {m && (
-          <div style={{ padding: "14px 20px 40px", display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-              <div style={{ width: 70, height: 70, borderRadius: 20, background: "linear-gradient(140deg,#EC5A13,#C24009)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: 26, color: "#FBF3E8", flexShrink: 0, position: "relative", overflow: "hidden" }}>
-                {m.alumni.avatar ? <img src={`/api/avatars/${m.alumni.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : (m.alumni.fio?.trim()?.[0] ?? "В").toUpperCase()}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ ...disp, fontWeight: 700, fontSize: 19 }}>{m.alumni.fio ?? "Выпускник"}</div>
-                <div style={{ fontSize: 13, color: "#5C6470", marginTop: 3 }}>Выпуск {m.alumni.cohort ?? "–"}{m.alumni.edu_program ? ` · ${m.alumni.edu_program}` : ""}</div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 7, ...mono, fontSize: 10, color: "#2C6E80", background: "rgba(44,110,128,.1)", padding: "4px 9px", borderRadius: 7 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2C6E80" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>Диплом верифицирован
-                </div>
-              </div>
-            </div>
-            {(m.alumni.interests?.length ?? 0) > 0 && (
-              <div>
-                <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A", marginBottom: 10 }}>Интересы в праве</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {m.alumni.interests!.map((it) => <span key={it} style={{ fontWeight: 500, fontSize: 13, background: "#fff", border: "1px solid #E4DCCC", padding: "8px 13px", borderRadius: 99 }}>{it}</span>)}
-                  <Link to="/lk/profile" style={{ fontWeight: 500, fontSize: 13, color: "#C24009", background: "rgba(236,90,19,.1)", border: "1px dashed rgba(236,90,19,.4)", padding: "8px 13px", borderRadius: 99, textDecoration: "none" }}>+ добавить</Link>
-                </div>
-              </div>
-            )}
-            {m.alumni.referral_code && (
-              <div style={{ background: INK, borderRadius: 18, padding: "17px 18px", position: "relative", overflow: "hidden" }}>
-                <div style={{ ...mono, fontSize: 9.5, letterSpacing: ".12em", color: "rgba(227,194,114,.85)" }}>КОД ПРИГЛАШЕНИЯ · +80 БАЛЛОВ</div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 11 }}>
-                  <span style={{ ...disp, fontWeight: 700, fontSize: 19, color: "#FBF3E8", letterSpacing: ".02em" }}>{m.alumni.referral_code}</span>
-                  <button onClick={copyRef} aria-label="Скопировать ссылку приглашения" style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "rgba(251,243,232,.12)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E3C272" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
-                  </button>
-                </div>
-              </div>
-            )}
-            <div style={{ ...CARD, borderRadius: 18, overflow: "hidden" }}>
-              {row(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5C6470" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>, "Редактировать профиль", "/lk/profile")}
-              {row(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5C6470" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>, "Уведомления и Telegram-бот", "/lk")}
-              {row(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5C6470" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>, "Юридические документы", "/privacy", true)}
-            </div>
-            <button onClick={logout} className="club-btn club-btn--secondary club-btn--block foc" style={{ color: "#B5331B", borderColor: "#E4DCCC" }}>Выйти из аккаунта</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+// ── Soft-cutover: старые ?screen= → канон /lk ─────────────────────────
+function legacyCabinetScreen(screen: string | null): string | null {
+  if (screen === "ach") return "/lk?section=achievements";
+  if (screen === "ledger") return "/lk/profile#ledger";
+  if (screen === "profile") return "/lk/profile";
+  return null;
 }
 
 // ── Оболочка ─────────────────────────────────────────────────────────
@@ -1068,13 +913,11 @@ export default function MobileApp() {
   if (ep) return <MobilePodcastPlayer epId={ep} />;
   const item = pathname === "/merch" ? qs.get("item") : null;
   if (item) return <MobileMerchItem slug={item} />;
-  // Приватные оверлеи ЛК – только для вошедшего: гость по прямой ссылке иначе
-  // получал пустой тупиковый экран. Без токена показываем обычную «Карту»
-  // (для гостя это приглашение войти/вступить).
-  const screen = pathname === "/" && token() ? qs.get("screen") : null;
-  if (screen === "ach") return <MobileAch />;
-  if (screen === "ledger") return <MobileLedger />;
-  if (screen === "profile") return <MobileProfile />;
+  // Закладки /?screen=* уводим в канонический кабинет (V2 + MobileTabs).
+  if (pathname === "/") {
+    const to = legacyCabinetScreen(qs.get("screen"));
+    if (to) return <Navigate to={to} replace />;
+  }
   const active = TABS.some((t) => t.to === pathname) ? pathname : "/";
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#FBF3E8", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", overflow: "hidden" }}>

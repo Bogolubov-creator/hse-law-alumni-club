@@ -216,6 +216,7 @@ function History({ token }: { token: string }) {
   const list = ledger.data ?? [];
   return (
     <Section title="История баллов" note={list.length ? `записей ${list.length}` : undefined}>
+      <div id="ledger">
       {ledger.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
       {!ledger.isLoading && list.length === 0 && (
         <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
@@ -231,6 +232,7 @@ function History({ token }: { token: string }) {
           </span>
         </div>
       ))}
+      </div>
     </Section>
   );
 }
