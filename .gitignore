@@ -17,3 +17,8 @@ design-export/.thumbnail
 backups/
 test-results/
 playwright-report/
+# Локальные отчёты/компы дизайна – не в релизный артефакт без явного запроса
+docs/report-assets/
+docs/Отчёт по дизайну*
+.superdesign/comps/vestnik-*.html
+
