@@ -562,3 +562,18 @@ Superdesign cloud в сессии без auth; init + 3 локальных ко�
 | Мачта | компактная, фото `assets/dpo-hero.jpg` + синий veil; не full-bleed hero лендинга |
 
 Файлы: `apps/web/src/pages/DpoV2.tsx`, `apps/web/src/styles/dpo-vitrine.css`. На телефоне MobileApp – лёгкий синий wash шапки витрины.
+
+## Performance – изображения и code-split (2026-09-11)
+
+Краткие заметки по LCP и весу ассетов (Phase 5).
+
+| Ассет | jpeg/jpg | webp | avif |
+|---|---:|---:|---:|
+| `themis.jpeg` | 28 KB | 10 KB (−65%) | 11 KB |
+| `dpo-hero.jpg` | 212 KB | 61 KB (−71%) | 45 KB (−79%) |
+| `merch-hoodie.jpg` | 13 KB | 12 KB | 10 KB |
+
+- Герои `/` и `/dpo`: `<picture>` (avif → webp → jpeg), `fetchpriority=high`, `loading=eager` (`HeroPicture`).
+- Каталог/карточки: `ProductImage` пробует соседний `.webp`, при 404 – оригинал; `loading=lazy`. Сиды могут оставаться на `.jpg`.
+- Оригиналы в `apps/web/public/assets/` не удаляем.
+- **Admin code-split:** `AdminApp` уже `lazy(() => import("./admin/AdminApp.js"))` в `App.tsx` внутри общего `<Suspense>` – отдельный чанк, в main не тянется. Менять не нужно.
