@@ -25,6 +25,7 @@ function LegalShell({ title, updated, v2, children }: { title: string; updated: 
 
   const body = (
     <>
+      {/* Баннер только на локальном review-стенде; прод-сборка не получает VITE_LOCAL_REVIEW. */}
       {import.meta.env.VITE_LOCAL_REVIEW === "true" && <p role="note" className="club-support-note">Проект юридических документов. Оператор определён. Размещение данных и перечень сервисов требуют подтверждения перед публикацией. Не отправляйте реальные персональные данные на этот стенд.</p>}
       <h1 className={v2 ? undefined : "font-display text-3xl font-bold tracking-tight"} style={v2 ? { ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.14, margin: 0 } : undefined}>{title}</h1>
       <p className={v2 ? undefined : "mt-2 font-mono text-[12px] text-grafit-soft"}
