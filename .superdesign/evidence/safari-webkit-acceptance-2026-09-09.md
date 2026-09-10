@@ -17,6 +17,10 @@ PLAYWRIGHT_BROWSERS_PATH=$HOME/Library/Caches/ms-playwright
 
 Итог (~1.0 мин): **99 passed**, **21 skipped**, **0 failed**.
 
+### Перепроверка 10.09.2026 (13:16 МСК)
+
+Повторный `pnpm -C apps/web e2e:safari` на том же стенде `:5274`: **99 passed**, **21 skipped**, **0 failed** (~1.2 мин). Регрессий нет.
+
 Осознанные skip: WebKit Tab / Full Keyboard Access; desktop landmarks на MobileApp; hero/якоря на iphone; sitemap без Directus.
 
 ## Чеклист физического iPhone (ещё вручную)
