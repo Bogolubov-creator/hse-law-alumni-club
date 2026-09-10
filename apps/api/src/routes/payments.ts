@@ -54,7 +54,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
 
     const payment = await createPayment({
       amountKop: order.total_estimate,
-      description: `Заявка ${order.number} · Клуб выпускников факультета права НИУ ВШЭ`,
+      description: `Заявка ${order.number} · Клуб выпускников факультета права Вышки`,
       orderNumber: order.number,
       customerEmail: order.contact_email || undefined,
     });
@@ -139,7 +139,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
           `Оплата получена – заявка ${orderNumber}`,
           `Здравствуйте, ${order.contact_fio}!\n\nОплата по заявке ${orderNumber} на сумму ${formatRub(order.total_estimate)} ₽ прошла успешно.` +
             (isPodcast ? "\nПодписка на подкасты клуба активирована на год – приятного прослушивания!" : "\nЗаявка передана учебному офису в работу.") +
-            "\n\n– Клуб выпускников факультета права НИУ ВШЭ",
+            "\n\n– Клуб выпускников факультета права Вышки",
         ).catch((e) => req.log.error({ err: e, orderNumber }, "payment email failed"));
       }
       req.log.info({ orderNumber }, "yookassa payment succeeded");

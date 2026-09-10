@@ -12,8 +12,8 @@ import { logout as logoutSession } from "../lib/cart.js";
 /** Профиль выпускника – порт «Профиль.dc.html» (C). Контакты + история баллов + правила достижений. */
 
 const TOKEN_KEY = "club_token";
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
-const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
+const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
+const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
 
 
 const REASON_TEXT: Record<string, string> = {
@@ -168,7 +168,7 @@ function ProfileContent({
                 {data.alumni.avatar
                   ? <img src={`/api/avatars/${data.alumni.avatar}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                   : (data.alumni.fio?.trim()?.[0] ?? "В").toUpperCase()}
-                <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "rgba(20,24,31,.65)", color: "#FBF3E8", fontFamily: "'Onest'", fontWeight: 600, fontSize: 10, padding: "3px 0", textAlign: "center" }}>
+                <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "rgba(20,24,31,.65)", color: "#FBF3E8", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, padding: "3px 0", textAlign: "center" }}>
                   {avatarBusy ? "…" : data.alumni.avatar ? "Сменить" : "Фото"}
                 </span>
               </button>
@@ -207,7 +207,7 @@ function ProfileContent({
                         const on = interests.includes(name);
                         return (
                           <button key={name} type="button" onClick={() => toggleInterest(name)} aria-pressed={on} className="foc"
-                            style={{ fontSize: 12.5, fontWeight: 500, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: "1.5px solid " + (on ? "#EC5A13" : t.chipBorder), background: on ? "rgba(236,90,19,.12)" : t.chipBg, color: on ? "#C9450E" : t.text }}>
+                            style={{ fontSize: 12.5, fontWeight: 500, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: "1.5px solid " + (on ? "#EC5A13" : t.chipBorder), background: on ? "rgba(236,90,19,.12)" : t.chipBg, color: on ? "#C24009" : t.text }}>
                             {name}
                           </button>
                         );
@@ -216,7 +216,7 @@ function ProfileContent({
                   </div>
                   <p style={{ fontSize: 12, lineHeight: 1.5, color: t.muted, margin: 0 }}>
                     Сохраняя, вы даёте согласие на обработку персональных данных –{" "}
-                    <Link to="/privacy" className="foc" style={{ color: "#C9450E", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
+                    <Link to="/privacy" className="foc" style={{ color: "#C24009", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
                   </p>
                   {saveErr && <p style={{ ...mono, fontSize: 12, color: "#B5331B", margin: 0 }}>{saveErr}</p>}
                   <button onClick={save} disabled={saveState === "saving"} className="foc" style={{ width: "100%", fontWeight: 600, fontSize: 15, padding: 13, borderRadius: 12, border: "none", background: saveState === "saved" ? "#1F8A5B" : "#EC5A13", color: "#FBF3E8", cursor: "pointer", transition: "background .2s" }}>
@@ -251,7 +251,7 @@ function ProfileContent({
                 {data.achievements.map((b: Achievement) => {
                   const inProg = !b.earned && b.current > 0;
                   const star = !b.earned && b.star;
-                  const statusColor = b.earned ? "#1F8A5B" : inProg ? "#EC5A13" : "#6B7280";
+                  const statusColor = b.earned ? "#1F8A5B" : inProg ? "#EC5A13" : "#5C6470";
                   const badgeBg = b.earned ? "linear-gradient(140deg,#2C6E80,#11296B)" : star ? "#EC5A13" : t.badgeLocked;
                   const badgeInk = b.earned || star ? "#FBF3E8" : "#b8a98a";
                   return (
@@ -266,7 +266,7 @@ function ProfileContent({
                       </div>
                       <p style={{ fontSize: 13, lineHeight: 1.5, color: t.muted, margin: "8px 0 0" }}>{b.description}</p>
                       <div style={{ height: 8, borderRadius: 999, background: t.progressTrack, overflow: "hidden", marginTop: 12 }}>
-                        <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${b.earned ? 100 : b.target ? Math.round((b.current / b.target) * 100) : 0}%` }} />
+                        <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C24009)", width: `${b.earned ? 100 : b.target ? Math.round((b.current / b.target) * 100) : 0}%` }} />
                       </div>
                     </div>
                   </div>

@@ -10,6 +10,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 const SAFE = {
   APP_ENV: "production",
+  CHECKOUT_DATABASE_URL: "postgresql://checkout@database.test/club",
   DIRECTUS_URL: "https://directus.club.example",
   DIRECTUS_SERVICE_TOKEN: "8f2c1a9d7e5b3c04f6a8d2e1b9c7a5f3",
   AUTH_SECRET: "0123456789abcdef0123456789abcdef01234567",
@@ -104,4 +105,8 @@ describe("assertProdConfig – каждая небезопасная настр�
     const errs = await errorsFor({ ADMIN_AUTH_SECRET: "", SMTP_HOST: "", SEED_DEMO: "true", PUBLIC_URL: "http://x.ru" });
     expect(errs).toHaveLength(4);
   });
+});
+
+it("production требует транзакционное хранилище заявок", async () => {
+  expect(await errorsFor({ CHECKOUT_DATABASE_URL: "" })).toContain("CHECKOUT_DATABASE_URL обязателен для транзакционного оформления");
 });

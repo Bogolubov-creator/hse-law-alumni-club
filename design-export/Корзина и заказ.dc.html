@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;800&family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0}
+  *{box-sizing:border-box}
+  ::selection{background:#EC5A13;color:#FBF3E8}
+  .foc:focus-visible{outline:3px solid #EC5A13;outline-offset:3px;border-radius:10px}
+  input,textarea{font-family:'Onest',sans-serif;color:#14181F}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes g-pop{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+  @media (max-width:880px){ .g-grid{grid-template-columns:1fr !important} .g-side{position:static !important} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} }
+</style>
+</helmet>
+<div style="background:#FBF3E8;color:#14181F;font-family:'Onest',system-ui,sans-serif;min-height:100vh">
+
+  <header style="position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(251,243,232,.85);border-bottom:1px solid #E5E7EB">
+    <div style="max-width:1180px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+      <a href="Главная.dc.html" class="foc" style="display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit">
+        <img src="assets/themis.jpeg" alt="Логотип" width="40" height="40" style="border-radius:10px;object-fit:cover;flex:none">
+        <div style="line-height:1.05">
+          <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:15px;letter-spacing:-0.01em">Клуб выпускников</div>
+          <div style="font-family:'Martian Mono',monospace;font-size:10px;color:#6B7280;letter-spacing:.08em;margin-top:2px">факультета права Вышки</div>
+        </div>
+      </a>
+      <nav style="display:flex;align-items:center;gap:22px">
+        <a href="Витрина ДПО.dc.html" class="foc" style="text-decoration:none;color:#14181F;font-weight:500;font-size:15px">ДПО</a>
+        <a href="Витрина мерча.dc.html" class="foc" style="text-decoration:none;color:#14181F;font-weight:500;font-size:15px">Одежда</a>
+        <a href="Дашборд ЛК.dc.html" class="foc" style="text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:11px;background:#EC5A13;color:#FBF3E8">Личный кабинет</a>
+      </nav>
+    </div>
+  </header>
+
+  <div style="max-width:1180px;margin:0 auto;padding:34px 28px 6px">
+    <div style="display:flex;align-items:center;gap:12px;font-family:'Martian Mono',monospace;font-size:12px;flex-wrap:wrap">
+      <span style="color:{{ s1color }};font-weight:500">1 · Корзина</span>
+      <span style="color:#cdd2da">→</span>
+      <span style="color:{{ s2color }};font-weight:500">2 · Оформление</span>
+      <span style="color:#cdd2da">→</span>
+      <span style="color:{{ s3color }};font-weight:500">3 · Заявка отправлена</span>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <sc-if value="{{ stepCart }}" hint-placeholder-val="{{ true }}">
+    <div class="g-grid" style="display:grid;grid-template-columns:1fr 360px;gap:28px;max-width:1180px;margin:0 auto;padding:18px 28px 90px;align-items:start">
+      <div>
+        <h1 style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:34px;letter-spacing:-0.01em;margin:0 0 20px">Корзина</h1>
+        <sc-if value="{{ hasItems }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ items }}" as="it" hint-placeholder-count="3">
+              <div style="display:flex;gap:16px;background:#fff;border:1px solid #E5E7EB;border-radius:16px;padding:18px">
+                <div style="width:64px;height:64px;border-radius:12px;background:{{ it.swatch }};display:flex;align-items:center;justify-content:center;flex:none;font-family:'Unbounded',sans-serif;font-weight:800;font-size:13px;color:#FBF3E8">{{ it.icon }}</div>
+                <div style="flex:1;min-width:0">
+                  <span style="font-family:'Martian Mono',monospace;font-size:10px;letter-spacing:.06em;padding:3px 8px;border-radius:999px;background:{{ it.tagBg }};color:{{ it.tagColor }}">{{ it.type }}</span>
+                  <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:16px;letter-spacing:-0.01em;margin-top:9px;line-height:1.25">{{ it.name }}</div>
+                  <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;margin-top:6px">{{ it.variant }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:10px">
+                  <div style="font-family:'Martian Mono',monospace;font-size:16px;font-weight:500;white-space:nowrap">{{ it.lineTotal }}</div>
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <sc-if value="{{ it.editable }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;align-items:center;border:1.5px solid #E5E7EB;border-radius:9px;overflow:hidden">
+                        <button onClick="{{ it.dec }}" class="foc" style="width:30px;height:30px;border:none;background:#fff;cursor:pointer;font-size:16px">−</button>
+                        <span style="min-width:26px;text-align:center;font-family:'Martian Mono',monospace;font-size:13px">{{ it.qty }}</span>
+                        <button onClick="{{ it.inc }}" class="foc" style="width:30px;height:30px;border:none;background:#fff;cursor:pointer;font-size:16px">+</button>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ it.fixed }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-family:'Martian Mono',monospace;font-size:11px;color:#9aa0aa">заявка · 1 место</span>
+                    </sc-if>
+                    <button onClick="{{ it.remove }}" class="foc" style="border:none;background:none;cursor:pointer;color:#9aa0aa;font-size:12px;font-family:'Martian Mono',monospace">убрать</button>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;margin-top:18px;line-height:1.5">Позиции ДПО оформляются как заявка на программу, одежда — как заказ. Менеджер свяжется для подтверждения.</div>
+        </sc-if>
+        <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:64px 24px;background:#fff;border:1px dashed #d8d2c4;border-radius:20px">
+            <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:22px;letter-spacing:-0.01em">Корзина пуста</div>
+            <p style="color:#6B7280;font-size:15px;margin:12px auto 0;max-width:340px">Загляните в витрины — программы ДПО и брендированная одежда клуба ждут.</p>
+            <div style="display:flex;gap:12px;justify-content:center;margin-top:22px;flex-wrap:wrap">
+              <a href="Витрина ДПО.dc.html" class="foc" style="text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:12px;background:#11296B;color:#FBF3E8">Витрина ДПО</a>
+              <a href="Витрина мерча.dc.html" class="foc" style="text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:12px;border:1.5px solid #14181F;color:#14181F">Одежда клуба</a>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <aside class="g-side" style="position:sticky;top:82px;background:#fff;border:1px solid #E5E7EB;border-radius:20px;padding:24px;box-shadow:0 20px 48px -32px rgba(20,24,31,.45)">
+        <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:18px;letter-spacing:-0.01em;margin-bottom:16px">Итог</div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:#3a3f49;padding:7px 0"><span>Позиции ({{ count }})</span><span style="font-family:'Martian Mono',monospace">{{ subtotal }}</span></div>
+        <sc-if value="{{ hasDiscount }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:#1F8A5B;padding:7px 0"><span>Скидка выпускника (ДПО)</span><span style="font-family:'Martian Mono',monospace">−{{ discount }}</span></div>
+        </sc-if>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #E5E7EB;margin-top:8px;padding-top:14px"><span style="font-weight:600">Итого</span><span style="font-family:'Martian Mono',monospace;font-size:22px;font-weight:500">{{ total }}</span></div>
+        <button onClick="{{ goCheckout }}" class="foc" style="margin-top:18px;width:100%;font-family:'Onest';font-weight:600;font-size:16px;padding:15px;border-radius:13px;border:none;background:{{ checkoutBg }};color:#FBF3E8;cursor:{{ checkoutCursor }}">Оформить заявку</button>
+      </aside>
+    </div>
+  </sc-if>
+
+  <!-- STEP 2 -->
+  <sc-if value="{{ stepCheckout }}" hint-placeholder-val="{{ false }}">
+    <div class="g-grid" style="display:grid;grid-template-columns:1fr 360px;gap:28px;max-width:1180px;margin:0 auto;padding:18px 28px 90px;align-items:start">
+      <div>
+        <button onClick="{{ backToCart }}" class="foc" style="background:none;border:none;cursor:pointer;font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;padding:0;margin-bottom:12px">← назад в корзину</button>
+        <h1 style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:34px;letter-spacing:-0.01em;margin:0 0 22px">Оформление</h1>
+
+        <sc-if value="{{ submitting }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid #E5E7EB;border-radius:18px;padding:74px 24px;text-align:center">
+            <div style="width:44px;height:44px;border-radius:50%;border:4px solid #F2E3CF;border-top-color:#EC5A13;margin:0 auto;animation:spin .8s linear infinite"></div>
+            <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:18px;margin-top:22px">Отправляем заявку…</div>
+            <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;margin-top:8px">Секунду — фиксируем её для менеджера</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showForm }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:18px;padding:24px">
+              <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:17px;letter-spacing:-0.01em;margin-bottom:18px">Контакты</div>
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <div>
+                  <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">ФИО</label>
+                  <input value="{{ f.name }}" onInput="{{ setName }}" placeholder="Анна Соколова" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid {{ e.name }};background:#FBF3E8;outline:none">
+                  <sc-if value="{{ err.name }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#B5331B;margin-top:6px">Укажите имя и фамилию</div></sc-if>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                  <div>
+                    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Телефон</label>
+                    <input value="{{ f.phone }}" onInput="{{ setPhone }}" placeholder="+7 ___ ___-__-__" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid {{ e.phone }};background:#FBF3E8;outline:none">
+                    <sc-if value="{{ err.phone }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#B5331B;margin-top:6px">Введите телефон для связи</div></sc-if>
+                  </div>
+                  <div>
+                    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Email</label>
+                    <input value="{{ f.email }}" onInput="{{ setEmail }}" placeholder="you@mail.ru" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid {{ e.email }};background:#FBF3E8;outline:none">
+                    <sc-if value="{{ err.email }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#B5331B;margin-top:6px">Проверьте email</div></sc-if>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <sc-if value="{{ hasMerch }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fff;border:1px solid #E5E7EB;border-radius:18px;padding:24px">
+                <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:17px;letter-spacing:-0.01em">Получение одежды</div>
+                <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
+                  <button onClick="{{ pickup }}" class="foc" style="flex:1;min-width:160px;text-align:left;border:1.5px solid {{ pickBorder }};background:{{ pickBg }};border-radius:13px;padding:15px;cursor:pointer">
+                    <div style="font-weight:600;font-size:15px">Самовывоз</div>
+                    <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280;margin-top:5px">Учебный офис, бесплатно</div>
+                  </button>
+                  <button onClick="{{ courier }}" class="foc" style="flex:1;min-width:160px;text-align:left;border:1.5px solid {{ courBorder }};background:{{ courBg }};border-radius:13px;padding:15px;cursor:pointer">
+                    <div style="font-weight:600;font-size:15px">Доставка</div>
+                    <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280;margin-top:5px">По адресу, оплата при получении</div>
+                  </button>
+                </div>
+                <sc-if value="{{ isCourier }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:16px">
+                    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Адрес доставки</label>
+                    <input value="{{ f.address }}" onInput="{{ setAddress }}" placeholder="Город, улица, дом, квартира, индекс" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid {{ e.address }};background:#FBF3E8;outline:none">
+                    <sc-if value="{{ err.address }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#B5331B;margin-top:6px">Укажите адрес доставки</div></sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:18px;padding:24px">
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Комментарий <span style="color:#9aa0aa;font-weight:400">(необязательно)</span></label>
+              <textarea value="{{ f.comment }}" onInput="{{ setComment }}" rows="3" placeholder="Удобное время для звонка, вопросы по программе…" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid #E5E7EB;background:#FBF3E8;outline:none;resize:vertical"></textarea>
+              <button onClick="{{ toggleConsent }}" class="foc" style="display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;background:none;border:none;cursor:pointer;margin-top:16px;padding:0">
+                <span style="width:22px;height:22px;border-radius:7px;border:1.5px solid {{ e.consent }};background:{{ consentBg }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex:none;margin-top:1px">{{ consentCheck }}</span>
+                <span style="font-size:13px;color:#3a3f49;line-height:1.5">Согласен на обработку персональных данных для связи и оформления заявки.</span>
+              </button>
+              <sc-if value="{{ err.consent }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#B5331B;margin-top:8px;padding-left:33px">Нужно согласие на обработку данных</div></sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <aside class="g-side" style="position:sticky;top:82px;background:#fff;border:1px solid #E5E7EB;border-radius:20px;padding:24px;box-shadow:0 20px 48px -32px rgba(20,24,31,.45)">
+        <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:18px;letter-spacing:-0.01em;margin-bottom:14px">Ваша заявка</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ items }}" as="it" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px">
+              <span style="color:#3a3f49;line-height:1.35">{{ it.name }} <span style="color:#9aa0aa">×{{ it.qty }}</span></span>
+              <span style="font-family:'Martian Mono',monospace;white-space:nowrap">{{ it.lineTotal }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasDiscount }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#1F8A5B;padding:4px 0"><span>Скидка выпускника</span><span style="font-family:'Martian Mono',monospace">−{{ discount }}</span></div>
+        </sc-if>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #E5E7EB;margin-top:8px;padding-top:14px"><span style="font-weight:600">Итого</span><span style="font-family:'Martian Mono',monospace;font-size:22px;font-weight:500">{{ total }}</span></div>
+        <button onClick="{{ submit }}" class="foc" style="margin-top:18px;width:100%;font-family:'Onest';font-weight:600;font-size:16px;padding:15px;border-radius:13px;border:none;background:#EC5A13;color:#FBF3E8;cursor:pointer">Отправить заявку</button>
+        <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#9aa0aa;text-align:center;margin-top:12px;line-height:1.5">Менеджер свяжется для подтверждения</div>
+      </aside>
+    </div>
+  </sc-if>
+
+  <!-- STEP 3 -->
+  <sc-if value="{{ stepSuccess }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:620px;margin:0 auto;padding:40px 28px 90px">
+      <div style="background:#fff;border:1px solid #E5E7EB;border-radius:24px;padding:48px 40px;text-align:center;box-shadow:0 24px 60px -34px rgba(20,24,31,.5);animation:g-pop .4s cubic-bezier(.2,.8,.2,1)">
+        <div style="width:74px;height:74px;border-radius:22px;background:linear-gradient(140deg,#1F8A5B,#157049);display:flex;align-items:center;justify-content:center;margin:0 auto;color:#fff;font-size:34px">✓</div>
+        <h1 style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:30px;letter-spacing:-0.01em;margin:24px 0 0">Заявка отправлена</h1>
+        <p style="font-size:16px;line-height:1.55;color:#3a3f49;margin:14px auto 0;max-width:420px">Менеджер свяжется для подтверждения в течение рабочего дня по указанным контактам.</p>
+        <div style="margin-top:26px;background:#FBF3E8;border:1px dashed #d8d2c4;border-radius:16px;padding:20px">
+          <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;letter-spacing:.06em">Номер заявки</div>
+          <div style="font-family:'Martian Mono',monospace;font-size:26px;font-weight:500;margin-top:8px;letter-spacing:.04em">{{ orderNo }}</div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap">
+          <a href="Дашборд ЛК.dc.html" class="foc" style="text-decoration:none;font-weight:600;font-size:15px;padding:13px 24px;border-radius:12px;background:#11296B;color:#FBF3E8">В личный кабинет</a>
+          <a href="Главная.dc.html" class="foc" style="text-decoration:none;font-weight:600;font-size:15px;padding:13px 24px;border-radius:12px;border:1.5px solid #14181F;color:#14181F">На главную</a>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    step: 'cart',
+    items: [
+      { id: 1, type: 'ДПО', name: 'Юрист в сфере договорного права', variant: '68 ак. ч. · старт 25 авг', price: 30000, qty: 1, fixed: true, dpo: true, swatch: '#11296B', icon: 'ДПО' },
+      { id: 2, type: 'Одежда', name: 'Худи с логотипом факультета', variant: 'графит · размер M', price: 4200, qty: 1, swatch: '#2C313B', icon: 'Х' },
+      { id: 3, type: 'Одежда', name: 'Шоппер с Фемидой', variant: 'натуральный', price: 1200, qty: 1, swatch: '#C49A45', icon: 'Ш' },
+    ],
+    delivery: 'pickup',
+    f: { name: '', phone: '', email: '', address: '', comment: '' },
+    consent: false, tried: false, submitting: false, orderNo: '',
+  };
+
+  _money(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+
+  _set(k, v) { this.setState(s => ({ f: Object.assign({}, s.f, { [k]: v }) })); }
+  _qty(id, d) { this.setState(s => ({ items: s.items.map(it => it.id === id ? Object.assign({}, it, { qty: Math.max(1, Math.min(20, it.qty + d)) }) : it) })); }
+  _remove(id) { this.setState(s => ({ items: s.items.filter(it => it.id !== id) })); }
+
+  _validate() {
+    const f = this.state.f, hasMerch = this.state.items.some(i => !i.dpo);
+    return {
+      name: f.name.trim().length < 2,
+      phone: f.phone.replace(/\D/g, '').length < 6,
+      email: !/.+@.+\..+/.test(f.email.trim()),
+      address: hasMerch && this.state.delivery === 'courier' && f.address.trim().length < 5,
+      consent: !this.state.consent,
+    };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const items = st.items;
+    const subtotalN = items.reduce((a, it) => a + it.price * it.qty, 0);
+    const discountN = items.reduce((a, it) => a + (it.dpo ? it.price * it.qty * 0.05 : 0), 0);
+    const totalN = subtotalN - discountN;
+    const hasMerch = items.some(i => !i.dpo);
+    const err = st.tried ? this._validate() : {};
+    const eb = (k) => err[k] ? '#B5331B' : '#E5E7EB';
+
+    const view = items.map(it => ({
+      name: it.name, type: it.type, variant: it.variant, swatch: it.swatch, icon: it.icon, qty: it.qty,
+      editable: !it.fixed, fixed: !!it.fixed,
+      tagBg: it.dpo ? 'rgba(17,41,107,.1)' : 'rgba(236,90,19,.14)',
+      tagColor: it.dpo ? '#11296B' : '#C9450E',
+      lineTotal: this._money(it.price * it.qty),
+      inc: () => this._qty(it.id, 1), dec: () => this._qty(it.id, -1), remove: () => this._remove(it.id),
+    }));
+
+    return {
+      stepCart: st.step === 'cart', stepCheckout: st.step === 'checkout', stepSuccess: st.step === 'success',
+      s1color: st.step === 'cart' ? '#EC5A13' : '#14181F',
+      s2color: st.step === 'checkout' ? '#EC5A13' : (st.step === 'success' ? '#14181F' : '#9aa0aa'),
+      s3color: st.step === 'success' ? '#EC5A13' : '#9aa0aa',
+
+      items: view, count: items.length,
+      hasItems: items.length > 0, empty: items.length === 0,
+      subtotal: this._money(subtotalN), discount: this._money(Math.round(discountN)), total: this._money(Math.round(totalN)),
+      hasDiscount: discountN > 0,
+
+      goCheckout: () => { if (items.length) this.setState({ step: 'checkout' }); },
+      checkoutBg: items.length ? '#11296B' : '#cdd2da',
+      checkoutCursor: items.length ? 'pointer' : 'not-allowed',
+      backToCart: () => this.setState({ step: 'cart' }),
+
+      submitting: st.submitting, showForm: !st.submitting,
+      f: st.f, e: { name: eb('name'), phone: eb('phone'), email: eb('email'), address: eb('address'), consent: err.consent ? '#B5331B' : '#cdd2da' },
+      err,
+      setName: (e) => this._set('name', e.target.value),
+      setPhone: (e) => this._set('phone', e.target.value),
+      setEmail: (e) => this._set('email', e.target.value),
+      setAddress: (e) => this._set('address', e.target.value),
+      setComment: (e) => this._set('comment', e.target.value),
+
+      hasMerch, isCourier: st.delivery === 'courier',
+      pickup: () => this.setState({ delivery: 'pickup' }),
+      courier: () => this.setState({ delivery: 'courier' }),
+      pickBg: st.delivery === 'pickup' ? '#FBF3E8' : '#fff', pickBorder: st.delivery === 'pickup' ? '#EC5A13' : '#E5E7EB',
+      courBg: st.delivery === 'courier' ? '#FBF3E8' : '#fff', courBorder: st.delivery === 'courier' ? '#EC5A13' : '#E5E7EB',
+
+      toggleConsent: () => this.setState(s => ({ consent: !s.consent })),
+      consentBg: st.consent ? '#EC5A13' : 'transparent', consentCheck: st.consent ? '✓' : '',
+
+      orderNo: st.orderNo,
+      submit: () => {
+        const v = this._validate();
+        if (Object.keys(v).some(k => v[k])) { this.setState({ tried: true }); return; }
+        this.setState({ submitting: true, tried: true });
+        const no = 'КВ-' + Math.floor(10000 + Math.random() * 89999);
+        setTimeout(() => this.setState({ submitting: false, step: 'success', orderNo: no }), 1500);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

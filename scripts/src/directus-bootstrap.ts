@@ -1,5 +1,5 @@
 /**
- * Идемпотентный bootstrap Directus для Клуба выпускников факультета права НИУ ВШЭ.
+ * Идемпотентный bootstrap Directus для Клуба выпускников факультета права Вышки.
  * Создаёт: коллекции + поля + связи, роли, сервисный токен, тестовые аккаунты, сиды.
  * Повторный запуск ничего не дублирует (всё проверяется перед созданием).
  *
@@ -153,7 +153,7 @@ const COLLECTIONS = [
   "levels", "point_rules", "achievements", "alumni", "points_ledger",
   "alumni_achievements", "alumni_friends", "pages", "news", "programs", "products",
   "carts", "orders", "offers", "referrals", "timeline_items", "podcasts", "audit_log",
-  "events", "event_rsvps", "push_subs",
+  "events", "event_rsvps", "push_subs", "podcast_plays",
 ];
 log("== Коллекции ==");
 for (const c of COLLECTIONS) await ensureCollection(c);
@@ -198,6 +198,7 @@ await ensureField("alumni", "contacts_json", json());
 await ensureField("alumni", "edu_program", str());
 await ensureField("alumni", "edu_level", str());
 await ensureField("alumni", "interests_json", json());
+await ensureField("alumni", "podcast_reminder_sent", bool(false)); // напоминание об окончании подписки уже отправлено
 await ensureField("alumni", "podcast_sub_until", ts()); // подписка на подкасты активна до этой даты
 await ensureField("alumni", "avatar", str()); // uuid файла в Directus (раздача через /api/avatars/:id)
 await ensureField("alumni", "referral_code", str(true));
@@ -260,7 +261,14 @@ await ensureField("timeline_items", "status", enumf(["draft", "published"], "pub
 await ensureField("podcasts", "title", str());
 await ensureField("podcasts", "description", txt());
 await ensureField("podcasts", "cover", str()); // URL/путь обложки
-await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.)
+await ensureField("podcasts", "audio_url", str()); // URL аудио (mp3 и т. п.) либо uuid файла в Directus
+await ensureField("podcasts", "video_url", str()); // ссылка RuTube: выпуск показывается видеоплеером
+
+// podcast_plays – факт прослушивания. Пишется сервером при выдаче аудио,
+// поэтому счётчик нельзя накрутить из браузера.
+await ensureM2O("podcast_plays", "podcast_id", "podcasts", "CASCADE");
+await ensureM2O("podcast_plays", "alumni_id", "alumni", "SET NULL");
+await ensureField("podcast_plays", "created_at", ts("date-created"));
 await ensureField("podcasts", "duration", str()); // «43 мин»
 await ensureField("podcasts", "is_free", bool(false)); // пробный выпуск – доступен без подписки
 await ensureField("podcasts", "sort", int());
@@ -354,7 +362,7 @@ await ensureField("orders", "consent_pdn", bool(false));
 await ensureField("orders", "payment_id", str());
 await ensureField("orders", "payment_status", str());
 await ensureField("orders", "paid_at", ts());
-await ensureField("orders", "status", enumf(["new", "in_progress", "confirmed", "done", "canceled"], "new"));
+await ensureField("orders", "status", enumf(["new", "in_progress", "confirmed", "done", "canceled", "expired"], "new"));
 await ensureField("orders", "created_at", ts("date-created"));
 
 // offers
@@ -437,8 +445,8 @@ if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "
       badge: "Сообщество выпускников факультета права",
       title_pre: "Статус выпускника, который",
       title_accent: "работает",
-      subtitle: "Клуб выпускников факультета права «Вышки»: личный кабинет с уровнями, скидка 5% на ДПО и мерч, новости и менторы – всё в одном месте.",
-      cta_primary: "Войти в личный кабинет",
+      subtitle: "Клуб выпускников факультета права Вышки: однокурсники, встречи и программы ДПО. Подтверждённый статус открывает цену выпускника на ДПО.",
+      cta_primary: "Вступить в клуб",
       cta_secondary: "Как вступить",
     }]))) as any;
     const cta = (await client.request((createItems as any)("block_cta", [{
@@ -609,7 +617,7 @@ await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "publishe
 await ensureSeed("timeline_items", "title", [
   { year: "2024", title: "Клуб основан", text: "Первый выпуск собирается в сообщество, появляется личный кабинет.", metric: "1-й выпуск · ~40 участников", sort: 1, status: "published" },
   { year: "2024", title: "Витрина ДПО", text: "Открывается доступ к программам доп. образования со скидкой выпускника.", metric: "каталог ВШЭ · скидка выпускника", sort: 2, status: "published" },
-  { year: "2025", title: "Геймификация", text: "Запуск уровней статуса, баллов и бейджей за активность в клубе.", metric: "4 уровня · 10 достижений", sort: 3, status: "published" },
+  { year: "2025", title: "Геймификация", text: "Запуск уровней статуса, баллов и бейджей за активность в клубе.", metric: "4 уровня · 16 достижений", sort: 3, status: "published" },
   { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, фирменный мерч и первые партнёрские предложения.", metric: "2-й выпуск · мерч", sort: 4, status: "published" },
   { year: "2026", title: "Сегодня", text: "Растущее сообщество выпускников факультета права с витринами и менторством.", metric: "и это только начало", sort: 5, status: "published" },
 ]);
@@ -619,10 +627,11 @@ await ensureSeed("events", "title", [
   { title: "Открытая лекция: карьера юриста в 2027", description: "Партнёры и инхаус-руководители о том, куда движется рынок юридических услуг.", starts_at: "2026-10-02T19:00:00+03:00", location: "Онлайн (ссылка придёт участникам)", format: "online", points: 60, status: "published" },
 ]);
 
-// Демо-подкасты (доступ по подписке)
+// Демо-подкасты (samplelib) – только draft. Реальные выпуски грузить скриптом
+// load-pravovaya-gramotnost (локальный Directus) или вручную по deploy-runbook.
 await ensureSeed("podcasts", "title", [
-  { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "published", is_free: true },
-  { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "published" },
+  { title: "Право и карьера: первые шаги после выпуска", description: "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.", cover: "/assets/dpo-hero.jpg", audio_url: "https://download.samplelib.com/mp3/sample-15s.mp3", duration: "42 мин", sort: 1, status: "draft", is_free: true },
+  { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "draft" },
 ]);
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
 

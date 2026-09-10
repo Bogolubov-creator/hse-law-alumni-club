@@ -1,0 +1,25 @@
+import {test,expect} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+const vars=Object.fromEntries(readFileSync('/Users/macbook/alumni-staged-evidence/local.env','utf8').trim().split('\n').map(l=>{const n=l.indexOf('=');return [l.slice(0,n),l.slice(n+1)]}));
+test('A реальная заявка и кабинет',async({page})=>{
+ await page.goto('/lk');
+ await page.getByLabel(/почта/i).fill(vars.TEST_ALUMNI_EMAIL);
+ await page.getByLabel(/пароль/i).fill(vars.TEST_ALUMNI_PASSWORD);
+ await page.getByRole('button',{name:'Войти в кабинет'}).click();
+ await expect(page.getByRole('heading',{name:'Мои заявки'})).toBeVisible();
+ await page.goto('/dpo');
+ const row=page.locator('article.v2-prog').filter({has:page.getByRole('button',{name:'В корзину',exact:true})}).first();
+ await Promise.all([page.waitForResponse(r=>r.url().includes('/api/cart')&&r.request().method()==='POST'&&r.ok()),row.getByRole('button',{name:'В корзину',exact:true}).click()]);
+ await page.goto('/cart');
+ await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/a-cart-before.png',fullPage:true});
+ await page.getByLabel('фио',{exact:true}).fill('Тестовая заявка');
+ await page.getByLabel('телефон',{exact:true}).fill('+7 000 000-00-00');
+ await page.getByLabel('почта',{exact:true}).fill('alumni@staged.example.com');
+ await page.locator('form input[type=checkbox]').check();
+ const response=page.waitForResponse(r=>r.url().endsWith('/api/orders')&&r.request().method()==='POST');
+ await page.getByRole('button',{name:'Оформить заявку',exact:true}).click();
+ const res=await response;expect(res.ok()).toBeTruthy();const order=await res.json();
+ console.log('Saved order',order.number,'total',order.total_estimate,'notification',order.notified);
+ await page.goto('/lk');await page.reload();await expect(page.getByText(order.number,{exact:true})).toBeVisible();
+ await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/a-order-persisted.png',fullPage:true});
+});

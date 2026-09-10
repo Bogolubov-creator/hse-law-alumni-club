@@ -1,3 +1,4 @@
+import { CLUB_OPERATOR } from "@club/shared";
 import { z } from "zod";
 
 const schema = z.object({
@@ -6,6 +7,13 @@ const schema = z.object({
   // fail-fast нужен отдельный сигнал, который оператор включает на VPS (APP_ENV=production).
   // Локальный стенд оставляет development → проверки только предупреждают, не роняют старт.
   APP_ENV: z.enum(["development", "production"]).default("development"),
+  CHECKOUT_DATABASE_URL: z.string().default(""),
+  SUPPORT_ENABLED: z.string().default("false"),
+  SUPPORT_OPERATOR_NAME: z.string().trim().default(CLUB_OPERATOR.name),
+  SUPPORT_OPERATOR_ADDRESS: z.string().trim().default(CLUB_OPERATOR.address),
+  SUPPORT_OPERATOR_CONTACT: z.string().trim().default(CLUB_OPERATOR.contact),
+  SUPPORT_RETENTION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  OFFICE_EMAIL: z.string().email().or(z.literal("")).default(""),
   DIRECTUS_URL: z.string().url(),
   DIRECTUS_SERVICE_TOKEN: z.string().min(1, "DIRECTUS_SERVICE_TOKEN обязателен"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET минимум 32 символа"),
@@ -41,6 +49,15 @@ const schema = z.object({
   SEED_DEMO: z.string().default(""),
   ORDER_RETENTION_DAYS: z.coerce.number().int().positive().default(1095), // 3 года – срок хранения заявок (152-ФЗ)
   AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(365),  // 1 год – срок хранения аудита
+  // Срок резерва мерча для заявок в статусе «new» без активного платежа (часы). 0 = выкл.
+  RESERVE_TTL_HOURS: z.coerce.number().int().min(0).max(720).default(72),
+  // Максимум попыток доставки из mail outbox.
+  MAIL_OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(50).default(8),
+  // Глобальный потолок запросов с одного IP в минуту. Настраиваемый, потому что
+  // за университетским NAT с одного адреса выходит целый корпус: при рассылке о
+  // наборе легко упереться и получить 429 всем сразу. Чувствительные операции
+  // защищены отдельными лимитами по маршрутам (логин 5, регистрация 3, оплата 10).
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(1000),
 });
 
 export const env = schema.parse(process.env);
@@ -54,6 +71,7 @@ export type Env = z.infer<typeof schema>;
 export function assertProdConfig(): string[] {
   if (env.APP_ENV !== "production") return [];
   const errs: string[] = [];
+  if (!env.CHECKOUT_DATABASE_URL) errs.push("CHECKOUT_DATABASE_URL обязателен для транзакционного оформления");
   const looksPlaceholder = (v: string) => /replace_with|сгенерируйте|changeme|your[_-]?secret|example/i.test(v);
   if (looksPlaceholder(env.AUTH_SECRET)) errs.push("AUTH_SECRET выглядит как плейсхолдер – сгенерируйте настоящий (openssl rand -hex 32)");
   if (looksPlaceholder(env.DIRECTUS_SERVICE_TOKEN)) errs.push("DIRECTUS_SERVICE_TOKEN выглядит как плейсхолдер");

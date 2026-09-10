@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
+vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
 vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
 vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
 
@@ -20,6 +21,8 @@ const GUARDED = [
   { method: "GET" as const, url: "/admin/orders" },
   { method: "GET" as const, url: "/admin/members" },
   { method: "GET" as const, url: "/admin/audit" },
+  { method: "GET" as const, url: "/admin/analytics" },
+  { method: "GET" as const, url: "/admin/analytics/export.csv" },
 ];
 
 function stubDirectusLogin(valid: (email: string, password: string) => boolean) {

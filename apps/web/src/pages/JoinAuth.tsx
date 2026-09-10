@@ -16,8 +16,8 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
   return (
     <>
       <VisionCorner />
-      <main className="flex min-h-screen flex-col items-center justify-center bg-kost px-4 py-10">
-        <div className="w-full max-w-[520px] rounded-[22px] border border-[#E5E7EB] bg-white p-8 shadow-sm max-md:p-6">
+      <main id="main" className="flex min-h-screen flex-col items-center justify-center bg-kost px-4 py-10">
+        <div className="w-full max-w-[520px] rounded-[22px] border border-[#7C828C] bg-white p-8 shadow-sm max-md:p-6">
           <Link to="/" className="foc font-mono text-xs text-ohra-deep">← На главную</Link>
           <p className="mt-5 font-mono text-xs uppercase tracking-[0.16em] text-ohra">Клуб выпускников</p>
           <h1 className="mt-2 font-display text-2xl font-bold">{title}</h1>
@@ -49,7 +49,7 @@ function Field({ label, value, onChange, type = "text", ph, required }: { label:
 export function Join() {
   useHead({
     title: "Вступить в клуб",
-    description: "Подайте заявку в клуб выпускников факультета права НИУ ВШЭ: подтвердите выпуск и получите статус, скидку на ДПО и доступ к сообществу.",
+    description: "Подайте заявку в клуб выпускников факультета права Вышки: подтвердите выпуск и получите статус, скидку на ДПО и доступ к сообществу.",
   });
   // Уже в клубе? Анкета нужна только новым выпускникам – не «кидаем» молча в ЛК,
   // а объясняем и даём выбор (в кабинет / выйти и заполнить за другого человека).

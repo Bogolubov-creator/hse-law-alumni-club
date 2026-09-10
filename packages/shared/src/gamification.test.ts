@@ -52,17 +52,32 @@ describe("decayDelta (−15%)", () => {
   });
 });
 
-describe("evaluateAchievements (набор Claude Design)", () => {
+describe("evaluateAchievements (Design + ступени движка/Kimi)", () => {
   it("«Первый шаг» – на первом мероприятии", () => {
     expect(evaluateAchievements({ events_attended: 0 })).not.toContain("first_step");
     expect(evaluateAchievements({ events_attended: 1 })).toContain("first_step");
+  });
+  it("«Активист» – на 3 мероприятиях", () => {
+    expect(evaluateAchievements({ events_attended: 2 })).not.toContain("activist");
+    expect(evaluateAchievements({ events_attended: 3 })).toContain("activist");
   });
   it("«Завсегдатай» – на 5 мероприятиях", () => {
     expect(evaluateAchievements({ events_attended: 4 })).not.toContain("regular");
     expect(evaluateAchievements({ events_attended: 5 })).toContain("regular");
   });
-  it("«Вечный студент» – 3 программы ДПО", () => {
+  it("«Снова студент» / «Вечный студент» / «Эрудит» – лестница ДПО", () => {
+    expect(evaluateAchievements({ programs_completed: 1 })).toContain("student_again");
+    expect(evaluateAchievements({ programs_completed: 1 })).not.toContain("eternal_student");
     expect(evaluateAchievements({ programs_completed: 3 })).toContain("eternal_student");
+    expect(evaluateAchievements({ programs_completed: 5 })).toContain("scholar5");
+  });
+  it("«Наставник» и «С атрибутикой»", () => {
+    expect(evaluateAchievements({ mentorship_count: 1 })).toContain("mentor");
+    expect(evaluateAchievements({ orders_count: 1 })).toContain("first_order");
+  });
+  it("«Опора клуба» – 500 баллов", () => {
+    expect(evaluateAchievements({ points: 499 })).not.toContain("patron");
+    expect(evaluateAchievements({ points: 500 })).toContain("patron");
   });
   it("«Легенда» – высший уровень (status_level 4)", () => {
     expect(evaluateAchievements({ status_level: 3 })).not.toContain("legend");
@@ -78,10 +93,11 @@ describe("achievementProgress", () => {
     const p = achievementProgress({ events_attended: 1, programs_completed: 1, referrals_count: 0, verified: 1, status_level: 1 });
     const by = (k: string) => p.find((x) => x.key === k)!;
     expect(by("first_step").earned).toBe(true); // events 1 >= 1
+    expect(by("student_again").earned).toBe(true);
     expect(by("regular")).toMatchObject({ current: 1, target: 5, earned: false, star: true });
     expect(by("office_seal").earned).toBe(true); // verified
     expect(by("on_wave")).toMatchObject({ current: 38, target: 50, earned: false }); // demo
     expect(by("legend")).toMatchObject({ current: 1, target: 4, earned: false });
-    expect(p).toHaveLength(10);
+    expect(p).toHaveLength(16);
   });
 });

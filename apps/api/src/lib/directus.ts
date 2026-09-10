@@ -9,6 +9,7 @@ export interface AlumniRow {
   personal_discount: number; contacts_json: Record<string, string> | null; edu_program: string | null; edu_level: string | null;
   interests_json: string[] | null;
   podcast_sub_until: string | null;
+  podcast_reminder_sent: boolean | null;
   avatar: string | null;
   referral_code: string | null; referred_by: string | null; last_activity_at: string | null;
   token_version: number | null;
@@ -42,7 +43,8 @@ export interface OrderRow {
 export interface NewsRow { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string }
 export interface PushSubRow { id: string; alumni_id: string; endpoint: string; keys: { p256dh: string; auth: string }; created_at: string }
 export interface TimelineItemRow { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string }
-export interface PodcastRow { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; is_free: boolean; sort: number; status: string; created_at: string }
+export interface PodcastRow { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; video_url: string | null; duration: string | null; is_free: boolean; sort: number; status: string; created_at: string }
+export interface PodcastPlayRow { id: string; podcast_id: string; alumni_id: string | null; created_at: string }
 export interface PageRow { id: string; slug: string; title: string; status: string; sort: number; blocks: unknown }
 
 interface Schema {
@@ -61,6 +63,7 @@ interface Schema {
   timeline_items: TimelineItemRow[];
   push_subs: PushSubRow[];
   podcasts: PodcastRow[];
+  podcast_plays: PodcastPlayRow[];
 }
 
 export const directus = createDirectus<Schema>(env.DIRECTUS_URL)

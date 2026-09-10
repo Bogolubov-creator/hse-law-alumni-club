@@ -42,7 +42,7 @@ export function announceEventByEmail(ev: { id: string; title: string; starts_at:
       const ok = await sendEmail(
         email,
         `Новое событие клуба: ${ev.title}`,
-        `Здравствуйте${a.fio ? `, ${a.fio}` : ""}!\n\nВ клубе выпускников новое событие:\n\n${ev.title}\n${when}${place ? ` · ${place}` : ""}\n${ev.reg_url ? `Регистрация: ${ev.reg_url}\n` : ""}\nЗаписаться («Пойду») и добавить в календарь: ${env.PUBLIC_URL}/events\nЗа участие начисляются баллы клуба.\n\n– Клуб выпускников факультета права НИУ ВШЭ\n\nЧтобы получать анонсы мгновенно – включите уведомления или привяжите Telegram в личном кабинете: ${env.PUBLIC_URL}/lk`,
+        `Здравствуйте${a.fio ? `, ${a.fio}` : ""}!\n\nВ клубе выпускников новое событие:\n\n${ev.title}\n${when}${place ? ` · ${place}` : ""}\n${ev.reg_url ? `Регистрация: ${ev.reg_url}\n` : ""}\nЗаписаться («Пойду») и добавить в календарь: ${env.PUBLIC_URL}/events\nЗа участие начисляются баллы клуба.\n\n– Клуб выпускников факультета права Вышки\n\nЧтобы получать анонсы мгновенно – включите уведомления или привяжите Telegram в личном кабинете: ${env.PUBLIC_URL}/lk`,
       );
       if (ok) sent++;
     }

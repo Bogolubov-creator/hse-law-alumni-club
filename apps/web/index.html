@@ -3,32 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Клуб выпускников факультета права НИУ ВШЭ</title>
-    <meta name="description" content="Клуб выпускников факультета права НИУ ВШЭ: программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
+    <title>Клуб выпускников факультета права Вышки</title>
+    <meta name="description" content="Клуб выпускников факультета права Вышки: программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
     <!-- PWA: установка на экран телефона как приложение -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#11296B" />
+    <meta name="theme-color" content="#EC5A13" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-180.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Клуб права" />
+    <meta name="application-name" content="Клуб права" />
     <link rel="canonical" href="%SITE_URL%/" />
     <!-- Превью ссылки в мессенджерах (абсолютные URL – их читают скрейперы без JS) -->
-    <meta property="og:title" content="Клуб выпускников факультета права НИУ ВШЭ" />
+    <meta property="og:title" content="Клуб выпускников факультета права Вышки" />
     <meta property="og:description" content="Программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
     <meta property="og:url" content="%SITE_URL%/" />
     <!-- Превью-карточка 1200×630 (apps/web/public/og-card.png) – широкий формат для мессенджеров. -->
     <meta property="og:image" content="%SITE_URL%/og-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Клуб выпускников факультета права НИУ ВШЭ" />
+    <meta property="og:image:alt" content="Клуб выпускников факультета права Вышки" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Клуб выпускников факультета права НИУ ВШЭ" />
+    <meta property="og:site_name" content="Клуб выпускников факультета права Вышки" />
     <meta property="og:locale" content="ru_RU" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Клуб выпускников факультета права НИУ ВШЭ" />
+    <meta name="twitter:title" content="Клуб выпускников факультета права Вышки" />
     <meta name="twitter:description" content="Программы ДПО со скидкой выпускника, мерч, подкасты и сообщество." />
     <meta name="twitter:image" content="%SITE_URL%/og-card.png" />
     <meta name="robots" content="index, follow" />
@@ -40,7 +42,7 @@
           {
             "@type": "EducationalOrganization",
             "@id": "%SITE_URL%/#club",
-            "name": "Клуб выпускников факультета права НИУ ВШЭ",
+            "name": "Клуб выпускников факультета права Вышки",
             "url": "%SITE_URL%/",
             "logo": "%SITE_URL%/icon-512.png",
             "image": "%SITE_URL%/og-card.png",
@@ -73,19 +75,19 @@
             "@type": "WebSite",
             "@id": "%SITE_URL%/#website",
             "url": "%SITE_URL%/",
-            "name": "Клуб выпускников факультета права НИУ ВШЭ",
+            "name": "Клуб выпускников факультета права Вышки",
             "inLanguage": "ru-RU",
             "publisher": { "@id": "%SITE_URL%/#club" }
           }
         ]
       }
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;800&family=Onest:wght@400;500;600;700;800&family=Martian+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Шрифты со своего домена, а не с fonts.googleapis.com: нет внешней
+         зависимости и IP посетителя не уходит в Google (см. public/fonts/fonts.css). -->
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <!-- Начертания первого экрана грузим заранее, чтобы заголовок не переписывался -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Regular.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/HSESans-Black.woff2" />
   </head>
   <body>
     <div id="root"></div>

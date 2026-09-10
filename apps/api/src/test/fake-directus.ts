@@ -102,7 +102,10 @@ export async function request(desc: Descriptor): Promise<any> {
       return row ? project(row, desc.query?.fields) : null;
     }
     case "createItem": {
-      const row = { id: randomUUID(), ...desc.data };
+      // created_at в Directus заполняется само (special: date-created). Без этого
+      // фильтры по времени в фейке молча не находили ничего, и логика, которая
+      // на них опирается (например дедупликация прослушиваний), выглядела рабочей.
+      const row = { id: randomUUID(), created_at: new Date().toISOString(), ...desc.data };
       // Уникальность номера заявки: в БД это UNIQUE-индекс, роут рассчитывает на отказ.
       if (desc.collection === "orders" && table("orders").some((r) => r.number === row.number)) {
         throw new Error("duplicate key value violates unique constraint (orders.number)");
@@ -111,7 +114,7 @@ export async function request(desc: Descriptor): Promise<any> {
       return { ...row };
     }
     case "createItems": {
-      const rows = (desc.data as Row[]).map((d) => ({ id: randomUUID(), ...d }));
+      const rows = (desc.data as Row[]).map((d) => ({ id: randomUUID(), created_at: new Date().toISOString(), ...d }));
       table(desc.collection!).push(...rows);
       return rows.map((r) => ({ ...r }));
     }
@@ -130,6 +133,22 @@ export async function request(desc: Descriptor): Promise<any> {
     case "aggregate": {
       const rows = table(desc.collection!).filter((r) => matchFilter(r, desc.query?.query?.filter));
       const agg = desc.query?.aggregate ?? {};
+      const groupBy = desc.query?.groupBy as string[] | undefined;
+      if (groupBy?.length && agg.count) {
+        const buckets = new Map<string, Row & { count: string }>();
+        for (const r of rows) {
+          const key = groupBy.map((g) => String(r[g] ?? "")).join("\0");
+          const prev = buckets.get(key);
+          if (prev) {
+            prev.count = String(Number(prev.count) + 1);
+          } else {
+            const base: Row & { count: string } = { count: "1" };
+            for (const g of groupBy) base[g] = r[g] ?? null;
+            buckets.set(key, base);
+          }
+        }
+        return [...buckets.values()];
+      }
       if (agg.count) return [{ count: String(rows.length) }];
       if (agg.sum) {
         const field = Array.isArray(agg.sum) ? agg.sum[0] : agg.sum;

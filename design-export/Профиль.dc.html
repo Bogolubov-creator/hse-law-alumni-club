@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;800&family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0}
+  *{box-sizing:border-box}
+  ::selection{background:#EC5A13;color:#FBF3E8}
+  .foc:focus-visible{outline:3px solid #EC5A13;outline-offset:3px;border-radius:10px}
+  input{font-family:'Onest',sans-serif;color:#14181F}
+  @media (max-width:880px){ .p-grid{grid-template-columns:1fr !important} .ach{grid-template-columns:1fr !important} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} }
+</style>
+</helmet>
+<div style="background:#FBF3E8;color:#14181F;font-family:'Onest',system-ui,sans-serif;min-height:100vh">
+
+  <!-- DARK HEADER -->
+  <header style="background:#14181F;color:#FBF3E8;position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(251,243,232,.08)">
+    <div style="max-width:1180px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+      <a href="Главная.dc.html" class="foc" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <img src="assets/themis.jpeg" alt="Логотип" width="38" height="38" style="border-radius:9px;object-fit:cover;flex:none">
+        <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:15px;letter-spacing:-0.01em">Личный кабинет</div>
+      </a>
+      <nav style="display:flex;align-items:center;gap:8px">
+        <a href="Дашборд ЛК.dc.html" class="foc" style="text-decoration:none;color:#c8cdd6;font-weight:500;font-size:14px;padding:8px 14px;border-radius:10px">Обзор</a>
+        <a href="#" class="foc" style="text-decoration:none;color:#FBF3E8;font-weight:600;font-size:14px;padding:8px 14px;border-radius:10px;background:rgba(236,90,19,.16)">Профиль</a>
+        <a href="Витрина ДПО.dc.html" class="foc" style="text-decoration:none;color:#c8cdd6;font-weight:500;font-size:14px;padding:8px 14px;border-radius:10px">Витрины</a>
+      </nav>
+    </div>
+  </header>
+
+  <main style="max-width:1180px;margin:0 auto;padding:32px 28px 80px">
+
+    <!-- PROFILE HEADER CARD -->
+    <div style="display:flex;align-items:center;gap:24px;background:#fff;border:1px solid #E5E7EB;border-radius:22px;padding:26px 28px;flex-wrap:wrap;box-shadow:0 18px 40px -30px rgba(20,24,31,.35)">
+      <button onClick="{{ pickPhoto }}" class="foc" title="Загрузить фото" style="position:relative;width:88px;height:88px;border-radius:22px;border:none;padding:0;cursor:pointer;flex:none;background:{{ avatarBg }};background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-family:'Unbounded',sans-serif;font-weight:800;font-size:38px;color:#FBF3E8;box-shadow:0 12px 26px -12px rgba(201,69,14,.7);overflow:hidden">
+        <span style="opacity:{{ avatarInitialOp }}">А</span>
+        <span style="position:absolute;left:0;right:0;bottom:0;font-family:'Onest';font-weight:600;font-size:10px;padding:4px 0;background:rgba(20,24,31,.58);color:#fff">{{ avatarHint }}</span>
+      </button>
+      <div style="flex:1;min-width:200px">
+        <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:27px;letter-spacing:-0.01em;line-height:1.1">{{ f.name }}</div>
+        <div style="font-family:'Martian Mono',monospace;font-size:13px;color:#6B7280;margin-top:8px">Выпуск 2024 · магистратура, ОП «Публичное право»</div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:6px 13px;border-radius:999px;background:rgba(196,154,69,.16);color:#a07d2e;border:1px solid rgba(196,154,69,.5)"><span style="width:16px;height:16px;border-radius:50%;background:#C49A45;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px">✓</span>Верифицирован учебным офисом</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:6px 13px;border-radius:999px;background:rgba(17,41,107,.1);color:#11296B">Уровень 3 · Знаток</span>
+        </div>
+      </div>
+      <div style="text-align:center;padding:0 6px">
+        <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:40px;line-height:1;letter-spacing:-0.02em;color:#EC5A13">{{ totalPoints }}</div>
+        <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280;margin-top:8px">баллов всего</div>
+      </div>
+    </div>
+
+    <!-- CONTACTS + POINTS -->
+    <div class="p-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px">
+
+      <!-- CONTACTS -->
+      <div style="background:#fff;border:1px solid #E5E7EB;border-radius:22px;padding:26px 28px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;letter-spacing:-0.01em">Контакты</div>
+          <span style="font-family:'Martian Mono',monospace;font-size:11px;color:{{ savedColor }}">{{ savedLabel }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;margin-top:20px">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">ФИО</label>
+            <input value="{{ f.name }}" onInput="{{ setName }}" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid #E5E7EB;background:#FBF3E8;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Телефон</label>
+            <input value="{{ f.phone }}" onInput="{{ setPhone }}" placeholder="+7 ___ ___-__-__" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid #E5E7EB;background:#FBF3E8;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Email</label>
+            <input value="{{ f.email }}" onInput="{{ setEmail }}" placeholder="you@mail.ru" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid #E5E7EB;background:#FBF3E8;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Telegram</label>
+            <input value="{{ f.telegram }}" onInput="{{ setTelegram }}" placeholder="@username" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid #E5E7EB;background:#FBF3E8;outline:none">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">ВКонтакте</label>
+              <input value="{{ f.vk }}" onInput="{{ setVk }}" placeholder="vk.com/username" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid #E5E7EB;background:#FBF3E8;outline:none">
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px">Макс</label>
+              <input value="{{ f.max }}" onInput="{{ setMax }}" placeholder="max.ru/username" style="width:100%;font-size:15px;padding:12px 14px;border-radius:11px;border:1.5px solid #E5E7EB;background:#FBF3E8;outline:none">
+            </div>
+          </div>
+          <button onClick="{{ save }}" class="foc" style="width:100%;font-family:'Onest';font-weight:600;font-size:15px;padding:13px;border-radius:12px;border:none;background:{{ saveBg }};color:#FBF3E8;cursor:pointer;transition:background .2s">{{ saveBtn }}</button>
+        </div>
+      </div>
+
+      <!-- POINTS HISTORY -->
+      <div style="background:#fff;border:1px solid #E5E7EB;border-radius:22px;padding:26px 28px">
+        <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;letter-spacing:-0.01em">История баллов</div>
+        <div style="display:flex;flex-direction:column;margin-top:18px">
+          <sc-for list="{{ points }}" as="p" hint-placeholder-count="7">
+            <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #f0ece2">
+              <span style="font-family:'Martian Mono',monospace;font-size:11px;color:#9aa0aa;width:54px;flex:none">{{ p.date }}</span>
+              <span style="flex:1;font-size:14px;color:#3a3f49;line-height:1.35">{{ p.text }}</span>
+              <span style="font-family:'Martian Mono',monospace;font-size:14px;font-weight:500;color:#1F8A5B;white-space:nowrap">+{{ p.pts }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div style="margin-top:44px">
+      <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">Достижения</div>
+      <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:26px;letter-spacing:-0.01em;margin:10px 0 4px">Правила и прогресс</h2>
+      <p style="color:#6B7280;font-size:15px;margin:0 0 22px">{{ doneLabel }} · каждое достижение приносит баллы и поднимает уровень.</p>
+      <div class="ach" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <sc-for list="{{ badges }}" as="b" hint-placeholder-count="10">
+          <div style="display:flex;gap:18px;background:#fff;border:1px solid #E5E7EB;border-radius:18px;padding:22px;opacity:{{ b.opacity }}">
+            <div style="width:52px;height:52px;border-radius:15px;transform:rotate(45deg);flex:none;background:{{ b.bg }};box-shadow:{{ b.glow }};display:flex;align-items:center;justify-content:center">
+              <span style="transform:rotate(-45deg);font-family:'Unbounded',sans-serif;font-weight:800;font-size:16px;color:{{ b.ink }}">{{ b.letter }}</span>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:16px;letter-spacing:-0.01em">{{ b.name }}</div>
+                <span style="font-family:'Martian Mono',monospace;font-size:10px;letter-spacing:.04em;color:{{ b.statusColor }};white-space:nowrap">{{ b.statusText }}</span>
+              </div>
+              <p style="font-size:13px;line-height:1.5;color:#6B7280;margin:8px 0 0">{{ b.desc }}</p>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+                <div style="flex:1;height:8px;border-radius:999px;background:#F2E3CF;overflow:hidden">
+                  <div style="height:100%;border-radius:999px;background:linear-gradient(90deg,#EC5A13,#C9450E);width:{{ b.pctW }}"></div>
+                </div>
+                <span style="font-family:'Martian Mono',monospace;font-size:11px;color:#9aa0aa;white-space:nowrap">{{ b.progNum }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    photo: null, saved: false,
+    f: { name: 'Анна Соколова', phone: '+7 905 123-45-67', email: 'a.sokolova@mail.ru', telegram: '@a_sokolova', vk: 'vk.com/a_sokolova', max: 'max.ru/a_sokolova' },
+  };
+
+  componentDidMount() {
+    try {
+      const p = localStorage.getItem('club_avatar'); if (p) this.setState({ photo: p });
+      const c = localStorage.getItem('club_contacts'); if (c) this.setState({ f: JSON.parse(c) });
+    } catch (e) {}
+  }
+
+  _set(k, v) { this.setState(s => ({ f: Object.assign({}, s.f, { [k]: v }), saved: false })); }
+
+  _pickPhoto = () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => {
+      const file = inp.files && inp.files[0]; if (!file) return;
+      const r = new FileReader();
+      r.onload = () => { this.setState({ photo: r.result }); try { localStorage.setItem('club_avatar', r.result); } catch (e) {} };
+      r.readAsDataURL(file);
+    };
+    inp.click();
+  };
+
+  renderVals() {
+    const raw = [
+      { letter: '1', name: 'Первый шаг', desc: 'Посетите своё первое мероприятие клуба — встречу, лекцию или нетворкинг.', done: true, kind: 'мероприятия' },
+      { letter: '✓', name: 'Печать офиса', desc: 'Пройдите верификацию профиля у учебного офиса и подтвердите свой выпуск.', done: true, kind: 'статус' },
+      { letter: '@', name: 'На радаре', desc: 'Подпишитесь на все соцсети факультета права, чтобы ничего не пропускать.', done: true, kind: 'соцсети' },
+      { letter: '♥', name: 'На волне', desc: 'Наберите 50 лайков под постами факультета за один месяц.', cur: 38, target: 50, kind: 'лайки за месяц', star: true },
+      { letter: '✎', name: 'Голос клуба', desc: 'Оставьте 10 комментариев в соцсетях факультета за один месяц.', cur: 7, target: 10, kind: 'комментарии за месяц' },
+      { letter: '5', name: 'Завсегдатай', desc: 'Посетите 5 мероприятий клуба. Вы уже на полпути!', cur: 3, target: 5, kind: 'мероприятия' },
+      { letter: 'Д', name: 'Вечный студент', desc: 'Пройдите 3 программы ДПО со скидкой выпускника.', cur: 1, target: 3, kind: 'программы ДПО' },
+      { letter: '10', name: 'Свой человек', desc: 'Посетите 10 мероприятий клуба и станьте его постоянным лицом.', cur: 3, target: 10, kind: 'мероприятия' },
+      { letter: '+', name: 'Проводник', desc: 'Пригласите 3 выпускников вступить в клуб по вашей рекомендации.', cur: 0, target: 3, kind: 'приглашения' },
+      { letter: '★', name: 'Легенда выпуска', desc: 'Достигните высшего уровня статуса — «Партнёр».', cur: 3, target: 4, kind: 'уровень статуса' },
+    ];
+    const style = (b) => {
+      if (b.star) return { opacity: '1', bg: '#EC5A13', ink: '#FBF3E8', glow: '0 0 0 4px rgba(236,90,19,.18), 0 12px 26px -10px rgba(236,90,19,.8)' };
+      if (b.done) return { opacity: '1', bg: 'linear-gradient(140deg,#2C6E80,#11296B)', ink: '#FBF3E8', glow: 'none' };
+      return { opacity: '.62', bg: 'var(--soft, #F2E3CF)', ink: '#8a6d28', glow: 'inset 0 0 0 1px #E5E7EB' };
+    };
+    const badges = raw.map(b => {
+      const target = b.target || 1;
+      const cur = b.done ? target : (b.cur || 0);
+      const pct = b.done ? 100 : Math.round((cur / target) * 100);
+      return Object.assign({}, b, style(b), {
+        pctW: pct + '%', progNum: b.done ? 'готово' : (cur + ' / ' + target),
+        statusText: b.done ? '● Получено' : (cur > 0 ? '◐ В процессе' : '○ Закрыто'),
+        statusColor: b.done ? '#1F8A5B' : (cur > 0 ? '#EC5A13' : '#9aa0aa'),
+      });
+    });
+    const doneCount = raw.filter(b => b.done).length;
+
+    const points = [
+      { date: '24 июн', text: 'Мероприятие «Встреча выпусков ’24 и ’25»', pts: 40 },
+      { date: '18 июн', text: 'Комментарии в соцсетях факультета', pts: 5 },
+      { date: '10 июн', text: 'Лайки под постами факультета за неделю', pts: 12 },
+      { date: '02 июн', text: 'Запись на программу ДПО', pts: 30 },
+      { date: '28 май', text: 'Верификация профиля учебным офисом', pts: 50 },
+      { date: '15 май', text: 'Подписка на все соцсети факультета', pts: 20 },
+      { date: '01 май', text: 'Вступление в клуб выпускников', pts: 100 },
+    ];
+    const totalPoints = points.reduce((a, p) => a + p.pts, 0);
+
+    return {
+      pickPhoto: this._pickPhoto,
+      avatarBg: this.state.photo ? ("url('" + this.state.photo + "')") : 'linear-gradient(140deg,#EC5A13,#B5331B)',
+      avatarInitialOp: this.state.photo ? '0' : '1',
+      avatarHint: this.state.photo ? 'Сменить' : 'Фото',
+      f: this.state.f,
+      setName: (e) => this._set('name', e.target.value),
+      setPhone: (e) => this._set('phone', e.target.value),
+      setEmail: (e) => this._set('email', e.target.value),
+      setTelegram: (e) => this._set('telegram', e.target.value),
+      setVk: (e) => this._set('vk', e.target.value),
+      setMax: (e) => this._set('max', e.target.value),
+      save: () => { try { localStorage.setItem('club_contacts', JSON.stringify(this.state.f)); } catch (e) {} this.setState({ saved: true }); },
+      saveBtn: this.state.saved ? 'Сохранено ✓' : 'Сохранить изменения',
+      saveBg: this.state.saved ? '#1F8A5B' : '#11296B',
+      savedLabel: this.state.saved ? 'изменения сохранены' : 'не сохранено',
+      savedColor: this.state.saved ? '#1F8A5B' : '#9aa0aa',
+      badges, doneLabel: doneCount + ' из ' + raw.length + ' открыто',
+      points, totalPoints,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Клуб выпускников · Бизнес и право · НИУ ВШЭ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ohra:#ED5A18; --ohra-deep:#C9450E;
+    --karmin:#B5331B;
+    --kobalt:#15375E; --kobalt-br:#2E6FAE;
+    --stal:#2C6E80;
+    --latun:#C49A45; --latun-br:#E3C272;
+    --grafit:#141821; --grafit-soft:#272C38;
+    --kost:#FBF3E8; --kost-2:#F2E3CF;
+    --ink-on-ohra:#2A1405;
+    --ok:#3E9C6B;
+    --r:18px; --r-s:12px;
+    --shadow:0 18px 50px -22px rgba(20,24,33,.55);
+    --maxw:1180px;
+    --f-disp:"Unbounded",system-ui,sans-serif;
+    --f-body:"Manrope",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; font-family:var(--f-body); color:var(--grafit);
+    background:var(--kost);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{animation:none!important; transition:none!important}
+  }
+  h1,h2,h3{font-family:var(--f-disp); font-weight:800; line-height:1.05; margin:0; letter-spacing:-.01em}
+  a{color:inherit}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px}
+  .eyebrow{font-family:var(--f-disp); font-weight:600; font-size:12px; letter-spacing:.22em; text-transform:uppercase}
+
+  /* ---------- HEADER ---------- */
+  header{position:sticky; top:0; z-index:50; backdrop-filter:saturate(1.1) blur(8px);
+    background:rgba(251,243,232,.86); border-bottom:1px solid rgba(20,24,33,.08)}
+  .nav{display:flex; align-items:center; gap:22px; height:66px}
+  .brand{display:flex; align-items:center; gap:11px; text-decoration:none; margin-right:auto}
+  .brand b{font-family:var(--f-disp); font-weight:800; font-size:15px; letter-spacing:-.01em; line-height:1}
+  .brand span{display:block; font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--ohra-deep); font-weight:600}
+  .mark{width:34px;height:34px;flex:0 0 auto}
+  .nav nav{display:flex; gap:20px}
+  .nav nav a{text-decoration:none; font-weight:600; font-size:14.5px; opacity:.82}
+  .nav nav a:hover{opacity:1; color:var(--ohra-deep)}
+  .btn{font-family:var(--f-body); font-weight:700; font-size:14px; border:none; cursor:pointer;
+    border-radius:999px; padding:11px 20px; transition:transform .15s ease, box-shadow .2s, background .2s}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--grafit); color:var(--kost)}
+  .btn-primary:hover{background:#000}
+  .btn-ohra{background:var(--ohra); color:#fff}
+  .btn-ohra:hover{background:var(--ohra-deep)}
+  .btn-ghost{background:transparent; border:1.5px solid rgba(20,24,33,.2)}
+  .btn-ghost:hover{border-color:var(--grafit)}
+  .nav-toggle{display:none}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative; background:var(--ohra); color:#fff; overflow:hidden}
+  .hero::before{content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(120% 90% at 90% 10%, rgba(46,111,174,.40), transparent 55%),
+      radial-gradient(90% 80% at 8% 95%, rgba(181,51,27,.45), transparent 60%);}
+  .hero .wrap{position:relative; display:grid; grid-template-columns:1.15fr .85fr; gap:30px;
+    align-items:center; padding:62px 22px 70px}
+  .hero .eyebrow{color:#ffe7cf}
+  .hero h1{font-size:clamp(34px,5vw,60px); margin:16px 0 0; color:#fff}
+  .hero h1 em{font-style:normal; color:var(--grafit)}
+  .hero p.lead{font-size:18px; max-width:30em; margin:20px 0 28px; color:#fff5ec; font-weight:500}
+  .hero-cta{display:flex; gap:12px; flex-wrap:wrap}
+  .hero-stats{display:flex; gap:30px; margin-top:34px}
+  .hero-stats div b{font-family:var(--f-disp); font-weight:800; font-size:30px; display:block; line-height:1}
+  .hero-stats div span{font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:#ffd9bd}
+  .emblem-box{display:flex; justify-content:center}
+  .emblem{width:min(330px,80%); height:auto; filter:drop-shadow(0 26px 40px rgba(40,12,0,.4))}
+  @keyframes rise{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+  .hero .wrap>*{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .hero .wrap>:nth-child(2){animation-delay:.12s}
+
+  .facet-strip{display:flex; height:10px}
+  .facet-strip i{flex:1}
+  .facet-strip i:nth-child(1){background:var(--ohra-deep)}
+  .facet-strip i:nth-child(2){background:var(--karmin)}
+  .facet-strip i:nth-child(3){background:var(--stal)}
+  .facet-strip i:nth-child(4){background:var(--kobalt)}
+  .facet-strip i:nth-child(5){background:var(--latun)}
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:72px 0}
+  .sec-head{max-width:46em; margin-bottom:38px}
+  .sec-head .eyebrow{color:var(--ohra-deep)}
+  .sec-head h2{font-size:clamp(26px,3.4vw,40px); margin-top:12px}
+  .sec-head p{font-size:17px; color:var(--grafit-soft); margin:14px 0 0; max-width:40em}
+
+  .cards{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+  .card{background:#fff; border:1px solid rgba(20,24,33,.08); border-radius:var(--r); padding:24px;
+    box-shadow:var(--shadow)}
+  .card .ic{width:42px;height:42px;border-radius:11px; display:grid; place-items:center; margin-bottom:14px;
+    font-family:var(--f-disp); font-weight:800; color:#fff}
+  .card h3{font-size:18px}
+  .card p{font-size:14.5px; color:var(--grafit-soft); margin:9px 0 0}
+
+  /* two cohorts */
+  #vypuski{background:var(--grafit); color:var(--kost)}
+  #vypuski .sec-head .eyebrow{color:var(--latun-br)}
+  #vypuski .sec-head p{color:#cdd2dd}
+  .cohorts{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  .cohort{border-radius:var(--r); padding:28px; position:relative; overflow:hidden}
+  .cohort.warm{background:linear-gradient(150deg,var(--ohra),var(--karmin))}
+  .cohort.cool{background:linear-gradient(150deg,var(--kobalt-br),var(--kobalt))}
+  .cohort h3{font-size:22px}
+  .cohort .yr{font-family:var(--f-disp); font-weight:800; font-size:46px; line-height:1; opacity:.9}
+  .cohort p{font-size:14.5px; margin:10px 0 0; color:rgba(255,255,255,.9)}
+  .cohort .chip{display:inline-block; margin-top:16px; background:rgba(255,255,255,.18);
+    padding:7px 13px; border-radius:999px; font-size:13px; font-weight:600}
+
+  /* ---------- CABINET ---------- */
+  #lk{background:linear-gradient(180deg,var(--kost) 0 40%, var(--kost-2))}
+  .gate{max-width:430px; margin:0 auto; background:#fff; border-radius:var(--r);
+    box-shadow:var(--shadow); padding:34px; border:1px solid rgba(20,24,33,.08)}
+  .gate h2{font-size:26px}
+  .gate p{color:var(--grafit-soft); font-size:14.5px; margin:8px 0 22px}
+  label{display:block; font-size:12.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--grafit-soft); margin:0 0 6px}
+  input,select{width:100%; font-family:var(--f-body); font-size:15px; padding:12px 14px; margin-bottom:16px;
+    border:1.5px solid rgba(20,24,33,.16); border-radius:var(--r-s); background:#fff; color:var(--grafit)}
+  input:focus,select:focus{outline:none; border-color:var(--ohra)}
+  .gate .btn{width:100%}
+  .gate-note{font-size:12.5px; color:var(--grafit-soft); margin-top:14px; display:flex; gap:8px; align-items:flex-start}
+  .gate-note b{color:var(--ok)}
+
+  .dash{display:none}
+  .dash.on{display:block; animation:rise .5s ease both}
+  .dash-top{display:grid; grid-template-columns:1.1fr 1.4fr; gap:18px; margin-bottom:18px}
+  @media(max-width:860px){.dash-top{grid-template-columns:1fr}}
+
+  .panel{background:#fff; border:1px solid rgba(20,24,33,.08); border-radius:var(--r); box-shadow:var(--shadow)}
+  .p-pad{padding:24px}
+  .panel h3{font-size:16px; letter-spacing:.01em}
+  .panel .h-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px}
+
+  /* profile */
+  .prof{display:flex; gap:18px; align-items:center}
+  .avatar{width:64px;height:64px;border-radius:16px; flex:0 0 auto; display:grid; place-items:center;
+    font-family:var(--f-disp); font-weight:800; font-size:24px; color:#fff;
+    background:linear-gradient(150deg,var(--ohra),var(--karmin))}
+  .prof .nm{font-family:var(--f-disp); font-weight:800; font-size:20px}
+  .prof .sub{font-size:13px; color:var(--grafit-soft)}
+  .verified{display:inline-flex; gap:5px; align-items:center; font-size:12px; font-weight:700; color:var(--ok);
+    background:rgba(62,156,107,.12); padding:4px 10px; border-radius:999px; margin-top:7px}
+  .lvl-badge{margin-top:18px; display:flex; align-items:center; gap:12px; padding:14px 16px;
+    border-radius:var(--r-s); background:linear-gradient(120deg,var(--kobalt),var(--stal)); color:#fff}
+  .lvl-badge .lv-ic{font-family:var(--f-disp); font-weight:800; font-size:20px}
+  .lvl-badge .lv-name{font-family:var(--f-disp); font-weight:700; font-size:16px}
+  .lvl-badge .lv-disc{margin-left:auto; text-align:right}
+  .lvl-badge .lv-disc b{font-family:var(--f-disp); font-size:22px; display:block; line-height:1}
+  .lvl-badge .lv-disc span{font-size:11px; opacity:.85}
+  .progress{margin-top:16px}
+  .progress .lab{display:flex; justify-content:space-between; font-size:12.5px; color:var(--grafit-soft); margin-bottom:6px}
+  .bar{height:11px; background:rgba(20,24,33,.08); border-radius:999px; overflow:hidden}
+  .bar>i{display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--ohra),var(--latun)); transition:width .6s cubic-bezier(.2,.7,.2,1)}
+
+  /* dynamics chart */
+  .chart{display:flex; align-items:flex-end; gap:8px; height:120px; margin-top:6px}
+  .chart .col{flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px}
+  .chart .col i{width:100%; border-radius:6px 6px 0 0; background:linear-gradient(180deg,var(--kobalt-br),var(--kobalt));
+    transition:height .5s ease}
+  .chart .col.dip i{background:linear-gradient(180deg,var(--karmin),var(--ohra-deep))}
+  .chart .col small{font-size:10.5px; color:var(--grafit-soft)}
+  .dip-note{display:inline-flex; gap:7px; align-items:center; margin-top:12px; font-size:13px; font-weight:600;
+    color:var(--karmin); background:rgba(181,51,27,.1); padding:6px 12px; border-radius:999px}
+
+  /* achievements */
+  .ach{display:grid; grid-template-columns:repeat(5,1fr); gap:12px}
+  @media(max-width:640px){.ach{grid-template-columns:repeat(3,1fr)}}
+  .badge{text-align:center; padding:14px 8px; border-radius:var(--r-s); border:1px solid rgba(20,24,33,.08)}
+  .badge .em{width:46px;height:46px;border-radius:50%; margin:0 auto 9px; display:grid; place-items:center;
+    font-size:22px; background:var(--kost-2)}
+  .badge .nm{font-size:12px; font-weight:700; line-height:1.2}
+  .badge.locked{opacity:.42; filter:grayscale(.6)}
+  .badge.unlocked .em{background:linear-gradient(150deg,var(--latun-br),var(--latun)); color:#3a2a00}
+  .badge.znatok.unlocked .em{background:linear-gradient(150deg,var(--ohra),var(--karmin)); color:#fff}
+
+  /* programs */
+  .progs{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  @media(max-width:900px){.progs{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.progs{grid-template-columns:1fr}}
+  .prog{display:flex; flex-direction:column; overflow:hidden; border-radius:var(--r);
+    border:1px solid rgba(20,24,33,.1); background:#fff}
+  .prog .top{padding:16px 16px 0; position:relative}
+  .prog .cat{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ohra-deep)}
+  .prog h4{font-family:var(--f-disp); font-weight:700; font-size:16px; margin:8px 0 0; line-height:1.18}
+  .prog .meta{font-size:12.5px; color:var(--grafit-soft); margin:10px 0 0}
+  .prog .disc-tag{position:absolute; top:14px; right:14px; background:var(--ohra); color:#fff;
+    font-weight:800; font-size:13px; padding:5px 10px; border-radius:999px; font-family:var(--f-disp)}
+  .prog .price{padding:14px 16px; margin-top:auto}
+  .prog .price .old{color:var(--grafit-soft); text-decoration:line-through; font-size:13px}
+  .prog .price .new{font-family:var(--f-disp); font-weight:800; font-size:19px; margin-left:8px}
+  .prog .price .new small{font-size:12px; color:var(--grafit-soft); font-weight:500; -webkit-text-fill-color:initial}
+  .prog .price .btn{width:100%; margin-top:12px}
+  .prog.done{border-color:var(--ok)}
+  .prog.done .btn{background:rgba(62,156,107,.14); color:var(--ok); cursor:default}
+
+  /* news + share */
+  .news{display:flex; flex-direction:column; gap:0}
+  .news .item{padding:16px 0; border-bottom:1px solid rgba(20,24,33,.08); display:flex; gap:14px}
+  .news .item:last-child{border-bottom:none}
+  .news .d{font-family:var(--f-disp); font-weight:800; font-size:13px; color:var(--ohra-deep); flex:0 0 56px}
+  .news .t b{display:block; font-size:14.5px}
+  .news .t span{font-size:13px; color:var(--grafit-soft)}
+  .share{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px}
+  .share .btn{font-size:13px; padding:9px 15px}
+  .share .tg{background:#229ED9; color:#fff}
+  .share .mx{background:linear-gradient(120deg,#1E63F0,#7A4DF0); color:#fff}
+
+  .col-2{display:grid; grid-template-columns:1.3fr 1fr; gap:18px; margin-top:18px}
+  @media(max-width:860px){.col-2{grid-template-columns:1fr}}
+
+  .actions-row{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px}
+
+  /* toast */
+  #toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(140%);
+    background:var(--grafit); color:#fff; padding:14px 22px; border-radius:999px; font-weight:700; font-size:14.5px;
+    box-shadow:var(--shadow); z-index:99; transition:transform .45s cubic-bezier(.2,.8,.2,1); max-width:90vw; text-align:center}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.up{background:linear-gradient(120deg,var(--ohra),var(--karmin))}
+  #toast.down{background:var(--karmin)}
+
+  footer{background:var(--grafit); color:#aeb4c1; padding:40px 0; font-size:13.5px}
+  footer .wrap{display:flex; flex-wrap:wrap; gap:18px; align-items:center; justify-content:space-between}
+  footer a{color:var(--latun-br); text-decoration:none}
+
+  @media(max-width:860px){
+    .hero .wrap{grid-template-columns:1fr; text-align:left}
+    .emblem-box{order:-1}
+    .cards,.cohorts{grid-template-columns:1fr}
+    .nav nav{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top">
+      <!-- mini faceted mark -->
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <defs>
+          <linearGradient id="mw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ED5A18"/><stop offset="1" stop-color="#B5331B"/></linearGradient>
+          <linearGradient id="mc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E6FAE"/><stop offset="1" stop-color="#15375E"/></linearGradient>
+        </defs>
+        <polygon points="20,3 28,12 20,21 12,12" fill="url(#mw)"/>
+        <polygon points="20,21 28,12 33,28 20,37" fill="url(#mc)"/>
+        <polygon points="20,21 12,12 7,28 20,37" fill="url(#mw)"/>
+        <rect x="11" y="17.5" width="18" height="3.4" rx="1.7" fill="#C49A45"/>
+      </svg>
+      <span style="line-height:1.05">
+        <b>Бизнес и право</b>
+        <span>Клуб выпускников</span>
+      </span>
+    </a>
+    <nav>
+      <a href="#preim">О клубе</a>
+      <a href="#vypuski">Выпуски</a>
+      <a href="#programmy">Программы</a>
+      <a href="#lk">Личный кабинет</a>
+    </nav>
+    <button class="btn btn-ohra" onclick="goLK()">Войти в ЛК</button>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<span id="top"></span>
+<section class="hero" style="padding:0">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">НИУ ВШЭ · Факультет права</div>
+      <h1>Клуб выпускников,<br>где статус <em>работает</em> на вас</h1>
+      <p class="lead">Личный кабинет выпускника «Бизнес и право»: доступ к программам со своей скидкой, уровни членства, новости факультета и сообщество, которое растёт вместе с вами.</p>
+      <div class="hero-cta">
+        <button class="btn btn-primary" onclick="goLK()">Войти в личный кабинет</button>
+        <a class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.5)" href="#preim">Как это устроено</a>
+      </div>
+      <div class="hero-stats">
+        <div><b>2</b><span>выпуска в клубе</span></div>
+        <div><b>4</b><span>уровня членства</span></div>
+        <div><b>до 20%</b><span>скидка на программы</span></div>
+      </div>
+    </div>
+    <div class="emblem-box">
+      <!-- ====== FACETED THEMIS EMBLEM ====== -->
+      <svg class="emblem" viewBox="0 0 300 430" role="img" aria-label="Фасеточная фигура Фемиды">
+        <defs>
+          <linearGradient id="warm" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#F2722B"/><stop offset="1" stop-color="#B5331B"/></linearGradient>
+          <linearGradient id="cool" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#3A82C4"/><stop offset="1" stop-color="#15375E"/></linearGradient>
+          <linearGradient id="teal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A8497"/><stop offset="1" stop-color="#1E5360"/></linearGradient>
+          <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E3C272"/><stop offset="1" stop-color="#A9792E"/></linearGradient>
+          <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8DA1AC"/><stop offset="1" stop-color="#2E4654"/></linearGradient>
+        </defs>
+
+        <!-- scales: beam + pans (drawn behind arms) -->
+        <g stroke="#7E5E22" stroke-width="1">
+          <rect x="150" y="168" width="96" height="6" rx="3" fill="url(#gold)"/>
+          <line x1="186" y1="172" x2="178" y2="214" stroke="#9a7a3a"/>
+          <line x1="186" y1="172" x2="198" y2="214" stroke="#9a7a3a"/>
+          <line x1="240" y1="172" x2="232" y2="214" stroke="#9a7a3a"/>
+          <line x1="240" y1="172" x2="250" y2="214" stroke="#9a7a3a"/>
+          <path d="M172 214 H204 L198 232 H178 Z" fill="url(#steel)"/>
+          <path d="M226 214 H256 L250 232 H232 Z" fill="url(#gold)"/>
+          <circle cx="150" cy="170" r="5" fill="url(#gold)"/>
+        </g>
+
+        <!-- sword (left) -->
+        <g>
+          <rect x="63" y="150" width="44" height="7" rx="2" fill="url(#steel)"/>
+          <polygon points="80,157 90,157 87,360 83,372 79,360" fill="url(#steel)"/>
+          <rect x="81" y="138" width="8" height="14" rx="2" fill="url(#gold)"/>
+        </g>
+
+        <!-- arms (gold/bronze) -->
+        <polygon points="118,128 96,150 104,160 130,140" fill="url(#gold)" opacity=".92"/>
+        <polygon points="182,128 206,150 198,160 172,140" fill="url(#gold)" opacity=".92"/>
+
+        <!-- head -->
+        <polygon points="150,18 168,34 168,70 150,86 132,70 132,34" fill="url(#warm)"/>
+        <polygon points="150,18 168,34 168,70 150,86" fill="url(#cool)" opacity=".55"/>
+        <rect x="129" y="46" width="42" height="9" rx="2" fill="url(#gold)"/>
+        <!-- hair facets -->
+        <polygon points="132,34 120,64 132,70" fill="url(#warm)"/>
+        <polygon points="168,34 180,64 168,70" fill="url(#cool)"/>
+
+        <!-- shoulders / chest (split) -->
+        <polygon points="150,92 116,120 150,150" fill="url(#warm)"/>
+        <polygon points="150,92 184,120 150,150" fill="url(#cool)"/>
+        <polygon points="116,120 104,150 150,150 150,118" fill="#B5331B" opacity=".0"/>
+        <polygon points="150,118 150,150 196,150 184,120" fill="url(#teal)"/>
+        <polygon points="104,150 116,120 150,118 150,150" fill="url(#warm)"/>
+
+        <!-- torso to waist (hourglass) -->
+        <polygon points="104,150 150,150 150,250 130,250" fill="url(#warm)"/>
+        <polygon points="196,150 150,150 150,250 170,250" fill="url(#cool)"/>
+        <!-- accent facets to echo color-blocking of source -->
+        <polygon points="150,150 170,250 150,250" fill="#B5331B" opacity=".9"/>
+        <polygon points="150,150 130,250 150,250" fill="#163a64"/>
+        <polygon points="150,150 130,250 150,250" fill="#163a64"/>
+
+        <!-- skirt to hem (wide) -->
+        <polygon points="130,250 150,250 150,400 96,400" fill="url(#warm)"/>
+        <polygon points="170,250 150,250 150,400 204,400" fill="url(#cool)"/>
+        <polygon points="150,250 150,400 204,400 188,250" fill="#163a64"/>
+        <polygon points="170,250 188,250 204,400 150,400 150,250" fill="#163a64"/>
+        <polygon points="150,250 150,400 124,400 112,250 130,250" fill="#B5331B" opacity=".85"/>
+        <polygon points="150,318 178,400 150,400" fill="url(#teal)" opacity=".9"/>
+        <polygon points="150,318 122,400 150,400" fill="url(#warm)"/>
+
+        <!-- base shadow facets -->
+        <polygon points="118,400 150,400 150,424 132,424" fill="#B5331B"/>
+        <polygon points="150,400 182,400 168,424 150,424" fill="#163a64"/>
+      </svg>
+    </div>
+  </div>
+  <div class="facet-strip"><i></i><i></i><i></i><i></i><i></i></div>
+</section>
+
+<!-- ============ ADVANTAGES ============ -->
+<section id="preim">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Зачем вступать</div>
+      <h2>Членство, которое приносит пользу каждый месяц</h2>
+      <p>Не просто строчка в базе выпускников, а живой статус: чем активнее вы участвуете, тем выше уровень и больше привилегий.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="ic" style="background:linear-gradient(150deg,var(--ohra),var(--karmin))">%</div>
+        <h3>Индивидуальная скидка</h3>
+        <p>Базовая скидка зависит от уровня, а учебный офис может добавить персональную надбавку — например, для наставников и амбассадоров клуба.</p>
+      </div>
+      <div class="card">
+        <div class="ic" style="background:linear-gradient(150deg,var(--kobalt-br),var(--kobalt))">↑</div>
+        <h3>Уровни и геймификация</h3>
+        <p>Выпускник → Друг клуба → Знаток → Амбассадор. Баллы за программы, события и менторство открывают новые привилегии и достижения.</p>
+      </div>
+      <div class="card">
+        <div class="ic" style="background:linear-gradient(150deg,var(--stal),var(--kobalt))">◷</div>
+        <h3>Динамика статуса</h3>
+        <p>Уровень живой: без активности баллы постепенно тают, и можно «просесть» назад. Это держит сообщество в тонусе — и честно отражает вклад.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TWO COHORTS ============ -->
+<section id="vypuski">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Два выпуска — один клуб</div>
+      <h2>Сообщество объединяет потоки</h2>
+      <p>Каждый выпуск сохраняет свою идентичность, но живёт в общем пространстве: общие события, наставничество «старшие → младшие» и совместный ежегодный сбор.</p>
+    </div>
+    <div class="cohorts">
+      <div class="cohort warm">
+        <div class="yr">’24</div>
+        <h3>Выпуск 2024</h3>
+        <p>Первый поток программы. Ядро сообщества, наставники и амбассадоры клуба.</p>
+        <span class="chip">86 выпускников · 12 амбассадоров</span>
+      </div>
+      <div class="cohort cool">
+        <div class="yr">’25</div>
+        <h3>Выпуск 2025</h3>
+        <p>Новый поток. Активно проходит программы и набирает первые уровни членства.</p>
+        <span class="chip">94 выпускника · растёт</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CABINET ============ -->
+<section id="lk">
+  <div class="wrap">
+
+    <!-- GATE (logged out) -->
+    <div id="gate" class="gate">
+      <div class="eyebrow" style="color:var(--ohra-deep)">Личный кабинет</div>
+      <h2 style="margin-top:10px">Вход для выпускников</h2>
+      <p>Войдите, чтобы открыть свой уровень, скидки и программы. В реальной версии — через Госуслуги/«Макс» или почту ВШЭ.</p>
+      <label for="g-name">Имя и фамилия</label>
+      <input id="g-name" placeholder="Например, Анна Гаджиева" value="">
+      <label for="g-year">Ваш выпуск</label>
+      <select id="g-year">
+        <option>Выпуск 2024</option>
+        <option>Выпуск 2025</option>
+      </select>
+      <button class="btn btn-ohra" onclick="login()">Войти в кабинет</button>
+      <div class="gate-note"><b>✓</b><span>Статус выпускника подтверждает учебный офис: сверка с реестром перед активацией кабинета.</span></div>
+    </div>
+
+    <!-- DASHBOARD (logged in) -->
+    <div id="dash" class="dash">
+      <div class="dash-top">
+        <!-- profile + level -->
+        <div class="panel p-pad">
+          <div class="prof">
+            <div class="avatar" id="d-ava">А</div>
+            <div>
+              <div class="nm" id="d-name">Анна Гаджиева</div>
+              <div class="sub" id="d-year">Выпуск 2024 · участник с 2024</div>
+              <span class="verified">✓ Верифицирован учебным офисом</span>
+            </div>
+          </div>
+          <div class="lvl-badge">
+            <span class="lv-ic" id="d-lvic">★</span>
+            <div>
+              <div class="lv-name" id="d-lvname">Друг клуба</div>
+              <div style="font-size:12px;opacity:.85" id="d-points">420 баллов активности</div>
+            </div>
+            <div class="lv-disc">
+              <b id="d-disc">10%</b><span>ваша скидка</span>
+            </div>
+          </div>
+          <div class="progress">
+            <div class="lab"><span id="d-next">До уровня «Знаток»</span><span id="d-need">ещё 80 баллов</span></div>
+            <div class="bar"><i id="d-bar" style="width:44%"></i></div>
+          </div>
+        </div>
+
+        <!-- dynamics -->
+        <div class="panel p-pad">
+          <div class="h-row"><h3>Динамика активности</h3><span style="font-size:12.5px;color:var(--grafit-soft)">за 6 месяцев</span></div>
+          <div class="chart" id="d-chart">
+            <div class="col"><i style="height:38%"></i><small>Янв</small></div>
+            <div class="col"><i style="height:62%"></i><small>Фев</small></div>
+            <div class="col dip"><i style="height:24%"></i><small>Мар</small></div>
+            <div class="col"><i style="height:48%"></i><small>Апр</small></div>
+            <div class="col"><i style="height:72%"></i><small>Май</small></div>
+            <div class="col"><i style="height:90%"></i><small>Июн</small></div>
+          </div>
+          <span class="dip-note">↘ В марте была просадка — баллы подтаяли без активности</span>
+          <div class="actions-row">
+            <button class="btn btn-ghost" onclick="simulateDecay()">Промотать месяц без активности</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- achievements -->
+      <div class="panel p-pad" style="margin-bottom:18px">
+        <div class="h-row"><h3>Достижения</h3><span style="font-size:12.5px;color:var(--grafit-soft)" id="d-achcount">2 из 5 открыто</span></div>
+        <div class="ach" id="d-ach">
+          <div class="badge unlocked" data-k="start"><div class="em">🎓</div><div class="nm">Первый шаг</div></div>
+          <div class="badge unlocked" data-k="net"><div class="em">🤝</div><div class="nm">Нетворкер</div></div>
+          <div class="badge znatok locked" data-k="znatok"><div class="em">📚</div><div class="nm">Знаток</div></div>
+          <div class="badge locked" data-k="mentor"><div class="em">🧭</div><div class="nm">Наставник</div></div>
+          <div class="badge locked" data-k="legend"><div class="em">🏛️</div><div class="nm">Легенда выпуска</div></div>
+        </div>
+      </div>
+
+      <!-- programs -->
+      <div class="panel p-pad" style="margin-bottom:18px">
+        <div class="h-row"><h3>Доступные программы — с вашей скидкой</h3><span style="font-size:12.5px;color:var(--grafit-soft)">Скидка пересчитывается по уровню</span></div>
+        <div class="progs" id="d-progs"><!-- filled by JS --></div>
+      </div>
+
+      <!-- news + share -->
+      <div class="col-2">
+        <div class="panel p-pad">
+          <div class="h-row"><h3>Новости факультета</h3><a href="https://t.me/pravohse" style="font-size:13px;color:var(--ohra-deep);font-weight:700;text-decoration:none">@pravohse →</a></div>
+          <div class="news">
+            <div class="item"><div class="d">29.06</div><div class="t"><b>Открыт набор на летнюю программу по комплаенсу</b><span>Для членов клуба — ранний доступ и скидка по уровню.</span></div></div>
+            <div class="item"><div class="d">21.06</div><div class="t"><b>Встреча выпусков ’24 и ’25</b><span>Ежегодный сбор клуба — нетворкинг и +60 баллов за участие.</span></div></div>
+            <div class="item"><div class="d">14.06</div><div class="t"><b>Запущен трек наставничества</b><span>Станьте наставником младшего потока и получите достижение.</span></div></div>
+          </div>
+        </div>
+        <div class="panel p-pad">
+          <h3 style="margin-bottom:6px">Поделиться и позвать</h3>
+          <p style="font-size:14px;color:var(--grafit-soft);margin:0 0 14px">Скиньте программу однокурсникам в чат — за приведённого выпускника начисляем баллы.</p>
+          <div class="share">
+            <button class="btn tg" onclick="toast('Открываем шаринг в Telegram…')">↗ В Telegram</button>
+            <button class="btn mx" onclick="toast('Открываем мини-приложение в «Макс»…')">↗ В «Макс»</button>
+          </div>
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(20,24,33,.08)">
+            <h3 style="font-size:14px;margin-bottom:8px">Персональное предложение</h3>
+            <p style="font-size:13.5px;color:var(--grafit-soft);margin:0">Учебный офис подобрал для вас: <b style="color:var(--grafit)">«Цифровое право и ИИ»</b> с дополнительной скидкой −5% сверх уровня.</p>
+          </div>
+          <button class="btn btn-ghost" style="margin-top:18px;width:100%" onclick="logout()">Выйти</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>© 2026 Клуб выпускников «Бизнес и право» · НИУ ВШЭ, факультет права · Прототип</div>
+    <div>
+      <a href="https://t.me/pravohse">t.me/pravohse</a> ·
+      <a href="https://pravo.hse.ru/businessandlaw/alumni">pravo.hse.ru/businessandlaw/alumni</a>
+    </div>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* ---------- LEVEL MODEL ---------- */
+const LEVELS = [
+  {name:'Выпускник', min:0,    disc:5,  ic:'•'},
+  {name:'Друг клуба', min:200, disc:10, ic:'★'},
+  {name:'Знаток',     min:500, disc:15, ic:'◆'},
+  {name:'Амбассадор', min:1000,disc:20, ic:'♦'},
+];
+const PROGRAMS = [
+  {id:'comp', cat:'Комплаенс', name:'Антикоррупционный комплаенс в бизнесе', meta:'6 недель · онлайн', price:48000},
+  {id:'ai',   cat:'Цифровое право', name:'Цифровое право и ИИ', meta:'8 недель · смешанный', price:62000},
+  {id:'gov',  cat:'GR & публичная политика', name:'GR и взаимодействие с государством', meta:'5 недель · очно', price:54000},
+  {id:'corp', cat:'Корпоративное право', name:'Сделки M&A: практикум', meta:'7 недель · онлайн', price:71000},
+  {id:'disp', cat:'Разрешение споров', name:'Арбитраж и медиация', meta:'6 недель · онлайн', price:46000},
+  {id:'lead', cat:'Soft skills', name:'Юрист как лидер: переговоры', meta:'4 недели · очно', price:39000},
+];
+
+let state = { points: 420, completed: [], name:'Анна Гаджиева', year:'Выпуск 2024' };
+
+/* ---------- HELPERS ---------- */
+function curLevelIndex(p){ let idx=0; LEVELS.forEach((l,i)=>{ if(p>=l.min) idx=i; }); return idx; }
+function fmt(n){ return n.toLocaleString('ru-RU'); }
+
+function goLK(){ document.getElementById('lk').scrollIntoView(); }
+
+function login(){
+  const nm = (document.getElementById('g-name').value||'').trim() || 'Анна Гаджиева';
+  const yr = document.getElementById('g-year').value;
+  state.name = nm; state.year = yr;
+  document.getElementById('d-name').textContent = nm;
+  document.getElementById('d-ava').textContent = (nm[0]||'А').toUpperCase();
+  document.getElementById('d-year').textContent = yr + ' · участник клуба';
+  document.getElementById('gate').style.display='none';
+  document.getElementById('dash').classList.add('on');
+  renderPrograms(); render();
+  document.getElementById('dash').scrollIntoView({block:'start'});
+}
+function logout(){
+  document.getElementById('dash').classList.remove('on');
+  document.getElementById('gate').style.display='block';
+  document.getElementById('lk').scrollIntoView();
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+  const i = curLevelIndex(state.points);
+  const lv = LEVELS[i];
+  document.getElementById('d-lvname').textContent = lv.name;
+  document.getElementById('d-lvic').textContent = lv.ic;
+  document.getElementById('d-disc').textContent = lv.disc + '%';
+  document.getElementById('d-points').textContent = fmt(state.points) + ' баллов активности';
+  // progress to next
+  if(i < LEVELS.length-1){
+    const next = LEVELS[i+1];
+    const span = next.min - lv.min;
+    const got = state.points - lv.min;
+    const pct = Math.max(4, Math.min(100, Math.round(got/span*100)));
+    document.getElementById('d-bar').style.width = pct + '%';
+    document.getElementById('d-next').textContent = 'До уровня «'+next.name+'»';
+    document.getElementById('d-need').textContent = 'ещё ' + fmt(next.min - state.points) + ' баллов';
+  } else {
+    document.getElementById('d-bar').style.width = '100%';
+    document.getElementById('d-next').textContent = 'Максимальный уровень';
+    document.getElementById('d-need').textContent = 'вы амбассадор клуба';
+  }
+  // achievements
+  const znatok = state.completed.length >= 3;
+  setBadge('znatok', znatok);
+  setBadge('mentor', state.completed.length >= 2);
+  let open = document.querySelectorAll('#d-ach .badge.unlocked').length;
+  document.getElementById('d-achcount').textContent = open + ' из 5 открыто';
+  // refresh program prices (discount may have changed)
+  document.querySelectorAll('#d-progs .prog').forEach(el=>{
+    const id = el.dataset.id, prog = PROGRAMS.find(p=>p.id===id);
+    const done = state.completed.includes(id);
+    const newPrice = Math.round(prog.price*(1-lv.disc/100)/100)*100;
+    el.querySelector('.disc-tag').textContent = '−'+lv.disc+'%';
+    el.querySelector('.new').innerHTML = fmt(newPrice)+' ₽ <small>вместо '+fmt(prog.price)+'</small>';
+  });
+}
+function setBadge(k, on){
+  const el = document.querySelector('#d-ach .badge[data-k="'+k+'"]');
+  if(!el) return;
+  el.classList.toggle('unlocked', on);
+  el.classList.toggle('locked', !on);
+}
+
+function renderPrograms(){
+  const wrap = document.getElementById('d-progs');
+  wrap.innerHTML = '';
+  const lv = LEVELS[curLevelIndex(state.points)];
+  PROGRAMS.forEach(p=>{
+    const done = state.completed.includes(p.id);
+    const newPrice = Math.round(p.price*(1-lv.disc/100)/100)*100;
+    const el = document.createElement('div');
+    el.className = 'prog' + (done?' done':'');
+    el.dataset.id = p.id;
+    el.innerHTML = `
+      <div class="top">
+        <span class="disc-tag">−${lv.disc}%</span>
+        <div class="cat">${p.cat}</div>
+        <h4>${p.name}</h4>
+        <div class="meta">${p.meta}</div>
+      </div>
+      <div class="price">
+        <span class="new">${fmt(newPrice)} ₽ <small>вместо ${fmt(p.price)}</small></span>
+        <button class="btn ${done?'':'btn-ohra'}" onclick="completeProgram('${p.id}')">${done?'✓ Пройдено':'Пройти программу'}</button>
+      </div>`;
+    wrap.appendChild(el);
+  });
+}
+
+function completeProgram(id){
+  if(state.completed.includes(id)) return;
+  const before = curLevelIndex(state.points);
+  state.completed.push(id);
+  state.points += 100;
+  const after = curLevelIndex(state.points);
+  renderPrograms(); render();
+  if(after>before){
+    toast('Уровень повышен: «'+LEVELS[after].name+'» — скидка теперь '+LEVELS[after].disc+'%! 🎉','up');
+  } else if(state.completed.length===3){
+    toast('Достижение открыто: «Знаток» 📚 +персональные предложения','up');
+  } else {
+    toast('Программа пройдена · +100 баллов');
+  }
+}
+
+function simulateDecay(){
+  const before = curLevelIndex(state.points);
+  state.points = Math.max(0, state.points - 150);
+  const after = curLevelIndex(state.points);
+  render();
+  // shift chart down a notch for visual feedback
+  const cols = document.querySelectorAll('#d-chart .col i');
+  cols.forEach(i=>{ const h=parseFloat(i.style.height); i.style.height=Math.max(12,h*0.7)+'%'; });
+  if(after<before){
+    toast('Хопа, просели до уровня «'+LEVELS[after].name+'» — скидка '+LEVELS[after].disc+'%','down');
+  } else {
+    toast('−150 баллов за месяц без активности. Не теряйте темп!','down');
+  }
+}
+
+let toastT;
+function toast(msg, kind){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (kind?(' '+kind):'');
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>{ t.className=''; }, 3400);
+}
+</script>
+</body>
+</html>

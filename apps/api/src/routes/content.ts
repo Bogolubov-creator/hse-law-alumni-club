@@ -15,7 +15,7 @@ export async function contentRoutes(app: FastifyInstance) {
     const base = env.PUBLIC_URL.replace(/\/$/, "");
     reply.header("content-type", "text/plain; charset=utf-8");
     return [
-      "# Клуб выпускников факультета права НИУ ВШЭ",
+      "# Клуб выпускников факультета права Вышки",
       "User-agent: *",
       "Allow: /",
       "# Личные и служебные разделы поисковикам не нужны",
@@ -94,7 +94,7 @@ export async function contentRoutes(app: FastifyInstance) {
   app.get("/programs", async () =>
     directus.request(readItems("programs", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url"],
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document"],
     })),
   );
   app.get("/programs/:slug", async (req, reply) => {

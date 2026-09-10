@@ -1,3 +1,4 @@
+import { withCartLock } from "../lib/checkout-store.js";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import { z } from "zod";
@@ -80,6 +81,7 @@ export async function cartRoutes(app: FastifyInstance) {
       }
     }
 
+    return withCartLock(token, async () => {
     const cart = await loadCart(token);
     const current = cart?.items ?? [];
     // Потолок позиций: без него items_json рос без предела (одна сессия – сколько угодно строк).
@@ -92,22 +94,27 @@ export async function cartRoutes(app: FastifyInstance) {
     });
     await saveCart(token, items);
     return summarizeCart(items);
+    });
   });
 
   app.patch("/cart", async (req, reply) => {
     const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
     const body = z.object({ ref_id: z.string(), variant_sku: z.string().nullish(), qty: z.number().int().min(0).max(99) }).parse(req.body);
+    return withCartLock(token, async () => {
     const cart = await loadCart(token);
     const items = setLineQty(cart?.items ?? [], body.ref_id, body.variant_sku ?? null, body.qty);
     await saveCart(token, items);
     return summarizeCart(items);
+    });
   });
 
   app.delete("/cart", async (req, reply) => {
     const token = cartSession(req);
     if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
-    await saveCart(token, []);
-    return summarizeCart([]);
+    return withCartLock(token, async () => {
+      await saveCart(token, []);
+      return summarizeCart([]);
+    });
   });
 }

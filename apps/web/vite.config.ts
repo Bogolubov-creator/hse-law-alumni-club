@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -7,6 +8,10 @@ const SITE_URL = (process.env.VITE_SITE_URL || "http://localhost").replace(/\/$/
 
 // В dev /api проксируется на локальный apps/api; в проде этим занимается Caddy.
 export default defineConfig({
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
+  },
   plugins: [
     react(),
     {
@@ -30,8 +35,10 @@ export default defineConfig({
   server: {
     port: Number(process.env.PORT) || 5173,
     proxy: {
+      "/robots.txt": { target: process.env.API_PROXY_TARGET || "http://localhost:3000", changeOrigin: true },
+      "/sitemap.xml": { target: process.env.API_PROXY_TARGET || "http://localhost:3000", changeOrigin: true },
       "/api": {
-        target: "http://localhost:3000",
+        target: process.env.API_PROXY_TARGET || "http://localhost:3000",
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ""),
       },

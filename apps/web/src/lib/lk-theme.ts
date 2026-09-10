@@ -41,7 +41,7 @@ export const LK_LIGHT: LkTokens = {
   bg: "#FBF3E8",
   text: "#14181F",
   textSoft: "#3a3f49",
-  muted: "#6B7280",
+  muted: "#5C6470",
   surfaceBg: "#fff",
   surfaceBorder: "#E5E7EB",
   divider: "#E5E7EB",

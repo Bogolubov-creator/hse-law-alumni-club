@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;800&family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;scroll-behavior:smooth}
+  *{box-sizing:border-box}
+  ::selection{background:#EC5A13;color:#FBF3E8}
+  .foc:focus-visible{outline:3px solid #EC5A13;outline-offset:3px;border-radius:10px}
+  @media (max-width:900px){ .e-grid{grid-template-columns:1fr !important} .e-side{position:static !important} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} html{scroll-behavior:auto} }
+</style>
+</helmet>
+<div style="background:#FBF3E8;color:#14181F;font-family:'Onest',system-ui,sans-serif;min-height:100vh">
+
+  <!-- HEADER -->
+  <header style="position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(251,243,232,.85);border-bottom:1px solid #E5E7EB">
+    <div style="max-width:1180px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+      <a href="Главная.dc.html" class="foc" style="display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit">
+        <img src="assets/themis.jpeg" alt="Логотип" width="40" height="40" style="border-radius:10px;object-fit:cover;flex:none">
+        <div style="line-height:1.05">
+          <div style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:15px;letter-spacing:-0.01em">Клуб выпускников</div>
+          <div style="font-family:'Martian Mono',monospace;font-size:10px;color:#6B7280;letter-spacing:.08em;margin-top:2px">факультета права Вышки</div>
+        </div>
+      </a>
+      <nav style="display:flex;align-items:center;gap:24px">
+        <a href="Витрина ДПО.dc.html" class="foc" style="text-decoration:none;color:#EC5A13;font-weight:600;font-size:15px">Витрина ДПО</a>
+        <a href="Главная.dc.html#novosti" class="foc" style="text-decoration:none;color:#14181F;font-weight:500;font-size:15px">Новости</a>
+        <a href="Дашборд ЛК.dc.html" class="foc" style="text-decoration:none;font-weight:600;font-size:14px;padding:10px 20px;border-radius:11px;background:#EC5A13;color:#FBF3E8">Войти в ЛК</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- TITLE BAND -->
+  <div style="max-width:1180px;margin:0 auto;padding:30px 28px 8px">
+    <div style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280;display:flex;gap:8px;flex-wrap:wrap">
+      <a href="Витрина ДПО.dc.html" class="foc" style="color:#2E6FAE;text-decoration:none">Витрина ДПО</a><span>/</span><span>Частное право</span>
+    </div>
+    <h1 style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:40px;letter-spacing:-0.015em;line-height:1.06;margin:16px 0 0;max-width:760px;text-wrap:balance">Юрист в сфере договорного права</h1>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
+      <span style="font-family:'Martian Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;background:rgba(17,41,107,.08);color:#11296B">Повышение квалификации</span>
+      <span style="font-family:'Martian Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;background:#F2E3CF;color:#8a6d28">68 ак. ч.</span>
+      <span style="font-family:'Martian Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;background:rgba(44,110,128,.1);color:#2C6E80">Онлайн синхронный</span>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="e-grid" style="display:grid;grid-template-columns:1fr 372px;gap:32px;max-width:1180px;margin:0 auto;padding:24px 28px 90px;align-items:start">
+
+    <!-- LEFT -->
+    <div>
+      <!-- GALLERY -->
+      <div style="border-radius:20px;overflow:hidden;border:1px solid #E5E7EB;background:#fff">
+        <div style="position:relative;height:340px;background:{{ gMain.color }};background-image:repeating-linear-gradient(45deg,rgba(251,243,232,.10) 0 16px,transparent 16px 32px);display:flex;align-items:flex-end;padding:26px">
+          <span style="font-family:'Martian Mono',monospace;font-size:11px;color:rgba(251,243,232,.7);position:absolute;top:22px;left:26px">[ {{ gMain.tag }} ]</span>
+          <span style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:28px;color:#FBF3E8;letter-spacing:-0.01em">{{ gMain.label }}</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:14px">
+          <sc-for list="{{ gallery }}" as="g" hint-placeholder-count="4">
+            <button onClick="{{ g.select }}" class="foc" style="flex:1;height:62px;border-radius:12px;border:2px solid {{ g.border }};background:{{ g.color }};cursor:pointer;display:flex;align-items:flex-end;padding:8px">
+              <span style="font-family:'Martian Mono',monospace;font-size:9px;color:rgba(251,243,232,.9)">{{ g.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ABOUT -->
+      <div style="margin-top:34px">
+        <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">О программе</div>
+        <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:26px;letter-spacing:-0.01em;margin:10px 0 0">Договоры — без рисков и пробелов</h2>
+        <p style="font-size:16px;line-height:1.6;color:#3a3f49;margin:14px 0 0;max-width:640px">За два месяца разберём договорную работу от заключения до спора: как формулировать условия, обеспечивать обязательства и защищать интересы в суде. Практика на реальных кейсах, обратная связь от преподавателей факультета права.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px">
+          <sc-for list="{{ skills }}" as="s" hint-placeholder-count="4">
+            <div style="display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:16px">
+              <span style="width:24px;height:24px;border-radius:7px;background:rgba(31,138,91,.14);color:#1F8A5B;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none">✓</span>
+              <span style="font-size:14px;line-height:1.45">{{ s }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- MODULES -->
+      <div style="margin-top:40px">
+        <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">Программа курса</div>
+        <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:26px;letter-spacing:-0.01em;margin:10px 0 20px">5 модулей · 68 ак. ч.</h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ modules }}" as="m" hint-placeholder-count="5">
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+              <button onClick="{{ m.toggle }}" class="foc" style="width:100%;display:flex;align-items:center;gap:16px;text-align:left;background:none;border:none;padding:20px 22px;cursor:pointer;font-family:'Onest'">
+                <span style="font-family:'Unbounded',sans-serif;font-weight:800;font-size:18px;color:#EC5A13;flex:none;width:32px">{{ m.n }}</span>
+                <span style="flex:1;font-weight:600;font-size:17px;color:#14181F;line-height:1.25">{{ m.title }}</span>
+                <span style="font-family:'Martian Mono',monospace;font-size:12px;color:#9aa0aa;flex:none">{{ m.hours }}</span>
+                <span style="flex:none;color:#6B7280;font-size:14px;transition:transform .25s ease;transform:{{ m.chev }}">▾</span>
+              </button>
+              <sc-if value="{{ m.open }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:0 22px 22px 70px">
+                  <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px">
+                    <sc-for list="{{ m.points }}" as="p" hint-placeholder-count="3">
+                      <li style="position:relative;padding-left:18px;font-size:14px;line-height:1.5;color:#3a3f49"><span style="position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:#C49A45"></span>{{ p }}</li>
+                    </sc-for>
+                  </ul>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- TEACHERS -->
+      <div style="margin-top:40px">
+        <div style="font-family:'Martian Mono',monospace;font-size:12px;letter-spacing:.16em;color:#EC5A13;text-transform:uppercase">Преподаватели</div>
+        <h2 style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:26px;letter-spacing:-0.01em;margin:10px 0 20px">Практики факультета права</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+          <sc-for list="{{ teachers }}" as="t" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:16px;padding:20px">
+              <div style="width:54px;height:54px;border-radius:14px;background:{{ t.color }};display:flex;align-items:center;justify-content:center;font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;color:#FBF3E8">{{ t.initial }}</div>
+              <div style="font-family:'Unbounded',sans-serif;font-weight:600;font-size:16px;letter-spacing:-0.01em;margin-top:16px;line-height:1.2">{{ t.name }}</div>
+              <div style="font-size:13px;color:#6B7280;line-height:1.45;margin-top:7px">{{ t.role }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT — STICKY INFO CARD -->
+    <aside class="e-side" style="position:sticky;top:82px;background:#fff;border:1px solid #E5E7EB;border-radius:20px;padding:26px;box-shadow:0 20px 48px -30px rgba(20,24,31,.45)">
+      <div style="height:8px;display:flex;border-radius:999px;overflow:hidden;margin-bottom:20px"><div style="flex:1;background:#EC5A13"></div><div style="flex:1;background:#11296B"></div><div style="flex:1;background:#C49A45"></div><div style="flex:1;background:#2C6E80"></div></div>
+
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <span style="font-family:'Martian Mono',monospace;font-size:28px;font-weight:500;color:#14181F">28 500 ₽</span>
+        <span style="font-family:'Martian Mono',monospace;font-size:15px;color:#9aa0aa;text-decoration:line-through">30 000 ₽</span>
+        <span style="font-family:'Martian Mono',monospace;font-size:12px;font-weight:500;padding:4px 9px;border-radius:999px;background:#EC5A13;color:#FBF3E8;margin-left:auto">−5%</span>
+      </div>
+      <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#6B7280;margin-top:8px">Цена выпускника · применяется после верификации в ЛК</div>
+
+      <div style="margin-top:22px;display:flex;flex-direction:column;gap:1px;border:1px solid #E5E7EB;border-radius:14px;overflow:hidden">
+        <sc-for list="{{ facts }}" as="f" hint-placeholder-count="5">
+          <div style="display:flex;justify-content:space-between;gap:12px;padding:13px 16px;background:#fff">
+            <span style="font-family:'Martian Mono',monospace;font-size:12px;color:#6B7280">{{ f.k }}</span>
+            <span style="font-size:14px;font-weight:500;text-align:right">{{ f.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <button onClick="{{ addToCart }}" class="foc" style="margin-top:20px;width:100%;font-family:'Onest';font-weight:600;font-size:16px;padding:15px;border-radius:13px;border:none;background:{{ cartBg }};color:#FBF3E8;cursor:pointer;transition:background .2s">{{ cartLabel }}</button>
+      <a href="#" class="foc" style="margin-top:11px;display:block;text-align:center;text-decoration:none;font-family:'Onest';font-weight:600;font-size:16px;padding:14px;border-radius:13px;border:1.5px solid #14181F;color:#14181F">Оставить заявку</a>
+      <div style="font-family:'Martian Mono',monospace;font-size:11px;color:#9aa0aa;text-align:center;margin-top:14px;line-height:1.5">Заявку обрабатывает учебный офис —<br>свяжемся в течение рабочего дня</div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { g: 0, open: 0, added: false };
+
+  renderVals() {
+    const slides = [
+      { label: 'Программа', tag: 'обложка · программа', color: '#11296B' },
+      { label: 'Формат', tag: 'формат · онлайн', color: '#2C6E80' },
+      { label: 'Преподаватели', tag: 'команда курса', color: '#C9450E' },
+      { label: 'Документ', tag: 'удостоверение ВШЭ', color: '#8a6d28' },
+    ];
+    const gallery = slides.map((s, i) => ({
+      label: s.label, color: s.color,
+      border: this.state.g === i ? '#EC5A13' : 'transparent',
+      select: () => this.setState({ g: i }),
+    }));
+
+    const skills = [
+      'Грамотно формулировать условия любого договора',
+      'Выбирать способы обеспечения обязательств',
+      'Менять и расторгать договор без потерь',
+      'Защищать позицию в договорном споре',
+    ];
+
+    const mods = [
+      { title: 'Основы договорного права', hours: '12 ак. ч.', points: ['Заключение, форма и момент возникновения обязательств', 'Свобода договора и её пределы', 'Толкование условий: правила и практика'] },
+      { title: 'Отдельные виды договоров', hours: '16 ак. ч.', points: ['Купля-продажа и поставка', 'Возмездное оказание услуг и подряд', 'Аренда, заём, лицензионные договоры'] },
+      { title: 'Обеспечение обязательств', hours: '14 ак. ч.', points: ['Неустойка, залог, удержание', 'Поручительство и независимая гарантия', 'Обеспечительный платёж'] },
+      { title: 'Изменение и расторжение договора', hours: '12 ак. ч.', points: ['Существенное изменение обстоятельств', 'Односторонний отказ от исполнения', 'Последствия расторжения'] },
+      { title: 'Защита прав и судебная практика', hours: '14 ак. ч.', points: ['Досудебное урегулирование', 'Иски и доказывание по договорным спорам', 'Разбор актуальной практики ВС РФ'] },
+    ];
+    const modules = mods.map((m, i) => ({
+      n: '0' + (i + 1), title: m.title, hours: m.hours, points: m.points,
+      open: this.state.open === i,
+      chev: this.state.open === i ? 'rotate(180deg)' : 'rotate(0deg)',
+      toggle: () => this.setState(s => ({ open: s.open === i ? -1 : i })),
+    }));
+
+    const teachers = [
+      { initial: 'И', name: 'Игорь Лебедев', role: 'к.ю.н., практикующий юрист по договорной работе', color: 'linear-gradient(140deg,#EC5A13,#B5331B)' },
+      { initial: 'М', name: 'Мария Орлова', role: 'руководитель договорной практики, преподаватель ФП', color: 'linear-gradient(140deg,#2E6FAE,#11296B)' },
+      { initial: 'С', name: 'Сергей Гущин', role: 'судебный юрист, споры из договоров', color: 'linear-gradient(140deg,#2C6E80,#11296B)' },
+    ];
+
+    const facts = [
+      { k: 'Старт', v: '25 августа 2026' },
+      { k: 'Длительность', v: '2 месяца' },
+      { k: 'Формат', v: 'Онлайн, синхронно' },
+      { k: 'Объём', v: '68 ак. ч.' },
+      { k: 'Документ', v: 'Удостоверение ВШЭ' },
+    ];
+
+    return {
+      gallery, gMain: slides[this.state.g], skills, modules, teachers, facts,
+      addToCart: () => this.setState({ added: true }),
+      cartLabel: this.state.added ? 'Добавлено в корзину ✓' : 'В корзину',
+      cartBg: this.state.added ? '#1F8A5B' : '#11296B',
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,7 +1,13 @@
 import { useVision, setVision } from "../lib/a11y.js";
 
-/** Кнопка-переключатель «Версия для слабовидящих» (в шапке). */
-export function VisionToggle({ compact = false }: { compact?: boolean }) {
+/**
+ * Кнопка-переключатель «Версия для слабовидящих» (в шапке).
+ *
+ * `v2` переводит кнопку на семантические токены: в тёмной теме зашитый
+ * bg-white светился белой плашкой на графите. Старый фронт остаётся на
+ * Tailwind-классах – там тёмной темы нет и менять нечего.
+ */
+export function VisionToggle({ compact = false, v2 = false }: { compact?: boolean; v2?: boolean }) {
   const v = useVision();
   return (
     <button
@@ -9,9 +15,10 @@ export function VisionToggle({ compact = false }: { compact?: boolean }) {
       aria-pressed={v.on}
       aria-label="Версия для слабовидящих"
       title="Версия для слабовидящих"
-      className="foc rounded-[10px] border border-[#E5E7EB] bg-white px-2.5 py-2 text-[13px] font-medium leading-none"
+      className={v2 ? "foc" : "foc rounded-[10px] border border-[#7C828C] bg-white px-2.5 py-2 text-[13px] font-medium leading-none"}
+      style={v2 ? { borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", padding: "7px 10px", fontSize: 13, lineHeight: 1, cursor: "pointer" } : undefined}
     >
-      <span aria-hidden>👁</span>{!compact && <span className="ml-1.5 align-middle">Для слабовидящих</span>}
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ display: "inline-block", verticalAlign: "middle" }}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>{!compact && <span className="ml-1.5 align-middle">Для слабовидящих</span>}
     </button>
   );
 }
@@ -21,8 +28,8 @@ export function VisionCorner() {
   const v = useVision();
   if (v.on) return null; // когда режим включён, панель настроек уже видна сверху
   return (
-    <div style={{ position: "fixed", top: 10, right: 10, zIndex: 60 }}>
-      <VisionToggle compact />
+    <div style={{ position: "fixed", top: import.meta.env.VITE_LOCAL_REVIEW === "true" ? 72 : 10, right: 10, zIndex: 60 }}>
+      <VisionToggle compact v2={window.location.pathname.startsWith("/")} />
     </div>
   );
 }
@@ -32,7 +39,7 @@ export function VisionPanel() {
   const v = useVision();
   if (!v.on) return null;
   const B = ({ active, onClick, children, label }: { active?: boolean; onClick: () => void; children: React.ReactNode; label?: string }) => (
-    <button onClick={onClick} aria-pressed={!!active} aria-label={label} className={`vis-btn${active ? " vis-active" : ""}`} style={{ padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
+    <button onClick={onClick} aria-pressed={!!active} aria-label={label} className={`vis-btn foc${active ? " vis-active" : ""}`} style={{ padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
       {children}
     </button>
   );
@@ -59,7 +66,7 @@ export function VisionPanel() {
       <span style={{ marginLeft: 8 }}>Изображения:</span>
       <B active={!v.images} onClick={() => setVision({ images: !v.images })} label="Показ изображений">{v.images ? "показаны" : "скрыты"}</B>
 
-      <button onClick={() => setVision({ on: false })} className="vis-btn" style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Обычная версия ✕</button>
+      <button onClick={() => setVision({ on: false })} className="vis-btn foc" style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Обычная версия ✕</button>
     </div>
   );
 }

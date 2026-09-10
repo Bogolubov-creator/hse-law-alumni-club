@@ -3,8 +3,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { LkTokensContext, useLkTheme } from "../lib/lk-theme.js";
 import { VisionToggle } from "./Vision.js";
 
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
-const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
+const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
+const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
 
 type LkTab = "overview" | "profile";
 
@@ -28,7 +28,7 @@ export function LkShell({
 
   return (
     <LkTokensContext.Provider value={t}>
-      <div style={{ background: t.bg, color: t.text, minHeight: "100vh", fontFamily: "'Onest', system-ui, sans-serif", transition: "background .2s, color .2s" }}>
+      <div style={{ background: t.bg, color: t.text, minHeight: "100vh", paddingBottom: "var(--cookie-h, 0px)", fontFamily: "'HSE Sans', system-ui, sans-serif", transition: "background .2s, color .2s" }}>
         <header style={{ background: t.headerBg, color: t.headerText, position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(251,243,232,.08)" }}>
           <div style={{ maxWidth: 1180, margin: "0 auto", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
             <Link to="/" className="foc" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
@@ -54,7 +54,7 @@ export function LkShell({
             </nav>
           </div>
         </header>
-        <main style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 28px 80px" }}>{children}</main>
+        <main id="main" style={{ maxWidth: 1180, margin: "0 auto", padding: "32px 28px 80px" }}>{children}</main>
         {/* 152-ФЗ: юр-документы доступны и в ЛК (как и на публичных страницах). */}
         <footer style={{ borderTop: `1px solid ${t.divider}`, padding: "22px 28px 40px" }}>
           <div style={{ maxWidth: 1180, margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 16, ...mono, fontSize: 12 }}>

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-08T13:32:45.446Z",
+  "title": "Клуб выпускников факультета права Вышки – V2, 08.09.2026",
+  "extensions": {
+    "motion": [
+      {
+        "name": "dur-fast",
+        "value": "140ms",
+        "purpose": "Быстрые переходы состояния."
+      },
+      {
+        "name": "dur-base",
+        "value": "200ms",
+        "purpose": "Переходы карточек."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Кривая перехода из текущих токенов."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "public-navigation",
+        "value": "1100px"
+      },
+      {
+        "name": "merch-two-columns",
+        "value": "1000px"
+      },
+      {
+        "name": "merch-one-column",
+        "value": "700px"
+      },
+      {
+        "name": "bottom-tabs-menu-links",
+        "value": "768px"
+      },
+      {
+        "name": "community-single-column",
+        "value": "700px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Основное действие",
+      "kind": "button",
+      "html": "<button class=\"ds-primary\">Продолжить</button>",
+      "css": ".ds-primary{font-family:var(--f-data);font-size:var(--t-caption);letter-spacing:var(--tr-data);text-transform:none;padding:9px 15px;border-radius:var(--r-sm);cursor:pointer;border:none;background:var(--c-accent);color:var(--c-on-accent)}.ds-primary:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}.ds-primary:disabled{opacity:.45;cursor:not-allowed}",
+      "description": "Общий примитив action; отдельного hover в источнике нет."
+    },
+    {
+      "name": "Вторичное действие",
+      "kind": "button",
+      "html": "<button class=\"ds-ghost\">Подробнее</button>",
+      "css": ".ds-ghost{font-family:var(--f-data);font-size:var(--t-caption);letter-spacing:var(--tr-data);text-transform:none;padding:9px 15px;border-radius:var(--r-sm);cursor:pointer;background:transparent;color:var(--c-text-2);border:1px solid var(--c-line-control)}.ds-ghost:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}.ds-ghost:disabled{opacity:.45;cursor:not-allowed}",
+      "description": "Общий примитив actionGhost; отдельного hover в источнике нет."
+    },
+    {
+      "name": "Поле формы",
+      "kind": "input",
+      "html": "<label class=\"ds-label\">Имя<input class=\"ds-field\" placeholder=\"Ваше имя\"></label>",
+      "css": ".ds-label{font-family:var(--f-body);color:var(--c-text)}.ds-field{display:block;width:100%;margin-top:7px;padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--c-line-control);background:var(--c-bg);color:var(--c-text);font-size:15px;font-family:inherit}.ds-field:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
+      "description": "Обычный field с подключённым видимым фокусом foc."
+    },
+    {
+      "name": "Публичная ссылка навигации",
+      "kind": "nav",
+      "html": "<nav aria-label=\"Разделы\"><a class=\"ds-nav\" href=\"#events\">События</a></nav>",
+      "css": ".ds-nav{text-decoration:none;color:var(--c-text-2);font-family:var(--f-body);font-size:14px;font-weight:500;padding:8px 12px;border-radius:var(--r-sm)}.ds-nav:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
+      "description": "Вид ссылки из Shell; меню прокручивается в пределах высоты экрана с учётом нижних вкладок и cookies. ДПО, мерч, корзина и кабинет включены в меню при 769–1100px, а до 768px доступны в нижних вкладках. Раскрытие требует логики приложения."
+    },
+    {
+      "name": "Категория мерча",
+      "kind": "chip",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Одежда</button>",
+      "css": ".ds-chip{font-family:var(--f-data);font-size:var(--t-caption);letter-spacing:var(--tr-data);text-transform:none;padding:9px 15px;border-radius:var(--r-sm);cursor:pointer;padding:7px 12px;border-radius:999px;border:1px solid var(--c-line);background:transparent;color:var(--c-text-2)}.ds-chip[aria-pressed=\"true\"]{border-color:var(--c-accent);background:var(--c-accent);color:var(--c-on-accent)}.ds-chip:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
+      "description": "Фактический выбранный фильтр; переключение не имитируется без логики."
+    },
+    {
+      "name": "Вид каталога",
+      "kind": "button",
+      "html": "<div class=\"ds-view\" role=\"group\" aria-label=\"Вид каталога\"><button aria-pressed=\"true\">Сетка</button><button aria-pressed=\"false\">Список</button></div>",
+      "css": ".ds-view{display:flex;gap:12px}.ds-view button{font-family:var(--f-body);border:1px solid var(--c-line-control);border-radius:var(--r-sm);padding:10px 18px;min-height:44px;color:var(--c-text);background:transparent}.ds-view button[aria-pressed=\"true\"]{background:var(--c-bg-inverse);color:var(--c-text-inverse);border-color:var(--c-bg-inverse)}.ds-view button:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
+      "description": "Два состояния переключателя из index.css; показаны одновременно."
+    }
+  ],
+  "narrative": {
+    "northStar": "Университетский клуб: встречи, обучение, сообщество",
+    "overview": "Визуальная версия переработана после замечания пользователя. Белая основа, HSE Slab 400 в титуле, HSE Sans и табличные цифры в интерфейсе. Без капслока и стилизации всех разделов под реестр. Текущий контракт: docs/staged-refinement/visual-refinement.md. Независимое ревью предыдущей версии не относится к новой композиции.",
+    "keyCharacteristics": [
+      "Фирменный титул, спокойный интерфейсный текст и табличные данные имеют разные роли.",
+      "Афиша, публикации, история и каталоги не обязаны повторять одну композицию.",
+      "Отсутствующее изображение товара заменяется полезными сведениями."
+    ],
+    "rules": [
+      {
+        "name": "Разделение акцента",
+        "body": "Заливка действия и цвет небольшого текста берутся из разных семантических токенов.",
+        "section": "colors"
+      },
+      {
+        "name": "Содержание определяет иерархию",
+        "body": "Масштаб титула главной не становится размером заголовка кабинета или каталога.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "**Do** Использовать семантические цвета и общие примитивы кнопок и полей.",
+      "**Do** Различать пороги шапки, героя, каталога и карточки кабинета по их назначению.",
+      "**Do** Сохранять названия, цены и действия при отсутствии фотографии товара.",
+      "**Do** Отмечать синтетические данные локального стенда и границы визуальной проверки."
+    ],
+    "donts": [
+      "**Don't** Переносить локальные размеры героя и композицию афиши на все поверхности.",
+      "**Don't** Заменять отсутствующую фотографию вымышленным товаром.",
+      "**Don't** Считать унаследованные декоративные eyebrow, текстовые стрелки и glyph icons правилом для новых компонентов: это незакреплённый остаток реализации.",
+      "**Don't** Скрывать содержимое героя до окончания анимации: текущий вариант сохраняет видимость с первого кадра."
+    ]
+  }
+}

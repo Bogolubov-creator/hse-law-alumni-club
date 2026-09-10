@@ -20,8 +20,8 @@ import { VisionCorner } from "../components/Vision.js";
  */
 
 const TOKEN_KEY = "club_token";
-const mono: CSSProperties = { fontFamily: "'Martian Mono', monospace" };
-const disp: CSSProperties = { fontFamily: "'Unbounded', sans-serif" };
+const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
+const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
 
 export default function Lk() {
   useHead({ title: "Личный кабинет", noindex: true }); // приватная зона – не индексируем
@@ -68,9 +68,9 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-kost px-6">
+    <main id="main" className="flex min-h-screen items-center justify-center bg-kost px-6">
       <VisionCorner />
-      <form onSubmit={submit} className="w-full max-w-[420px] rounded-[22px] border border-[#E5E7EB] bg-white p-8 shadow-sm">
+      <form onSubmit={submit} className="w-full max-w-[420px] rounded-[22px] border border-[#7C828C] bg-white p-8 shadow-sm">
         <Link to="/" className="foc font-mono text-xs text-ohra-deep">← На главную</Link>
         <p className="mt-5 font-mono text-xs uppercase tracking-[0.16em] text-ohra">Личный кабинет</p>
         <h1 className="mt-2 font-display text-2xl font-bold">Вход для выпускников</h1>
@@ -98,9 +98,9 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
 
 function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => void }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-kost px-6">
+    <main id="main" className="flex min-h-screen items-center justify-center bg-kost px-6">
       <VisionCorner />
-      <div className="w-full max-w-[420px] rounded-[22px] border border-[#E5E7EB] bg-white p-8 text-center shadow-sm">
+      <div className="w-full max-w-[420px] rounded-[22px] border border-[#7C828C] bg-white p-8 text-center shadow-sm">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-latun/20 font-display text-2xl text-[#a07d2e]">⏳</div>
         <h1 className="mt-4 font-display text-xl font-bold">Ожидает верификации</h1>
         <p className="mt-2 text-sm text-grafit-soft">
@@ -161,7 +161,7 @@ function BadgeModal({ a, onClose }: { a: Achievement; onClose: () => void }) {
               <span>Прогресс · {a.kind}</span><span>{a.current} / {a.target}</span>
             </div>
             <div style={{ height: 10, borderRadius: 999, background: t.progressTrack, overflow: "hidden", marginTop: 8 }}>
-              <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((a.current / a.target) * 100)}%` }} />
+              <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C24009)", width: `${Math.round((a.current / a.target) * 100)}%` }} />
             </div>
             <p style={{ ...mono, fontSize: 12, color: t.muted, margin: "10px 0 0" }}>Осталось ещё {Math.max(0, a.target - a.current)} – и достижение ваше.</p>
           </div>
@@ -204,7 +204,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
         <div style={{ width: 1, alignSelf: "stretch", background: t.divider }} />
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           <div style={{ position: "relative", width: 118, height: 118, flex: "none" }}>
-            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `conic-gradient(from -90deg, #EC5A13 0deg, #C9450E ${deg}deg, ${t.ringTrack} ${deg}deg 360deg)` }} />
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `conic-gradient(from -90deg, #EC5A13 0deg, #C24009 ${deg}deg, ${t.ringTrack} ${deg}deg 360deg)` }} />
             <div style={{ position: "absolute", inset: 11, borderRadius: "50%", background: t.ringInner, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: 36, lineHeight: 1, letterSpacing: "-0.02em" }}>{idx + 1}</div>
               <div style={{ ...mono, fontSize: 9, color: t.muted, marginTop: 3, letterSpacing: ".1em" }}>УРОВЕНЬ</div>
@@ -231,7 +231,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
           <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 188, marginTop: 26 }}>
             {me.activity.map((m, i) => (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-                <div style={{ width: "100%", maxWidth: 44, height: `${Math.max(4, Math.round((m.points / maxAct) * 100))}%`, borderRadius: "8px 8px 3px 3px", background: m.points > 0 ? "linear-gradient(180deg,#EC5A13,#C9450E)" : t.barEmpty }} />
+                <div style={{ width: "100%", maxWidth: 44, height: `${Math.max(4, Math.round((m.points / maxAct) * 100))}%`, borderRadius: "8px 8px 3px 3px", background: m.points > 0 ? "linear-gradient(180deg,#EC5A13,#C24009)" : t.barEmpty }} />
               </div>
             ))}
           </div>
@@ -285,7 +285,7 @@ function DashboardBody({ me, token, onBadge }: { me: import("../lib/api.js").Me;
           <div style={{ ...disp, fontWeight: 600, fontSize: 24, letterSpacing: "-0.01em", marginTop: 12, lineHeight: 1.2 }}>Программы ДПО со скидкой выпускника −{me.level.discount}%</div>
           <p style={{ fontSize: 15, color: "rgba(251,243,232,.82)", lineHeight: 1.5, margin: "12px 0 0" }}>Учебный офис подбирает программы под вашу активность. Загляните в витрину ДПО.</p>
         </div>
-        <Link to="/dpo" className="foc" style={{ position: "relative", textDecoration: "none", ...{ fontFamily: "'Onest'" }, fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", flex: "none", boxShadow: "0 14px 30px -14px rgba(0,0,0,.5)" }}>В витрину ДПО</Link>
+        <Link to="/dpo" className="foc" style={{ position: "relative", textDecoration: "none", ...{ fontFamily: "'HSE Sans', system-ui, sans-serif" }, fontWeight: 600, fontSize: 16, padding: "15px 30px", borderRadius: 13, background: "#EC5A13", color: "#FBF3E8", flex: "none", boxShadow: "0 14px 30px -14px rgba(0,0,0,.5)" }}>В витрину ДПО</Link>
       </div>
 
       {/* РЕФЕРАЛКА: пригласи однокурсника */}
@@ -371,7 +371,7 @@ function Events({ token }: { token: string }) {
 
   return (
     <div style={{ ...surface, padding: "20px 28px", marginBottom: 22, borderLeft: "4px solid #EC5A13" }}>
-      <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "#C9450E" }}>События</div>
+      <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "#C24009" }}>События</div>
       <div style={{ marginTop: 4 }}>
         {list.map((e, i) => (
           <div key={i} style={{ borderTop: i ? `1px solid ${t.dividerSoft}` : "none" }}>{line(e, i)}</div>
@@ -744,7 +744,7 @@ function NewbieChecklist({ me }: { me: import("../lib/api.js").Me }) {
         <button onClick={() => { localStorage.setItem("club_checklist_done", "1"); setHidden(true); }} className="foc" style={{ ...mono, fontSize: 11, color: t.muted, background: "transparent", border: "none", cursor: "pointer" }}>скрыть</button>
       </div>
       <div style={{ height: 6, borderRadius: 999, background: t.progressTrack, overflow: "hidden", marginTop: 12 }}>
-        <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C9450E)", width: `${Math.round((doneCnt / items.length) * 100)}%`, transition: "width .4s" }} />
+        <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#EC5A13,#C24009)", width: `${Math.round((doneCnt / items.length) * 100)}%`, transition: "width .4s" }} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginTop: 16 }}>
         {items.map((it) => (
@@ -766,7 +766,7 @@ function achStatus(a: Achievement): string {
   return a.earned ? "● Достижение получено" : achInProgress(a) ? "◐ В процессе" : "○ Ещё не открыто";
 }
 function achColor(a: Achievement): string {
-  return a.earned ? "#1F8A5B" : achInProgress(a) ? "#EC5A13" : "#6B7280";
+  return a.earned ? "#1F8A5B" : achInProgress(a) ? "#EC5A13" : "#5C6470";
 }
 
 // Оформление «ромба» повторяет Claude Design: получено – teal→navy, следующее – оранжевый, закрыто – soft.

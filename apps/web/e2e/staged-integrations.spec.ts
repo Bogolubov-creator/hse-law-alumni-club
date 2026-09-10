@@ -1,0 +1,28 @@
+import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+const vars=Object.fromEntries(readFileSync('/Users/macbook/alumni-staged-evidence/local.env','utf8').split('\n').filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
+test('local private media and actual admin order status',async({page,request},info)=>{
+ test.skip(info.project.name!=='desktop','Одна мутация изолированной базы; мобильный плеер проверяется отдельно.');
+ const auth=await request.post('/api/auth/login',{data:{email:vars.TEST_ALUMNI_EMAIL,password:vars.TEST_ALUMNI_PASSWORD}}).then(r=>r.json());
+ const admin=await request.post('/api/auth/admin-login',{data:{email:vars.ADMIN_EMAIL,password:vars.ADMIN_PASSWORD}}).then(r=>r.json());
+ const headers={Authorization:`Bearer ${auth.token}`};
+ const pub=await request.get('/api/podcasts').then(r=>r.json());const closed=pub.items.find((p:any)=>!p.is_free);expect(closed.audio_url).toBeNull();
+ expect((await request.get(`/api/podcasts/${closed.id}/audio`)).status()).toBe(403);
+ const file=JSON.parse(readFileSync('/Users/macbook/alumni-staged-evidence/local-audio.json','utf8')).file;
+ expect((await request.get(`http://localhost:8255/assets/${file}`)).status()).toBe(403);
+ await page.addInitScript(({user,admin})=>{localStorage.setItem('club_token',user);localStorage.setItem('club_admin_token',admin);localStorage.setItem('club_cookie_consent','1')},{user:auth.token,admin:admin.token});
+ await page.goto('/podcasts');const audio=page.locator('audio').first();
+ await audio.evaluate((a:HTMLAudioElement)=>a.load());await expect.poll(()=>audio.evaluate((a:HTMLAudioElement)=>a.readyState)).toBeGreaterThanOrEqual(1);
+ expect(await audio.evaluate((a:HTMLAudioElement)=>a.duration)).toBeCloseTo(15);
+ await audio.evaluate((a:HTMLAudioElement)=>a.play());await expect.poll(()=>audio.evaluate((a:HTMLAudioElement)=>a.currentTime)).toBeGreaterThan(0);
+ await page.getByRole('button',{name:'Скорость воспроизведения ×1',exact:true}).first().click();expect(await audio.evaluate((a:HTMLAudioElement)=>a.playbackRate)).toBe(1.25);
+ await audio.evaluate((a:HTMLAudioElement)=>{a.currentTime=7;a.pause()});await expect.poll(()=>page.evaluate((id)=>Number(localStorage.getItem(`pod-pos-${id}`)),pub.items.find((p:any)=>p.is_free).id)).toBeGreaterThanOrEqual(7);await page.reload();const restored=page.locator('audio').first();await restored.evaluate((a:HTMLAudioElement)=>a.load());await expect.poll(()=>restored.evaluate((a:HTMLAudioElement)=>a.currentTime)).toBeGreaterThanOrEqual(7);
+ const free=pub.items.find((p:any)=>p.is_free);const range=await request.get(free.audio_url,{headers:{Range:'bytes=0-99'}});expect(range.status()).toBe(206);expect((await range.body()).length).toBe(100);
+ await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/podcast-local-playing.png',fullPage:true});
+ const orders=await request.get('/api/me/orders',{headers}).then(r=>r.json());const order=orders.find((o:any)=>o.status==='new'&&o.type!=='podcast');expect(order).toBeTruthy();
+ await page.goto('/admin');await page.locator('aside').getByRole('button',{name:/^Заявки/}).click();const select=page.getByLabel(`Статус заявки ${order.number}`);await expect(select).toBeVisible();
+ await Promise.all([page.waitForResponse(r=>r.request().method()==='PATCH'&&r.url().includes('/api/admin/orders/')&&r.ok()),select.selectOption('in_progress')]);
+ await page.reload();await page.locator('aside').getByRole('button',{name:/^Заявки/}).click();await expect(page.getByLabel(`Статус заявки ${order.number}`)).toHaveValue('in_progress');
+ const after=await request.get('/api/me/orders',{headers}).then(r=>r.json());expect(after.find((o:any)=>o.number===order.number).status).toBe('in_progress');
+ await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/admin-order-persisted.png',fullPage:true});
+});

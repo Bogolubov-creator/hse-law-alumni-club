@@ -1,0 +1,23 @@
+import { test, expect } from '@playwright/test';
+for (const width of [320, 360, 390, 768, 1024, 1280, 1440]) test(`catalog comparison ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto('/dpo');
+  await page.getByRole('button', { name: 'Принять все', exact: true }).click();
+  await expect(page.locator('.club-program-row').first()).toBeVisible();
+  await page.getByRole('checkbox', { name: /^Сравнить:/ }).nth(0).click();
+  await expect(page.getByRole('checkbox', { name: /^Сравнить:/ }).nth(0)).toBeChecked();
+  await page.getByRole('checkbox', { name: /^Сравнить:/ }).nth(1).click();
+  await expect(page.getByRole('checkbox', { name: /^Сравнить:/ }).nth(1)).toBeChecked();
+  await expect(page.getByRole('heading', { name: 'Сравнение программ · 2 из 3' })).toBeVisible();
+  await expect(page.locator('.club-compare')).not.toContainText('Загружаем программу');
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Сравнение программ · 2 из 3' })).toBeVisible();
+  const input = page.getByRole('searchbox', { name: 'Поиск программы' });
+  await input.fill('НЕСУЩЕСТВУЮЩАЯ ПРОГРАММА');
+  await expect(page.getByText('По выбранным условиям программ нет')).toBeVisible();
+  await page.getByRole('button', { name: 'Сбросить фильтры' }).click();
+  await expect(page.locator('.club-program-row').first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: `/Users/macbook/alumni-staged-evidence/screenshots/stage3-dpo-${width}.png`, fullPage: true });
+});

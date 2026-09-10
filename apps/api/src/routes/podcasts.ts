@@ -2,19 +2,99 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { PODCAST_SUB_PRICE_KOP, orderNumber } from "@club/shared";
+import { PODCAST_SUB_PRICE_KOP, orderNumber, rutubeEmbed } from "@club/shared";
 import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
 import { lastOrderSeq } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
+import { withCartLock } from "../lib/checkout-store.js";
 import { audit } from "../lib/audit.js";
 
 const di = directus;
 
 export function subActive(until: string | null | undefined): boolean {
   return !!until && new Date(until).getTime() > Date.now();
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Отдача аудио из хранилища Directus через наш прокси.
+ *
+ * Хранилище закрыто от публики (роль Public не читает файлы), и открывать его
+ * нельзя: там же лежат аватары выпускников – это персональные данные. Поэтому
+ * файл тянется сервисным токеном, как это уже сделано для аватаров.
+ *
+ * UUID из podcast.audio_url не должен совпадать с alumni.avatar: иначе редактор
+ * мог бы опубликовать чужой аватар как «пробный выпуск» и обойти /avatars gate.
+ * Не-audio Content-Type отвергаем, а не переименовываем в audio/mpeg.
+ *
+ * Range пробрасывается в обе стороны: без него плеер не умеет перематывать
+ * и вынужден тянуть весь выпуск целиком, а это десятки мегабайт. Тело
+ * передаётся потоком – класть часовой подкаст в память нельзя.
+ */
+async function streamAudio(reply: any, fileId: string, range: string | undefined) {
+  // Не отдаём файлы, которые являются чьим-то аватаром (PII / обход /avatars).
+  const avatarHits = (await di.request((readItems as any)("alumni", {
+    filter: { avatar: { _eq: fileId } },
+    limit: 1,
+    fields: ["id"],
+  }))) as any[];
+  if (avatarHits.length) return reply.code(404).send({ error: "Выпуск не найден" });
+
+  const res = await fetch(`${env.DIRECTUS_URL}/assets/${fileId}`, {
+    headers: {
+      authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}`,
+      ...(range ? { range } : {}),
+    },
+  });
+  if (!res.ok || !res.body) return reply.code(404).send({ error: "Выпуск не найден" });
+
+  const upstream = (res.headers.get("content-type") ?? "").split(";")[0]!.trim();
+  if (!upstream.startsWith("audio/")) return reply.code(404).send({ error: "Выпуск не найден" });
+
+  reply.code(res.status === 206 ? 206 : 200);
+  reply.header("Content-Type", upstream);
+  reply.header("Accept-Ranges", "bytes");
+  reply.header("X-Content-Type-Options", "nosniff");
+  // Подписанная ссылка живёт 2 часа, поэтому кэш только приватный и короткий.
+  reply.header("Cache-Control", "private, max-age=3600");
+  for (const h of ["content-length", "content-range"]) {
+    const v = res.headers.get(h);
+    if (v) reply.header(h, v);
+  }
+  const { Readable } = await import("node:stream");
+  return reply.send(Readable.fromWeb(res.body as any));
+}
+
+/** Не чаще одной записи на связку «выпуск + слушатель» за это время. */
+const PLAY_DEDUP_MS = 6 * 3600 * 1000;
+
+/**
+ * Отметить прослушивание выпуска.
+ *
+ * Пишет сервер, а не браузер: счётчик, который шлёт фронт, накручивается
+ * одной строкой в консоли. `holder` – это alumni-id подписчика либо "free"
+ * у пробного выпуска, тогда слушателя мы не знаем и пишем без него.
+ *
+ * Дедупликация по окну: один человек, вернувшийся к выпуску через час,
+ * не должен считаться дважды.
+ */
+async function recordPlay(podcastId: string, holder: string): Promise<void> {
+  const alumniId = holder === "free" ? null : holder;
+  const since = new Date(Date.now() - PLAY_DEDUP_MS).toISOString();
+  const recent = (await di.request((readItems as any)("podcast_plays", {
+    filter: {
+      podcast_id: { _eq: podcastId },
+      created_at: { _gte: since },
+      ...(alumniId ? { alumni_id: { _eq: alumniId } } : { alumni_id: { _null: true } }),
+    },
+    limit: 1, fields: ["id"],
+  }))) as any[];
+  if (recent.length) return;
+  await di.request((createItem as any)("podcast_plays", { podcast_id: podcastId, alumni_id: alumniId }));
 }
 
 // ── Подписанные ссылки на аудио ────────────────────────────────────
@@ -55,7 +135,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     const subscribed = subActive(until);
     const rows = (await di.request(readItems("podcasts", {
       filter: { status: { _eq: "published" } }, sort: ["sort"], limit: -1,
-      fields: ["id", "title", "description", "cover", "duration", "is_free", "audio_url"],
+      fields: ["id", "title", "description", "cover", "duration", "is_free", "audio_url", "video_url"],
     }))) as any[];
     return {
       // Реальный audio_url не покидает сервер: доступным выпускам выдаётся
@@ -66,6 +146,10 @@ export async function podcastsRoutes(app: FastifyInstance) {
         audio_url: p.audio_url && (p.is_free || subscribed)
           ? signedAudioPath(p.id, p.is_free ? "free" : alumni!.id)
           : null,
+        // Ссылку на видео подписать нельзя – она чужая. Поэтому просто не
+        // отдаём её тем, кому выпуск не открыт: в закрытой папке RuTube
+        // защита ровно в том, что ссылку не публикуют.
+        video_url: p.video_url && (p.is_free || subscribed) ? rutubeEmbed(p.video_url)?.src ?? null : null,
       })),
       subscribed,
       sub_until: subscribed ? until : null,
@@ -90,6 +174,17 @@ export async function podcastsRoutes(app: FastifyInstance) {
       const a = (await di.request(readItems("alumni", { filter: { id: { _eq: q.data.h } }, limit: 1, fields: ["podcast_sub_until"] }))) as any[];
       if (!subActive(a[0]?.podcast_sub_until)) return reply.code(403).send({ error: "Подписка неактивна" });
     }
+    // Учёт прослушивания. Считаем начало воспроизведения, а не каждый кусок:
+    // при перемотке плеер шлёт десятки Range-запросов, и без этого счётчик
+    // показывал бы не слушателей, а сетевую активность.
+    if (!req.headers.range || /^bytes=0-/.test(req.headers.range)) {
+      void recordPlay(id, q.data.h).catch(() => undefined); // учёт не должен ломать выдачу
+    }
+
+    // Файл, залитый в Directus, отдаём через прокси: хранилище закрыто от
+    // публики, и открывать его нельзя – там же лежат аватары выпускников.
+    // Внешний URL (сторонний хостинг) по-прежнему отдаётся редиректом.
+    if (UUID_RE.test(podcast.audio_url)) return streamAudio(reply, podcast.audio_url, req.headers.range);
     return reply.redirect(podcast.audio_url, 302);
   });
 
@@ -100,6 +195,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     if (alumni.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     if (subActive(alumni.podcast_sub_until)) return reply.code(400).send({ error: "Подписка уже активна" });
 
+    return withCartLock(`podcast:${alumni.id}`, async () => {
     // Незакрытая заявка на подписку уже есть – возвращаем её, а не плодим новые.
     // Без этого каждый повторный клик создавал заявку и дёргал офис уведомлением.
     // ВНИМАНИЕ про NULL: `_nin` транслируется в SQL `NOT IN`, а `NULL NOT IN (…)`
@@ -126,7 +222,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     }
 
     const contacts = alumni.contacts_json ?? {};
-    const year = new Date().getFullYear();
+    const year = Number(new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow", year: "numeric" }));
     const baseSeq = await lastOrderSeq(year);
     let number = "";
     let created = false;
@@ -139,6 +235,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
           subtotal: PODCAST_SUB_PRICE_KOP, member_discount: 0, total_estimate: PODCAST_SUB_PRICE_KOP,
           contact_fio: alumni.fio ?? "Выпускник", contact_phone: contacts.phone ?? "-", contact_email: contacts.email ?? "-",
           fulfillment: "pickup", consent_pdn: true, status: "new",
+          payment_status: paymentsEnabled() ? "pending" : null,
         }));
         created = true;
       } catch (e) {
@@ -169,6 +266,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     }
     audit("podcast.sub.request", { actor: `alumni:${alumni.id}`, subject: `order:${number}`, detail: { payment: !!payment_url }, req });
     return { number, payment_url };
+    });
   });
 }
 
@@ -179,6 +277,8 @@ export async function extendPodcastSub(alumniId: string, months = 12): Promise<s
   const base = current && current.getTime() > Date.now() ? current : new Date();
   base.setMonth(base.getMonth() + months);
   const until = base.toISOString();
-  await di.request((updateItem as any)("alumni", alumniId, { podcast_sub_until: until }));
+  // Флаг напоминания сбрасываем при каждом продлении: иначе выпускник получил
+  // бы предупреждение об окончании один раз в жизни, а на следующий год – нет.
+  await di.request((updateItem as any)("alumni", alumniId, { podcast_sub_until: until, podcast_reminder_sent: false }));
   return until;
 }

@@ -58,7 +58,7 @@ export type Overview = {
 };
 export type AdminNews = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string };
 export type AdminTimeline = { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string };
-export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
+export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; video_url?: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; payment_status?: string | null; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
 export type Member = {
@@ -80,6 +80,66 @@ export type AdminPage = { slug: string; title: string; blocks: { hero?: PageHero
 
 export function useOverview() {
   return useQuery({ queryKey: ["adm", "overview"], queryFn: () => req<Overview>("GET", "/admin/overview"), retry: false });
+}
+
+export type AnalyticsRange = "7d" | "30d" | "90d";
+export type AnalyticsBucket = { key: string; count: number };
+export type Analytics = {
+  range: AnalyticsRange;
+  since: string;
+  generated_at: string;
+  pulse: {
+    joins: number; verified_in_range: number; registers: number;
+    orders_created: number; orders_new: number; orders_paid: number;
+    rsvps: number; podcast_plays: number; achievements_granted: number;
+    friendships_new: number; push_subs_new: number;
+    referrals_ledger: number; referrals_alumni: number;
+    login_ok: number; login_fail: number; login_locked: number;
+    support_open: number | null; support_created: number | null;
+  };
+  snapshot: { alumni_count: number; alumni_verified: number; verified_ratio: number };
+  orders: { by_type: AnalyticsBucket[]; by_status: AnalyticsBucket[]; paid_sum_kop: number };
+  community: {
+    points_by_reason: AnalyticsBucket[];
+    achievements_top: Array<{ achievement_id: string; key: string; title: string; count: number }>;
+  };
+  engagement: {
+    events_top: Array<{ event_id: string; title: string; rsvps: number; attended: number }>;
+    podcasts_top: Array<{ podcast_id: string; title: string; plays: number; listeners: number }>;
+  };
+  support: {
+    open: number | null; created_in_range: number | null;
+    by_status: Array<{ status: string; count: number }>;
+    by_topic: Array<{ topic: string; count: number }>;
+  };
+  series: {
+    joins_by_day: Array<{ day: string; count: number }>;
+    orders_by_day: Array<{ day: string; count: number }>;
+  };
+};
+
+export function useAnalytics(range: AnalyticsRange) {
+  return useQuery({
+    queryKey: ["adm", "analytics", range],
+    queryFn: () => req<Analytics>("GET", `/admin/analytics?range=${range}`),
+    retry: false,
+  });
+}
+
+/** CSV аналитики за выбранное окно (без ПДн). */
+export async function downloadAnalyticsCsv(range: AnalyticsRange): Promise<void> {
+  const t = adminToken();
+  const res = await fetch(`/api/admin/analytics/export.csv?range=${range}`, { headers: t ? { authorization: `Bearer ${t}` } : {} });
+  if (!res.ok) throw new Error("Не удалось выгрузить аналитику");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `analytics-${range}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 export type OrdersPage = { items: AdminOrder[]; total: number; page: number; limit: number };
 export type OrdersQuery = { q?: string; status?: string; payment?: string; page?: number; limit?: number };
@@ -113,6 +173,18 @@ export function useAdminProducts() {
   return useQuery({ queryKey: ["adm", "products"], queryFn: () => req<AdminProduct[]>("GET", "/admin/products"), retry: false });
 }
 export type AuditEntry = { id: string; event: string; actor: string | null; subject: string | null; detail: Record<string, unknown> | null; ip: string | null; created_at: string | null };
+export type PodcastSub = { id: string; fio: string | null; cohort: string | null; until: string; days_left: number; reminded: boolean; email: string | null };
+export type PodcastPlays = { id: string; title: string; is_free: boolean; plays: number; listeners: number; plays_30d: number };
+export type PodcastSubs = {
+  active: number; expiring_30d: number; expired: number;
+  items: PodcastSub[]; plays_total: number; by_podcast: PodcastPlays[];
+};
+
+/** Подписки на подкасты и статистика прослушиваний – один срез для офиса. */
+export function usePodcastSubs() {
+  return useQuery({ queryKey: ["adm", "podcast-subs"], queryFn: () => req<PodcastSubs>("GET", "/admin/podcast-subs"), retry: false });
+}
+
 export function useAuditLog() {
   return useQuery({ queryKey: ["adm", "audit"], queryFn: () => req<AuditEntry[]>("GET", "/admin/audit?limit=300"), retry: false, refetchInterval: 60_000 });
 }

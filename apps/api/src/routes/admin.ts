@@ -1,3 +1,4 @@
+import { changeOrderStatus } from "../lib/checkout-store.js";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import { anonymizeAlumni } from "../lib/anonymize.js";
 import { readUsers } from "@directus/sdk";
 import { env } from "../env.js";
 import { count, sum, groupCount } from "../lib/agg.js";
+import { analyticsToCsv, buildAdminAnalytics, parseAnalyticsRange } from "../lib/admin-analytics.js";
 
 /** E-mail выпускника по alumni_id (через привязанный аккаунт). */
 async function alumniEmail(alumniId: string): Promise<string | null> {
@@ -67,6 +69,61 @@ export async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  /**
+   * Подписки на подкасты: кто подписан, до какой даты, кто скоро истекает.
+   * Отдельная ручка, а не фильтр по выпускникам: офису нужен срез именно по
+   * подпискам, с сортировкой по дате окончания и статистикой прослушиваний.
+   */
+  app.get("/admin/podcast-subs", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const now = new Date().toISOString();
+    const soon = new Date(Date.now() + 30 * 86400000).toISOString();
+
+    const subs = (await di.request((readItems as any)("alumni", {
+      filter: { podcast_sub_until: { _nnull: true } },
+      sort: ["podcast_sub_until"], limit: -1,
+      fields: ["id", "fio", "cohort", "podcast_sub_until", "podcast_reminder_sent", "contacts_json"],
+    }))) as any[];
+
+    const active = subs.filter((a) => a.podcast_sub_until > now);
+    const items = active.map((a) => ({
+      id: a.id, fio: a.fio, cohort: a.cohort,
+      until: a.podcast_sub_until,
+      days_left: Math.ceil((new Date(a.podcast_sub_until).getTime() - Date.now()) / 86400000),
+      reminded: !!a.podcast_reminder_sent,
+      email: a.contacts_json?.email ?? null,
+    }));
+
+    // Прослушивания: сводка по выпускам. Пишет их сервер при выдаче аудио,
+    // поэтому цифры отражают реальные обращения, а не клики по странице.
+    const plays = (await di.request((readItems as any)("podcast_plays", {
+      limit: -1, fields: ["podcast_id", "alumni_id", "created_at"],
+    }))) as any[];
+    const podcasts = (await di.request((readItems as any)("podcasts", {
+      limit: -1, sort: ["sort"], fields: ["id", "title", "is_free"],
+    }))) as any[];
+
+    const monthAgo = Date.now() - 30 * 86400000;
+    const byPodcast = podcasts.map((p) => {
+      const mine = plays.filter((x) => x.podcast_id === p.id);
+      return {
+        id: p.id, title: p.title, is_free: !!p.is_free,
+        plays: mine.length,
+        listeners: new Set(mine.map((x) => x.alumni_id ?? "гость")).size,
+        plays_30d: mine.filter((x) => new Date(x.created_at).getTime() >= monthAgo).length,
+      };
+    }).sort((a, b) => b.plays - a.plays);
+
+    return {
+      active: items.length,
+      expiring_30d: active.filter((a) => a.podcast_sub_until <= soon).length,
+      expired: subs.length - active.length,
+      items,
+      plays_total: plays.length,
+      by_podcast: byPodcast,
+    };
+  });
+
   // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
@@ -113,11 +170,30 @@ export async function adminRoutes(app: FastifyInstance) {
     };
   });
 
+  /** Продуктовая аналитика за 7/30/90 дней – агрегаты без ПДн. */
+  app.get("/admin/analytics", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return reply;
+    const { range: raw } = z.object({ range: z.enum(["7d", "30d", "90d"]).default("30d") }).parse(req.query);
+    return buildAdminAnalytics(parseAnalyticsRange(raw));
+  });
+
+  app.get("/admin/analytics/export.csv", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return reply;
+    const { range: raw } = z.object({ range: z.enum(["7d", "30d", "90d"]).default("30d") }).parse(req.query);
+    const range = parseAnalyticsRange(raw);
+    const data = await buildAdminAnalytics(range);
+    const ctx = resolveAdmin(req);
+    if (ctx) audit("analytics.export", { actor: `admin:${ctx.userId}`, detail: { range }, req });
+    reply.header("Content-Type", "text/csv; charset=utf-8");
+    reply.header("Content-Disposition", `attachment; filename="analytics-${range}-${new Date().toISOString().slice(0, 10)}.csv"`);
+    return analyticsToCsv(data);
+  });
+
   // Ручная пуш-рассылка всем подписанным устройствам (анонсы офиса).
   app.post("/admin/push/broadcast", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     // Рассылка уходит на все устройства сразу и не отзывается – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const b = z.object({
       title: z.string().min(3).max(80),
       body: z.string().min(3).max(200),
@@ -135,7 +211,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!requireAdmin(req, reply)) return;
     const qp = z.object({
       q: z.string().max(100).optional(),
-      status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]).optional(),
+      status: z.enum(["new", "in_progress", "confirmed", "done", "canceled", "expired"]).optional(),
       payment: z.enum(["succeeded", "pending", "canceled", "none"]).optional(),
       page: z.coerce.number().int().min(1).default(1),
       limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -161,8 +237,9 @@ export async function adminRoutes(app: FastifyInstance) {
     const ctx = requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
-    await di.request((updateItem as any)("orders", id, { status }));
+    const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled", "expired"]) }).parse(req.body);
+    const changed = await changeOrderStatus(id, status);
+    if (!changed) return { ok: true, status };
     audit("order.status", { actor: `admin:${ctx.userId}`, subject: `order:${id}`, detail: { status }, req });
     // Уведомления клиенту (письмо + пуш) – один запрос заказа на оба.
     const verb = ORDER_STATUS_VERB_RU[status] ?? status;
@@ -172,7 +249,7 @@ export async function adminRoutes(app: FastifyInstance) {
       if (!o) return;
       if (o.contact_email && o.contact_email !== "-") {
         await sendEmail(o.contact_email, `Заявка ${o.number}: ${verb}`,
-          `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${verb}.\nДетали – в личном кабинете клуба.\n\n– Клуб выпускников факультета права НИУ ВШЭ`);
+          `Здравствуйте, ${o.contact_fio}!\n\nСтатус вашей заявки ${o.number} изменился: ${verb}.\nДетали – в личном кабинете клуба.\n\n– Клуб выпускников факультета права Вышки`);
       }
       if (o.alumni_id) pushToAlumni(o.alumni_id, { title: "Статус заявки", body: `Заявка ${o.number} ${verb}`, url: "/lk" });
     })().catch((e) => req.log.error({ err: e }, "order status notify failed"));
@@ -250,7 +327,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/admin/members/:id/podcast-sub", async (req, reply) => {
     // Выдача платной подписки – операция с деньгами, только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const until = await extendPodcastSub(id, 12);
     audit("podcast.sub.grant", { actor: `admin:${ctx.userId}`, subject: `alumni:${id}`, detail: { until }, req });
@@ -260,7 +337,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.patch("/admin/members/:id", async (req, reply) => {
     // Верификация и персональная скидка – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
       verification_status: z.enum(["pending", "verified", "rejected"]).optional(),
@@ -277,10 +354,10 @@ export async function adminRoutes(app: FastifyInstance) {
         if (!email) return;
         if (body.verification_status === "verified") {
           await sendEmail(email, "Кабинет выпускника активирован 🎓",
-            "Поздравляем! Учебный офис подтвердил ваш выпуск – личный кабинет клуба активирован.\n\nВас ждут: скидка выпускника на программы ДПО, сообщество однокурсников, подкасты и мерч.\nВойти: " + env.PUBLIC_URL + "/lk\n\n– Клуб выпускников факультета права НИУ ВШЭ");
+            "Поздравляем! Учебный офис подтвердил ваш выпуск – личный кабинет клуба активирован.\n\nВас ждут: скидка выпускника на программы ДПО, сообщество однокурсников, подкасты и мерч.\nВойти: " + env.PUBLIC_URL + "/lk\n\n– Клуб выпускников факультета права Вышки");
         } else {
           await sendEmail(email, "По вашей заявке на вступление",
-            "К сожалению, учебный офис не смог подтвердить данные вашей заявки. Если считаете это ошибкой – ответьте на письмо или свяжитесь с офисом.\n\n– Клуб выпускников факультета права НИУ ВШЭ");
+            "К сожалению, учебный офис не смог подтвердить данные вашей заявки. Если считаете это ошибкой – ответьте на письмо или свяжитесь с офисом.\n\n– Клуб выпускников факультета права Вышки");
         }
       })().catch((e) => req.log.error({ err: e }, "verification email failed"));
     }
@@ -443,7 +520,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get("/admin/orders/export.csv", async (req, reply) => {
     // Выгрузка содержит ПДн всех заявителей – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const orders = (await di.request((readItems as any)("orders", {
       sort: ["-created_at"], limit: -1,
       fields: ["number", "created_at", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "address", "items_json", "subtotal", "member_discount", "total_estimate", "status", "payment_status", "comment"],
@@ -576,14 +653,20 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ── Подкасты ──────────────────────────────────────────────────────
-  // Ссылки на медиа обязаны быть http(s): значение уходит в 302-редирект плеера
-  // и в img-src страницы, произвольная строка там не нужна.
-  const mediaUrl = z.string().url().max(500).refine((u) => /^https?:\/\//i.test(u), "Ссылка должна начинаться с http:// или https://");
+  // Обложка: только http(s). Аудио: http(s) для внешнего хоста либо UUID
+  // файла Directus (стрим через /api/podcasts/:id/audio).
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const httpUrl = z.string().url().max(500).refine((u) => /^https?:\/\//i.test(u), "Ссылка должна начинаться с http:// или https://");
+  const audioRef = z.string().max(500).refine(
+    (u) => /^https?:\/\//i.test(u) || UUID_RE.test(u),
+    "Укажите https://…/file.mp3 или UUID файла Directus",
+  );
   const podcastBody = z.object({
     title: z.string().min(3),
     description: z.string().nullish(),
-    cover: mediaUrl.nullish().or(z.literal("").transform(() => null)),
-    audio_url: mediaUrl.nullish().or(z.literal("").transform(() => null)),
+    cover: httpUrl.nullish().or(z.literal("").transform(() => null)),
+    audio_url: audioRef.nullish().or(z.literal("").transform(() => null)),
+    video_url: httpUrl.nullish().or(z.literal("").transform(() => null)),
     duration: z.string().nullish(),
     is_free: z.boolean().optional(), // пробный выпуск (без подписки)
     sort: z.number().int().optional(),
@@ -592,17 +675,31 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get("/admin/podcasts", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "duration", "is_free", "sort", "status"] }));
+    return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "video_url", "duration", "is_free", "sort", "status"] }));
   });
+
+  /** UUID аудио не должен совпадать с alumni.avatar – иначе публичный прокси обходит /avatars. */
+  const rejectAvatarAsAudio = async (audioUrl: string | null | undefined, reply: any): Promise<boolean> => {
+    if (!audioUrl || !UUID_RE.test(audioUrl)) return false;
+    const hits = (await di.request((readItems as any)("alumni", {
+      filter: { avatar: { _eq: audioUrl } },
+      limit: 1,
+      fields: ["id"],
+    }))) as any[];
+    if (!hits.length) return false;
+    reply.code(400).send({ error: "Этот файл – аватар выпускника, его нельзя указать как аудио выпуска" });
+    return true;
+  };
 
   app.post("/admin/podcasts", async (req, reply) => {
     const ctx = requireAdmin(req, reply);
     if (!ctx) return;
     const b = podcastBody.parse(req.body);
+    if (await rejectAvatarAsAudio(b.audio_url, reply)) return;
     const all = (await di.request(readItems("podcasts", { fields: ["sort"], limit: -1 }))) as any[];
     const created = (await di.request((createItem as any)("podcasts", {
       ...b, description: b.description ?? null, cover: b.cover ?? null,
-      audio_url: b.audio_url ?? null, duration: b.duration ?? null,
+      audio_url: b.audio_url ?? null, video_url: b.video_url ?? null, duration: b.duration ?? null,
       sort: b.sort ?? Math.max(0, ...all.map((p) => p.sort || 0)) + 1,
     }))) as any;
     if (b.status === "published") pushToAll({ title: "Новый подкаст 🎧", body: b.title, url: "/podcasts" });
@@ -615,6 +712,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = podcastBody.partial().parse(req.body);
+    if (await rejectAvatarAsAudio(b.audio_url, reply)) return;
     await di.request((updateItem as any)("podcasts", id, b));
     // is_free снимает пейволл – правку обязательно видно в журнале.
     audit("podcast.patch", { actor: `admin:${ctx.userId}`, subject: `podcast:${id}`, detail: b, req });
@@ -682,7 +780,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/admin/members/:id/points", async (req, reply) => {
     // Баллы конвертируются в скидку – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
       reason: z.enum(["program", "event", "referral", "mentorship", "manual"]).default("manual"),
@@ -700,7 +798,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/admin/members/:id/anonymize", async (req, reply) => {
     // Необратимое стирание ПДн – только админ.
     const ctx = requireFullAdmin(req, reply);
-    if (!ctx) return;
+    if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const ok = await anonymizeAlumni(id);
     if (!ok) return reply.code(404).send({ error: "Участник не найден" });

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
+vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
 vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
 vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
 
@@ -24,7 +25,7 @@ const ORDER = "ALU-2026-000001";
 const ALUMNI_ID = "alumni-1";
 
 async function build(): Promise<FastifyInstance> {
-  // trustProxy: 1 — как в проде: req.ip берётся из X-Forwarded-For, поставленного Caddy.
+  // trustProxy: 1 – как в проде: req.ip берётся из X-Forwarded-For, поставленного Caddy.
   const app = Fastify({ trustProxy: 1 });
   registerErrorHandler(app);
   await app.register(paymentsRoutes);
@@ -78,7 +79,7 @@ describe("вебхук ЮKassa: телу не доверяем", () => {
   it("статус берётся из API ЮKassa, а не из тела: отменённый платёж не оплачивает заявку", async () => {
     yk.fetchPayment.mockResolvedValue({ id: "pay-1", status: "canceled", metadata: { order_number: ORDER } } as any);
     const app = await build();
-    // тело говорит payment.succeeded, а API — canceled
+    // тело говорит payment.succeeded, а API – canceled
     const r = await webhook(app, YOOKASSA_IP);
     expect(r.statusCode).toBe(200);
     expect(db.orders![0]!.payment_status).toBe("canceled");
@@ -128,7 +129,7 @@ describe("вебхук ЮKassa: телу не доверяем", () => {
   });
 });
 
-describe("POST /orders/:number/pay — ссылка на оплату", () => {
+describe("POST /orders/:number/pay – ссылка на оплату", () => {
   const memberToken = () => jwt.sign({ alumni_id: ALUMNI_ID, sub: "user-1", ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
 
   it("без авторизации платить нельзя", async () => {

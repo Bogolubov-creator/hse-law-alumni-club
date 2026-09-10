@@ -8,7 +8,7 @@ import { useProducts, useCartMutations } from "../lib/cart.js";
 import { usePaymentsEnabled } from "../lib/queries.js";
 
 export default function Merch() {
-  useHead({ title: "Мерч клуба", description: "Фирменный мерч клуба выпускников факультета права НИУ ВШЭ: одежда и аксессуары с фасеточной Фемидой. Самовывоз в учебном офисе или доставка." });
+  useHead({ title: "Мерч клуба", description: "Фирменный мерч клуба выпускников факультета права Вышки: одежда и аксессуары с фасеточной Фемидой. Самовывоз в учебном офисе или доставка." });
   const products = useProducts();
   const { add } = useCartMutations();
   const toast = useToast();
@@ -22,7 +22,7 @@ export default function Merch() {
   // Скидка выпускника действует только на ДПО – мерч всегда по базовой цене.
   return (
     <SiteShell>
-      <main className="mx-auto max-w-[1180px] px-7 py-12">
+      <main id="main" className="mx-auto max-w-[1180px] px-7 py-12">
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Витрина · Брендированная одежда</p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">Брендированная одежда клуба</h1>
         <p className="mt-3 max-w-[560px] text-grafit-soft">Одежда и аксессуары с фасеточной Фемидой. Самовывоз в учебном офисе или доставка – выберите при оформлении.</p>
@@ -39,7 +39,7 @@ export default function Merch() {
         )}
         <div className="two-col mt-7 grid grid-cols-3 gap-5">
           {list.map((p) => (
-            <button key={p.id} onClick={() => setOpen(p)} className="vcard foc block overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white text-left">
+            <button key={p.id} onClick={() => setOpen(p)} className="vcard foc block overflow-hidden rounded-[18px] border border-[#7C828C] bg-white text-left">
               {p.images?.[0] ? (
                 <div className="relative flex h-[200px] items-end bg-white p-5" style={{ background: `#fff url(${p.images[0]}) center / contain no-repeat` }}>
                   <span className="rounded-full bg-grafit/70 px-3 py-1 font-display text-sm font-bold text-kost">{p.category}</span>

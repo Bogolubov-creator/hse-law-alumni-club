@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { CLUB_OPERATOR } from "@club/shared";
 import { useCart, token } from "../lib/cart.js";
+import { openCookieSettings } from "../lib/cookie-consent.js";
 import { VisionToggle } from "./Vision.js";
 
 const NAV = [
@@ -21,6 +23,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   return (
     <div className="min-h-screen bg-kost font-body text-grafit">
+      <a href="#main" className="skip">К содержанию страницы</a>
       <header className="sticky top-0 z-50 border-b border-[#E5E7EB] bg-kost/85 backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-7 py-3.5">
           <Link to="/" className="foc flex items-center gap-3">
@@ -48,7 +51,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <Link to="/cart" aria-label="Корзина" className="foc relative rounded-[11px] bg-grafit px-3.5 py-2.5 font-semibold text-kost">
               🛒{count > 0 && <span className="absolute -right-1.5 -top-1.5 rounded-full bg-ohra px-1.5 font-mono text-[11px] text-kost">{count}</span>}
             </Link>
-            <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc rounded-[11px] border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-lg leading-none">
+            <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc rounded-[11px] border border-[#7C828C] bg-white px-3.5 py-2.5 text-lg leading-none">
               {menuOpen ? "✕" : "☰"}
             </button>
           </div>
@@ -81,9 +84,12 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             <Link to="/privacy" className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost">Политика обработки персональных данных</Link>
             <Link to="/confidential" className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost">Политика конфиденциальности</Link>
             <Link to="/requisites" className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost">Реквизиты</Link>
+            <button type="button" onClick={() => openCookieSettings()} className="foc underline decoration-[rgba(154,163,178,.5)] underline-offset-2 hover:text-kost bg-transparent border-0 p-0 cursor-pointer text-inherit" style={{ font: "inherit" }}>
+              Cookies
+            </button>
           </div>
           <p className="mt-3 text-[12px] leading-relaxed">
-            НИУ «Высшая школа экономики», факультет права · ОГРН 1027739630401 · ИНН 7714030726 · 101000, г. Москва, ул. Мясницкая, д. 20 · pravo@hse.ru · +7 (495) 771-32-32
+            {CLUB_OPERATOR.shortName} · ОГРН {CLUB_OPERATOR.ogrn} · ИНН {CLUB_OPERATOR.inn} · {CLUB_OPERATOR.address}
           </p>
         </div>
       </footer>

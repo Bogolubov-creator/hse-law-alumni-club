@@ -1,0 +1,78 @@
+/*
+ * Фирменные шрифты НИУ ВШЭ.
+ *
+ * Взяты из официального брендбука университета (hse.ru/info/brandbook) и
+ * переведены в woff2. Раньше сайт грузил Unbounded/Onest с fonts.googleapis.com –
+ * это давало внешнюю зависимость и отправляло IP посетителя в Google, который
+ * не указан получателем в политике обработки персональных данных.
+ *
+ * Моноширинного начертания у ВШЭ нет, поэтому данные реестра набираются
+ * системным моноширинным: ему не нужен внешний файл, и цифры в нём табличные.
+ */
+
+/* ── HSE Sans: основной текст и заголовки ── */
+@font-face {
+  font-family: 'HSE Sans';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('/fonts/HSESans-Thin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'HSE Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/HSESans-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'HSE Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/HSESans-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'HSE Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/HSESans-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'HSE Sans';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/HSESans-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'HSE Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/HSESans-Italic.woff2') format('woff2');
+}
+
+/* ── HSE Slab: акцентные заголовки ── */
+@font-face {
+  font-family: 'HSE Slab';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/HSESlab-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'HSE Slab';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/HSESlab-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'HSE Slab';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/HSESlab-Italic.woff2') format('woff2');
+}
