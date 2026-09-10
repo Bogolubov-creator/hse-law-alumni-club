@@ -645,6 +645,13 @@ button[aria-disabled="true"],
 .club-achievement-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; align-items: start; margin-top: 24px; }
 .club-award { min-width: 0; background: var(--c-bg-sunken); border: 1px solid var(--c-line); border-radius: 10px; overflow: clip; }
 .club-award.is-earned { background: var(--c-surface-warm); border-color: var(--c-accent-text); }
+.club-award.is-next { background: color-mix(in srgb, var(--c-accent) 12%, var(--c-bg)); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c-accent) 55%, transparent); }
+.club-award.is-next .club-award-medal { background: var(--c-accent); }
+.club-award.is-next .club-award-medal > span { background: color-mix(in srgb, var(--c-accent) 85%, #000); color: var(--c-on-accent); }
+.club-award.is-next .club-award-status { color: var(--c-accent-text); font-weight: 600; }
+.club-awards-next { margin: 0 0 18px; padding: 14px 18px; background: color-mix(in srgb, var(--c-accent) 10%, var(--c-bg)); border: 1px solid color-mix(in srgb, var(--c-accent) 40%, var(--c-line)); border-radius: 10px; font-size: 15px; line-height: 1.5; color: var(--c-text); }
+.club-awards-next strong { font-weight: 600; }
+.club-awards-next span { color: var(--c-text-2); }
 .club-award summary { list-style: none; padding: 24px 20px 18px; cursor: pointer; display: flex; align-items: center; flex-direction: column; text-align: center; }
 .club-award summary::-webkit-details-marker { display: none; }
 .club-award h3 { font: 600 18px/1.3 var(--f-body); min-height: 47px; margin: 18px 0 8px; }

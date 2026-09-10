@@ -30,7 +30,7 @@ const ME = {
   level: { points: 480, level: "2", level_title: "Активный выпускник", discount: 10, next_level: "Амбассадор", to_next: 220 },
   achievements: [
     { key: "first_order", title: "Первая заявка", description: "Оформлена первая заявка", earned: true, current: 1, target: 1, icon: "📄", kind: "count", star: false },
-    { key: "friends_5", title: "Пятеро однокурсников", description: "Добавить пятерых", earned: false, current: 2, target: 5, icon: "👥", kind: "count", star: false },
+    { key: "friends_5", title: "Пятеро однокурсников", description: "Добавить пятерых", earned: false, current: 2, target: 5, icon: "👥", kind: "count", star: true },
   ],
   activity: [],
 };
@@ -110,9 +110,11 @@ test.describe("Кабинет v2", () => {
     await expect(page.locator("summary").filter({ hasText: "ORD-000418" })).toContainText("40 500 ₽");
 
     await page.getByRole("button", { name: "Достижения", exact: true }).click();
-    // Достижения: полученное и то, что в процессе
+    // Достижения: полученное и заметное «следующее»
     await expect(page.getByRole("heading", { name: "Первая заявка", exact: true })).toBeVisible();
-    await expect(page.getByText("2 / 5", { exact: true })).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("Следующее:");
+    await expect(page.getByRole("status")).toContainText("Пятеро однокурсников");
+    await expect(page.locator(".club-award.is-next")).toContainText("следующее · 2 / 5");
 
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();
     // Однокурсники и состояния дружбы

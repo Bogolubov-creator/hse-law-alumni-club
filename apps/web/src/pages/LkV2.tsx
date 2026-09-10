@@ -230,7 +230,10 @@ function Achievements({ me }: { me: Me }) {
     setSearchParams(nextParams, { replace: true });
   };
   const earned = me.achievements.filter(a => a.earned);
-  const list = view === "earned" ? earned : me.achievements;
+  const next = me.achievements.find(a => !a.earned && a.star);
+  const list = view === "earned"
+    ? earned
+    : [...me.achievements].sort((a, b) => Number(!b.earned && b.star) - Number(!a.earned && a.star));
 
   if (!me.achievements.length) {
     return (
@@ -256,18 +259,29 @@ function Achievements({ me }: { me: Me }) {
       <button className="foc" aria-pressed={view === "earned"} onClick={() => setView("earned")}>Полученные ({earned.length})</button>
     </div>
     <p className="club-awards-hint">{view === "all" ? "Общий каталог для всех участников. Нажмите на знак, чтобы узнать условия." : "Здесь собраны ваши полученные достижения."}</p>
+    {view === "all" && next && (
+      <p className="club-awards-next" role="status">
+        Следующее: <strong>{next.title}</strong>
+        <span> · {next.current} / {next.target} · {next.kind}</span>
+      </p>
+    )}
     {list.length === 0 && <div className="club-awards-empty"><h3>Коллекция ещё впереди</h3><p>Посмотрите общий каталог и выберите, с чего начнёте.</p><button className="foc" onClick={() => setView("all")}>Посмотреть все достижения</button></div>}
     <div className="club-achievement-list">
-      {list.map(a => <details key={a.key} data-achievement={a.key} className={`club-award ${a.earned ? "is-earned" : ""}`}>
-        <summary className="foc">
-          <span className="club-award-medal" aria-hidden="true"><span>{a.icon}</span></span>
-          <h3>{a.title}</h3>
-          <span className="club-award-status">{a.earned ? "получено" : `${a.current} / ${a.target}`}</span>
-          <progress value={a.current} max={Math.max(1, a.target)} aria-label={`Прогресс: ${a.title}`} />
-          <span className="club-award-disclosure">Условия <span aria-hidden="true">+</span></span>
-        </summary>
-        <div className="club-award-description"><p>{a.description}</p><span>{a.kind}: {a.current} / {a.target}</span></div>
-      </details>)}
+      {list.map(a => {
+        const isNext = !a.earned && a.star;
+        return (
+          <details key={a.key} data-achievement={a.key} className={`club-award ${a.earned ? "is-earned" : ""}${isNext ? " is-next" : ""}`}>
+            <summary className="foc">
+              <span className="club-award-medal" aria-hidden="true"><span>{a.icon}</span></span>
+              <h3>{a.title}</h3>
+              <span className="club-award-status">{a.earned ? "получено" : isNext ? `следующее · ${a.current} / ${a.target}` : `${a.current} / ${a.target}`}</span>
+              <progress value={a.current} max={Math.max(1, a.target)} aria-label={`Прогресс: ${a.title}`} />
+              <span className="club-award-disclosure">Условия <span aria-hidden="true">+</span></span>
+            </summary>
+            <div className="club-award-description"><p>{a.description}</p><span>{a.kind}: {a.current} / {a.target}</span></div>
+          </details>
+        );
+      })}
     </div>
   </Section>;
 }
