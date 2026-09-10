@@ -787,22 +787,35 @@ const CATALOG_STATUS: Record<string, string> = { published: "На витрине
 function Content() {
   const [tab, setTab] = useState<"programs" | "products" | "events" | "news" | "timeline" | "podcasts" | "pages">("programs");
   const tabs = [
-    { key: "programs" as const, label: "Программы ДПО" },
-    { key: "products" as const, label: "Товары (мерч)" },
-    { key: "events" as const, label: "События" },
-    { key: "news" as const, label: "Новости" },
-    { key: "timeline" as const, label: "История" },
-    { key: "podcasts" as const, label: "Подкасты" },
-    { key: "pages" as const, label: "Страницы" },
+    { key: "programs" as const, label: "Программы ДПО", collection: "programs" },
+    { key: "products" as const, label: "Товары (мерч)", collection: "products" },
+    { key: "events" as const, label: "События", collection: "events" },
+    { key: "news" as const, label: "Новости", collection: "news" },
+    { key: "timeline" as const, label: "История", collection: "timeline_items" },
+    { key: "podcasts" as const, label: "Подкасты", collection: "podcasts" },
+    { key: "pages" as const, label: "Страницы", collection: "pages" },
   ];
+  const active = tabs.find((t) => t.key === tab) ?? tabs[0]!;
+  const directusCollection = `${DIRECTUS_URL.replace(/\/$/, "")}/admin/content/${active.collection}`;
+  const directusFiles = `${DIRECTUS_URL.replace(/\/$/, "")}/admin/files`;
   return (
     <>
       <div className="mb-5 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === t.key ? "bg-[var(--c-accent)] text-[var(--c-on-accent)]" : "border border-[var(--c-line)] text-[var(--c-text-2)]"}`}>{t.label}</button>
         ))}
-        <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc ml-auto rounded-[11px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2.5 font-mono text-[12px] text-[var(--c-text-3)]">Directus Studio → медиа</a>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <a href={directusCollection} target="_blank" rel="noopener noreferrer" className="foc rounded-[11px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2.5 font-mono text-[12px] text-[var(--c-text-3)]">
+            Directus → {active.collection}
+          </a>
+          <a href={directusFiles} target="_blank" rel="noopener noreferrer" className="foc rounded-[11px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2.5 font-mono text-[12px] text-[var(--c-text-3)]">
+            Медиа
+          </a>
+        </div>
       </div>
+      <p className="mb-4 font-mono text-[11px] text-[var(--c-text-3)]">
+        Быстрые правки – здесь. Схемы полей, файлы и роли – в Directus Studio по ссылке коллекции выше.
+      </p>
       {tab === "programs" && <ProgramsAdmin />}
       {tab === "products" && <ProductsAdmin />}
       {tab === "events" && <EventsAdmin />}

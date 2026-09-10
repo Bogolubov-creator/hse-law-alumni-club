@@ -37,6 +37,53 @@ const SUPPORT_STATUS_RU: Record<string, string> = {
   closed: "Закрыты",
 };
 
+function Sparkline({
+  series,
+  title,
+  empty,
+}: {
+  series: Array<{ day: string; count: number }>;
+  title: string;
+  empty: string;
+}) {
+  const max = Math.max(1, ...series.map((x) => x.count));
+  const w = 280;
+  const h = 56;
+  const pad = 2;
+  const pts = series.map((x, i) => {
+    const px = series.length <= 1 ? w / 2 : (i / (series.length - 1)) * (w - pad * 2) + pad;
+    const py = h - pad - (x.count / max) * (h - pad * 2);
+    return `${px},${py}`;
+  });
+  const total = series.reduce((s, x) => s + x.count, 0);
+  return (
+    <Panel>
+      <PanelTitle>{title}</PanelTitle>
+      {total === 0 ? (
+        <p style={{ ...label, margin: "12px 0 0", textTransform: "none", letterSpacing: 0 }}>{empty}</p>
+      ) : (
+        <>
+          <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} role="img" aria-label={`${title}: всего ${total}`}>
+            <polyline
+              fill="none"
+              stroke="var(--c-accent-text)"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              points={pts.join(" ")}
+            />
+          </svg>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+            <span style={{ ...mono, fontSize: 11, color: "var(--c-text-3)" }}>{series[0]?.day}</span>
+            <span style={{ ...mono, fontSize: 12, color: "var(--c-text-2)" }}>всего {total}</span>
+            <span style={{ ...mono, fontSize: 11, color: "var(--c-text-3)" }}>{series[series.length - 1]?.day}</span>
+          </div>
+        </>
+      )}
+    </Panel>
+  );
+}
+
 function BucketTable({
   title,
   rows,
@@ -144,7 +191,7 @@ export default function AnalyticsAdmin() {
 
       {q.isLoading && <p style={{ ...label, margin: 0, textTransform: "none" }}>Считаем агрегаты…</p>}
       {q.isError && (
-        <p role="alert" style={{ ...mono, margin: 0, fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>
+        <p role="alert" style={{ ...mono, margin: "0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>
           Не удалось загрузить аналитику.{" "}
           <button type="button" className="foc" onClick={() => q.refetch()} style={{ ...mono, background: "none", border: "none", color: "inherit", textDecoration: "underline", cursor: "pointer", font: "inherit" }}>
             Повторить
@@ -163,6 +210,16 @@ export default function AnalyticsAdmin() {
             {pulseStats.map((s) => (
               <Stat key={s.label} name={s.label} value={s.value} note={s.note} />
             ))}
+          </div>
+
+          <div className="adm-two" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, marginTop: 26 }}>
+            <Sparkline title="Вступления" series={d.series.joins_by_day} empty="Нет вступлений за период." />
+            <Sparkline title="Заявки" series={d.series.orders_by_day} empty="Нет заявок за период." />
+            <Sparkline
+              title="Просмотры"
+              series={d.series.pageviews_by_day ?? []}
+              empty={d.pageviews.hits == null ? "БД просмотров недоступна." : "Нет просмотров за период (нужно «Принять все» у посетителей)."}
+            />
           </div>
 
           <div className="adm-two" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 26 }}>
