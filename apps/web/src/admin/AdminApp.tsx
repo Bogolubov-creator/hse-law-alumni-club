@@ -170,6 +170,10 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const { patchMember } = useAdminMutations();
   const pending = members.data?.items ?? [];
   const d = ov.data;
+  const inbox = [
+    { key: "orders", count: d?.new_orders ?? 0, title: "Новые заявки", hint: "разобрать статус и оплату", go: "orders" as Section },
+    { key: "verify", count: d?.pending_verifications ?? 0, title: "На верификацию", hint: "подтвердить выпуск", go: "members" as Section },
+  ].filter((x) => x.count > 0);
   // Вся статистика сайта – одним экраном.
   /**
    * Акцентом помечены только те два числа, по которым офис действует прямо
@@ -190,12 +194,30 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   ] as { label: string; value: number; note?: string; act?: boolean }[];
   return (
     <>
-      <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "0 28px" }}>
+      <Panel>
+        <PanelTitle>Требует действия</PanelTitle>
+        {inbox.length === 0 && (
+          <p style={{ ...label, margin: "12px 0 0", textTransform: "none", letterSpacing: 0, lineHeight: 1.5 }}>
+            Очередь пуста – новых заявок и ожидающих верификации нет.
+          </p>
+        )}
+        {inbox.map((item) => (
+          <Row key={item.key} cols="minmax(0,1fr) auto">
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{item.title} · {item.count}</div>
+              <div style={{ ...label, marginTop: 4, textTransform: "none", letterSpacing: 0, color: "var(--c-text-2)" }}>{item.hint}</div>
+            </div>
+            <button type="button" onClick={() => onGo(item.go)} className="foc" style={{ ...action, padding: "10px 14px" }}>открыть</button>
+          </Row>
+        ))}
+      </Panel>
+
+      <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "0 28px", marginTop: 26 }}>
         {stats.map((s) => <Stat key={s.label} name={s.label} value={s.value} note={s.note} accent={s.act} />)}
       </div>
       <div className="adm-two" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20, marginTop: 26 }}>
         <Panel>
-          <PanelTitle right={<button onClick={() => onGo("orders")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>все →</button>}>
+          <PanelTitle right={<button type="button" onClick={() => onGo("orders")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>все →</button>}>
             Последние заявки
           </PanelTitle>
           {(orders.data?.items ?? []).slice(0, 5).map((o) => (
@@ -216,8 +238,8 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
               <div style={{ fontSize: 14, fontWeight: 500 }}>{m.fio}</div>
               <div style={{ ...label, fontSize: 10, marginTop: 3 }}>выпуск {m.cohort}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-                <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc" style={{ ...action, flex: 1, textAlign: "center" }}>Подтвердить</button>
-                <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center", color: "var(--c-danger-text)", borderColor: "var(--c-danger-text)" }}>Отклонить</button>
+                <button type="button" disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc" style={{ ...action, flex: 1, textAlign: "center" }}>Подтвердить</button>
+                <button type="button" disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center", color: "var(--c-danger-text)", borderColor: "var(--c-danger-text)" }}>Отклонить</button>
               </div>
             </div>
           ))}
@@ -225,7 +247,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
       </div>
       <div className="adm-two" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 20, marginTop: 20 }}>
         <Panel>
-          <PanelTitle right={<button onClick={() => onGo("content")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>события →</button>}>
+          <PanelTitle right={<button type="button" onClick={() => onGo("content")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>события →</button>}>
             Ближайшее событие
           </PanelTitle>
           {d?.next_event ? (

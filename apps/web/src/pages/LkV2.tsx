@@ -480,7 +480,19 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
       {me.data && (
         <div className="lkv2-grid" style={{ display: "grid", gridTemplateColumns: "300px minmax(0, 1fr)", gap: 28, alignItems: "start" }}>
           <div className="lkv2-aside" style={{ position: "sticky", top: 88 }}>
-            <div className="club-identity-desktop"><Identity me={me.data} /></div><details className="club-identity-mobile"><summary>{me.data.alumni.fio}<span>Статус, баллы и приглашение</span></summary><Identity me={me.data} /></details>
+            <div className="club-identity-desktop"><Identity me={me.data} /></div>
+            <details className="club-identity-mobile">
+              <summary>
+                {me.data.alumni.fio}
+                <span>
+                  {(() => {
+                    const next = me.data.achievements.find((a) => !a.earned && a.star);
+                    return `${me.data.level.points} б. · скидка ${me.data.level.discount}%${next ? ` · далее: ${next.title}` : ""}`;
+                  })()}
+                </span>
+              </summary>
+              <Identity me={me.data} />
+            </details>
           </div>
           <div>
             <nav aria-label="Разделы кабинета" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
