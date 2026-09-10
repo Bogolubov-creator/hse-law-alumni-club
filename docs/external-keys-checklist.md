@@ -14,6 +14,7 @@
 | `AUTH_SECRET`, `ADMIN_AUTH_SECRET` | JWT сессий | `openssl rand -hex 32` | ☐ |
 | `DIRECTUS_SERVICE_TOKEN` | CMS API | Directus admin | ☐ |
 | `CHECKOUT_DATABASE_URL` | Корзина, резерв, outbox, FAQ-hits | Postgres | ☐ |
+| `SEED_DEMO=false` (или не задан) | Иначе fail-fast на проде: демо попадёт в витрины/sitemap | env хоста | ☐ |
 
 ## Опционально (включаются по мере выдачи)
 
