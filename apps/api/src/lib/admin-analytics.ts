@@ -45,6 +45,44 @@ export function bucketByDay(isoDates: Array<string | null | undefined>, range: A
   return daysInRange(range, now).map((day) => ({ day, count: counts.get(day) ?? 0 }));
 }
 
+export type ProgramTopRow = { ref_id: string; title: string; qty: number; orders: number };
+
+/**
+ * Топ программ ДПО из снапшотов `orders.items_json`.
+ * Считает qty и число заявок, где позиция встречалась; merch/podcast игнорирует.
+ */
+export function topProgramsFromItems(
+  orderItems: Array<unknown>,
+  limit = 12,
+): ProgramTopRow[] {
+  const agg = new Map<string, { title: string; qty: number; orders: number }>();
+  for (const raw of orderItems) {
+    if (!Array.isArray(raw)) continue;
+    const seenInOrder = new Set<string>();
+    for (const line of raw) {
+      if (!line || typeof line !== "object") continue;
+      const item = line as { type?: unknown; ref_id?: unknown; title?: unknown; qty?: unknown };
+      if (item.type !== "dpo") continue;
+      const ref = String(item.ref_id ?? "").trim();
+      if (!ref) continue;
+      const qty = typeof item.qty === "number" && item.qty > 0 ? Math.floor(item.qty) : 1;
+      const title = String(item.title ?? "").trim() || ref;
+      const cur = agg.get(ref) ?? { title, qty: 0, orders: 0 };
+      cur.qty += qty;
+      if (title.length >= cur.title.length) cur.title = title;
+      if (!seenInOrder.has(ref)) {
+        cur.orders += 1;
+        seenInOrder.add(ref);
+      }
+      agg.set(ref, cur);
+    }
+  }
+  return [...agg.entries()]
+    .map(([ref_id, v]) => ({ ref_id, title: v.title, qty: v.qty, orders: v.orders }))
+    .sort((a, b) => b.qty - a.qty || b.orders - a.orders || a.title.localeCompare(b.title, "ru"))
+    .slice(0, limit);
+}
+
 function sinceFilter(field: string, since: string) {
   return { [field]: { _gte: since } };
 }
@@ -180,7 +218,7 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
     di.request((readItems as any)("orders", {
       filter: sinceFilter("created_at", since),
       limit: -1,
-      fields: ["created_at"],
+      fields: ["created_at", "items_json"],
     })) as Promise<any[]>,
   ]);
 
@@ -188,6 +226,7 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
     joins_by_day: bucketByDay(joinRows.map((r) => r.joined_at as string), range, now),
     orders_by_day: bucketByDay(orderDayRows.map((r) => r.created_at as string), range, now),
   };
+  const programs_top = topProgramsFromItems(orderDayRows.map((r) => r.items_json));
 
   const achievementIds = [...new Set(achievement_rows.map((r) => r.achievement_id).filter(Boolean))];
   const achievementDefs = achievementIds.length
@@ -292,6 +331,7 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
       by_type: mapGroup(orders_by_type, "type"),
       by_status: mapGroup(orders_by_status, "status"),
       paid_sum_kop: orders_paid_sum,
+      programs_top,
     },
     community: {
       points_by_reason: mapGroup(points_by_reason, "reason"),
@@ -332,6 +372,7 @@ export function analyticsToCsv(data: AdminAnalytics): string {
   row("orders", "paid_sum_kop", data.orders.paid_sum_kop);
   for (const x of data.orders.by_type) row("orders_by_type", x.key, x.count);
   for (const x of data.orders.by_status) row("orders_by_status", x.key, x.count);
+  for (const x of data.orders.programs_top) row("programs_top", x.title, `${x.qty}/${x.orders}`);
   for (const x of data.community.points_by_reason) row("points_by_reason", x.key, x.count);
   for (const x of data.community.achievements_top) row("achievements", x.title, x.count);
   for (const x of data.engagement.events_top) row("events", x.title, `${x.rsvps}/${x.attended}`);

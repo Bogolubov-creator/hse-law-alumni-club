@@ -98,7 +98,12 @@ export type Analytics = {
     support_open: number | null; support_created: number | null;
   };
   snapshot: { alumni_count: number; alumni_verified: number; verified_ratio: number };
-  orders: { by_type: AnalyticsBucket[]; by_status: AnalyticsBucket[]; paid_sum_kop: number };
+  orders: {
+    by_type: AnalyticsBucket[];
+    by_status: AnalyticsBucket[];
+    paid_sum_kop: number;
+    programs_top: Array<{ ref_id: string; title: string; qty: number; orders: number }>;
+  };
   community: {
     points_by_reason: AnalyticsBucket[];
     achievements_top: Array<{ achievement_id: string; key: string; title: string; count: number }>;

@@ -177,6 +177,15 @@ export default function AnalyticsAdmin() {
               rows={d.orders.by_status.map((x) => ({ name: ORDER_STATUS_RU[x.key] ?? x.key, value: x.count }))}
             />
             <BucketTable
+              title="Топ программ ДПО"
+              empty="В заявках за период нет позиций ДПО."
+              valueLabel=""
+              rows={(d.orders.programs_top ?? []).map((x) => ({
+                name: x.title,
+                value: `${x.qty} поз. · ${x.orders} заявок`,
+              }))}
+            />
+            <BucketTable
               title="Баллы по причинам"
               empty="Начислений за период нет."
               rows={d.community.points_by_reason.map((x) => ({ name: REASON_RU[x.key] ?? x.key, value: x.count }))}
