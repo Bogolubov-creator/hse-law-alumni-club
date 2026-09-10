@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { mediaUrl, webpSiblingUrl } from "../lib/public-url.js";
 
 type Props = {
@@ -15,8 +15,15 @@ type Props = {
 export default function ProductImage({ src, title, priority = false }: Props) {
   const resolved = src ? mediaUrl(src) : undefined;
   const webp = src ? webpSiblingUrl(src) : null;
-  const [current, setCurrent] = useState<string | undefined>(() => webp ?? resolved);
+  const [useOrig, setUseOrig] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setUseOrig(false);
+    setFailed(false);
+  }, [src]);
+
+  const current = useOrig ? resolved : (webp ?? resolved);
 
   if (!resolved || failed) {
     return (
@@ -48,8 +55,8 @@ export default function ProductImage({ src, title, priority = false }: Props) {
       fetchPriority={priority ? "high" : undefined}
       style={{ display: "block", width: "100%", height: "100%", objectFit: "contain" }}
       onError={() => {
-        if (current !== resolved) {
-          setCurrent(resolved);
+        if (!useOrig && webp) {
+          setUseOrig(true);
           return;
         }
         setFailed(true);
