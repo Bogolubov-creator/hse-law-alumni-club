@@ -120,6 +120,11 @@ export type Analytics = {
   series: {
     joins_by_day: Array<{ day: string; count: number }>;
     orders_by_day: Array<{ day: string; count: number }>;
+    pageviews_by_day: Array<{ day: string; count: number }>;
+  };
+  pageviews: {
+    hits: number | null;
+    paths_top: Array<{ path: string; count: number }>;
   };
 };
 

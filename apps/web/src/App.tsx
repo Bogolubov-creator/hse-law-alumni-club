@@ -5,6 +5,7 @@ import { useIsMobile } from "./lib/use-mobile.js";
 import { useIsPwaShell } from "./lib/use-pwa.js";
 import Stub from "./pages/Stub.js";
 import CookieBanner from "./components/CookieBanner.js";
+import { PageViewBeacon } from "./components/PageViewBeacon.js";
 import InstallPrompt from "./components/InstallPrompt.js";
 import { PwaShell } from "./components/PwaShell.js";
 import { VisionPanel } from "./components/Vision.js";
@@ -123,6 +124,7 @@ export default function App() {
       </Suspense>
       </ErrorBoundary>
       <SupportDock />
+      <PageViewBeacon />
       <CookieBanner />
       <InstallPrompt />
     </PwaShell>

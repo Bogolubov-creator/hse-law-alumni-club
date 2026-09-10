@@ -41,6 +41,10 @@ describe("admin-analytics helpers", () => {
         events_top: [{ event_id: "e1", title: "Встреча", rsvps: 4, attended: 2 }],
         podcasts_top: [{ podcast_id: "p1", title: "Выпуск 1", plays: 5, listeners: 3 }],
       },
+      pageviews: {
+        hits: 12,
+        paths_top: [{ path: "/dpo", count: 5 }],
+      },
       support: {
         open: 1, created_in_range: 2,
         by_status: [{ status: "open", count: 1 }],
@@ -49,6 +53,7 @@ describe("admin-analytics helpers", () => {
       series: {
         joins_by_day: [{ day: "2026-09-01", count: 2 }],
         orders_by_day: [{ day: "2026-09-02", count: 3 }],
+        pageviews_by_day: [{ day: "2026-09-02", count: 4 }],
       },
     };
     const csv = analyticsToCsv(sample);

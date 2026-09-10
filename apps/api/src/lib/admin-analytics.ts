@@ -3,6 +3,7 @@ import { directus } from "./directus.js";
 import { count, groupCount, sum } from "./agg.js";
 import { env } from "../env.js";
 import { checkoutPool } from "./checkout-store.js";
+import { pageviewStats } from "./pageviews.js";
 
 export type AnalyticsRange = "7d" | "30d" | "90d";
 
@@ -162,6 +163,7 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
     support,
     joinRows,
     orderDayRows,
+    pageviews,
   ] = await Promise.all([
     count("alumni", sinceFilter("joined_at", since)),
     count("alumni", { verification_status: { _eq: "verified" }, ...sinceFilter("verified_at", since) }),
@@ -220,11 +222,16 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
       limit: -1,
       fields: ["created_at", "items_json"],
     })) as Promise<any[]>,
+    pageviewStats(since),
   ]);
 
   const series = {
     joins_by_day: bucketByDay(joinRows.map((r) => r.joined_at as string), range, now),
     orders_by_day: bucketByDay(orderDayRows.map((r) => r.created_at as string), range, now),
+    pageviews_by_day: (() => {
+      const map = new Map(pageviews.by_day.map((x) => [x.day, x.count]));
+      return daysInRange(range, now).map((day) => ({ day, count: map.get(day) ?? 0 }));
+    })(),
   };
   const programs_top = topProgramsFromItems(orderDayRows.map((r) => r.items_json));
 
@@ -341,6 +348,10 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
       events_top,
       podcasts_top,
     },
+    pageviews: {
+      hits: pageviews.hits,
+      paths_top: pageviews.paths_top,
+    },
     support: {
       open: support.open,
       created_in_range: support.created_in_range,
@@ -377,11 +388,14 @@ export function analyticsToCsv(data: AdminAnalytics): string {
   for (const x of data.community.achievements_top) row("achievements", x.title, x.count);
   for (const x of data.engagement.events_top) row("events", x.title, `${x.rsvps}/${x.attended}`);
   for (const x of data.engagement.podcasts_top) row("podcasts", x.title, `${x.plays}/${x.listeners}`);
+  row("pageviews", "hits", data.pageviews.hits ?? "");
+  for (const x of data.pageviews.paths_top) row("pageviews_paths", x.path, x.count);
   row("support", "open", data.support.open ?? "");
   row("support", "created_in_range", data.support.created_in_range ?? "");
   for (const x of data.support.by_status) row("support_by_status", x.status, x.count);
   for (const x of data.support.by_topic) row("support_by_topic", x.topic, x.count);
   for (const x of data.series.joins_by_day) row("joins_by_day", x.day, x.count);
   for (const x of data.series.orders_by_day) row("orders_by_day", x.day, x.count);
+  for (const x of data.series.pageviews_by_day) row("pageviews_by_day", x.day, x.count);
   return "\uFEFF" + lines.join("\r\n");
 }

@@ -21,6 +21,7 @@ import { avatarsRoutes } from "./routes/avatars.js";
 import { eventsRoutes } from "./routes/events.js";
 import { pushRoutes } from "./routes/push.js";
 import { telegramRoutes } from "./routes/telegram.js";
+import { pageviewRoutes } from "./routes/pageviews.js";
 import { registerBotCommands } from "./lib/telegram-bot.js";
 import { startTelegramPolling } from "./lib/telegram-polling.js";
 import { runDecay } from "./lib/engine.js";
@@ -119,6 +120,7 @@ await app.register(avatarsRoutes);
 await app.register(eventsRoutes);
 await app.register(pushRoutes);
 await app.register(telegramRoutes);
+await app.register(pageviewRoutes);
 
 // Фоновые cron-задачи. Держим ссылки, чтобы остановить их при плавной остановке.
 // ВНИМАНИЕ: cron выполняется внутри процесса API – деплой одноинстансный. На

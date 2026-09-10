@@ -28,7 +28,7 @@
 | `PUBLIC_URL=https://…` | return_url оплаты, sitemap, canonical | Прод-домен | ☐ |
 | `AUTH_SECRET`, `ADMIN_AUTH_SECRET` | JWT сессий | `openssl rand -hex 32` | ☐ |
 | `DIRECTUS_SERVICE_TOKEN` | CMS API | Directus admin | ☐ |
-| `CHECKOUT_DATABASE_URL` | Корзина, резерв, outbox, FAQ-hits | Postgres | ☐ |
+| `CHECKOUT_DATABASE_URL` | Корзина, резерв, outbox, FAQ-hits, pageviews | Postgres | ☐ |
 | `SEED_DEMO=false` (или не задан) | Иначе fail-fast на проде: демо попадёт в витрины/sitemap | env хоста | ☐ |
 | `VITE_LOCAL_REVIEW` **не** `true` на сборке web | Иначе на legal – баннер «Проект юридических документов» | CI/prod build args | ☐ |
 

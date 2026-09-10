@@ -233,11 +233,21 @@ export default function AnalyticsAdmin() {
               empty="Нет заявок за период."
               rows={d.series.orders_by_day.filter((x) => x.count > 0).map((x) => ({ name: x.day, value: x.count }))}
             />
+            <BucketTable
+              title="Просмотры по дням"
+              empty={d.pageviews.hits == null ? "БД просмотров недоступна." : "Нет просмотров за период (нужно «Принять все» у посетителей)."}
+              rows={(d.series.pageviews_by_day ?? []).filter((x) => x.count > 0).map((x) => ({ name: x.day, value: x.count }))}
+            />
+            <BucketTable
+              title="Топ страниц"
+              empty={d.pageviews.hits == null ? "БД просмотров недоступна." : "Просмотров с согласием cookies нет."}
+              rows={(d.pageviews.paths_top ?? []).map((x) => ({ name: x.path, value: x.count }))}
+            />
           </div>
 
           <p style={{ ...label, margin: "28px 0 0", textTransform: "none", letterSpacing: 0, color: "var(--c-text-3)", lineHeight: 1.5 }}>
-            Просмотры страниц, cookie, PWA и чаты FAQ-бота в эту сводку не входят – они на сервере не пишутся.
-            Операционные очереди – во вкладке «Обзор»; сырой след – в «Журнале».
+            Просмотры – только при «Принять все»: путь и день UTC, без IP и user-id.
+            FAQ-бот – во вкладке Support; очереди – в «Обзор»; сырой след – в «Журнале».
           </p>
         </>
       )}
