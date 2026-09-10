@@ -19,6 +19,32 @@ export function rangeSince(range: AnalyticsRange, now = Date.now()): string {
   return new Date(now - RANGE_DAYS[range] * 86400000).toISOString();
 }
 
+/** Дни YYYY-MM-DD (UTC) в окне range, включая сегодня. */
+export function daysInRange(range: AnalyticsRange, now = Date.now()): string[] {
+  const n = RANGE_DAYS[range];
+  const days: string[] = [];
+  const end = new Date(now);
+  end.setUTCHours(0, 0, 0, 0);
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(end);
+    d.setUTCDate(d.getUTCDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+/** Считает по дням UTC; дырки заполняются нулями. */
+export function bucketByDay(isoDates: Array<string | null | undefined>, range: AnalyticsRange, now = Date.now()): Array<{ day: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const raw of isoDates) {
+    if (!raw) continue;
+    const day = String(raw).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
+    counts.set(day, (counts.get(day) ?? 0) + 1);
+  }
+  return daysInRange(range, now).map((day) => ({ day, count: counts.get(day) ?? 0 }));
+}
+
 function sinceFilter(field: string, since: string) {
   return { [field]: { _gte: since } };
 }
@@ -96,6 +122,8 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
     plays_rows,
     podcasts,
     support,
+    joinRows,
+    orderDayRows,
   ] = await Promise.all([
     count("alumni", sinceFilter("joined_at", since)),
     count("alumni", { verification_status: { _eq: "verified" }, ...sinceFilter("verified_at", since) }),
@@ -144,7 +172,22 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
       fields: ["id", "title"],
     })) as Promise<any[]>,
     supportStats(since),
+    di.request((readItems as any)("alumni", {
+      filter: sinceFilter("joined_at", since),
+      limit: -1,
+      fields: ["joined_at"],
+    })) as Promise<any[]>,
+    di.request((readItems as any)("orders", {
+      filter: sinceFilter("created_at", since),
+      limit: -1,
+      fields: ["created_at"],
+    })) as Promise<any[]>,
   ]);
+
+  const series = {
+    joins_by_day: bucketByDay(joinRows.map((r) => r.joined_at as string), range, now),
+    orders_by_day: bucketByDay(orderDayRows.map((r) => r.created_at as string), range, now),
+  };
 
   const achievementIds = [...new Set(achievement_rows.map((r) => r.achievement_id).filter(Boolean))];
   const achievementDefs = achievementIds.length
@@ -264,6 +307,7 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
       by_status: support.by_status,
       by_topic: support.by_topic,
     },
+    series,
   };
 }
 
@@ -296,5 +340,7 @@ export function analyticsToCsv(data: AdminAnalytics): string {
   row("support", "created_in_range", data.support.created_in_range ?? "");
   for (const x of data.support.by_status) row("support_by_status", x.status, x.count);
   for (const x of data.support.by_topic) row("support_by_topic", x.topic, x.count);
+  for (const x of data.series.joins_by_day) row("joins_by_day", x.day, x.count);
+  for (const x of data.series.orders_by_day) row("orders_by_day", x.day, x.count);
   return "\uFEFF" + lines.join("\r\n");
 }

@@ -15,6 +15,12 @@ type BotStatus = {
     answers: number;
     gaps: number;
     note: string;
+    hits?: {
+      gap_hits: number;
+      none_hits: number;
+      by_gap: Array<{ gap_id: string; count: number }>;
+      by_channel: Array<{ channel: string; count: number }>;
+    };
   };
   tickets: {
     enabled: boolean;
@@ -124,11 +130,17 @@ export default function SupportAdmin() {
         <div>
           <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6 }}>FAQ на сайте</div>
           <strong>
-            {st?.siteFaq.answers ?? "–"} ответов · {st?.siteFaq.gaps ?? "–"} эскалаций
+            {st?.siteFaq.answers ?? "–"} ответов · {st?.siteFaq.gaps ?? "–"} тем в каталоге эскалаций
           </strong>
           <p style={{ margin: "8px 0", fontSize: 14, lineHeight: 1.45 }}>
             {st?.siteFaq.note ?? "Ворона на сайте и Telegram используют один набор FAQ."}
           </p>
+          {st?.siteFaq.hits && (
+            <p style={{ margin: "0 0 8px", fontSize: 13, lineHeight: 1.45, opacity: 0.9 }}>
+              За 30 дней: gap {st.siteFaq.hits.gap_hits}, без ответа {st.siteFaq.hits.none_hits}
+              {st.siteFaq.hits.by_gap[0] ? ` · топ: ${st.siteFaq.hits.by_gap[0].gap_id} (${st.siteFaq.hits.by_gap[0].count})` : ""}
+            </p>
+          )}
           <a className="foc" href="/" target="_blank" rel="noreferrer">
             Открыть сайт
           </a>

@@ -112,6 +112,10 @@ export type Analytics = {
     by_status: Array<{ status: string; count: number }>;
     by_topic: Array<{ topic: string; count: number }>;
   };
+  series: {
+    joins_by_day: Array<{ day: string; count: number }>;
+    orders_by_day: Array<{ day: string; count: number }>;
+  };
 };
 
 export function useAnalytics(range: AnalyticsRange) {

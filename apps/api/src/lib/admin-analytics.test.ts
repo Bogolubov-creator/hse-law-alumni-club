@@ -45,11 +45,26 @@ describe("admin-analytics helpers", () => {
         by_status: [{ status: "open", count: 1 }],
         by_topic: [{ topic: "вход", count: 1 }],
       },
+      series: {
+        joins_by_day: [{ day: "2026-09-01", count: 2 }],
+        orders_by_day: [{ day: "2026-09-02", count: 3 }],
+      },
     };
     const csv = analyticsToCsv(sample);
     expect(csv.startsWith("\uFEFF")).toBe(true);
     expect(csv).toContain("pulse");
     expect(csv).toContain("joins");
+    expect(csv).toContain("joins_by_day");
     expect(csv).toContain("'=cmd"); // CSV-инъекция обезврежена
+  });
+
+  it("bucketByDay заполняет нули в окне", async () => {
+    const { bucketByDay } = await import("./admin-analytics.js");
+    const now = Date.parse("2026-09-09T12:00:00.000Z");
+    const series = bucketByDay(["2026-09-09T01:00:00.000Z", "2026-09-09T02:00:00.000Z", "2026-09-07T00:00:00.000Z"], "7d", now);
+    expect(series).toHaveLength(7);
+    expect(series.find((x) => x.day === "2026-09-09")?.count).toBe(2);
+    expect(series.find((x) => x.day === "2026-09-08")?.count).toBe(0);
+    expect(series.find((x) => x.day === "2026-09-07")?.count).toBe(1);
   });
 });

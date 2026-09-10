@@ -33,6 +33,16 @@ const GAP_TEXT =
 const FAIL_TEXT = "Не получилось загрузить данные. Напишите в поддержку – ответим.";
 const WAIT_TEXT = "Секунду, гружу программы…";
 
+/** Счётчик gap/none без текста вопроса. */
+function reportFaqHit(kind: "gap" | "none", gapId?: string) {
+  void fetch("/api/support/faq-event", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ kind, gapId, channel: "site" }),
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
 type LogItem =
   | { id: string; kind: "say" | "mine" | "typing"; text: string }
   | { id: string; kind: "more"; href: string; label: string }
@@ -175,10 +185,12 @@ export function ClubSupportBot({ open, onClose }: Props) {
         pushExtra(out.extra);
         break;
       case "gap":
+        reportFaqHit("gap", out.gap.id);
         pushSay(GAP_TEXT);
         items.push({ id: nextId(), kind: "escalate" });
         break;
       case "none":
+        reportFaqHit("none");
         pushSay("Такого не нашла. Вот что стартует ближе всего:");
         pushCards(out.programs);
         items.push({ id: nextId(), kind: "escalate" });

@@ -5,6 +5,8 @@ import { checkoutPool } from "../lib/checkout-store.js";
 import { env } from "../env.js";
 import { requireAdmin, requireFullAdmin } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
+import { faqGapStats, logFaqEvent } from "../lib/faq-events.js";
+import { rangeSince } from "../lib/admin-analytics.js";
 
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const access = z.string().regex(/^[a-f0-9]{64}$/);
@@ -33,6 +35,16 @@ export async function supportRoutes(app: FastifyInstance) {
   });
   app.addHook("onSend", async (_req, reply) => { reply.header("Cache-Control", "no-store"); });
   app.get("/support/config", async () => supportConfig());
+  /** Счётчик FAQ-gap / unmatched – без текста вопроса. */
+  app.post("/support/faq-event", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (req) => {
+    const body = z.object({
+      kind: z.enum(["gap", "none"]),
+      gapId: z.string().trim().min(1).max(64).optional(),
+      channel: z.enum(["site", "telegram"]).default("site"),
+    }).parse(req.body);
+    void logFaqEvent({ kind: body.kind, gapId: body.gapId, channel: body.channel });
+    return { ok: true };
+  });
   app.post("/support", { config: { rateLimit: { max: 3, timeWindow: "10 minutes" } } }, async (req, reply) => {
     const config = supportConfig();
     if (!config.enabled) return reply.code(503).send({ error: "Поддержка пока не принимает обращения" });
@@ -102,6 +114,7 @@ export async function supportRoutes(app: FastifyInstance) {
         answers: BOT_FAQ.answers.length,
         gaps: BOT_FAQ.gaps.length,
         note: "Ворона на сайте и @pravohse_alumni_bot отвечают одним FAQ; каталог ДПО – из API.",
+        hits: await faqGapStats(rangeSince("30d")),
       },
       tickets: { enabled: cfg.enabled, draft: cfg.draft, openApprox },
     };

@@ -13,6 +13,7 @@ import {
 } from "@club/shared";
 import { directus } from "./directus.js";
 import { env } from "../env.js";
+import { logFaqEvent } from "./faq-events.js";
 
 function mapFormat(raw: string | null | undefined): string {
   const f = String(raw || "").toLowerCase();
@@ -120,5 +121,13 @@ export async function answerTelegramFaq(query: string): Promise<string | null> {
   if (!q || q.length < 2) return null;
   const programs = await loadPrograms();
   const data: BotReplyData = { programs, ...BOT_FAQ };
-  return formatReply(reply(q, data), env.PUBLIC_URL || "https://example.invalid");
+  const out = reply(q, data);
+  if (out.kind === "gap" || out.kind === "none") {
+    void logFaqEvent({
+      kind: out.kind,
+      gapId: out.kind === "gap" ? out.gap.id : null,
+      channel: "telegram",
+    });
+  }
+  return formatReply(out, env.PUBLIC_URL || "https://example.invalid");
 }

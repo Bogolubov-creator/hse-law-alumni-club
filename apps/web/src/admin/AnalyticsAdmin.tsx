@@ -214,6 +214,16 @@ export default function AnalyticsAdmin() {
               empty={d.support.by_topic.length ? "" : "Тем за период нет."}
               rows={d.support.by_topic.map((x) => ({ name: x.topic, value: x.count }))}
             />
+            <BucketTable
+              title="Вступления по дням"
+              empty="Нет вступлений за период."
+              rows={d.series.joins_by_day.filter((x) => x.count > 0).map((x) => ({ name: x.day, value: x.count }))}
+            />
+            <BucketTable
+              title="Заявки по дням"
+              empty="Нет заявок за период."
+              rows={d.series.orders_by_day.filter((x) => x.count > 0).map((x) => ({ name: x.day, value: x.count }))}
+            />
           </div>
 
           <p style={{ ...label, margin: "28px 0 0", textTransform: "none", letterSpacing: 0, color: "var(--c-text-3)", lineHeight: 1.5 }}>
