@@ -1,12 +1,12 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "Клуб выпускников факультета права НИУ ВШЭ",
   "short_name": "Клуб права",
   "description": "Личный кабинет выпускника: программы ДПО со скидкой, мерч, подкасты и сообщество.",
   "lang": "ru",
   "dir": "ltr",
-  "start_url": "/?source=pwa",
-  "scope": "/",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait-primary",
@@ -15,14 +15,15 @@
   "prefer_related_applications": false,
   "categories": ["education", "social"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "Личный кабинет", "short_name": "Кабинет", "url": "/lk?source=pwa", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Витрина ДПО", "short_name": "ДПО", "url": "/dpo?source=pwa", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Подкасты", "short_name": "Подкасты", "url": "/podcasts?source=pwa", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Мерч", "short_name": "Мерч", "url": "/merch?source=pwa", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Личный кабинет", "short_name": "Кабинет", "url": "./lk?source=pwa", "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }] },
+    { "name": "Витрина ДПО", "short_name": "ДПО", "url": "./dpo?source=pwa", "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }] },
+    { "name": "Подкасты", "short_name": "Подкасты", "url": "./podcasts?source=pwa", "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }] },
+    { "name": "Мерч", "short_name": "Мерч", "url": "./merch?source=pwa", "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }] }
   ]
 }

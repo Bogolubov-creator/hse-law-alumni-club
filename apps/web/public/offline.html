@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#EC5A13" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Нет сети – Клуб права</title>
     <style>
       :root { color-scheme: light; }
@@ -67,7 +68,8 @@
   <body>
     <main>
       <div class="mark" aria-hidden="true">
-        <img src="/icon-192.png" alt="" width="36" height="36" />
+        <!-- Относительный путь: работает при /offline.html и при Vite/mirror base. -->
+        <img src="./icon-192.png" alt="" width="36" height="36" />
       </div>
       <h1>Нет подключения</h1>
       <p>Оболочка клуба открыта офлайн. Проверьте сеть и обновите – каталог и кабинет требуют связи.</p>

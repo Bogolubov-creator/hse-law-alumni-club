@@ -114,8 +114,11 @@ HSE Moscow, Russia», разработчик – Letterhead Studio, дизайн
 
 **PWA-оболочка.** В `display-mode: standalone` (и QA `?pwa=1`) включается
 `PwaShell`: phone-column на широком экране, класс `html.pwa-shell`, mobile-chrome
-вместо desk-nav. Ключевые маршруты идут через `MobileApp`. Offline fallback –
-`/offline.html` в SW `club-v5`. Админка без рамки.
+вместо desk-nav. Ключевые маршруты идут через `MobileApp`; `/lk` остаётся
+`LkV2` внутри оболочки (deep link из манифеста). Offline fallback –
+`offline.html` (относительные ассеты) в SW `club-v6` (skipWaiting + clientsClaim;
+версию CACHE поднимать при релизе статики). Манифест и иконки – относительные
+пути под Vite/mirror base. На зеркале Pages SW не регистрируется. Админка без рамки.
 
 **Кнопки (как dpo-pravo-hse).** CTA – пилюли `border-radius: 999px`, primary
 заливка акцента / secondary обводка акцента, отклик `scale(0.97)` на `:active`.

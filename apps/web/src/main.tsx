@@ -14,7 +14,8 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
 
-// PWA: на зеркале Pages SW отключён (чужой кэш ломает base path).
+// PWA: на зеркале Pages SW отключён (офлайн-страница всё равно с относительными
+// путями). В проде register под Vite base; sw.js сам резолвит scope (club-v6).
 const serviceWorker = navigator.serviceWorker;
 const enableSw =
   !isMirror &&

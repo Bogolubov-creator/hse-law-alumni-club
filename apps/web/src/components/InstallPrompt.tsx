@@ -7,11 +7,19 @@ const DISMISS_KEY = "club_pwa_dismiss";
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
 const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
-const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+  window.matchMedia("(display-mode: standalone)").matches
+  || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+const isIos = () => {
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  // iPadOS 13+: desktop UA, но с тачем
+  return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+};
 
 /**
  * Приглашение установить сайт как приложение.
+ * iOS Safari не шлёт beforeinstallprompt – показываем подсказку «Поделиться».
  * На телефоне поднимаем над нижней таб-панелью MobileApp (~64px + safe-area),
  * чтобы не перекрывать навигацию.
  */
@@ -39,12 +47,18 @@ export default function InstallPrompt() {
       }
     }, 1000);
 
-    return () => { window.removeEventListener("beforeinstallprompt", onBip); window.clearInterval(timer); };
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBip);
+      window.clearInterval(timer);
+    };
   }, []);
 
   if (!show || isStandalone() || (!ios && !deferred)) return null;
 
-  const dismiss = () => { localStorage.setItem(DISMISS_KEY, "1"); setShow(false); };
+  const dismiss = () => {
+    localStorage.setItem(DISMISS_KEY, "1");
+    setShow(false);
+  };
   const install = async () => {
     if (!deferred) return;
     await deferred.prompt();
@@ -54,26 +68,76 @@ export default function InstallPrompt() {
   };
 
   return (
-    <div role="dialog" aria-label="Установка приложения" className="mob-only" style={{
-      position: "fixed", left: 16, right: 16,
-      bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
-      zIndex: 290,
-      maxWidth: 560, margin: "0 auto",
-      display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
-      background: "#11296B", color: "#FBF3E8", borderRadius: 16, padding: "14px 18px",
-      boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)", fontSize: 13.5, lineHeight: 1.45,
-    }}>
+    <div
+      role="dialog"
+      aria-label="Установка приложения"
+      className="mob-only"
+      style={{
+        position: "fixed",
+        left: 16,
+        right: 16,
+        /* Как cookie: над вкладками; --cookie-h поднимает выше баннера, если он открыт. */
+        bottom: "calc(16px + var(--tabs-h, 0px) + var(--cookie-h, 0px))",
+        zIndex: 290,
+        maxWidth: 560,
+        margin: "0 auto",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        flexWrap: "wrap",
+        background: "#11296B",
+        color: "#FBF3E8",
+        borderRadius: 16,
+        padding: "14px 18px",
+        boxShadow: "0 24px 60px -20px rgba(0,0,0,.55)",
+        fontSize: 13.5,
+        lineHeight: 1.45,
+      }}
+    >
       <p style={{ flex: 1, minWidth: 200, margin: 0 }}>
-        {ios
-          ? <>Добавьте клуб на экран телефона: нажмите <b>Поделиться</b> → <b>«На экран „Домой“»</b> – сайт откроется как приложение.</>
-          : <>Установите клуб как приложение – быстрый запуск с главного экрана, без адресной строки.</>}
+        {ios ? (
+          <>
+            На iPhone: кнопка{" "}
+            <span aria-hidden="true" style={{ display: "inline-flex", verticalAlign: "middle", marginInline: 2 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v12" />
+                <path d="m8 7 4-4 4 4" />
+                <path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+              </svg>
+            </span>
+            <b>Поделиться</b>
+            {" "}
+            → <b>«На экран „Домой“»</b>
+            {" "}
+            – клуб откроется как приложение без адресной строки.
+          </>
+        ) : (
+          <>Установите клуб как приложение – быстрый запуск с главного экрана, без адресной строки.</>
+        )}
       </p>
       {!ios && (
-        <button onClick={install} className="foc club-btn club-btn--primary" style={{ flex: "none" }}>
+        <button type="button" onClick={install} className="foc club-btn club-btn--primary" style={{ flex: "none" }}>
           Установить
         </button>
       )}
-      <button onClick={dismiss} aria-label="Скрыть" className="foc" style={{ flex: "none", width: 34, height: 34, borderRadius: 999, border: "1px solid rgba(251,243,232,.25)", background: "transparent", color: "#FBF3E8", cursor: "pointer" }}>✕</button>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Скрыть"
+        className="foc"
+        style={{
+          flex: "none",
+          width: 34,
+          height: 34,
+          borderRadius: 999,
+          border: "1px solid rgba(251,243,232,.25)",
+          background: "transparent",
+          color: "#FBF3E8",
+          cursor: "pointer",
+        }}
+      >
+        ✕
+      </button>
     </div>
   );
 }
