@@ -304,17 +304,19 @@ function DataRights({ token }: { token: string }) {
   };
 
   return (
-    <section style={{ marginTop: 44, border: "1px solid var(--c-danger-text)", borderRadius: "var(--r-lg)", padding: 22 }}>
-      <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0, color: "var(--c-danger-text)" }}>Ваши данные</h2>
+    <section id="data-rights" className="profile-rights" aria-labelledby="profile-rights-title" style={{ marginTop: 48, padding: "28px 24px", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)" }}>
+      <p style={{ ...label, margin: 0, color: "var(--c-text-3)" }}>права субъекта · 152-ФЗ</p>
+      <h2 id="profile-rights-title" style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: "10px 0 0", color: "var(--c-text)" }}>Ваши персональные данные</h2>
       <p style={{ color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, margin: "10px 0 0", maxWidth: 620 }}>
-        По 152-ФЗ вы вправе получить копию своих данных, отозвать согласие и потребовать удаления персональных данных.
-        Профиль будет обезличен, контакты и фото стёрты, вход в аккаунт закрыт. Действие необратимо.
+        Этот блок отдельно от редактирования профиля. Вы вправе получить копию данных, отозвать согласие
+        и потребовать удаления. После удаления профиль обезличивается, контакты и фото стираются, вход закрывается.
+        Действие необратимо.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
-        <button onClick={exportData} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>скачать мои данные (json)</button>
+        <button type="button" onClick={exportData} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>скачать мои данные (json)</button>
         {!open && (
-          <button onClick={() => setOpen(true)} className="foc"
+          <button type="button" onClick={() => setOpen(true)} className="foc"
             style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)", borderColor: "var(--c-danger-text)", color: "var(--c-danger-text)" }}>
             удалить мой аккаунт
           </button>
@@ -329,12 +331,12 @@ function DataRights({ token }: { token: string }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
             <input id="v2-del-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="УДАЛИТЬ" className="foc"
               style={{ ...field, ...mono, width: "auto", marginTop: 0, minWidth: 160 }} />
-            <button onClick={del} disabled={confirm !== "УДАЛИТЬ" || busy} className="foc"
+            <button type="button" onClick={del} disabled={confirm !== "УДАЛИТЬ" || busy} className="foc"
               style={{ ...action, padding: "11px 16px", borderRadius: "var(--r-md)", background: "var(--c-danger)", color: "#fff",
                 cursor: confirm === "УДАЛИТЬ" && !busy ? "pointer" : "not-allowed", opacity: confirm === "УДАЛИТЬ" && !busy ? 1 : 0.5 }}>
               {busy ? "удаляем…" : "удалить навсегда"}
             </button>
-            <button onClick={() => { setOpen(false); setConfirm(""); }} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>отмена</button>
+            <button type="button" onClick={() => { setOpen(false); setConfirm(""); }} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>отмена</button>
           </div>
         </div>
       )}
@@ -370,9 +372,12 @@ function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
             <IdentityCard me={me.data} token={token} onChanged={() => me.refetch()} />
           </div>
           <div>
-            <ContactsForm me={me.data} token={token} onSaved={() => me.refetch()} />
-            <History token={token} />
-            <Rules me={me.data} />
+            <div className="profile-edit-zone">
+              <p style={{ ...label, margin: "0 0 18px", color: "var(--c-text-3)" }}>редактирование профиля</p>
+              <ContactsForm me={me.data} token={token} onSaved={() => me.refetch()} />
+              <History token={token} />
+              <Rules me={me.data} />
+            </div>
             <DataRights token={token} />
           </div>
         </div>
