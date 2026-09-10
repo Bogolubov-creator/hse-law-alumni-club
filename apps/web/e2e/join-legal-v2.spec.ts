@@ -199,3 +199,12 @@ for (const url of ["/", "/dpo", "/merch", "/cart", "/news", "/events", "/podcast
     expect(legacy, `${url} ведёт в legacy: ${[...new Set(legacy)].join(", ")}`).toEqual([]);
   });
 }
+
+test("soft-cutover: /legacy/* уводит на канон", async ({ page }) => {
+  await stubSw(page);
+  await page.goto("/legacy/dpo");
+  await expect(page).toHaveURL(/\/dpo$/);
+  await expect(page.locator("h1")).toBeVisible();
+  await page.goto("/legacy/lk/profile?x=1");
+  await expect(page).toHaveURL(/\/lk\/profile\?x=1$/);
+});

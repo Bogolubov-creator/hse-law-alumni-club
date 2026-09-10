@@ -11,7 +11,7 @@ import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./lib/cart.js";
 
-// Канон (этап 0): публичное лицо – бывший v2. Legacy UI под /legacy.
+// Канон: публичное лицо – бывший v2. /v2/* и /legacy/* – только редиректы на канон.
 // На телефоне (<768px) и в установленном PWA для ключевых маршрутов – MobileApp.
 
 const SupportV2 = lazy(() => import("./pages/SupportV2.js"));
@@ -38,28 +38,19 @@ const Requisites = lazy(() => import("./pages/legal.js").then((m) => ({ default:
 const AdminApp = lazy(() => import("./admin/AdminApp.js"));
 const MobileApp = lazy(() => import("./mobile/MobileApp.js"));
 
-const Home = lazy(() => import("./pages/Home.js"));
-const News = lazy(() => import("./pages/News.js"));
-const NewsPost = lazy(() => import("./pages/NewsPost.js"));
-const Dpo = lazy(() => import("./pages/Dpo.js"));
-const Program = lazy(() => import("./pages/Program.js"));
-const Merch = lazy(() => import("./pages/Merch.js"));
-const Podcasts = lazy(() => import("./pages/Podcasts.js"));
-const Events = lazy(() => import("./pages/Events.js"));
-const Join = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Join })));
-const Forgot = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Forgot })));
-const Reset = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Reset })));
-const ConfirmEmail = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.ConfirmEmail })));
-const Lk = lazy(() => import("./pages/Lk.js"));
-const Profile = lazy(() => import("./pages/Profile.js"));
-const Cart = lazy(() => import("./pages/Cart.js"));
-
 const MOBILE_APP_ROUTES = new Set(["/", "/news", "/dpo", "/podcasts", "/merch"]);
 
 /** Старые закладки /v2/... → канонические пути. */
 function StripV2Prefix() {
   const { pathname, search, hash } = useLocation();
   const next = pathname === "/v2" || pathname === "/v2/" ? "/" : pathname.replace(/^\/v2/, "") || "/";
+  return <Navigate to={`${next}${search}${hash}`} replace />;
+}
+
+/** Soft-cutover: /legacy/... → канон без старого UI (файлы pages/* legacy – hard-remove позже). */
+function StripLegacyPrefix() {
+  const { pathname, search, hash } = useLocation();
+  const next = pathname === "/legacy" || pathname === "/legacy/" ? "/" : pathname.replace(/^\/legacy/, "") || "/";
   return <Navigate to={`${next}${search}${hash}`} replace />;
 }
 
@@ -123,24 +114,8 @@ export default function App() {
           <Route path="/v2" element={<StripV2Prefix />} />
           <Route path="/v2/*" element={<StripV2Prefix />} />
 
-          <Route path="/legacy" element={<Home />} />
-          <Route path="/legacy/news" element={<News />} />
-          <Route path="/legacy/news/:slug" element={<NewsPost />} />
-          <Route path="/legacy/dpo" element={<Dpo />} />
-          <Route path="/legacy/dpo/:slug" element={<Program />} />
-          <Route path="/legacy/merch" element={<Merch />} />
-          <Route path="/legacy/cart" element={<Cart />} />
-          <Route path="/legacy/podcasts" element={<Podcasts />} />
-          <Route path="/legacy/events" element={<Events />} />
-          <Route path="/legacy/join" element={<Join />} />
-          <Route path="/legacy/forgot" element={<Forgot />} />
-          <Route path="/legacy/reset" element={<Reset />} />
-          <Route path="/legacy/confirm" element={<ConfirmEmail />} />
-          <Route path="/legacy/lk" element={<Lk />} />
-          <Route path="/legacy/lk/profile" element={<Profile />} />
-          <Route path="/legacy/privacy" element={<Privacy />} />
-          <Route path="/legacy/confidential" element={<Confidential />} />
-          <Route path="/legacy/requisites" element={<Requisites />} />
+          <Route path="/legacy" element={<StripLegacyPrefix />} />
+          <Route path="/legacy/*" element={<StripLegacyPrefix />} />
 
           <Route path="*" element={<Stub title="Страница не найдена" />} />
         </Routes>
