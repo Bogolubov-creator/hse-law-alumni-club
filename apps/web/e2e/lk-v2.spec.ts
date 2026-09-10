@@ -132,18 +132,23 @@ test.describe("Кабинет v2", () => {
     await expect(page.locator(".club-award.is-next")).toContainText("следующее · 2 / 5");
 
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();
-    // Однокурсники и состояния дружбы
+    // Однокурсники, поиск и входящие заявки в одном разделе
+    await expect(page.getByLabel("поиск")).toBeVisible();
     await expect(page.getByText("Орлова Мария Петровна")).toBeVisible();
     await expect(page.getByRole("button", { name: "в друзьях – Орлова Мария Петровна" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "заявка отправлена – Тимофеева Анна Львовна" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "в друзья – Гаврилов Илья Олегович" })).toBeEnabled();
-
-    await page.getByRole("button", { name: "Обзор", exact: true }).click();
-    // Входящая заявка в друзья
     await expect(page.getByText("хочет добавить вас в друзья")).toBeVisible();
-    await expect(page.getByText("Заявка ORD-000418 подтверждена · оплата прошла")).toBeVisible();
     await expect(page.getByRole("button", { name: "Принять заявку в друзья – Белов Роман Игоревич" })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Отклонить заявку в друзья – Белов Роман Игоревич" })).toBeEnabled();
+    await page.getByLabel("поиск").fill("Частное");
+    await expect(page.getByText("Тимофеева Анна Львовна")).toBeVisible();
+    await expect(page.getByText("Орлова Мария Петровна")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Обзор", exact: true }).click();
+    await expect(page.getByText("Заявка ORD-000418 подтверждена · оплата прошла")).toBeVisible();
+    // Входящие в друзья больше не дублируются в ленте обзора
+    await expect(page.getByText("хочет добавить вас в друзья")).toHaveCount(0);
   });
 
   test("пустой кабинет объясняет, что делать, и не падает", async ({ page }) => {

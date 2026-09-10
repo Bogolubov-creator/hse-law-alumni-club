@@ -159,37 +159,37 @@ function Identity({ me }: { me: Me }) {
 function EventsFeed({ token }: { token: string }) {
   const [showAll, setShowAll] = useState(false);
   const events = useLkEvents(token);
-  const addFriend = useAddFriend(token);
-  const removeFriend = useRemoveFriend(token);
-  const list = events.data ?? [];
+  // Входящие в друзья – в разделе «Сообщество»; здесь остальное.
+  const list = (events.data ?? []).filter((e) => e.kind !== "friend_request");
   if (!list.length) return null;
+
+  const lineFor = (e: LkEvent): string | null => {
+    switch (e.kind) {
+      case "friend_accepted":
+        return `${e.by_fio ?? "Выпускник"} теперь у вас в друзьях`;
+      case "order_status":
+        return `Заявка ${e.number} ${ORDER_STATUS_VERB_RU[e.status] ?? e.status}${e.paid ? " · оплата прошла" : ""}`;
+      case "podcast_expiring":
+        return `Подписка на подкасты истекает через ${e.days_left} дн.`;
+      case "friend_request":
+        return null;
+      default: {
+        const _exhaustive: never = e;
+        return _exhaustive;
+      }
+    }
+  };
 
   return (
     <Section title="Уведомления">
       {(showAll ? list : list.slice(0, 3)).map((e: LkEvent, i) => {
-        if (e.kind === "friend_request") {
-          return (
-            <div key={`fr-${e.from_id}-${i}`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
-              <span style={{ flex: 1, minWidth: 190, fontSize: "var(--t-body)" }}>
-                <b>{e.from_fio ?? "Выпускник"}</b> хочет добавить вас в друзья
-              </span>
-              <button onClick={() => addFriend.mutate(e.from_id)} disabled={addFriend.isPending} className="foc" style={action}
-                aria-label={`Принять заявку в друзья – ${e.from_fio ?? "выпускник"}`}>принять</button>
-              <button onClick={() => removeFriend.mutate(e.from_id)} disabled={removeFriend.isPending} className="foc" style={actionGhost}
-                aria-label={`Отклонить заявку в друзья – ${e.from_fio ?? "выпускник"}`}>отклонить</button>
-            </div>
-          );
-        }
-        const line =
-          e.kind === "friend_accepted" ? `${e.by_fio ?? "Выпускник"} теперь у вас в друзьях`
-          // В ленте – глагольная форма («заявка подтверждена»), в списке заявок – именительная
-          : e.kind === "order_status" ? `Заявка ${e.number} ${ORDER_STATUS_VERB_RU[e.status] ?? e.status}${e.paid ? " · оплата прошла" : ""}`
-          : `Подписка на подкасты истекает через ${e.days_left} дн.`;
+        const line = lineFor(e);
+        if (!line) return null;
         return (
           <div key={`ev-${i}`} style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{line}</div>
         );
       })}
-      {list.length > 3 && <button className="foc" style={{ ...actionGhost, marginTop: 14 }} onClick={() => setShowAll(v => !v)}>{showAll ? "Свернуть уведомления" : `Все уведомления (${list.length})`}</button>}
+      {list.length > 3 && <button type="button" className="foc" style={{ ...actionGhost, marginTop: 14 }} onClick={() => setShowAll(v => !v)}>{showAll ? "Свернуть уведомления" : `Все уведомления (${list.length})`}</button>}
     </Section>
   );
 }
@@ -349,20 +349,70 @@ const FRIEND_LABEL: Record<Classmate["friend_status"], string> = {
 
 function Community({ token }: { token: string }) {
   const classmates = useClassmates(token);
+  const feed = useLkEvents(token);
   const addFriend = useAddFriend(token);
   const removeFriend = useRemoveFriend(token);
+  const [q, setQ] = useState("");
+  const [sameProgram, setSameProgram] = useState(false);
   const list = classmates.data ?? [];
+  const incoming = (feed.data ?? []).filter((e): e is Extract<LkEvent, { kind: "friend_request" }> => e.kind === "friend_request");
   const friends = list.filter((c) => c.friend_status === "accepted").length;
+  const needle = q.trim().toLocaleLowerCase("ru");
+  const filtered = list.filter((c) => {
+    if (sameProgram && c.match !== "program" && c.match !== "both") return false;
+    if (!needle) return true;
+    const hay = [c.fio, c.edu_program, c.cohort, c.level_title].filter(Boolean).join(" ").toLocaleLowerCase("ru");
+    return hay.includes(needle);
+  });
 
   return (
     <Section title="Однокурсники" note={list.length ? `${list.length} чел. · в друзьях ${friends}` : undefined}>
+      {incoming.length > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <p style={{ ...label, margin: "0 0 8px", color: "var(--c-accent-text)" }}>входящие заявки · {incoming.length}</p>
+          {incoming.map((e, i) => (
+            <div key={`fr-${e.from_id}-${i}`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
+              <span style={{ flex: 1, minWidth: 190, fontSize: "var(--t-body)" }}>
+                <b>{e.from_fio ?? "Выпускник"}</b> хочет добавить вас в друзья
+              </span>
+              <button type="button" onClick={() => addFriend.mutate(e.from_id)} disabled={addFriend.isPending} className="foc" style={action}
+                aria-label={`Принять заявку в друзья – ${e.from_fio ?? "выпускник"}`}>принять</button>
+              <button type="button" onClick={() => removeFriend.mutate(e.from_id)} disabled={removeFriend.isPending} className="foc" style={actionGhost}
+                aria-label={`Отклонить заявку в друзья – ${e.from_fio ?? "выпускник"}`}>отклонить</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {list.length > 0 && (
+        <div style={{ display: "grid", gap: 10, padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
+          <label htmlFor="lk-community-q" style={{ ...label, display: "block" }}>поиск</label>
+          <input
+            id="lk-community-q"
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="ФИО, программа, выпуск"
+            className="foc"
+            style={field}
+          />
+          <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "var(--t-small)", color: "var(--c-text-2)" }}>
+            <input type="checkbox" checked={sameProgram} onChange={(e) => setSameProgram(e.target.checked)} className="foc" />
+            Только моя образовательная программа
+          </label>
+        </div>
+      )}
       {classmates.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
       {!classmates.isLoading && list.length === 0 && (
         <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
           Из вашего выпуска и программы в клубе пока никого нет. Появятся, как только учебный офис их верифицирует.
         </p>
       )}
-      {list.map((c) => {
+      {!classmates.isLoading && list.length > 0 && filtered.length === 0 && (
+        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
+          Никого не нашли по этому запросу.
+        </p>
+      )}
+      {filtered.map((c) => {
         const settled = c.friend_status === "accepted" || c.friend_status === "pending";
         return (
           <div key={c.id} className="lkv2-mate" style={{ display: "grid", gridTemplateColumns: "36px 1fr auto 34px", gap: 12, alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -372,14 +422,14 @@ function Community({ token }: { token: string }) {
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: "var(--t-body)", fontWeight: 500, overflowWrap: "anywhere" }}>{c.fio ?? "Выпускник"}</div>
               <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 3 }}>
-                {[c.cohort ? `выпуск ${c.cohort}` : null, c.level_title].filter(Boolean).join(" · ")}
+                {[c.cohort ? `выпуск ${c.cohort}` : null, c.edu_program, c.level_title].filter(Boolean).join(" · ")}
               </div>
             </div>
             <button
+              type="button"
               onClick={() => addFriend.mutate(c.id)}
               disabled={addFriend.isPending || settled}
               className="foc"
-              /* Без имени экранный диктор читает подряд десяток одинаковых «в друзья» */
               aria-label={`${FRIEND_LABEL[c.friend_status]} – ${c.fio ?? "выпускник"}`}
               style={
                 c.friend_status === "accepted" ? { ...actionGhost, color: "var(--c-ok-text)", cursor: "default" }
@@ -389,10 +439,8 @@ function Community({ token }: { token: string }) {
             >
               {FRIEND_LABEL[c.friend_status]}
             </button>
-            {/* Ячейка есть всегда, даже пустая: иначе строки без «✕» съезжают
-                и колонка действий перестаёт быть колонкой. */}
             {c.friend_status === "none" ? <span aria-hidden /> : (
-              <button onClick={() => removeFriend.mutate(c.id)} disabled={removeFriend.isPending} className="foc"
+              <button type="button" onClick={() => removeFriend.mutate(c.id)} disabled={removeFriend.isPending} className="foc"
                 aria-label={c.friend_status === "accepted" ? `Удалить ${c.fio ?? "выпускника"} из друзей` : `Отменить заявку к ${c.fio ?? "выпускнику"}`}
                 style={{ ...actionGhost, padding: "8px 9px", width: 34 }}>✕</button>
             )}
