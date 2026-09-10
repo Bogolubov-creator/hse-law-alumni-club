@@ -76,4 +76,13 @@ describe.skipIf(!enabled)('PostgreSQL: атомарность и повтор', 
     await expect(changeOrderStatus(id, 'canceled')).rejects.toMatchObject({ statusCode: 409 });
     expect((await pool!.query('SELECT stock FROM products WHERE id=$1', [productId])).rows[0].stock).toBe(0);
   });
+  it('истечение резерва возвращает склад и ставит expired', async () => {
+    const { input, productId } = await fixture();
+    const result = await commitCheckout(input);
+    const id = await keep(result.number);
+    expect(await changeOrderStatus(id, 'expired')).toBe(true);
+    expect((await pool!.query('SELECT status FROM orders WHERE id=$1', [id])).rows[0].status).toBe('expired');
+    expect((await pool!.query('SELECT stock FROM products WHERE id=$1', [productId])).rows[0].stock).toBe(1);
+    await expect(changeOrderStatus(id, 'new')).rejects.toMatchObject({ statusCode: 409 });
+  });
 });

@@ -5,6 +5,7 @@ export const ORDER_STATUS_RU: Record<string, string> = {
   confirmed: "Подтверждена",
   done: "Выполнена",
   canceled: "Отменена",
+  expired: "Истёк резерв",
 };
 
 /** Статус в глагольной форме – для уведомлений («Заявка … взята в работу»). */
@@ -13,6 +14,7 @@ export const ORDER_STATUS_VERB_RU: Record<string, string> = {
   confirmed: "подтверждена",
   done: "выполнена",
   canceled: "отменена",
+  expired: "истекла по сроку резерва",
 };
 
 /** Копейки → «12 345» (ru-RU), без символа валюты. */

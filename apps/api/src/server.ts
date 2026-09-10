@@ -27,6 +27,8 @@ import { runDecay } from "./lib/engine.js";
 import { runPodcastSubReminders } from "./lib/podcast-reminders.js";
 import { runEventReminders } from "./lib/event-reminders.js";
 import { runRetention } from "./lib/retention.js";
+import { expireStaleReservations } from "./lib/checkout-store.js";
+import { drainMailOutbox } from "./lib/notify.js";
 import { initSentry } from "./lib/sentry.js";
 import { registerErrorHandler } from "./lib/errors.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
@@ -157,6 +159,20 @@ cronTasks.push(cron.schedule("0 4 * * *", () => {
   runRetention()
     .then((r) => { if (r.orders || r.audit) app.log.info(r, "retention applied"); })
     .catch((e) => app.log.error(e, "retention failed"));
+}, { timezone: "Europe/Moscow" }));
+
+// Истечение резерва мерча (каждые 15 мин): new без платежа старше RESERVE_TTL_HOURS.
+cronTasks.push(cron.schedule("*/15 * * * *", () => {
+  expireStaleReservations()
+    .then((n) => { if (n) app.log.info({ expired: n }, "merch reserves expired"); })
+    .catch((e) => app.log.error(e, "reserve expiry failed"));
+}, { timezone: "Europe/Moscow" }));
+
+// Повтор писем из outbox (каждые 5 мин).
+cronTasks.push(cron.schedule("*/5 * * * *", () => {
+  drainMailOutbox()
+    .then((r) => { if (r.sent || r.failed) app.log.info(r, "mail outbox drained"); })
+    .catch((e) => app.log.error(e, "mail outbox failed"));
 }, { timezone: "Europe/Moscow" }));
 
 // Базовый health – для healthcheck'а docker и Caddy.

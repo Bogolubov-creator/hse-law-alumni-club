@@ -87,7 +87,24 @@ export async function commitCheckout(input: { session: string; key: string; requ
   } catch (e) { await c.query("ROLLBACK"); throw e; } finally { c.release(); }
 }
 
-/** Отмена освобождает только наш резерв и ровно один раз. Оплаченный заказ требует возврата. */
+/** Отмена / истечение освобождает только наш резерв и ровно один раз. Оплаченный заказ требует возврата. */
+async function releaseReservations(c: PoolClient, orderId: string) {
+  const { rows: commits } = await c.query("SELECT reservations,released FROM club_checkout_commits WHERE order_id=$1 FOR UPDATE", [orderId]);
+  if (!commits[0] || commits[0].released) return;
+  for (const reserve of commits[0].reservations) {
+    const { rows: products } = await c.query("SELECT variants_json FROM products WHERE id=$1 FOR UPDATE", [reserve.id]);
+    if (!products[0]) throw conflict("Товар резерва удалён. Восстановите его перед отменой.");
+    if (reserve.sku) {
+      const variants = products[0].variants_json ?? [];
+      const variant = variants.find((v: { sku: string }) => v.sku === reserve.sku);
+      if (!variant) throw conflict("Вариант резерва удалён. Восстановите его перед отменой.");
+      variant.stock += reserve.qty;
+      await c.query("UPDATE products SET variants_json=$2::json WHERE id=$1", [reserve.id, JSON.stringify(variants)]);
+    } else await c.query("UPDATE products SET stock=stock+$2 WHERE id=$1", [reserve.id, reserve.qty]);
+  }
+  await c.query("UPDATE club_checkout_commits SET released=true WHERE order_id=$1", [orderId]);
+}
+
 export async function changeOrderStatus(id: string, status: string) {
   const c = await checkoutPool().connect();
   try {
@@ -95,26 +112,43 @@ export async function changeOrderStatus(id: string, status: string) {
     const { rows } = await c.query("SELECT status,payment_status FROM orders WHERE id=$1 FOR UPDATE", [id]);
     if (!rows[0]) throw Object.assign(new Error("Заявка не найдена"), { statusCode: 404 });
     if (rows[0].status === status) { await c.query("COMMIT"); return false; }
-    if (rows[0].status === "canceled") throw conflict("Отменённую заявку нельзя открыть повторно. Создайте новую.");
-    if (status === "canceled" && ["succeeded", "pending", "waiting_for_capture", "review"].includes(rows[0].payment_status)) throw conflict("Сначала завершите сверку или возврат платежа. Резерв сохранён.");
-    if (status === "canceled") {
-      const { rows: commits } = await c.query("SELECT reservations,released FROM club_checkout_commits WHERE order_id=$1 FOR UPDATE", [id]);
-      if (commits[0] && !commits[0].released) {
-        for (const reserve of commits[0].reservations) {
-          const { rows: products } = await c.query("SELECT variants_json FROM products WHERE id=$1 FOR UPDATE", [reserve.id]);
-          if (!products[0]) throw conflict("Товар резерва удалён. Восстановите его перед отменой.");
-          if (reserve.sku) {
-            const variants = products[0].variants_json ?? [];
-            const variant = variants.find((v: { sku: string }) => v.sku === reserve.sku);
-            if (!variant) throw conflict("Вариант резерва удалён. Восстановите его перед отменой.");
-            variant.stock += reserve.qty;
-            await c.query("UPDATE products SET variants_json=$2::json WHERE id=$1", [reserve.id, JSON.stringify(variants)]);
-          } else await c.query("UPDATE products SET stock=stock+$2 WHERE id=$1", [reserve.id, reserve.qty]);
-        }
-        await c.query("UPDATE club_checkout_commits SET released=true WHERE order_id=$1", [id]);
-      }
+    if (rows[0].status === "canceled" || rows[0].status === "expired") {
+      throw conflict("Закрытую заявку нельзя открыть повторно. Создайте новую.");
     }
+    if ((status === "canceled" || status === "expired") && ["succeeded", "pending", "waiting_for_capture", "review"].includes(rows[0].payment_status)) {
+      throw conflict("Сначала завершите сверку или возврат платежа. Резерв сохранён.");
+    }
+    if (status === "canceled" || status === "expired") await releaseReservations(c, id);
     await c.query("UPDATE orders SET status=$2 WHERE id=$1", [id, status]);
     await c.query("COMMIT"); return true;
   } catch (e) { await c.query("ROLLBACK"); throw e; } finally { c.release(); }
+}
+
+/**
+ * Истечение резерва мерча: заявки «new» без активного платежа старше RESERVE_TTL_HOURS.
+ * Возвращает число истёкших. 0 часов в env – выключено.
+ */
+export async function expireStaleReservations(now = Date.now()): Promise<number> {
+  if (!env.CHECKOUT_DATABASE_URL || env.RESERVE_TTL_HOURS <= 0) return 0;
+  const cutoff = new Date(now - env.RESERVE_TTL_HOURS * 3600_000).toISOString();
+  const { rows } = await checkoutPool().query<{ id: string }>(
+    `SELECT o.id FROM orders o
+     JOIN club_checkout_commits c ON c.order_id = o.id
+     WHERE o.status = 'new'
+       AND (o.payment_status IS NULL OR o.payment_status = '' OR o.payment_status = 'none')
+       AND c.released = false
+       AND jsonb_array_length(c.reservations) > 0
+       AND o.created_at < $1::timestamptz
+     LIMIT 50`,
+    [cutoff],
+  );
+  let n = 0;
+  for (const row of rows) {
+    try {
+      if (await changeOrderStatus(row.id, "expired")) n += 1;
+    } catch {
+      /* гонка с оплатой/админом – пропуск */
+    }
+  }
+  return n;
 }

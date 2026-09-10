@@ -49,6 +49,10 @@ const schema = z.object({
   SEED_DEMO: z.string().default(""),
   ORDER_RETENTION_DAYS: z.coerce.number().int().positive().default(1095), // 3 года – срок хранения заявок (152-ФЗ)
   AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(365),  // 1 год – срок хранения аудита
+  // Срок резерва мерча для заявок в статусе «new» без активного платежа (часы). 0 = выкл.
+  RESERVE_TTL_HOURS: z.coerce.number().int().min(0).max(720).default(72),
+  // Максимум попыток доставки из mail outbox.
+  MAIL_OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(50).default(8),
   // Глобальный потолок запросов с одного IP в минуту. Настраиваемый, потому что
   // за университетским NAT с одного адреса выходит целый корпус: при рассылке о
   // наборе легко упереться и получить 429 всем сразу. Чувствительные операции

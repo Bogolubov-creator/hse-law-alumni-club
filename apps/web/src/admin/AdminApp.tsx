@@ -26,7 +26,7 @@ import {
  * Контент (новости/программы/товары/блоки) редактируется в Directus Studio.
  */
 
-const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled"];
+const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled", "expired"];
 const VERIF: Record<string, string> = { pending: "На проверке", verified: "Верифицирован", rejected: "Отклонён" };
 const LEVEL_RU: Record<string, string> = { graduate: "Выпускник", friend: "Друг клуба", expert: "Знаток", ambassador: "Амбассадор" };
 

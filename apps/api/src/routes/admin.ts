@@ -211,7 +211,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!requireAdmin(req, reply)) return;
     const qp = z.object({
       q: z.string().max(100).optional(),
-      status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]).optional(),
+      status: z.enum(["new", "in_progress", "confirmed", "done", "canceled", "expired"]).optional(),
       payment: z.enum(["succeeded", "pending", "canceled", "none"]).optional(),
       page: z.coerce.number().int().min(1).default(1),
       limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -237,7 +237,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const ctx = requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled"]) }).parse(req.body);
+    const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled", "expired"]) }).parse(req.body);
     const changed = await changeOrderStatus(id, status);
     if (!changed) return { ok: true, status };
     audit("order.status", { actor: `admin:${ctx.userId}`, subject: `order:${id}`, detail: { status }, req });

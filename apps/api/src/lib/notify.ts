@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { formatRub } from "@club/shared";
 import { env } from "../env.js";
+import { checkoutPool } from "./checkout-store.js";
 
 // SMTP-транспорт создаётся при первой отправке и переиспользуется. Лениво, а не
 // на импорте: источник правды – env.SMTP_HOST в момент запроса, иначе модуль,
@@ -28,7 +29,7 @@ export function mailEnabled(): boolean {
   return !!env.SMTP_HOST;
 }
 
-/** Письмо пользователю. Без SMTP возвращаем false, содержимое и адрес не логируем. */
+/** Прямая отправка (восстановление пароля и т.п.). Без SMTP – false. */
 export async function sendEmail(to: string, subject: string, text: string): Promise<boolean> {
   const t = transport();
   if (!t) {
@@ -42,6 +43,91 @@ export async function sendEmail(to: string, subject: string, text: string): Prom
     console.error("[mail] ошибка доставки; содержимое и адрес скрыты");
     return false;
   }
+}
+
+/** Кладёт письмо в outbox и сразу пробует отправить; при сбое – повтор из cron. */
+export async function enqueueMail(input: {
+  to: string;
+  subject: string;
+  body: string;
+  kind?: string;
+}): Promise<{ id: number | null; sent: boolean; blocked: boolean }> {
+  if (!env.CHECKOUT_DATABASE_URL) {
+    const sent = await sendEmail(input.to, input.subject, input.body);
+    return { id: null, sent, blocked: !mailEnabled() };
+  }
+  try {
+    const { rows } = await checkoutPool().query<{ id: number }>(
+      `INSERT INTO club_mail_outbox(kind, to_addr, subject, body)
+       VALUES($1,$2,$3,$4) RETURNING id`,
+      [input.kind ?? "office", input.to, input.subject, input.body],
+    );
+    const id = rows[0]!.id;
+    const sent = await sendEmail(input.to, input.subject, input.body);
+    if (sent) {
+      await checkoutPool().query(
+        `UPDATE club_mail_outbox SET status='sent', attempts=1, sent_at=now() WHERE id=$1`,
+        [id],
+      );
+      return { id, sent: true, blocked: false };
+    }
+    await checkoutPool().query(
+      `UPDATE club_mail_outbox
+       SET attempts=1, next_attempt_at=now() + interval '5 minutes',
+           last_error=$2, status=CASE WHEN 1 >= $3 THEN 'failed' ELSE 'pending' END
+       WHERE id=$1`,
+      [id, mailEnabled() ? "smtp_fail" : "smtp_missing", env.MAIL_OUTBOX_MAX_ATTEMPTS],
+    );
+    return { id, sent: false, blocked: !mailEnabled() };
+  } catch {
+    const sent = await sendEmail(input.to, input.subject, input.body);
+    return { id: null, sent, blocked: !mailEnabled() };
+  }
+}
+
+/** Слив due-писем из outbox. Возвращает { sent, failed, pending }. */
+export async function drainMailOutbox(limit = 20): Promise<{ sent: number; failed: number; skipped: number }> {
+  if (!env.CHECKOUT_DATABASE_URL) return { sent: 0, failed: 0, skipped: 0 };
+  let sent = 0, failed = 0, skipped = 0;
+  try {
+    const { rows } = await checkoutPool().query<{
+      id: number; to_addr: string; subject: string; body: string; attempts: number;
+    }>(
+      `SELECT id, to_addr, subject, body, attempts FROM club_mail_outbox
+       WHERE status='pending' AND next_attempt_at <= now()
+       ORDER BY id ASC LIMIT $1`,
+      [limit],
+    );
+    for (const row of rows) {
+      const ok = await sendEmail(row.to_addr, row.subject, row.body);
+      const attempts = row.attempts + 1;
+      if (ok) {
+        await checkoutPool().query(
+          `UPDATE club_mail_outbox SET status='sent', attempts=$2, sent_at=now(), last_error=NULL WHERE id=$1`,
+          [row.id, attempts],
+        );
+        sent += 1;
+      } else if (attempts >= env.MAIL_OUTBOX_MAX_ATTEMPTS) {
+        await checkoutPool().query(
+          `UPDATE club_mail_outbox SET status='failed', attempts=$2, last_error='max_attempts' WHERE id=$1`,
+          [row.id, attempts],
+        );
+        failed += 1;
+      } else {
+        const delayMin = Math.min(60, 5 * attempts);
+        await checkoutPool().query(
+          `UPDATE club_mail_outbox
+           SET attempts=$2, next_attempt_at=now() + ($3::text || ' minutes')::interval, last_error='smtp_fail'
+           WHERE id=$1`,
+          [row.id, attempts, String(delayMin)],
+        );
+        skipped += 1;
+      }
+    }
+  } catch {
+    /* таблица ещё не накачена */
+  }
+  return { sent, failed, skipped };
 }
 
 /** Произвольное текстовое уведомление офису (Telegram при токене, иначе лог). */
@@ -68,8 +154,6 @@ export interface OrderNotice {
   member_discount: number;
 }
 
-
-
 /** Уведомление офиса о новой заявке. Telegram если есть токен, иначе лог + BLOCKED-пометка. */
 export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; ok: boolean; blocked?: boolean }> {
   // 152-ФЗ: Telegram – зарубежный сервис (трансграничная передача). НЕ отправляем
@@ -84,7 +168,17 @@ export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; o
   const results: { channel: string; ok: boolean; blocked?: boolean }[] = [];
   if (env.OFFICE_NOTIFY_CHANNEL === "email" || env.OFFICE_NOTIFY_CHANNEL === "both") {
     const configured = !!env.OFFICE_EMAIL && mailEnabled();
-    results.push({ channel: "email", ok: configured && await sendEmail(env.OFFICE_EMAIL, `Новая заявка ${o.number}`, text), blocked: !configured });
+    if (env.OFFICE_EMAIL) {
+      const q = await enqueueMail({
+        to: env.OFFICE_EMAIL,
+        subject: `Новая заявка ${o.number}`,
+        body: text,
+        kind: "office_order",
+      });
+      results.push({ channel: "email", ok: q.sent, blocked: q.blocked || !configured });
+    } else {
+      results.push({ channel: "email", ok: false, blocked: true });
+    }
   }
   if (env.OFFICE_NOTIFY_CHANNEL === "telegram" || env.OFFICE_NOTIFY_CHANNEL === "both") {
     const configured = !!env.OFFICE_TG_BOT_TOKEN && !!env.OFFICE_TG_CHAT_ID;
