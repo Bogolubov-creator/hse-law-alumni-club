@@ -178,12 +178,14 @@ test.describe("Юридические страницы v2", () => {
 
   test("реквизиты оператора не потерялись при переносе", async ({ page }) => {
     await page.goto("/requisites");
-    await expect(page.getByText("1257700005551")).toBeVisible(); // ОГРН
-    await expect(page.getByText("9707041865")).toBeVisible();    // ИНН
-    await expect(page.getByText("771801001")).toBeVisible();     // КПП
-    await expect(page.getByText(/Большая Черкизовская/)).toBeVisible();
-    await expect(page.getByText(/Спиваков Алексей Игоревич/)).toBeVisible();
-    await expect(page.getByRole("link", { name: /Rusprofile/i })).toHaveAttribute(
+    // Скоуп на main: ОГРН/ИНН/адрес дублируются строкой оператора в подвале.
+    const main = page.locator("main");
+    await expect(main.getByText("1257700005551", { exact: true })).toBeVisible(); // ОГРН
+    await expect(main.getByText("9707041865", { exact: true })).toBeVisible(); // ИНН
+    await expect(main.getByText("771801001", { exact: true })).toBeVisible(); // КПП
+    await expect(main.getByText(/Большая Черкизовская/)).toBeVisible();
+    await expect(main.getByText(/Спиваков Алексей Игоревич/)).toBeVisible();
+    await expect(main.getByRole("link", { name: /Rusprofile/i })).toHaveAttribute(
       "href",
       "https://www.rusprofile.ru/id/1257700005551",
     );
