@@ -194,21 +194,78 @@ function EventsFeed({ token }: { token: string }) {
   );
 }
 
+function orderNextHint(o: MyOrder): string {
+  if (o.status === "canceled") return "Заявка отменена. Новую можно оформить в каталоге.";
+  if (o.status === "expired") return "Резерв мерча истёк. Оформите заявку снова, если товар ещё нужен.";
+  if (o.status === "done") return "Заявка закрыта. Вопросы – в поддержку.";
+  if (o.payment_status === "succeeded") {
+    if (o.status === "confirmed") return "Оплата есть · офис готовит выдачу или доставку.";
+    if (o.status === "in_progress") return "Оплата есть · офис обрабатывает заявку.";
+    return "Оплата подтверждена · ждите обновления статуса.";
+  }
+  if (o.status === "new") return "Заявка у офиса. Ожидайте подтверждения или счёт на оплату.";
+  if (o.status === "in_progress") return "Офис взял в работу. При необходимости придёт письмо.";
+  if (o.status === "confirmed") return "Подтверждена. Если нужна оплата – ссылка придёт на почту.";
+  return "Следите за статусом в этом списке и на почте.";
+}
+
+const ORDER_FILTERS: Array<{ key: "all" | "open" | "done"; label: string }> = [
+  { key: "all", label: "Все" },
+  { key: "open", label: "В работе" },
+  { key: "done", label: "Закрытые" },
+];
+
 function Orders({ token, compact = false }: { token: string; compact?: boolean }) {
   const orders = useMyOrders(token);
+  const [filter, setFilter] = useState<"all" | "open" | "done">("all");
   const list = orders.data ?? [];
+  const filtered = compact
+    ? list
+    : list.filter((o) => {
+      if (filter === "open") return !["done", "canceled", "expired"].includes(o.status);
+      if (filter === "done") return ["done", "canceled", "expired"].includes(o.status);
+      return true;
+    });
+  const shown = compact ? filtered.slice(0, 3) : filtered;
+
   return (
     <Section title="Мои заявки" note={list.length ? `всего ${list.length}` : undefined}>
       {orders.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
-      {orders.isError && <p role="alert">Не удалось загрузить заявки. <button onClick={() => orders.refetch()}>Повторить</button></p>}
+      {orders.isError && <p role="alert">Не удалось загрузить заявки. <button type="button" onClick={() => orders.refetch()}>Повторить</button></p>}
       {!orders.isLoading && !orders.isError && list.length === 0 && (
         <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
           Заявок пока нет. <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Посмотреть программы ДПО →</Link>
         </p>
       )}
-      {(compact ? list.slice(0, 3) : list).map((o: MyOrder) => (
+      {!compact && list.length > 0 && (
+        <div role="group" aria-label="Фильтр заявок" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 8px", paddingTop: 4 }}>
+          {ORDER_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              className="foc"
+              aria-pressed={filter === f.key}
+              onClick={() => setFilter(f.key)}
+              style={filter === f.key ? action : actionGhost}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {!compact && list.length > 0 && filtered.length === 0 && (
+        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
+          В этом фильтре заявок нет.
+        </p>
+      )}
+      {shown.map((o: MyOrder) => (
         <details key={o.number} style={{ padding: "16px 0", borderTop: "1px solid var(--c-line)", overflowWrap: "anywhere" }}>
-          <summary className="foc" style={{ cursor: "pointer", padding: "8px 0", lineHeight: 1.6 }}><strong>{o.number}</strong> · {ORDER_STATUS_RU[o.status] ?? o.status} · {rub(o.total_estimate)}</summary>
+          <summary className="foc" style={{ cursor: "pointer", padding: "8px 0", lineHeight: 1.6 }}>
+            <strong>{o.number}</strong> · {ORDER_STATUS_RU[o.status] ?? o.status} · {rub(o.total_estimate)}
+          </summary>
+          <p style={{ margin: "10px 0 0", color: "var(--c-accent-text)", fontSize: "var(--t-small)", fontWeight: 600, lineHeight: 1.5 }}>
+            Что дальше: {orderNextHint(o)}
+          </p>
           <p>Создана: {new Date(o.created_at).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} (Москва)</p>
           {!!o.items_json?.length && <ul>{o.items_json.map((item, i) => <li key={i} style={{ marginBlock: 12 }}>{item.title}{item.variant_sku && ` · ${item.variant_sku}`} · {item.qty} шт. × {rub(item.price)}</li>)}</ul>}
           <p>До скидки: {rub(o.subtotal)}. Скидка на ДПО: {o.member_discount}%.</p>

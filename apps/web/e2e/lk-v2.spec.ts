@@ -116,6 +116,14 @@ test.describe("Кабинет v2", () => {
     await expect(page.locator("summary").filter({ hasText: "ORD-000418" })).toContainText("Подтверждена");
     await expect(page.locator("summary").filter({ hasText: "ORD-000418" })).toContainText("40 500 ₽");
 
+    await page.getByRole("button", { name: "Мои заявки", exact: true }).click();
+    await expect(page.getByRole("group", { name: "Фильтр заявок" })).toBeVisible();
+    await page.locator("summary").filter({ hasText: "ORD-000377" }).click();
+    await expect(page.getByText(/Что дальше:/).first()).toBeVisible();
+    await page.getByRole("button", { name: "Закрытые", exact: true }).click();
+    await expect(page.getByText("В этом фильтре заявок нет.")).toBeVisible();
+    await page.getByRole("button", { name: "Все", exact: true }).click();
+
     await page.getByRole("button", { name: "Достижения", exact: true }).click();
     // Достижения: полученное и заметное «следующее»
     await expect(page.getByRole("heading", { name: "Первая заявка", exact: true })).toBeVisible();
