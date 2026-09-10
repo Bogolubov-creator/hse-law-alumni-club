@@ -27,6 +27,11 @@
   overflow: hidden;
   pointer-events: none;
 }
+.vestnik-hero-atmosphere > picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .vestnik-themis {
   display: block;
   width: 100%;

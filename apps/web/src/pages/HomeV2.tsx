@@ -5,7 +5,7 @@ import { useNewsList, usePage, useTimeline, formatNewsDate } from "../lib/querie
 import { apiGet } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
-import { publicUrl } from "../lib/public-url.js";
+import { HeroPicture } from "../components/HeroPicture.js";
 import { V2Shell, text } from "../v2/Shell.js";
 import { useVestnikMotion } from "../v2/home-motion.js";
 import "../styles/vestnik-home.css";
@@ -48,13 +48,12 @@ export default function HomeV2() {
       <main id="main" ref={rootRef} className="vestnik-home">
         <section className="vestnik-hero" id="top" aria-label="Клуб выпускников">
           <div className="vestnik-hero-atmosphere">
-            <img
+            <HeroPicture
+              path="assets/themis.jpeg"
               className="vestnik-themis"
-              src={publicUrl("assets/themis.jpeg")}
               alt="Фемида с весами и мечом – знак клуба выпускников факультета права"
               width={1600}
               height={1200}
-              decoding="async"
             />
             <div className="vestnik-grain" aria-hidden />
             <div className="vestnik-wash" aria-hidden />

@@ -7,7 +7,7 @@ import { rub, FORMAT_LABEL, type Program } from "../lib/api.js";
 import { usePrograms, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import ProgramCompare from "../components/ProgramCompare.js";
 import { field } from "../styles/primitives.js";
-import { publicUrl } from "../lib/public-url.js";
+import { HeroPicture } from "../components/HeroPicture.js";
 import { V2Shell, mono, disp } from "../v2/Shell.js";
 import "../styles/dpo-vitrine.css";
 
@@ -57,13 +57,12 @@ export default function DpoV2() {
       <main id="main" className="club-dpo-vitrine">
         <header className="club-dpo-masthead">
           <div className="club-dpo-masthead__atmosphere" aria-hidden="true">
-            <img
+            <HeroPicture
+              path="assets/dpo-hero.jpg"
               className="club-dpo-masthead__photo"
-              src={publicUrl("assets/dpo-hero.jpg")}
               alt=""
               width={1400}
               height={900}
-              decoding="async"
             />
             <div className="club-dpo-masthead__veil" />
           </div>
