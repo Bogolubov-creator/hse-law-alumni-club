@@ -70,7 +70,19 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  /* На синем veil мачты --c-accent-text (#c24009) даёт 3,98:1 – ниже AA.
+     Углубляем чернилами палитры (~6:1 на том же фоне). */
+  color: color-mix(in srgb, var(--c-accent-text) 70%, var(--p-ink));
+}
+
+/* Тёмная тема: accent-text уже светлый (#ff7a3d) – смесь с ink убила бы контраст. */
+:root[data-theme="dark"] .club-dpo-eyebrow {
   color: var(--c-accent-text);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .club-dpo-eyebrow {
+    color: var(--c-accent-text);
+  }
 }
 
 .club-dpo-masthead h1 {
