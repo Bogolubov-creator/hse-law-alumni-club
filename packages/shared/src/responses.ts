@@ -51,6 +51,8 @@ export const programSchema = z.object({
   source_url: z.string().nullable().optional(),
   dates: z.object({ start: z.string().optional() }).nullable().optional(),
   document: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  cover: z.string().nullable().optional(), // путь/URL обложки программы
 });
 export const programsSchema = z.array(programSchema);
 export const programModuleSchema = z.object({ title: z.string(), hours: z.number().optional(), points: z.array(z.string()).optional() });
@@ -61,6 +63,7 @@ export const programFullSchema = programSchema.extend({
   teachers: z.array(programTeacherSchema).nullable().optional(),
   description: z.string().nullable().optional(),
   document: z.string().nullable().optional(),
+  cover: z.string().nullable().optional(),
 });
 
 export const productVariantSchema = z.object({ sku: z.string(), size: z.string().optional(), color: z.string().optional(), stock: z.number() });

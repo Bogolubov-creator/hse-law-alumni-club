@@ -1,13 +1,32 @@
 import type { FastifyInstance } from "fastify";
 import { readItems } from "@directus/sdk";
 import { z } from "zod";
-import { PRODUCTS_SEED } from "@club/shared";
+import { PRODUCTS_SEED, PROGRAMS_SEED } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 
 const NEWS_FIELDS = ["id", "slug", "title", "excerpt", "body", "published_at"] as const;
 const listQuery = z.object({ limit: z.coerce.number().int().positive().max(100).optional() });
 
+type ProgramSeedRow = (typeof PROGRAMS_SEED)[number];
+
+function seedBySlug(): Map<string, ProgramSeedRow> {
+  return new Map(PROGRAMS_SEED.map((p) => [p.slug, p]));
+}
+
+/** Пустые поля программы подставляем из сида по slug – как images у products. */
+function mergeProgramSeed<T extends Record<string, unknown>>(row: T, seed: ProgramSeedRow | undefined): T {
+  if (!seed) return row;
+  const emptyArr = (v: unknown) => !Array.isArray(v) || v.length === 0;
+  const emptyStr = (v: unknown) => v == null || v === "";
+  return {
+    ...row,
+    description: emptyStr(row.description) ? (seed.description ?? null) : row.description,
+    cover: emptyStr(row.cover) ? (seed.cover ?? null) : row.cover,
+    modules: emptyArr(row.modules) ? (seed.modules ?? null) : row.modules,
+    teachers: emptyArr(row.teachers) ? (seed.teachers ?? null) : row.teachers,
+  };
+}
 // Публичные чтения контента. Directus наружу не выставляем – только через apps/api.
 export async function contentRoutes(app: FastifyInstance) {
   // robots.txt из API: абсолютный Sitemap из PUBLIC_URL (единый источник домена).
@@ -91,21 +110,31 @@ export async function contentRoutes(app: FastifyInstance) {
     return rows[0];
   });
 
-  // Каталог ДПО.
-  app.get("/programs", async () =>
-    directus.request(readItems("programs", {
+  // Каталог ДПО. Пустые description/cover/modules/teachers – из сида по slug.
+  app.get("/programs", async () => {
+    const rows = (await directus.request(readItems("programs", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document"],
-    })),
-  );
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document", "description", "cover"],
+    }))) as Record<string, unknown>[];
+    const seeds = seedBySlug();
+    return rows.map((row) => {
+      const seed = seeds.get(String(row.slug));
+      const emptyStr = (v: unknown) => v == null || v === "";
+      return {
+        ...row,
+        description: emptyStr(row.description) ? (seed?.description ?? null) : row.description,
+        cover: emptyStr(row.cover) ? (seed?.cover ?? null) : row.cover,
+      };
+    });
+  });
   app.get("/programs/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const rows = (await directus.request(readItems("programs", {
       filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document", "enrollment", "source_url"],
-    }))) as any[];
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document", "enrollment", "source_url", "cover"],
+    }))) as Record<string, unknown>[];
     if (!rows.length) return reply.code(404).send({ error: "Программа не найдена" });
-    return rows[0];
+    return mergeProgramSeed(rows[0]!, seedBySlug().get(slug));
   });
 
   // Каталог мерча. Пустые images подставляем из сида – на стенде худи когда-то

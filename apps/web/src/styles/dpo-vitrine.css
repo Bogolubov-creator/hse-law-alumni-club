@@ -166,6 +166,37 @@
   color: var(--c-text-2);
 }
 
+.club-dpo-mode {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--c-line-control);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--c-bg);
+  align-self: end;
+}
+
+.club-dpo-mode__btn {
+  border: none;
+  background: transparent;
+  color: var(--c-text-2);
+  padding: 10px 14px;
+  font: inherit;
+  font-size: var(--t-caption);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.club-dpo-mode__btn + .club-dpo-mode__btn {
+  border-left: 1px solid var(--c-line-control);
+}
+
+.club-dpo-mode__btn.is-on {
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+}
+
 .club-dpo-status {
   display: flex;
   flex-wrap: wrap;

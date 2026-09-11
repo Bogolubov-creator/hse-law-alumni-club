@@ -43,12 +43,11 @@ export async function meRoutes(app: FastifyInstance) {
   });
 
 
-  // Сводка ЛК (профиль + уровень + достижения + активность). Только для верифицированных.
+  // Сводка ЛК (профиль + уровень + достижения + активность).
+  // Pending/rejected тоже получают профиль (фото и статус); скидка – только verified.
   app.get("/me", async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
-    if (a.verification_status !== "verified")
-      return reply.code(403).send({ error: "ЛК активируется после верификации учебным офисом" });
 
     const ledger = (await di.request(
       readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at"], limit: -1 }),
@@ -59,6 +58,10 @@ export async function meRoutes(app: FastifyInstance) {
       (readItems as any)("alumni", { filter: { referred_by: { _eq: a.id } }, limit: -1, fields: ["verification_status"] }),
     )) as { verification_status: string }[];
 
+    const verified = a.verification_status === "verified";
+    const level = levelInfo(a.points_cached ?? 0, verified ? (a.personal_discount ?? 0) : 0);
+    if (!verified) level.discount = 0;
+
     return {
       alumni: {
         fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {},
@@ -67,9 +70,9 @@ export async function meRoutes(app: FastifyInstance) {
         referrals_verified: referred.filter((r) => r.verification_status === "verified").length,
         referrals_pending: referred.filter((r) => r.verification_status === "pending").length,
       },
-      level: levelInfo(a.points_cached ?? 0, a.personal_discount ?? 0),
-      achievements: achievementProgress(await alumniStats(a.id)),
-      activity: lastSixMonths(ledger),
+      level,
+      achievements: verified ? achievementProgress(await alumniStats(a.id)) : [],
+      activity: verified ? lastSixMonths(ledger) : [],
     };
   });
 

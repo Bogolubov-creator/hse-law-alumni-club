@@ -98,7 +98,10 @@ export default function DpoV2() {
             <label>Формат<select style={field} value={format} onChange={(e) => update("format", e.target.value)}><option value="">Все форматы</option>{formats.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f] ?? f}</option>)}</select></label>
             <label>Документ<select style={field} value={document} onChange={(e) => update("document", e.target.value)}><option value="">Все документы</option>{documents.map((d) => <option key={d}>{d}</option>)}</select></label>
             <label>Порядок<select style={field} value={sort} onChange={(e) => update("sort", e.target.value)}><option value="title">По названию</option><option value="price">По цене</option><option value="start">По дате начала</option></select></label>
-            <label style={{ display: "flex", gap: 10, alignItems: "center" }}><input type="checkbox" checked={showAll} onChange={(e) => update("all", e.target.checked ? "1" : "")} />Включая закрытый набор</label>
+            <div className="club-dpo-mode" role="tablist" aria-label="Режим каталога">
+              <button type="button" role="tab" aria-selected={!showAll} className={`foc club-dpo-mode__btn${!showAll ? " is-on" : ""}`} onClick={() => update("all", "")}>Актуальный набор</button>
+              <button type="button" role="tab" aria-selected={showAll} className={`foc club-dpo-mode__btn${showAll ? " is-on" : ""}`} onClick={() => update("all", "1")}>Весь каталог</button>
+            </div>
             <button type="button" className="foc club-btn club-btn--secondary" onClick={() => setParams(selected.length ? { compare: selected.join(",") } : {})}>Сбросить фильтры</button>
           </form>
 
@@ -154,9 +157,9 @@ export default function DpoV2() {
                       {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration].filter(Boolean).join(" · ")}
                     </div>
                     <p style={{ color: "var(--c-text-2)", margin: "10px 0" }}>{p.dates?.start ? `Начало: ${programStart(p.dates.start)}` : "Дата начала уточняется"}{p.document ? ` · ${p.document}` : ""}</p>
-                    {closed && (
-                      <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-danger-text)", marginTop: 8, textTransform: "none" }}>набор закрыт</div>
-                    )}
+                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", marginTop: 8, textTransform: "none", color: closed ? "var(--c-danger-text)" : "var(--c-ok-text)" }}>
+                      {closed ? "набор закрыт" : "актуальный набор"}
+                    </div>
                   </div>
 
                   <div className="club-program-price club-dpo-row__price" style={{ color: discount > 0 ? "var(--c-accent-text)" : "var(--c-text)" }}>

@@ -5,6 +5,8 @@ import { ApiError, FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } 
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
+import { HeroPicture } from "../components/HeroPicture.js";
+import { mediaUrl } from "../lib/public-url.js";
 import { V2Shell, mono, disp, pageTitle } from "../v2/Shell.js";
 
 /**
@@ -61,6 +63,9 @@ export default function ProgramV2() {
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];
   const teachers: ProgramTeacher[] = Array.isArray(p?.teachers) ? p!.teachers : [];
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
+  const coverSrc = p?.cover || "/assets/dpo-hero.jpg";
+  const coverPath = coverSrc.replace(/^\//, "");
+  const coverIsAsset = coverPath.startsWith("assets/");
 
   useHead({
     title: q.isError ? (notFound ? "Программа не найдена" : "Не удалось загрузить программу") : p?.title ?? "Программа ДПО",
@@ -102,6 +107,13 @@ export default function ProgramV2() {
 
         {p && (
           <>
+          <div style={{ marginTop: 18, borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--c-line)", maxHeight: 320, background: "var(--c-bg-sunken)" }}>
+            {coverIsAsset ? (
+              <HeroPicture path={coverPath} alt="" width={1400} height={700} className="club-program-cover" />
+            ) : (
+              <img src={mediaUrl(coverSrc)} alt="" width={1400} height={700} style={{ width: "100%", height: "auto", maxHeight: 320, objectFit: "cover", display: "block" }} />
+            )}
+          </div>
           <div style={{ paddingTop: 24, maxWidth: "58ch" }}><h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1></div>
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
             {/* ── Содержание записи ── */}

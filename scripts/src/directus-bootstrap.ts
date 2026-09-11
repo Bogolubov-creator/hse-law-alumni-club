@@ -325,6 +325,7 @@ await ensureField("programs", "document", str());
 await ensureField("programs", "source_url", str()); // страница программы на hse.ru (управляется синком)
 await ensureField("programs", "enrollment", enumf(["actual", "nonactual"], "actual")); // актуальный набор / набор закрыт
 await ensureField("programs", "description", txt());
+await ensureField("programs", "cover", str()); // обложка карточки/героя: URL или /assets/…
 await ensureField("programs", "status", enumf(["draft", "published", "archived"], "draft"));
 
 // products (мерч)

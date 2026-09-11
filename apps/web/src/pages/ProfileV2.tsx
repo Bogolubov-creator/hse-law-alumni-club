@@ -81,13 +81,35 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
   };
 
   const sub = [a.cohort ? `выпуск ${a.cohort}` : null, a.edu_program].filter(Boolean).join(" · ") || "выпускник клуба";
+  const canUpload = a.verification_status === "verified" || a.verification_status === "pending";
+  const statusLabel =
+    a.verification_status === "verified" ? "подтверждён"
+      : a.verification_status === "rejected" ? "отклонён"
+        : "на проверке";
+  const statusColor =
+    a.verification_status === "verified" ? "var(--c-ok-text)"
+      : a.verification_status === "rejected" ? "var(--c-danger-text)"
+        : "var(--c-status-text)";
 
   return (
     <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 22, background: "var(--c-bg-raised)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        {a.avatar
-          ? <img src={`/api/avatars/${a.avatar}`} alt="" width={64} height={64} style={{ width: 64, height: 64, flexShrink: 0, borderRadius: "var(--r-md)", objectFit: "cover" }} />
-          : <Initial fio={a.fio} size={64} radius="var(--r-md)" />}
+        <button
+          type="button"
+          onClick={() => canUpload && !busy && fileRef.current?.click()}
+          disabled={!canUpload || busy}
+          className="foc"
+          aria-label={a.avatar ? "Сменить фото профиля" : "Загрузить фото профиля"}
+          title={canUpload ? (a.avatar ? "Нажмите, чтобы сменить фото" : "Нажмите, чтобы загрузить фото") : "Загрузка фото недоступна"}
+          style={{
+            padding: 0, border: "none", background: "transparent", cursor: canUpload && !busy ? "pointer" : "default",
+            borderRadius: "var(--r-md)", flexShrink: 0, position: "relative",
+          }}
+        >
+          {a.avatar
+            ? <img src={`/api/avatars/${a.avatar}`} alt="" width={64} height={64} style={{ width: 64, height: 64, borderRadius: "var(--r-md)", objectFit: "cover", display: "block" }} />
+            : <Initial fio={a.fio} size={64} radius="var(--r-md)" />}
+        </button>
         <div style={{ minWidth: 0, flex: 1 }}>
           <BlankField label={sub}>
             <span style={{ ...disp, display: "block", fontWeight: 700, fontSize: 20, lineHeight: 1.2 }}>{a.fio ?? "Выпускник"}</span>
@@ -95,14 +117,21 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
         </div>
       </div>
 
-      <button onClick={() => fileRef.current?.click()} disabled={busy} className="foc"
-        style={{ ...actionGhost, width: "100%", marginTop: 16, padding: "10px 14px", cursor: busy ? "wait" : "pointer" }}>
-        {busy ? "загружаем…" : a.avatar ? "сменить фото" : "загрузить фото"}
-      </button>
+      {canUpload && (
+        <button onClick={() => fileRef.current?.click()} disabled={busy} className="foc"
+          style={{ ...actionGhost, width: "100%", marginTop: 16, padding: "10px 14px", cursor: busy ? "wait" : "pointer" }}>
+          {busy ? "загружаем…" : a.avatar ? "сменить фото" : "загрузить фото"}
+        </button>
+      )}
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }}
         aria-label="Файл фотографии профиля"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
       {err && <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0" }}>{err}</p>}
+      {a.verification_status === "rejected" && (
+        <p style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0", lineHeight: 1.45 }}>
+          Заявка отклонена учебным офисом. Фото профиля недоступно для загрузки.
+        </p>
+      )}
 
       <div style={{ marginTop: 18 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -115,8 +144,8 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
         </div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
           <span style={label}>статус</span>
-          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: a.verification_status === "verified" ? "var(--c-ok-text)" : "var(--c-status-text)" }}>
-            {a.verification_status === "verified" ? "подтверждён" : "на проверке"}
+          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: statusColor }}>
+            {statusLabel}
           </span>
         </div>
       </div>
@@ -372,13 +401,29 @@ function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
             <IdentityCard me={me.data} token={token} onChanged={() => me.refetch()} />
           </div>
           <div>
-            <div className="profile-edit-zone">
-              <p style={{ ...label, margin: "0 0 18px", color: "var(--c-text-3)" }}>редактирование профиля</p>
-              <ContactsForm me={me.data} token={token} onSaved={() => me.refetch()} />
-              <History token={token} />
-              <Rules me={me.data} />
-            </div>
-            <DataRights token={token} />
+            {me.data.alumni.verification_status === "verified" ? (
+              <>
+                <div className="profile-edit-zone">
+                  <p style={{ ...label, margin: "0 0 18px", color: "var(--c-text-3)" }}>редактирование профиля</p>
+                  <ContactsForm me={me.data} token={token} onSaved={() => me.refetch()} />
+                  <History token={token} />
+                  <Rules me={me.data} />
+                </div>
+                <DataRights token={token} />
+              </>
+            ) : (
+              <section style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 22, background: "var(--c-bg-raised)" }}>
+                <p style={{ ...label, margin: 0, color: "var(--c-status-text)" }}>
+                  {me.data.alumni.verification_status === "rejected" ? "заявка отклонена" : "ожидает верификации"}
+                </p>
+                <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: 520 }}>
+                  {me.data.alumni.verification_status === "rejected"
+                    ? "Редактирование профиля и кабинет недоступны. При необходимости свяжитесь с учебным офисом."
+                    : "Пока офис проверяет выпуск, можно загрузить фото слева. Контакты, баллы и достижения откроются после подтверждения."}
+                </p>
+                <Link to="/lk" className="foc" style={{ ...actionGhost, display: "inline-block", marginTop: 16, textDecoration: "none" }}>к статусу заявки</Link>
+              </section>
+            )}
           </div>
         </div>
       )}

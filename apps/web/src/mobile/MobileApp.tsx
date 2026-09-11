@@ -386,6 +386,10 @@ function MobileDpo() {
           )}
         </div>
         <div className="noscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px 2px" }}>
+          <Chip on={!showAll} onClick={() => { setShowAll(false); setDir(null); }}>Актуальный набор</Chip>
+          <Chip on={showAll} onClick={() => { setShowAll(true); setDir(null); }}>Весь каталог</Chip>
+        </div>
+        <div className="noscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "10px -20px 0", padding: "0 20px 2px" }}>
           <Chip on={!dir} onClick={() => setDir(null)}>Все</Chip>
           {dirs.map((d) => <Chip key={d} on={dir === d} onClick={() => setDir(dir === d ? null : d)}>{d}</Chip>)}
         </div>
@@ -447,7 +451,7 @@ function MobileDpo() {
                 <span style={{ ...mono, fontSize: 9, letterSpacing: ".06em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>
                   {FORMAT_LABEL[p.format] ?? FMT_RU[p.format] ?? p.format}
                 </span>
-                {closed && <span style={{ ...mono, fontSize: 10, color: "#B5331B" }}>набор закрыт</span>}
+                <span style={{ ...mono, fontSize: 10, color: closed ? "#B5331B" : "#1F8A5B" }}>{closed ? "набор закрыт" : "актуальный набор"}</span>
               </div>
               <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: INK }}>
                 <h2 style={{ ...disp, fontWeight: 600, fontSize: 16.5, lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
@@ -646,7 +650,14 @@ function MobileProgram() {
     <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 200, overflow: "hidden", background: "linear-gradient(150deg,#1e2942,#11296B 60%,#0f1c3f)" }}>
-          <img src={publicUrl("assets/themis.jpeg")} alt="" style={{ position: "absolute", right: -30, bottom: -30, width: 190, height: 190, objectFit: "cover", opacity: .16, transform: "rotate(8deg)" }} />
+          <img
+            src={mediaUrl(p?.cover || "/assets/dpo-hero.jpg")}
+            alt=""
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: p?.cover ? 0.55 : 0.28 }}
+          />
+          {!p?.cover && (
+            <img src={publicUrl("assets/themis.jpeg")} alt="" style={{ position: "absolute", right: -30, bottom: -30, width: 190, height: 190, objectFit: "cover", opacity: .16, transform: "rotate(8deg)" }} />
+          )}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(20,24,31,.15),rgba(20,24,31,.86))" }} />
           <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 14px)", left: 16, right: 16, display: "flex", justifyContent: "space-between" }}>
             <button onClick={() => nav("/dpo")} aria-label="Назад" style={roundDark}>{BackWhite}</button>

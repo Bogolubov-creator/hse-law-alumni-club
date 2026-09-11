@@ -85,21 +85,34 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
 }
 
 function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => void }) {
+  const rejected = alumni.verification_status === "rejected";
   return (
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <div style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <div style={{ ...label, color: "var(--c-status-text)" }}>статус · pending</div>
-        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "12px 0 0" }}>Ожидает верификации</h1>
+        <div style={{ ...label, color: rejected ? "var(--c-danger-text)" : "var(--c-status-text)" }}>
+          статус · {rejected ? "отклонён" : "pending"}
+        </div>
+        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "12px 0 0" }}>
+          {rejected ? "Заявка отклонена" : "Ожидает верификации"}
+        </h1>
         <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
-          {alumni.fio ?? "Выпускник"}, учебный офис сверяет выпуск с реестром факультета.
+          {alumni.fio ?? "Выпускник"}, {rejected
+            ? "учебный офис не подтвердил выпуск по этой заявке."
+            : "учебный офис сверяет выпуск с реестром факультета."}
         </p>
-        <ul style={{ margin: "16px 0 0", paddingLeft: 18, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
-          <li>Кабинет, баллы и скидка на ДПО откроются после подтверждения.</li>
-          <li>Заявки из корзины уже можно подавать – скидка подтянется после верификации.</li>
-          <li>Обычно проверка занимает 1–2 рабочих дня.</li>
-        </ul>
+        {!rejected && (
+          <ul style={{ margin: "16px 0 0", paddingLeft: 18, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
+            <li>Кабинет, баллы и скидка на ДПО откроются после подтверждения.</li>
+            <li>Можно заранее загрузить фото в профиле – оно появится после верификации.</li>
+            <li>Заявки из корзины уже можно подавать – скидка подтянется после верификации.</li>
+            <li>Обычно проверка занимает 1–2 рабочих дня.</li>
+          </ul>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 22 }}>
-          <Link to="/dpo" className="foc" style={{ ...action, textAlign: "center", textDecoration: "none" }}>Смотреть программы ДПО</Link>
+          {!rejected && (
+            <Link to="/lk/profile" className="foc" style={{ ...action, textAlign: "center", textDecoration: "none" }}>Загрузить фото профиля</Link>
+          )}
+          <Link to="/dpo" className="foc" style={{ ...actionGhost, textAlign: "center", textDecoration: "none" }}>Смотреть программы ДПО</Link>
           <button onClick={onBack} className="foc" style={{ width: "100%", padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад ко входу</button>
         </div>
       </div>
@@ -533,10 +546,13 @@ export default function LkV2() {
   const [pending, setPending] = useState<AlumniBrief | null>(null);
 
   const onAuthed = (resp: LoginResponse) => {
+    // Токен сохраняем и для pending – нужен для загрузки фото профиля.
+    localStorage.setItem(TOKEN_KEY, resp.token);
     if (resp.alumni.verification_status === "verified") {
-      localStorage.setItem(TOKEN_KEY, resp.token);
       setToken(resp.token);
+      setPending(null);
     } else {
+      setToken(resp.token);
       setPending(resp.alumni);
     }
   };
@@ -546,7 +562,27 @@ export default function LkV2() {
     setPending(null);
   };
 
-  if (pending) return <PendingScreen alumni={pending} onBack={() => setPending(null)} />;
+  if (pending) return <PendingScreen alumni={pending} onBack={() => doLogout()} />;
   if (!token) return <Gate onAuthed={onAuthed} />;
-  return <Dashboard token={token} onLogout={doLogout} />;
+  return <DashboardGate token={token} onLogout={doLogout} onPending={(a) => setPending(a)} />;
+}
+
+/** После refresh: если токен есть, но статус не verified – показать ожидание, не кабинет. */
+function DashboardGate({ token, onLogout, onPending }: { token: string; onLogout: () => void; onPending: (a: AlumniBrief) => void }) {
+  const me = useMe(token);
+  useEffect(() => {
+    const a = me.data?.alumni;
+    if (a && a.verification_status !== "verified") onPending(a);
+  }, [me.data, onPending]);
+  if (me.isLoading) {
+    return (
+      <main id="main" style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--c-bg)", color: "var(--c-text-3)" }}>
+        <p style={{ ...label, margin: 0 }}>загружаем кабинет…</p>
+      </main>
+    );
+  }
+  if (me.data?.alumni.verification_status && me.data.alumni.verification_status !== "verified") {
+    return null;
+  }
+  return <Dashboard token={token} onLogout={onLogout} />;
 }

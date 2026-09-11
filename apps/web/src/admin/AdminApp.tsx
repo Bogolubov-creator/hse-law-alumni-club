@@ -168,6 +168,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const orders = useAdminOrders({ limit: 5 }); // дашборду хватает пяти строк
   const members = useMembers({ status: "pending", limit: 100 });
   const { patchMember } = useAdminMutations();
+  const [sel, setSel] = useState<Member | null>(null);
   const pending = members.data?.items ?? [];
   const d = ov.data;
   const inbox = [
@@ -231,15 +232,20 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
         </Panel>
 
         <Panel>
-          <PanelTitle>На верификацию</PanelTitle>
+          <PanelTitle right={<button type="button" onClick={() => onGo("members")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>все →</button>}>
+            На верификацию
+          </PanelTitle>
           {pending.length === 0 && <p style={{ ...label, margin: 0, textTransform: "none", letterSpacing: 0 }}>Нет ожидающих.</p>}
           {pending.map((m) => (
             <div key={m.id} style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{m.fio}</div>
-              <div style={{ ...label, fontSize: 10, marginTop: 3 }}>выпуск {m.cohort}</div>
+              <div style={{ ...label, fontSize: 10, marginTop: 3 }}>
+                {[m.email, m.cohort ? `выпуск ${m.cohort}` : null].filter(Boolean).join(" · ") || "анкета без почты"}
+              </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                 <button type="button" disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc" style={{ ...action, flex: 1, textAlign: "center" }}>Подтвердить</button>
                 <button type="button" disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center", color: "var(--c-danger-text)", borderColor: "var(--c-danger-text)" }}>Отклонить</button>
+                <button type="button" onClick={() => setSel(m)} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center" }}>карточка</button>
               </div>
             </div>
           ))}
@@ -264,6 +270,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
         </Panel>
         <PushBroadcast subs={d?.push_subs_count ?? 0} />
       </div>
+      {sel && <MemberModal member={sel} onClose={() => setSel(null)} />}
     </>
   );
 }
@@ -404,7 +411,7 @@ function Members() {
   const [sel, setSel] = useState<Member | null>(null);
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
-  const [vf, setVf] = useState<string>("all");
+  const [vf, setVf] = useState<string>("pending");
   const [page, setPage] = useState(1);
   const pendingCount = useOverview().data?.pending_verifications ?? 0;
 
@@ -428,8 +435,8 @@ function Members() {
     <>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 16 }}>
         {[
-          { key: "all", label: "все" },
           { key: "pending", label: `заявки на вступление${pendingCount ? ` · ${pendingCount}` : ""}` },
+          { key: "all", label: "все" },
           { key: "verified", label: "подтверждённые" },
           { key: "rejected", label: "отклонённые" },
         ].map((f) => {
@@ -524,8 +531,14 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
           style={{ position: "absolute", right: 16, top: 16, width: 34, height: 34, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}>✕</button>
 
         <h2 id="member-modal-title" style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: 0, paddingRight: 40 }}>{member.fio}</h2>
-        <div style={{ ...label, fontSize: 10, marginTop: 8 }}>
-          выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях {member.friends_count ?? 0}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14 }}>
+          {member.avatar
+            ? <img src={`/api/avatars/${member.avatar}`} alt="" width={56} height={56} style={{ width: 56, height: 56, borderRadius: "var(--r-md)", objectFit: "cover", flexShrink: 0 }} />
+            : <div aria-hidden style={{ width: 56, height: 56, borderRadius: "var(--r-md)", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: 18, color: "var(--c-text-2)", flexShrink: 0 }}>{(member.fio ?? "?").trim().charAt(0).toUpperCase()}</div>}
+          <div style={{ ...label, fontSize: 10, minWidth: 0 }}>
+            выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях {member.friends_count ?? 0}
+            {member.email && <div style={{ marginTop: 4, textTransform: "none", letterSpacing: 0, color: "var(--c-text-2)" }}>{member.email}</div>}
+          </div>
         </div>
 
         {/* Анкета из формы вступления – всё, что заполнил выпускник */}
@@ -1342,7 +1355,7 @@ function ConfirmDelete({ title, hint, busy, onCancel, onConfirm }: { title: stri
 
 // Цена вводится в рублях, хранится в копейках.
 function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: ProgramInput) => void }) {
-  const [f, setF] = useState({ title: "", direction: "", format: "online", duration: "", priceRub: "", start: "", description: "" });
+  const [f, setF] = useState({ title: "", direction: "", format: "online", duration: "", priceRub: "", start: "", description: "", cover: "" });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
   const valid = f.title.trim().length >= 3 && f.direction.trim().length >= 2 && f.duration.trim() && Number(f.priceRub) > 0;
   const submit = (e: FormEvent) => {
@@ -1352,6 +1365,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
       title: f.title.trim(), direction: f.direction.trim(), format: f.format, duration: f.duration.trim(),
       price: Math.round(Number(f.priceRub) * 100),
       start: f.start.trim() || null, description: f.description.trim() || null,
+      cover: f.cover.trim() || null,
       document: "Удостоверение о повышении квалификации НИУ ВШЭ",
     });
   };
@@ -1376,6 +1390,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
             <FormField label="Цена, ₽" value={f.priceRub} onChange={(v) => set("priceRub", v.replace(/[^\d]/g, ""))} ph="50000" required />
           </div>
           <FormField label="Старт (дата словами)" value={f.start} onChange={(v) => set("start", v)} ph="напр. 15 сентября 2026" />
+          <FormField label="Обложка (ссылка или /assets/…)" value={f.cover} onChange={(v) => set("cover", v)} ph="/assets/dpo-hero.jpg" />
           <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
         </div>
         <div className="mt-5 flex gap-2">

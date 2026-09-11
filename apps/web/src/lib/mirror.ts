@@ -28,11 +28,12 @@ function programRow(p: ProgramSeed, i: number) {
     format: p.format,
     duration: p.duration,
     price: p.price,
-    enrollment: "actual" as const,
+    enrollment: (p.enrollment ?? "actual") as "actual" | "nonactual",
     source_url: null as string | null,
     dates: p.dates ?? null,
     document: p.document ?? null,
     description: p.description ?? null,
+    cover: p.cover ?? null,
     modules: p.modules ?? null,
     teachers: p.teachers ?? null,
     status: "published",
@@ -167,7 +168,7 @@ const ME = {
     edu_program: "Юриспруденция",
     edu_level: "бакалавриат",
     interests: ["гражданское право", "арбитраж"],
-    avatar: null as string | null,
+    avatar: "mirror-avatar" as string | null,
     referral_code: "ANNA2024",
     referrals_verified: 1,
     referrals_pending: 0,
@@ -293,6 +294,7 @@ const MEMBERS = [
     interests_json: ["гражданское право"],
     contacts_json: { telegram: "@a_sokolova" },
     joined_at: "2026-05-01T10:00:00.000Z",
+    avatar: "mirror-avatar",
   },
   {
     id: "mem-2",
@@ -312,6 +314,7 @@ const MEMBERS = [
     interests_json: [],
     contacts_json: {},
     joined_at: "2026-08-20T10:00:00.000Z",
+    avatar: null as string | null,
   },
 ];
 
@@ -392,7 +395,7 @@ const OVERVIEW = {
   alumni_count: MEMBERS.length,
   alumni_verified: 1,
   points_total: DEMO_POINTS + 40,
-  programs_actual: PROGRAMS.length,
+  programs_actual: PROGRAMS.filter((p) => p.enrollment !== "nonactual").length,
   programs_total: PROGRAMS.length,
   products_count: PRODUCTS.length,
   news_count: NEWS.length,
@@ -494,6 +497,11 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/me/classmates") return jsonResponse(CLASSMATES);
   if (clean === "/me/events") return jsonResponse(LK_EVENTS);
   if (clean === "/me/level") return jsonResponse(DEMO_LEVEL);
+  // Стаб аватара: отдаём 1×1 jpeg, чтобы <img> не падал на зеркале.
+  if (/^\/avatars\/[^/]+$/.test(clean)) {
+    const jpeg = Uint8Array.from(atob("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z"), (c) => c.charCodeAt(0));
+    return new Response(jpeg, { status: 200, headers: { "content-type": "image/jpeg", "cache-control": "no-store" } });
+  }
 
   // ── Админка ──
   if (clean === "/admin/overview") return jsonResponse(OVERVIEW);
@@ -580,6 +588,10 @@ function mirrorMutation(path: string, method: string): Response {
       total_estimate: 0,
       notified: { channel: "mirror", ok: false, blocked: true },
     });
+  }
+  if (clean === "/me/avatar" && method === "POST") {
+    ME.alumni.avatar = "mirror-avatar";
+    return jsonResponse({ ok: true, avatar: "mirror-avatar" });
   }
   if (clean.startsWith("/admin/") || clean.startsWith("/me/") || clean.startsWith("/events/")) {
     // UI ждёт 200 на PATCH/POST – возвращаем мягкий ok, без реальной записи.

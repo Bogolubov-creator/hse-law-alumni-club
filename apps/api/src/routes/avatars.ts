@@ -39,7 +39,11 @@ export async function avatarsRoutes(app: FastifyInstance) {
   app.post("/me/avatar", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
-    if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
+    // Фото можно загрузить до подтверждения выпуска; отклонённым – нет.
+    if (me.verification_status === "rejected") return reply.code(403).send({ error: "Заявка отклонена – загрузка фото недоступна" });
+    if (me.verification_status !== "verified" && me.verification_status !== "pending") {
+      return reply.code(403).send({ error: "Доступно после подачи заявки" });
+    }
 
     const file = await req.file();
     if (!file) return reply.code(400).send({ error: "Прикрепите файл изображения" });
