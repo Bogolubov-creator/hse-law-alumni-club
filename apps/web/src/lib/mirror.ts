@@ -4,6 +4,8 @@
  */
 import {
   ACHIEVEMENTS,
+  addLine, setLineQty, summarizeCart, cartSummarySchema, cartItemSchema, cartLineLimitReached,
+  type StoredCartItem,
   NEWS_SEED,
   PRODUCTS_SEED,
   PROGRAMS_SEED,
@@ -227,12 +229,21 @@ const PODCASTS = {
       status: "published",
     },
   ],
-  subscribed: false,
-  sub_until: null as string | null,
+  subscribed: true,
+  sub_until: "2027-06-01T00:00:00.000Z" as string | null,
   price: PODCAST_SUB_PRICE_KOP,
 };
 
-const EMPTY_CART = { items: [] as unknown[], count: 0, subtotal: 0 };
+function readCart(): StoredCartItem[] {
+  try { return cartSummarySchema.parse(JSON.parse(sessionStorage.getItem('club_mirror_cart:' + localStorage.getItem('club_cart')) || '{}')).items; }
+  catch { return []; }
+}
+function saveCart(items: StoredCartItem[]): Response {
+  const summary = summarizeCart(items);
+  try { sessionStorage.setItem('club_mirror_cart:' + localStorage.getItem('club_cart'), JSON.stringify(summary)); }
+  catch { return errorResponse(503, 'Для демо-корзины разрешите хранение данных в этой вкладке.'); }
+  return jsonResponse(summary);
+}
 
 const DEMO_POINTS = 320;
 const DEMO_LEVEL = levelInfo(DEMO_POINTS);
@@ -246,7 +257,7 @@ const ME = {
     edu_program: "Юриспруденция",
     edu_level: "бакалавриат",
     interests: ["гражданское право", "арбитраж"],
-    avatar: "mirror-avatar" as string | null,
+    avatar: null as string | null,
     referral_code: "ANNA2024",
     referrals_verified: 1,
     referrals_pending: 0,
@@ -372,7 +383,7 @@ const MEMBERS = [
     interests_json: ["гражданское право"],
     contacts_json: { telegram: "@a_sokolova" },
     joined_at: "2026-05-01T10:00:00.000Z",
-    avatar: "mirror-avatar",
+    avatar: null,
   },
   {
     id: "mem-2",
@@ -466,9 +477,9 @@ function analytics(range: string) {
 }
 
 const OVERVIEW = {
-  new_orders: 3,
+  new_orders: ADMIN_ORDERS.filter((o) => o.status === "new").length,
   orders_count: ADMIN_ORDERS.length,
-  orders_paid: 1,
+  orders_paid: ADMIN_ORDERS.filter((o) => o.payment_status === "paid").length,
   pending_verifications: 1,
   alumni_count: MEMBERS.length,
   alumni_verified: 1,
@@ -508,7 +519,7 @@ function textResponse(body: string, contentType: string, status = 200): Response
 function apiPathFromUrl(raw: string): string | null {
   let pathname = raw;
   try {
-    if (/^https?:\/\//i.test(raw)) pathname = new URL(raw).pathname;
+    if (/^https?:\/\//i.test(raw)) pathname = new URL(raw).pathname + new URL(raw).search;
   } catch {
     return null;
   }
@@ -565,7 +576,7 @@ function mirrorGet(path: string): Response | null {
       retentionDays: 30,
     });
   }
-  if (clean === "/cart") return jsonResponse(EMPTY_CART);
+  if (clean === "/cart") return jsonResponse(summarizeCart(readCart()));
   if (clean === "/health" || clean === "/ready") return jsonResponse({ ok: true, mirror: true });
 
   // ── ЛК ──
@@ -575,11 +586,7 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/me/classmates") return jsonResponse(CLASSMATES);
   if (clean === "/me/events") return jsonResponse(LK_EVENTS);
   if (clean === "/me/level") return jsonResponse(DEMO_LEVEL);
-  // Стаб аватара: отдаём 1×1 jpeg, чтобы <img> не падал на зеркале.
-  if (/^\/avatars\/[^/]+$/.test(clean)) {
-    const jpeg = Uint8Array.from(atob("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z"), (c) => c.charCodeAt(0));
-    return new Response(jpeg, { status: 200, headers: { "content-type": "image/jpeg", "cache-control": "no-store" } });
-  }
+  // Демо-профили используют инициалы вместо отсутствующего фото.
 
   // ── Админка ──
   if (clean === "/admin/overview") return jsonResponse(OVERVIEW);
@@ -590,7 +597,9 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/admin/orders") {
     const page = Number(q?.get("page") || 1);
     const limit = Number(q?.get("limit") || 50);
-    return jsonResponse({ items: ADMIN_ORDERS, total: ADMIN_ORDERS.length, page, limit });
+    const search = (q?.get('q') || '').toLocaleLowerCase('ru');
+    const items = ADMIN_ORDERS.filter(o => (!q?.get('status') || o.status === q.get('status')) && (!q?.get('payment') || (q.get('payment') === 'unpaid' ? o.payment_status !== 'paid' : o.payment_status === q.get('payment'))) && [o.number, o.contact_fio, o.contact_email].join(' ').toLocaleLowerCase('ru').includes(search));
+    return jsonResponse({ items: items.slice((page - 1) * limit, page * limit), total: items.length, page, limit });
   }
   if (clean === "/admin/orders/export.csv") {
     return textResponse("number,status,fio\nCL-1001,confirmed,Анна Соколова\n", "text/csv; charset=utf-8");
@@ -598,7 +607,9 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/admin/members") {
     const page = Number(q?.get("page") || 1);
     const page_size = Number(q?.get("limit") || 50);
-    return jsonResponse({ items: MEMBERS, total: MEMBERS.length, page, page_size });
+    const search = (q?.get('q') || '').toLocaleLowerCase('ru');
+    const items = MEMBERS.filter(m => (!q?.get('status') || m.verification_status === q.get('status')) && [m.fio, m.email, m.cohort].join(' ').toLocaleLowerCase('ru').includes(search));
+    return jsonResponse({ items: items.slice((page - 1) * page_size, page * page_size), total: items.length, page, page_size });
   }
   if (clean === "/admin/programs") return jsonResponse(PROGRAMS);
   if (clean === "/admin/products") return jsonResponse(PRODUCTS);
@@ -607,7 +618,7 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/admin/events") return jsonResponse(EVENTS);
   if (clean === "/admin/podcasts") return jsonResponse(PODCASTS.items);
   if (clean === "/admin/podcast-subs") {
-    return jsonResponse({ items: [{ alumni_id: "mem-1", fio: "Анна Соколова", until: "2027-06-01T00:00:00.000Z" }], total: 1 });
+    return jsonResponse({ active: 1, expiring_30d: 0, expired: 0, plays_total: 0, by_podcast: PODCASTS.items.map(p => ({ id: p.id, title: p.title, is_free: p.is_free, plays: 0, listeners: 0, plays_30d: 0 })), items: [{ id: 'mem-1', fio: 'Анна Соколова', cohort: '2024', until: PODCASTS.sub_until, days_left: Math.max(0, Math.ceil((Date.parse(PODCASTS.sub_until!) - Date.now()) / 86400000)), reminded: false, email: 'alumni@club.example.com' }] });
   }
   if (clean === "/admin/audit") return jsonResponse(AUDIT);
   if (clean === "/admin/support") {
@@ -642,7 +653,7 @@ function mirrorGet(path: string): Response | null {
   return errorResponse(404, "На зеркале нет этого эндпоинта");
 }
 
-function mirrorMutation(path: string, method: string): Response {
+function mirrorMutation(path: string, method: string, body: unknown): Response {
   const clean = (path.split("?")[0] ?? path);
 
   if (clean === "/auth/login" || clean === "/auth/register") {
@@ -654,26 +665,32 @@ function mirrorMutation(path: string, method: string): Response {
   if (clean === "/auth/logout" || clean === "/auth/admin-logout") {
     return jsonResponse({ ok: true });
   }
-  if (clean === "/cart" || clean.startsWith("/cart")) {
-    return jsonResponse(EMPTY_CART);
+  if (clean === '/cart') {
+    if (method === 'DELETE') return saveCart([]);
+    const b = body as Record<string, unknown> | null;
+    if (method === 'PATCH') {
+      if (!b || typeof b.ref_id !== 'string' || !Number.isInteger(b.qty) || Number(b.qty) < 0 || Number(b.qty) > 99 || (b.variant_sku != null && typeof b.variant_sku !== 'string')) return errorResponse(400, 'Некорректное количество.');
+      const product = PRODUCTS.find(p => p.id === b.ref_id || p.slug === b.ref_id);
+      if (product && Number(b.qty) > (product.variants_json?.find(v => v.sku === b.variant_sku)?.stock ?? product.stock)) return errorResponse(409, 'Недостаточно товара в наличии.');
+      return saveCart(setLineQty(readCart(), b.ref_id, b.variant_sku as string | null, Number(b.qty)));
+    }
+    const parsed = cartItemSchema.safeParse(body);
+    if (!parsed.success) return errorResponse(400, 'Проверьте товар и количество.');
+    const item = parsed.data;
+    if (cartLineLimitReached(readCart(), item)) return errorResponse(409, 'В корзине уже 30 разных позиций.');
+    const row = (item.type === 'merch' ? PRODUCTS : PROGRAMS).find(p => p.id === item.ref_id || p.slug === item.ref_id);
+    if (!row) return errorResponse(404, 'Товар не найден.');
+    if ('variants_json' in row) {
+      const variant = row.variants_json?.find(v => v.sku === item.variant_sku);
+      if (row.variants_json?.length && !variant) return errorResponse(400, 'Выберите размер.');
+      const existing = readCart().find(i => i.ref_id === item.ref_id && i.variant_sku === item.variant_sku);
+      if ((existing?.qty || 0) + item.qty > (variant?.stock ?? row.stock)) return errorResponse(409, 'Недостаточно товара в наличии.');
+    }
+    return saveCart(addLine(readCart(), { ...item, price: row.price, title: row.title }));
   }
-  if (clean === "/orders") {
-    return jsonResponse({
-      number: "CL-DEMO",
-      status: "new",
-      member_discount: 10,
-      subtotal: 0,
-      total_estimate: 0,
-      notified: { channel: "mirror", ok: false, blocked: true },
-    });
-  }
-  if (clean === "/me/avatar" && method === "POST") {
-    ME.alumni.avatar = "mirror-avatar";
-    return jsonResponse({ ok: true, avatar: "mirror-avatar" });
-  }
-  if (clean.startsWith("/admin/") || clean.startsWith("/me/") || clean.startsWith("/events/")) {
-    // UI ждёт 200 на PATCH/POST – возвращаем мягкий ok, без реальной записи.
-    return jsonResponse({ ok: true, mirror: true, message: MIRROR_MUTATION });
+  if (clean === '/orders') return errorResponse(503, 'Это демо-корзина. Заявка не отправлена; оформление будет доступно на основном сайте.');
+  if (clean.startsWith('/admin/') || clean.startsWith('/me/') || clean.startsWith('/events/')) {
+    return errorResponse(503, MIRROR_MUTATION);
   }
   if (clean.startsWith("/analytics") || clean.startsWith("/support")) {
     return jsonResponse({ ok: true, mirror: true });
@@ -717,7 +734,9 @@ export function installMirrorFetch(): void {
         const res = mirrorGet(apiPath);
         if (res) return method === "HEAD" ? new Response(null, { status: res.status, headers: res.headers }) : res;
       } else {
-        return mirrorMutation(apiPath, method);
+        let body: unknown = null;
+        try { body = init?.body ? JSON.parse(String(init.body)) : input instanceof Request ? await input.clone().json() : null; } catch { /* Не-JSON формы не сохраняются на зеркале. */ }
+        return mirrorMutation(apiPath, method, body);
       }
     }
 
