@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CLUB_OPERATOR } from "@club/shared";
 import { useHead } from "../lib/title.js";
 import { rub, type CartLine, type OrderResult } from "../lib/api.js";
+import { isMirror } from "../lib/public-url.js";
 import { useCart, useMemberDiscount, useCartMutations, submitOrder, token } from "../lib/cart.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
@@ -232,6 +233,7 @@ export default function CartV2() {
           </Empty>
         )}
 
+        {isMirror && <p role="note" style={{ padding: 18, border: "1px solid var(--c-line)", borderRadius: 12, color: "var(--c-text-2)" }}>Демо-корзина хранится только в этой вкладке. Можно менять состав и количество. Отправка заявки отключена; личные данные вводить не нужно.</p>}
         {items.length > 0 && (
           <div className="v2-cart" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 32, alignItems: "start" }}>
             {/* ── Позиции как записи описи ── */}
@@ -345,14 +347,14 @@ export default function CartV2() {
 
               {/* Недоступная кнопка становится нейтральной, а не бледно-охряной:
                   полупрозрачная охра читалась как активная и роняла контраст текста. */}
-              <button type="submit" disabled={busy || !form.consent} className="foc"
+              <button type="submit" disabled={isMirror || busy || !form.consent} className="foc"
                 style={{
                   ...primary, width: "100%", marginTop: 16,
                   ...(busy || !form.consent
                     ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line-control)", cursor: busy ? "wait" : "not-allowed" }
                     : {}),
                 }}>
-                {busy ? "Отправляем…" : form.consent ? "Оформить заявку" : "Нужно согласие на обработку данных"}
+                {isMirror ? "Отправка недоступна на зеркале" : busy ? "Отправляем…" : form.consent ? "Оформить заявку" : "Нужно согласие на обработку данных"}
               </button>
             </form>
           </div>

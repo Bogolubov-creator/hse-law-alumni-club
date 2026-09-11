@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CLUB_OPERATOR } from "@club/shared";
 import { token, useCart } from "../lib/cart.js";
+import { useTheme } from "../lib/theme.js";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
 import { Mark } from "./Mark.js";
@@ -55,15 +56,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
   const authed = !!token();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Тема: следуем системной, но даём переключатель – канон-охра должна быть
-  // проверяема в обоих режимах, а не только в том, что стоит у смотрящего.
-  const [theme, setTheme] = useState<"auto" | "light" | "dark">("auto");
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "auto") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", theme);
-    return () => root.removeAttribute("data-theme");
-  }, [theme]);
+  const { dark, toggle } = useTheme();
 
   return (
     <div className="club-public-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
@@ -83,14 +76,14 @@ export function V2Shell({ children }: { children: ReactNode }) {
               <Link key={n.to} to={n.to} className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>{n.label}</Link>
             ))}
             <Link to="/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
-              Корзина{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>}
+              Корзина{" "}{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>}
             </Link>
             <button
               type="button"
-              onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-              aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-              title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-              aria-pressed={theme === "dark"}
+              onClick={toggle}
+              aria-label={dark ? "Светлая тема" : "Тёмная тема"}
+              title={dark ? "Светлая тема" : "Тёмная тема"}
+              aria-pressed={dark}
               className="foc club-chrome-icon-btn"
               style={{ marginLeft: 4 }}
             >
@@ -134,9 +127,9 @@ export function V2Shell({ children }: { children: ReactNode }) {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, paddingTop: 12, borderTop: "1px solid var(--c-line)" }}>
               <button
                 type="button"
-                onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-                aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-                aria-pressed={theme === "dark"}
+                onClick={toggle}
+                aria-label={dark ? "Светлая тема" : "Тёмная тема"}
+                aria-pressed={dark}
                 className="foc tap club-chrome-icon-btn"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /></svg>

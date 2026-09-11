@@ -198,7 +198,7 @@ export default function ProgramV2() {
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
                     <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Программа курса</h2>
                     <span style={label}>
-                      {modules.length} {plural(modules.length, "модуль", "модуля", "модулей")}
+                      {modules.length} {plural(modules.length, "раздел", "раздела", "разделов")}
                       {totalHours > 0 && ` · ${totalHours} ак. ч.`}
                     </span>
                   </div>

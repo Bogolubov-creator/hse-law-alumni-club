@@ -1,3 +1,6 @@
+import { ThemeProvider } from "./lib/theme.js";
+import { SiteNotice } from "./components/SiteNotice.js";
+import { RouteScroll } from "./components/RouteScroll.js";
 import { SupportDock } from "./components/SupportDock.js";
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation, Link } from "react-router-dom";
@@ -5,7 +8,6 @@ import { useIsMobile } from "./lib/use-mobile.js";
 import { useIsPwaShell } from "./lib/use-pwa.js";
 import Stub from "./pages/Stub.js";
 import CookieBanner from "./components/CookieBanner.js";
-import { ChannelInvite } from "./components/ChannelInvite.js";
 import { PageViewBeacon } from "./components/PageViewBeacon.js";
 import InstallPrompt from "./components/InstallPrompt.js";
 import { PwaShell } from "./components/PwaShell.js";
@@ -82,22 +84,24 @@ export default function App() {
   }, []);
 
   return (
+    <ThemeProvider>
     <PwaShell>
-      {import.meta.env.VITE_LOCAL_REVIEW === "true" && <div className="club-local-notice">Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</div>}
+      {import.meta.env.VITE_LOCAL_REVIEW === "true" && <SiteNotice>Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</SiteNotice>}
       {import.meta.env.VITE_MIRROR === "true" && (
-        <div className="club-local-notice">
+        <SiteNotice>
           Публичное зеркало · демо-данные ·{" "}
           <Link to="/lk" className="foc" style={{ color: "inherit", fontWeight: 600 }}>кабинет</Link>
           {" · "}
           <Link to="/admin" className="foc" style={{ color: "inherit", fontWeight: 600 }}>админка</Link>
           {" · "}
           <Link to="/?pwa=1" className="foc" style={{ color: "inherit", fontWeight: 600 }}>Смотреть как на телефоне</Link>
-          {" · сохранение отключено"}
-        </div>
+          {" · отправка заявок отключена"}
+        </SiteNotice>
       )}
       <VisionPanel />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
+        <RouteScroll />
         {mobileTakeover ? <MobileApp /> : (
         <Routes>
           <Route path="/" element={<HomeV2 />} />
@@ -136,10 +140,10 @@ export default function App() {
       </Suspense>
       </ErrorBoundary>
       <SupportDock />
-      <ChannelInvite />
       <PageViewBeacon />
       <CookieBanner />
       <InstallPrompt />
     </PwaShell>
+    </ThemeProvider>
   );
 }

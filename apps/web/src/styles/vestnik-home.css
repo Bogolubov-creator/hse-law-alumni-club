@@ -14,7 +14,7 @@
 /* ── Hero: Artistic Asymmetry + full-bleed Themis ───────────────── */
 .vestnik-hero {
   position: relative;
-  min-height: min(92vh, 860px);
+  min-height: min(76vh, 700px);
   display: grid;
   align-items: end;
   isolation: isolate;
@@ -75,7 +75,7 @@
   max-width: var(--container);
   width: 100%;
   margin: 0 auto;
-  padding: clamp(72px, 12vh, 120px) 28px clamp(48px, 8vh, 72px);
+  padding: clamp(48px, 8vh, 80px) 28px clamp(36px, 6vh, 56px);
 }
 .vestnik-hero-copy-inner {
   max-width: min(38rem, 92vw);

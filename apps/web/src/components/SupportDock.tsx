@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useIsMobile } from "../lib/use-mobile.js";
+import { useIsPwaShell } from "../lib/use-pwa.js";
 import { ClubSupportBot } from "./ClubSupportBot.js";
 import { crowMascotApi } from "../mascot/crow-mascot.js";
 import { publicUrl } from "../lib/public-url.js";
@@ -21,6 +23,9 @@ export function SupportDock() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const crowRef = useRef<CrowInstance | null>(null);
+  const mobile = useIsMobile();
+  const pwa = useIsPwaShell();
+  const compact = mobile || pwa || pathname !== "/";
   const hidden = pathname.startsWith("/admin") || pathname.includes("/support");
 
   useEffect(() => {
@@ -36,10 +41,9 @@ export function SupportDock() {
 
     const mount = () => {
       if (cancelled || crowRef.current || hit) return;
-      const narrow = window.matchMedia("(max-width: 768px)").matches;
 
-      // На телефоне ворона + invite съедают primary CTA – только компактная кнопка.
-      if (narrow) {
+      // В рабочих разделах и мобильной оболочке оставляем компактную кнопку.
+      if (compact) {
         hit = document.createElement("button");
         hit.type = "button";
         hit.className = "club-support-pill foc";
@@ -50,7 +54,7 @@ export function SupportDock() {
         return;
       }
 
-      const width = 200;
+      const width = 112;
       const height = Math.round((width * 1465) / 1400);
 
       hit = document.createElement("button");
@@ -99,7 +103,7 @@ export function SupportDock() {
       hit?.remove();
       viBtn?.remove();
     };
-  }, [hidden]);
+  }, [hidden, compact]);
 
   useEffect(() => {
     const crow = crowRef.current;

@@ -1,3 +1,4 @@
+import { isMirror } from "../lib/public-url.js";
 import { Link } from "react-router-dom";
 import { rub, type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
@@ -80,7 +81,7 @@ export default function PodcastsV2() {
 
         {data?.subscribed && (
           <div style={{ ...label, color: "var(--c-ok-text)", padding: "14px 0", borderTop: "1px solid var(--c-line)", borderBottom: "1px solid var(--c-line)" }}>
-            подписка активна{data.sub_until ? ` до ${new Date(data.sub_until).toLocaleDateString("ru-RU")}` : ""} · доступны все выпуски
+            подписка активна{data.sub_until ? ` до ${new Date(data.sub_until).toLocaleDateString("ru-RU")}` : ""} · {isMirror ? "демо: записи не подключены" : "доступны все выпуски"}
           </div>
         )}
 
@@ -130,7 +131,7 @@ export default function PodcastsV2() {
                     <EpisodePlayer id={p.id} src={p.audio_url} v2 />
                   ) : (
                     <div style={{ ...label, fontSize: "var(--t-micro)", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: "1px dashed var(--c-line)", borderRadius: "var(--r-md)" }}>
-                      <span aria-hidden>🔒</span> доступно по подписке {priceRub} в год
+                      {isMirror ? "Запись не подключена к демо-витрине" : p.is_free || data?.subscribed ? "Запись пока недоступна" : `Доступно по подписке ${priceRub} в год`}
                     </div>
                   )}
                 </div>

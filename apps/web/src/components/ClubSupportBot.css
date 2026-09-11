@@ -136,7 +136,7 @@
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--p-blue) 35%, transparent);
   background: var(--c-bg);
-  color: var(--p-blue);
+  color: var(--c-accent-text);
   cursor: pointer;
 }
 
@@ -151,7 +151,7 @@
   min-height: 44px;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--p-blue);
+  color: var(--c-accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -221,7 +221,7 @@
 
 .club-bot-form input:focus-visible {
   outline: none;
-  border-color: var(--p-blue);
+  border-color: var(--c-accent-text);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-blue) 18%, transparent);
 }
 

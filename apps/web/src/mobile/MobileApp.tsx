@@ -5,7 +5,7 @@ import { rub, FORMAT_LABEL, type Program, type Product, type ProductVariant, typ
 import { token, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, useNewsPost, usePodcasts, formatNewsDate } from "../lib/queries.js";
 import { programStart } from "../lib/program-date.js";
-import { publicUrl, mediaUrl, programThumbUrl } from "../lib/public-url.js";
+import { isMirror, publicUrl, mediaUrl, programThumbUrl } from "../lib/public-url.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
@@ -22,7 +22,7 @@ const ANDROID = isAndroid();
 
 const INK = "var(--c-text)";
 const PAGE_BG = "var(--c-bg)";
-const TEXT_INV = "var(--c-text-inverse)";
+
 const LINE = "var(--c-line)";
 const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
 const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
@@ -96,7 +96,7 @@ function MobileHome() {
       </header>
 
       <div style={{ padding: "16px 20px 2px" }}>
-        <div style={{ fontSize: 15, color: "#5C6470" }}>Добрый день,</div>
+        <div style={{ fontSize: 15, color: "var(--c-text-2)" }}>Добрый день,</div>
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 30, letterSpacing: "-.02em", margin: "1px 0 0" }}>{first}</h1>
       </div>
 
@@ -105,7 +105,7 @@ function MobileHome() {
         <Link to="/lk" style={{ display: "block", borderRadius: 24, position: "relative", overflow: "hidden", background: "linear-gradient(152deg,#1e2942 0%,#14181F 54%,#0f1c3f 100%)", boxShadow: "0 28px 52px -28px rgba(17,41,107,.95)", textDecoration: "none" }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: 24, border: "1px solid rgba(196,154,69,.42)", pointerEvents: "none" }} />
           <img src={publicUrl("assets/themis.jpeg")} alt="" style={{ position: "absolute", right: -34, top: -22, width: 196, height: 196, objectFit: "cover", opacity: .15, borderRadius: 22, transform: "rotate(7deg)" }} />
-          <div style={{ position: "relative", padding: "20px 20px 18px", color: TEXT_INV }}>
+          <div style={{ position: "relative", padding: "20px 20px 18px", color: "#fbf3e8" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".24em", color: "rgba(227,194,114,.92)" }}>КАРТА ВЫПУСКНИКА</span>
               <span style={{ ...mono, fontSize: 10, letterSpacing: ".16em", color: "rgba(251,243,232,.55)" }}>ВЫПУСК {m.alumni.cohort ?? "–"}</span>
@@ -113,7 +113,7 @@ function MobileHome() {
             <div style={{ ...disp, fontWeight: 700, fontSize: 23, letterSpacing: "-.01em", marginTop: 28 }}>{m.alumni.fio ?? "Выпускник"}</div>
             <div style={{ ...mono, fontSize: 11, letterSpacing: ".1em", color: "rgba(251,243,232,.55)", marginTop: 5 }}>№ {m.alumni.referral_code ?? "–"}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 22 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#E3C272,#C49A45)", color: INK, padding: "7px 13px", borderRadius: 11 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#E3C272,#C49A45)", color: "#14181F", padding: "7px 13px", borderRadius: 11 }}>
                 <span style={{ ...disp, fontWeight: 700, fontSize: 12 }}>{m.level.level_title}</span>
                 <span style={{ width: 1, height: 12, background: "rgba(20,24,31,.35)" }} />
                 <span style={{ ...mono, fontWeight: 600, fontSize: 12 }}>{disc}</span>
@@ -134,17 +134,17 @@ function MobileHome() {
             </svg>
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: 23, lineHeight: 1 }}>{m.level.points}</div>
-              <div style={{ ...mono, fontSize: 8.5, letterSpacing: ".12em", color: "#6E675A", marginTop: 2 }}>БАЛЛОВ</div>
+              <div style={{ ...mono, fontSize: 8.5, letterSpacing: ".12em", color: "var(--c-text-3)", marginTop: 2 }}>БАЛЛОВ</div>
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Уровень</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Уровень</div>
             <div style={{ ...disp, fontWeight: 700, fontSize: 18, marginTop: 2 }}>{m.level.level_title}</div>
-            <div style={{ fontSize: 13, color: "#5C6470", marginTop: 2 }}>Скидка {disc} на ДПО</div>
+            <div style={{ fontSize: 13, color: "var(--c-text-2)", marginTop: 2 }}>Скидка {disc} на ДПО</div>
             <div style={{ marginTop: 11, height: 7, borderRadius: 99, background: "#F2E3CF", overflow: "hidden" }}>
               <div style={{ width: `${Math.round(prog * 100)}%`, height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#EC5A13,#C49A45)", transition: "width 1s cubic-bezier(.4,0,.2,1)" }} />
             </div>
-            <div style={{ ...mono, fontSize: 9.5, color: "#6E675A", marginTop: 7 }}>{next ? `+${m.level.to_next} до «${next.title}»` : "максимальный уровень"}</div>
+            <div style={{ ...mono, fontSize: 9.5, color: "var(--c-text-3)", marginTop: 7 }}>{next ? `+${m.level.to_next} до «${next.title}»` : "максимальный уровень"}</div>
           </div>
         </div>
       </div>
@@ -153,8 +153,8 @@ function MobileHome() {
       {m.achievements.length > 0 && (
         <div style={{ padding: "16px 0 2px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 20px 11px" }}>
-            <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Достижения · {m.achievements.filter((a) => a.earned).length}/{m.achievements.length}</span>
-            <Link to="/lk?section=achievements" style={{ ...mono, fontSize: 11, color: "#C24009" }}>Все →</Link>
+            <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Достижения · {m.achievements.filter((a) => a.earned).length}/{m.achievements.length}</span>
+            <Link to="/lk?section=achievements" style={{ ...mono, fontSize: 11, color: "var(--c-accent-text)" }}>Все →</Link>
           </div>
           <div className="noscroll" style={{ display: "flex", gap: 14, overflowX: "auto", padding: "4px 20px 6px" }}>
             {m.achievements.map((a) => {
@@ -163,9 +163,9 @@ function MobileHome() {
               return (
                 <div key={a.key} style={{ flexShrink: 0, width: 64, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, opacity: active ? 1 : 0.42 }}>
                   <div style={{ width: 54, height: 54, transform: "rotate(45deg)", borderRadius: 15, background: bg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: a.earned ? "0 8px 18px -10px rgba(17,41,107,.6)" : "none" }}>
-                    <span style={{ transform: "rotate(-45deg)", fontSize: 19, lineHeight: 1, color: active ? "var(--c-bg)" : "#b8a98a" }}>{a.icon}</span>
+                    <span style={{ transform: "rotate(-45deg)", fontSize: 19, lineHeight: 1, color: a.earned ? "#fbf3e8" : "#14181F" }}>{a.icon}</span>
                   </div>
-                  <span style={{ fontSize: 9.5, textAlign: "center", color: "#5C6470", lineHeight: 1.15 }}>{a.title}</span>
+                  <span style={{ fontSize: 9.5, textAlign: "center", color: "var(--c-text-2)", lineHeight: 1.15 }}>{a.title}</span>
                 </div>
               );
             })}
@@ -185,17 +185,17 @@ function MobileHome() {
       {ledger.data && ledger.data.length > 0 && (
         <div style={{ padding: "16px 20px 2px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10 }}>
-            <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Последнее</span>
-            <Link to="/lk/profile#ledger" style={{ ...mono, fontSize: 11, color: "#C24009" }}>Вся история →</Link>
+            <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Последнее</span>
+            <Link to="/lk/profile#ledger" style={{ ...mono, fontSize: 11, color: "var(--c-accent-text)" }}>Вся история →</Link>
           </div>
           <div style={{ ...CARD, borderRadius: 18, overflow: "hidden" }}>
             {ledger.data.slice(0, 3).map((l, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderTop: i ? "1px solid #F3EDE1" : "none" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 500 }}>{REASON_RU[l.reason] ?? l.reason}</div>
-                  <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>{formatNewsDate(l.created_at)}</div>
+                  <div style={{ ...mono, fontSize: 10, color: "var(--c-text-3)", marginTop: 2 }}>{formatNewsDate(l.created_at)}</div>
                 </div>
-                <div style={{ ...mono, fontWeight: 600, fontSize: 14, color: l.delta >= 0 ? "#1F8A5B" : "#C24009", flexShrink: 0 }}>{l.delta >= 0 ? "+" : ""}{l.delta}</div>
+                <div style={{ ...mono, fontWeight: 600, fontSize: 14, color: l.delta >= 0 ? "var(--c-ok-text)" : "var(--c-accent-text)", flexShrink: 0 }}>{l.delta >= 0 ? "+" : ""}{l.delta}</div>
               </div>
             ))}
           </div>
@@ -205,8 +205,8 @@ function MobileHome() {
       {/* Рекомендуем */}
       {rec && (
         <div style={{ padding: "16px 20px 4px" }}>
-          <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Рекомендуем вам</span>
-          <Link to={`/dpo/${rec.slug}`} style={{ display: "block", marginTop: 11, background: INK, borderRadius: 20, overflow: "hidden", position: "relative", padding: "18px 18px 16px", color: TEXT_INV, boxShadow: "0 18px 36px -26px rgba(20,24,31,.9)", textDecoration: "none" }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Рекомендуем вам</span>
+          <Link to={`/dpo/${rec.slug}`} style={{ display: "block", marginTop: 11, background: "#14181F", borderRadius: 20, overflow: "hidden", position: "relative", padding: "18px 18px 16px", color: "#fbf3e8", boxShadow: "0 18px 36px -26px rgba(20,24,31,.9)", textDecoration: "none" }}>
             <div style={{ position: "absolute", right: -20, bottom: -30, width: 130, height: 130, borderRadius: 99, background: "radial-gradient(circle,rgba(236,90,19,.34),transparent 70%)" }} />
             <div style={{ position: "relative" }}>
               <span style={{ display: "inline-block", ...mono, fontSize: 9, letterSpacing: ".1em", padding: "4px 8px", borderRadius: 7, background: "rgba(251,243,232,.12)", color: "#E3C272" }}>{rec.direction}</span>
@@ -234,7 +234,7 @@ function QuickAction({ to, onClick, label, tint, stroke, icon }: { to?: string; 
     </>
   );
   const st: CSSProperties = { display: "flex", alignItems: "center", gap: 11, ...CARD, borderRadius: 16, padding: "13px 14px", textDecoration: "none", color: INK, width: "100%", cursor: "pointer" };
-  return to ? <Link to={to} style={st}>{inner}</Link> : <button onClick={onClick} style={{ ...st, border: st.border as string, textAlign: "left", background: "#fff" }}>{inner}</button>;
+  return to ? <Link to={to} style={st}>{inner}</Link> : <button onClick={onClick} style={{ ...st, border: st.border as string, textAlign: "left", background: "var(--c-bg-raised)" }}>{inner}</button>;
 }
 
 function GuestHome() {
@@ -275,7 +275,7 @@ function ScreenHeader({ title, sub, right }: { title: string; sub?: string; righ
         {/* Настоящий <h1>: экран мобильной оболочки – самостоятельная страница, скринридер
             должен находить её заголовок навигацией по заголовкам (как на десктопе). */}
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: 0 }}>{title}</h1>
-        {sub && <div style={{ fontSize: 13, color: "#5C6470", marginTop: 2 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 13, color: "var(--c-text-2)", marginTop: 2 }}>{sub}</div>}
       </div>
       {right}
     </header>
@@ -292,8 +292,8 @@ function MobileFeed() {
       <ScreenHeader title="Лента" sub={`Новости клуба · ${TELEGRAM_CHANNEL.handle}`} />
       <div style={{ padding: "8px 20px 16px", display: "flex", flexDirection: "column", gap: 15 }}>
         {news.isLoading && <Loader />}
-        {news.isError && <p style={{ ...mono, fontSize: 13, color: "#C24009" }}>Не удалось загрузить новости.</p>}
-        {news.data?.length === 0 && <p style={{ ...mono, fontSize: 13, color: "#6E675A" }}>Пока нет публикаций.</p>}
+        {news.isError && <p style={{ ...mono, fontSize: 13, color: "var(--c-accent-text)" }}>Не удалось загрузить новости.</p>}
+        {news.data?.length === 0 && <p style={{ ...mono, fontSize: 13, color: "var(--c-text-3)" }}>Пока нет публикаций.</p>}
         {news.data?.map((n, i) => (
           <Link key={n.id} to={`/news/${n.slug}`} style={{ ...CARD, overflow: "hidden", boxShadow: "0 14px 32px -26px rgba(20,24,31,.5)", textDecoration: "none", color: INK }}>
             <div style={{ height: 96, position: "relative", background: NEWS_TINTS[i % NEWS_TINTS.length], overflow: "hidden" }}>
@@ -302,10 +302,10 @@ function MobileFeed() {
             </div>
             <div style={{ padding: "14px 16px 16px" }}>
               <div style={{ ...disp, fontWeight: 600, fontSize: 16, lineHeight: 1.25 }}>{n.title}</div>
-              {n.excerpt && <div style={{ fontSize: 13, color: "#5C6470", lineHeight: 1.45, marginTop: 8 }}>{n.excerpt}</div>}
+              {n.excerpt && <div style={{ fontSize: 13, color: "var(--c-text-2)", lineHeight: 1.45, marginTop: 8 }}>{n.excerpt}</div>}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
-                <span style={{ ...mono, fontSize: 10, color: "#6E675A" }}>{formatNewsDate(n.published_at)}</span>
-                <span style={{ ...mono, fontSize: 11, color: "#C24009" }}>Читать →</span>
+                <span style={{ ...mono, fontSize: 10, color: "var(--c-text-3)" }}>{formatNewsDate(n.published_at)}</span>
+                <span style={{ ...mono, fontSize: 11, color: "var(--c-accent-text)" }}>Читать →</span>
               </div>
             </div>
           </Link>
@@ -316,7 +316,7 @@ function MobileFeed() {
 }
 
 // ── ДПО ──────────────────────────────────────────────────────────────
-const FMT_COL: Record<string, string> = { online: "#2C6E80", offline: "#C24009", blended: "#11296B" };
+const FMT_COL: Record<string, string> = { online: "#2C6E80", offline: "var(--c-accent-text)", blended: "#11296B" };
 const FMT_RU: Record<string, string> = { online: "онлайн", offline: "очно", blended: "смешанный" };
 function MobileDpo() {
   useHead({ title: "Программы ДПО со скидкой выпускника", description: "Каталог программ ДПО факультета права НИУ ВШЭ со скидкой выпускника." });
@@ -342,24 +342,24 @@ function MobileDpo() {
     <div>
       {/* Без фото-мачты десктопа: лаконичный blue wash + eyebrow, чтобы не убивать скролл. */}
       <header style={{ ...HEADER, padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px", background: "linear-gradient(180deg, rgba(17,41,107,.1), rgba(17,41,107,.03) 55%, transparent 100%)", borderBottom: "1px solid rgba(17,41,107,.1)" }}>
-        <p style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#C24009", fontWeight: 600, margin: 0 }}>Витрина ДПО</p>
+        <p style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--c-accent-text)", fontWeight: 600, margin: 0 }}>Витрина ДПО</p>
         <h1 style={{ ...disp, fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", margin: "8px 0 0" }}>Программы ДПО</h1>
-        <p style={{ fontSize: 13, color: "#5C6470", margin: "6px 0 0", lineHeight: 1.45 }}>
+        <p style={{ fontSize: 13, color: "var(--c-text-2)", margin: "6px 0 0", lineHeight: 1.45 }}>
           Содержание, формат и старты – в каждой записи. Цена выпускника после подтверждения офисом.
         </p>
         <div style={{ display: "flex", gap: 14, marginTop: 14, flexWrap: "wrap" }} aria-live="polite">
           <div>
             <div style={{ ...disp, fontWeight: 700, fontSize: 18 }}>{programs.isLoading ? "…" : catalog.length}</div>
-            <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>в каталоге</div>
+            <div style={{ ...mono, fontSize: 10, color: "var(--c-text-3)", marginTop: 2 }}>в каталоге</div>
           </div>
           <div>
             <div style={{ ...disp, fontWeight: 700, fontSize: 18 }}>{programs.isLoading ? "…" : actual.length}</div>
-            <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>актуальный набор</div>
+            <div style={{ ...mono, fontSize: 10, color: "var(--c-text-3)", marginTop: 2 }}>актуальный набор</div>
           </div>
           {discount > 0 && (
             <div>
-              <div style={{ ...disp, fontWeight: 700, fontSize: 18, color: "#C24009" }}>−{discount}%</div>
-              <div style={{ ...mono, fontSize: 10, color: "#6E675A", marginTop: 2 }}>скидка выпускника</div>
+              <div style={{ ...disp, fontWeight: 700, fontSize: 18, color: "var(--c-accent-text)" }}>−{discount}%</div>
+              <div style={{ ...mono, fontSize: 10, color: "var(--c-text-3)", marginTop: 2 }}>скидка выпускника</div>
             </div>
           )}
         </div>
@@ -373,7 +373,7 @@ function MobileDpo() {
         </div>
       </header>
       <div style={{ padding: "12px 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ ...mono, fontSize: 12, color: "#6E675A" }} role="status">
+        <div style={{ ...mono, fontSize: 12, color: "var(--c-text-3)" }} role="status">
           {programs.isLoading ? "Загружаем каталог…" : <>Найдено программ: <strong style={{ color: INK }}>{shown.length}</strong></>}
         </div>
 
@@ -387,7 +387,7 @@ function MobileDpo() {
         )}
 
         {programs.isLoading && (
-          <div aria-busy="true" style={{ ...mono, fontSize: 13, color: "#6E675A", padding: "8px 0 4px" }}>
+          <div aria-busy="true" style={{ ...mono, fontSize: 13, color: "var(--c-text-3)", padding: "8px 0 4px" }}>
             загружаем каталог…
             <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
               {[0, 1, 2].map((i) => (
@@ -400,7 +400,7 @@ function MobileDpo() {
         {!programs.isLoading && !programs.isError && shown.length === 0 && (
           <div style={{ ...CARD, padding: "22px 18px", textAlign: "center" }}>
             <div style={{ ...disp, fontWeight: 700, fontSize: 17 }}>По выбранным условиям программ нет</div>
-            <p style={{ fontSize: 13.5, color: "#5C6470", margin: "8px 0 0", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13.5, color: "var(--c-text-2)", margin: "8px 0 0", lineHeight: 1.5 }}>
               Снимите фильтр направления или посмотрите весь каталог, включая закрытый набор.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, alignItems: "stretch" }}>
@@ -433,24 +433,24 @@ function MobileDpo() {
                     <span style={{ ...mono, fontSize: 9, letterSpacing: ".06em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>
                       {FORMAT_LABEL[p.format] ?? FMT_RU[p.format] ?? p.format}
                     </span>
-                    <span style={{ ...mono, fontSize: 10, color: closed ? "#B5331B" : "#1F8A5B" }}>{closed ? "набор закрыт" : "актуальный набор"}</span>
+                    <span style={{ ...mono, fontSize: 10, color: closed ? "var(--c-danger-text)" : "var(--c-ok-text)" }}>{closed ? "набор закрыт" : "актуальный набор"}</span>
                   </div>
                   <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: INK }}>
                     <h2 style={{ ...disp, fontWeight: 600, fontSize: 16.5, lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
                   </Link>
                 </div>
               </div>
-              {meta && <div style={{ ...mono, fontSize: 11, color: "#6E675A", marginTop: 10, lineHeight: 1.35 }}>{meta}</div>}
-              <p style={{ fontSize: 13, color: "#5C6470", margin: "8px 0 0", lineHeight: 1.45 }}>
+              {meta && <div style={{ ...mono, fontSize: 11, color: "var(--c-text-3)", marginTop: 10, lineHeight: 1.35 }}>{meta}</div>}
+              <p style={{ fontSize: 13, color: "var(--c-text-2)", margin: "8px 0 0", lineHeight: 1.45 }}>
                 {p.dates?.start ? `Начало: ${programStart(p.dates.start)}` : "Дата начала уточняется"}
                 {p.document ? ` · ${p.document}` : ""}
               </p>
               <div style={{ marginTop: 14 }}>
-                <div style={{ ...disp, fontWeight: 700, fontSize: 20, color: discount > 0 ? "#C24009" : INK }}>{rub(priced)}</div>
+                <div style={{ ...disp, fontWeight: 700, fontSize: 20, color: discount > 0 ? "var(--c-accent-text)" : INK }}>{rub(priced)}</div>
                 {discount > 0 && (
                   <>
                     <div style={{ ...mono, fontSize: 12, color: "#B8B0A0", textDecoration: "line-through", marginTop: 3 }}>{rub(p.price)}</div>
-                    <div style={{ ...mono, fontSize: 11, color: "#1F8A5B", marginTop: 4 }}>−{discount}% выпускнику</div>
+                    <div style={{ ...mono, fontSize: 11, color: "var(--c-ok-text)", marginTop: 4 }}>−{discount}% выпускнику</div>
                   </>
                 )}
               </div>
@@ -459,11 +459,11 @@ function MobileDpo() {
                   Подробнее
                 </Link>
                 {external ? (
-                  <a href={p.source_url!} target="_blank" rel="noopener noreferrer" className="foc tap club-btn club-btn--block" style={{ background: "transparent", borderColor: "transparent", color: "#11296B", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  <a href={p.source_url!} target="_blank" rel="noopener noreferrer" className="foc tap club-btn club-btn--block" style={{ background: "transparent", borderColor: "transparent", color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 3 }}>
                     Запись на hse.ru ↗
                   </a>
                 ) : closed ? (
-                  <span style={{ ...mono, fontSize: 12, color: "#6E675A", textAlign: "center", padding: "12px 0", border: "1px dashed #E4DCCC", borderRadius: 999 }}>Набор закрыт</span>
+                  <span style={{ ...mono, fontSize: 12, color: "var(--c-text-3)", textAlign: "center", padding: "12px 0", border: "1px dashed #E4DCCC", borderRadius: 999 }}>Набор закрыт</span>
                 ) : (
                   <button type="button" onClick={() => addToCart(p)} disabled={add.isPending} className="foc tap club-btn club-btn--primary club-btn--block">
                     В корзину
@@ -475,10 +475,10 @@ function MobileDpo() {
         })}
 
         {shown.length > 0 && (
-          <div style={{ ...mono, fontSize: 11, color: "#6E675A", textAlign: "center", paddingTop: 4 }}>
+          <div style={{ ...mono, fontSize: 11, color: "var(--c-text-3)", textAlign: "center", paddingTop: 4 }}>
             Показано программ: {shown.length}
             {!showAll && catalog.length > actual.length && (
-              <> · <button type="button" onClick={() => setShowAll(true)} style={{ background: "none", border: "none", color: "#C24009", cursor: "pointer", font: "inherit", textDecoration: "underline" }}>включая закрытый набор</button></>
+              <> · <button type="button" onClick={() => setShowAll(true)} style={{ background: "none", border: "none", color: "var(--c-accent-text)", cursor: "pointer", font: "inherit", textDecoration: "underline" }}>включая закрытый набор</button></>
             )}
           </div>
         )}
@@ -490,8 +490,8 @@ function MobileDpo() {
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
   // Android – Material-чип (тёмный активный); iOS – оранжевый активный.
   const brd = on ? (ANDROID ? "#14181F" : "#EC5A13") : "#E4DCCC";
-  const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "#fff";
-  const col = on ? (ANDROID ? "var(--c-bg)" : "#C24009") : INK;
+  const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "var(--c-bg-raised)";
+  const col = on ? (ANDROID ? "#fbf3e8" : "var(--c-accent-text)") : INK;
   return <button onClick={onClick} style={{ flexShrink: 0, fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + brd, background: bg, color: col, cursor: "pointer" }}>{children}</button>;
 }
 
@@ -505,16 +505,16 @@ function MobilePodcasts() {
       <ScreenHeader title="Подкасты" sub="Разговоры с практиками права" />
       <div style={{ padding: "10px 20px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
         {q.isLoading && <Loader />}
-        {items.length === 0 && !q.isLoading && <p style={{ ...mono, fontSize: 13, color: "#6E675A" }}>Выпусков пока нет.</p>}
+        {items.length === 0 && !q.isLoading && <p style={{ ...mono, fontSize: 13, color: "var(--c-text-3)" }}>Выпусков пока нет.</p>}
         {items.map((p, i) => (
           <Link key={p.id} to={`/podcasts?ep=${encodeURIComponent(p.id)}`} style={{ display: "flex", alignItems: "center", gap: 14, ...CARD, borderRadius: 18, padding: "13px 14px", boxShadow: "0 14px 30px -28px rgba(20,24,31,.5)", textDecoration: "none", color: INK }}>
             <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, background: p.cover ? `#11296B url(${mediaUrl(p.cover)}) center/cover` : "linear-gradient(140deg,#1e2942,#11296B)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {!p.cover && <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...mono, fontSize: 9.5, letterSpacing: ".08em", color: "#6E675A" }}>ВЫПУСК {i + 1}{p.duration ? ` · ${p.duration}` : ""}{p.is_free ? " · беспл." : ""}</div>
+              <div style={{ ...mono, fontSize: 9.5, letterSpacing: ".08em", color: "var(--c-text-3)" }}>ВЫПУСК {i + 1}{p.duration ? ` · ${p.duration}` : ""}{p.is_free ? " · беспл." : ""}</div>
               <div style={{ ...disp, fontWeight: 600, fontSize: 14.5, lineHeight: 1.2, marginTop: 4 }}>{p.title}</div>
-              {p.description && <div style={{ fontSize: 12, color: "#5C6470", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.description}</div>}
+              {p.description && <div style={{ fontSize: 12, color: "var(--c-text-2)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.description}</div>}
             </div>
           </Link>
         ))}
@@ -571,9 +571,9 @@ function MobileMerch() {
 
 // ── Детальные экраны (стадия 2): full-screen без нижней навигации ─────
 const roundDark: CSSProperties = { width: 40, height: 40, borderRadius: 99, border: "none", background: "rgba(20,24,31,.42)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, textDecoration: "none" };
-const roundLight: CSSProperties = { width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 };
+const roundLight: CSSProperties = { width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "var(--c-bg-raised)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 };
 const secTitle: CSSProperties = { ...disp, fontWeight: 600, fontSize: 15, marginBottom: 8 };
-const factChip: CSSProperties = { ...mono, fontSize: 10.5, color: INK, background: "#fff", border: `1px solid ${LINE}`, padding: "7px 11px", borderRadius: 9 };
+const factChip: CSSProperties = { ...mono, fontSize: 10.5, color: INK, background: "var(--c-bg-raised)", border: `1px solid ${LINE}`, padding: "7px 11px", borderRadius: 9 };
 const stickyBar: CSSProperties = { flexShrink: 0, padding: "12px 20px calc(env(safe-area-inset-bottom, 0px) + 16px)", background: PAGE_BG, borderTop: `1px solid ${LINE}`, display: "flex", gap: 11 };
 /* Пилюли как на dpo-pravo-hse; цвет – охра клуба. */
 const primaryBtn: CSSProperties = {
@@ -585,7 +585,7 @@ const primaryBtn: CSSProperties = {
 };
 const secondaryBtn: CSSProperties = {
   ...primaryBtn,
-  background: "#fff", color: "#C24009", border: "1px solid rgba(236,90,19,.35)",
+  background: "var(--c-bg-raised)", color: "var(--c-accent-text)", border: "1px solid rgba(236,90,19,.35)",
 };
 const ghostBtn: CSSProperties = { ...secondaryBtn };
 const BackWhite = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>;
@@ -627,9 +627,9 @@ function MobileProgram() {
     });
   };
   return (
-    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
-      <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
-        <div style={{ position: "relative", height: 200, overflow: "hidden", background: "linear-gradient(150deg,#1e2942,#11296B 60%,#0f1c3f)" }}>
+    <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+      <div key={pathname} className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ position: "relative", minHeight: 200, paddingTop: 76, overflow: "hidden", background: "linear-gradient(150deg,#1e2942,#11296B 60%,#0f1c3f)" }}>
           <img
             src={mediaUrl(p?.cover || "/assets/dpo-hero.jpg")}
             alt=""
@@ -646,14 +646,14 @@ function MobileProgram() {
               {count > 0 && <span style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 99, background: "#EC5A13", color: "#14181F", ...mono, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #0f1c3f" }}>{count}</span>}
             </Link>
           </div>
-          {p && <div style={{ position: "absolute", left: 20, right: 20, bottom: 16 }}>
+          {p && <div style={{ position: "relative", padding: "0 20px 20px" }}>
             <span style={{ ...mono, fontSize: 9, letterSpacing: ".08em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>{FMT_RU[p.format] ?? p.format}</span>
-            <div style={{ ...disp, fontWeight: 700, fontSize: 22, lineHeight: 1.15, color: TEXT_INV, marginTop: 10 }}>{p.title}</div>
+            <h1 style={{ ...disp, fontWeight: 700, fontSize: 22, lineHeight: 1.15, color: "#fbf3e8", margin: "10px 0 0" }}>{p.title}</h1>
             {p.tagline && <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.4, color: "rgba(251,243,232,.82)" }}>{p.tagline}</div>}
           </div>}
         </div>
         {q.isLoading && <Loader />}
-        {q.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#C24009" }}>Программа не найдена.</p>}
+        {q.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "var(--c-accent-text)" }}>Программа не найдена.</p>}
         {p && (
           <div style={{ padding: "18px 20px 24px", display: "flex", flexDirection: "column", gap: 18 }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -666,25 +666,25 @@ function MobileProgram() {
                 <span style={{ ...disp, fontWeight: 800, fontSize: 26, color: "#EC5A13" }}>{rub(mem)}</span>
                 {discount > 0 && <span style={{ ...mono, fontSize: 14, color: "#B8B0A0", textDecoration: "line-through" }}>{rub(p.price)}</span>}
               </div>
-              <div style={{ ...mono, fontSize: 10.5, color: "#6E675A", marginTop: 6 }}>{discount > 0 ? `Цена члена клуба (−${discount}%) · справочно` : "Цена · справочно"}</div>
+              <div style={{ ...mono, fontSize: 10.5, color: "var(--c-text-3)", marginTop: 6 }}>{discount > 0 ? `Цена члена клуба (−${discount}%) · справочно` : "Цена · справочно"}</div>
             </div>
-            {p.description && <div><div style={secTitle}>О программе</div><div style={{ fontSize: 14, lineHeight: 1.55, color: "#3a3f49", whiteSpace: "pre-line" }}>{p.description}</div></div>}
-            {audience.length > 0 && <div><div style={secTitle}>Кому подойдёт</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{audience.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "#3a3f49" }}>– {item}</li>)}</ul></div>}
-            {results.length > 0 && <div><div style={secTitle}>Чему научитесь</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{results.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "#3a3f49" }}>– {item}</li>)}</ul></div>}
-            {advantages.length > 0 && <div><div style={secTitle}>Преимущества</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{advantages.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "#3a3f49" }}>– {item}</li>)}</ul></div>}
+            {p.description && <div><div style={secTitle}>О программе</div><div style={{ fontSize: 14, lineHeight: 1.55, color: "var(--c-text-2)", whiteSpace: "pre-line" }}>{p.description}</div></div>}
+            {audience.length > 0 && <div><div style={secTitle}>Кому подойдёт</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{audience.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c-text-2)" }}>– {item}</li>)}</ul></div>}
+            {results.length > 0 && <div><div style={secTitle}>Чему научитесь</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{results.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c-text-2)" }}>– {item}</li>)}</ul></div>}
+            {advantages.length > 0 && <div><div style={secTitle}>Преимущества</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{advantages.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c-text-2)" }}>– {item}</li>)}</ul></div>}
             {modules.length > 0 && <div><div style={secTitle}>Модули</div><div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{modules.map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, ...CARD, borderRadius: 13, padding: "12px 14px" }}><span style={{ width: 22, height: 22, borderRadius: 99, background: "rgba(236,90,19,.12)", color: "#C24009", ...mono, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span><span style={{ fontSize: 13.5 }}>{m.title}</span></div>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, ...CARD, borderRadius: 13, padding: "12px 14px" }}><span style={{ width: 22, height: 22, borderRadius: 99, background: "rgba(236,90,19,.12)", color: "var(--c-accent-text)", ...mono, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span><span style={{ fontSize: 13.5 }}>{m.title}</span></div>
             ))}</div></div>}
             {teachers.length > 0 && <div><div style={secTitle}>Преподаватели</div><div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{teachers.map((t, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, background: i === 0 ? INK : "#fff", borderRadius: 16, padding: "15px 16px", border: i === 0 ? "none" : "1px solid #E4DCCC" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, background: i === 0 ? "#14181F" : "var(--c-bg-raised)", borderRadius: 16, padding: "15px 16px", border: i === 0 ? "none" : "1px solid #E4DCCC" }}>
                 {t.photo ? (
                   <img src={mediaUrl(t.photo)} alt="" width={42} height={42} loading="lazy" decoding="async" style={{ width: 42, height: 42, borderRadius: 12, objectFit: "cover", flexShrink: 0, border: i === 0 ? "1px solid rgba(251,243,232,.2)" : "1px solid #E4DCCC" }} />
                 ) : (
-                  <span style={{ width: 42, height: 42, borderRadius: 12, background: i === 0 ? "linear-gradient(135deg,#E3C272,#C49A45)" : "rgba(236,90,19,.12)", color: i === 0 ? INK : "#C24009", ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.name.trim()[0] ?? "≡"}</span>
+                  <span style={{ width: 42, height: 42, borderRadius: 12, background: i === 0 ? "linear-gradient(135deg,#E3C272,#C49A45)" : "rgba(236,90,19,.12)", color: i === 0 ? "#14181F" : "var(--c-accent-text)", ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.name.trim()[0] ?? "≡"}</span>
                 )}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: i === 0 ? "var(--c-bg)" : INK }}>{t.name}</div>
-                  {t.role && <div style={{ ...mono, fontSize: 11, marginTop: 3, color: i === 0 ? "rgba(251,243,232,.55)" : "#6E675A" }}>{t.role}</div>}
+                  <div style={{ fontWeight: 600, fontSize: 14, color: i === 0 ? "#fbf3e8" : INK }}>{t.name}</div>
+                  {t.role && <div style={{ ...mono, fontSize: 11, marginTop: 3, color: i === 0 ? "rgba(251,243,232,.55)" : "var(--c-text-3)" }}>{t.role}</div>}
                 </div>
               </div>
             ))}</div></div>}
@@ -704,7 +704,7 @@ function MobileProgram() {
 }
 
 function CartField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "#fff", padding: "0 15px", fontFamily: "'HSE Sans', system-ui, sans-serif", fontSize: 15, color: INK, outline: "none" }} />;
+  return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "var(--c-bg-raised)", padding: "0 15px", fontFamily: "'HSE Sans', system-ui, sans-serif", fontSize: 15, color: INK, outline: "none" }} />;
 }
 
 function MobileCart() {
@@ -734,11 +734,11 @@ function MobileCart() {
 
   if (result) {
     return (
-      <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+      <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: PAGE_BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
         <div style={{ width: 96, height: 96, borderRadius: 99, background: "linear-gradient(140deg,#2C6E80,#15375E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 46px -20px rgba(21,55,94,.8)" }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg></div>
         <div style={{ ...disp, fontWeight: 800, fontSize: 24, marginTop: 26 }}>Заявка отправлена</div>
-        <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "#C24009", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
-        <div style={{ fontSize: 14, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
+        <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "var(--c-accent-text)", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
+        <div style={{ fontSize: 14, color: "var(--c-text-2)", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
         {result.payment_url && <a href={result.payment_url} style={{ ...primaryBtn, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", padding: "0 26px", background: "#1F8A5B", boxShadow: "none" }}>Оплатить онлайн</a>}
         <button onClick={() => nav("/")} style={{ ...secondaryBtn, marginTop: 22, flex: "none", padding: "13px 34px", color: INK, borderColor: "rgba(20,24,31,.25)" }}>На главную</button>
       </div>
@@ -746,19 +746,19 @@ function MobileCart() {
   }
 
   return (
-    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <header style={{ ...HEADER, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 12px" }}>
         <button onClick={() => nav(-1)} aria-label="Назад" style={roundLight}>{BackInk}</button>
         <div style={{ ...disp, fontWeight: 800, fontSize: 21, letterSpacing: "-.01em" }}>Заявка</div>
       </header>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         {cart.isLoading && <Loader />}
-        {cart.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#C24009" }}>Не удалось загрузить корзину.</p>}
+        {cart.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "var(--c-accent-text)" }}>Не удалось загрузить корзину.</p>}
         {!cart.isLoading && !cart.isError && items.length === 0 && (
           <div style={{ padding: "70px 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <div style={{ width: 78, height: 78, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C49A45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg></div>
             <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Заявка пуста</div>
-            <div style={{ fontSize: 13.5, color: "#5C6470", marginTop: 6, lineHeight: 1.5 }}>Добавьте программу ДПО или мерч – и оформите заявку в пару касаний.</div>
+            <div style={{ fontSize: 13.5, color: "var(--c-text-2)", marginTop: 6, lineHeight: 1.5 }}>Добавьте программу ДПО или мерч – и оформите заявку в пару касаний.</div>
             <button onClick={() => nav("/dpo")} style={{ ...primaryBtn, flex: "none", marginTop: 22, height: 48, padding: "0 26px" }}>К программам</button>
           </div>
         )}
@@ -770,45 +770,46 @@ function MobileCart() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.25 }}>{c.title}</div>
                     {c.type === "dpo" && <div style={{ ...mono, fontSize: 10, color: "#2C6E80", marginTop: 3 }}>ДПО · скидка выпускника</div>}
-                    <div style={{ ...mono, fontSize: 12, color: "#6E675A", marginTop: 5 }}>{rub(c.price)}</div>
+                    <div style={{ ...mono, fontSize: 12, color: "var(--c-text-3)", marginTop: 5 }}>{rub(c.price)}</div>
                   </div>
                   {c.type === "merch" ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
-                      <button type="button" aria-label="Меньше" disabled={setQty.isPending} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: c.qty - 1 })} style={{ width: 28, height: 28, borderRadius: 9, border: "1px solid #E4DCCC", background: "#fff", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>–</button>
+                      <button type="button" aria-label="Меньше" disabled={setQty.isPending} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: c.qty - 1 })} style={{ width: 28, height: 28, borderRadius: 9, border: "1px solid #E4DCCC", background: "var(--c-bg-raised)", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>–</button>
                       <span style={{ ...mono, fontSize: 13, minWidth: 14, textAlign: "center" }}>{c.qty}</span>
-                      <button type="button" aria-label="Больше" disabled={setQty.isPending || c.qty >= 99} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: c.qty + 1 })} style={{ width: 28, height: 28, borderRadius: 9, border: "1px solid #E4DCCC", background: "#fff", cursor: "pointer", fontSize: 15, lineHeight: 1 }}>+</button>
+                      <button type="button" aria-label="Больше" disabled={setQty.isPending || c.qty >= 99} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: c.qty + 1 })} style={{ width: 28, height: 28, borderRadius: 9, border: "1px solid #E4DCCC", background: "var(--c-bg-raised)", cursor: "pointer", fontSize: 15, lineHeight: 1 }}>+</button>
                     </div>
                   ) : (
-                    <button type="button" aria-label="Убрать" disabled={setQty.isPending} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: 0 })} style={{ background: "none", border: "none", color: "#C24009", cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
+                    <button type="button" aria-label="Убрать" disabled={setQty.isPending} onClick={() => setQty.mutate({ ref_id: c.ref_id, variant_sku: c.variant_sku, qty: 0 })} style={{ background: "none", border: "none", color: "var(--c-accent-text)", cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
                   )}
                 </div>
               ))}
             </div>
             <div style={{ ...CARD, borderRadius: 16, padding: "15px 16px", display: "flex", flexDirection: "column", gap: 9 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "#3a3f49" }}><span>Подытог</span><span style={mono}>{rub(subtotal)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "var(--c-text-2)" }}><span>Подытог</span><span style={mono}>{rub(subtotal)}</span></div>
               {discAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "#2C6E80" }}><span>Скидка выпускника −{discount}% (ДПО)</span><span style={mono}>−{rub(discAmt)}</span></div>}
               <div style={{ height: 1, background: "#F0E9DC", margin: "2px 0" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ ...disp, fontWeight: 700, fontSize: 15 }}>Итого</span><span style={{ ...disp, fontWeight: 800, fontSize: 19, color: "#EC5A13" }}>{rub(total)}</span></div>
-              <div style={{ ...mono, fontSize: 9.5, color: "#6E675A", marginTop: 2 }}>Оценочно. С вами свяжется менеджер учебного офиса.</div>
+              <div style={{ ...mono, fontSize: 9.5, color: "var(--c-text-3)", marginTop: 2 }}>Оценочно. С вами свяжется менеджер учебного офиса.</div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-              <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Контакты</div>
+              <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Контакты</div>
+              {isMirror && <p role="note">Это демо: заявку отправить нельзя. Личные данные вводить не нужно.</p>}
               <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={form.website} onChange={(e) => set("website", e.target.value)} style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} />
               <CartField label="ФИО" value={form.fio} onChange={(v) => set("fio", v)} />
               <CartField label="Телефон" value={form.phone} onChange={(v) => set("phone", v)} />
               <CartField label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} />
               <div style={{ display: "flex", gap: 9 }}>
                 {(["pickup", "delivery"] as const).map((f) => (
-                  <button type="button" key={f} onClick={() => set("fulfillment", f)} style={{ flex: 1, height: 46, borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, border: "1.5px solid " + (form.fulfillment === f ? "#EC5A13" : "#E4DCCC"), background: "#fff", color: INK }}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
+                  <button type="button" key={f} onClick={() => set("fulfillment", f)} style={{ flex: 1, height: 46, borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, border: "1.5px solid " + (form.fulfillment === f ? "#EC5A13" : "#E4DCCC"), background: "var(--c-bg-raised)", color: INK }}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
                 ))}
               </div>
               {form.fulfillment === "delivery" && <CartField label="Адрес доставки" value={form.address} onChange={(v) => set("address", v)} />}
-              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 12.5, color: "#3a3f49", lineHeight: 1.45, marginTop: 2, cursor: "pointer" }}>
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 12.5, color: "var(--c-text-2)", lineHeight: 1.45, marginTop: 2, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} required style={{ width: 20, height: 20, margin: 0, flexShrink: 0, accentColor: "#EC5A13" }} />
-                <span>Согласен на обработку персональных данных оператору {CLUB_OPERATOR.shortName} согласно <Link to="/privacy" target="_blank" style={{ color: "#C24009" }}>политике</Link> (152-ФЗ).</span>
+                <span>Согласен на обработку персональных данных оператору {CLUB_OPERATOR.shortName} согласно <Link to="/privacy" target="_blank" style={{ color: "var(--c-accent-text)" }}>политике</Link> (152-ФЗ).</span>
               </label>
             </div>
-            <button type="submit" disabled={busy || !form.consent} style={{ ...primaryBtn, height: 54, opacity: busy || !form.consent ? 0.6 : 1 }}>{busy ? "Отправляем…" : "Отправить заявку"}</button>
+            <button type="submit" disabled={isMirror || busy || !form.consent} style={{ ...primaryBtn, height: 54, opacity: busy || !form.consent ? 0.6 : 1 }}>{isMirror ? "Демо · отправка отключена" : busy ? "Отправляем…" : "Отправить заявку"}</button>
           </form>
         )}
       </div>
@@ -832,7 +833,7 @@ function MobileNewsPost() {
   // Оттенок героя – стабильный по slug (как цветные карточки ленты).
   const tint = NEWS_TINTS[Math.abs([...slug].reduce((s, c) => s + c.charCodeAt(0), 0)) % NEWS_TINTS.length];
   return (
-    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 150, background: tint, overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 2px,transparent 2px 14px)" }} />
@@ -840,17 +841,17 @@ function MobileNewsPost() {
           <div style={{ position: "absolute", left: 20, bottom: 14, ...mono, fontSize: 9.5, letterSpacing: ".12em", color: "rgba(255,255,255,.95)", background: "rgba(0,0,0,.24)", padding: "5px 10px", borderRadius: 7 }}>НОВОСТЬ</div>
         </div>
         {post.isLoading && <Loader />}
-        {post.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#C24009" }}>Новость не найдена.</p>}
+        {post.isError && <p style={{ padding: 20, ...mono, fontSize: 13, color: "var(--c-accent-text)" }}>Новость не найдена.</p>}
         {d && (
           <div style={{ padding: "18px 20px 40px" }}>
-            <div style={{ ...mono, fontSize: 10, color: "#6E675A" }}>{formatNewsDate(d.published_at)}</div>
+            <div style={{ ...mono, fontSize: 10, color: "var(--c-text-3)" }}>{formatNewsDate(d.published_at)}</div>
             <h1 style={{ ...disp, fontWeight: 700, fontSize: 22, lineHeight: 1.2, margin: "8px 0 0" }}>{d.title}</h1>
             <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 13 }}>
               {(d.body ?? d.excerpt ?? "").split(/\n{2,}/).filter(Boolean).map((para, i) => (
-                <p key={i} style={{ fontSize: 14.5, lineHeight: 1.6, color: "#3a3f49", margin: 0 }}>{para}</p>
+                <p key={i} style={{ fontSize: 14.5, lineHeight: 1.6, color: "var(--c-text-2)", margin: 0 }}>{para}</p>
               ))}
             </div>
-            <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="club-btn club-btn--block foc" style={{ marginTop: 20, background: "#15375E", borderColor: "#15375E", color: TEXT_INV }}>Открыть в Telegram · {TELEGRAM_CHANNEL.handle}</a>
+            <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="club-btn club-btn--block foc" style={{ marginTop: 20, background: "#15375E", borderColor: "#15375E", color: "#fbf3e8" }}>Открыть в Telegram · {TELEGRAM_CHANNEL.handle}</a>
           </div>
         )}
       </div>
@@ -881,14 +882,15 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
   // Смена выпуска – сбрасываем локальный прогресс UI (audio сам перезагрузится по key).
   useEffect(() => { setPlaying(false); setPos(0); setDur(0); }, [epId]);
 
-  if (q.isLoading) return <div style={{ height: "100dvh", background: "#14181F" }}><Loader /></div>;
+  if (q.isLoading) return <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: "#14181F" }}><Loader /></div>;
   if (!item) return (
-    <div style={{ height: "100dvh", background: "#14181F", color: TEXT_INV, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: "#14181F", color: "#fbf3e8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <p style={{ ...mono, fontSize: 13 }}>Выпуск не найден</p>
       <button onClick={() => nav("/podcasts")} style={{ ...primaryBtn, flex: "none", padding: "0 26px", height: 48 }}>К списку</button>
     </div>
   );
   const locked = !item.audio_url;
+  const unavailable = isMirror || item.is_free || !!q.data?.subscribed;
   const goEp = (i: number) => { const t2 = items[i]; if (t2) nav(`/podcasts?ep=${encodeURIComponent(t2.id)}`, { replace: true }); };
   const toggle = () => {
     const a = audioRef.current;
@@ -902,10 +904,10 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
     a.currentTime = Math.max(0, Math.min(dur, ((e.clientX - r.left) / r.width) * dur));
   };
   return (
-    <div style={{ height: "100dvh", background: "linear-gradient(180deg,#1a2338 0%,#14181F 60%,#0f131a 100%)", display: "flex", flexDirection: "column", color: TEXT_INV, overflow: "hidden", fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: "linear-gradient(180deg,#1a2338 0%,#14181F 60%,#0f131a 100%)", display: "flex", flexDirection: "column", color: "#fbf3e8", overflow: "hidden", fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 14px) 16px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button onClick={() => nav("/podcasts")} aria-label="Назад" style={{ ...roundDark, background: "rgba(251,243,232,.12)", backdropFilter: "none", WebkitBackdropFilter: "none" }}>{BackWhite}</button>
-        <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "rgba(251,243,232,.55)" }}>{locked ? "ПО ПОДПИСКЕ" : "СЕЙЧАС ИГРАЕТ"}</span>
+        <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "rgba(251,243,232,.55)" }}>{locked ? (unavailable ? "ЗАПИСЬ НЕДОСТУПНА" : "ПО ПОДПИСКЕ") : "СЕЙЧАС ИГРАЕТ"}</span>
         <div style={{ width: 40 }} />
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 30px", minHeight: 0 }}>
@@ -926,7 +928,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
       </div>
       <div style={{ padding: "0 30px calc(env(safe-area-inset-bottom, 0px) + 34px)" }}>
         {locked ? (
-          <button onClick={() => nav("/podcasts")} style={{ ...primaryBtn, width: "100%", flex: "none" }}>Оформить подписку на подкасты</button>
+          <button onClick={() => nav("/podcasts")} style={{ ...primaryBtn, width: "100%", flex: "none" }}>{unavailable ? "Запись пока недоступна · к выпускам" : "Оформить подписку на подкасты"}</button>
         ) : (
           <>
             <audio key={item.id} ref={audioRef} src={item.audio_url ?? undefined} preload="metadata"
@@ -977,32 +979,32 @@ function MobileMerchItem({ slug }: { slug: string }) {
     });
   };
   return (
-    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 300, overflow: "hidden", background: m?.images?.[0] ? `#EDE4D2 url(${mediaUrl(m.images[0])}) center/cover no-repeat` : tint }}>
           {!m?.images?.[0] && <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 9px,transparent 9px 19px)" }} />}
           <button onClick={() => nav("/merch")} aria-label="Назад" style={{ ...roundDark, position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 14px)", left: 16 }}>{BackWhite}</button>
         </div>
         {products.isLoading && <Loader />}
-        {!products.isLoading && !m && <p style={{ padding: 20, ...mono, fontSize: 13, color: "#C24009" }}>Товар не найден.</p>}
+        {!products.isLoading && !m && <p style={{ padding: 20, ...mono, fontSize: 13, color: "var(--c-accent-text)" }}>Товар не найден.</p>}
         {m && (
           <div style={{ padding: "20px 20px 30px" }}>
             <div style={{ ...disp, fontWeight: 700, fontSize: 21, lineHeight: 1.2 }}>{m.title}</div>
             <div style={{ ...disp, fontWeight: 800, fontSize: 24, marginTop: 12 }}>{rub(m.price)}</div>
-            <div style={{ fontSize: 13.5, color: "#5C6470", lineHeight: 1.55, marginTop: 12 }}>{m.description || "Официальный мерч клуба выпускников факультета права."} На мерч скидка выпускника не распространяется.</div>
+            <div style={{ fontSize: 13.5, color: "var(--c-text-2)", lineHeight: 1.55, marginTop: 12 }}>{m.description || "Официальный мерч клуба выпускников факультета права."} На мерч скидка выпускника не распространяется.</div>
             {variants.length > 0 && (
               <div style={{ marginTop: 20 }}>
-                <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A", marginBottom: 10 }}>Размер</div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--c-text-3)", marginBottom: 10 }}>Размер</div>
                 <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
                   {variants.map((v) => {
                     const on = sku === v.sku;
                     const label = [v.size, v.color].filter(Boolean).join(" · ") || v.sku;
-                    return <button key={v.sku} disabled={v.stock <= 0} aria-pressed={on} onClick={() => setSku(v.sku)} style={{ minWidth: 52, height: 48, padding: "0 12px", borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, border: "1.5px solid " + (on ? "#EC5A13" : "#E4DCCC"), background: on ? "rgba(236,90,19,.08)" : "#fff", color: INK, opacity: v.stock <= 0 ? .4 : 1 }}>{label}</button>;
+                    return <button key={v.sku} disabled={v.stock <= 0} aria-pressed={on} onClick={() => setSku(v.sku)} style={{ minWidth: 52, height: 48, padding: "0 12px", borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, border: "1.5px solid " + (on ? "#EC5A13" : "#E4DCCC"), background: on ? "rgba(236,90,19,.08)" : "var(--c-bg-raised)", color: INK, opacity: v.stock <= 0 ? .4 : 1 }}>{label}</button>;
                   })}
                 </div>
               </div>
             )}
-            {stock != null && <p style={{ ...mono, fontSize: 12, marginTop: 14, color: stock <= 0 ? "#B5331B" : stock <= 3 ? "#C24009" : "#6E675A" }}>{stock <= 0 ? "Нет в наличии" : stock <= 3 ? `Осталось ${stock} шт.` : `В наличии: ${stock} шт.`}</p>}
+            {stock != null && <p style={{ ...mono, fontSize: 12, marginTop: 14, color: stock <= 0 ? "var(--c-danger-text)" : stock <= 3 ? "#C24009" : "var(--c-text-3)" }}>{stock <= 0 ? "Нет в наличии" : stock <= 3 ? `Осталось ${stock} шт.` : `В наличии: ${stock} шт.`}</p>}
           </div>
         )}
       </div>
@@ -1044,8 +1046,8 @@ export default function MobileApp() {
   }
   const active = clubTabActive(pathname);
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: PAGE_BG, color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", overflow: "hidden" }}>
-      <div className="noscroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
+    <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", display: "flex", flexDirection: "column", background: PAGE_BG, color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", overflow: "hidden" }}>
+      <div key={pathname} className="noscroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
         {pathname === "/news" ? <MobileFeed />
           : pathname === "/dpo" ? <MobileDpo />
             : pathname === "/podcasts" ? <MobilePodcasts />

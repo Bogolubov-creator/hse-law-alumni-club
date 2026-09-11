@@ -57,7 +57,7 @@ export function Privacy({ v2 }: { v2?: boolean } = {}) {
   return (
     <LegalShell title="Политика обработки персональных данных" updated="10 сентября 2026 года" v2={v2}>
       <p>
-        Настоящая Политика определяет порядок обработки персональных данных пользователей сайта
+        Настоящая Политика определяет порядок обработки персональных данных пользователей сайта{" "}
         {OWNER.shortName} (далее – «Сайт») и меры по их защите.
         Оператор персональных данных – {OWNER.name}, ОГРН {OWNER.ogrn}, ИНН {OWNER.inn},
         КПП {OWNER.kpp}, адрес: {OWNER.address} (далее – «Оператор»).
@@ -161,7 +161,7 @@ export function Confidential({ v2 }: { v2?: boolean } = {}) {
   return (
     <LegalShell title="Политика конфиденциальности" updated="10 сентября 2026 года" v2={v2}>
       <p>
-        Настоящая Политика конфиденциальности описывает, как {OWNER.shortName}
+        Настоящая Политика конфиденциальности описывает, как {OWNER.shortName}{" "}
         (ОГРН {OWNER.ogrn}, ИНН {OWNER.inn}) обеспечивает конфиденциальность информации
         пользователей сайта клуба.
       </p>
@@ -199,7 +199,7 @@ export function Confidential({ v2 }: { v2?: boolean } = {}) {
 export function Requisites({ v2 }: { v2?: boolean } = {}) {
   const row = (k: string, v: ReactNode) => (
     <div className="club-requisites-row gap-2 border-b border-[#f0ece2] py-3">
-      <span className="w-56 flex-none font-mono text-[12px] uppercase tracking-wide text-grafit-soft">{k}</span>
+      <span className="w-56 flex-none font-mono text-[12px] uppercase tracking-wide " style={{ color: "var(--c-text-2)" }}>{k}</span>
       <span className="min-w-0 flex-1">{v}</span>
     </div>
   );
@@ -212,7 +212,7 @@ export function Requisites({ v2 }: { v2?: boolean } = {}) {
         </a>
         .
       </p>
-      <div className="mt-6 rounded-[18px] border border-[#7C828C] bg-white px-6 py-3">
+      <div className="mt-6 rounded-[18px] border px-6 py-3" style={{ background: "var(--c-bg-raised)", color: "var(--c-text)", borderColor: "var(--c-line)" }}>
         {row("Полное наименование", OWNER.name)}
         {row("Сокращённое наименование", OWNER.shortName)}
         {row("ОГРН", OWNER.ogrn)}
