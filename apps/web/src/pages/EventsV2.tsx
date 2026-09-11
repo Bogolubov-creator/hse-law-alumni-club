@@ -8,6 +8,7 @@ import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { fmtEventDate, fmtEventDateFull, gcalUrl, type ClubEvent } from "../lib/events.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { action } from "../styles/primitives.js";
 
 /** Афиша и прямая страница события используют общие данные и запись. */
 
@@ -80,9 +81,9 @@ export default function EventsV2() {
         style={{
           ...label, whiteSpace: "normal", cursor: rsvp.isPending ? "wait" : "pointer",
           padding: "8px 14px", borderRadius: "var(--r-sm)",
-          border: e.my_rsvp ? "1px solid var(--c-ok-text)" : "none",
-          background: e.my_rsvp ? "transparent" : "var(--c-accent)",
-          color: e.my_rsvp ? "var(--c-ok-text)" : "var(--c-on-accent)",
+          border: e.my_rsvp ? "1px solid var(--c-ok-text)" : "1px solid var(--c-bg-inverse)",
+          background: e.my_rsvp ? "transparent" : "var(--c-bg-inverse)",
+          color: e.my_rsvp ? "var(--c-ok-text)" : "var(--c-text-inverse)",
         }}
       >
         {e.my_rsvp ? "иду · отменить" : "пойду"}
@@ -101,7 +102,7 @@ export default function EventsV2() {
       }}
     >
       <div>
-        <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: isPast ? "var(--c-text-3)" : "var(--c-accent-text)" }}>{fmtEventDate(e.starts_at)}</div>
+        <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: isPast ? "var(--c-text-3)" : "var(--c-text)" }}>{fmtEventDate(e.starts_at)}</div>
         <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 6 }}>{e.format === "online" ? "онлайн" : "очно"}</div>
       </div>
 
@@ -137,7 +138,7 @@ export default function EventsV2() {
         {events.isError && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
             <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>афиша не загрузилась</p>
-            <button onClick={() => events.refetch()} className="foc" style={{ marginTop: 16, border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "12px 20px", fontWeight: 600, cursor: "pointer" }}>Повторить</button>
+            <button onClick={() => events.refetch()} className="foc" style={{ ...action, marginTop: 16 }}>Повторить</button>
           </div>
         )}
 
@@ -212,7 +213,7 @@ export default function EventsV2() {
                   {rsvpButton(opened, new Date(opened.starts_at).getTime() < now || opened.status === "done")}
                   {opened.reg_url && (
                     <a href={opened.reg_url} target="_blank" rel="noopener noreferrer" className="foc"
-                      style={{ ...label, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-sm)", padding: "8px 14px" }}>
+                      style={{ ...label, textDecoration: "none", background: "var(--c-bg-inverse)", color: "var(--c-text-inverse)", borderRadius: "var(--r-sm)", padding: "8px 14px" }}>
                       регистрация ↗
                     </a>
                   )}

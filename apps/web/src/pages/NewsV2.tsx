@@ -3,6 +3,7 @@ import { useNewsList, useNewsPost, formatNewsDate } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
 import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
+import { action } from "../styles/primitives.js";
 
 /**
  * Новости v2: список (/news) и публикация (/news/:slug).
@@ -45,7 +46,7 @@ export function NewsV2() {
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
             <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>новости не загрузились</p>
             <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Проверьте соединение и попробуйте ещё раз.</p>
-            <button onClick={() => news.refetch()} className="foc" style={{ marginTop: 16, border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "12px 20px", fontWeight: 600, cursor: "pointer" }}>Повторить</button>
+            <button onClick={() => news.refetch()} className="foc" style={{ ...action, marginTop: 16 }}>Повторить</button>
           </div>
         )}
 
@@ -141,7 +142,7 @@ export function NewsPostV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: 720, margin: "0 auto", padding: "0 28px" }}>
         <nav style={{ ...label, paddingTop: 28 }}>
-          <Link to="/news" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>← все новости</Link>
+          <Link to="/news" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← все новости</Link>
         </nav>
 
         {post.isLoading && <p style={{ ...label, paddingTop: 40 }}>загружаем публикацию…</p>}
@@ -152,7 +153,7 @@ export function NewsPostV2() {
             <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55 }}>
               Такой публикации нет – возможно, адрес устарел.
             </p>
-            <Link to="/news" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/news" className="foc" style={{ ...action, marginTop: 20 }}>
               Все новости
             </Link>
           </div>

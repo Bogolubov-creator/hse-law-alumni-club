@@ -28,7 +28,7 @@ export default function ProductV2() {
   return (
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "32px 28px" }}>
-        <Link to="/merch" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none", ...mono, fontSize: "var(--t-caption)" }}>← весь мерч</Link>
+        <Link to="/merch" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4, ...mono, fontSize: "var(--t-caption)" }}>← весь мерч</Link>
 
         {products.isLoading && <p role="status" style={{ marginTop: 28 }}>Загружаем товар…</p>}
         {products.isError && (

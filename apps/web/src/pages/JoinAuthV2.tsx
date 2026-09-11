@@ -32,15 +32,16 @@ const input: CSSProperties = {
   fontSize: 15, fontFamily: "inherit",
 };
 
+/* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
 const primary: CSSProperties = {
-  border: "1px solid var(--c-accent)", background: "var(--c-accent)", color: "var(--c-on-accent)",
-  borderRadius: 999, padding: "13px 22px", minHeight: 44, fontWeight: 600, fontSize: 15,
+  border: "1px solid var(--c-bg-inverse)", background: "var(--c-bg-inverse)", color: "var(--c-text-inverse)",
+  borderRadius: "var(--r-sm)", padding: "13px 22px", minHeight: 44, fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase",
   cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", textAlign: "center",
 };
 
 const ghost: CSSProperties = {
-  ...primary, background: "var(--c-bg)", color: "var(--c-accent-text)",
-  border: "1px solid color-mix(in srgb, var(--c-accent) 35%, transparent)",
+  ...primary, background: "transparent", color: "var(--c-text)",
+  border: "1px solid var(--c-text)",
 };
 
 /** Общая оболочка экранов входа: знак, заголовок, карточка, юр-ссылки под ней. */
@@ -49,7 +50,7 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
     <main id="main" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
       <VisionCorner />
       <div style={{ width: "100%", maxWidth: 520, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <Link to="/" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
+        <Link to="/" className="foc" style={{ ...label, color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← на главную</Link>
         <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 18 }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{title}</h1>
         {sub && <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>{sub}</p>}
@@ -228,9 +229,9 @@ export function JoinV2() {
                   style={{
                     ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                     padding: "7px 12px", borderRadius: 999,
-                    border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line-control)"}`,
-                    background: on ? "var(--c-accent)" : "transparent",
-                    color: on ? "var(--c-on-accent)" : "var(--c-text-2)",
+                    border: `1px solid ${on ? "var(--c-bg-inverse)" : "var(--c-line-control)"}`,
+                    background: on ? "var(--c-bg-inverse)" : "transparent",
+                    color: on ? "var(--c-text-inverse)" : "var(--c-text-2)",
                     opacity: !on && full ? 0.4 : 1,
                     cursor: !on && full ? "not-allowed" : "pointer",
                   }}>
@@ -243,10 +244,10 @@ export function JoinV2() {
 
         <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 14, cursor: "pointer", fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
           <input type="checkbox" checked={f.consent} required onChange={(e) => set("consent", e.target.checked)}
-            style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
+            style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-bg-inverse)" }} />
           <span>
             Даю согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} –{" "}
-            <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>
+            <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-link)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>
           </span>
         </label>
 
@@ -263,7 +264,7 @@ export function JoinV2() {
         </button>
 
         <p style={{ textAlign: "center", margin: "14px 0 0", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
-          Уже в клубе? <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Войти</Link>
+          Уже в клубе? <Link to="/lk" className="foc" style={{ color: "var(--c-link)", fontWeight: 600 }}>Войти</Link>
         </p>
       </form>
     </AuthShell>

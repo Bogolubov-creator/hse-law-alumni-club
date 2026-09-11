@@ -7,6 +7,7 @@ import { useHead } from "../lib/title.js";
 import { EpisodePlayer } from "../components/EpisodePlayer.js";
 import { VideoEmbed } from "../components/VideoEmbed.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { action } from "../styles/primitives.js";
 
 /**
  * Подкасты v2 (/podcasts) – выпуски как записи фонотеки: номер и
@@ -67,12 +68,12 @@ export default function PodcastsV2() {
             </div>
             {t ? (
               <button onClick={onSubscribe} disabled={subscribe.isPending} className="foc"
-                style={{ flex: "none", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15, cursor: subscribe.isPending ? "wait" : "pointer" }}>
+                style={{ ...action, flex: "none", cursor: subscribe.isPending ? "wait" : "pointer" }}>
                 {subscribe.isPending ? "Оформляем…" : "Оформить подписку"}
               </button>
             ) : (
               <Link to="/lk" className="foc"
-                style={{ flex: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15, textDecoration: "none" }}>
+                style={{ ...action, flex: "none" }}>
                 Войти в кабинет
               </Link>
             )}
@@ -99,7 +100,7 @@ export default function PodcastsV2() {
         {q.isError && (
           <div style={{ borderTop: "1px solid var(--c-line)", marginTop: 26, padding: "40px 0" }}>
             <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>выпуски не загрузились</p>
-            <button onClick={() => q.refetch()} className="foc" style={{ marginTop: 16, border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "12px 20px", fontWeight: 600, cursor: "pointer" }}>Повторить</button>
+            <button onClick={() => q.refetch()} className="foc" style={{ ...action, marginTop: 16 }}>Повторить</button>
           </div>
         )}
 

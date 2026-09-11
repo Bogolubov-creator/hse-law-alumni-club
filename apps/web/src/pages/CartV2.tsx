@@ -33,14 +33,15 @@ const field = {
   fontSize: 15, fontFamily: "inherit",
 };
 
+/* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
 const primary = {
-  border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)",
-  borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15, cursor: "pointer",
+  border: "1px solid var(--c-bg-inverse)", background: "var(--c-bg-inverse)", color: "var(--c-text-inverse)",
+  borderRadius: "var(--r-sm)", padding: "13px 22px", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase" as const, cursor: "pointer",
 };
 
 const ghost = {
-  border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)",
-  borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15,
+  border: "1px solid var(--c-text)", background: "transparent", color: "var(--c-text)",
+  borderRadius: "var(--r-sm)", padding: "13px 22px", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase" as const,
   cursor: "pointer", textDecoration: "none", display: "inline-block",
 };
 
@@ -115,7 +116,7 @@ function Submitted({ result }: { result: OrderResult }) {
           {!result.notified.ok && (
             <p role="alert" style={{ margin: "18px 0 0", padding: "14px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-danger-text)", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>
               Заявка сохранена, но автоматическое уведомление офиса не прошло. Продублируйте её в Telegram{" "}
-              <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>{TELEGRAM_CHANNEL.handle}</a> – так офис точно увидит заявку.
+              <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "var(--c-link)", fontWeight: 600 }}>{TELEGRAM_CHANNEL.handle}</a> – так офис точно увидит заявку.
             </p>
           )}
 
@@ -137,7 +138,7 @@ function Submitted({ result }: { result: OrderResult }) {
             <Link
               to={authed ? "/lk?section=orders" : "/lk"}
               className="foc"
-              style={{ ...ghost, borderColor: "var(--c-accent)" }}
+              style={ghost}
             >
               {authed ? "К моим заявкам" : "Войти в кабинет"}
             </Link>
@@ -241,7 +242,7 @@ export default function CartV2() {
               {items.map((it: CartLine) => (
                 <article key={`${it.ref_id}-${it.variant_sku ?? ""}`} className="v2-cart-row"
                   style={{ display: "grid", gridTemplateColumns: "72px 1fr auto auto 32px", gap: 16, alignItems: "center", padding: "16px 0", borderTop: "1px solid var(--c-line)" }}>
-                  <span style={{ ...label, color: it.type === "dpo" ? "var(--c-anchor)" : "var(--c-accent-text)" }}>
+                  <span style={{ ...label, color: "var(--c-text-3)" }}>
                     {it.type === "dpo" ? "дпо" : "мерч"}
                   </span>
 
@@ -280,7 +281,7 @@ export default function CartV2() {
                   <p style={{ margin: "12px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
                     {token()
                       ? "Скидка на ДПО откроется после верификации выпуска учебным офисом."
-                      : <>Скидка на ДПО – для подтверждённых выпускников. <Link to="/join?next=/cart" className="foc" style={{ color: "var(--c-accent-text)" }}>Вступить</Link> или <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)" }}>войти</Link>.</>}
+                      : <>Скидка на ДПО – для подтверждённых выпускников. <Link to="/join?next=/cart" className="foc" style={{ color: "var(--c-link)" }}>Вступить</Link> или <Link to="/lk" className="foc" style={{ color: "var(--c-link)" }}>войти</Link>.</>}
                   </p>
                 )}
                 {items.some((i) => i.type === "merch") && (
@@ -318,9 +319,9 @@ export default function CartV2() {
                           style={{
                             ...mono, flex: 1, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                             padding: "10px 8px", borderRadius: "var(--r-sm)", cursor: "pointer",
-                            border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line)"}`,
-                            background: on ? "var(--c-accent)" : "transparent",
-                            color: on ? "var(--c-on-accent)" : "var(--c-text-2)",
+                            border: `1px solid ${on ? "var(--c-bg-inverse)" : "var(--c-line-control)"}`,
+                            background: on ? "var(--c-bg-inverse)" : "transparent",
+                            color: on ? "var(--c-text-inverse)" : "var(--c-text-2)",
                           }}>
                           {f === "pickup" ? "самовывоз" : "доставка"}
                         </button>
@@ -336,10 +337,10 @@ export default function CartV2() {
 
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 14, cursor: "pointer", fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
                 <input type="checkbox" checked={form.consent} required onChange={(e) => set("consent", e.target.checked)}
-                  style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
+                  style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-bg-inverse)" }} />
                 <span>
                   Даю согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} в соответствии с{" "}
-                  <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
+                  <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-link)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
                 </span>
               </label>
 

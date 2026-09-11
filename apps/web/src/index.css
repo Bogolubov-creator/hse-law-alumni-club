@@ -578,7 +578,7 @@ html.vis .club-cookie-banner__btn--primary {
 
 .v2-card { transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
 @media (hover: hover) and (pointer: fine) {
-  .v2-card:hover { border-color: var(--c-accent); transform: translateY(-2px); }
+  .v2-card:hover { border-color: var(--c-text); transform: translateY(-2px); }
 }
 .v2-card:active { transform: scale(0.995); }
 
