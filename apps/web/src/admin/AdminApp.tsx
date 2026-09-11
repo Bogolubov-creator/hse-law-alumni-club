@@ -1253,21 +1253,49 @@ function ProgramsAdmin() {
   const { createProgram, patchProgram, deleteProgram, syncDpo } = useAdminMutations();
   const [showCreate, setShowCreate] = useState(false);
   const [confirmDel, setConfirmDel] = useState<AdminProgram | null>(null);
+  const list = programs.data ?? [];
+  const actualCount = list.filter((p) => p.enrollment !== "nonactual" && p.status !== "archived").length;
+  const closedCount = list.filter((p) => p.enrollment === "nonactual" && p.status !== "archived").length;
+  const publishedCount = list.filter((p) => p.status === "published").length;
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-[var(--c-line)] bg-[var(--c-bg-raised)]">
       <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--c-bg-sunken)] px-6 py-3.5">
-        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">Каталог ДПО · {programs.data?.length ?? "…"} программ</span>
+        <div className="min-w-0">
+          <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">
+            Каталог ДПО · {list.length ? `${publishedCount} на витрине` : "…"} · актуальный набор {list.length ? actualCount : "…"} · закрытый {list.length ? closedCount : "…"}
+          </span>
+          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-[var(--c-text-3)]">
+            <a className="foc text-[var(--c-link)] underline-offset-2 hover:underline" href="https://www.hse.ru/edu/dpo/?orgUnit=22753" target="_blank" rel="noopener noreferrer">
+              hse.ru · актуальный набор
+            </a>
+            <a className="foc text-[var(--c-link)] underline-offset-2 hover:underline" href="https://www.hse.ru/edu/dpo/?onlyActual=0&orgUnit=22753" target="_blank" rel="noopener noreferrer">
+              hse.ru · весь каталог
+            </a>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => syncDpo.mutate()} disabled={syncDpo.isPending} title="Забрать актуальный набор с hse.ru (факультет права)" className="foc rounded-[10px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2 text-sm font-semibold disabled:opacity-60">
+          <button
+            onClick={() => syncDpo.mutate()}
+            disabled={syncDpo.isPending}
+            title="Синхронизация как на лендинге ДПО: актуальный набор + onlyActual=0 (весь каталог факультета права)"
+            className="foc rounded-[10px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2 text-sm font-semibold disabled:opacity-60"
+          >
             {syncDpo.isPending ? "Синхронизируем…" : "⟳ Обновить с hse.ru"}
           </button>
           <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-[var(--c-accent)] px-4 py-2 text-sm font-semibold text-[var(--c-on-accent)]">+ Добавить программу</button>
         </div>
       </div>
-      {syncDpo.isSuccess && <p className="border-t border-[var(--c-line)] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[var(--c-ok-text)]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (актуальный набор {(syncDpo.data as any).actual ?? "–"}, закрытые {(syncDpo.data as any).nonactual ?? "–"}). Ночная автосинхронизация – ежедневно в 05:00.</p>}
+      {syncDpo.isSuccess && (
+        <p className="border-t border-[var(--c-line)] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[var(--c-ok-text)]">
+          Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив
+          {" "}(актуальный набор {(syncDpo.data as { actual?: number }).actual ?? "–"} / весь каталог {(syncDpo.data as { total?: number }).total ?? "–"},
+          {" "}закрытые {(syncDpo.data as { nonactual?: number }).nonactual ?? "–"}).
+          {" "}Ночная автосинхронизация – ежедневно в 05:00.
+        </p>
+      )}
       {syncDpo.isError && <p className="border-t border-[var(--c-line)] px-6 py-2.5 font-mono text-[12px] text-[var(--c-danger-text)]">Синхронизация не удалась: {(syncDpo.error as Error).message}</p>}
-      {(programs.data ?? []).map((p) => (
+      {list.map((p) => (
         <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[var(--c-line)] px-6 py-3.5 text-sm max-md:grid-cols-1">
           <div className="min-w-0">
             <div className="truncate font-semibold">{p.title}</div>
@@ -1282,7 +1310,7 @@ function ProgramsAdmin() {
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-[var(--c-danger-text)] hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {programs.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-[var(--c-text-3)]">Программ нет – добавьте первую.</p>}
+      {list.length === 0 && <p className="p-10 text-center font-mono text-sm text-[var(--c-text-3)]">Программ нет – добавьте первую или обновите каталог с hse.ru.</p>}
       {(createProgram.isError || deleteProgram.isError || patchProgram.isError) && <p className="px-6 py-3 font-mono text-xs text-[var(--c-danger-text)]">Не удалось сохранить изменение – попробуйте ещё раз.</p>}
 
       {showCreate && <ProgramForm busy={createProgram.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProgram.mutate(v, { onSuccess: () => setShowCreate(false) })} />}

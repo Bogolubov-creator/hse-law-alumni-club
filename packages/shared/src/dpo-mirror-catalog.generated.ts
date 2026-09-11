@@ -1,8 +1,9 @@
 /* eslint-disable */
 /**
- * Автогенерация: scripts/src/import-dpo-mirror-catalog.ts
- * Источник – itspecR/dpo-pravo-hse `.catalog-data.json` (+ programs-index.json).
- * Не редактировать вручную – перезапустите `pnpm --filter @club/scripts import-dpo`.
+ * Автогенерация: scripts/src/import-dpo-mirror-catalog.ts (+ enrollment с hse.ru).
+ * Источник контента – itspecR/dpo-pravo-hse; enrollment – живой hse.ru
+ * (orgUnit=22753 и onlyActual=0).
+ * Не редактировать вручную – перезапустите import-dpo / refresh-dpo-enrollment.
  */
 import type { ProgramSeed } from "./seeds.js";
 
@@ -1175,6 +1176,32 @@ export const DPO_MIRROR_PROGRAMS: ProgramSeed[] = [
     ]
   },
   {
+    "slug": "dostup-na-rynok-market-access-lekarstvennyh-preparatov-strat-1162952114",
+    "title": "Доступ на рынок (Market Access) лекарственных препаратов: стратегии и правовое сопровождение",
+    "direction": "Право",
+    "format": "blended",
+    "duration": "уточняется",
+    "price": 15000000,
+    "document": "Удостоверение о повышении квалификации НИУ ВШЭ",
+    "enrollment": "nonactual",
+    "source_url": "https://www.hse.ru/edu/dpo/1162952114",
+    "hse_id": "1162952114",
+    "cover": null
+  },
+  {
+    "slug": "imuschestvennye-otnosheniya-v-seme-pravo-i-mediaciya-934858556",
+    "title": "Имущественные отношения в семье: право и медиация",
+    "direction": "Право",
+    "format": "offline",
+    "duration": "Интенсив 2 полных дня",
+    "price": 4000000,
+    "document": "Удостоверение о повышении квалификации НИУ ВШЭ",
+    "enrollment": "actual",
+    "source_url": "https://www.hse.ru/edu/dpo/934858556",
+    "hse_id": "934858556",
+    "cover": null
+  },
+  {
     "slug": "intellektualnaya-sobstvennost-ot-zakona-k-praktike-816497962",
     "title": "Интеллектуальная собственность: от закона к практике",
     "direction": "Цифровое право и интеллектуальная собственность",
@@ -1437,6 +1464,19 @@ export const DPO_MIRROR_PROGRAMS: ProgramSeed[] = [
       "Востребованные навыки, необходимость которых на рынке постоянно возрастает",
       "Возможность вести деятельность в высокодоходной сфере, например, связанной с IT"
     ]
+  },
+  {
+    "slug": "iskusstvo-sostavleniya-dogovorov-474413637",
+    "title": "Искусство составления договоров",
+    "direction": "Право",
+    "format": "online",
+    "duration": "1 месяц",
+    "price": 5000000,
+    "document": "Удостоверение о повышении квалификации НИУ ВШЭ",
+    "enrollment": "nonactual",
+    "source_url": "https://www.hse.ru/edu/dpo/474413637",
+    "hse_id": "474413637",
+    "cover": null
   },
   {
     "slug": "islamskie-finansy-pravovye-osnovy-komplaens-i-biznes-praktik-814248062",
@@ -2373,6 +2413,19 @@ export const DPO_MIRROR_PROGRAMS: ProgramSeed[] = [
       "Программа включает информацию о ведении морского арбитража в Англии, Гонконге и Китае",
       "Курс проводится преподавателем, имеющим практический опыт ведения морских арбитражей более восьми лет"
     ]
+  },
+  {
+    "slug": "nasledstvennoe-pravo-obschie-polozheniya-795955343",
+    "title": "Наследственное право (общие положения)",
+    "direction": "Право",
+    "format": "offline",
+    "duration": "2 месяца",
+    "price": 3000000,
+    "document": "Удостоверение о повышении квалификации НИУ ВШЭ",
+    "enrollment": "nonactual",
+    "source_url": "https://www.hse.ru/edu/dpo/795955343",
+    "hse_id": "795955343",
+    "cover": null
   },
   {
     "slug": "neyropravo-905186485",
@@ -3714,5 +3767,18 @@ export const DPO_MIRROR_PROGRAMS: ProgramSeed[] = [
       "Возможность вести деятельность в высокодоходной сфере, во многом связанной с IT",
       "Обучение проходит дистанционно на образовательной платформе для роста профессиональных навыков — Ispring"
     ]
+  },
+  {
+    "slug": "yuridicheskaya-otvetstvennost-vracha-i-medicinskoj-organizac-1029651795",
+    "title": "Юридическая ответственность врача и медицинской организации: актуализация и профилактика",
+    "direction": "Право",
+    "format": "online",
+    "duration": "уточняется",
+    "price": 4500000,
+    "document": "Удостоверение о повышении квалификации НИУ ВШЭ",
+    "enrollment": "nonactual",
+    "source_url": "https://www.hse.ru/edu/dpo/1029651795",
+    "hse_id": "1029651795",
+    "cover": null
   }
 ];
