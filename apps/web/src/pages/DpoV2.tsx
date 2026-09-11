@@ -56,7 +56,7 @@ export default function DpoV2() {
   return (
     <V2Shell>
       <main id="main" className="club-dpo-vitrine">
-        <header className="club-dpo-masthead">
+        <header className="club-dpo-masthead club-dark">
           <div className="club-dpo-masthead__inner">
             <p className="club-dpo-eyebrow">Витрина ДПО</p>
             <h1>Программы дополнительного образования</h1>

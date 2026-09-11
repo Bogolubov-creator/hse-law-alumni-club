@@ -8,6 +8,7 @@ import { useHead } from "../lib/title.js";
 import { HeroPicture } from "../components/HeroPicture.js";
 import { mediaUrl } from "../lib/public-url.js";
 import { V2Shell, mono, disp, pageTitle } from "../v2/Shell.js";
+import { action, actionGhost } from "../styles/primitives.js";
 
 /**
  * Карточка программы ДПО v2 (/dpo/:slug).
@@ -88,7 +89,7 @@ export default function ProgramV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <nav style={{ ...label, paddingTop: 28 }} aria-label="Хлебные крошки">
-          <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>витрина дпо</Link>
+          <Link to="/dpo" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>витрина дпо</Link>
           {p?.direction && <> · {p.direction}</>}
         </nav>
 
@@ -101,7 +102,7 @@ export default function ProgramV2() {
               {notFound ? "Такой записи в каталоге нет – возможно, набор завершён и программа снята." : "Сервер временно недоступен. Повторите загрузку."}
             </p>
             {!notFound && <button className="foc" onClick={() => q.refetch()}>Повторить загрузку</button>}
-            <Link to="/dpo" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/dpo" className="foc" style={{ ...action, marginTop: 20 }}>
               Весь каталог программ
             </Link>
           </div>
@@ -157,7 +158,7 @@ export default function ProgramV2() {
                   <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
                     {audience.map((item, i) => (
                       <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
-                        <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                        <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -171,7 +172,7 @@ export default function ProgramV2() {
                   <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
                     {results.map((item, i) => (
                       <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
-                        <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                        <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -185,7 +186,7 @@ export default function ProgramV2() {
                   <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
                     {advantages.map((item, i) => (
                       <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
-                        <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                        <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -233,7 +234,7 @@ export default function ProgramV2() {
                             <ul style={{ margin: 0, padding: "0 0 18px 58px", listStyle: "none" }}>
                               {points.map((pt, j) => (
                                 <li key={j} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "5px 0", fontSize: "var(--t-small)", lineHeight: 1.55, color: "var(--c-text-2)" }}>
-                                  <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                                  <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
                                   <span>{pt}</span>
                                 </li>
                               ))}
@@ -325,11 +326,11 @@ export default function ProgramV2() {
                 ) : (
                   <>
                     <button disabled={add.isPending} onClick={leaveRequest} className="foc"
-                      style={{ width: "100%", marginTop: 18, padding: "14px 16px", borderRadius: "var(--r-md)", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 15, cursor: add.isPending ? "wait" : "pointer" }}>
+                      style={{ ...action, width: "100%", marginTop: 18, cursor: add.isPending ? "wait" : "pointer" }}>
                       Оставить заявку
                     </button>
                     <button disabled={add.isPending} onClick={addToCart} className="foc"
-                      style={{ width: "100%", marginTop: 8, padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, fontSize: 15, cursor: add.isPending ? "wait" : "pointer" }}>
+                      style={{ ...actionGhost, width: "100%", marginTop: 8, cursor: add.isPending ? "wait" : "pointer" }}>
                       Положить в корзину
                     </button>
                     <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "12px 0 0", lineHeight: 1.5 }}>

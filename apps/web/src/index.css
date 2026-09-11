@@ -475,11 +475,13 @@ html.vis .club-cookie-banner__btn--primary {
   gap: 8px;
   min-height: 44px;
   padding: 13px 18px;
-  border-radius: 999px;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   font-family: var(--f-body, "HSE Sans", system-ui, sans-serif);
-  font-size: 0.9375rem;
+  font-size: var(--t-caps);
   font-weight: 600;
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
   line-height: 1.2;
   text-decoration: none;
   text-align: center;
@@ -494,15 +496,16 @@ html.vis .club-cookie-banner__btn--primary {
   opacity: 0.55;
   cursor: not-allowed;
 }
+/* Референс 12.09: заливка контрастом и обводка; охра действий не красит. */
 .club-btn--primary {
-  background: var(--c-accent, #ec5a13);
-  border-color: var(--c-accent, #ec5a13);
-  color: var(--c-on-accent, #14181f);
+  background: var(--c-bg-inverse);
+  border-color: var(--c-bg-inverse);
+  color: var(--c-text-inverse);
 }
 .club-btn--secondary {
-  background: var(--c-bg, #fbf3e8);
-  color: var(--c-accent-text, #c24009);
-  border-color: color-mix(in srgb, var(--c-accent, #ec5a13) 35%, transparent);
+  background: transparent;
+  color: var(--c-text);
+  border-color: var(--c-text);
 }
 .club-btn--block {
   width: 100%;
