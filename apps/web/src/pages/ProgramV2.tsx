@@ -67,8 +67,7 @@ export default function ProgramV2() {
   const advantages = Array.isArray(p?.advantages) ? p!.advantages : [];
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
   const coverSrc = p?.cover || "/assets/dpo-hero.jpg";
-  const coverPath = coverSrc.replace(/^\//, "");
-  const coverIsAsset = coverPath.startsWith("assets/");
+  const coverIsHeroFallback = !p?.cover;
 
   useHead({
     title: q.isError ? (notFound ? "Программа не найдена" : "Не удалось загрузить программу") : p?.title ?? "Программа ДПО",
@@ -111,10 +110,20 @@ export default function ProgramV2() {
         {p && (
           <>
           <div style={{ marginTop: 18, borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--c-line)", maxHeight: 320, background: "var(--c-bg-sunken)" }}>
-            {coverIsAsset ? (
-              <HeroPicture path={coverPath} alt="" width={1400} height={700} className="club-program-cover" />
+            {coverIsHeroFallback ? (
+              <HeroPicture path="assets/dpo-hero.jpg" alt="" width={1400} height={700} className="club-program-cover" />
             ) : (
-              <img src={mediaUrl(coverSrc)} alt="" width={1400} height={700} style={{ width: "100%", height: "auto", maxHeight: 320, objectFit: "cover", display: "block" }} />
+              <img
+                className="club-program-cover"
+                src={mediaUrl(coverSrc)}
+                alt=""
+                width={1400}
+                height={700}
+                style={{ width: "100%", height: "auto", maxHeight: 320, objectFit: "cover", display: "block" }}
+                decoding="async"
+                loading="eager"
+                fetchPriority="high"
+              />
             )}
           </div>
           <div style={{ paddingTop: 24, maxWidth: "58ch" }}>
