@@ -7,6 +7,7 @@ import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLk
 import { logout as logoutSession } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
+import { useToast } from "../components/Toast.js";
 import { BlankField, mono, disp } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
 import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
@@ -90,29 +91,31 @@ function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => 
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <div style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
         <div style={{ ...label, color: rejected ? "var(--c-danger-text)" : "var(--c-status-text)" }}>
-          статус · {rejected ? "отклонён" : "pending"}
+          статус · {rejected ? "отклонена" : "на проверке"}
         </div>
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "12px 0 0" }}>
-          {rejected ? "Заявка отклонена" : "Ожидает верификации"}
+          {rejected ? "Заявка отклонена" : "Заявка на проверке"}
         </h1>
         <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
           {alumni.fio ?? "Выпускник"}, {rejected
-            ? "учебный офис не подтвердил выпуск по этой заявке."
-            : "учебный офис сверяет выпуск с реестром факультета."}
+            ? "учебный офис не подтвердил выпуск по этой заявке. Напишите в поддержку, если нужна помощь."
+            : "учебный офис сверяет выпуск с реестром факультета. Кабинет и скидка на ДПО откроются после подтверждения."}
         </p>
         {!rejected && (
-          <ul style={{ margin: "16px 0 0", paddingLeft: 18, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
-            <li>Кабинет, баллы и скидка на ДПО откроются после подтверждения.</li>
-            <li>Можно заранее загрузить фото в профиле – оно появится после верификации.</li>
-            <li>Заявки из корзины уже можно подавать – скидка подтянется после верификации.</li>
-            <li>Обычно проверка занимает 1–2 рабочих дня.</li>
-          </ul>
+          <p style={{ margin: "14px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>
+            Пока можно загрузить фото профиля и смотреть каталог программ – заявки из корзины уже принимаются.
+          </p>
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 22 }}>
           {!rejected && (
             <Link to="/lk/profile" className="foc" style={{ ...action, textAlign: "center", textDecoration: "none" }}>Загрузить фото профиля</Link>
           )}
-          <Link to="/dpo" className="foc" style={{ ...actionGhost, textAlign: "center", textDecoration: "none" }}>Смотреть программы ДПО</Link>
+          <Link to="/dpo" className="foc" style={{ ...actionGhost, textAlign: "center", textDecoration: "none" }}>
+            {rejected ? "Смотреть программы ДПО" : "Пока смотреть ДПО"}
+          </Link>
+          {rejected && (
+            <Link to="/support" className="foc" style={{ ...actionGhost, textAlign: "center", textDecoration: "none" }}>Написать в поддержку</Link>
+          )}
           <button onClick={onBack} className="foc" style={{ width: "100%", padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад ко входу</button>
         </div>
       </div>
@@ -193,13 +196,40 @@ function EventsFeed({ token }: { token: string }) {
     }
   };
 
+  const hrefFor = (e: LkEvent): string | null => {
+    switch (e.kind) {
+      case "order_status":
+        return "/lk?section=orders";
+      case "podcast_expiring":
+        return "/podcasts";
+      case "friend_accepted":
+        return "/lk?section=community";
+      case "friend_request":
+        return "/lk?section=community";
+      default: {
+        const _exhaustive: never = e;
+        return _exhaustive;
+      }
+    }
+  };
+
   return (
     <Section title="Уведомления">
       {(showAll ? list : list.slice(0, 3)).map((e: LkEvent, i) => {
         const line = lineFor(e);
+        const href = hrefFor(e);
         if (!line) return null;
+        const rowStyle = { padding: "12px 0", borderTop: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" } as const;
+        if (href) {
+          return (
+            <Link key={`ev-${i}`} to={href} className="foc" style={{ ...rowStyle, display: "block", textDecoration: "none" }}>
+              {line}
+              <span style={{ color: "var(--c-accent-text)", fontWeight: 600, marginLeft: 8 }}>Открыть →</span>
+            </Link>
+          );
+        }
         return (
-          <div key={`ev-${i}`} style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{line}</div>
+          <div key={`ev-${i}`} style={rowStyle}>{line}</div>
         );
       })}
       {list.length > 3 && <button type="button" className="foc" style={{ ...actionGhost, marginTop: 14 }} onClick={() => setShowAll(v => !v)}>{showAll ? "Свернуть уведомления" : `Все уведомления (${list.length})`}</button>}
@@ -246,8 +276,11 @@ function Orders({ token, compact = false }: { token: string; compact?: boolean }
       {orders.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
       {orders.isError && <p role="alert">Не удалось загрузить заявки. <button type="button" onClick={() => orders.refetch()}>Повторить</button></p>}
       {!orders.isLoading && !orders.isError && list.length === 0 && (
-        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
-          Заявок пока нет. <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Посмотреть программы ДПО →</Link>
+        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14, lineHeight: 1.6 }}>
+          Заявок пока нет.{" "}
+          <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Программы ДПО →</Link>
+          {" · "}
+          <Link to="/merch" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Мерч клуба →</Link>
         </p>
       )}
       {!compact && list.length > 0 && (
@@ -360,7 +393,8 @@ const FRIEND_LABEL: Record<Classmate["friend_status"], string> = {
   none: "в друзья", incoming: "принять", pending: "заявка отправлена", accepted: "в друзьях",
 };
 
-function Community({ token }: { token: string }) {
+function Community({ token, referralCode }: { token: string; referralCode?: string | null }) {
+  const toast = useToast();
   const classmates = useClassmates(token);
   const feed = useLkEvents(token);
   const addFriend = useAddFriend(token);
@@ -377,6 +411,16 @@ function Community({ token }: { token: string }) {
     const hay = [c.fio, c.edu_program, c.cohort, c.level_title].filter(Boolean).join(" ").toLocaleLowerCase("ru");
     return hay.includes(needle);
   });
+
+  const inviteCode = referralCode?.trim() || null;
+  const copyInvite = () => {
+    if (!inviteCode) return;
+    const link = `${window.location.origin}/join?ref=${encodeURIComponent(inviteCode)}`;
+    void navigator.clipboard?.writeText(link).then(
+      () => toast("Ссылка приглашения скопирована"),
+      () => toast("Не удалось скопировать ссылку", "err"),
+    );
+  };
 
   return (
     <Section title="Однокурсники" note={list.length ? `${list.length} чел. · в друзьях ${friends}` : undefined}>
@@ -416,9 +460,22 @@ function Community({ token }: { token: string }) {
       )}
       {classmates.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
       {!classmates.isLoading && list.length === 0 && (
-        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
-          Из вашего выпуска и программы в клубе пока никого нет. Появятся, как только учебный офис их верифицирует.
-        </p>
+        <div style={{ borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
+          <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
+            Из вашего выпуска и программы в клубе пока никого нет. Пригласите однокурсника – после верификации он появится здесь.
+          </p>
+          {inviteCode && (
+            <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+              <div>
+                <div style={label}>ваш код приглашения</div>
+                <div style={{ ...mono, fontSize: 17, fontWeight: 500, marginTop: 6, letterSpacing: "0.08em" }}>{inviteCode}</div>
+              </div>
+              <button type="button" className="foc" onClick={copyInvite} style={{ ...action, justifySelf: "start", padding: "11px 16px", borderRadius: "var(--r-md)" }}>
+                Скопировать ссылку приглашения
+              </button>
+            </div>
+          )}
+        </div>
       )}
       {!classmates.isLoading && list.length > 0 && filtered.length === 0 && (
         <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
@@ -478,6 +535,11 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
     if (expired) onLogout();
   }, [expired, onLogout]);
 
+  const nextStar = me.data?.achievements.find((a) => !a.earned && a.star);
+  const identityNote = me.data
+    ? `${me.data.level.points} б. · скидка ${me.data.level.discount}%${nextStar ? ` · далее: ${nextStar.title}` : ""}`
+    : "";
+
   return (
     <CabinetShell active="lk" onLogout={onLogout}>
       {me.isLoading && <p style={{ ...label, margin: 0 }}>загружаем кабинет…</p>}
@@ -497,12 +559,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
             <details className="club-identity-mobile">
               <summary>
                 {me.data.alumni.fio}
-                <span>
-                  {(() => {
-                    const next = me.data.achievements.find((a) => !a.earned && a.star);
-                    return `${me.data.level.points} б. · скидка ${me.data.level.discount}%${next ? ` · далее: ${next.title}` : ""}`;
-                  })()}
-                </span>
+                <span>{identityNote}</span>
               </summary>
               <Identity me={me.data} />
             </details>
@@ -529,10 +586,19 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                 >{title}</button>
               ))}
             </nav>
-            {section === "overview" && <><CabinetClubOverview me={me.data} token={token} /><EventsFeed token={token} /></>}
-            {(section === "overview" || section === "orders") && <Orders token={token} compact={section === "overview"} />}
+            {section === "overview" && (
+              <>
+                <CabinetClubOverview me={me.data} token={token} />
+                <details className="cabinet-more">
+                  <summary className="foc">Уведомления и заявки</summary>
+                  <EventsFeed token={token} />
+                  <Orders token={token} compact />
+                </details>
+              </>
+            )}
+            {section === "orders" && <Orders token={token} />}
             {section === "achievements" && <Achievements me={me.data} />}
-            {section === "community" && <Community token={token} />}
+            {section === "community" && <Community token={token} referralCode={me.data.alumni.referral_code} />}
           </div>
         </div>
       )}

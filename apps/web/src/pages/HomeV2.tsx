@@ -17,11 +17,52 @@ const MARQUEE = [
   "гражданское", "уголовное", "международное", "финансовое", "цифровое право",
 ];
 
+const HERO_FALLBACK_TITLE = "Клуб выпускников факультета права";
+const HERO_FALLBACK_SUB =
+  "Встречи, программы ДПО и кабинет участника. Статус выпускника – после проверки учебным офисом.";
+const CTA_FALLBACK =
+  "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет. Оплаты и взносов на сайте нет.";
+
+/** Старые маркетинговые формулировки из CMS – не показываем в предрелизе. */
+function sober(value: string | null | undefined, fallback: string, stale: RegExp): string {
+  const v = (value ?? "").trim();
+  if (!v || stale.test(v)) return fallback;
+  return v;
+}
+
+function soberMetric(metric: string | null | undefined): string | null {
+  const v = (metric ?? "").trim();
+  if (!v) return null;
+  if (/только начало/i.test(v)) return "предрелиз";
+  return v;
+}
+
+function timelineCard(r: { title: string; text?: string | null; metric?: string | null }) {
+  let title = r.title;
+  let body = (r.text ?? "").trim();
+  if (/геймификац/i.test(title)) {
+    title = "Уровни и баллы";
+    if (/бейдж|геймификац/i.test(body)) body = "Уровни статуса, баллы и достижения за участие в жизни клуба.";
+  }
+  if (title === "Сегодня" || /только начало/i.test(r.metric ?? "")) {
+    title = "Сейчас";
+    body = "Предрелизная версия портала: витрины, кабинет и афиша в работе.";
+  }
+  if (/собирается в сообщество/i.test(body)) body = "Первый выпуск и запуск личного кабинета.";
+  if (/Открывается доступ к программам/i.test(body)) {
+    body = "Каталог программ доп. образования и цена выпускника после проверки.";
+  }
+  if (/растущее сообщество|менторством/i.test(body)) {
+    body = "Предрелизная версия портала: витрины, кабинет и афиша в работе.";
+  }
+  return { title, body, metric: soberMetric(r.metric) };
+}
+
 /** Главная портала клуба: full-bleed Фемида, бренд, живой motion. */
 export default function HomeV2() {
   useHead({
     title: "Клуб выпускников факультета права",
-    description: "Клуб выпускников факультета права НИУ ВШЭ: встречи, программы ДПО и сообщество однокурсников.",
+    description: "Клуб выпускников факультета права НИУ ВШЭ: встречи, программы ДПО и кабинет участника.",
   });
   const page = usePage("home");
   const timeline = useTimeline();
@@ -31,7 +72,15 @@ export default function HomeV2() {
   const hero = page.data?.blocks.hero ?? {};
   const cta = page.data?.blocks.cta ?? {};
   const configuredTitle = `${hero.title_pre || ""} ${hero.title_accent || ""}`.trim();
-  const title = configuredTitle || "Статус выпускника, который работает";
+  const title = sober(configuredTitle, HERO_FALLBACK_TITLE, /который\s+работает/i);
+  const subtitle = sober(hero.subtitle, HERO_FALLBACK_SUB, /открывает цену|сообщество однокурсников|статус,?\s*скидк/i);
+  const ctaText = sober(
+    cta.text,
+    CTA_FALLBACK,
+    /получите статус|скидки и доступ к витринам|честные сроки|1\s*[–-]\s*3\s*рабочих/i,
+  );
+  const historyTitle = sober(hero.history_title, "Ключевые этапы", /к сообществу|первого выпуска/i);
+  const historyHint = sober(hero.history_hint, "Листайте вбок", /таймлайн движется|↓/);
   const records = timeline.data ?? [];
   const upcoming = (events.data ?? [])
     .filter((e) => Date.parse(e.starts_at) >= Date.now())
@@ -52,8 +101,8 @@ export default function HomeV2() {
               path="assets/themis.jpeg"
               className="vestnik-themis"
               alt="Фемида с весами и мечом – знак клуба выпускников факультета права"
-              width={1600}
-              height={1200}
+              width={700}
+              height={900}
             />
             <div className="vestnik-grain" aria-hidden />
             <div className="vestnik-wash" aria-hidden />
@@ -66,7 +115,7 @@ export default function HomeV2() {
               </p>
               <h1>{title}</h1>
               <p className="vestnik-lead">
-                {text(hero.subtitle, "Личный кабинет со статусом, скидка на программы ДПО, события клуба и однокурсники.")}
+                {subtitle}
               </p>
               <div className="vestnik-actions">
                 <Link to={authed ? "/lk" : "/join"} className="vestnik-button foc">
@@ -90,17 +139,18 @@ export default function HomeV2() {
           </div>
         </div>
 
-        <nav aria-label="Участие в клубе" className="vestnik-index">
+        <nav aria-label="Разделы клуба" className="vestnik-index">
           {[
-            { to: "/events", title: "Встретиться", description: "Афиша и запись на встречи" },
-            { to: "/dpo", title: "Продолжить учиться", description: "Программы факультета права" },
+            { to: "/events", title: "События", description: "Афиша и запись на встречи" },
+            { to: "/dpo", title: "Программы ДПО", description: "Каталог факультета права" },
             {
               to: authed ? "/lk" : "/join",
-              title: "Найти своих",
-              description: authed ? "Однокурсники в личном кабинете" : "Вступление открывает сообщество однокурсников",
+              title: authed ? "Кабинет" : "Вступление",
+              description: authed ? "Профиль и разделы участника" : "Заявка и проверка выпуска",
             },
-          ].map((entry) => (
+          ].map((entry, i) => (
             <Link key={entry.to} to={entry.to} className="foc vestnik-scrub">
+              <span className="vestnik-index__num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
               <strong>{entry.title}</strong>
               <span>{entry.description}</span>
             </Link>
@@ -136,7 +186,7 @@ export default function HomeV2() {
           {(news.data ?? []).length > 0 && (
             <section className="vestnik-news vestnik-scrub">
               <div className="vestnik-section-head">
-                <h2>Что в клубе сейчас</h2>
+                <h2>Новости</h2>
                 <Link to="/news" className="foc">Все новости</Link>
               </div>
               {(news.data ?? []).map((n) => (
@@ -161,20 +211,15 @@ export default function HomeV2() {
           </div>
           <div className="vestnik-access-row">
             <h3><Link to="/merch" className="foc">Мерч клуба</Link></h3>
-            <p>Одежда и аксессуары с фасеточной Фемидой. Варианты, остатки, самовывоз или доставка.</p>
+            <p>Одежда и аксессуары с символикой клуба. Варианты, остатки, самовывоз или доставка.</p>
             <Link to="/merch" className="vestnik-text-link foc">Перейти в магазин</Link>
           </div>
         </section>
 
         <section id="kak" className="vestnik-join vestnik-scrub">
           <div>
-            <h2>Три шага и честные сроки</h2>
-            <p>
-              {text(
-                cta.text,
-                "Учебный офис сверит выпуск с реестром факультета и откроет кабинет – обычно 1–3 рабочих дня. Оплаты на сайте нет, взносов нет.",
-              )}
-            </p>
+            <h2>Три шага и вы в клубе</h2>
+            <p>{ctaText}</p>
             <Link to={authed ? "/lk" : "/join"} className="vestnik-button foc">
               {authed ? "Открыть кабинет" : text(cta.button, "Подать заявку")}
             </Link>
@@ -189,28 +234,34 @@ export default function HomeV2() {
               <p>Офис сверяет выпуск с реестром факультета и подтверждает статус.</p>
             </li>
             <li>
-              <h3>Статус выпускника</h3>
-              <p>Кабинет, цена выпускника на ДПО, события с баллами, сообщество однокурсников.</p>
+              <h3>Доступ к кабинету</h3>
+              <p>После проверки откроются кабинет, цена выпускника на ДПО и разделы клуба.</p>
             </li>
           </ol>
         </section>
 
         {records.length > 0 && (
-          <section className="vestnik-history vestnik-scrub">
-            <h2>{text(hero.history_title, "История клуба")}</h2>
-            {hero.history_hint && <p>{hero.history_hint}</p>}
-            <div className="vestnik-history-grid">
-              {records.map((r) => (
-                <article key={r.id}>
-                  <time>{r.year}</time>
-                  <div>
-                    <h3>{r.title}</h3>
-                    {r.text && <p>{r.text}</p>}
-                    {r.metric && <small>{r.metric}</small>}
-                  </div>
-                </article>
-              ))}
-            </div>
+          <section className="vestnik-history vestnik-scrub" aria-labelledby="vestnik-history-title">
+            <header className="vestnik-history__head">
+              <p className="vestnik-eyebrow">{text(hero.history_eyebrow, "История клуба")}</p>
+              <h2 id="vestnik-history-title">{historyTitle}</h2>
+              <p className="vestnik-history__hint">{historyHint}</p>
+            </header>
+            <ol className="vestnik-timeline">
+              {records.map((r, i) => {
+                const card = timelineCard(r);
+                return (
+                  <li key={r.id} className="vestnik-timeline__item" style={{ ["--step" as string]: i }}>
+                    <time dateTime={r.year}>{r.year}</time>
+                    <div className="vestnik-timeline__card">
+                      <h3>{card.title}</h3>
+                      {card.body && <p>{card.body}</p>}
+                      {card.metric && <span className="vestnik-timeline__metric">{card.metric}</span>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </section>
         )}
       </main>

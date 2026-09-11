@@ -85,6 +85,7 @@ function Empty({ title, children }: { title: string; children: ReactNode }) {
 /* ── Экран подтверждения ──────────────────────────────────────────── */
 
 function Submitted({ result }: { result: OrderResult }) {
+  const authed = !!token();
   return (
     <V2Shell>
       <main id="main" style={{ maxWidth: 620, margin: "0 auto", padding: "0 28px" }}>
@@ -132,7 +133,13 @@ function Submitted({ result }: { result: OrderResult }) {
           )}
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
-            <Link to="/lk" className="foc" style={{ ...ghost, borderColor: "var(--c-accent)" }}>В личный кабинет</Link>
+            <Link
+              to={authed ? "/lk?section=orders" : "/lk"}
+              className="foc"
+              style={{ ...ghost, borderColor: "var(--c-accent)" }}
+            >
+              {authed ? "К моим заявкам" : "Войти в кабинет"}
+            </Link>
             <Link to="/" className="foc" style={ghost}>На главную</Link>
           </div>
         </div>
@@ -198,7 +205,7 @@ export default function CartV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
-          eyebrow="корзина · заявка"
+          eyebrow="корзина"
           title="Заявка в учебный офис"
           lead="Учебный офис подтвердит состав и сумму. Скидка клуба – только на ДПО и только после верификации выпуска. На мерч скидка не действует."
           count={items.length ? `позиций ${items.length} · на сумму ${rub(total)}` : undefined}

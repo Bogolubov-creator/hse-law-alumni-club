@@ -14,8 +14,9 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
- * Живой motion главной «Вестник» (gpt-taste): grain drift, scale Фемиды,
- * scrub-reveal полос, marquee. При reduced-motion – только статичный кадр.
+ * Живой motion главной «Вестник»: grain, мягкое проявление Фемиды,
+ * scrub-reveal полос, marquee. Scale на Фемиде не трогаем – обрезает голову.
+ * При reduced-motion – только статичный кадр.
  */
 export function useVestnikMotion(rootRef: RefObject<HTMLElement | null>) {
   const scrubTriggers = useRef<ScrollTrigger[]>([]);
@@ -29,10 +30,9 @@ export function useVestnikMotion(rootRef: RefObject<HTMLElement | null>) {
       if (themis) {
         gsap.fromTo(
           themis,
-          { scale: 1.12, opacity: 0.42 },
+          { opacity: 0.7 },
           {
-            scale: 1,
-            opacity: 0.62,
+            opacity: 0.82,
             ease: "none",
             scrollTrigger: {
               trigger: root.querySelector(".vestnik-hero"),

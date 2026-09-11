@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CLUB_OPERATOR } from "@club/shared";
 import { token, useCart } from "../lib/cart.js";
@@ -42,6 +42,13 @@ const NAV = [
   { to: "/events", label: "События" },
   { to: "/news", label: "Новости" },
 ];
+
+/** Карта · Лента · ДПО · Мерч · Кабинет – в ClubTabBar; здесь остальное. */
+const MOBILE_MENU = [
+  { to: "/podcasts", label: "Подкасты" },
+  { to: "/events", label: "События" },
+  { to: "/cart", label: "Корзина" },
+] as const;
 
 export function V2Shell({ children }: { children: ReactNode }) {
   const cartCount = useCart().data?.count ?? 0;
@@ -102,16 +109,25 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
         {menuOpen && (
           <nav className="mob-only club-mobile-menu" style={{ flexDirection: "column", borderTop: "1px solid var(--c-line)", padding: "8px 20px 18px" }}>
-            {/* Главная, витрины, корзина и кабинет живут во вкладках снизу –
-                в меню остаётся только контент и вступление */}
-            {[
-              ...NAV,
-              { to: "/cart", label: "Корзина" },
-              { to: "/lk", label: "Личный кабинет" },
-              ...(authed ? [] : [{ to: "/join", label: "Вступить в клуб" }]),
-            ].map((n) => (
-              <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className={["/dpo", "/merch", "/cart", "/lk"].includes(n.to) ? "foc club-tablet-link" : "foc"} style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>{n.label}</Link>
+            {MOBILE_MENU.map((n) => (
+              <Link
+                key={n.to}
+                to={n.to}
+                onClick={() => setMenuOpen(false)}
+                className={n.to === "/cart" ? "foc club-tablet-link" : "foc"}
+                style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}
+              >
+                {n.label}
+                {n.to === "/cart" && cartCount > 0 && (
+                  <span style={{ ...mono, marginLeft: 8, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>
+                )}
+              </Link>
             ))}
+            {!authed && (
+              <Link to="/join" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>
+                Вступить в клуб
+              </Link>
+            )}
 
             {/* Тема и версия для слабовидящих жили только в десктопной строке –
                 на телефоне режим по ГОСТ было физически нечем включить. */}

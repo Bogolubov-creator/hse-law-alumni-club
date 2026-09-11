@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 test("нижняя таб-навигация: все пять вкладок", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const nav = page.locator("nav").last();
-  for (const label of ["Карта", "Лента", "ДПО", "Подкасты", "Мерч"]) {
+  for (const label of ["Карта", "Лента", "ДПО", "Мерч", "Кабинет"]) {
     await expect(nav.getByRole("link", { name: label })).toBeVisible();
   }
 });

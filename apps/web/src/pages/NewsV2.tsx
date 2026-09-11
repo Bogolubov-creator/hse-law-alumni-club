@@ -22,7 +22,7 @@ const label = {
 export function NewsV2() {
   useHead({
     title: "Новости клуба",
-    description: "Новости клуба выпускников факультета права Вышки: события, программы, партнёрства и жизнь сообщества.",
+    description: "Новости клуба выпускников факультета права Вышки: встречи, программы ДПО и обновления портала.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news`,
     noindex: false,
   });
@@ -33,9 +33,9 @@ export function NewsV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
-          eyebrow="хроника · новости"
-          title="Что в клубе сейчас"
-          lead="События, программы, партнёрства и жизнь сообщества выпускников факультета права."
+          eyebrow="новости"
+          title="Новости клуба"
+          lead="Анонсы встреч, программы ДПО и обновления портала."
           count={list.length ? `публикаций ${list.length}` : undefined}
         />
 

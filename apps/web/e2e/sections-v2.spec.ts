@@ -20,7 +20,7 @@ test.describe("Новости v2", () => {
 
   test("список открывается и ведёт на публикацию v2, а не v1", async ({ page }) => {
     await page.goto("/news");
-    await expect(page.getByRole("heading", { level: 1, name: "Что в клубе сейчас" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Новости клуба" })).toBeVisible();
 
     const first = page.locator("article.v2-row").first();
     await expect(first).toBeVisible();
@@ -125,7 +125,7 @@ test.describe("События v2", () => {
 });
 
 const PODCASTS = {
-  subscribed: false, sub_until: null, price: 399900,
+  subscribed: false, sub_until: null, price: 499900,
   items: [
     { id: "pd1", title: "Пробный выпуск: зачем клубу подкаст", description: "О чём будем говорить.", cover: null, duration: "42 мин", is_free: true, audio_url: "/api/podcasts/pd1/audio", video_url: null },
     { id: "pd2", title: "Договорная работа в 2026", description: "Практика и споры.", cover: null, duration: "58 мин", is_free: false, audio_url: null, video_url: null },

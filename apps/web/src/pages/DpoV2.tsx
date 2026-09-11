@@ -59,11 +59,11 @@ export default function DpoV2() {
         <header className="club-dpo-masthead">
           <div className="club-dpo-masthead__atmosphere" aria-hidden="true">
             <HeroPicture
-              path="assets/dpo-hero.jpg"
+              path="assets/dpo-masthead.jpg"
               className="club-dpo-masthead__photo"
               alt=""
-              width={1400}
-              height={900}
+              width={1200}
+              height={700}
             />
             <div className="club-dpo-masthead__veil" />
           </div>

@@ -401,7 +401,7 @@ await ensureField("block_hero", "cta_primary", str());
 await ensureField("block_hero", "cta_secondary", str());
 await ensureField("block_hero", "history_eyebrow", str()); // секция «История клуба»: надзаголовок
 await ensureField("block_hero", "history_title", str());   // ... заголовок
-await ensureField("block_hero", "history_hint", str());    // ... подсказка «листайте»
+await ensureField("block_hero", "history_hint", str());    // подсказка к таймлайну
 await ensureField("block_hero", "marquee", json());        // бегущая лента: массив строк
 
 await ensureCollection("block_cta", "campaign");
@@ -449,16 +449,16 @@ if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "
   const links = (await client.request((readItems as any)("pages_blocks", { filter: { pages_id: { _eq: homeId } }, limit: 1 }))) as any[];
   if (!links.length) {
     const hero = (await client.request((createItems as any)("block_hero", [{
-      badge: "Сообщество выпускников факультета права",
-      title_pre: "Статус выпускника, который",
-      title_accent: "работает",
-      subtitle: "Клуб выпускников факультета права Вышки: однокурсники, встречи и программы ДПО. Подтверждённый статус открывает цену выпускника на ДПО.",
+      badge: "Клуб выпускников факультета права",
+      title_pre: "Клуб выпускников",
+      title_accent: "факультета права",
+      subtitle: "Встречи, программы ДПО и кабинет участника. Статус выпускника – после проверки учебным офисом.",
       cta_primary: "Вступить в клуб",
       cta_secondary: "Как вступить",
     }]))) as any;
     const cta = (await client.request((createItems as any)("block_cta", [{
       title: "Вступить в клуб",
-      text: "Подтвердите выпуск у учебного офиса – и получите статус, скидки и доступ к витринам.",
+      text: "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет. Оплаты и взносов на сайте нет.",
       button: "Подать заявку",
     }]))) as any;
     const heroId = Array.isArray(hero) ? hero[0].id : hero.id;
@@ -622,11 +622,11 @@ await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
 // История главной – стартовый таймлайн (дальше редактируется в админ-панели)
 await ensureSeed("timeline_items", "title", [
-  { year: "2024", title: "Клуб основан", text: "Первый выпуск собирается в сообщество, появляется личный кабинет.", metric: "1-й выпуск · ~40 участников", sort: 1, status: "published" },
-  { year: "2024", title: "Витрина ДПО", text: "Открывается доступ к программам доп. образования со скидкой выпускника.", metric: "каталог ВШЭ · скидка выпускника", sort: 2, status: "published" },
-  { year: "2025", title: "Геймификация", text: "Запуск уровней статуса, баллов и бейджей за активность в клубе.", metric: "4 уровня · 16 достижений", sort: 3, status: "published" },
-  { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, фирменный мерч и первые партнёрские предложения.", metric: "2-й выпуск · мерч", sort: 4, status: "published" },
-  { year: "2026", title: "Сегодня", text: "Растущее сообщество выпускников факультета права с витринами и менторством.", metric: "и это только начало", sort: 5, status: "published" },
+  { year: "2024", title: "Клуб основан", text: "Первый выпуск и запуск личного кабинета.", metric: "1-й выпуск · ~40 участников", sort: 1, status: "published" },
+  { year: "2024", title: "Витрина ДПО", text: "Каталог программ доп. образования и цена выпускника после проверки.", metric: "каталог ВШЭ · скидка выпускника", sort: 2, status: "published" },
+  { year: "2025", title: "Уровни и баллы", text: "Уровни статуса, баллы и достижения за участие в жизни клуба.", metric: "4 уровня · 16 достижений", sort: 3, status: "published" },
+  { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, мерч клуба и первые партнёрские предложения.", metric: "2-й выпуск · мерч", sort: 4, status: "published" },
+  { year: "2026", title: "Сейчас", text: "Предрелизная версия портала: витрины, кабинет и афиша в работе.", metric: "предрелиз", sort: 5, status: "published" },
 ]);
 // Демо-события календаря
 await ensureSeed("events", "title", [

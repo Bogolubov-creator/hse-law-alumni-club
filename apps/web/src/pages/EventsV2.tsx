@@ -126,9 +126,9 @@ export default function EventsV2() {
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         {!eventId && <>
         <ShowcaseHead
-          eyebrow="календарь · события"
-          title="События и встречи клуба"
-          lead="Нетворкинги, лекции и встречи выпусков. Записывайтесь заранее – за участие начисляются баллы клуба."
+          eyebrow="события"
+          title="События клуба"
+          lead="Встречи выпусков и лекции. Запись заранее – за участие начисляются баллы."
           count={upcoming.length ? `ближайших ${upcoming.length}` : undefined}
         />
 

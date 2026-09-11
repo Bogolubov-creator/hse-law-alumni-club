@@ -2,11 +2,11 @@ import { test, expect, type Page } from "@playwright/test";
 import { seedClientStorage, stubSw } from "./harness.js";
 
 /**
- * Нижняя панель вкладок V2Shell (MobileTabs).
+ * Нижняя панель вкладок (ClubTabBar / MobileTabs).
  *
- * После cutover ключевые маршруты (`/`, `/dpo`, `/merch`, `/news`, `/podcasts`, `/cart`)
- * на телефоне отдаёт MobileApp – у него своя оболочка. Эти тесты проверяют
- * MobileTabs на страницах без takeover: `/events`, `/lk`, `/join`.
+ * Канон: Карта · Лента · ДПО · Мерч · Кабинет.
+ * На takeover-маршрутах (`/`, `/dpo`, …) панель внутри MobileApp;
+ * эти тесты смотрят fixed-панель на `/events`, `/lk`, `/join`.
  */
 
 const tabs = (page: Page) => page.getByRole("navigation", { name: "Основные разделы" });
@@ -30,14 +30,14 @@ test.describe("Панель вкладок v2", () => {
   test("текущий раздел помечен для экранного диктора, а не только цветом", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/lk");
-    await expect(tabs(page).getByRole("link", { name: "кабинет" })).toHaveAttribute("aria-current", "page");
-    await expect(tabs(page).getByRole("link", { name: "главная" })).not.toHaveAttribute("aria-current", "page");
+    await expect(tabs(page).getByRole("link", { name: "Кабинет" })).toHaveAttribute("aria-current", "page");
+    await expect(tabs(page).getByRole("link", { name: "Карта" })).not.toHaveAttribute("aria-current", "page");
   });
 
   test("панель переносит между разделами", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/events");
-    await tabs(page).getByRole("link", { name: "кабинет" }).click();
+    await tabs(page).getByRole("link", { name: "Кабинет" }).click();
     await expect(page).toHaveURL(/\/lk$/);
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
     await expect(tabs(page)).toBeVisible();
@@ -47,7 +47,7 @@ test.describe("Панель вкладок v2", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/lk");
     await expect(tabs(page)).toBeVisible();
-    await expect(tabs(page).getByRole("link", { name: "кабинет" })).toHaveAttribute("aria-current", "page");
+    await expect(tabs(page).getByRole("link", { name: "Кабинет" })).toHaveAttribute("aria-current", "page");
   });
 
   test("панель не перекрывает низ страницы", async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe("Панель вкладок v2", () => {
     const box = (await last.boundingBox())!;
     const covered = await page.evaluate(([x, y]) => {
       const el = document.elementFromPoint(x, y);
-      return !!el?.closest(".v2-tabs");
+      return !!el?.closest(".v2-tabs, .club-tab-bar");
     }, [box.x + box.width / 2, box.y + box.height / 2]);
     expect(covered, "низ страницы уехал под панель вкладок").toBe(false);
 
@@ -76,17 +76,18 @@ test.describe("Панель вкладок v2", () => {
 
     const menu = page.locator("header nav.mob-only");
     const labels = await menu.getByRole("link").allInnerTexts();
-    expect(labels.map((t) => t.trim())).toEqual(["Подкасты", "События", "Новости", "Вступить в клуб"]);
+    expect(labels.map((t) => t.trim().replace(/\d+$/, "").trim())).toEqual(["Подкасты", "События", "Корзина", "Вступить в клуб"]);
   });
 
-  test("счётчик корзины виден на вкладке", async ({ page }) => {
+  test("счётчик корзины виден в меню шапки", async ({ page }) => {
     await page.route("**/api/cart", (r) => r.fulfill({
       status: 200, contentType: "application/json",
       body: JSON.stringify({ items: [], count: 3, subtotal: 0 }),
     }));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/events");
-    await expect(tabs(page).getByRole("link", { name: "корзина" }).getByText("3")).toBeVisible();
+    await page.getByRole("button", { name: "Открыть меню" }).click();
+    await expect(page.locator("header nav.mob-only").getByRole("link", { name: /Корзина/ }).getByText("3")).toBeVisible();
   });
 });
 
@@ -103,7 +104,7 @@ test.describe("Панель вкладок v2 · cookie-баннер", () => {
     const box = (await accept.boundingBox())!;
     const covered = await page.evaluate(([x, y]) => {
       const el = document.elementFromPoint(x, y);
-      return !!el?.closest(".v2-tabs");
+      return !!el?.closest(".v2-tabs, .club-tab-bar");
     }, [box.x + box.width / 2, box.y + box.height / 2]);
     expect(covered, "кнопка согласия перекрыта панелью").toBe(false);
 

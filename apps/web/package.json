@@ -17,6 +17,7 @@
     "build": "tsc -p tsconfig.json && vite build",
     "build:mirror": "tsc -p tsconfig.json && VITE_MIRROR=true VITE_BASE=/club-pravo-hse-mirror/ VITE_SITE_URL=https://bogolubov-creator.github.io/club-pravo-hse-mirror vite build && bash scripts/prepare-pages.sh",
     "preview": "vite preview",
+    "preview:mobile": "vite --host 127.0.0.1 --port 5285 --open http://127.0.0.1:5285/?pwa=1",
     "preview:mirror": "vite preview --base /club-pravo-hse-mirror/",
     "test": "vitest run",
     "e2e": "playwright test",

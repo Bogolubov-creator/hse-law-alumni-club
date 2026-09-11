@@ -10,6 +10,7 @@ test("PWA-оболочка: ?pwa=1 включает phone-shell и MobileApp н�
   // На широком экране без PWA была бы HomeV2; в оболочке – табы MobileApp
   await expect(page.getByRole("navigation").getByRole("link", { name: "Карта" })).toBeVisible();
   await expect(page.getByRole("navigation").getByRole("link", { name: "ДПО" })).toBeVisible();
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Кабинет" })).toBeVisible();
 });
 
 test("PWA deep link /lk: оболочка не ломает кабинет", async ({ page }) => {

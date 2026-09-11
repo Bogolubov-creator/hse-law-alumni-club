@@ -1067,7 +1067,7 @@ function TimelineForm({ busy, onClose, onSave }: { busy: boolean; onClose: () =>
   );
 }
 
-// ── Подкасты (доступ слушателям – по подписке 3 999 ₽/год) ──────────
+// ── Подкасты (доступ слушателям – по подписке 4 999 ₽/год) ──────────
 function PodcastsAdmin() {
   const podcasts = useAdminPodcasts();
   const { createPodcast, patchPodcast, deletePodcast } = useAdminMutations();
@@ -1076,7 +1076,7 @@ function PodcastsAdmin() {
   return (
     <div className="overflow-hidden rounded-[18px] border border-[var(--c-line)] bg-[var(--c-bg-raised)]">
       <div className="flex items-center justify-between gap-3 bg-[var(--c-bg-sunken)] px-6 py-3.5">
-        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">Подкасты · {podcasts.data?.length ?? "…"} · доступ по подписке 3 999 ₽/год</span>
+        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">Подкасты · {podcasts.data?.length ?? "…"} · доступ по подписке 4 999 ₽/год</span>
         <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-[var(--c-accent)] px-4 py-2 text-sm font-semibold text-[var(--c-on-accent)]">+ Добавить подкаст</button>
       </div>
       {(podcasts.data ?? []).map((p) => (
@@ -1173,8 +1173,8 @@ function PagesAdmin() {
     const h = page.data.blocks.hero ?? {}, c = page.data.blocks.cta ?? {};
     setHero({ badge: h.badge ?? "", title_pre: h.title_pre ?? "", title_accent: h.title_accent ?? "", subtitle: h.subtitle ?? "", cta_primary: h.cta_primary ?? "", cta_secondary: h.cta_secondary ?? "" });
     setCta({ title: c.title ?? "", text: c.text ?? "", button: c.button ?? "" });
-    setHistory({ history_eyebrow: h.history_eyebrow ?? "История клуба", history_title: h.history_title ?? "От первого выпуска – к сообществу", history_hint: h.history_hint ?? "↓ листайте – таймлайн движется вбок" });
-    setMarquee((h.marquee?.length ? h.marquee : ["Выпуск ’24", "Выпуск ’25", "Менторы клуба", "Учебный офис", "Партнёры", "ДПО", "Мерч", "Нетворкинг"]).join(", "));
+    setHistory({ history_eyebrow: h.history_eyebrow ?? "История клуба", history_title: h.history_title ?? "Ключевые этапы", history_hint: h.history_hint ?? "Листайте вбок" });
+    setMarquee((h.marquee?.length ? h.marquee : ["Выпуск ’24", "Выпуск ’25", "Учебный офис", "ДПО", "Мерч", "События"]).join(", "));
     setLoaded(true);
   }, [page.data, loaded]);
 
@@ -1221,8 +1221,8 @@ function PagesAdmin() {
         <p className="mt-1 font-mono text-[11px] text-[var(--c-text-3)]">Заголовок секции «История клуба» и бегущая лента над ней.</p>
         <div className="mt-4 space-y-3">
           <FormField label="Надзаголовок (мелкий, оранжевый)" value={history.history_eyebrow ?? ""} onChange={(v) => xset("history_eyebrow", v)} ph="История клуба" />
-          <FormField label="Заголовок секции" value={history.history_title ?? ""} onChange={(v) => xset("history_title", v)} ph="От первого выпуска – к сообществу" />
-          <FormField label="Подсказка под заголовком" value={history.history_hint ?? ""} onChange={(v) => xset("history_hint", v)} ph="↓ листайте – таймлайн движется вбок" />
+          <FormField label="Заголовок секции" value={history.history_title ?? ""} onChange={(v) => xset("history_title", v)} ph="Ключевые этапы" />
+          <FormField label="Подсказка под заголовком" value={history.history_hint ?? ""} onChange={(v) => xset("history_hint", v)} ph="Листайте вбок" />
           <FormField label="Бегущая лента (пункты через запятую)" value={marquee} onChange={setMarquee} textarea ph="Выпуск ’24, Выпуск ’25, Менторы клуба, …" />
         </div>
       </Card>

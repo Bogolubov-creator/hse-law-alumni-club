@@ -90,6 +90,8 @@ export default function App() {
           <Link to="/lk" className="foc" style={{ color: "inherit", fontWeight: 600 }}>кабинет</Link>
           {" · "}
           <Link to="/admin" className="foc" style={{ color: "inherit", fontWeight: 600 }}>админка</Link>
+          {" · "}
+          <Link to="/?pwa=1" className="foc" style={{ color: "inherit", fontWeight: 600 }}>Смотреть как на телефоне</Link>
           {" · сохранение отключено"}
         </div>
       )}

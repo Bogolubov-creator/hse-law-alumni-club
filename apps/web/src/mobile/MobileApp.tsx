@@ -10,14 +10,14 @@ import { TELEGRAM_CHANNEL } from "../config/social.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
 import { isAndroid } from "../lib/use-mobile.js";
+import { ClubTabBar, clubTabActive } from "./ClubTabBar.js";
 
 // Платформа фиксируется один раз (UA не меняется в рамках сессии).
 const ANDROID = isAndroid();
 
 /**
- * Мобильная оболочка витрин (порт Claude Design): табы Карта/Лента/ДПО/Подкасты/Мерч.
- * Кабинет – канон `/lk` + MobileTabs (не параллельные `?screen=` оверлеи).
- * Старые закладки `/?screen=profile|ach|ledger` редиректят в `/lk…`.
+ * Мобильная оболочка витрин: табы Карта/Лента/ДПО/Мерч/Кабинет (общий ClubTabBar).
+ * Кабинет – канон `/lk`. Старые закладки `/?screen=profile|ach|ledger` → `/lk…`.
  */
 
 const INK = "#14181F";
@@ -29,53 +29,6 @@ const HEADER: CSSProperties = {
   padding: "calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px",
   background: "rgba(251,243,232,.9)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
 };
-
-// ── Нижняя таб-навигация ──────────────────────────────────────────────
-const TABS = [
-  { to: "/", label: "Карта", icon: (<><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M3 10h18" /><path d="M7 15h5" /></>) },
-  { to: "/news", label: "Лента", icon: (<><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="M8 9h8M8 13h8M8 17h5" /></>) },
-  { to: "/dpo", label: "ДПО", icon: (<><path d="M3 8l9-4 9 4-9 4-9-4z" /><path d="M7 10.5V15c0 1 2.2 2.2 5 2.2s5-1.2 5-2.2v-4.5" /><path d="M21 8.5v5" /></>) },
-  { to: "/podcasts", label: "Подкасты", icon: (<path d="M5 10v4M9 6v12M13 8.5v7M17 5v14M21 10.5v3" />) },
-  { to: "/merch", label: "Мерч", icon: (<><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></>) },
-];
-
-function TabBar({ active }: { active: string }) {
-  if (ANDROID) {
-    // Material 3 NavigationBar: pill-индикатор активного таба, сплошной фон без блюра.
-    return (
-      <nav style={{ flexShrink: 0, display: "flex", alignItems: "stretch", padding: "6px 6px calc(env(safe-area-inset-bottom, 0px) + 8px)", background: "#FBF3E8", borderTop: "1px solid #E7E0D0" }}>
-        {TABS.map((t) => {
-          const on = t.to === active;
-          const col = on ? "#C24009" : "#5C5648";
-          return (
-            <Link key={t.to} to={t.to} aria-label={t.label} aria-current={on ? "page" : undefined}
-              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", textDecoration: "none" }}>
-              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 62, height: 32, borderRadius: 16, background: on ? "rgba(236,90,19,.16)" : "transparent", transition: "background .2s" }}>
-                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{t.icon}</svg>
-              </span>
-              <span style={{ ...mono, fontSize: 11, letterSpacing: ".02em", color: col }}>{t.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  }
-  // iOS / прочее – Cupertino-стиль: блюр-фон, активный цвет без «таблетки».
-  return (
-    <nav style={{ flexShrink: 0, display: "flex", alignItems: "stretch", padding: "9px 6px calc(env(safe-area-inset-bottom, 0px) + 12px)", background: "rgba(251,243,232,.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid #E7E0D0" }}>
-      {TABS.map((t) => {
-        const on = t.to === active;
-        return (
-          <Link key={t.to} to={t.to} aria-label={t.label} aria-current={on ? "page" : undefined}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "5px 0", textDecoration: "none", color: on ? "#EC5A13" : "#6E675A", transition: "color .2s" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{t.icon}</svg>
-            <span style={{ ...mono, fontSize: 11, letterSpacing: ".02em" }}>{t.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
 
 // ── Экран «Карта» (главная) ──────────────────────────────────────────
 const REASON_RU: Record<string, string> = {
@@ -1066,12 +1019,12 @@ export default function MobileApp() {
   if (ep) return <MobilePodcastPlayer epId={ep} />;
   const item = pathname === "/merch" ? qs.get("item") : null;
   if (item) return <MobileMerchItem slug={item} />;
-  // Закладки /?screen=* уводим в канонический кабинет (V2 + MobileTabs).
+  // Закладки /?screen=* уводим в канонический кабинет.
   if (pathname === "/") {
     const to = legacyCabinetScreen(qs.get("screen"));
     if (to) return <Navigate to={to} replace />;
   }
-  const active = TABS.some((t) => t.to === pathname) ? pathname : "/";
+  const active = clubTabActive(pathname);
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#FBF3E8", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", overflow: "hidden" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
@@ -1081,7 +1034,7 @@ export default function MobileApp() {
               : pathname === "/merch" ? <MobileMerch />
                 : <MobileHome />}
       </div>
-      <TabBar active={active} />
+      <ClubTabBar variant="embedded" active={active} />
     </div>
   );
 }

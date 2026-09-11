@@ -100,7 +100,7 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
           </div>
         </div>
       </header>
-      <nav className="cabinet-club-nav" aria-label="Разделы клуба">{[["/", "Главная"], ["/news", "Новости"], ["/events", "События"], ["/dpo", "ДПО"], ["/merch", "Мерч"], ["/podcasts", "Подкасты"], ["/cart", "Корзина"], ["/support", "Поддержка"]].map(([to, title]) => {
+      <nav className="cabinet-club-nav desk-only" aria-label="Разделы клуба">{[["/", "Главная"], ["/news", "Новости"], ["/events", "События"], ["/dpo", "ДПО"], ["/merch", "Мерч"], ["/podcasts", "Подкасты"], ["/cart", "Корзина"], ["/support", "Поддержка"]].map(([to, title]) => {
         const current = to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
         return <Link className="foc" key={to} to={to!} aria-current={current ? "page" : undefined}>{title}</Link>;
       })}</nav>

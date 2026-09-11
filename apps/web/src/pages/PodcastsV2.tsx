@@ -35,7 +35,7 @@ export default function PodcastsV2() {
   const q = usePodcasts(t);
   const subscribe = useSubscribePodcasts(t);
   const data = q.data;
-  const priceRub = data ? rub(data.price) : "3 999 ₽";
+  const priceRub = data ? rub(data.price) : "4 999 ₽";
   const items = data?.items ?? [];
 
   const onSubscribe = () =>
@@ -47,9 +47,9 @@ export default function PodcastsV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
-          eyebrow="фонотека · подкасты"
-          title="Разговоры о праве и практике"
-          lead="Выпускники, преподаватели и практики права. Пробный выпуск открыт всем, остальное – по годовой подписке."
+          eyebrow="подкасты"
+          title="Подкасты клуба"
+          lead="Выпуски о праве и практике. Один выпуск бесплатно, остальные – по годовой подписке."
           count={items.length ? `выпусков ${items.length}` : undefined}
         />
 

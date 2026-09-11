@@ -134,9 +134,9 @@ export default function MerchV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
-          eyebrow="витрина · мерч"
+          eyebrow="мерч"
           title="Одежда и аксессуары клуба"
-          lead="Фирменные вещи с фасеточной Фемидой. Самовывоз в учебном офисе или доставка, выбирается при оформлении."
+          lead="Фирменные вещи с символикой клуба. Самовывоз в учебном офисе или доставка – выбирается при оформлении."
           count={products.isLoading ? "загружаем склад" : `позиций ${catalog.length} · на складе ${catalog.reduce((s, p) => s + totalStock(p), 0)}`}
         />
 

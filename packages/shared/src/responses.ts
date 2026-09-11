@@ -16,7 +16,7 @@ export const timelineItemSchema = z.object({
 export const timelineSchema = z.array(timelineItemSchema);
 
 // Подкасты клуба: audio_url отдаётся только активным подписчикам
-export const PODCAST_SUB_PRICE_KOP = 399_900; // 3 999 ₽ / год
+export const PODCAST_SUB_PRICE_KOP = 499_900; // 4 999 ₽ / год
 export const podcastItemSchema = z.object({
   id: z.string(), title: z.string(), description: z.string().nullable(),
   cover: z.string().nullable(), duration: z.string().nullable(),
