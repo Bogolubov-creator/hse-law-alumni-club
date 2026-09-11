@@ -5,7 +5,7 @@ import { rub, FORMAT_LABEL, type Program, type Product, type ProductVariant, typ
 import { token, usePrograms, useProducts, useProgram, useCart, useMemberDiscount, useCartMutations, submitOrder } from "../lib/cart.js";
 import { useMe, useLedger, useNewsList, useNewsPost, usePodcasts, formatNewsDate } from "../lib/queries.js";
 import { programStart } from "../lib/program-date.js";
-import { publicUrl, mediaUrl } from "../lib/public-url.js";
+import { publicUrl, mediaUrl, programThumbUrl } from "../lib/public-url.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
@@ -386,8 +386,8 @@ function MobileDpo() {
           )}
         </div>
         <div className="noscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px 2px" }}>
-          <Chip on={!showAll} onClick={() => { setShowAll(false); setDir(null); }}>Актуальный набор</Chip>
-          <Chip on={showAll} onClick={() => { setShowAll(true); setDir(null); }}>Весь каталог</Chip>
+          <Chip on={!showAll} onClick={() => { setShowAll(false); setDir(null); }}>Актуальный набор · {actual.length}</Chip>
+          <Chip on={showAll} onClick={() => { setShowAll(true); setDir(null); }}>Весь каталог · {catalog.length}</Chip>
         </div>
         <div className="noscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "10px -20px 0", padding: "0 20px 2px" }}>
           <Chip on={!dir} onClick={() => setDir(null)}>Все</Chip>
@@ -445,18 +445,24 @@ function MobileDpo() {
           const external = !!p.source_url;
           const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
           const meta = [p.direction, FORMAT_LABEL[p.format] ?? FMT_RU[p.format] ?? p.format, p.duration].filter(Boolean).join(" · ");
+          const thumb = programThumbUrl(p.cover);
           return (
             <article key={p.id} style={{ ...CARD, padding: "16px 17px", boxShadow: "0 14px 32px -28px rgba(20,24,31,.5)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <span style={{ ...mono, fontSize: 9, letterSpacing: ".06em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>
-                  {FORMAT_LABEL[p.format] ?? FMT_RU[p.format] ?? p.format}
-                </span>
-                <span style={{ ...mono, fontSize: 10, color: closed ? "#B5331B" : "#1F8A5B" }}>{closed ? "набор закрыт" : "актуальный набор"}</span>
+              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <Link to={`/dpo/${p.slug}`} className="foc" aria-hidden="true" tabIndex={-1} style={{ flexShrink: 0, width: 72, height: 54, borderRadius: 10, overflow: "hidden", background: thumb ? `#11296B url(${thumb}) center/cover` : "linear-gradient(145deg,#1e2942,#11296B)", border: "1px solid #E4DCCC", display: "block" }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                    <span style={{ ...mono, fontSize: 9, letterSpacing: ".06em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>
+                      {FORMAT_LABEL[p.format] ?? FMT_RU[p.format] ?? p.format}
+                    </span>
+                    <span style={{ ...mono, fontSize: 10, color: closed ? "#B5331B" : "#1F8A5B" }}>{closed ? "набор закрыт" : "актуальный набор"}</span>
+                  </div>
+                  <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: INK }}>
+                    <h2 style={{ ...disp, fontWeight: 600, fontSize: 16.5, lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
+                  </Link>
+                </div>
               </div>
-              <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: INK }}>
-                <h2 style={{ ...disp, fontWeight: 600, fontSize: 16.5, lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
-              </Link>
-              {meta && <div style={{ ...mono, fontSize: 11, color: "#6E675A", marginTop: 8, lineHeight: 1.35 }}>{meta}</div>}
+              {meta && <div style={{ ...mono, fontSize: 11, color: "#6E675A", marginTop: 10, lineHeight: 1.35 }}>{meta}</div>}
               <p style={{ fontSize: 13, color: "#5C6470", margin: "8px 0 0", lineHeight: 1.45 }}>
                 {p.dates?.start ? `Начало: ${programStart(p.dates.start)}` : "Дата начала уточняется"}
                 {p.document ? ` · ${p.document}` : ""}
@@ -524,7 +530,7 @@ function MobilePodcasts() {
         {items.length === 0 && !q.isLoading && <p style={{ ...mono, fontSize: 13, color: "#6E675A" }}>Выпусков пока нет.</p>}
         {items.map((p, i) => (
           <Link key={p.id} to={`/podcasts?ep=${encodeURIComponent(p.id)}`} style={{ display: "flex", alignItems: "center", gap: 14, ...CARD, borderRadius: 18, padding: "13px 14px", boxShadow: "0 14px 30px -28px rgba(20,24,31,.5)", textDecoration: "none", color: INK }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, background: p.cover ? `#11296B url(${p.cover}) center/cover` : "linear-gradient(140deg,#1e2942,#11296B)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, background: p.cover ? `#11296B url(${mediaUrl(p.cover)}) center/cover` : "linear-gradient(140deg,#1e2942,#11296B)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {!p.cover && <svg width="17" height="17" viewBox="0 0 24 24" fill="#FBF3E8"><path d="M8 5v14l11-7z" /></svg>}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>

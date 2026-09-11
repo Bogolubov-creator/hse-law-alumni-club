@@ -10,6 +10,17 @@ export function mediaUrl(src: string): string {
   return publicUrl(src);
 }
 
+/**
+ * Миниатюра обложки ДПО: `/assets/programs/{id}.*` → `/assets/programs/thumbs/{id}.jpg`.
+ * Иначе возвращает исходный cover (или null).
+ */
+export function programThumbUrl(cover: string | null | undefined): string | null {
+  if (!cover) return null;
+  const m = /\/assets\/programs\/([^/]+)\.(jpe?g|png|webp)$/i.exec(cover);
+  if (m) return mediaUrl(`/assets/programs/thumbs/${m[1]}.jpg`);
+  return mediaUrl(cover);
+}
+
 const RASTER_EXT = /\.(jpe?g|png)$/i;
 
 /** Локальный jpeg/png → соседние `.avif` / `.webp` (оригинал остаётся fallback). */
