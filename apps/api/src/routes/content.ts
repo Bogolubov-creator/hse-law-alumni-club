@@ -25,6 +25,12 @@ function mergeProgramSeed<T extends Record<string, unknown>>(row: T, seed: Progr
     cover: emptyStr(row.cover) ? (seed.cover ?? null) : row.cover,
     modules: emptyArr(row.modules) ? (seed.modules ?? null) : row.modules,
     teachers: emptyArr(row.teachers) ? (seed.teachers ?? null) : row.teachers,
+    tagline: emptyStr(row.tagline) ? (seed.tagline ?? null) : row.tagline,
+    audience: emptyArr(row.audience) ? (seed.audience ?? null) : row.audience,
+    results: emptyArr(row.results) ? (seed.results ?? null) : row.results,
+    advantages: emptyArr(row.advantages) ? (seed.advantages ?? null) : row.advantages,
+    hse_id: emptyStr(row.hse_id) ? (seed.hse_id ?? null) : row.hse_id,
+    source_url: emptyStr(row.source_url) ? (seed.source_url ?? null) : row.source_url,
   };
 }
 // Публичные чтения контента. Directus наружу не выставляем – только через apps/api.
@@ -114,7 +120,7 @@ export async function contentRoutes(app: FastifyInstance) {
   app.get("/programs", async () => {
     const rows = (await directus.request(readItems("programs", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document", "description", "cover"],
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document", "description", "cover", "tagline", "hse_id"],
     }))) as Record<string, unknown>[];
     const seeds = seedBySlug();
     return rows.map((row) => {
@@ -124,6 +130,8 @@ export async function contentRoutes(app: FastifyInstance) {
         ...row,
         description: emptyStr(row.description) ? (seed?.description ?? null) : row.description,
         cover: emptyStr(row.cover) ? (seed?.cover ?? null) : row.cover,
+        tagline: emptyStr(row.tagline) ? (seed?.tagline ?? null) : row.tagline,
+        source_url: emptyStr(row.source_url) ? (seed?.source_url ?? null) : row.source_url,
       };
     });
   });
@@ -131,7 +139,7 @@ export async function contentRoutes(app: FastifyInstance) {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const rows = (await directus.request(readItems("programs", {
       filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document", "enrollment", "source_url", "cover"],
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document", "enrollment", "source_url", "cover", "tagline", "audience", "results", "advantages", "hse_id"],
     }))) as Record<string, unknown>[];
     if (!rows.length) return reply.code(404).send({ error: "Программа не найдена" });
     return mergeProgramSeed(rows[0]!, seedBySlug().get(slug));

@@ -638,7 +638,10 @@ function MobileProgram() {
   const count = cart.data?.count ?? 0;
   const mem = p ? Math.round(p.price * (1 - discount / 100)) : 0;
   const modules = (Array.isArray(p?.modules) && p!.modules) || [];
-  const teacher = (Array.isArray(p?.teachers) && p!.teachers && p!.teachers[0]) || null;
+  const teachers = (Array.isArray(p?.teachers) && p!.teachers) || [];
+  const audience = (Array.isArray(p?.audience) && p!.audience) || [];
+  const results = (Array.isArray(p?.results) && p!.results) || [];
+  const advantages = (Array.isArray(p?.advantages) && p!.advantages) || [];
   const doAdd = (goCart: boolean) => {
     if (!p) return;
     add.mutate({ type: "dpo", ref_id: p.slug, qty: 1 }, {
@@ -669,6 +672,7 @@ function MobileProgram() {
           {p && <div style={{ position: "absolute", left: 20, right: 20, bottom: 16 }}>
             <span style={{ ...mono, fontSize: 9, letterSpacing: ".08em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>{FMT_RU[p.format] ?? p.format}</span>
             <div style={{ ...disp, fontWeight: 700, fontSize: 22, lineHeight: 1.15, color: "#FBF3E8", marginTop: 10 }}>{p.title}</div>
+            {p.tagline && <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.4, color: "rgba(251,243,232,.82)" }}>{p.tagline}</div>}
           </div>}
         </div>
         {q.isLoading && <Loader />}
@@ -687,11 +691,22 @@ function MobileProgram() {
               </div>
               <div style={{ ...mono, fontSize: 10.5, color: "#6E675A", marginTop: 6 }}>{discount > 0 ? `Цена члена клуба (−${discount}%) · справочно` : "Цена · справочно"}</div>
             </div>
-            {p.description && <div><div style={secTitle}>О программе</div><div style={{ fontSize: 14, lineHeight: 1.55, color: "#3a3f49" }}>{p.description}</div></div>}
+            {p.description && <div><div style={secTitle}>О программе</div><div style={{ fontSize: 14, lineHeight: 1.55, color: "#3a3f49", whiteSpace: "pre-line" }}>{p.description}</div></div>}
+            {audience.length > 0 && <div><div style={secTitle}>Кому подойдёт</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{audience.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "#3a3f49" }}>– {item}</li>)}</ul></div>}
+            {results.length > 0 && <div><div style={secTitle}>Чему научитесь</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{results.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "#3a3f49" }}>– {item}</li>)}</ul></div>}
+            {advantages.length > 0 && <div><div style={secTitle}>Преимущества</div><ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>{advantages.map((item, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.5, color: "#3a3f49" }}>– {item}</li>)}</ul></div>}
             {modules.length > 0 && <div><div style={secTitle}>Модули</div><div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{modules.map((m, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, ...CARD, borderRadius: 13, padding: "12px 14px" }}><span style={{ width: 22, height: 22, borderRadius: 99, background: "rgba(236,90,19,.12)", color: "#C24009", ...mono, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span><span style={{ fontSize: 13.5 }}>{m.title}</span></div>
             ))}</div></div>}
-            {teacher && <div style={{ display: "flex", alignItems: "center", gap: 12, background: INK, borderRadius: 16, padding: "15px 16px" }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#E3C272,#C49A45)", color: INK, ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{teacher.name.trim()[0] ?? "≡"}</span><div style={{ minWidth: 0 }}><div style={{ ...mono, fontSize: 9.5, letterSpacing: ".1em", color: "rgba(251,243,232,.5)" }}>ПРЕПОДАВАТЕЛЬ</div><div style={{ fontWeight: 600, fontSize: 14, color: "#FBF3E8", marginTop: 2 }}>{teacher.name}{teacher.role ? ` · ${teacher.role}` : ""}</div></div></div>}
+            {teachers.length > 0 && <div><div style={secTitle}>Преподаватели</div><div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{teachers.map((t, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, background: i === 0 ? INK : "#fff", borderRadius: 16, padding: "15px 16px", border: i === 0 ? "none" : "1px solid #E4DCCC" }}>
+                <span style={{ width: 42, height: 42, borderRadius: 12, background: i === 0 ? "linear-gradient(135deg,#E3C272,#C49A45)" : "rgba(236,90,19,.12)", color: i === 0 ? INK : "#C24009", ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.name.trim()[0] ?? "≡"}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: i === 0 ? "#FBF3E8" : INK }}>{t.name}</div>
+                  {t.role && <div style={{ ...mono, fontSize: 11, marginTop: 3, color: i === 0 ? "rgba(251,243,232,.55)" : "#6E675A" }}>{t.role}</div>}
+                </div>
+              </div>
+            ))}</div></div>}
           </div>
         )}
       </div>

@@ -326,6 +326,11 @@ await ensureField("programs", "source_url", str()); // страница прог
 await ensureField("programs", "enrollment", enumf(["actual", "nonactual"], "actual")); // актуальный набор / набор закрыт
 await ensureField("programs", "description", txt());
 await ensureField("programs", "cover", str()); // обложка карточки/героя: URL или /assets/…
+await ensureField("programs", "hse_id", str()); // числовой id на hse.ru
+await ensureField("programs", "tagline", str());
+await ensureField("programs", "audience", json()); // string[]
+await ensureField("programs", "results", json()); // string[]
+await ensureField("programs", "advantages", json()); // string[]
 await ensureField("programs", "status", enumf(["draft", "published", "archived"], "draft"));
 
 // products (мерч)

@@ -64,6 +64,11 @@ export const programFullSchema = programSchema.extend({
   description: z.string().nullable().optional(),
   document: z.string().nullable().optional(),
   cover: z.string().nullable().optional(),
+  tagline: z.string().nullable().optional(),
+  audience: z.array(z.string()).nullable().optional(),
+  results: z.array(z.string()).nullable().optional(),
+  advantages: z.array(z.string()).nullable().optional(),
+  hse_id: z.string().nullable().optional(),
 });
 
 export const productVariantSchema = z.object({ sku: z.string(), size: z.string().optional(), color: z.string().optional(), stock: z.number() });

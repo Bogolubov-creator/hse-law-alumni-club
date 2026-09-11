@@ -29,13 +29,18 @@ function programRow(p: ProgramSeed, i: number) {
     duration: p.duration,
     price: p.price,
     enrollment: (p.enrollment ?? "actual") as "actual" | "nonactual",
-    source_url: null as string | null,
+    source_url: p.source_url ?? null,
     dates: p.dates ?? null,
     document: p.document ?? null,
     description: p.description ?? null,
     cover: p.cover ?? null,
     modules: p.modules ?? null,
     teachers: p.teachers ?? null,
+    tagline: p.tagline ?? null,
+    audience: p.audience ?? null,
+    results: p.results ?? null,
+    advantages: p.advantages ?? null,
+    hse_id: p.hse_id ?? null,
     status: "published",
   };
 }
@@ -193,7 +198,7 @@ const ME = {
 };
 
 const LEDGER = [
-  { id: "led-1", delta: 100, reason: "program", ref: "legal-english-mastery", comment: "Завершение программы", created_at: "2026-08-12T10:00:00.000Z" },
+  { id: "led-1", delta: 100, reason: "program", ref: "masterstvo-yuridicheskogo-angliyskogo-prodvinutye-navyki-dly-959312137", comment: "Завершение программы", created_at: "2026-08-12T10:00:00.000Z" },
   { id: "led-2", delta: 60, reason: "event", ref: "mirror-ev-1", comment: "Встреча выпусков", created_at: "2026-07-20T18:00:00.000Z" },
   { id: "led-3", delta: 80, reason: "referral", ref: null, comment: "Приглашённый верифицирован", created_at: "2026-06-01T09:00:00.000Z" },
 ];
@@ -209,7 +214,7 @@ const MY_ORDERS = [
     member_discount: 10,
     total_estimate: 4_050_000,
     created_at: "2026-08-01T12:00:00.000Z",
-    items_json: [{ type: "dpo" as const, ref_id: "legal-english-mastery", variant_sku: null, qty: 1, price: 4_500_000, title: "Мастерство юридического английского" }],
+    items_json: [{ type: "dpo" as const, ref_id: "masterstvo-yuridicheskogo-angliyskogo-prodvinutye-navyki-dly-959312137", variant_sku: null, qty: 1, price: 4_500_000, title: "Мастерство юридического английского" }],
   },
   {
     number: "CL-1002",

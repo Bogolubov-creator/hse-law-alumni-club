@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "bootstrap": "tsx src/directus-bootstrap.ts",
+    "import-dpo": "tsx src/import-dpo-mirror-catalog.ts",
     "load-pravovaya-gramotnost": "tsx src/load-pravovaya-gramotnost.ts"
   },
   "dependencies": {

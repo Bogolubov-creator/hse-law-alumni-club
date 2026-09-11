@@ -62,6 +62,9 @@ export default function ProgramV2() {
   const priced = p ? p.price - Math.round((p.price * discount) / 100) : 0;
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];
   const teachers: ProgramTeacher[] = Array.isArray(p?.teachers) ? p!.teachers : [];
+  const audience = Array.isArray(p?.audience) ? p!.audience : [];
+  const results = Array.isArray(p?.results) ? p!.results : [];
+  const advantages = Array.isArray(p?.advantages) ? p!.advantages : [];
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
   const coverSrc = p?.cover || "/assets/dpo-hero.jpg";
   const coverPath = coverSrc.replace(/^\//, "");
@@ -114,7 +117,12 @@ export default function ProgramV2() {
               <img src={mediaUrl(coverSrc)} alt="" width={1400} height={700} style={{ width: "100%", height: "auto", maxHeight: 320, objectFit: "cover", display: "block" }} />
             )}
           </div>
-          <div style={{ paddingTop: 24, maxWidth: "58ch" }}><h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1></div>
+          <div style={{ paddingTop: 24, maxWidth: "58ch" }}>
+            <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1>
+            {p.tagline && (
+              <p style={{ margin: "12px 0 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{p.tagline}</p>
+            )}
+          </div>
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
             {/* ── Содержание записи ── */}
             <div style={{ minWidth: 0 }}>
@@ -130,7 +138,49 @@ export default function ProgramV2() {
               {p.description && (
                 <section style={{ marginTop: 30 }}>
                   <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>О программе</h2>
-                  <p style={{ margin: "12px 0 0", fontSize: "var(--t-body)", lineHeight: 1.65, color: "var(--c-text-2)", maxWidth: "64ch" }}>{p.description}</p>
+                  <p style={{ margin: "12px 0 0", fontSize: "var(--t-body)", lineHeight: 1.65, color: "var(--c-text-2)", maxWidth: "64ch", whiteSpace: "pre-line" }}>{p.description}</p>
+                </section>
+              )}
+
+              {audience.length > 0 && (
+                <section style={{ marginTop: 36 }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Кому подойдёт</h2>
+                  <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
+                    {audience.map((item, i) => (
+                      <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
+                        <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {results.length > 0 && (
+                <section style={{ marginTop: 36 }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Чему научитесь</h2>
+                  <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
+                    {results.map((item, i) => (
+                      <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
+                        <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {advantages.length > 0 && (
+                <section style={{ marginTop: 36 }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Преимущества</h2>
+                  <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
+                    {advantages.map((item, i) => (
+                      <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
+                        <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
 
