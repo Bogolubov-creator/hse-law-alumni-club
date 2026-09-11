@@ -1289,8 +1289,8 @@ function ProgramsAdmin() {
       {syncDpo.isSuccess && (
         <p className="border-t border-[var(--c-line)] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[var(--c-ok-text)]">
           Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив
-          {" "}(актуальный набор {(syncDpo.data as { actual?: number }).actual ?? "–"} / весь каталог {(syncDpo.data as { total?: number }).total ?? "–"},
-          {" "}закрытые {(syncDpo.data as { nonactual?: number }).nonactual ?? "–"}).
+          {" "}(актуальный набор {syncDpo.data.actual} / весь каталог {syncDpo.data.total},
+          {" "}закрытые {syncDpo.data.nonactual}).
           {" "}Ночная автосинхронизация – ежедневно в 05:00.
         </p>
       )}
