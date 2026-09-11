@@ -317,7 +317,7 @@ export default function ProgramV2() {
                   </>
                 ) : p.source_url ? (
                   <>
-                    <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ display: "block", marginTop: 18, padding: "14px 16px", borderRadius: "var(--r-md)", background: "var(--c-anchor)", color: "#fff", textAlign: "center", fontWeight: 600, textDecoration: "none" }}>Записаться на hse.ru →</a>
+                    <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ display: "inline-block", marginTop: 18, padding: "10px 0", color: "var(--c-link)", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 4 }}>Записаться на hse.ru ↗</a>
                     <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "12px 0 0", lineHeight: 1.5 }}>
                       Запись и оплата – на официальном маркетплейсе ДПО НИУ ВШЭ. Скидка выпускника действует на все программы.
                     </p>

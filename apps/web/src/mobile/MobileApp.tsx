@@ -492,7 +492,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   const brd = on ? (ANDROID ? "#14181F" : "#EC5A13") : "#E4DCCC";
   const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "var(--c-bg-raised)";
   const col = on ? (ANDROID ? "#fbf3e8" : "var(--c-accent-text)") : INK;
-  return <button onClick={onClick} style={{ flexShrink: 0, fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + brd, background: bg, color: col, cursor: "pointer" }}>{children}</button>;
+  return <button onClick={onClick} aria-pressed={on} style={{ flexShrink: 0, fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + brd, background: bg, color: col, cursor: "pointer" }}>{children}</button>;
 }
 
 // ── Подкасты ─────────────────────────────────────────────────────────
@@ -703,8 +703,13 @@ function MobileProgram() {
   );
 }
 
-function CartField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "var(--c-bg-raised)", padding: "0 15px", fontFamily: "'HSE Sans', system-ui, sans-serif", fontSize: 15, color: INK, outline: "none" }} />;
+function CartField({ label, value, onChange, type = "text", name, autoComplete }: { label: string; value: string; onChange: (v: string) => void; type?: string; name: string; autoComplete: string }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+      <span style={{ fontSize: 12.5, color: "var(--c-text-2)" }}>{label}</span>
+      <input type={type} name={name} autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "var(--c-bg-raised)", padding: "0 15px", fontFamily: "'HSE Sans', system-ui, sans-serif", fontSize: 15, color: INK, outline: "none" }} />
+    </label>
+  );
 }
 
 function MobileCart() {
@@ -795,15 +800,15 @@ function MobileCart() {
               <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Контакты</div>
               {isMirror && <p role="note">Это демо: заявку отправить нельзя. Личные данные вводить не нужно.</p>}
               <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={form.website} onChange={(e) => set("website", e.target.value)} style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} />
-              <CartField label="ФИО" value={form.fio} onChange={(v) => set("fio", v)} />
-              <CartField label="Телефон" value={form.phone} onChange={(v) => set("phone", v)} />
-              <CartField label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} />
+              <CartField label="ФИО" name="fio" autoComplete="name" value={form.fio} onChange={(v) => set("fio", v)} />
+              <CartField label="Телефон" name="phone" type="tel" autoComplete="tel" value={form.phone} onChange={(v) => set("phone", v)} />
+              <CartField label="E-mail" name="email" type="email" autoComplete="email" value={form.email} onChange={(v) => set("email", v)} />
               <div style={{ display: "flex", gap: 9 }}>
                 {(["pickup", "delivery"] as const).map((f) => (
                   <button type="button" key={f} onClick={() => set("fulfillment", f)} style={{ flex: 1, height: 46, borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, border: "1.5px solid " + (form.fulfillment === f ? "#EC5A13" : "#E4DCCC"), background: "var(--c-bg-raised)", color: INK }}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
                 ))}
               </div>
-              {form.fulfillment === "delivery" && <CartField label="Адрес доставки" value={form.address} onChange={(v) => set("address", v)} />}
+              {form.fulfillment === "delivery" && <CartField label="Адрес доставки" name="address" autoComplete="street-address" value={form.address} onChange={(v) => set("address", v)} />}
               <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 12.5, color: "var(--c-text-2)", lineHeight: 1.45, marginTop: 2, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} required style={{ width: 20, height: 20, margin: 0, flexShrink: 0, accentColor: "#EC5A13" }} />
                 <span>Согласен на обработку персональных данных оператору {CLUB_OPERATOR.shortName} согласно <Link to="/privacy" target="_blank" style={{ color: "var(--c-accent-text)" }}>политике</Link> (152-ФЗ).</span>
@@ -897,11 +902,10 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
     if (!a) return;
     if (a.paused) { void a.play().catch(() => undefined); } else { a.pause(); }
   };
-  const seek = (e: { currentTarget: HTMLDivElement; clientX: number }) => {
+  const seek = (sec: number) => {
     const a = audioRef.current;
     if (!a || !dur) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    a.currentTime = Math.max(0, Math.min(dur, ((e.clientX - r.left) / r.width) * dur));
+    a.currentTime = Math.max(0, Math.min(dur, sec));
   };
   return (
     <div style={{ height: "calc(100dvh - var(--notice-h, 0px))", background: "linear-gradient(180deg,#1a2338 0%,#14181F 60%,#0f131a 100%)", display: "flex", flexDirection: "column", color: "#fbf3e8", overflow: "hidden", fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
@@ -936,9 +940,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
               onTimeUpdate={(e) => { const a = e.currentTarget; setPos(a.currentTime); try { localStorage.setItem(posKey, String(a.currentTime)); } catch { /* приватный режим */ } }}
               onLoadedMetadata={(e) => { const a = e.currentTarget; setDur(a.duration || 0); const saved = Number(localStorage.getItem(posKey) || 0); if (saved > 5 && saved < (a.duration || Infinity) - 5) a.currentTime = saved; }}
               onEnded={() => { setPlaying(false); try { localStorage.removeItem(posKey); } catch { /* ок */ } }} />
-            <div onClick={seek} role="slider" aria-label="Перемотка" aria-valuemin={0} aria-valuemax={Math.round(dur)} aria-valuenow={Math.round(pos)} style={{ height: 5, borderRadius: 99, background: "rgba(251,243,232,.16)", overflow: "hidden", cursor: "pointer" }}>
-              <div style={{ width: dur ? `${(pos / dur) * 100}%` : "0%", height: "100%", borderRadius: 99, background: "#EC5A13" }} />
-            </div>
+            <input type="range" aria-label="Перемотка" min={0} max={Math.max(1, Math.round(dur))} step={1} value={Math.round(pos)} onChange={(e) => seek(Number(e.target.value))} disabled={!dur} style={{ display: "block", width: "100%", margin: 0, accentColor: "#EC5A13", cursor: "pointer" }} />
             <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 10, color: "rgba(251,243,232,.5)", marginTop: 8 }}><span>{fmtTime(pos)}</span><span>{fmtTime(dur)}</span></div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 30, marginTop: 22 }}>
               <button onClick={() => goEp(idx - 1)} disabled={idx <= 0} aria-label="Предыдущий выпуск" style={{ background: "none", border: "none", cursor: "pointer", opacity: idx <= 0 ? .35 : 1 }}><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M11 6L4 12l7 6zM19 6l-7 6 7 6z" /></svg></button>

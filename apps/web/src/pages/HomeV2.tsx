@@ -97,7 +97,7 @@ export default function HomeV2() {
     .slice(0, 2);
 
   const rootRef = useRef<HTMLElement>(null);
-  useVestnikMotion(rootRef);
+  useVestnikMotion(rootRef, [news.data, events.data]);
 
   const marqueeBits = [...MARQUEE, ...MARQUEE];
 

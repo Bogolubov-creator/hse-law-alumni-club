@@ -18,7 +18,8 @@ function prefersReducedMotion(): boolean {
  * scrub-reveal полос, marquee. Scale на Фемиде не трогаем – обрезает голову.
  * При reduced-motion – только статичный кадр.
  */
-export function useVestnikMotion(rootRef: RefObject<HTMLElement | null>) {
+/** `deps` – данные, по которым монтируются секции: без них ScrollTrigger видит только пустую разметку. */
+export function useVestnikMotion(rootRef: RefObject<HTMLElement | null>, deps: unknown[] = []) {
   const scrubTriggers = useRef<ScrollTrigger[]>([]);
 
   useGSAP(
@@ -64,7 +65,7 @@ export function useVestnikMotion(rootRef: RefObject<HTMLElement | null>) {
         if (tween.scrollTrigger) scrubTriggers.current.push(tween.scrollTrigger);
       });
     },
-    { scope: rootRef, dependencies: [] },
+    { scope: rootRef, dependencies: deps },
   );
 
   useLayoutEffect(() => {

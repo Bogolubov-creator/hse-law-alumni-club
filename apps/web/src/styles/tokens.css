@@ -10,6 +10,7 @@
  */
 
 :root {
+  color-scheme: light;
   /* ── Слой 1. Палитра ─────────────────────────────────────────── */
   /* Канон – неприкосновенны */
   --p-ohra: #ec5a13;         /* акцент клуба */
@@ -37,6 +38,13 @@
   /* Третичный текст. #6b7280 давал 4,39:1 на кости – провал AA на моно-подписи,
      которой набран весь реестр. #5c6470 даёт 5,44:1 на кости и 5,98:1 на белом. */
   --p-ink-mute: #5c6470;     /* третичный текст, подписи */
+  /* Тёмная тема: поверхности и текст на графите (раньше жили hex-ами в слое 2) */
+  --p-ink-raised: #1b202a;   /* приподнятая поверхность на графите */
+  --p-ink-sunken: #10141b;   /* утопленная поверхность на графите */
+  --p-paper-soft: #c9cdd6;   /* вторичный текст на графите */
+  --p-paper-mute: #8e95a3;   /* третичный текст на графите */
+  --p-ohra-light: #ff7a3d;   /* охра-текст на графите */
+  --p-blue-light: #6f9bd8;   /* якорь и ссылки на графите: 6,23:1 на графите, 5,72:1 на приподнятой */
   --p-paper: #ffffff;        /* белый: основной фон */
   --p-paper-2: #f3f5f7;      /* вторичная поверхность */
   --p-line: #e5e7eb;         /* разделители */
@@ -132,19 +140,20 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --c-bg: var(--p-ink);
-    --c-bg-raised: #1b202a;
-    --c-bg-sunken: #10141b;
+    --c-bg-raised: var(--p-ink-raised);
+    --c-bg-sunken: var(--p-ink-sunken);
     --c-bg-inverse: var(--p-paper);
 
     --c-text: var(--p-paper);
-    --c-text-2: #c9cdd6;
-    --c-text-3: #8e95a3;
+    --c-text-2: var(--p-paper-soft);
+    --c-text-3: var(--p-paper-mute);
     --c-text-inverse: var(--p-ink);
 
-    --c-accent-text: #ff7a3d;
-    --c-anchor: #6f9bd8;
-    --c-link: var(--p-blue-bright);
+    --c-accent-text: var(--p-ohra-light);
+    --c-anchor: var(--p-blue-light);
+    --c-link: var(--p-blue-light); /* яркий синий давал 3,39:1 на графите */
     --c-status: var(--p-brass-light);
     --c-status-text: var(--p-brass-light);
     --c-ok-text: var(--p-green-light);
@@ -156,16 +165,18 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --c-bg: var(--p-ink);
-  --c-bg-raised: #1b202a;
-  --c-bg-sunken: #10141b;
+  --c-bg-raised: var(--p-ink-raised);
+  --c-bg-sunken: var(--p-ink-sunken);
   --c-bg-inverse: var(--p-paper);
   --c-text: var(--p-paper);
-  --c-text-2: #c9cdd6;
-  --c-text-3: #8e95a3;
+  --c-text-2: var(--p-paper-soft);
+  --c-text-3: var(--p-paper-mute);
   --c-text-inverse: var(--p-ink);
-  --c-accent-text: #ff7a3d;
-  --c-anchor: #6f9bd8;
+  --c-accent-text: var(--p-ohra-light);
+  --c-anchor: var(--p-blue-light);
+  --c-link: var(--p-blue-light);
   --c-status: var(--p-brass-light);
   --c-status-text: var(--p-brass-light);
   --c-ok-text: var(--p-green-light);

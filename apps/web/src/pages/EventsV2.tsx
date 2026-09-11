@@ -180,7 +180,7 @@ export default function EventsV2() {
             <div style={{ background: "var(--c-bg-raised)", color: "var(--c-text)", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--c-line)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: 20 }}><Link className="foc" to={eventId ? "/events" : `/events/${opened.id}`}>{eventId ? "← Вся афиша" : "Открыть страницу события"}</Link>{!eventId && <button className="foc" onClick={() => setOpenId(null)} style={{ ...label, padding: 12, border: "1px solid var(--c-line-control)", background: "transparent", borderRadius: 8 }}>Закрыть</button>}</div>
               {opened.cover && (
-                <img src={opened.cover} alt={`Афиша: ${opened.title}`} style={{ display: "block", width: "100%", maxHeight: 240, objectFit: "cover" }}
+                <img src={opened.cover} alt={`Афиша: ${opened.title}`} width={1200} height={630} loading="lazy" decoding="async" style={{ display: "block", width: "100%", height: "auto", maxHeight: 240, objectFit: "cover" }}
                   onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
               )}
               <div style={{ padding: 26 }}>

@@ -53,7 +53,7 @@ body {
 }
 
 /* ── PWA/мобильная полировка (десктоп не затрагивается) ── */
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
 body { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea { touch-action: manipulation; } /* без 300мс-задержки и дабл-тап-зума */
 @media (max-width: 768px) {

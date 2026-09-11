@@ -605,3 +605,9 @@
     opacity: 0.55;
   }
 }
+
+/* Печать: scrub-reveal не успевает дойти до конца – показываем всё сразу. */
+@media print {
+  .vestnik-scrub { opacity: 1 !important; transform: none !important; }
+  .vestnik-grain, .vestnik-marquee { display: none !important; }
+}

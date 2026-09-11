@@ -24,7 +24,7 @@
   margin: 0 auto;
   padding: clamp(28px, 3.5vw, 44px) 28px;
   border-bottom: 1px solid var(--c-line);
-  background: color-mix(in srgb, var(--p-blue) 8%, var(--c-bg));
+  background: color-mix(in srgb, var(--c-anchor) 8%, var(--c-bg));
 }
 
 .club-dpo-masthead__inner {
@@ -44,7 +44,7 @@
   min-height: clamp(220px, 28vw, 340px);
   border-radius: 14px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--p-blue) 12%, var(--c-bg-sunken));
+  background: color-mix(in srgb, var(--c-anchor) 12%, var(--c-bg-sunken));
 }
 
 .club-dpo-masthead__media > picture,
@@ -80,7 +80,7 @@
   text-transform: uppercase;
   /* На синем veil мачты --c-accent-text (#c24009) даёт 3,98:1 – ниже AA.
      Углубляем чернилами палитры (~6:1 на том же фоне). */
-  color: color-mix(in srgb, var(--c-accent-text) 70%, var(--p-ink));
+  color: color-mix(in srgb, var(--c-accent-text) 70%, var(--c-text));
 }
 
 /* Тёмная тема: accent-text уже светлый (#ff7a3d) – смесь с ink убила бы контраст. */
@@ -120,7 +120,7 @@
   gap: 10px 28px;
   margin-top: 18px;
   padding-top: 14px;
-  border-top: 1px solid color-mix(in srgb, var(--p-blue) 22%, var(--c-line));
+  border-top: 1px solid color-mix(in srgb, var(--c-anchor) 22%, var(--c-line));
 }
 
 .club-dpo-meta__item {
@@ -174,10 +174,10 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--p-blue) 7%, var(--c-bg)) 0%,
-      color-mix(in srgb, var(--p-ohra) 5%, var(--c-bg)) 100%
+      color-mix(in srgb, var(--c-anchor) 7%, var(--c-bg)) 0%,
+      color-mix(in srgb, var(--c-accent) 5%, var(--c-bg)) 100%
     );
-  border: 1px solid color-mix(in srgb, var(--p-blue) 12%, var(--c-line));
+  border: 1px solid color-mix(in srgb, var(--c-anchor) 12%, var(--c-line));
   border-radius: 14px;
   padding: 22px;
 }
@@ -195,7 +195,7 @@
   border-radius: 999px;
   overflow: hidden;
   background: var(--c-bg);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--p-blue) 8%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--c-anchor) 8%, transparent);
 }
 
 .club-dpo-mode__btn {
@@ -295,7 +295,7 @@
   border-radius: 12px;
   overflow: hidden;
   background: var(--c-bg-sunken);
-  border: 1px solid color-mix(in srgb, var(--p-blue) 12%, var(--c-line));
+  border: 1px solid color-mix(in srgb, var(--c-anchor) 12%, var(--c-line));
   text-decoration: none;
 }
 
@@ -313,8 +313,8 @@
   background:
     linear-gradient(
       145deg,
-      color-mix(in srgb, var(--p-blue) 55%, #1a2238) 0%,
-      color-mix(in srgb, var(--p-ohra) 35%, #11296b) 100%
+      color-mix(in srgb, var(--c-anchor) 55%, #1a2238) 0%,
+      color-mix(in srgb, var(--c-accent) 35%, #11296b) 100%
     );
 }
 
@@ -331,12 +331,12 @@
 }
 
 .club-dpo-row:first-of-type {
-  border-top-color: color-mix(in srgb, var(--p-blue) 16%, var(--c-line));
+  border-top-color: color-mix(in srgb, var(--c-anchor) 16%, var(--c-line));
 }
 
 @media (hover: hover) and (pointer: fine) {
   .club-dpo-row:hover {
-    background: color-mix(in srgb, var(--p-ohra) 5%, var(--c-bg));
+    background: color-mix(in srgb, var(--c-accent) 5%, var(--c-bg));
   }
   .club-dpo-row:hover::before {
     background: var(--c-accent);
@@ -420,7 +420,7 @@
 }
 
 .club-dpo-loading {
-  background: color-mix(in srgb, var(--p-blue) 6%, var(--c-bg));
+  background: color-mix(in srgb, var(--c-anchor) 6%, var(--c-bg));
   color: var(--c-text-3);
   font-family: var(--f-data);
   font-size: var(--t-caption);
@@ -435,7 +435,7 @@
 .club-dpo-loading__bar {
   height: 14px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--p-blue) 12%, var(--c-bg-sunken));
+  background: color-mix(in srgb, var(--c-anchor) 12%, var(--c-bg-sunken));
   transform-origin: left center;
 }
 
@@ -443,8 +443,8 @@
 .club-dpo-loading__bar:nth-child(3) { width: 62%; }
 
 .club-dpo-empty {
-  background: color-mix(in srgb, var(--p-ohra) 6%, var(--c-bg));
-  border-color: color-mix(in srgb, var(--p-ohra) 18%, var(--c-line));
+  background: color-mix(in srgb, var(--c-accent) 6%, var(--c-bg));
+  border-color: color-mix(in srgb, var(--c-accent) 18%, var(--c-line));
 }
 
 .club-dpo-empty h2 {
@@ -460,8 +460,8 @@
 }
 
 .club-dpo-error {
-  background: color-mix(in srgb, var(--p-karmin) 8%, var(--c-bg));
-  border-color: color-mix(in srgb, var(--p-karmin) 22%, var(--c-line));
+  background: color-mix(in srgb, var(--c-danger) 8%, var(--c-bg));
+  border-color: color-mix(in srgb, var(--c-danger) 22%, var(--c-line));
 }
 
 .club-dpo-foot {
@@ -492,14 +492,8 @@
 }
 
 @keyframes club-dpo-rise {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { transform: translateY(12px); }
+  to { transform: translateY(0); }
 }
 
 @keyframes club-dpo-pulse {
@@ -580,11 +574,11 @@
 
 /* Тёмная тема */
 :root[data-theme="dark"] .club-dpo-masthead {
-  background: color-mix(in srgb, var(--p-blue) 18%, var(--c-bg));
+  background: color-mix(in srgb, var(--c-anchor) 18%, var(--c-bg));
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .club-dpo-masthead {
-    background: color-mix(in srgb, var(--p-blue) 18%, var(--c-bg));
+    background: color-mix(in srgb, var(--c-anchor) 18%, var(--c-bg));
   }
 }
 
