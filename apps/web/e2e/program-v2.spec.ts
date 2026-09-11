@@ -151,7 +151,7 @@ test.describe("Программа v2", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/dpo\/test-program$/);
   });
 
-  // <768px отдаёт MobileApp; адаптив ProgramV2 (aside order:-1) – на 768..900.
+  // Адаптив ProgramV2 (aside order:-1) – на 768..900; ниже – та же вёрстка в одну колонку.
   test("на планшете бланк с ценой уходит над описанием, прокрутки вбок нет", async ({ page }) => {
     await mockProgram(page);
     await page.setViewportSize({ width: 820, height: 900 });

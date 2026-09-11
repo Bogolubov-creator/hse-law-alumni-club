@@ -3,8 +3,6 @@ import { RouteScroll } from "./components/RouteScroll.js";
 import { SupportDock } from "./components/SupportDock.js";
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation, Link } from "react-router-dom";
-import { useIsMobile } from "./lib/use-mobile.js";
-import { useIsPwaShell } from "./lib/use-pwa.js";
 import Stub from "./pages/Stub.js";
 import CookieBanner from "./components/CookieBanner.js";
 import { PageViewBeacon } from "./components/PageViewBeacon.js";
@@ -15,7 +13,7 @@ import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./lib/cart.js";
 
 // Канон: публичное лицо – бывший v2. /v2/* и /legacy/* – только редиректы на канон.
-// На телефоне (<768px) и в установленном PWA для ключевых маршрутов – MobileApp.
+// Телефон – та же адаптивная вёрстка (решение заказчика 12.09), отдельного «приложения» нет.
 
 const SupportV2 = lazy(() => import("./pages/SupportV2.js"));
 const SupportConsent = lazy(() => import("./pages/SupportV2.js").then(m => ({ default: m.SupportConsent })));
@@ -39,9 +37,6 @@ const Privacy = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.
 const Confidential = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Confidential })));
 const Requisites = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Requisites })));
 const AdminApp = lazy(() => import("./admin/AdminApp.js"));
-const MobileApp = lazy(() => import("./mobile/MobileApp.js"));
-
-const MOBILE_APP_ROUTES = new Set(["/", "/news", "/dpo", "/podcasts", "/merch"]);
 
 /** Старые закладки /v2/... → канонические пути. */
 function StripV2Prefix() {
@@ -60,15 +55,6 @@ function StripLegacyPrefix() {
 export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isMobile = useIsMobile();
-  const isPwa = useIsPwaShell();
-  const appShell = (isMobile || isPwa) && !pathname.startsWith("/admin");
-  const mobileTakeover = appShell && (
-    MOBILE_APP_ROUTES.has(pathname)
-    || pathname.startsWith("/dpo/")
-    || pathname.startsWith("/news/")
-    || pathname === "/cart"
-  );
 
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {
@@ -100,7 +86,6 @@ export default function App() {
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <RouteScroll />
-        {mobileTakeover ? <MobileApp /> : (
         <Routes>
           <Route path="/" element={<HomeV2 />} />
           <Route path="/support" element={<SupportV2 />} />
@@ -134,7 +119,6 @@ export default function App() {
 
           <Route path="*" element={<Stub title="Страница не найдена" />} />
         </Routes>
-        )}
       </Suspense>
       </ErrorBoundary>
       <SupportDock />
