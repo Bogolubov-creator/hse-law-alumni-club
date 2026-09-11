@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { hasCookieChoice } from "../lib/cookie-consent.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
+import { publicUrl } from "../lib/public-url.js";
 
 const DISMISS_KEY = "club_channel_invite_closed";
 const DISMISS_DAYS = 30;
@@ -76,9 +77,17 @@ export function ChannelInvite() {
         ✕
       </button>
       <div className="club-channel-invite__body">
-        <span className="club-channel-invite__mark" aria-hidden>
-          TG
-        </span>
+        <picture className="club-channel-invite__mark-wrap">
+          <source type="image/webp" srcSet={publicUrl("assets/alumni-mark.webp")} />
+          <img
+            className="club-channel-invite__mark"
+            src={publicUrl("assets/alumni-mark.png")}
+            alt=""
+            width={40}
+            height={40}
+            decoding="async"
+          />
+        </picture>
         <div className="club-channel-invite__copy">
           <strong className="club-channel-invite__title">{TELEGRAM_CHANNEL.title}</strong>
           <p className="club-channel-invite__text">{TELEGRAM_CHANNEL.description}</p>
