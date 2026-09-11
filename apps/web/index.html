@@ -93,8 +93,8 @@
     <!-- Начертания первого экрана грузим заранее, чтобы заголовок не переписывался -->
     <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/HSESans-Regular.woff2" />
     <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/HSESans-Black.woff2" />
-    <!-- Фемида героя главной (10 КБ avif): иначе она ждёт три хопа JS и становится LCP на 7 с -->
-    <link rel="preload" as="image" type="image/avif" href="%BASE_URL%assets/themis.avif" />
+    <!-- Фото героя главной (55 КБ avif): иначе оно ждёт три хопа JS и становится LCP на секунды позже -->
+    <link rel="preload" as="image" type="image/avif" href="%BASE_URL%assets/alumni-meeting.avif" />
   </head>
   <body>
     <div id="root"></div>

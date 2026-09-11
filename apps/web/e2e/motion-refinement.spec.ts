@@ -2,13 +2,12 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 const out='/Users/macbook/alumni-staged-evidence/motion';
 test.beforeEach(async({page})=>{mkdirSync(out,{recursive:true});await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});});
-test('первый экран движется, reduced motion сохраняет содержание без анимации',async({page},info)=>{
+// Решение заказчика 12.09: главная без зерна, маркизы и scrub – первый экран статичен и виден сразу.
+test('первый экран статичен: содержание видно без анимации',async({page},info)=>{
  await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/');
- const grain=page.locator('.vestnik-grain');await expect(page.locator('.vestnik-themis')).toBeVisible();await expect(grain).toBeVisible();
- expect(await grain.evaluate(e=>getComputedStyle(e).animationName)).toMatch(/vestnik-grain-drift/);
- await page.evaluate(()=>document.getAnimations().forEach(a=>{a.pause();a.currentTime=150}));await page.screenshot({path:`${out}/intro-moving-${info.project.name}.png`});
- await page.evaluate(()=>document.getAnimations().forEach(a=>{try{a.finish()}catch{a.cancel()}}));await page.screenshot({path:`${out}/intro-settled-${info.project.name}.png`});
- await page.emulateMedia({reducedMotion:'reduce'});expect(await grain.evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
+ await expect(page.locator('.home-hero__photo img')).toBeVisible();
+ expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBe(0);
+ await page.screenshot({path:`${out}/intro-${info.project.name}.png`});
  await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.getByRole('link',{name:'Вступить в клуб',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
