@@ -28,11 +28,17 @@ test.describe("Вступление в клуб v2", () => {
 
   test("без согласия на обработку данных заявку не отправить", async ({ page }) => {
     await page.goto("/join");
-    const submit = page.getByRole("button", { name: "Нужно согласие на обработку данных" });
-    await expect(submit).toBeDisabled();
+    let posted = false;
+    await page.route("**/api/auth/register", (r) => { posted = true; r.abort(); });
+    const submit = page.getByRole("button", { name: "Подать заявку на вступление" });
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    // Кнопка не серая: браузер подсвечивает обязательный чекбокс, запрос не уходит
+    await expect(page.getByRole("checkbox")).toHaveJSProperty("validity.valid", false);
+    expect(posted).toBe(false);
 
     await page.getByRole("checkbox").check();
-    await expect(page.getByRole("button", { name: "Подать заявку на вступление" })).toBeEnabled();
+    await expect(page.getByRole("checkbox")).toHaveJSProperty("validity.valid", true);
   });
 
   test("год выпуска принимает только цифры и не длиннее четырёх", async ({ page }) => {

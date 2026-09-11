@@ -1,18 +1,23 @@
 import { Link } from "react-router-dom";
 import { useHead } from "../lib/title.js";
+import { V2Shell, pageTitle } from "../v2/Shell.js";
+import { action, actionGhost } from "../styles/primitives.js";
 
-// Заглушка для ненайденных/будущих экранов. noindex: soft-404 не должен индексироваться
-// (SPA отдаёт index.html с HTTP 200, поэтому закрываем на уровне meta для Googlebot).
+/** Страница-заглушка для неизвестных адресов: в общей оболочке, честная копия, два выхода. */
 export default function Stub({ title }: { title: string }) {
   useHead({ title, noindex: true });
   return (
-    <main id="main" className="mx-auto flex min-h-screen max-w-3xl flex-col items-start justify-center px-6">
-      <p className="font-mono text-xs uppercase tracking-[0.16em] text-ohra">Клуб выпускников факультета права Вышки</p>
-      <h1 className="mt-3 font-display text-4xl font-extrabold">{title}</h1>
-      <p className="mt-4 text-grafit-soft">Этот раздел скоро появится.</p>
-      <Link to="/" className="foc mt-6 font-display text-sm font-bold text-ohra-deep">
-        ← На главную
-      </Link>
-    </main>
+    <V2Shell>
+      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "var(--rh-section) 28px" }}>
+        <h1 style={{ ...pageTitle, fontSize: "var(--t-h1-page)", lineHeight: 1.08, margin: 0 }}>{title}</h1>
+        <p style={{ margin: "16px 0 0", maxWidth: "52ch", color: "var(--c-text-2)", lineHeight: 1.5 }}>
+          Такой страницы нет – возможно, адрес устарел или в нём опечатка.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 28 }}>
+          <Link to="/" className="foc" style={action}>На главную</Link>
+          <Link to="/dpo" className="foc" style={actionGhost}>Программы ДПО</Link>
+        </div>
+      </main>
+    </V2Shell>
   );
 }

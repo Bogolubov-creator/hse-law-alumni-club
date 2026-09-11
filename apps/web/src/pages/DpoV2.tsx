@@ -12,6 +12,13 @@ import { programThumbUrl } from "../lib/public-url.js";
 import { V2Shell, mono, disp } from "../v2/Shell.js";
 import "../styles/dpo-vitrine.css";
 
+/** Обложки с логотипом факультета (просмотрены 12.09); остальные с hse.ru – сток без символики. */
+const FACULTY_COVERS = new Set(["472681893", "474599435", "474776084", "494685723", "589527758", "802031223", "905186485", "906651510"]);
+function hasFacultyCover(cover: string | null | undefined): boolean {
+  const m = /\/programs\/(\d+)\.(?:jpe?g|png|webp)$/i.exec(cover ?? "");
+  return !!m && FACULTY_COVERS.has(m[1]!);
+}
+
 export default function DpoV2() {
   useHead({
     title: "Программы ДПО",
@@ -161,14 +168,15 @@ export default function DpoV2() {
               const closed = p.enrollment === "nonactual";
               const external = !!p.source_url;
               const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
-              const thumb = programThumbUrl(p.cover);
+              // Превью только с символикой факультета (решение заказчика 12.09): сток с hse.ru не показываем.
+              const thumb = hasFacultyCover(p.cover) ? programThumbUrl(p.cover) : null;
               return (
                 <article key={p.id} className="v2-prog club-program-row club-dpo-row">
                   <Link to={`/dpo/${p.slug}`} className="foc club-dpo-row__thumb" aria-hidden="true" tabIndex={-1}>
                     {thumb ? (
                       <img src={thumb} alt="" width={240} height={180} loading="lazy" decoding="async" />
                     ) : (
-                      <span className="club-dpo-row__thumb-fallback" />
+                      <span className="club-dpo-row__thumb-fallback">{p.direction}</span>
                     )}
                   </Link>
                   <div className="club-program-description" style={{ minWidth: 0 }}>
@@ -179,18 +187,18 @@ export default function DpoV2() {
                       {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration].filter(Boolean).join(" · ")}
                     </div>
                     <p style={{ color: "var(--c-text-2)", margin: "10px 0" }}>{p.dates?.start ? `Начало: ${programStart(p.dates.start)}` : "Дата начала уточняется"}{p.document ? ` · ${p.document}` : ""}</p>
-                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", marginTop: 8, textTransform: "none", color: closed ? "var(--c-danger-text)" : "var(--c-ok-text)" }}>
+                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", marginTop: 8, textTransform: "none", color: closed ? "var(--c-danger-text)" : "var(--c-text-3)" }}>
                       {closed ? "набор закрыт" : "актуальный набор"}
                     </div>
                   </div>
 
-                  <div className="club-program-price club-dpo-row__price" style={{ color: discount > 0 ? "var(--c-accent-text)" : "var(--c-text)" }}>
+                  <div className="club-program-price club-dpo-row__price" style={{ color: "var(--c-text)" }}>
                     <div>{rub(priced)}</div>
                     {discount > 0 && (
                       <div style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
                     )}
                     {discount > 0 && (
-                      <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-ok-text)", marginTop: 6, textTransform: "none" }}>−{discount}% выпускнику</div>
+                      <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 6, textTransform: "none" }}>−{discount}% выпускнику</div>
                     )}
                   </div>
 
@@ -199,14 +207,11 @@ export default function DpoV2() {
                       <input type="checkbox" checked={selected.includes(p.slug)} disabled={!selected.includes(p.slug) && selected.length >= 3} onChange={() => toggleCompare(p.slug)} aria-label={`Сравнить: ${p.title}`} />
                       Сравнить
                     </label>
+                    {/* Одно действие на ряд: запись на hse.ru живёт в бланке программы. */}
                     <Link to={`/dpo/${p.slug}`} className="foc tap club-btn club-btn--secondary">
                       Подробнее
                     </Link>
-                    {external ? (
-                      <a href={p.source_url!} target="_blank" rel="noopener noreferrer" className="foc tap club-dpo-external">
-                        Запись на hse.ru<span aria-hidden="true"> ↗</span>
-                      </a>
-                    ) : closed ? (
+                    {external ? null : closed ? (
                       <span className="club-dpo-closed">Набор закрыт</span>
                     ) : (
                       <button type="button" onClick={() => addToCart(p)} disabled={add.isPending} className="foc tap club-btn club-btn--primary">

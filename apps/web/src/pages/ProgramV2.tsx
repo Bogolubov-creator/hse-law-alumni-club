@@ -97,7 +97,7 @@ export default function ProgramV2() {
 
         {q.isError && (
           <div style={{ padding: "56px 0" }}>
-            <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h2)", margin: 0 }}>{notFound ? "Программа не найдена" : "Не удалось загрузить программу"}</h1>
+            <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: 0 }}>{notFound ? "Программа не найдена" : "Не удалось загрузить программу"}</h1>
             <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", maxWidth: 520, lineHeight: 1.55 }}>
               {notFound ? "Такой записи в каталоге нет – возможно, набор завершён и программа снята." : "Сервер временно недоступен. Повторите загрузку."}
             </p>
@@ -120,7 +120,7 @@ export default function ProgramV2() {
                 alt=""
                 width={1400}
                 height={700}
-                style={{ width: "100%", height: "auto", maxHeight: 320, objectFit: "cover", display: "block" }}
+                style={{ width: "100%", height: 320, objectFit: "contain", display: "block" }}
                 decoding="async"
                 loading="eager"
                 fetchPriority="high"
@@ -284,7 +284,7 @@ export default function ProgramV2() {
             {/* ── Бланк программы ── */}
             <aside className="v2-prog-aside" style={{ position: "sticky", top: 92 }}>
               <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 22 }}>
-                <div style={{ ...mono, fontSize: 26, fontWeight: 600, color: discount > 0 ? "var(--c-accent-text)" : "var(--c-text)" }}>{rub(priced)}</div>
+                <div style={{ ...mono, fontSize: 26, fontWeight: 600, color: "var(--c-text)" }}>{rub(priced)}</div>
                 {discount > 0 && (
                   <div style={{ ...mono, fontSize: 13, color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
                 )}
@@ -318,9 +318,9 @@ export default function ProgramV2() {
                   </>
                 ) : p.source_url ? (
                   <>
-                    <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ display: "inline-block", marginTop: 18, padding: "10px 0", color: "var(--c-link)", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 4 }}>Записаться на hse.ru ↗</a>
+                    <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ ...actionGhost, width: "100%", marginTop: 18 }}>Записаться на hse.ru ↗</a>
                     <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "12px 0 0", lineHeight: 1.5 }}>
-                      Запись и оплата – на официальном маркетплейсе ДПО НИУ ВШЭ. Скидка выпускника действует на все программы.
+                      Откроется официальный маркетплейс ДПО НИУ ВШЭ. Скидка выпускника учитывается после подтверждения выпуска в кабинете.
                     </p>
                   </>
                 ) : (

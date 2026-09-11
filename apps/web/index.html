@@ -93,8 +93,17 @@
     <!-- Начертания первого экрана грузим заранее, чтобы заголовок не переписывался -->
     <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/HSESans-Regular.woff2" />
     <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/HSESans-Black.woff2" />
-    <!-- Фото героя главной (55 КБ avif): иначе оно ждёт три хопа JS и становится LCP на секунды позже -->
-    <link rel="preload" as="image" type="image/avif" href="%BASE_URL%assets/alumni-meeting.avif" />
+    <!-- Фото героя главной (55 КБ avif): иначе оно ждёт три хопа JS и становится LCP на секунды позже.
+         Только на главной – на остальных маршрутах preload грузил бы файл впустую. -->
+    <script>
+      (function () {
+        var base = "%BASE_URL%".replace(/\/$/, "");
+        if (location.pathname.replace(/\/$/, "") !== base) return;
+        var l = document.createElement("link");
+        l.rel = "preload"; l.as = "image"; l.type = "image/avif"; l.href = "%BASE_URL%assets/alumni-meeting.avif";
+        document.head.appendChild(l);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

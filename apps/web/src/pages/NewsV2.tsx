@@ -66,11 +66,8 @@ export function NewsV2() {
                 gridTemplateColumns: i === 0 ? "1fr" : "150px 1fr",
                 gap: 24,
                 alignItems: "start",
-                padding: i === 0 ? "28px 24px" : "22px 0",
-                marginBottom: i === 0 ? 12 : 0,
-                borderTop: i === 0 ? "none" : "1px solid var(--c-line)",
-                borderRadius: i === 0 ? 12 : 0,
-                background: i === 0 ? "var(--c-surface-blue, var(--c-bg-sunken))" : undefined,
+                padding: i === 0 ? "28px 0" : "22px 0",
+                borderTop: i === 0 ? "1px solid var(--c-text)" : "1px solid var(--c-line)",
               }}
             >
               {i !== 0 && <div style={{ ...label }}>{formatNewsDate(item.published_at)}</div>}

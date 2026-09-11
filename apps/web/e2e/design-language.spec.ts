@@ -151,9 +151,11 @@ test.describe("Один акцент на действие", () => {
   test("уход на hse.ru не тяжелее внутреннего перехода", async ({ page }) => {
     await page.goto("/dpo");
     await page.waitForLoadState("networkidle");
-    const external = page.getByRole("link", { name: /Запись на hse\.ru/ }).first();
+    const first = page.locator("a[href^='/dpo/']").first();
+    if (await first.count()) await first.click();
+    const external = page.getByRole("link", { name: /Записаться на hse\.ru/ }).first();
     if (await external.count()) {
-      // Синей заливки быть не должно: институциональный синий здесь – цвет ссылки
+      // Заливки быть не должно (канон 10.09): внешний уход – обводка, не заливка
       await expect(external).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     }
   });

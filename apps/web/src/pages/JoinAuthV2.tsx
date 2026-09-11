@@ -3,8 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR } from "@club/shared";
 import { apiPost } from "../lib/api.js";
 import { useHead } from "../lib/title.js";
-import { VisionCorner } from "../components/Vision.js";
-import { mono, disp } from "../v2/Shell.js";
+import { V2Shell, mono, disp } from "../v2/Shell.js";
+import { caps } from "../styles/primitives.js";
 import { Mark } from "../v2/Mark.js";
 
 /**
@@ -21,9 +21,9 @@ import { Mark } from "../v2/Mark.js";
 
 const TOKEN_KEY = "club_token";
 
+/* Капс-лейблы полей, как у навигации и кнопок (канон 12.09). */
 const label: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "none", color: "var(--c-text-3)",
+  ...caps, color: "var(--c-text-3)",
 };
 
 const input: CSSProperties = {
@@ -47,11 +47,10 @@ const ghost: CSSProperties = {
 /** Общая оболочка экранов входа: знак, заголовок, карточка, юр-ссылки под ней. */
 function AuthShell({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
-    <main id="main" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
-      <VisionCorner />
-      <div style={{ width: "100%", maxWidth: 520, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <Link to="/" className="foc" style={{ ...label, color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← на главную</Link>
-        <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 18 }} />
+    <V2Shell>
+    <main id="main" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "var(--rh-head-top) 20px 40px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
+      <div style={{ width: "100%", maxWidth: 560, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32 }}>
+        <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)" }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{title}</h1>
         {sub && <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>{sub}</p>}
         {children}
@@ -63,6 +62,7 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
         <Link to="/requisites" className="foc" style={{ color: "var(--c-text-3)" }}>Реквизиты</Link>
       </div>
     </main>
+    </V2Shell>
   );
 }
 
@@ -204,9 +204,10 @@ export function JoinV2() {
           value={f.website} onChange={(e) => set("website", e.target.value)}
           style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
+        {/* Две группы вместо одной ленты полей: «о вас» – что сверяет офис, «доступ» – что нужно вам. */}
+        <h2 style={{ ...disp, fontWeight: 600, fontSize: 18, margin: "8px 0 6px" }}>О вас</h2>
         <Field name="фио" value={f.fio} onChange={(v) => set("fio", v)} ph="Иван Иванов" autoComplete="name" />
         <Field name="почта" type="email" value={f.email} onChange={(v) => set("email", v)} ph="you@mail.ru" autoComplete="email" />
-        <Field name="пароль" type="password" value={f.password} onChange={(v) => set("password", v)} hint="от 8 символов" autoComplete="new-password" />
         <Field name="год выпуска" value={f.cohort} onChange={(v) => set("cohort", v.replace(/[^\d]/g, "").slice(0, 4))} ph="2026" inputMode="numeric" />
 
         <div style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -217,6 +218,9 @@ export function JoinV2() {
         </div>
 
         <Field name="образовательная программа" value={f.edu_program} onChange={(v) => set("edu_program", v)} ph="напр. Публичное право" />
+
+        <h2 style={{ ...disp, fontWeight: 600, fontSize: 18, margin: "28px 0 6px" }}>Доступ в кабинет</h2>
+        <Field name="пароль" type="password" value={f.password} onChange={(v) => set("password", v)} hint="от 8 символов" autoComplete="new-password" />
 
         <div style={{ padding: "14px 0", borderTop: "1px solid var(--c-line)" }}>
           <div style={label}>интересы в праве · необязательно, до {MAX_INTERESTS}</div>
@@ -253,14 +257,14 @@ export function JoinV2() {
 
         {err && <p role="alert" style={{ ...mono, margin: "12px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
 
-        <button type="submit" disabled={busy || !f.consent} className="foc"
-          style={{
-            ...primary, width: "100%", marginTop: 16,
-            ...(busy || !f.consent
-              ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line-control)", cursor: busy ? "wait" : "not-allowed" }
-              : {}),
-          }}>
-          {busy ? "Отправляем…" : f.consent ? "Подать заявку на вступление" : "Нужно согласие на обработку данных"}
+        <p style={{ margin: "18px 0 0", fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
+          Учебный офис сверит выпуск с реестром факультета – обычно 1–2 рабочих дня. Ответ придёт на почту.
+        </p>
+
+        {/* Кнопка всегда активна: без согласия браузер подсветит чекбокс, а не «сломанную» серую кнопку. */}
+        <button type="submit" disabled={busy} className="foc"
+          style={{ ...primary, width: "100%", marginTop: 14, cursor: busy ? "wait" : "pointer" }}>
+          {busy ? "Отправляем…" : "Подать заявку на вступление"}
         </button>
 
         <p style={{ textAlign: "center", margin: "14px 0 0", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
