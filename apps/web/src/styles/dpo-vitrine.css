@@ -38,27 +38,28 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Фемида слева, табличка ВШЭ справа – кадр по центру */
-  object-position: 50% 42%;
-  filter: grayscale(0.08) contrast(1.05) saturate(0.95);
-  opacity: 0.58;
+  /* Фемида слева, табличка ВШЭ справа – кадр чуть ниже центра */
+  object-position: 48% 45%;
+  filter: contrast(1.04) saturate(1.02);
+  opacity: 0.92;
 }
 
 .club-dpo-masthead__veil {
   position: absolute;
   inset: 0;
+  /* Лёгкий читабельный градиент слева под текст; фото справа почти без завесы */
   background:
     linear-gradient(
-      105deg,
-      color-mix(in srgb, var(--c-bg) 92%, transparent) 0%,
-      color-mix(in srgb, var(--c-bg) 72%, transparent) 38%,
-      color-mix(in srgb, var(--p-blue) 34%, transparent) 70%,
-      color-mix(in srgb, var(--p-blue) 46%, transparent) 100%
+      100deg,
+      color-mix(in srgb, var(--c-bg) 88%, transparent) 0%,
+      color-mix(in srgb, var(--c-bg) 55%, transparent) 28%,
+      color-mix(in srgb, var(--c-bg) 18%, transparent) 52%,
+      transparent 72%
     ),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--c-bg) 8%, transparent) 0%,
-      color-mix(in srgb, var(--c-bg) 55%, transparent) 100%
+      color-mix(in srgb, var(--c-bg) 6%, transparent) 0%,
+      color-mix(in srgb, var(--c-bg) 28%, transparent) 100%
     );
 }
 
@@ -547,8 +548,8 @@
     max-width: none;
   }
   .club-dpo-masthead__photo {
-    object-position: 48% 40%;
-    opacity: 0.45;
+    object-position: 42% 40%;
+    opacity: 0.88;
   }
 }
 
