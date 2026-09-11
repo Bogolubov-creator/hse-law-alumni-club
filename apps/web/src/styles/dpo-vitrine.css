@@ -83,16 +83,6 @@
   color: color-mix(in srgb, var(--c-accent-text) 70%, var(--c-text));
 }
 
-/* Тёмная тема: accent-text уже светлый (#ff7a3d) – смесь с ink убила бы контраст. */
-:root[data-theme="dark"] .club-dpo-eyebrow {
-  color: var(--c-accent-text);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .club-dpo-eyebrow {
-    color: var(--c-accent-text);
-  }
-}
-
 .club-dpo-masthead h1 {
   margin: 14px 0 0;
   max-width: min(22ch, 100%);
@@ -569,16 +559,6 @@
   }
   .club-dpo-meta {
     gap: 14px 20px;
-  }
-}
-
-/* Тёмная тема */
-:root[data-theme="dark"] .club-dpo-masthead {
-  background: color-mix(in srgb, var(--c-anchor) 18%, var(--c-bg));
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .club-dpo-masthead {
-    background: color-mix(in srgb, var(--c-anchor) 18%, var(--c-bg));
   }
 }
 

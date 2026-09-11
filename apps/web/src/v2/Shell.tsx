@@ -2,7 +2,6 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CLUB_OPERATOR } from "@club/shared";
 import { token, useCart } from "../lib/cart.js";
-import { useTheme } from "../lib/theme.js";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
 import { Mark } from "./Mark.js";
@@ -56,8 +55,6 @@ export function V2Shell({ children }: { children: ReactNode }) {
   const authed = !!token();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const { dark, toggle } = useTheme();
-
   return (
     <div className="club-public-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
       <a href="#main" className="skip">К содержанию страницы</a>
@@ -78,17 +75,6 @@ export function V2Shell({ children }: { children: ReactNode }) {
             <Link to="/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
               Корзина{" "}{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>}
             </Link>
-            <button
-              type="button"
-              onClick={toggle}
-              aria-label={dark ? "Светлая тема" : "Тёмная тема"}
-              title={dark ? "Светлая тема" : "Тёмная тема"}
-              aria-pressed={dark}
-              className="foc club-chrome-icon-btn"
-              style={{ marginLeft: 4 }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /></svg>
-            </button>
             <VisionToggle compact v2 />
             <Link to={authed ? "/lk" : "/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
               {authed ? "Кабинет" : "Вступить"}
@@ -122,18 +108,9 @@ export function V2Shell({ children }: { children: ReactNode }) {
               </Link>
             )}
 
-            {/* Тема и версия для слабовидящих жили только в десктопной строке –
+            {/* Версия для слабовидящих жила только в десктопной строке –
                 на телефоне режим по ГОСТ было физически нечем включить. */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, paddingTop: 12, borderTop: "1px solid var(--c-line)" }}>
-              <button
-                type="button"
-                onClick={toggle}
-                aria-label={dark ? "Светлая тема" : "Тёмная тема"}
-                aria-pressed={dark}
-                className="foc tap club-chrome-icon-btn"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /></svg>
-              </button>
               <VisionToggle compact v2 />
             </div>
           </nav>

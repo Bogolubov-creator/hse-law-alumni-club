@@ -44,22 +44,28 @@ export const label: CSSProperties = {
   color: "var(--c-text-3)",
 };
 
+/** Капс-лейбл референса: навигация, кнопки, eyebrow. */
+export const caps: CSSProperties = {
+  fontFamily: "var(--f-body)",
+  fontSize: "var(--t-caps)",
+  fontWeight: 600,
+  letterSpacing: "var(--tr-caps)",
+  textTransform: "uppercase",
+};
+
 /**
- * Действие – пилюля как на dpo-pravo-hse (border-radius 999, padding ~13×18).
- * Акцент охра с тёмным текстом (5,12:1), не белый на охре.
+ * Действие (решение заказчика 12.09, референс Peak Design): прямоугольник 4px,
+ * заливка контрастом – графит на белом, белый на тёмной панели (через .club-dark
+ * токены --c-bg-inverse / --c-text-inverse). Охра действий больше не красит.
  */
 export const action: CSSProperties = {
-  fontFamily: "var(--f-body)",
-  fontSize: 15,
-  fontWeight: 600,
-  letterSpacing: "normal",
-  textTransform: "none",
-  padding: "13px 18px",
+  ...caps,
+  padding: "13px 20px",
   minHeight: 44,
-  borderRadius: 999,
-  border: "1px solid var(--c-accent)",
-  background: "var(--c-accent)",
-  color: "var(--c-on-accent)",
+  borderRadius: "var(--r-sm)",
+  border: "1px solid var(--c-bg-inverse)",
+  background: "var(--c-bg-inverse)",
+  color: "var(--c-text-inverse)",
   cursor: "pointer",
   textAlign: "center",
   textDecoration: "none",
@@ -69,12 +75,21 @@ export const action: CSSProperties = {
   boxSizing: "border-box",
 };
 
-/** Второстепенное действие: та же пилюля, обводка акцента (как secondary на ДПО). */
+/** Второстепенное действие: та же форма, обводка 1px цветом текста, без заливки. */
 export const actionGhost: CSSProperties = {
   ...action,
-  background: "var(--c-bg)",
-  color: "var(--c-accent-text)",
-  border: "1px solid color-mix(in srgb, var(--c-accent) 35%, transparent)",
+  background: "transparent",
+  color: "var(--c-text)",
+  border: "1px solid var(--c-text)",
+};
+
+/** Третий вид: только капс-текст, без рамки – рядом с главным действием. */
+export const actionText: CSSProperties = {
+  ...action,
+  background: "transparent",
+  color: "var(--c-text)",
+  border: "1px solid transparent",
+  padding: "13px 4px",
 };
 
 /** Поле ввода. Просторное: формы кабинета и заявки, куда вводят с телефона. */

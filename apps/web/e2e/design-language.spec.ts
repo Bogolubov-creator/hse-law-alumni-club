@@ -125,13 +125,6 @@ test.describe("Контраст и нижняя граница шкалы", () =
       expect(await minFontSize(page)).toBeGreaterThanOrEqual(12);
     });
   }
-
-  test("тёмная тема держит тот же порог", async ({ page }) => {
-    await stubSw(page);
-    await page.goto("/dpo");
-    await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
-    expect(await contrastFailures(page)).toEqual([]);
-  });
 });
 
 test.describe("Иерархия титулов", () => {

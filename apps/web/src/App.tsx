@@ -1,4 +1,3 @@
-import { ThemeProvider } from "./lib/theme.js";
 import { SiteNotice } from "./components/SiteNotice.js";
 import { RouteScroll } from "./components/RouteScroll.js";
 import { SupportDock } from "./components/SupportDock.js";
@@ -84,7 +83,6 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider>
     <PwaShell>
       {import.meta.env.VITE_LOCAL_REVIEW === "true" && <SiteNotice>Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</SiteNotice>}
       {import.meta.env.VITE_MIRROR === "true" && (
@@ -144,6 +142,5 @@ export default function App() {
       <CookieBanner />
       <InstallPrompt />
     </PwaShell>
-    </ThemeProvider>
   );
 }

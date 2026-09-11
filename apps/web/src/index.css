@@ -4,7 +4,9 @@
 @tailwind utilities;
 
 body {
-  @apply bg-kost text-grafit font-body antialiased;
+  @apply font-body antialiased;
+  background: var(--c-bg);
+  color: var(--c-text);
 }
 
 ::selection { background: var(--c-accent); color: var(--c-on-accent); }

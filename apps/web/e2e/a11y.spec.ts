@@ -76,12 +76,12 @@ test.describe("2.4.1 Пропуск блоков", () => {
 });
 
 test.describe("1.4.11 Контраст нетекстовых элементов", () => {
-  for (const theme of ["light", "dark"] as const) {
+  // Одна светлая тема (решение заказчика 12.09); тёмные панели живут областью .club-dark.
+  for (const theme of ["light"] as const) {
     test(`контур полей и кнопок различим, тема ${theme}`, async ({ page }) => {
       await preparePage(page);
       await page.goto("/join");
       await page.locator("#main").waitFor();
-      await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
       const bad = await page.evaluate(`(() => {
         ${CONTRAST_FN}
         const bad = [];
