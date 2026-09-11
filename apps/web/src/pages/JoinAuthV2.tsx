@@ -108,6 +108,10 @@ export function JoinV2() {
   const [authed, setAuthed] = useState(() => !!localStorage.getItem(TOKEN_KEY));
   const [params] = useSearchParams();
   const ref = params.get("ref") ?? "";
+  // Deep-link после заявки (например из корзины: ?next=/cart).
+  const nextRaw = params.get("next");
+  const next =
+    nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : null;
   const [f, setF] = useState({ fio: "", email: "", password: "", cohort: "", edu_level: "магистратура", edu_program: "", consent: false, website: "" });
   const [interests, setInterests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -180,7 +184,9 @@ export function JoinV2() {
           <li>После подтверждения войдите в кабинет – откроются скидка на ДПО и разделы клуба.</li>
         </ol>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
-          <Link to="/lk" className="foc" style={primary}>Войти в кабинет</Link>
+          <Link to={next ?? "/lk"} className="foc" style={primary}>
+            {next?.includes("cart") || next?.includes("orders") ? "К заказу" : "Войти в кабинет"}
+          </Link>
           <Link to="/" className="foc" style={ghost}>На главную</Link>
         </div>
       </AuthShell>

@@ -57,16 +57,6 @@ export default function DpoV2() {
     <V2Shell>
       <main id="main" className="club-dpo-vitrine">
         <header className="club-dpo-masthead">
-          <div className="club-dpo-masthead__atmosphere" aria-hidden="true">
-            <HeroPicture
-              path="assets/dpo-masthead.jpg"
-              className="club-dpo-masthead__photo"
-              alt=""
-              width={1200}
-              height={700}
-            />
-            <div className="club-dpo-masthead__veil" />
-          </div>
           <div className="club-dpo-masthead__inner">
             <p className="club-dpo-eyebrow">Витрина ДПО</p>
             <h1>Программы дополнительного образования</h1>
@@ -89,6 +79,15 @@ export default function DpoV2() {
                 </div>
               )}
             </div>
+          </div>
+          <div className="club-dpo-masthead__media" aria-hidden="true">
+            <HeroPicture
+              path="assets/dpo-masthead.jpg"
+              className="club-dpo-masthead__photo"
+              alt=""
+              width={1200}
+              height={700}
+            />
           </div>
         </header>
 

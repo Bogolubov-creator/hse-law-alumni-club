@@ -647,6 +647,18 @@ function DashboardGate({ token, onLogout, onPending }: { token: string; onLogout
       </main>
     );
   }
+  if (me.isError) {
+    return (
+      <main id="main" style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--c-bg)", color: "var(--c-text)", padding: 24 }}>
+        <div style={{ maxWidth: 420, textAlign: "center" }}>
+          <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>кабинет сейчас недоступен</p>
+          <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Не удалось загрузить профиль. Попробуйте ещё раз.</p>
+          <button type="button" className="foc" onClick={() => me.refetch()} style={{ ...action, marginTop: 16, padding: "10px 16px", borderRadius: "var(--r-md)" }}>повторить</button>
+          <button type="button" className="foc" onClick={onLogout} style={{ ...actionGhost, display: "block", margin: "12px auto 0", padding: "10px 16px", borderRadius: "var(--r-md)" }}>выйти</button>
+        </div>
+      </main>
+    );
+  }
   if (me.data?.alumni.verification_status && me.data.alumni.verification_status !== "verified") {
     return null;
   }

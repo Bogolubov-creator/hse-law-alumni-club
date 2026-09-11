@@ -278,7 +278,7 @@ export default function CartV2() {
                   <p style={{ margin: "12px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
                     {token()
                       ? "Скидка на ДПО откроется после верификации выпуска учебным офисом."
-                      : <>Скидка на ДПО – для подтверждённых выпускников. <Link to="/join" className="foc" style={{ color: "var(--c-accent-text)" }}>Вступить</Link> или <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)" }}>войти</Link>.</>}
+                      : <>Скидка на ДПО – для подтверждённых выпускников. <Link to="/join?next=/cart" className="foc" style={{ color: "var(--c-accent-text)" }}>Вступить</Link> или <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)" }}>войти</Link>.</>}
                   </p>
                 )}
                 {items.some((i) => i.type === "merch") && (

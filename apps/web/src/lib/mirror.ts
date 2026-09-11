@@ -8,7 +8,7 @@ import {
   PRODUCTS_SEED,
   PROGRAMS_SEED,
   PODCAST_SUB_PRICE_KOP,
-  computeLevel,
+  levelInfo,
   type ProgramSeed,
   type ProductSeed,
   type NewsSeed,
@@ -235,7 +235,7 @@ const PODCASTS = {
 const EMPTY_CART = { items: [] as unknown[], count: 0, subtotal: 0 };
 
 const DEMO_POINTS = 320;
-const DEMO_LEVEL = computeLevel(DEMO_POINTS);
+const DEMO_LEVEL = levelInfo(DEMO_POINTS);
 
 const ME = {
   alumni: {
@@ -361,7 +361,7 @@ const MEMBERS = [
     status: "active",
     verification_status: "verified",
     points_cached: DEMO_POINTS,
-    level_cached: DEMO_LEVEL.key,
+    level_cached: DEMO_LEVEL.level,
     personal_discount: 0,
     friends_count: 1,
     podcast_active: true,

@@ -77,8 +77,8 @@ export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
     padding: ANDROID
       ? "6px 6px calc(env(safe-area-inset-bottom, 0px) + 8px)"
       : "9px 6px calc(env(safe-area-inset-bottom, 0px) + 12px)",
-    background: ANDROID ? "#FBF3E8" : "rgba(251,243,232,.95)",
-    borderTop: "1px solid #E7E0D0",
+    background: ANDROID ? "var(--c-bg)" : "color-mix(in srgb, var(--c-bg) 95%, transparent)",
+    borderTop: "1px solid var(--c-line)",
     ...(ANDROID
       ? {}
       : { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }),
@@ -94,7 +94,7 @@ export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
       {CLUB_TABS.map((t) => {
         const on = t.to === active;
         if (ANDROID) {
-          const col = on ? "#C24009" : "#5C5648";
+          const col = on ? "var(--c-accent-text)" : "var(--c-text-3)";
           return (
             <Link
               key={t.to}
@@ -104,7 +104,7 @@ export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
               className="foc"
               style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", textDecoration: "none" }}
             >
-              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 62, height: 32, borderRadius: 16, background: on ? "rgba(236,90,19,.16)" : "transparent" }}>
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 62, height: 32, borderRadius: 16, background: on ? "color-mix(in srgb, var(--c-accent) 16%, transparent)" : "transparent" }}>
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{t.icon}</svg>
               </span>
               <span style={{ ...MONO, fontSize: 11, letterSpacing: ".02em", color: col }}>{t.label}</span>

@@ -433,24 +433,34 @@ html.vis .club-cookie-banner__btn--primary {
 }
 @media (max-width: 1023px) {
   .club-channel-invite {
-    /* Ворона на телефоне 96×~100: оставляем правый карман, invite слева. */
-    right: max(12px, calc(12px + 96px + 12px));
-    width: min(280px, calc(100vw - 24px - 108px));
-  }
-  .club-channel-invite__text { display: none; }
-}
-/* Узкий телефон: рядом с вороной не хватает ширины – ставим invite над ней. */
-@media (max-width: 420px) {
-  .club-channel-invite {
     left: 12px;
     right: 12px;
     width: auto;
-    /* Высота угловой вороны (~100) + зазор, чтобы не накрывать hit-зону. */
-    bottom: calc(12px + var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--crow-h, 108px));
+    bottom: calc(12px + var(--tabs-h, 0px) + var(--cookie-h, 0px));
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -8px 28px -18px rgba(20, 24, 31, 0.4);
   }
+  .club-channel-invite__text { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .club-channel-invite { animation: none; }
+}
+
+/* Компактный launcher поддержки на телефоне (вместо вороны). */
+.club-support-pill {
+  position: fixed;
+  z-index: 41;
+  right: 12px;
+  bottom: calc(12px + var(--tabs-h, 0px) + var(--cookie-h, 0px));
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--c-line-control, var(--c-line));
+  border-radius: 999px;
+  background: var(--c-bg-raised, var(--c-bg));
+  color: var(--c-text);
+  font: 600 13px/1 var(--f-body);
+  cursor: pointer;
+  box-shadow: 0 8px 24px -16px rgba(20, 24, 31, 0.45);
 }
 
 /* CTA-пилюли как на dpo-pravo-hse (mobile-cta). */

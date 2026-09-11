@@ -20,15 +20,33 @@ const ANDROID = isAndroid();
  * Кабинет – канон `/lk`. Старые закладки `/?screen=profile|ach|ledger` → `/lk…`.
  */
 
-const INK = "#14181F";
+const INK = "var(--c-text)";
+const PAGE_BG = "var(--c-bg)";
+const TEXT_INV = "var(--c-text-inverse)";
+const LINE = "var(--c-line)";
 const disp: CSSProperties = { fontFamily: "'HSE Sans', system-ui, sans-serif" };
 const mono: CSSProperties = { fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace' };
-const CARD: CSSProperties = { background: "#fff", border: "1px solid #ECE6DA", borderRadius: 20 };
+const CARD: CSSProperties = { background: "var(--c-bg-raised)", border: `1px solid ${LINE}`, borderRadius: 20 };
 const HEADER: CSSProperties = {
   position: "sticky", top: 0, zIndex: 3,
   padding: "calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px",
-  background: "rgba(251,243,232,.9)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+  background: "color-mix(in srgb, var(--c-bg) 92%, transparent)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
 };
+
+function CartBadgeLink() {
+  const cart = useCart();
+  const count = cart.data?.count ?? 0;
+  return (
+    <Link to="/cart" aria-label="Корзина" style={{ position: "relative", width: 42, height: 42, borderRadius: 13, border: `1px solid ${LINE}`, background: "var(--c-bg-raised)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>
+      {count > 0 && (
+        <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 99, background: "var(--c-accent)", color: "var(--c-on-accent)", ...mono, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${PAGE_BG}` }}>
+          {count}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 // ── Экран «Карта» (главная) ──────────────────────────────────────────
 const REASON_RU: Record<string, string> = {
@@ -66,12 +84,15 @@ function MobileHome() {
           <img src={publicUrl("assets/themis.jpeg")} alt="" width={36} height={36} style={{ borderRadius: 10, objectFit: "cover", boxShadow: "0 3px 10px -3px rgba(236,90,19,.7)" }} />
           <div style={{ lineHeight: 1.2 }}>
             <div style={{ ...disp, fontWeight: 700, fontSize: 13 }}>Клуб выпускников</div>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", color: "#6E675A" }}>ФАКУЛЬТЕТА ПРАВА ВЫШКИ</div>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: ".12em", color: "var(--c-text-3)" }}>ФАКУЛЬТЕТА ПРАВА ВЫШКИ</div>
           </div>
         </div>
-        <Link to="/lk/profile" aria-label="Профиль" style={{ width: 40, height: 40, borderRadius: 12, border: "1px solid #ECE6DA", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <CartBadgeLink />
+          <Link to="/lk/profile" aria-label="Профиль" style={{ width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "var(--c-bg-raised)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+          </Link>
+        </div>
       </header>
 
       <div style={{ padding: "16px 20px 2px" }}>
@@ -84,7 +105,7 @@ function MobileHome() {
         <Link to="/lk" style={{ display: "block", borderRadius: 24, position: "relative", overflow: "hidden", background: "linear-gradient(152deg,#1e2942 0%,#14181F 54%,#0f1c3f 100%)", boxShadow: "0 28px 52px -28px rgba(17,41,107,.95)", textDecoration: "none" }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: 24, border: "1px solid rgba(196,154,69,.42)", pointerEvents: "none" }} />
           <img src={publicUrl("assets/themis.jpeg")} alt="" style={{ position: "absolute", right: -34, top: -22, width: 196, height: 196, objectFit: "cover", opacity: .15, borderRadius: 22, transform: "rotate(7deg)" }} />
-          <div style={{ position: "relative", padding: "20px 20px 18px", color: "#FBF3E8" }}>
+          <div style={{ position: "relative", padding: "20px 20px 18px", color: TEXT_INV }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".24em", color: "rgba(227,194,114,.92)" }}>КАРТА ВЫПУСКНИКА</span>
               <span style={{ ...mono, fontSize: 10, letterSpacing: ".16em", color: "rgba(251,243,232,.55)" }}>ВЫПУСК {m.alumni.cohort ?? "–"}</span>
@@ -142,7 +163,7 @@ function MobileHome() {
               return (
                 <div key={a.key} style={{ flexShrink: 0, width: 64, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, opacity: active ? 1 : 0.42 }}>
                   <div style={{ width: 54, height: 54, transform: "rotate(45deg)", borderRadius: 15, background: bg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: a.earned ? "0 8px 18px -10px rgba(17,41,107,.6)" : "none" }}>
-                    <span style={{ transform: "rotate(-45deg)", fontSize: 19, lineHeight: 1, color: active ? "#FBF3E8" : "#b8a98a" }}>{a.icon}</span>
+                    <span style={{ transform: "rotate(-45deg)", fontSize: 19, lineHeight: 1, color: active ? "var(--c-bg)" : "#b8a98a" }}>{a.icon}</span>
                   </div>
                   <span style={{ fontSize: 9.5, textAlign: "center", color: "#5C6470", lineHeight: 1.15 }}>{a.title}</span>
                 </div>
@@ -157,7 +178,7 @@ function MobileHome() {
         <QuickAction to="/lk/profile#ledger" label="История баллов" tint="rgba(236,90,19,.12)" stroke="#C24009" icon={<><path d="M3 3v18h18" /><path d="M7 14l4-4 3 3 5-6" /></>} />
         <QuickAction onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/join?ref=${m.alumni.referral_code ?? ""}`); toast("Ссылка приглашения скопирована ✓"); }} label="Пригласить друга" tint="rgba(44,110,128,.12)" stroke="#2C6E80" icon={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M17 3.13a4 4 0 0 1 0 7.75" /></>} />
         <QuickAction to="/dpo" label="Программы ДПО" tint="rgba(17,41,107,.1)" stroke="#11296B" icon={<><path d="M3 8l9-4 9 4-9 4-9-4z" /><path d="M7 10.5V15c0 1 2.2 2.2 5 2.2s5-1.2 5-2.2v-4.5" /></>} />
-        <QuickAction to="/lk/profile" label="Профиль" tint="rgba(196,154,69,.16)" stroke="#B78A2E" icon={<><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>} />
+        <QuickAction to="/podcasts" label="Подкасты" tint="rgba(196,154,69,.16)" stroke="#B78A2E" icon={<><path d="M12 3a5 5 0 0 1 5 5v4a5 5 0 0 1-10 0V8a5 5 0 0 1 5-5z" /><path d="M19 11a7 7 0 0 1-14 0" /><path d="M12 18v3" /><path d="M8 21h8" /></>} />
       </div>
 
       {/* Последнее – история баллов */}
@@ -185,7 +206,7 @@ function MobileHome() {
       {rec && (
         <div style={{ padding: "16px 20px 4px" }}>
           <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "#6E675A" }}>Рекомендуем вам</span>
-          <Link to={`/dpo/${rec.slug}`} style={{ display: "block", marginTop: 11, background: INK, borderRadius: 20, overflow: "hidden", position: "relative", padding: "18px 18px 16px", color: "#FBF3E8", boxShadow: "0 18px 36px -26px rgba(20,24,31,.9)", textDecoration: "none" }}>
+          <Link to={`/dpo/${rec.slug}`} style={{ display: "block", marginTop: 11, background: INK, borderRadius: 20, overflow: "hidden", position: "relative", padding: "18px 18px 16px", color: TEXT_INV, boxShadow: "0 18px 36px -26px rgba(20,24,31,.9)", textDecoration: "none" }}>
             <div style={{ position: "absolute", right: -20, bottom: -30, width: 130, height: 130, borderRadius: 99, background: "radial-gradient(circle,rgba(236,90,19,.34),transparent 70%)" }} />
             <div style={{ position: "relative" }}>
               <span style={{ display: "inline-block", ...mono, fontSize: 9, letterSpacing: ".1em", padding: "4px 8px", borderRadius: 7, background: "rgba(251,243,232,.12)", color: "#E3C272" }}>{rec.direction}</span>
@@ -220,16 +241,20 @@ function GuestHome() {
   useHead({ title: null });
   return (
     <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
+      <header style={{ ...HEADER, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ ...disp, fontWeight: 700, fontSize: 13 }}>Клуб выпускников</div>
+        <CartBadgeLink />
+      </header>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 30px", textAlign: "center" }}>
         <img src={publicUrl("assets/themis.jpeg")} alt="" width={76} height={76} style={{ borderRadius: 20, objectFit: "cover", boxShadow: "0 14px 30px -12px rgba(236,90,19,.7)" }} />
-        <h1 style={{ ...disp, fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", margin: "22px 0 0" }}>Клуб выпускников</h1>
-        <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "#6E675A", marginTop: 6 }}>ФАКУЛЬТЕТА ПРАВА ВЫШКИ</div>
-        <p style={{ fontSize: 15, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 300 }}>
-          Войдите, чтобы открыть карту выпускника – баллы, уровень и скидку на программы ДПО.
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", margin: "22px 0 0", overflowWrap: "anywhere", textWrap: "balance" }}>Карта выпускника</h1>
+        <div style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "var(--c-text-3)", marginTop: 6 }}>БАЛЛЫ · УРОВЕНЬ · СКИДКА НА ДПО</div>
+        <p style={{ fontSize: 15, color: "var(--c-text-2)", lineHeight: 1.55, marginTop: 18, maxWidth: 300 }}>
+          Войдите, чтобы открыть карту – баллы, уровень и скидку на программы ДПО.
         </p>
         <Link to="/lk" className="club-btn club-btn--primary club-btn--block foc" style={{ marginTop: 24, maxWidth: 300 }}>Войти в кабинет</Link>
         <Link to="/join" className="club-btn club-btn--secondary club-btn--block foc" style={{ marginTop: 10, maxWidth: 300 }}>Вступить в клуб</Link>
-        <div style={{ ...mono, fontSize: 11, color: "#6E675A", marginTop: 20 }}>Витрины ниже открыты всем →</div>
+        <div style={{ ...mono, fontSize: 11, color: "var(--c-text-3)", marginTop: 20 }}>Витрины ниже открыты всем →</div>
       </div>
     </div>
   );
@@ -366,7 +391,7 @@ function MobileDpo() {
             загружаем каталог…
             <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
               {[0, 1, 2].map((i) => (
-                <div key={i} style={{ height: 88, borderRadius: 16, background: "linear-gradient(90deg,#F2E9DC 0%,#FBF3E8 50%,#F2E9DC 100%)", opacity: 0.85 - i * 0.15 }} />
+                <div key={i} style={{ height: 88, borderRadius: 16, background: "linear-gradient(90deg,#F2E9DC 0%,var(--c-bg) 50%,#F2E9DC 100%)", opacity: 0.85 - i * 0.15 }} />
               ))}
             </div>
           </div>
@@ -466,7 +491,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   // Android – Material-чип (тёмный активный); iOS – оранжевый активный.
   const brd = on ? (ANDROID ? "#14181F" : "#EC5A13") : "#E4DCCC";
   const bg = on ? (ANDROID ? "#14181F" : "rgba(236,90,19,.1)") : "#fff";
-  const col = on ? (ANDROID ? "#FBF3E8" : "#C24009") : INK;
+  const col = on ? (ANDROID ? "var(--c-bg)" : "#C24009") : INK;
   return <button onClick={onClick} style={{ flexShrink: 0, fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, padding: "8px 15px", borderRadius: 99, border: "1px solid " + brd, background: bg, color: col, cursor: "pointer" }}>{children}</button>;
 }
 
@@ -484,7 +509,7 @@ function MobilePodcasts() {
         {items.map((p, i) => (
           <Link key={p.id} to={`/podcasts?ep=${encodeURIComponent(p.id)}`} style={{ display: "flex", alignItems: "center", gap: 14, ...CARD, borderRadius: 18, padding: "13px 14px", boxShadow: "0 14px 30px -28px rgba(20,24,31,.5)", textDecoration: "none", color: INK }}>
             <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, background: p.cover ? `#11296B url(${mediaUrl(p.cover)}) center/cover` : "linear-gradient(140deg,#1e2942,#11296B)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {!p.cover && <svg width="17" height="17" viewBox="0 0 24 24" fill="#FBF3E8"><path d="M8 5v14l11-7z" /></svg>}
+              {!p.cover && <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ ...mono, fontSize: 9.5, letterSpacing: ".08em", color: "#6E675A" }}>ВЫПУСК {i + 1}{p.duration ? ` · ${p.duration}` : ""}{p.is_free ? " · беспл." : ""}</div>
@@ -503,21 +528,14 @@ const MERCH_TINTS = ["#C24009", "#2C6E80", "#11296B", "#7A5CA8"];
 function MobileMerch() {
   useHead({ title: "Мерч клуба", description: "Фирменный мерч клуба выпускников факультета права Вышки." });
   const products = useProducts();
-  const cart = useCart();
   const { add } = useCartMutations();
   const toast = useToast();
   const nav = useNavigate(); // товар с размерами открываем карточкой, а не кладём вслепую
-  const count = cart.data?.count ?? 0;
   const list = products.data ?? [];
 
   return (
     <div>
-      <ScreenHeader title="Мерч" sub="Товары без скидки выпускника" right={
-        <Link to="/cart" aria-label="Корзина" style={{ position: "relative", width: 42, height: 42, borderRadius: 13, border: "1px solid #ECE6DA", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>
-          {count > 0 && <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 99, background: "#EC5A13", color: "#14181F", ...mono, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #FBF3E8" }}>{count}</span>}
-        </Link>
-      } />
+      <ScreenHeader title="Мерч" sub="Товары без скидки выпускника" right={<CartBadgeLink />} />
       <div style={{ padding: "12px 20px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>
         {products.isLoading && <Loader />}
         {list.map((m: Product, i) => (
@@ -553,10 +571,10 @@ function MobileMerch() {
 
 // ── Детальные экраны (стадия 2): full-screen без нижней навигации ─────
 const roundDark: CSSProperties = { width: 40, height: 40, borderRadius: 99, border: "none", background: "rgba(20,24,31,.42)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, textDecoration: "none" };
-const roundLight: CSSProperties = { width: 40, height: 40, borderRadius: 12, border: "1px solid #ECE6DA", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 };
+const roundLight: CSSProperties = { width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 };
 const secTitle: CSSProperties = { ...disp, fontWeight: 600, fontSize: 15, marginBottom: 8 };
-const factChip: CSSProperties = { ...mono, fontSize: 10.5, color: INK, background: "#fff", border: "1px solid #ECE6DA", padding: "7px 11px", borderRadius: 9 };
-const stickyBar: CSSProperties = { flexShrink: 0, padding: "12px 20px calc(env(safe-area-inset-bottom, 0px) + 16px)", background: "#FBF3E8", borderTop: "1px solid #EFE7D8", display: "flex", gap: 11 };
+const factChip: CSSProperties = { ...mono, fontSize: 10.5, color: INK, background: "#fff", border: `1px solid ${LINE}`, padding: "7px 11px", borderRadius: 9 };
+const stickyBar: CSSProperties = { flexShrink: 0, padding: "12px 20px calc(env(safe-area-inset-bottom, 0px) + 16px)", background: PAGE_BG, borderTop: `1px solid ${LINE}`, display: "flex", gap: 11 };
 /* Пилюли как на dpo-pravo-hse; цвет – охра клуба. */
 const primaryBtn: CSSProperties = {
   flex: 1, minHeight: 48, padding: "13px 18px", borderRadius: 999,
@@ -609,7 +627,7 @@ function MobileProgram() {
     });
   };
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 200, overflow: "hidden", background: "linear-gradient(150deg,#1e2942,#11296B 60%,#0f1c3f)" }}>
           <img
@@ -630,7 +648,7 @@ function MobileProgram() {
           </div>
           {p && <div style={{ position: "absolute", left: 20, right: 20, bottom: 16 }}>
             <span style={{ ...mono, fontSize: 9, letterSpacing: ".08em", color: "#fff", background: FMT_COL[p.format] ?? "#11296B", padding: "4px 8px", borderRadius: 6 }}>{FMT_RU[p.format] ?? p.format}</span>
-            <div style={{ ...disp, fontWeight: 700, fontSize: 22, lineHeight: 1.15, color: "#FBF3E8", marginTop: 10 }}>{p.title}</div>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 22, lineHeight: 1.15, color: TEXT_INV, marginTop: 10 }}>{p.title}</div>
             {p.tagline && <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.4, color: "rgba(251,243,232,.82)" }}>{p.tagline}</div>}
           </div>}
         </div>
@@ -665,7 +683,7 @@ function MobileProgram() {
                   <span style={{ width: 42, height: 42, borderRadius: 12, background: i === 0 ? "linear-gradient(135deg,#E3C272,#C49A45)" : "rgba(236,90,19,.12)", color: i === 0 ? INK : "#C24009", ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.name.trim()[0] ?? "≡"}</span>
                 )}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: i === 0 ? "#FBF3E8" : INK }}>{t.name}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: i === 0 ? "var(--c-bg)" : INK }}>{t.name}</div>
                   {t.role && <div style={{ ...mono, fontSize: 11, marginTop: 3, color: i === 0 ? "rgba(251,243,232,.55)" : "#6E675A" }}>{t.role}</div>}
                 </div>
               </div>
@@ -716,8 +734,8 @@ function MobileCart() {
 
   if (result) {
     return (
-      <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
-        <div style={{ width: 96, height: 96, borderRadius: 99, background: "linear-gradient(140deg,#2C6E80,#15375E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 46px -20px rgba(21,55,94,.8)" }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#FBF3E8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg></div>
+      <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+        <div style={{ width: 96, height: 96, borderRadius: 99, background: "linear-gradient(140deg,#2C6E80,#15375E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 46px -20px rgba(21,55,94,.8)" }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg></div>
         <div style={{ ...disp, fontWeight: 800, fontSize: 24, marginTop: 26 }}>Заявка отправлена</div>
         <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "#C24009", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
         <div style={{ fontSize: 14, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
@@ -728,7 +746,7 @@ function MobileCart() {
   }
 
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <header style={{ ...HEADER, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 12px" }}>
         <button onClick={() => nav(-1)} aria-label="Назад" style={roundLight}>{BackInk}</button>
         <div style={{ ...disp, fontWeight: 800, fontSize: 21, letterSpacing: "-.01em" }}>Заявка</div>
@@ -814,7 +832,7 @@ function MobileNewsPost() {
   // Оттенок героя – стабильный по slug (как цветные карточки ленты).
   const tint = NEWS_TINTS[Math.abs([...slug].reduce((s, c) => s + c.charCodeAt(0), 0)) % NEWS_TINTS.length];
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 150, background: tint, overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 2px,transparent 2px 14px)" }} />
@@ -832,7 +850,7 @@ function MobileNewsPost() {
                 <p key={i} style={{ fontSize: 14.5, lineHeight: 1.6, color: "#3a3f49", margin: 0 }}>{para}</p>
               ))}
             </div>
-            <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="club-btn club-btn--block foc" style={{ marginTop: 20, background: "#15375E", borderColor: "#15375E", color: "#FBF3E8" }}>Открыть в Telegram · {TELEGRAM_CHANNEL.handle}</a>
+            <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="club-btn club-btn--block foc" style={{ marginTop: 20, background: "#15375E", borderColor: "#15375E", color: TEXT_INV }}>Открыть в Telegram · {TELEGRAM_CHANNEL.handle}</a>
           </div>
         )}
       </div>
@@ -865,7 +883,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
 
   if (q.isLoading) return <div style={{ height: "100dvh", background: "#14181F" }}><Loader /></div>;
   if (!item) return (
-    <div style={{ height: "100dvh", background: "#14181F", color: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "#14181F", color: TEXT_INV, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <p style={{ ...mono, fontSize: 13 }}>Выпуск не найден</p>
       <button onClick={() => nav("/podcasts")} style={{ ...primaryBtn, flex: "none", padding: "0 26px", height: 48 }}>К списку</button>
     </div>
@@ -884,7 +902,7 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
     a.currentTime = Math.max(0, Math.min(dur, ((e.clientX - r.left) / r.width) * dur));
   };
   return (
-    <div style={{ height: "100dvh", background: "linear-gradient(180deg,#1a2338 0%,#14181F 60%,#0f131a 100%)", display: "flex", flexDirection: "column", color: "#FBF3E8", overflow: "hidden", fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: "linear-gradient(180deg,#1a2338 0%,#14181F 60%,#0f131a 100%)", display: "flex", flexDirection: "column", color: TEXT_INV, overflow: "hidden", fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 14px) 16px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button onClick={() => nav("/podcasts")} aria-label="Назад" style={{ ...roundDark, background: "rgba(251,243,232,.12)", backdropFilter: "none", WebkitBackdropFilter: "none" }}>{BackWhite}</button>
         <span style={{ ...mono, fontSize: 10, letterSpacing: ".14em", color: "rgba(251,243,232,.55)" }}>{locked ? "ПО ПОДПИСКЕ" : "СЕЙЧАС ИГРАЕТ"}</span>
@@ -921,13 +939,13 @@ function MobilePodcastPlayer({ epId }: { epId: string }) {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 10, color: "rgba(251,243,232,.5)", marginTop: 8 }}><span>{fmtTime(pos)}</span><span>{fmtTime(dur)}</span></div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 30, marginTop: 22 }}>
-              <button onClick={() => goEp(idx - 1)} disabled={idx <= 0} aria-label="Предыдущий выпуск" style={{ background: "none", border: "none", cursor: "pointer", opacity: idx <= 0 ? .35 : 1 }}><svg width="30" height="30" viewBox="0 0 24 24" fill="#FBF3E8"><path d="M11 6L4 12l7 6zM19 6l-7 6 7 6z" /></svg></button>
+              <button onClick={() => goEp(idx - 1)} disabled={idx <= 0} aria-label="Предыдущий выпуск" style={{ background: "none", border: "none", cursor: "pointer", opacity: idx <= 0 ? .35 : 1 }}><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M11 6L4 12l7 6zM19 6l-7 6 7 6z" /></svg></button>
               <button onClick={toggle} aria-label={playing ? "Пауза" : "Играть"} style={{ width: 74, height: 74, borderRadius: 99, border: "none", cursor: "pointer", background: "#EC5A13", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 16px 34px -12px rgba(236,90,19,.9)" }}>
                 {playing
-                  ? <svg width="26" height="26" viewBox="0 0 24 24" fill="#FBF3E8"><rect x="6" y="5" width="4" height="14" rx="1.3" /><rect x="14" y="5" width="4" height="14" rx="1.3" /></svg>
-                  : <svg width="28" height="28" viewBox="0 0 24 24" fill="#FBF3E8"><path d="M8 5v14l11-7z" /></svg>}
+                  ? <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3" /><rect x="14" y="5" width="4" height="14" rx="1.3" /></svg>
+                  : <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>}
               </button>
-              <button onClick={() => goEp(idx + 1)} disabled={idx >= items.length - 1} aria-label="Следующий выпуск" style={{ background: "none", border: "none", cursor: "pointer", opacity: idx >= items.length - 1 ? .35 : 1 }}><svg width="30" height="30" viewBox="0 0 24 24" fill="#FBF3E8"><path d="M13 6l7 6-7 6zM5 6l7 6-7 6z" /></svg></button>
+              <button onClick={() => goEp(idx + 1)} disabled={idx >= items.length - 1} aria-label="Следующий выпуск" style={{ background: "none", border: "none", cursor: "pointer", opacity: idx >= items.length - 1 ? .35 : 1 }}><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M13 6l7 6-7 6zM5 6l7 6-7 6z" /></svg></button>
             </div>
           </>
         )}
@@ -959,7 +977,7 @@ function MobileMerchItem({ slug }: { slug: string }) {
     });
   };
   return (
-    <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
+    <div style={{ height: "100dvh", background: PAGE_BG, display: "flex", flexDirection: "column", overflow: "hidden", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ position: "relative", height: 300, overflow: "hidden", background: m?.images?.[0] ? `#EDE4D2 url(${mediaUrl(m.images[0])}) center/cover no-repeat` : tint }}>
           {!m?.images?.[0] && <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 9px,transparent 9px 19px)" }} />}
@@ -1026,7 +1044,7 @@ export default function MobileApp() {
   }
   const active = clubTabActive(pathname);
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#FBF3E8", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: PAGE_BG, color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif", overflow: "hidden" }}>
       <div className="noscroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
         {pathname === "/news" ? <MobileFeed />
           : pathname === "/dpo" ? <MobileDpo />

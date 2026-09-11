@@ -35,9 +35,22 @@ export function SupportDock() {
     const openBot = () => setOpen(true);
 
     const mount = () => {
-      if (cancelled || crowRef.current) return;
-      const narrow = window.matchMedia("(max-width: 1023px)").matches;
-      const width = narrow ? 96 : 200;
+      if (cancelled || crowRef.current || hit) return;
+      const narrow = window.matchMedia("(max-width: 768px)").matches;
+
+      // На телефоне ворона + invite съедают primary CTA – только компактная кнопка.
+      if (narrow) {
+        hit = document.createElement("button");
+        hit.type = "button";
+        hit.className = "club-support-pill foc";
+        hit.textContent = "Поддержка";
+        hit.setAttribute("aria-label", "Открыть бота поддержки");
+        hit.addEventListener("click", openBot);
+        document.body.appendChild(hit);
+        return;
+      }
+
+      const width = 200;
       const height = Math.round((width * 1465) / 1400);
 
       hit = document.createElement("button");

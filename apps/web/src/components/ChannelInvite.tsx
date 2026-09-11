@@ -29,15 +29,35 @@ function rememberDismiss(): void {
 
 /**
  * Приглашение в Telegram-канал клуба после ответа на cookies.
- * По образцу channel-invite на сайте ДПО: один раз за визит-серию, пауза 1 с,
- * скрытие на 30 дней. Редкий UI – лёгкий enter, без вечного micro-motion.
+ * Не на входе/заявке/корзине/главной/ЛК и не на телефоне (табы + поддержка
+ * уже занимают нижний слой). На десктопе – только витрины сообщества, не каталоги.
  */
 export function ChannelInvite() {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
+  const [narrow, setNarrow] = useState(false);
 
-  const hidden = pathname.startsWith("/admin");
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  const hidden =
+    narrow ||
+    pathname.startsWith("/admin") ||
+    pathname === "/" ||
+    pathname.startsWith("/lk") ||
+    pathname.startsWith("/join") ||
+    pathname.startsWith("/cart") ||
+    pathname.startsWith("/dpo") ||
+    pathname.startsWith("/merch") ||
+    pathname.startsWith("/forgot") ||
+    pathname.startsWith("/reset") ||
+    pathname.startsWith("/confirm");
 
   useEffect(() => {
     if (hidden || isDismissed()) return;
@@ -51,7 +71,7 @@ export function ChannelInvite() {
           setReady(true);
           setOpen(true);
         }
-      }, 1000);
+      }, 1600);
     }, 400);
 
     return () => {

@@ -17,9 +17,10 @@ const MARQUEE = [
   "гражданское", "уголовное", "международное", "финансовое", "цифровое право",
 ];
 
-const HERO_FALLBACK_TITLE = "Клуб выпускников факультета права";
+/* Шапка уже держит бренд – H1 = одно обещание, не третье «Клуб выпускников». */
+const HERO_FALLBACK_TITLE = "Статус выпускника – после проверки офисом";
 const HERO_FALLBACK_SUB =
-  "Встречи, программы ДПО и кабинет участника. Статус выпускника – после проверки учебным офисом.";
+  "Встречи, программы ДПО и кабинет участника. Оплаты и взносов на сайте нет.";
 const CTA_FALLBACK =
   "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет. Оплаты и взносов на сайте нет.";
 
@@ -72,8 +73,16 @@ export default function HomeV2() {
   const hero = page.data?.blocks.hero ?? {};
   const cta = page.data?.blocks.cta ?? {};
   const configuredTitle = `${hero.title_pre || ""} ${hero.title_accent || ""}`.trim();
-  const title = sober(configuredTitle, HERO_FALLBACK_TITLE, /который\s+работает/i);
-  const subtitle = sober(hero.subtitle, HERO_FALLBACK_SUB, /открывает цену|сообщество однокурсников|статус,?\s*скидк/i);
+  const title = sober(
+    configuredTitle,
+    HERO_FALLBACK_TITLE,
+    /который\s+работает|клуб\s+выпускников/i,
+  );
+  const subtitle = sober(
+    hero.subtitle,
+    HERO_FALLBACK_SUB,
+    /открывает цену|сообщество однокурсников|статус,?\s*скидк|статус\s+выпускника\s*[–-]/i,
+  );
   const ctaText = sober(
     cta.text,
     CTA_FALLBACK,
@@ -109,10 +118,6 @@ export default function HomeV2() {
           </div>
           <div className="vestnik-hero-copy">
             <div className="vestnik-hero-copy-inner">
-              <p className="vestnik-brand">
-                Клуб выпускников
-                <span>факультета права Вышки</span>
-              </p>
               <h1>{title}</h1>
               <p className="vestnik-lead">
                 {subtitle}

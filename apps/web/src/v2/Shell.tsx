@@ -179,7 +179,7 @@ export function ShowcaseHead({ title, lead, count }: { eyebrow: string; title: s
   return (
     <div style={{ paddingTop: "var(--rh-head-top)", paddingBottom: "var(--rh-head-bottom)" }}>
 
-      <h1 style={{ ...pageTitle, fontSize: "var(--t-h1-page)", lineHeight: 1.12, margin: 0, maxWidth: "28ch" }}>{title}</h1>
+      <h1 style={{ ...pageTitle, fontSize: "var(--t-h1-page)", lineHeight: 1.12, margin: 0, maxWidth: "min(28ch, 100%)", overflowWrap: "anywhere", textWrap: "balance" }}>{title}</h1>
       <div style={{ marginTop: 20, maxWidth: 560 }}>
         {count ? (
           <BlankField label={count}>
