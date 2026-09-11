@@ -9,6 +9,8 @@ export interface ProgramModuleSeed {
 export interface ProgramTeacherSeed {
   name: string;
   role: string;
+  /** Локальный путь обложки/фото (public) или URL. */
+  photo?: string | null;
 }
 export interface ProgramSeed {
   slug: string;

@@ -243,10 +243,22 @@ export default function ProgramV2() {
                   <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Преподаватели</h2>
                   <div style={{ marginTop: 12 }}>
                     {teachers.map((t, i) => (
-                      <div key={i} style={{ display: "grid", gridTemplateColumns: "40px 1fr", gap: 14, alignItems: "center", padding: "13px 0", borderTop: "1px solid var(--c-line)" }}>
-                        <span aria-hidden style={{ width: 40, height: 40, borderRadius: "var(--r-sm)", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: 15, color: "var(--c-text-2)" }}>
-                          {t.name.trim().charAt(0).toUpperCase()}
-                        </span>
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "56px 1fr", gap: 14, alignItems: "center", padding: "13px 0", borderTop: "1px solid var(--c-line)" }}>
+                        {t.photo ? (
+                          <img
+                            src={mediaUrl(t.photo)}
+                            alt=""
+                            width={56}
+                            height={56}
+                            loading="lazy"
+                            decoding="async"
+                            style={{ width: 56, height: 56, borderRadius: "var(--r-sm)", objectFit: "cover", border: "1px solid var(--c-line)", background: "var(--c-bg-sunken)" }}
+                          />
+                        ) : (
+                          <span aria-hidden style={{ width: 56, height: 56, borderRadius: "var(--r-sm)", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: 18, color: "var(--c-text-2)" }}>
+                            {t.name.trim().charAt(0).toUpperCase()}
+                          </span>
+                        )}
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{t.name}</div>
                           {t.role && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 3 }}>{t.role}</div>}

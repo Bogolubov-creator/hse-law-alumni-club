@@ -706,7 +706,11 @@ function MobileProgram() {
             ))}</div></div>}
             {teachers.length > 0 && <div><div style={secTitle}>Преподаватели</div><div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{teachers.map((t, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, background: i === 0 ? INK : "#fff", borderRadius: 16, padding: "15px 16px", border: i === 0 ? "none" : "1px solid #E4DCCC" }}>
-                <span style={{ width: 42, height: 42, borderRadius: 12, background: i === 0 ? "linear-gradient(135deg,#E3C272,#C49A45)" : "rgba(236,90,19,.12)", color: i === 0 ? INK : "#C24009", ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.name.trim()[0] ?? "≡"}</span>
+                {t.photo ? (
+                  <img src={mediaUrl(t.photo)} alt="" width={42} height={42} loading="lazy" decoding="async" style={{ width: 42, height: 42, borderRadius: 12, objectFit: "cover", flexShrink: 0, border: i === 0 ? "1px solid rgba(251,243,232,.2)" : "1px solid #E4DCCC" }} />
+                ) : (
+                  <span style={{ width: 42, height: 42, borderRadius: 12, background: i === 0 ? "linear-gradient(135deg,#E3C272,#C49A45)" : "rgba(236,90,19,.12)", color: i === 0 ? INK : "#C24009", ...disp, fontWeight: 700, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.name.trim()[0] ?? "≡"}</span>
+                )}
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, color: i === 0 ? "#FBF3E8" : INK }}>{t.name}</div>
                   {t.role && <div style={{ ...mono, fontSize: 11, marginTop: 3, color: i === 0 ? "rgba(251,243,232,.55)" : "#6E675A" }}>{t.role}</div>}

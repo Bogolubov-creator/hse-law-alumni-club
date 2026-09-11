@@ -1,8 +1,10 @@
 /**
  * Импорт полного каталога ДПО из зеркала itspecR/dpo-pravo-hse.
  *
- * Тянет `.catalog-data.json` + `content/programs-index.json`, скачивает обложки
- * в `apps/web/public/assets/programs/`, генерирует:
+ * Тянет `.catalog-data.json` + `content/programs-index.json`, скачивает:
+ *  – обложки программ → `apps/web/public/assets/programs/` (+ thumbs)
+ *  – фото преподавателей из `teacherPhotos` → `apps/web/public/assets/teachers/`
+ * и генерирует:
  *  – `packages/shared/src/dpo-mirror-catalog.generated.ts`
  *  – `apps/web/public/content/bot-catalog.json`
  *
@@ -28,6 +30,7 @@ const OUT_TS = path.join(ROOT, "packages/shared/src/dpo-mirror-catalog.generated
 const OUT_BOT = path.join(ROOT, "apps/web/public/content/bot-catalog.json");
 const OUT_IMG = path.join(ROOT, "apps/web/public/assets/programs");
 const OUT_THUMB = path.join(OUT_IMG, "thumbs");
+const OUT_TEACHERS = path.join(ROOT, "apps/web/public/assets/teachers");
 
 type CatalogModule = { title?: string; hours?: number | null; topics?: string[] };
 type CatalogTeacher = { name?: string; about?: string | null };
@@ -51,6 +54,12 @@ type CatalogProgram = {
   image?: string | null;
   locked?: boolean;
   hours?: string | null;
+};
+type CatalogPayload = {
+  programs: CatalogProgram[];
+  count?: number;
+  teacherPhotos?: Record<string, string>;
+  teacherPages?: Record<string, string>;
 };
 
 type IndexProgram = { id: string | number; title?: string; url?: string; sphere?: string };
@@ -140,7 +149,11 @@ function descriptionOf(p: CatalogProgram): string | undefined {
   return tagline || undefined;
 }
 
-function mapProgram(p: CatalogProgram, idx: IndexProgram | undefined): ProgramSeed {
+function mapProgram(
+  p: CatalogProgram,
+  idx: IndexProgram | undefined,
+  teacherLocalByName: Map<string, string>,
+): ProgramSeed {
   const id = String(p.id);
   const typ = typeShort(p);
   const formatRaw = studyFormatTitle(p);
@@ -163,10 +176,15 @@ function mapProgram(p: CatalogProgram, idx: IndexProgram | undefined): ProgramSe
 
   const teachers = (p.teachers || [])
     .filter((t) => t?.name)
-    .map((t) => ({
-      name: String(t.name),
-      role: truncate(String(t.about || "").trim() || "Преподаватель", TEACHER_ABOUT_MAX),
-    }));
+    .map((t) => {
+      const name = String(t.name);
+      const photo = teacherLocalByName.get(name) ?? null;
+      return {
+        name,
+        role: truncate(String(t.about || "").trim() || "Преподаватель", TEACHER_ABOUT_MAX),
+        ...(photo ? { photo } : {}),
+      };
+    });
 
   const direction =
     (idx?.sphere || "").trim() ||
@@ -262,9 +280,37 @@ async function downloadImage(id: string, imageRel: string | null | undefined): P
   return ext;
 }
 
+/** Скачивает teacherPhotos → локальные `/assets/teachers/{file}`; ключ карты – ФИО. */
+async function downloadTeacherPhotos(teacherPhotos: Record<string, string> | undefined): Promise<Map<string, string>> {
+  const localByName = new Map<string, string>();
+  const entries = Object.entries(teacherPhotos || {});
+  if (!entries.length) return localByName;
+
+  await mkdir(OUT_TEACHERS, { recursive: true });
+  let ok = 0;
+  for (const [name, rel] of entries) {
+    const clean = String(rel || "").replace(/^\//, "").trim();
+    if (!clean) continue;
+    const base = path.basename(clean);
+    if (!base || base === "." || base === "..") continue;
+    const srcUrl = `${RAW}/${clean}`;
+    const buf = await fetchBytes(srcUrl);
+    if (!buf) {
+      console.warn(`  ! нет фото преподавателя ${name} ← ${srcUrl}`);
+      continue;
+    }
+    await writeFile(path.join(OUT_TEACHERS, base), buf);
+    const local = `/assets/teachers/${base}`;
+    localByName.set(name, local);
+    ok++;
+  }
+  console.log(`Фото преподавателей: ${ok}/${entries.length}`);
+  return localByName;
+}
+
 async function main() {
   console.log(`Источник: ${REPO}`);
-  const catalog = await fetchJson<{ programs: CatalogProgram[]; count?: number }>(`${RAW}/.catalog-data.json`);
+  const catalog = await fetchJson<CatalogPayload>(`${RAW}/.catalog-data.json`);
   const index = await fetchJson<{ programs: IndexProgram[] }>(`${RAW}/content/programs-index.json`);
   const byId = new Map(index.programs.map((p) => [String(p.id), p]));
 
@@ -274,17 +320,25 @@ async function main() {
   await mkdir(OUT_IMG, { recursive: true });
   await mkdir(OUT_THUMB, { recursive: true });
 
+  const teacherLocalByName = await downloadTeacherPhotos(catalog.teacherPhotos);
+
   let images = 0;
+  let teachersWithPhoto = 0;
+  let teachersTotal = 0;
   const seeds: ProgramSeed[] = [];
   for (const raw of list) {
     const id = String(raw.id);
     const idx = byId.get(id);
     const ext = await downloadImage(id, raw.image);
     if (ext) images++;
-    const seed = mapProgram(raw, idx);
+    const seed = mapProgram(raw, idx, teacherLocalByName);
     // cover должен совпасть с реально скачанным расширением
     if (ext) seed.cover = `/assets/programs/${id}.${ext}`;
     else seed.cover = null;
+    for (const t of seed.teachers || []) {
+      teachersTotal++;
+      if (t.photo) teachersWithPhoto++;
+    }
     seeds.push(seed);
     console.log(`  · ${id} → ${seed.slug}${ext ? ` [${ext}]` : " [no-img]"}`);
   }
@@ -294,10 +348,11 @@ async function main() {
   await writeFile(OUT_TS, serializePrograms(seeds), "utf8");
   await writeFile(OUT_BOT, `${JSON.stringify({ programs: seeds.map(toBot) }, null, 2)}\n`, "utf8");
 
-  console.log(`Готово: ${seeds.length} программ, ${images} обложек.`);
+  console.log(`Готово: ${seeds.length} программ, ${images} обложек, фото у ${teachersWithPhoto}/${teachersTotal} преподавателей.`);
   console.log(`  ${path.relative(ROOT, OUT_TS)}`);
   console.log(`  ${path.relative(ROOT, OUT_BOT)}`);
   console.log(`  ${path.relative(ROOT, OUT_IMG)}/`);
+  console.log(`  ${path.relative(ROOT, OUT_TEACHERS)}/`);
 }
 
 main().catch((e) => {

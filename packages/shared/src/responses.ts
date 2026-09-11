@@ -56,7 +56,11 @@ export const programSchema = z.object({
 });
 export const programsSchema = z.array(programSchema);
 export const programModuleSchema = z.object({ title: z.string(), hours: z.number().optional(), points: z.array(z.string()).optional() });
-export const programTeacherSchema = z.object({ name: z.string(), role: z.string().optional() });
+export const programTeacherSchema = z.object({
+  name: z.string(),
+  role: z.string().optional(),
+  photo: z.string().nullable().optional(),
+});
 export const programFullSchema = programSchema.extend({
   dates: z.object({ start: z.string() }).partial().nullable().optional(),
   modules: z.array(programModuleSchema).nullable().optional(),
