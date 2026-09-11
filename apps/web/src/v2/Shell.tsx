@@ -1,21 +1,22 @@
-import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { CLUB_OPERATOR } from "@club/shared";
 import { token, useCart } from "../lib/cart.js";
 import { VisionToggle } from "../components/Vision.js";
-import { MobileTabs } from "./MobileTabs.js";
+import { SiteSearch } from "../components/SiteSearch.js";
 import { Mark } from "./Mark.js";
 import { openCookieSettings } from "../lib/cookie-consent.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
+import "../styles/shell.css";
 
 /**
- * Общая оболочка v2: шапка и подвал для всех страниц нового языка.
- * Вынесена из HomeV2, чтобы витрины не дублировали разметку и чтобы
- * навигация менялась в одном месте.
+ * Общая оболочка публичного контура: шапка и подвал для всех страниц.
+ * Пересобрана 12.09.2026 под референс: белая шапка 64px с hairline, капс-навигация,
+ * поиск по программам и новостям, одно действие «Вступить»; тёмный подвал.
  */
 
 // Определения – в styles/primitives.ts, здесь только точка входа для витрин.
-import { mono, disp, pageTitle } from "../styles/primitives.js";
+import { mono, disp, pageTitle, action, caps } from "../styles/primitives.js";
 export { mono, disp, pageTitle } from "../styles/primitives.js";
 
 /**
@@ -37,119 +38,138 @@ export function BlankField({ children, label }: { children: ReactNode; label: st
 
 const NAV = [
   { to: "/dpo", label: "ДПО" },
-  { to: "/merch", label: "Мерч" },
-  { to: "/podcasts", label: "Подкасты" },
   { to: "/events", label: "События" },
   { to: "/news", label: "Новости" },
+  { to: "/podcasts", label: "Подкасты" },
+  { to: "/merch", label: "Мерч" },
 ];
 
-/** Карта · Лента · ДПО · Мерч · Кабинет – в ClubTabBar; здесь остальное. */
-const MOBILE_MENU = [
-  { to: "/podcasts", label: "Подкасты" },
-  { to: "/events", label: "События" },
-  { to: "/cart", label: "Корзина" },
-] as const;
+const SearchIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+);
+const CartIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>
+);
 
 export function V2Shell({ children }: { children: ReactNode }) {
   const cartCount = useCart().data?.count ?? 0;
   const authed = !!token();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { pathname } = useLocation();
+
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+
+  const cta = (
+    <Link to={authed ? "/lk" : "/join"} className="foc club-header__cta" style={action}>
+      {authed ? "Кабинет" : "Вступить"}
+    </Link>
+  );
 
   return (
     <div className="club-public-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
       <a href="#main" className="skip">К содержанию страницы</a>
-      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "color-mix(in srgb, var(--c-bg) 88%, transparent)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--c-line)" }}>
-        <div className="club-header-inner" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", height: 72, display: "flex", alignItems: "center", gap: 24 }}>
-          <Link to="/" className="foc" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
-            <Mark kind="scales" size={34} style={{ color: "var(--c-accent-text)" }} />
-            <span style={{ ...disp, fontWeight: 800, fontSize: 15, lineHeight: 1.1 }}>
+      <header className="club-header">
+        <div className="club-header__inner">
+          <Link to="/" className="foc club-header__brand">
+            <Mark kind="scales" size={32} style={{ color: "var(--c-accent-text)" }} />
+            <span className="club-header__lockup">
               Клуб выпускников
-              <span style={{ ...mono, display: "block", fontSize: "var(--t-micro)", letterSpacing: "normal", color: "var(--c-text-3)", fontWeight: 400, marginTop: 3, textTransform: "none" }}>факультета права Вышки</span>
+              <small>факультета права Вышки</small>
             </span>
           </Link>
 
-          <nav className="desk-only" style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+          <nav className="club-header__nav" aria-label="Разделы">
             {NAV.map((n) => (
-              <Link key={n.to} to={n.to} className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>{n.label}</Link>
+              <NavLink key={n.to} to={n.to} className="foc club-caps club-header__link">{n.label}</NavLink>
             ))}
-            <Link to="/cart" className="foc" style={{ textDecoration: "none", color: "var(--c-text-2)", fontSize: 14, fontWeight: 500, padding: "8px 12px", borderRadius: "var(--r-sm)" }}>
-              Корзина{" "}{cartCount > 0 && <span style={{ ...mono, marginLeft: 6, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>}
-            </Link>
-            <VisionToggle compact v2 />
-            <Link to={authed ? "/lk" : "/join"} className="foc" style={{ marginLeft: 8, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 14, padding: "10px 18px", borderRadius: "var(--r-md)" }}>
-              {authed ? "Кабинет" : "Вступить"}
-            </Link>
+            <div className="club-header__tools">
+              <button type="button" onClick={() => setSearchOpen(true)} className="foc club-chrome-icon-btn" aria-label="Поиск" title="Поиск по программам и новостям">
+                {SearchIcon}
+              </button>
+              <VisionToggle compact v2 />
+              <Link to="/cart" className="foc club-chrome-icon-btn club-header__cart" aria-label={cartCount > 0 ? `Корзина, ${cartCount}` : "Корзина"} title="Корзина">
+                {CartIcon}
+                {cartCount > 0 && <span className="club-header__count" aria-hidden="true">{cartCount}</span>}
+              </Link>
+            </div>
+            {cta}
           </nav>
 
-          <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc mob-only" style={{ marginLeft: "auto", width: 44, height: 44, borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontSize: 18, cursor: "pointer" }}>
+          <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-controls="club-menu" aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc club-header__burger">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={menuOpen ? "M6 6l12 12M6 18L18 6" : "M4 6h16M4 12h16M4 18h16"} /></svg>
           </button>
         </div>
 
-        {menuOpen && (
-          <nav className="mob-only club-mobile-menu" style={{ flexDirection: "column", borderTop: "1px solid var(--c-line)", padding: "8px 20px 18px" }}>
-            {MOBILE_MENU.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                onClick={() => setMenuOpen(false)}
-                className={n.to === "/cart" ? "foc club-tablet-link" : "foc"}
-                style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}
-              >
-                {n.label}
-                {n.to === "/cart" && cartCount > 0 && (
-                  <span style={{ ...mono, marginLeft: 8, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: 999, padding: "1px 6px", fontSize: "var(--t-micro)" }}>{cartCount}</span>
-                )}
-              </Link>
-            ))}
-            {!authed && (
-              <Link to="/join" onClick={() => setMenuOpen(false)} className="foc" style={{ textDecoration: "none", color: "var(--c-text)", fontWeight: 600, fontSize: 16, padding: "13px 8px", borderRadius: "var(--r-md)" }}>
-                Вступить в клуб
-              </Link>
-            )}
-
-            {/* Версия для слабовидящих жила только в десктопной строке –
-                на телефоне режим по ГОСТ было физически нечем включить. */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, paddingTop: 12, borderTop: "1px solid var(--c-line)" }}>
-              <VisionToggle compact v2 />
-            </div>
-          </nav>
-        )}
+        <nav id="club-menu" className="club-menu" data-open={menuOpen} aria-label="Меню">
+          <button type="button" onClick={() => { setMenuOpen(false); setSearchOpen(true); }} className="foc">
+            Поиск по программам и новостям
+            {SearchIcon}
+          </button>
+          {NAV.map((n) => (
+            <NavLink key={n.to} to={n.to} className="foc" style={{ fontWeight: 600 }}>{n.label}</NavLink>
+          ))}
+          <Link to="/cart" className="foc" style={{ fontWeight: 600 }}>
+            Корзина
+            {cartCount > 0 && <span className="club-header__count" style={{ position: "static" }}>{cartCount}</span>}
+          </Link>
+          <div className="club-menu__tools">
+            <VisionToggle compact v2 />
+            <span style={{ ...caps, color: "var(--c-text-3)" }}>Версия для слабовидящих</span>
+          </div>
+          <Link to={authed ? "/lk" : "/join"} className="foc club-menu__cta" style={action}>
+            {authed ? "Кабинет" : "Вступить в клуб"}
+          </Link>
+        </nav>
       </header>
+
+      {searchOpen && <SiteSearch onClose={() => setSearchOpen(false)} />}
 
       {children}
 
-      <footer style={{ marginTop: "var(--rh-section)", borderTop: "1px solid var(--c-line)", padding: "34px 28px 46px", paddingBottom: "calc(46px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between" }}>
-            <span>© 2026 Клуб выпускников факультета права Вышки</span>
-            <span style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-              <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc tap" style={{ color: "inherit" }}>{TELEGRAM_CHANNEL.handle}</a>
-              <Link to="/privacy" className="foc tap" style={{ color: "inherit" }}>Политика обработки персональных данных</Link>
-              <Link to="/confidential" className="foc tap" style={{ color: "inherit" }}>Политика конфиденциальности</Link>
-              <Link to="/requisites" className="foc tap" style={{ color: "inherit" }}>Реквизиты</Link>
-              <Link to="/support" className="foc tap" style={{ color: "inherit" }}>Поддержка</Link>
-              <button type="button" className="foc tap" style={{ color: "inherit", background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" }} onClick={() => openCookieSettings()}>
-                Cookies
-              </button>
-            </span>
+      <footer className="club-footer club-dark">
+        <div className="club-footer__inner">
+          <div className="club-footer__brand">
+            <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", flex: "none" }} />
+            <div>
+              <strong>Клуб выпускников факультета права Вышки</strong>
+              <p>Встречи, программы ДПО с ценой выпускника, подкасты и мерч. Оплаты и взносов на сайте нет.</p>
+            </div>
           </div>
-          <p style={{ margin: "14px 0 0", fontSize: "var(--t-caption)", lineHeight: 1.55, maxWidth: "72ch" }}>
-            {CLUB_OPERATOR.shortName} · ОГРН {CLUB_OPERATOR.ogrn} · ИНН {CLUB_OPERATOR.inn} · {CLUB_OPERATOR.address}
-          </p>
+          <div>
+            <h2 className="club-caps">Разделы</h2>
+            <ul>
+              {NAV.map((n) => <li key={n.to}><Link to={n.to} className="foc">{n.label}</Link></li>)}
+              <li><Link to={authed ? "/lk" : "/join"} className="foc">{authed ? "Кабинет" : "Вступить в клуб"}</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h2 className="club-caps">Клуб</h2>
+            <ul>
+              <li><a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc">{TELEGRAM_CHANNEL.handle}</a></li>
+              <li><Link to="/support" className="foc">Поддержка</Link></li>
+              <li><Link to="/privacy" className="foc">Политика обработки персональных данных</Link></li>
+              <li><Link to="/confidential" className="foc">Политика конфиденциальности</Link></li>
+              <li><Link to="/requisites" className="foc">Реквизиты</Link></li>
+              <li><button type="button" className="foc" onClick={() => openCookieSettings()}>Cookies</button></li>
+            </ul>
+          </div>
+          <div className="club-footer__legal">
+            <span>© 2026 Клуб выпускников факультета права Вышки</span>
+            <p>{CLUB_OPERATOR.shortName} · ОГРН {CLUB_OPERATOR.ogrn} · ИНН {CLUB_OPERATOR.inn} · {CLUB_OPERATOR.address}</p>
+          </div>
         </div>
       </footer>
-      <MobileTabs />
     </div>
   );
 }
 
-/** Заголовок витрины: моно-надзаголовок, крупный заголовок, счётчик записей. */
-export function ShowcaseHead({ title, lead, count }: { eyebrow: string; title: string; lead: string; count?: string }) {
+/** Заголовок витрины: капс-надзаголовок, титул плитой, счётчик записей. */
+export function ShowcaseHead({ eyebrow, title, lead, count }: { eyebrow: string; title: string; lead: string; count?: string }) {
   return (
     <div style={{ paddingTop: "var(--rh-head-top)", paddingBottom: "var(--rh-head-bottom)" }}>
-
-      <h1 style={{ ...pageTitle, fontSize: "var(--t-h1-page)", lineHeight: 1.12, margin: 0, maxWidth: "min(28ch, 100%)", overflowWrap: "anywhere", textWrap: "balance" }}>{title}</h1>
+      <p style={{ ...caps, color: "var(--c-text-3)", margin: "0 0 14px" }}>{eyebrow}</p>
+      <h1 style={{ ...pageTitle, fontSize: "var(--t-h1-page)", lineHeight: 1.08, margin: 0, maxWidth: "min(24ch, 100%)", overflowWrap: "anywhere", textWrap: "balance" }}>{title}</h1>
       <div style={{ marginTop: 20, maxWidth: 560 }}>
         {count ? (
           <BlankField label={count}>
