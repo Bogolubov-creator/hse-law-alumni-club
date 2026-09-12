@@ -132,13 +132,15 @@ export default function MerchV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         <ShowcaseHead
+          photo={{ src: "assets/photos/alumni-field.jpg", alt: "Выпускники и студенты факультета права на спортивном поле" }}
           eyebrow="мерч"
           title="Одежда и аксессуары клуба"
           lead="Фирменные вещи с символикой клуба. Самовывоз в учебном офисе или доставка – выбирается при оформлении."
           count={products.isLoading ? "загружаем склад" : `позиций ${catalog.length} · на складе ${catalog.reduce((s, p) => s + totalStock(p), 0)}`}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", paddingBottom: 22, borderBottom: "1px solid var(--c-line)" }}>
           {[null, ...categories].map((c) => (
@@ -212,6 +214,7 @@ export default function MerchV2() {
             показано позиций: {list.length}
           </div>
         )}
+        </div>
       </main>
 
       {open && <SizeDialog product={open} onClose={() => setOpen(null)} />}

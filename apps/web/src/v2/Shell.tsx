@@ -6,6 +6,7 @@ import { VisionToggle } from "../components/Vision.js";
 import { SiteSearch } from "../components/SiteSearch.js";
 import { Mark } from "./Mark.js";
 import { openCookieSettings } from "../lib/cookie-consent.js";
+import { publicUrl } from "../lib/public-url.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 import "../styles/shell.css";
 
@@ -164,21 +165,28 @@ export function V2Shell({ children }: { children: ReactNode }) {
   );
 }
 
-/** Заголовок витрины: капс-надзаголовок, титул плитой, счётчик записей. */
-export function ShowcaseHead({ eyebrow, title, lead, count }: { eyebrow: string; title: string; lead: string; count?: string }) {
+/**
+ * Заголовок витрины. С фотографией – тёмный разворот 50/50 как на главной («Фасад и зал»,
+ * 12.09): титул плитой слева, фото факультета во весь край справа. Без фото (корзина) –
+ * тихая шапка на белом. Eyebrow не рендерится: заголовок несёт себя сам.
+ */
+export function ShowcaseHead({ title, lead, count, photo }: { eyebrow?: string; title: string; lead: string; count?: string; photo?: { src: string; alt: string } }) {
+  const copy = (
+    <>
+      <h1 style={{ ...pageTitle, fontSize: photo ? "clamp(36px, 4vw, 60px)" : "var(--t-h1-page)", lineHeight: 1.06, margin: 0, maxWidth: "min(18ch, 100%)", overflowWrap: "anywhere", textWrap: "balance" }}>{title}</h1>
+      <p style={{ margin: "22px 0 0", maxWidth: "44ch", fontSize: "var(--t-lead)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{lead}</p>
+      {count && <p style={{ ...caps, margin: "20px 0 0", color: "var(--c-text-3)" }}>{count}</p>}
+    </>
+  );
+  if (!photo) {
+    return <div style={{ paddingTop: "var(--rh-head-top)", paddingBottom: "var(--rh-head-bottom)" }}>{copy}</div>;
+  }
   return (
-    <div style={{ paddingTop: "var(--rh-head-top)", paddingBottom: "var(--rh-head-bottom)" }}>
-      <p style={{ ...caps, color: "var(--c-text-3)", margin: "0 0 14px" }}>{eyebrow}</p>
-      <h1 style={{ ...pageTitle, fontSize: "var(--t-h1-page)", lineHeight: 1.08, margin: 0, maxWidth: "min(24ch, 100%)", overflowWrap: "anywhere", textWrap: "balance" }}>{title}</h1>
-      <div style={{ marginTop: 20, maxWidth: 560 }}>
-        {count ? (
-          <BlankField label={count}>
-            <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{lead}</p>
-          </BlankField>
-        ) : (
-          <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{lead}</p>
-        )}
+    <header className="club-masthead club-dark">
+      <div className="club-masthead__copy">{copy}</div>
+      <div className="club-masthead__photo">
+        <img src={publicUrl(photo.src)} alt={photo.alt} width={1083} height={722} decoding="async" fetchPriority="high" />
       </div>
-    </div>
+    </header>
   );
 }

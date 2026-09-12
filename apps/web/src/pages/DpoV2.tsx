@@ -8,8 +8,8 @@ import { usePrograms, useMemberDiscount, useCartMutations } from "../lib/cart.js
 import ProgramCompare from "../components/ProgramCompare.js";
 import { field } from "../styles/primitives.js";
 import { HeroPicture } from "../components/HeroPicture.js";
-import { programThumbUrl } from "../lib/public-url.js";
-import { V2Shell, mono, disp } from "../v2/Shell.js";
+import { mediaUrl } from "../lib/public-url.js";
+import { V2Shell } from "../v2/Shell.js";
 import "../styles/dpo-vitrine.css";
 
 /** Обложки с логотипом факультета (просмотрены 12.09); остальные с hse.ru – сток без символики. */
@@ -65,7 +65,6 @@ export default function DpoV2() {
       <main id="main" className="club-dpo-vitrine">
         <header className="club-dpo-masthead club-dark">
           <div className="club-dpo-masthead__inner">
-            <p className="club-dpo-eyebrow">Витрина ДПО</p>
             <h1>Программы дополнительного образования</h1>
             <p className="club-dpo-lead">
               Содержание, формат и ближайшие старты – в каждой записи. Цена выпускника открывается после подтверждения выпуска учебным офисом.
@@ -89,7 +88,7 @@ export default function DpoV2() {
           </div>
           <div className="club-dpo-masthead__media" aria-hidden="true">
             <HeroPicture
-              path="assets/dpo-masthead.jpg"
+              path="assets/photos/diploma.jpg"
               className="club-dpo-masthead__photo"
               alt=""
               width={1200}
@@ -163,58 +162,41 @@ export default function DpoV2() {
             </div>
           )}
 
-          <div>
+          {/* Программы как предметы на белом (референс 12.09): обложка, название, направление, цена. */}
+          <div className="club-dpo-grid">
             {list.map((p) => {
               const closed = p.enrollment === "nonactual";
               const external = !!p.source_url;
               const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
-              // Превью только с символикой факультета (решение заказчика 12.09): сток с hse.ru не показываем.
-              const thumb = hasFacultyCover(p.cover) ? programThumbUrl(p.cover) : null;
+              // Обложка только с символикой факультета (решение заказчика 12.09): сток с hse.ru не показываем.
+              const cover = hasFacultyCover(p.cover) ? mediaUrl(p.cover!) : null;
               return (
-                <article key={p.id} className="v2-prog club-program-row club-dpo-row">
-                  <Link to={`/dpo/${p.slug}`} className="foc club-dpo-row__thumb" aria-hidden="true" tabIndex={-1}>
-                    {thumb ? (
-                      <img src={thumb} alt="" width={240} height={180} loading="lazy" decoding="async" />
+                <article key={p.id} className="club-dpo-tile">
+                  <Link to={`/dpo/${p.slug}`} className="foc club-dpo-tile__cover" aria-hidden="true" tabIndex={-1}>
+                    {cover ? (
+                      <img src={cover} alt="" width={640} height={360} loading="lazy" decoding="async" />
                     ) : (
-                      <span className="club-dpo-row__thumb-fallback">{p.direction}</span>
+                      <span className="club-dpo-tile__plate">{p.direction}</span>
                     )}
                   </Link>
-                  <div className="club-program-description" style={{ minWidth: 0 }}>
-                    <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
-                      <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
-                    </Link>
-                    <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 10, textTransform: "none" }}>
-                      {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration].filter(Boolean).join(" · ")}
-                    </div>
-                    <p style={{ color: "var(--c-text-2)", margin: "10px 0" }}>{p.dates?.start ? `Начало: ${programStart(p.dates.start)}` : "Дата начала уточняется"}{p.document ? ` · ${p.document}` : ""}</p>
-                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", marginTop: 8, textTransform: "none", color: closed ? "var(--c-danger-text)" : "var(--c-text-3)" }}>
-                      {closed ? "набор закрыт" : "актуальный набор"}
-                    </div>
+                  <Link to={`/dpo/${p.slug}`} className="foc club-dpo-tile__link">
+                    <h2>{p.title}</h2>
+                  </Link>
+                  <div className="club-dpo-tile__meta">
+                    {[FORMAT_LABEL[p.format] ?? p.format, p.duration, p.dates?.start ? `с ${programStart(p.dates.start)}` : null].filter(Boolean).join(" · ")}
                   </div>
-
-                  <div className="club-program-price club-dpo-row__price" style={{ color: "var(--c-text)" }}>
-                    <div>{rub(priced)}</div>
-                    {discount > 0 && (
-                      <div style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
-                    )}
-                    {discount > 0 && (
-                      <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 6, textTransform: "none" }}>−{discount}% выпускнику</div>
-                    )}
+                  <div className="club-dpo-tile__price">
+                    <span>{rub(priced)}</span>
+                    {discount > 0 && <s>{rub(p.price)}</s>}
+                    {closed && <span className="club-dpo-tile__closed">набор закрыт</span>}
                   </div>
-
-                  <div className="club-dpo-row__actions">
-                    <label className="club-dpo-row__compare">
+                  <div className="club-dpo-tile__actions">
+                    <label className="club-dpo-tile__compare">
                       <input type="checkbox" checked={selected.includes(p.slug)} disabled={!selected.includes(p.slug) && selected.length >= 3} onChange={() => toggleCompare(p.slug)} aria-label={`Сравнить: ${p.title}`} />
                       Сравнить
                     </label>
-                    {/* Одно действие на ряд: запись на hse.ru живёт в бланке программы. */}
-                    <Link to={`/dpo/${p.slug}`} className="foc tap club-btn club-btn--secondary">
-                      Подробнее
-                    </Link>
-                    {external ? null : closed ? (
-                      <span className="club-dpo-closed">Набор закрыт</span>
-                    ) : (
-                      <button type="button" onClick={() => addToCart(p)} disabled={add.isPending} className="foc tap club-btn club-btn--primary">
+                    {!external && !closed && (
+                      <button type="button" onClick={() => addToCart(p)} disabled={add.isPending} className="foc club-btn club-btn--secondary">
                         В корзину
                       </button>
                     )}

@@ -32,13 +32,15 @@ export function NewsV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         <ShowcaseHead
+          photo={{ src: "assets/photos/students-talk.jpg", alt: "Студенты факультета права после церемонии" }}
           eyebrow="новости"
           title="Новости клуба"
           lead="Анонсы встреч, программы ДПО и обновления портала."
           count={list.length ? `публикаций ${list.length}` : undefined}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         {news.isLoading && <p style={{ ...label, margin: 0 }}>загружаем новости…</p>}
 
@@ -84,6 +86,7 @@ export function NewsV2() {
             </article>
           ))}
           {list.length > 0 && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
+        </div>
         </div>
       </main>
     </V2Shell>

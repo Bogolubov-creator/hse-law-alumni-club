@@ -266,3 +266,28 @@
   .club-footer { padding: 44px 16px 32px; padding-bottom: calc(32px + var(--cookie-h, 0px)); }
   .club-footer__inner { grid-template-columns: 1fr; }
 }
+
+/* ── Мачта витрины: разворот 50/50, титул на графите, фото факультета во весь край ── */
+.club-masthead {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: clamp(380px, 52vh, 560px);
+}
+.club-masthead__copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(40px, 6vw, 88px) clamp(28px, 5vw, 80px);
+  padding-left: max(clamp(28px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
+}
+.club-masthead__photo { position: relative; background: var(--c-bg-sunken); }
+.club-masthead__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
+.club-masthead + * { margin-top: clamp(32px, 4vw, 56px); }
+@media (max-width: 900px) {
+  .club-masthead { grid-template-columns: 1fr; min-height: 0; }
+  .club-masthead__photo { aspect-ratio: 3 / 2; }
+  .club-masthead__copy { padding: 44px 24px; order: 1; }
+}
+@media (max-width: 480px) {
+  .club-masthead__copy { padding: 36px 16px; }
+}

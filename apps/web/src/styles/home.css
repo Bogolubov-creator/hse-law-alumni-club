@@ -1,8 +1,7 @@
 /*
- * Главная по референсу Peak Design (12.09.2026): монохромный холст, разворот
- * 50/50, полосы белое → тёмное с шагом 80px, hairline вместо теней и рамок,
- * HSE Slab 400 в титулах, капс-лейблы с разрядкой. Движения нет – только
- * hover и focus.
+ * Главная «Фасад и зал» (12.09.2026, направление заказчика по референсу Peak Design):
+ * фотография факультета во весь край на каждой полосе, белый холст и графитовые
+ * панели, HSE Slab 400 с одним курсивным словом, капс-кнопки 4px. Движения нет.
  */
 
 .home {
@@ -19,19 +18,14 @@
   margin: 0;
   text-wrap: balance;
 }
-.home h1 { font-size: var(--t-h1); line-height: 1.02; }
-.home h2 { font-size: var(--t-h2); line-height: 1.1; }
-.home h3 {
-  font-family: var(--f-head);
-  font-weight: 600;
-  font-size: var(--t-h3);
-  line-height: 1.25;
-  margin: 0;
-}
+.home h1 { font-size: clamp(44px, 5vw, 76px); line-height: 1.02; }
+.home h2 { font-size: clamp(32px, 3.6vw, 52px); line-height: 1.06; }
+.home h1 em,
+.home h2 em { font-style: italic; font-weight: 400; }
+.home h3 { font-family: var(--f-head); font-weight: 600; font-size: 20px; line-height: 1.3; margin: 0; }
 .home p { margin: 0; }
-.home-eyebrow { color: var(--c-text-3); margin-bottom: 18px; }
 
-/* Кнопки главной: белая заливка на тёмной панели, графит на белом – через токены. */
+/* Кнопки: заливка контрастом или обводка; цвета из токенов панели */
 .home-btn {
   font-family: var(--f-body);
   font-size: var(--t-caps);
@@ -42,271 +36,189 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-  padding: 0 24px;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 26px;
   border-radius: var(--r-sm);
   border: 1px solid var(--c-bg-inverse);
   background: var(--c-bg-inverse);
   color: var(--c-text-inverse);
+  white-space: nowrap;
 }
-.home-btn--ghost {
-  background: transparent;
-  color: var(--c-text);
-  border-color: var(--c-line-control);
-}
-.home-btn:hover { opacity: 0.88; }
-.home-btn--ghost:hover { opacity: 1; border-color: var(--c-text); }
-.home-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.home-text-link {
-  color: var(--c-text);
-  text-decoration: underline;
-  text-underline-offset: 6px;
-  text-decoration-thickness: 1px;
-}
-.home-text-link:hover { text-decoration-thickness: 2px; }
+.home-btn--ghost { background: transparent; color: var(--c-text); border-color: var(--c-text); }
+.home-btn:hover { opacity: 0.86; }
+.home-btn--ghost:hover { opacity: 1; background: color-mix(in srgb, var(--c-text) 8%, transparent); }
+.home-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
 
-/* Общая сетка секций */
-.home-section-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--c-text);
+/* Панель разворота: контентная колонка прижата к сетке контейнера */
+.home-panel-pad {
+  padding: clamp(48px, 7vw, 112px) clamp(28px, 5vw, 88px);
 }
-.home-section-head > a { color: var(--c-text); text-decoration: none; white-space: nowrap; }
-.home-section-head > a:hover { text-decoration: underline; text-underline-offset: 6px; }
 
-/* ── 1. Герой ──────────────────────────────────────────────────── */
+/* ── 1. Фасад ──────────────────────────────────────────────────── */
 .home-hero {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: clamp(520px, 72vh, 720px);
+  grid-template-columns: 3fr 2fr;
+  min-height: clamp(560px, 86vh, 860px);
+}
+.home-hero__photo { position: relative; background: var(--c-bg-sunken); }
+.home-hero__photo picture,
+.home-hero__photo img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 38% 20%; display: block;
 }
 .home-hero__panel {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(40px, 6vw, 96px) clamp(24px, 5vw, 80px);
-  padding-left: max(clamp(24px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
+  padding: clamp(48px, 7vw, 112px) clamp(28px, 5vw, 80px);
+  padding-right: max(clamp(28px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
 }
 .home-hero__panel h1 { max-width: 14ch; }
-.home-lead {
-  margin-top: 24px !important;
-  max-width: 46ch;
-  font-size: var(--t-lead);
-  color: var(--c-text-2);
-}
-.home-hero__photo { position: relative; min-height: 360px; background: var(--c-bg-sunken); }
-.home-hero__photo picture,
-.home-hero__photo img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 40%;
-  display: block;
-}
+.home-hero__lead { margin-top: 28px !important; max-width: 40ch; font-size: var(--t-lead); line-height: 1.5; color: var(--c-text-2); }
 
-/* ── 2. Индекс разделов ────────────────────────────────────────── */
-.home-index {
+/* ── 2. Зал: встречи ───────────────────────────────────────────── */
+.home-agenda {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: clamp(480px, 64vh, 680px);
+}
+.home-agenda__copy {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(48px, 7vw, 104px) clamp(28px, 5vw, 80px);
+  padding-left: max(clamp(28px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
+}
+.home-agenda__list { margin-top: 36px; border-top: 1px solid var(--c-text); }
+.home-agenda__item {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 24px; align-items: start;
+  padding: 24px 0; border-bottom: 1px solid var(--c-line); color: inherit; text-decoration: none;
+}
+.home-agenda__item time { display: grid; gap: 4px; }
+.home-agenda__item time strong { font-family: var(--f-display); font-weight: 400; font-size: 56px; line-height: 0.9; }
+.home-agenda__item time span { font-size: var(--t-caption); color: var(--c-text-3); }
+.home-agenda__body { display: grid; gap: 6px; }
+.home-agenda__title { font-family: var(--f-head); font-weight: 600; font-size: 22px; line-height: 1.25; }
+.home-agenda__place { color: var(--c-text-2); }
+.home-agenda__item:hover .home-agenda__title { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+.home-agenda__empty { margin-top: 28px !important; max-width: 44ch; color: var(--c-text-2); }
+.home-agenda__all { align-self: flex-start; margin-top: 32px; }
+.home-agenda__photo { position: relative; background: var(--c-bg-sunken); }
+.home-agenda__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; display: block; }
+
+/* ── 3. Витрина ДПО: предметы на белом ─────────────────────────── */
+.home-dpo {
   max-width: var(--container);
   margin: 0 auto;
-  padding: 0 28px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border-bottom: 1px solid var(--c-line);
+  padding: clamp(64px, 8vw, 120px) 28px 0;
 }
-.home-index__item {
+.home-dpo__head { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px 64px; align-items: end; }
+.home-dpo__head p { color: var(--c-text-2); max-width: 46ch; }
+.home-dpo__grid {
+  margin-top: 44px;
   display: grid;
-  gap: 8px;
-  padding: 36px 24px 36px 0;
-  color: inherit;
-  text-decoration: none;
-  border-left: 1px solid var(--c-line);
-  padding-left: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px 24px;
 }
-.home-index__item:first-child { border-left: 0; padding-left: 0; }
-.home-index__num { font-family: var(--f-data); font-size: var(--t-caption); color: var(--c-text-3); font-variant-numeric: tabular-nums; }
-.home-index__item strong { font-family: var(--f-display); font-weight: 400; font-size: 28px; line-height: 1.1; }
-.home-index__item > span:last-child { color: var(--c-text-2); }
-.home-index__item:hover strong { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
+.home-dpo__item { display: grid; gap: 10px; color: inherit; text-decoration: none; align-content: start; }
+.home-dpo__cover { display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--r-lg); background: var(--c-bg-sunken); }
+.home-dpo__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.home-dpo__title { font-family: var(--f-head); font-weight: 600; font-size: 18px; line-height: 1.3; margin-top: 6px; }
+.home-dpo__meta { font-size: var(--t-caption); color: var(--c-text-3); }
+.home-dpo__price { font-family: var(--f-data); font-variant-numeric: tabular-nums; font-weight: 500; }
+.home-dpo__item:hover .home-dpo__title { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+.home-dpo__all { margin-top: 40px; }
 
-/* ── 3. Афиша и новости ────────────────────────────────────────── */
-.home-folio {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: var(--rh-section) 28px 0;
+/* ── 4. Встреча клуба: фото во всю ширину, чёрная подпись ──────── */
+.home-meeting { margin-top: clamp(64px, 8vw, 120px); }
+.home-meeting__photo { position: relative; aspect-ratio: 21 / 9; min-height: 380px; max-height: 720px; background: var(--c-bg-sunken); }
+.home-meeting__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
+.home-meeting__caption {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 24px 64px;
+  align-items: center;
+  padding: clamp(40px, 5vw, 72px) max(28px, calc((100vw - var(--container)) / 2 + 28px));
+}
+.home-meeting__caption p { color: var(--c-text-2); max-width: 52ch; }
+.home-meeting__caption .home-btn { grid-column: 1 / -1; justify-self: start; margin-top: 8px; }
+
+/* ── 5. Голос выпускника ───────────────────────────────────────── */
+.home-voice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: clamp(440px, 58vh, 620px);
+  background: var(--c-bg-sunken);
+}
+.home-voice__photo { position: relative; }
+.home-voice__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
+.home-voice__copy {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(48px, 7vw, 104px) clamp(28px, 5vw, 80px);
+  padding-right: max(clamp(28px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
+}
+.home-voice__copy p { margin-top: 24px !important; max-width: 44ch; color: var(--c-text-2); font-size: var(--t-lead); }
+.home-voice__copy .home-btn { align-self: flex-start; margin-top: 32px; }
+
+/* ── 6. Вступление: чёрная полоса ──────────────────────────────── */
+.home-join {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 48px 64px;
+  padding: clamp(56px, 7vw, 104px) max(28px, calc((100vw - var(--container)) / 2 + 28px));
 }
-.home-meeting {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 20px;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--c-line);
-  color: inherit;
-  text-decoration: none;
+.home-join__copy p { margin-top: 24px; color: var(--c-text-2); max-width: 44ch; }
+.home-join__copy .home-btn { margin-top: 36px; }
+.home-join__steps { list-style: none; margin: 0; padding: 0; counter-reset: step; align-self: center; }
+.home-join__steps li {
+  counter-increment: step;
+  display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 6px 20px;
+  padding: 22px 0; border-top: 1px solid var(--c-line);
 }
-.home-meeting time { display: grid; gap: 2px; }
-.home-meeting time strong { font-family: var(--f-display); font-weight: 400; font-size: 40px; line-height: 1; }
-.home-meeting time span { font-size: var(--t-caption); color: var(--c-text-3); }
-.home-meeting__body { display: grid; gap: 6px; align-content: start; }
-.home-meeting__title { font-family: var(--f-head); font-weight: 600; font-size: var(--t-h3); line-height: 1.25; }
-.home-meeting__place { color: var(--c-text-2); }
-.home-meeting:hover .home-meeting__title { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
-.home-news article { padding: 22px 0; border-bottom: 1px solid var(--c-line); display: grid; gap: 8px; }
-.home-news time { font-size: var(--t-caption); color: var(--c-text-3); }
+.home-join__steps li:last-child { border-bottom: 1px solid var(--c-line); }
+.home-join__steps li::before {
+  content: counter(step);
+  grid-row: 1 / span 2;
+  font-family: var(--f-display); font-size: 40px; line-height: 1; color: var(--c-text-3);
+}
+.home-join__steps strong { grid-column: 2; font-family: var(--f-head); font-weight: 600; font-size: 20px; line-height: 1.3; }
+.home-join__steps span { grid-column: 2; color: var(--c-text-2); }
+
+/* ── 7. Новости ────────────────────────────────────────────────── */
+.home-news { max-width: var(--container); margin: 0 auto; padding: clamp(64px, 8vw, 120px) 28px 0; }
+.home-news__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--c-text); }
+.home-news__all { color: var(--c-text); text-decoration: none; }
+.home-news__all:hover { text-decoration: underline; text-underline-offset: 6px; }
+.home-news__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 40px; }
+.home-news article { display: grid; gap: 10px; align-content: start; padding: 28px 0; }
+.home-news time { font-family: var(--f-display); font-size: 28px; line-height: 1; }
 .home-news h3 a { color: inherit; text-decoration: none; }
 .home-news h3 a:hover { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
 .home-news p { color: var(--c-text-2); }
 
-/* ── 4. Что доступно выпускнику: Фемида на белом ───────────────── */
-.home-access {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: var(--rh-section) 28px 0;
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  gap: 48px 64px;
-  align-items: start;
-}
-.home-access__art { position: sticky; top: 88px; }
-.home-access__art img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 640px;
-  object-fit: contain;
-  object-position: center top;
-  mix-blend-mode: multiply;
-  filter: grayscale(0.12) contrast(1.05);
-}
-.home-access__rows h2 { padding-bottom: 18px; border-bottom: 1px solid var(--c-text); }
-.home-access__row {
-  display: grid;
-  gap: 10px;
-  padding: 26px 0;
-  border-bottom: 1px solid var(--c-line);
-}
-.home-access__row h3 a { color: inherit; text-decoration: none; }
-.home-access__row h3 a:hover { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
-.home-access__row p { color: var(--c-text-2); max-width: 56ch; }
-.home-access__row .home-text-link { justify-self: start; margin-top: 4px; }
-
-/* ── 5. Три шага: тёмная полоса ────────────────────────────────── */
-.home-join {
-  margin-top: var(--rh-section);
-  padding: var(--rh-section) 28px;
-}
-.home-join__copy,
-.home-join__steps {
-  max-width: var(--container);
-  margin: 0 auto;
-}
-.home-join { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px 64px; }
-.home-join > * { margin: 0; }
-.home-join { padding-left: max(28px, calc((100vw - var(--container)) / 2 + 28px)); padding-right: max(28px, calc((100vw - var(--container)) / 2 + 28px)); }
-.home-join__copy p { margin-top: 20px; color: var(--c-text-2); max-width: 46ch; }
-.home-join__copy .home-btn { margin-top: 32px; }
-.home-join__steps { list-style: none; padding: 0; counter-reset: step; }
-.home-join__steps li {
-  counter-increment: step;
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  gap: 20px;
-  padding: 22px 0;
-  border-top: 1px solid var(--c-line);
-}
-.home-join__steps li:last-child { border-bottom: 1px solid var(--c-line); }
-.home-join__steps li::before {
-  grid-row: 1 / span 2;
-  content: counter(step, decimal-leading-zero);
-  font-family: var(--f-display);
-  font-size: 32px;
-  line-height: 1;
-  color: var(--c-text-3);
-}
-.home-join__steps h3 { font-size: 20px; }
-.home-join__steps h3, .home-join__steps p { grid-column: 2; }
-.home-join__steps p { margin-top: 6px; color: var(--c-text-2); }
-
-/* ── 6. История ────────────────────────────────────────────────── */
-.home-history {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: var(--rh-section) 28px 0;
-}
-.home-timeline {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-.home-timeline li {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-  padding: 28px 24px 28px 0;
-  border-left: 1px solid var(--c-line);
-  padding-left: 24px;
-}
-.home-timeline li:first-child { border-left: 0; padding-left: 0; }
-.home-timeline time { font-family: var(--f-display); font-size: 48px; line-height: 1; }
-.home-timeline h3 { font-size: 20px; }
-.home-timeline p { color: var(--c-text-2); }
-.home-timeline__metric { color: var(--c-text-3); margin-top: 6px; }
-
-/* ── 7. Голос выпускника: серая полоса ─────────────────────────── */
-.home-voice {
-  margin-top: var(--rh-section);
-  background: var(--c-bg-sunken);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
-.home-voice__photo { position: relative; min-height: 360px; }
-.home-voice__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
-.home-voice__copy {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: clamp(40px, 6vw, 96px) clamp(24px, 5vw, 80px);
-  padding-right: max(clamp(24px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
-}
-.home-voice__copy p { margin-top: 20px; color: var(--c-text-2); max-width: 46ch; }
-.home-voice__copy .home-text-link { align-self: flex-start; margin-top: 28px; }
-
 /* ── Адаптив ───────────────────────────────────────────────────── */
-@media (max-width: 960px) {
-  .home-hero { grid-template-columns: 1fr; min-height: 0; }
-  .home-hero__panel { padding: 56px 24px; }
-  .home-hero__photo { min-height: 0; aspect-ratio: 3 / 2; }
-  .home-hero__photo picture, .home-hero__photo img { position: absolute; }
-  .home-folio, .home-access, .home-join, .home-voice { grid-template-columns: 1fr; }
-  .home-access__art { position: static; max-width: 360px; }
-  .home-join { padding-left: 24px; padding-right: 24px; }
-  .home-voice__photo { aspect-ratio: 3 / 2; min-height: 0; }
-  .home-voice__copy { padding: 48px 24px; }
+@media (max-width: 1100px) {
+  .home-dpo__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-news__grid { grid-template-columns: 1fr; }
+  .home-news article { border-top: 1px solid var(--c-line); }
+  .home-news article:first-child { border-top: 0; }
 }
-@media (max-width: 640px) {
-  .home-index { grid-template-columns: 1fr; padding: 0 16px; }
-  .home-index__item { border-left: 0; padding: 22px 0; border-top: 1px solid var(--c-line); }
-  .home-index__item:first-child { border-top: 0; }
-  .home-folio, .home-access, .home-history { padding-left: 16px; padding-right: 16px; }
-  .home-hero__panel, .home-join, .home-voice__copy { padding-left: 16px; padding-right: 16px; }
-  .home-section-head { flex-direction: column; align-items: flex-start; }
-  .home-timeline li { border-left: 0; padding-left: 0; border-top: 1px solid var(--c-line); }
-  .home-timeline li:first-child { border-top: 0; }
-  .home-meeting time strong { font-size: 32px; }
+@media (max-width: 900px) {
+  .home-hero, .home-agenda, .home-voice, .home-join, .home-meeting__caption, .home-dpo__head { grid-template-columns: 1fr; min-height: 0; }
+  .home-hero__photo, .home-agenda__photo, .home-voice__photo { aspect-ratio: 3 / 2; }
+  .home-agenda { display: flex; flex-direction: column-reverse; }
+  .home-agenda__photo { flex: none; }
+  .home-hero__panel, .home-agenda__copy, .home-voice__copy { padding: 48px 24px; }
+  .home-join, .home-meeting__caption { padding-left: 24px; padding-right: 24px; }
+  .home-meeting__photo { aspect-ratio: 3 / 2; min-height: 0; }
+  .home-agenda__item time strong { font-size: 44px; }
 }
-
-/* Версия для слабовидящих: без фотоплит и смешивания */
-html.vis .home-access__art img { mix-blend-mode: normal; filter: none; }
+@media (max-width: 560px) {
+  .home-dpo, .home-news { padding-left: 16px; padding-right: 16px; }
+  .home-dpo__grid { grid-template-columns: 1fr; }
+  .home-hero__panel, .home-agenda__copy, .home-voice__copy, .home-join, .home-meeting__caption { padding-left: 16px; padding-right: 16px; }
+  .home-actions .home-btn { width: 100%; }
+  .home-btn { white-space: normal; }
+}
 
 @media print {
-  .home-hero__photo, .home-voice__photo { display: none; }
+  .home-hero__photo, .home-agenda__photo, .home-meeting__photo, .home-voice__photo { display: none; }
 }

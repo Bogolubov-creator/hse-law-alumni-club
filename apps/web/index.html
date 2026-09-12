@@ -100,12 +100,20 @@
         var base = "%BASE_URL%".replace(/\/$/, "");
         if (location.pathname.replace(/\/$/, "") !== base) return;
         var l = document.createElement("link");
-        l.rel = "preload"; l.as = "image"; l.type = "image/avif"; l.href = "%BASE_URL%assets/alumni-meeting.avif";
+        l.rel = "preload"; l.as = "image"; l.type = "image/avif"; l.href = "%BASE_URL%assets/photos/themis-facade.avif";
         document.head.appendChild(l);
       })();
     </script>
   </head>
   <body>
+    <!--
+    THESIS: Клуб доказывает себя фотографией факультета, а не обещаниями; отказ от главной-реестра со списками и eyebrow.
+    OWN-WORLD: белый холст и графитовые панели, фото во весь край на каждой полосе, HSE Slab 400 с одним курсивным словом, HSE Sans 16/1.5, капс-кнопки 4px, охра только у знака и одной вещи на экран.
+    STORY: гость видит Фемиду у фасада Вышки и людей клуба, понимает «это настоящий клуб юрфака», и подаёт заявку.
+    FIRST VIEWPORT: 60/40 – фото Фемиды у фасада слева во весь край, чёрная панель справа: одна фраза Slab 72px, подпись, «Вступить в клуб» белой кнопкой и «Программы ДПО» обводкой.
+    FORM: «Фасад и зал», кандидат 4 из семи, seed 774a600a.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

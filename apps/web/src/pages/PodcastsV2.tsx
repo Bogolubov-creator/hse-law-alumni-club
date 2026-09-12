@@ -47,13 +47,15 @@ export default function PodcastsV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         <ShowcaseHead
+          photo={{ src: "assets/photos/hall-audience.jpg", alt: "Аудитория факультета права во время лекции" }}
           eyebrow="подкасты"
           title="Подкасты клуба"
           lead="Выпуски о праве и практике. Один выпуск бесплатно, остальные – по годовой подписке."
           count={items.length ? `выпусков ${items.length}` : undefined}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}
         {data && !data.subscribed && (
@@ -147,6 +149,7 @@ export default function PodcastsV2() {
             <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Выпусков пока нет. О новых напишем в новостях клуба.</p>
           </div>
         )}
+        </div>
       </main>
     </V2Shell>
   );

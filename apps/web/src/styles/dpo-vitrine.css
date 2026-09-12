@@ -230,106 +230,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.club-dpo-row {
-  position: relative;
-  display: grid;
-  grid-template-columns: 132px minmax(0, 1fr) 150px 168px;
-  gap: 22px;
-  align-items: start;
-  padding: 28px 0 28px 14px;
-  border-top: 1px solid var(--c-line);
-}
-
-/* Перебиваем общие колонки .club-program-* из index.css (там 3 колонки). */
-.club-dpo-vitrine .club-dpo-row__thumb {
-  grid-column: 1;
-  grid-row: 1;
-}
-.club-dpo-vitrine .club-dpo-row .club-program-description {
-  grid-column: 2;
-  grid-row: 1;
-}
-.club-dpo-vitrine .club-dpo-row .club-program-price {
-  grid-column: 3;
-  grid-row: 1;
-}
-.club-dpo-vitrine .club-dpo-row > :last-child {
-  grid-column: 4;
-  grid-row: 1;
-}
-
-.club-dpo-row__thumb {
-  display: block;
-  width: 132px;
-  aspect-ratio: 4 / 3;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  background: var(--c-bg-sunken);
-  text-decoration: none;
-}
-
-.club-dpo-row__thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.club-dpo-row__thumb-fallback {
-  display: flex;
-  align-items: flex-end;
-  width: 100%;
-  height: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  background: var(--c-bg-sunken);
-  font-family: var(--f-body);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: var(--tr-caps);
-  text-transform: uppercase;
-  line-height: 1.25;
-  color: var(--c-text-3);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .club-dpo-row:hover h2 {
-    text-decoration: underline;
-    text-underline-offset: 5px;
-    text-decoration-thickness: 1px;
-  }
-}
-
-.club-dpo-row__price {
-  font-family: var(--f-data);
-  font-size: 22px;
-  font-weight: 500;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.15;
-}
-
-.club-dpo-row__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: stretch;
-  min-width: 160px;
-}
-
-.club-dpo-row__actions .club-btn {
-  width: 100%;
-}
-
-.club-dpo-row__compare {
-  display: flex;
-  gap: 8px;
-  min-height: 44px;
-  align-items: center;
-  font-size: 14px;
-  color: var(--c-text-2);
-}
-
 .club-dpo-external {
   display: inline-flex;
   align-items: center;
@@ -453,36 +353,6 @@
 }
 
 @media (max-width: 900px) {
-  .club-dpo-row {
-    grid-template-columns: 96px minmax(0, 1fr) !important;
-    gap: 14px 16px !important;
-    padding-left: 12px;
-  }
-  .club-dpo-vitrine .club-dpo-row__thumb {
-    grid-column: 1;
-    grid-row: 1;
-    width: 96px;
-  }
-  .club-dpo-vitrine .club-dpo-row .club-program-description {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .club-dpo-vitrine .club-dpo-row .club-program-price,
-  .club-dpo-vitrine .club-dpo-row > :last-child {
-    grid-column: 1 / -1;
-    grid-row: auto;
-  }
-  .club-dpo-row__actions {
-    flex-direction: row !important;
-    flex-wrap: wrap;
-    min-width: 0 !important;
-  }
-  .club-dpo-row__actions .club-btn,
-  .club-dpo-external,
-  .club-dpo-closed {
-    width: auto;
-    flex: 1 1 140px;
-  }
   .club-dpo-mode {
     width: 100%;
     max-width: none;
@@ -530,12 +400,38 @@ html.vis .club-dpo-masthead {
   grid-template-columns: 1fr;
   background: var(--vis-bg, var(--c-bg)) !important;
 }
-html.vis .club-dpo-row:hover {
-  background: transparent;
+
+/* ── Плитки программ: предметы на белом ───────────────────────── */
+.club-dpo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 44px 28px;
+  margin-top: 28px;
 }
-html.vis .club-dpo-row:hover::before {
-  background: var(--vis-fg, currentColor);
+.club-dpo-tile { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.club-dpo-tile__cover {
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--c-bg-sunken);
+  text-decoration: none;
 }
-html.vis .club-dpo-row:hover h2 {
-  color: inherit;
+.club-dpo-tile__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.club-dpo-tile__plate {
+  display: flex; align-items: flex-end; width: 100%; height: 100%; padding: 16px; box-sizing: border-box;
+  font-family: var(--f-body); font-size: 12px; font-weight: 600; letter-spacing: var(--tr-caps); text-transform: uppercase; line-height: 1.3; color: var(--c-text-3);
 }
+.club-dpo-tile__link { color: inherit; text-decoration: none; margin-top: 6px; }
+.club-dpo-tile h2 { font-family: var(--f-head); font-weight: 600; font-size: 20px; line-height: 1.28; margin: 0; }
+.club-dpo-tile__link:hover h2 { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+.club-dpo-tile__meta { font-size: var(--t-caption); color: var(--c-text-3); }
+.club-dpo-tile__price { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; font-family: var(--f-data); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 500; }
+.club-dpo-tile__price s { font-size: var(--t-caption); color: var(--c-text-3); font-weight: 400; }
+.club-dpo-tile__closed { font-size: var(--t-caption); font-weight: 400; color: var(--c-danger-text); }
+.club-dpo-tile__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--c-line); }
+.club-dpo-tile__compare { display: flex; align-items: center; gap: 8px; min-height: 40px; font-size: var(--t-caption); color: var(--c-text-2); cursor: pointer; }
+.club-dpo-tile__compare input { width: 16px; height: 16px; margin: 0; accent-color: var(--c-bg-inverse); }
+.club-dpo-tile__actions .club-btn { min-height: 40px; padding: 8px 14px; }
+@media (max-width: 960px) { .club-dpo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 20px; } }
+@media (max-width: 560px) { .club-dpo-grid { grid-template-columns: 1fr; } }

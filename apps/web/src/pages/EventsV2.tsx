@@ -119,14 +119,16 @@ export default function EventsV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         {!eventId && <>
         <ShowcaseHead
+          photo={{ src: "assets/photos/hall-first-day.jpg", alt: "Зал факультета права в первый день учебного года" }}
           eyebrow="события"
           title="События клуба"
           lead="Встречи выпусков и лекции. Запись заранее – за участие начисляются баллы."
           count={upcoming.length ? `ближайших ${upcoming.length}` : undefined}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         {events.isLoading && <p style={{ ...label, margin: 0 }}>загружаем афишу…</p>}
 
@@ -168,7 +170,9 @@ export default function EventsV2() {
           </section>
         )}
 
+        </div>
         </>}
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         {eventId && events.isLoading && <p role="status">Загружаем событие…</p>}
         {eventId && events.isError && <p role="alert">Не удалось загрузить событие. <button onClick={() => events.refetch()}>Повторить</button></p>}
         {eventId && events.isSuccess && !opened && <><h1>Событие не найдено</h1><Link to="/events">Вернуться к афише</Link></>}
@@ -225,6 +229,7 @@ export default function EventsV2() {
             </div>
           </EventSurface>
         )}
+        </div>
       </main>
     </V2Shell>
   );
