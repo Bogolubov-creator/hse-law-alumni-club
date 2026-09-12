@@ -283,12 +283,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Один оркестрированный вход мачты */
+/* Пульс полосок загрузки – единственное движение витрины (состояние, не декор) */
 @media (prefers-reduced-motion: no-preference) {
-  .club-dpo-masthead__inner > * {
-    animation: club-dpo-rise 420ms var(--ease-out) both;
-  }
-
   .club-dpo-loading__bar {
     animation: club-dpo-pulse 1.2s var(--ease-out) infinite alternate;
   }
