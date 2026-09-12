@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
+import { computeOrderTotals } from "@club/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useNewsList, usePage, formatNewsDate } from "../lib/queries.js";
 import { apiGet, rub } from "../lib/api.js";
-import { token, usePrograms } from "../lib/cart.js";
+import { token, usePrograms, useMemberDiscount } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { V2Shell, text } from "../v2/Shell.js";
 import { HeroPicture } from "../components/HeroPicture.js";
@@ -58,6 +59,7 @@ export default function HomeV2() {
   const page = usePage("home");
   const news = useNewsList(3);
   const programs = usePrograms();
+  const discount = useMemberDiscount();
   const events = useQuery({ queryKey: ["events"], queryFn: () => apiGet<EventItem[]>("/events") });
   const authed = !!token();
   const hero = page.data?.blocks.hero ?? {};
@@ -139,7 +141,7 @@ export default function HomeV2() {
         <section className="home-dpo" aria-labelledby="home-dpo-title" data-reveal>
           <div className="home-dpo__head">
             <h2 id="home-dpo-title">Программы ДПО с ценой <em>выпускника</em></h2>
-            <p>Курсы и интенсивы факультета права. После подтверждения выпуска цена участника клуба открывается в каждой записи.</p>
+            <p>Курсы и интенсивы факультета права. {discount > 0 ? `Скидка ${discount}% уже учтена в ценах программ.` : "Показаны базовые цены. Цена участника клуба открывается после подтверждения выпуска."}</p>
           </div>
           {featured.length > 0 && (
             <div className="home-dpo__grid">
@@ -150,7 +152,7 @@ export default function HomeV2() {
                   </span>
                   <span className="home-dpo__title">{p.title}</span>
                   <span className="home-dpo__meta">{p.direction}</span>
-                  <span className="home-dpo__price">{rub(p.price)}</span>
+                  <span className="home-dpo__price">{rub(computeOrderTotals([{ type: "dpo", price: p.price, qty: 1 }], discount).total)}</span>
                 </Link>
               ))}
             </div>
