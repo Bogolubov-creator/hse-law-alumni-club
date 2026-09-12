@@ -291,3 +291,11 @@
 @media (max-width: 480px) {
   .club-masthead__copy { padding: 36px 16px; }
 }
+
+/* Вариант мачты: фото слева, титул справа – чтобы разделы не повторяли одну схему */
+.club-masthead--photo-left .club-masthead__photo { order: -1; }
+.club-masthead--photo-left .club-masthead__copy {
+  padding-left: clamp(28px, 5vw, 80px);
+  padding-right: max(clamp(28px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
+}
+@media (max-width: 900px) { .club-masthead--photo-left .club-masthead__photo { order: 0; } }

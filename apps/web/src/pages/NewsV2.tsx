@@ -34,7 +34,7 @@ export function NewsV2() {
     <V2Shell>
       <main id="main">
         <ShowcaseHead
-          photo={{ src: "assets/photos/students-talk.jpg", alt: "Студенты факультета права после церемонии" }}
+          photo={{ src: "assets/photos/students-talk.jpg", alt: "Студенты факультета права после церемонии", side: "left" }}
           eyebrow="новости"
           title="Новости клуба"
           lead="Анонсы встреч, программы ДПО и обновления портала."

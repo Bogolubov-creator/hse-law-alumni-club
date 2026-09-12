@@ -91,38 +91,6 @@
   color: var(--c-text-2);
 }
 
-.club-dpo-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 28px;
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--c-line);
-}
-
-.club-dpo-meta__item {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-
-.club-dpo-meta__value {
-  font-family: var(--f-display);
-  font-size: clamp(22px, 2.4vw, 28px);
-  font-weight: 400;
-  line-height: 1;
-  color: var(--c-text);
-  font-variant-numeric: tabular-nums;
-}
-
-.club-dpo-meta__label {
-  font-family: var(--f-data);
-  font-size: var(--t-micro);
-  letter-spacing: var(--tr-data);
-  color: var(--c-text-3);
-  text-transform: none;
-}
-
 .club-dpo-body {
   max-width: var(--container);
   margin: 0 auto;
@@ -388,9 +356,6 @@
     padding-left: 18px;
     padding-right: 18px;
   }
-  .club-dpo-meta {
-    gap: 14px 20px;
-  }
 }
 
 html.vis .club-dpo-masthead__media {
@@ -418,10 +383,6 @@ html.vis .club-dpo-masthead {
   text-decoration: none;
 }
 .club-dpo-tile__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.club-dpo-tile__plate {
-  display: flex; align-items: flex-end; width: 100%; height: 100%; padding: 16px; box-sizing: border-box;
-  font-family: var(--f-body); font-size: 12px; font-weight: 600; letter-spacing: var(--tr-caps); text-transform: uppercase; line-height: 1.3; color: var(--c-text-3);
-}
 .club-dpo-tile__link { color: inherit; text-decoration: none; margin-top: 6px; }
 .club-dpo-tile h2 { font-family: var(--f-head); font-weight: 600; font-size: 20px; line-height: 1.28; margin: 0; }
 .club-dpo-tile__link:hover h2 { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
@@ -435,3 +396,7 @@ html.vis .club-dpo-masthead {
 .club-dpo-tile__actions .club-btn { min-height: 40px; padding: 8px 14px; }
 @media (max-width: 960px) { .club-dpo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 20px; } }
 @media (max-width: 560px) { .club-dpo-grid { grid-template-columns: 1fr; } }
+
+/* Плитка без факультетской обложки: текст ведёт, hairline сверху вместо картинки */
+.club-dpo-tile--text { padding-top: 14px; border-top: 1px solid var(--c-text); }
+.club-dpo-tile--text h2 { font-size: 22px; }

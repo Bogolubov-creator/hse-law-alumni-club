@@ -170,7 +170,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
  * 12.09): титул плитой слева, фото факультета во весь край справа. Без фото (корзина) –
  * тихая шапка на белом. Eyebrow не рендерится: заголовок несёт себя сам.
  */
-export function ShowcaseHead({ title, lead, count, photo }: { eyebrow?: string; title: string; lead: string; count?: string; photo?: { src: string; alt: string } }) {
+export function ShowcaseHead({ title, lead, count, photo }: { eyebrow?: string; title: string; lead: string; count?: string; photo?: { src: string; alt: string; side?: "left" | "right" } }) {
   const copy = (
     <>
       <h1 style={{ ...pageTitle, fontSize: photo ? "clamp(36px, 4vw, 60px)" : "var(--t-h1-page)", lineHeight: 1.06, margin: 0, maxWidth: "min(18ch, 100%)", overflowWrap: "anywhere", textWrap: "balance" }}>{title}</h1>
@@ -182,7 +182,7 @@ export function ShowcaseHead({ title, lead, count, photo }: { eyebrow?: string; 
     return <div style={{ paddingTop: "var(--rh-head-top)", paddingBottom: "var(--rh-head-bottom)" }}>{copy}</div>;
   }
   return (
-    <header className="club-masthead club-dark">
+    <header className={photo.side === "left" ? "club-masthead club-masthead--photo-left club-dark" : "club-masthead club-dark"}>
       <div className="club-masthead__copy">{copy}</div>
       <div className="club-masthead__photo">
         <img src={publicUrl(photo.src)} alt={photo.alt} width={1083} height={722} decoding="async" fetchPriority="high" />

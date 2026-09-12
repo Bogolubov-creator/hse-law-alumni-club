@@ -66,25 +66,11 @@ export default function DpoV2() {
         <header className="club-dpo-masthead club-dark">
           <div className="club-dpo-masthead__inner">
             <h1>Программы дополнительного образования</h1>
-            <p className="club-dpo-lead">
-              Содержание, формат и ближайшие старты – в каждой записи. Цена выпускника открывается после подтверждения выпуска учебным офисом.
+            <p className="club-dpo-lead" aria-live="polite">
+              {programs.isLoading
+                ? "Загружаем каталог факультета права…"
+                : `В каталоге ${catalog.length} программ, с открытым набором – ${actual.length}. ${discount > 0 ? `Цена выпускника со скидкой ${discount} % уже применена.` : "Цена выпускника открывается после подтверждения выпуска учебным офисом."}`}
             </p>
-            <div className="club-dpo-meta" aria-live="polite">
-              <div className="club-dpo-meta__item">
-                <span className="club-dpo-meta__value">{programs.isLoading ? "…" : catalog.length}</span>
-                <span className="club-dpo-meta__label">в каталоге</span>
-              </div>
-              <div className="club-dpo-meta__item">
-                <span className="club-dpo-meta__value">{programs.isLoading ? "…" : actual.length}</span>
-                <span className="club-dpo-meta__label">актуальный набор</span>
-              </div>
-              {discount > 0 && (
-                <div className="club-dpo-meta__item">
-                  <span className="club-dpo-meta__value" style={{ color: "var(--c-accent-text)" }}>−{discount}%</span>
-                  <span className="club-dpo-meta__label">скидка выпускника</span>
-                </div>
-              )}
-            </div>
           </div>
           <div className="club-dpo-masthead__media" aria-hidden="true">
             <HeroPicture
@@ -171,19 +157,17 @@ export default function DpoV2() {
               // Обложка только с символикой факультета (решение заказчика 12.09): сток с hse.ru не показываем.
               const cover = hasFacultyCover(p.cover) ? mediaUrl(p.cover!) : null;
               return (
-                <article key={p.id} className="club-dpo-tile">
-                  <Link to={`/dpo/${p.slug}`} className="foc club-dpo-tile__cover" aria-hidden="true" tabIndex={-1}>
-                    {cover ? (
+                <article key={p.id} className={cover ? "club-dpo-tile" : "club-dpo-tile club-dpo-tile--text"}>
+                  {cover && (
+                    <Link to={`/dpo/${p.slug}`} className="foc club-dpo-tile__cover" aria-hidden="true" tabIndex={-1}>
                       <img src={cover} alt="" width={640} height={360} loading="lazy" decoding="async" />
-                    ) : (
-                      <span className="club-dpo-tile__plate">{p.direction}</span>
-                    )}
-                  </Link>
+                    </Link>
+                  )}
                   <Link to={`/dpo/${p.slug}`} className="foc club-dpo-tile__link">
                     <h2>{p.title}</h2>
                   </Link>
                   <div className="club-dpo-tile__meta">
-                    {[FORMAT_LABEL[p.format] ?? p.format, p.duration, p.dates?.start ? `с ${programStart(p.dates.start)}` : null].filter(Boolean).join(" · ")}
+                    {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration, p.dates?.start ? `с ${programStart(p.dates.start)}` : null].filter(Boolean).join(" · ")}
                   </div>
                   <div className="club-dpo-tile__price">
                     <span>{rub(priced)}</span>

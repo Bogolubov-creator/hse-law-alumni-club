@@ -49,7 +49,7 @@ export default function PodcastsV2() {
     <V2Shell>
       <main id="main">
         <ShowcaseHead
-          photo={{ src: "assets/photos/hall-audience.jpg", alt: "Аудитория факультета права во время лекции" }}
+          photo={{ src: "assets/photos/hall-audience.jpg", alt: "Аудитория факультета права во время лекции", side: "left" }}
           eyebrow="подкасты"
           title="Подкасты клуба"
           lead="Выпуски о праве и практике. Один выпуск бесплатно, остальные – по годовой подписке."
@@ -120,8 +120,8 @@ export default function PodcastsV2() {
               </div>
 
               <div style={{ minWidth: 0 }}>
-                {p.is_free && <div style={{ ...label, fontSize: "var(--t-micro)", color: "var(--c-ok-text)", marginBottom: 6 }}>пробный выпуск · бесплатно</div>}
                 <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}>{p.title}</h2>
+                {p.is_free && <div style={{ ...label, fontSize: "var(--t-caption)", color: "var(--c-ok-text)", marginTop: 6 }}>Пробный выпуск, бесплатно</div>}
                 {p.description && (
                   <p style={{ margin: "9px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: "62ch" }}>{p.description}</p>
                 )}

@@ -458,7 +458,7 @@ html.vis .club-cookie-banner__btn--primary {
   min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--c-line-control, var(--c-line));
-  border-radius: 999px;
+  border-radius: var(--r-sm);
   background: var(--c-bg-raised, var(--c-bg));
   color: var(--c-text);
   font: 600 13px/1 var(--f-body);

@@ -100,7 +100,7 @@ export default function HomeV2() {
             <h1><Emphasized title={title} /></h1>
             <p className="home-hero__lead">{subtitle}</p>
             <div className="home-actions">
-              <Link to={joinTo} className="foc home-btn">{authed ? "Мой кабинет" : text(hero.cta_primary, "Вступить в клуб")}</Link>
+              <Link to={joinTo} className="foc home-btn">{authed ? "Мой кабинет" : text(hero.cta_primary, "Вступить в клуб")}<span aria-hidden="true">→</span></Link>
               <Link to="/dpo" className="foc home-btn home-btn--ghost">Программы ДПО</Link>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function HomeV2() {
               {featured.map((p) => (
                 <Link key={p.slug} to={`/dpo/${p.slug}`} className="foc home-dpo__item">
                   <span className="home-dpo__cover">
-                    <img src={mediaUrl(p.cover!)} alt="" width={640} height={360} loading="lazy" decoding="async" />
+                    <img src={mediaUrl(p.cover!)} alt="" width={640} height={360} decoding="async" />
                   </span>
                   <span className="home-dpo__title">{p.title}</span>
                   <span className="home-dpo__meta">{p.direction}</span>
@@ -173,7 +173,7 @@ export default function HomeV2() {
         {/* 5. Голос выпускника: портрет слева, слово справа */}
         <section className="home-voice" aria-labelledby="home-voice-title">
           <div className="home-voice__photo">
-            <img src={mediaUrl("/assets/photos/alumni-voice.jpg")} alt="Екатерина Салугина-Сорокова, выпускница факультета права 2006 года" width={1083} height={720} loading="lazy" decoding="async" />
+            <img src={mediaUrl("/assets/photos/alumni-voice.jpg")} alt="Екатерина Салугина-Сорокова, выпускница факультета права 2006 года" width={1083} height={720} decoding="async" />
           </div>
           <div className="home-voice__copy">
             <h2 id="home-voice-title">Екатерина Салугина-Сорокова, <em>выпуск 2006</em></h2>
