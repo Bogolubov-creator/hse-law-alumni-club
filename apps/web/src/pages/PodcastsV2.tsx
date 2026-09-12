@@ -1,3 +1,5 @@
+import { PodcastArtwork } from "../components/PodcastArtwork.js";
+import { Mark } from "../v2/Mark.js";
 import { Link } from "react-router-dom";
 import { rub, type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
@@ -80,8 +82,9 @@ export default function PodcastsV2() {
         )}
 
         {data?.subscribed && (
-          <div style={{ ...label, color: "var(--c-ok-text)", padding: "14px 0", borderTop: "1px solid var(--c-line)", borderBottom: "1px solid var(--c-line)" }}>
-            подписка активна{data.sub_until ? ` до ${new Date(data.sub_until).toLocaleDateString("ru-RU")}` : ""} · доступны все выпуски
+          <div className="podcast-member-panel">
+            <Mark kind="scales" size={34} />
+            <div><strong>Ваша подписка активна</strong><p>{data.sub_until ? `До ${new Date(data.sub_until).toLocaleDateString("ru-RU")} · ` : ""}Все выпуски доступны для прослушивания</p></div>
           </div>
         )}
 
@@ -109,13 +112,8 @@ export default function PodcastsV2() {
             return (
             <article key={p.id} className={`v2-row podcast-row${locked ? " podcast-row--locked" : ""}`} style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
               <div className="podcast-row__meta">
-                <div style={{ ...disp, fontFamily: "var(--f-display)", fontSize: 30, fontWeight: 400, fontVariantNumeric: "tabular-nums", color: "var(--c-accent-text)" }}>{String(i + 1).padStart(2, "0")}</div>
-                {p.duration && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 6 }}>{p.duration}</div>}
-                {p.cover && (
-                  <img src={p.cover} alt="" width={56} height={56} loading="lazy"
-                    style={{ width: 56, height: 56, marginTop: 10, borderRadius: "var(--r-sm)", objectFit: "cover", boxShadow: "var(--shadow-ambient)" }}
-                    onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
-                )}
+                <Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" aria-label={`Открыть выпуск: ${p.title}`}><PodcastArtwork key={p.id} cover={p.cover} number={i + 1} locked={locked} /></Link>
+                {p.duration && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 10 }}>{p.duration}</div>}
               </div>
 
               <div style={{ minWidth: 0 }}>
