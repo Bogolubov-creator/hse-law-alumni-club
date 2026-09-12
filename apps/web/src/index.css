@@ -924,3 +924,25 @@ button[aria-disabled="true"],
 .club-product-variants li span { color: var(--c-text-3); }
 .club-product-variants li[data-out] { border-style: dashed; color: var(--c-text-3); }
 @media (max-width: 900px) { .club-product-detail { grid-template-columns: 1fr; gap: 28px; } .club-product-detail > section { position: static; } }
+
+/* ── Кабинет в языке сайта (12.09, вечер): материалы, hairline, графитовая панель встречи ── */
+.cabinet-header__tabs { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
+.cabinet-club-nav { background: transparent; border-radius: 0; padding: 4px 6px 0; margin: 0 auto; max-width: 1180px; border-bottom: 1px solid var(--c-line); gap: 0; }
+.cabinet-club-nav a { min-height: 44px; padding: 10px 14px; border-radius: 0; font-size: var(--t-caps); font-weight: 600; letter-spacing: var(--tr-caps); text-transform: uppercase; color: var(--c-text-2); }
+.cabinet-club-nav a:is(:hover,:focus-visible), .cabinet-club-nav a[aria-current="page"] { background: transparent; color: var(--c-text); text-decoration: underline; text-underline-offset: 8px; text-decoration-thickness: 1px; }
+.club-identity-desktop > div, .club-identity-mobile > div { background: var(--c-bg-raised) !important; border: 1px solid var(--c-line) !important; border-radius: var(--r-lg) !important; box-shadow: var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9); }
+.cabinet-benefits { gap: 0; border-top: 1px solid var(--c-text); }
+.cabinet-benefits__row { background: transparent; border-radius: 0; padding: 16px 0; border-bottom: 1px solid var(--c-line); }
+.cabinet-next-action { background: var(--c-bg-raised); border: 1px solid var(--c-line); border-radius: var(--r-lg); box-shadow: var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9); }
+.cabinet-next-action-eyebrow { display: none; }
+.cabinet-next-action h2 { margin-top: 0; font: 400 26px/1.15 var(--f-display); }
+.cabinet-next-event { background: radial-gradient(60% 70% at 85% 20%, rgb(236 90 19 / 0.22), transparent 70%), var(--p-ink); color: var(--p-paper); border-radius: var(--r-lg); box-shadow: var(--shadow-ambient-lift); }
+.cabinet-next-event time { color: var(--c-accent); font-family: var(--f-display); font-size: 22px; }
+.cabinet-next-event p { color: var(--p-paper-soft); }
+.cabinet-next-event a { color: var(--p-paper); }
+.cabinet-achievements-teaser { background: transparent; border: 1px solid var(--c-line); border-radius: var(--r-lg); }
+.cabinet-opportunities { background: transparent; border-top: 1px solid var(--c-text); border-radius: 0; padding: 0; }
+.cabinet-opportunities a { border-bottom: 1px solid var(--c-line); }
+.club-awards-intro { background: radial-gradient(60% 70% at 85% 20%, rgb(236 90 19 / 0.22), transparent 70%), var(--p-ink); border-radius: var(--r-lg); box-shadow: var(--shadow-ambient-lift); }
+.club-awards-empty { background: var(--c-bg-sunken); border: 1px solid var(--c-line); border-radius: var(--r-lg); }
+.club-award.is-earned { background: color-mix(in srgb, var(--c-accent) 8%, var(--c-bg)); }

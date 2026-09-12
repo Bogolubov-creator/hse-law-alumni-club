@@ -2,9 +2,10 @@ import { type CSSProperties, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
-import { mono, disp, label, actionGhost } from "../styles/primitives.js";
+import { mono, disp, label, actionGhost, caps } from "../styles/primitives.js";
 export { label, field, action, actionGhost } from "../styles/primitives.js";
 import { Mark } from "./Mark.js";
+import "../styles/shell.css";
 
 /**
  * Общие примитивы кабинета v2 (DESIGN.md): плотность 7, движения нет,
@@ -78,17 +79,21 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
   const { pathname } = useLocation();
   return (
     <div className="cabinet-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
-      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-line)" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 20px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <Link to="/" className="foc" style={{ display: "flex", alignItems: "center", gap: 9, ...disp, fontWeight: 800, fontSize: 15, textDecoration: "none", color: "inherit" }}>
-            <Mark kind="scales" size={26} style={{ color: "var(--c-accent-text)" }} />Клуб
+      {/* Шапка кабинета – тот же материал, что у сайта (стекло, локап, капс), но со своими вкладками */}
+      <header className="club-header cabinet-header">
+        <div className="club-header__inner">
+          <Link to="/" className="foc club-header__brand">
+            <Mark kind="scales" size={32} style={{ color: "var(--c-accent-text)" }} />
+            <span className="club-header__lockup">
+              Клуб выпускников
+              <small>факультета права Вышки</small>
+            </span>
           </Link>
-          <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <nav className="cabinet-header__tabs" aria-label="Кабинет">
             {NAV.map((n) => {
               const on = (active === "lk" && n.to === "/lk") || (active === "profile" && n.to === "/lk/profile");
               return (
-                <Link key={n.to} to={n.to} className="foc" aria-current={on ? "page" : undefined}
-                  style={{ ...label, textDecoration: "none", padding: "8px 10px", color: on ? "var(--c-text)" : "var(--c-text-3)", borderBottom: `2px solid ${on ? "var(--c-accent)" : "transparent"}` }}>
+                <Link key={n.to} to={n.to} className="foc club-caps club-header__link" aria-current={on ? "page" : undefined}>
                   {n.label}
                 </Link>
               );
@@ -96,7 +101,7 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
           </nav>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
             <VisionToggle compact v2 />
-            <button onClick={onLogout} className="foc" style={{ ...actionGhost, padding: "8px 12px" }}>выйти</button>
+            <button onClick={onLogout} className="foc" style={{ ...actionGhost, minHeight: 40, padding: "8px 14px" }}>выйти</button>
           </div>
         </div>
       </header>
