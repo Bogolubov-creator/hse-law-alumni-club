@@ -9,6 +9,7 @@ import { useHead } from "../lib/title.js";
 import { VisionToggle } from "../components/Vision.js";
 import { Mark } from "../v2/Mark.js";
 import { mono, disp, label, action, actionGhost, field, Panel, PanelTitle, Pill, Row, Stat, statusTone } from "./ui.js";
+import { caps, pageTitle } from "../styles/primitives.js";
 
 const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
@@ -53,22 +54,22 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
   };
   return (
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <form onSubmit={submit} style={{ width: "100%", maxWidth: 400, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
+      <form onSubmit={submit} style={{ width: "100%", maxWidth: 400, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32, boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
         <Mark kind="scales" size={38} style={{ color: "var(--c-accent-text)" }} />
-        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "16px 0 0" }}>Панель учебного офиса</h1>
+        <h1 style={{ ...pageTitle, fontSize: 28, lineHeight: 1.1, margin: "16px 0 0" }}>Панель учебного офиса</h1>
         <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "8px 0 0", lineHeight: 1.5 }}>
           Служебный вход. Все действия попадают в журнал безопасности.
         </p>
 
-        <label htmlFor={emailId} style={{ ...label, display: "block", marginTop: 22 }}>почта</label>
+        <label htmlFor={emailId} style={{ ...caps, color: "var(--c-text-2)", display: "block", marginTop: 22 }}>Почта</label>
         <input id={emailId} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="foc" style={{ ...field, width: "100%", marginTop: 7, padding: "12px 14px", fontSize: 15 }} />
 
-        <label htmlFor={passId} style={{ ...label, display: "block", marginTop: 16 }}>пароль</label>
+        <label htmlFor={passId} style={{ ...caps, color: "var(--c-text-2)", display: "block", marginTop: 16 }}>Пароль</label>
         <input id={passId} type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="foc" style={{ ...field, width: "100%", marginTop: 7, padding: "12px 14px", fontSize: 15 }} />
 
         {err && <p role="alert" style={{ ...mono, margin: "14px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
 
-        <button disabled={busy} className="foc" style={{ width: "100%", marginTop: 22, padding: "14px 20px", borderRadius: "var(--r-md)", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 15, cursor: busy ? "wait" : "pointer" }}>
+        <button disabled={busy} className="foc" style={{ ...action, width: "100%", marginTop: 22, cursor: busy ? "wait" : "pointer" }}>
           {busy ? "Входим…" : "Войти"}
         </button>
       </form>
@@ -107,12 +108,12 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="adm-grid" style={{ display: "grid", gridTemplateColumns: "232px 1fr", minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)" }}>
-      <aside className="adm-aside" style={{ position: "sticky", top: 0, height: "100dvh", display: "flex", flexDirection: "column", gap: 2, padding: 16, borderRight: "1px solid var(--c-line)" }}>
+      <aside className="adm-aside club-dark" style={{ position: "sticky", top: 0, height: "100dvh", display: "flex", flexDirection: "column", gap: 2, padding: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 6px 18px" }}>
-          <Mark kind="scales" size={26} style={{ color: "var(--c-accent-text)" }} />
-          <span style={{ ...disp, fontWeight: 800, fontSize: 13, lineHeight: 1.1 }}>
+          <Mark kind="scales" size={28} style={{ color: "var(--c-accent)" }} />
+          <span style={{ ...disp, fontWeight: 600, fontSize: 14, lineHeight: 1.1 }}>
             Учебный офис
-            <span style={{ ...label, display: "block", fontSize: 9, marginTop: 3 }}>клуб выпускников</span>
+            <span style={{ ...caps, display: "block", fontSize: 10, marginTop: 4, color: "var(--c-text-3)" }}>клуб выпускников</span>
           </span>
         </div>
         {nav.map((n) => {
@@ -122,9 +123,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
                 padding: "10px 12px", borderRadius: "var(--r-sm)", textAlign: "left", cursor: "pointer",
-                border: "none", background: on ? "var(--c-bg-sunken)" : "transparent",
-                color: on ? "var(--c-text)" : "var(--c-text-3)",
-                ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
+                border: "none", background: on ? "rgb(255 255 255 / 0.06)" : "transparent",
+                color: on ? "var(--c-text)" : "var(--c-text-2)",
+                ...caps,
                 borderLeft: `2px solid ${on ? "var(--c-accent)" : "transparent"}`,
               }}>
               {n.label}
@@ -138,7 +139,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
       {/* Низ панели не должен уезжать под cookie-баннер */}
       <main id="main" style={{ minWidth: 0, padding: "26px 32px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px))" }}>
-        <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", margin: "0 0 22px" }}>{titles[section]}</h1>
+        <h1 style={{ ...pageTitle, fontSize: 36, lineHeight: 1.1, margin: "0 0 24px" }}>{titles[section]}</h1>
         {ov.isError && (
           <p role="alert" style={{ margin: "0 0 20px", padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-danger-text)", ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>
             Не удалось загрузить данные (ошибка сети или сервера).{" "}
