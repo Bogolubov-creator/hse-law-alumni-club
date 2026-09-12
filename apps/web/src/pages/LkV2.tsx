@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU, type Classmate, type LkEvent } from "@club/shared";
 import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Me, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../lib/queries.js";
-import { logout as logoutSession } from "../lib/cart.js";
+import { clearToken, logout as logoutSession } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
 import { useToast } from "../components/Toast.js";
@@ -31,7 +31,7 @@ import { MobileTabs } from "../v2/MobileTabs.js";
 
 /* ── Вход ─────────────────────────────────────────────────────────── */
 
-function Gate({ onAuthed, returnTo }: { onAuthed: (r: LoginResponse) => void; returnTo: string | null }) {
+function Gate({ onAuthed, returnTo, sessionExpired }: { onAuthed: (r: LoginResponse) => void; returnTo: string | null; sessionExpired: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -60,6 +60,8 @@ function Gate({ onAuthed, returnTo }: { onAuthed: (r: LoginResponse) => void; re
         <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
           {returnTo ? "Войдите, чтобы продолжить оформление подписки на подкасты. После входа вернём вас к её условиям." : "Доступ открывается после верификации учебным офисом."}
         </p>
+
+        {sessionExpired && <p role="status" style={{ margin: "18px 0 0", padding: "12px 14px", borderLeft: "2px solid var(--c-accent)", background: "var(--c-bg)", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>Сессия завершилась. Войдите снова, чтобы продолжить работу в выбранном разделе.</p>}
 
         <label htmlFor="lkv2-email" style={{ ...label, display: "block", marginTop: 22 }}>Почта</label>
         <input id="lkv2-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="foc" style={field} />
@@ -529,12 +531,6 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const me = useMe(token);
   const expired = me.isError && isAuthError(me.error);
 
-  // Протухшую сессию гасим сами: иначе кабинет остаётся в вечной ошибке,
-  // а localStorage продолжает держать мёртвый токен.
-  useEffect(() => {
-    if (expired) onLogout();
-  }, [expired, onLogout]);
-
   const nextStar = me.data?.achievements.find((a) => !a.earned && a.star);
   const identityNote = me.data
     ? `${me.data.level.points} б. · скидка ${me.data.level.discount}%${nextStar ? ` · далее: ${nextStar.title}` : ""}`
@@ -610,6 +606,7 @@ export default function LkV2() {
   useHead({ title: "Личный кабинет", noindex: true });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [pending, setPending] = useState<AlumniBrief | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [params] = useSearchParams();
   const navigate = useNavigate();
   // Разрешён только известный маршрут оформления, внешние адреса не принимаются.
@@ -622,6 +619,7 @@ export default function LkV2() {
   const onAuthed = (resp: LoginResponse) => {
     // Токен сохраняем и для pending – нужен для загрузки фото профиля.
     localStorage.setItem(TOKEN_KEY, resp.token);
+    setSessionExpired(false);
     if (resp.alumni.verification_status === "verified") {
       setToken(resp.token);
       setPending(null);
@@ -632,22 +630,35 @@ export default function LkV2() {
   };
   const doLogout = () => {
     logoutSession();
+    setSessionExpired(false);
     setToken(null);
     setPending(null);
   };
 
+  const onExpired = () => {
+    clearToken();
+    setToken(null);
+    setPending(null);
+    setSessionExpired(true);
+  };
+
   if (pending) return <PendingScreen alumni={pending} onBack={() => doLogout()} />;
-  if (!token) return <Gate onAuthed={onAuthed} returnTo={returnTo} />;
-  return <DashboardGate token={token} onLogout={doLogout} onPending={(a) => setPending(a)} />;
+  if (!token) return <Gate onAuthed={onAuthed} returnTo={returnTo} sessionExpired={sessionExpired} />;
+  return <DashboardGate token={token} onExpired={onExpired} onLogout={doLogout} onPending={(a) => setPending(a)} />;
 }
 
 /** После refresh: если токен есть, но статус не verified – показать ожидание, не кабинет. */
-function DashboardGate({ token, onLogout, onPending }: { token: string; onLogout: () => void; onPending: (a: AlumniBrief) => void }) {
+function DashboardGate({ token, onLogout, onPending, onExpired }: { token: string; onLogout: () => void; onPending: (a: AlumniBrief) => void; onExpired: () => void }) {
   const me = useMe(token);
+  const expired = me.isError && isAuthError(me.error);
+  useEffect(() => {
+    if (expired) onExpired();
+  }, [expired, onExpired]);
   useEffect(() => {
     const a = me.data?.alumni;
     if (a && a.verification_status !== "verified") onPending(a);
   }, [me.data, onPending]);
+  if (expired) return null;
   if (me.isLoading) {
     return (
       <main id="main" style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--c-bg)", color: "var(--c-text-3)" }}>
