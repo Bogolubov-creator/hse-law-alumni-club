@@ -12,6 +12,14 @@ import { mediaUrl } from "../lib/public-url.js";
 import { V2Shell } from "../v2/Shell.js";
 import "../styles/dpo-vitrine.css";
 
+/** Русское склонение по числу: plural(31, ["программа", "программы", "программ"]). */
+function plural(n: number, forms: [string, string, string]): string {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return forms[0];
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return forms[1];
+  return forms[2];
+}
+
 /** Обложки с логотипом факультета (просмотрены 12.09); остальные с hse.ru – сток без символики. */
 const FACULTY_COVERS = new Set(["472681893", "474599435", "474776084", "494685723", "589527758", "802031223", "905186485", "906651510"]);
 function hasFacultyCover(cover: string | null | undefined): boolean {
@@ -69,7 +77,7 @@ export default function DpoV2() {
             <p className="club-dpo-lead" aria-live="polite">
               {programs.isLoading
                 ? "Загружаем каталог факультета права…"
-                : `В каталоге ${catalog.length} программ, с открытым набором – ${actual.length}. ${discount > 0 ? `Цена выпускника со скидкой ${discount} % уже применена.` : "Цена выпускника открывается после подтверждения выпуска учебным офисом."}`}
+                : `В каталоге ${catalog.length} ${plural(catalog.length, ["программа", "программы", "программ"])}, с открытым набором – ${actual.length}. ${discount > 0 ? `Цена выпускника со скидкой ${discount} % уже применена.` : "Цена выпускника открывается после подтверждения выпуска учебным офисом."}`}
             </p>
           </div>
           <div className="club-dpo-masthead__media" aria-hidden="true">
@@ -148,9 +156,13 @@ export default function DpoV2() {
             </div>
           )}
 
-          {/* Программы как предметы на белом (референс 12.09): обложка, название, направление, цена. */}
-          <div className="club-dpo-grid">
-            {list.map((p) => {
+          {/* Программы как предметы на белом (референс 12.09): сначала плитки с факультетской обложкой,
+              затем остальные текстом в две колонки – так ряды не рвутся пустотами. Порядок сортировки
+              сохраняется внутри каждой группы. */}
+          {[list.filter((p) => hasFacultyCover(p.cover)), list.filter((p) => !hasFacultyCover(p.cover))].map((group, gi) => group.length === 0 ? null : (
+          <div key={gi} className={gi === 0 ? "club-dpo-grid" : "club-dpo-grid club-dpo-grid--text"}>
+            {gi === 1 && list.some((p) => hasFacultyCover(p.cover)) && <h2 className="club-dpo-grid__title">Ещё {group.length} {plural(group.length, ["программа", "программы", "программ"])}</h2>}
+            {group.map((p) => {
               const closed = p.enrollment === "nonactual";
               const external = !!p.source_url;
               const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
@@ -189,6 +201,7 @@ export default function DpoV2() {
               );
             })}
           </div>
+          ))}
 
           {list.length > 0 && (
             <div className="club-dpo-foot">

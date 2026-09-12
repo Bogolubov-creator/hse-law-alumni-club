@@ -398,5 +398,8 @@ html.vis .club-dpo-masthead {
 @media (max-width: 560px) { .club-dpo-grid { grid-template-columns: 1fr; } }
 
 /* Плитка без факультетской обложки: текст ведёт, hairline сверху вместо картинки */
-.club-dpo-tile--text { padding-top: 14px; border-top: 1px solid var(--c-text); }
-.club-dpo-tile--text h2 { font-size: 22px; }
+.club-dpo-tile--text { padding-top: 16px; border-top: 1px solid var(--c-line); }
+.club-dpo-tile--text h2 { font-size: 20px; }
+.club-dpo-grid--text { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; margin-top: 56px; }
+.club-dpo-grid__title { grid-column: 1 / -1; margin: 0 0 4px; font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 2.6vw, 32px); line-height: 1.1; }
+@media (max-width: 560px) { .club-dpo-grid--text { grid-template-columns: 1fr; } }
