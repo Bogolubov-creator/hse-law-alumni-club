@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { hasCookieChoice } from "../lib/cookie-consent.js";
 
 const DISMISS_KEY = "club_pwa_dismiss";
@@ -27,6 +27,8 @@ export default function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
   const [ios, setIos] = useState(false);
+  const promptRef = useRef<HTMLDivElement>(null);
+  const visible = show && !isStandalone() && (ios || !!deferred);
 
   useEffect(() => {
     if (isStandalone() || localStorage.getItem(DISMISS_KEY)) return;
@@ -53,7 +55,22 @@ export default function InstallPrompt() {
     };
   }, []);
 
-  if (!show || isStandalone() || (!ios && !deferred)) return null;
+  // Угловая поддержка учитывает реальную высоту приглашения, включая переносы.
+  useEffect(() => {
+    const el = promptRef.current;
+    const root = document.documentElement;
+    if (!visible || !el) return;
+    const measure = () => root.style.setProperty("--install-h", el.offsetHeight ? `${el.offsetHeight + 24}px` : "0px");
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--install-h");
+    };
+  }, [visible]);
+
+  if (!visible) return null;
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, "1");
@@ -69,6 +86,7 @@ export default function InstallPrompt() {
 
   return (
     <div
+      ref={promptRef}
       role="dialog"
       aria-label="Установка приложения"
       className="mob-only"
