@@ -303,14 +303,21 @@ export function ForgotV2() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    // Ответ всегда одинаковый: по нему нельзя узнать, есть ли такой аккаунт.
-    try { await apiPost("/auth/forgot", { email }); } catch { /* намеренно молча */ }
-    setSent(true);
-    setBusy(false);
+    setErr(null);
+    try {
+      // Сервер одинаково отвечает для существующих и неизвестных адресов.
+      await apiPost("/auth/forgot", { email });
+      setSent(true);
+    } catch {
+      setErr("Не удалось отправить запрос. Проверьте соединение и попробуйте ещё раз. Если ошибка повторяется, обратитесь в поддержку.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -323,6 +330,7 @@ export function ForgotV2() {
       ) : (
         <form onSubmit={submit} style={{ marginTop: 18 }}>
           <Field name="почта" type="email" value={email} onChange={setEmail} ph="you@mail.ru" autoComplete="email" />
+          {err && <p role="alert" style={{ color: "var(--c-danger-text)", lineHeight: 1.55 }}>{err} <Link to="/support" className="foc">Написать в поддержку</Link></p>}
           <button type="submit" disabled={busy} className="foc" style={{ ...primary, width: "100%", marginTop: 16, cursor: busy ? "wait" : "pointer" }}>
             {busy ? "Отправляем…" : "Прислать ссылку"}
           </button>
