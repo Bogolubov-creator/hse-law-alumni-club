@@ -81,7 +81,7 @@ export default function PodcastsV2() {
                 {subscribe.isPending ? "Оформляем…" : "Оформить подписку"}
               </button>
             ) : (
-              <Link to="/lk" className="foc"
+              <Link to="/lk?next=%2Fpodcasts%23podcast-subscription" className="foc"
                 style={{ ...action, flex: "none" }}>
                 Войти в кабинет
               </Link>

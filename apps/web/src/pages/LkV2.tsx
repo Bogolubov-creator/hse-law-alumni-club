@@ -1,6 +1,6 @@
 import { CabinetClubOverview } from "../components/CabinetClubOverview.js";
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU, type Classmate, type LkEvent } from "@club/shared";
 import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Me, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../lib/queries.js";
@@ -31,7 +31,7 @@ import { MobileTabs } from "../v2/MobileTabs.js";
 
 /* ── Вход ─────────────────────────────────────────────────────────── */
 
-function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
+function Gate({ onAuthed, returnTo }: { onAuthed: (r: LoginResponse) => void; returnTo: string | null }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -58,7 +58,7 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 20 }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "14px 0 0" }}>Вход для выпускников</h1>
         <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
-          Доступ открывается после верификации учебным офисом.
+          {returnTo ? "Войдите, чтобы продолжить оформление подписки на подкасты. После входа вернём вас к её условиям." : "Доступ открывается после верификации учебным офисом."}
         </p>
 
         <label htmlFor="lkv2-email" style={{ ...label, display: "block", marginTop: 22 }}>Почта</label>
@@ -75,7 +75,7 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         </button>
 
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "var(--t-small)" }}>
-          <Link to="/join" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
+          <Link to={returnTo ? `/join?next=${encodeURIComponent(`/lk?next=${encodeURIComponent(returnTo)}`)}` : "/join"} className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
           <Link to="/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
         </div>
       </form>
@@ -610,6 +610,14 @@ export default function LkV2() {
   useHead({ title: "Личный кабинет", noindex: true });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [pending, setPending] = useState<AlumniBrief | null>(null);
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  // Разрешён только известный маршрут оформления, внешние адреса не принимаются.
+  const returnTo = params.get("next") === "/podcasts#podcast-subscription"
+    ? "/podcasts#podcast-subscription" : null;
+  useEffect(() => {
+    if (token && returnTo) navigate(returnTo, { replace: true });
+  }, [token, returnTo, navigate]);
 
   const onAuthed = (resp: LoginResponse) => {
     // Токен сохраняем и для pending – нужен для загрузки фото профиля.
@@ -629,7 +637,7 @@ export default function LkV2() {
   };
 
   if (pending) return <PendingScreen alumni={pending} onBack={() => doLogout()} />;
-  if (!token) return <Gate onAuthed={onAuthed} />;
+  if (!token) return <Gate onAuthed={onAuthed} returnTo={returnTo} />;
   return <DashboardGate token={token} onLogout={doLogout} onPending={(a) => setPending(a)} />;
 }
 
