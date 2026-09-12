@@ -11,6 +11,12 @@ const request = async (path: string, method = "GET", body?: unknown) => {
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); window.fetch = original; installMirrorFetch(); });
 afterEach(() => { window.fetch = original; });
 describe("демо-витрина", () => {
+  it("все семь выпусков имеют отдельные постоянные ссылки на аудио", async () => {
+    const { data } = await request('/podcasts');
+    expect(data.items).toHaveLength(7);
+    expect(new Set(data.items.map((item: any) => item.audio_url)).size).toBe(7);
+    for (const item of data.items) expect(item.audio_url).toMatch(/^https:\/\/github\.com\/Bogolubov-creator\/hse-law-alumni-club\/releases\/download\/podcast-audio-v1\/[a-z]+\.mp3$/);
+  });
   it("сохраняет товар, количество и итог между запросами и повторной установкой перехвата", async () => {
     const { data: products } = await request('/products');
     const p = products.find((p: any) => p.variants_json?.some((v: any) => v.stock > 2));
