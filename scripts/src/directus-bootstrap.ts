@@ -14,6 +14,7 @@ import {
   createCollection,
   readFieldsByCollection,
   createField,
+  updateField,
   readRelations,
   createRelation,
   readRoles,
@@ -327,7 +328,13 @@ await ensureField("programs", "enrollment", enumf(["actual", "nonactual"], "actu
 await ensureField("programs", "description", txt());
 await ensureField("programs", "cover", str()); // обложка карточки/героя: URL или /assets/…
 await ensureField("programs", "hse_id", str()); // числовой id на hse.ru
-await ensureField("programs", "tagline", str());
+await ensureField("programs", "tagline", txt());
+// Лид программы из источника может быть длиннее 255 символов. Расширяем старое
+// поле без обрезания данных; повторный bootstrap больше ничего не меняет.
+const programFields = await client.request(readFieldsByCollection("programs"));
+if (programFields.find(f => f.field === "tagline")?.schema?.data_type !== "text") {
+  await client.request(updateField("programs", "tagline", { type: "text", schema: { data_type: "text", max_length: null } }));
+}
 await ensureField("programs", "audience", json()); // string[]
 await ensureField("programs", "results", json()); // string[]
 await ensureField("programs", "advantages", json()); // string[]

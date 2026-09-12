@@ -216,7 +216,7 @@ process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => void gracefulShutdown("SIGINT"));
 
 try {
-  await app.listen({ host: "0.0.0.0", port: env.API_PORT });
+  await app.listen({ host: env.API_HOST, port: env.API_PORT });
   app.log.info(`club-api слушает :${env.API_PORT}`);
   if (env.TELEGRAM_BOT_TOKEN) void registerBotCommands(env.TELEGRAM_BOT_TOKEN);
   startTelegramPolling();
