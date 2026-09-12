@@ -300,6 +300,9 @@ export function JoinV2() {
 
 export function ForgotV2() {
   useHead({ title: "Восстановление пароля", noindex: true });
+  const [params] = useSearchParams();
+  const returnTo = params.get("next") === "/podcasts#podcast-subscription"
+    ? "/lk?next=%2Fpodcasts%23podcast-subscription" : "/lk";
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -322,10 +325,11 @@ export function ForgotV2() {
 
   return (
     <AuthShell title="Восстановление пароля" sub="Укажите почту от аккаунта – пришлём ссылку для смены пароля, она действует 30 минут.">
+      {!sent && <Link to={returnTo} className="foc">← Вернуться ко входу</Link>}
       {sent ? (
         <>
           <Note tone="ok">Если такой аккаунт существует, письмо со ссылкой уже отправлено. Проверьте почту и папку «Спам».</Note>
-          <Link to="/lk" className="foc" style={{ ...primary, marginTop: 20 }}>К входу</Link>
+          <Link to={returnTo} className="foc" style={{ ...primary, marginTop: 20 }}>К входу</Link>
         </>
       ) : (
         <form onSubmit={submit} style={{ marginTop: 18 }}>

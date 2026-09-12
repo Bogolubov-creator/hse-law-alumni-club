@@ -1,3 +1,5 @@
+import "../styles/cabinet-gate.css";
+import { action as publicAction } from "../styles/primitives.js";
 import { CabinetClubOverview } from "../components/CabinetClubOverview.js";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -53,10 +55,17 @@ function Gate({ onAuthed, returnTo, sessionExpired }: { onAuthed: (r: LoginRespo
   return (
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <VisionCorner />
-      <form onSubmit={submit} style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
+      <div className="cabinet-gate">
+        <aside className="cabinet-gate__intro club-dark">
+          <Link to="/" className="foc cabinet-gate__brand"><Mark kind="scales" size={32} /><span>Клуб выпускников<small>факультета права Вышки</small></span></Link>
+          <h2>Ваше место <br />в <em>клубе</em></h2>
+          <p>Знакомые лица, новые встречи и знания после выпуска.</p>
+          <div className="cabinet-gate__benefits"><span>Программы ДПО с ценой выпускника</span><span>События и подкасты клуба</span><span>Ваши заявки и статус участия</span></div>
+        </aside>
+      <form onSubmit={submit} className="cabinet-gate__form">
         <Link to="/" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
-        <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 20 }} />
-        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "14px 0 0" }}>Вход для выпускников</h1>
+
+        <h1 style={{ fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "clamp(28px, 3vw, 36px)", margin: "24px 0 0", lineHeight: 1.12 }}>Вход для выпускников</h1>
         <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
           {returnTo ? "Войдите, чтобы продолжить оформление подписки на подкасты. После входа вернём вас к её условиям." : "Доступ открывается после верификации учебным офисом."}
         </p>
@@ -72,15 +81,16 @@ function Gate({ onAuthed, returnTo, sessionExpired }: { onAuthed: (r: LoginRespo
         {err && <p role="alert" style={{ ...mono, margin: "14px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
 
         <button type="submit" disabled={busy} className="foc"
-          style={{ width: "100%", marginTop: 22, padding: "14px 20px", borderRadius: "var(--r-md)", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 15, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.7 : 1 }}>
+          style={{ ...publicAction, width: "100%", marginTop: 22, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.7 : 1 }}>
           {busy ? "Входим…" : "Войти в кабинет"}
         </button>
 
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "var(--t-small)" }}>
           <Link to={returnTo ? `/join?next=${encodeURIComponent(`/lk?next=${encodeURIComponent(returnTo)}`)}` : "/join"} className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
-          <Link to="/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
+          <Link to={returnTo ? `/forgot?next=${encodeURIComponent(returnTo)}` : "/forgot"} className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
         </div>
       </form>
+      </div>
       {/* Без панели экран входа – тупик: во вкладках «кабинет» ведёт сюда */}
       <MobileTabs />
     </main>
