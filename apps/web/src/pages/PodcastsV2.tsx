@@ -1,6 +1,7 @@
 import { PodcastArtwork } from "../components/PodcastArtwork.js";
 import { Mark } from "../v2/Mark.js";
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { rub, type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
@@ -36,6 +37,13 @@ export default function PodcastsV2() {
   const q = usePodcasts(t);
   const subscribe = useSubscribePodcasts(t);
   const data = q.data;
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash !== "#podcast-subscription" || !data || data.subscribed) return;
+    const panel = document.getElementById("podcast-subscription");
+    panel?.scrollIntoView({ block: "start" });
+    panel?.focus({ preventScroll: true });
+  }, [hash, data]);
   const priceRub = data ? rub(data.price) : "4 999 ₽";
   const items = data?.items ?? [];
 

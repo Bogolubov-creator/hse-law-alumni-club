@@ -23,3 +23,14 @@
  .episode-player { padding: 16px; }
  .episode-neighbors { flex-direction: column; }
 }
+
+.episode-cover .podcast-artwork__type strong { font-size: clamp(48px, 7vw, 100px); }
+.episode-cover .podcast-artwork__type > span { font-size: 13px; }
+.episode-cover .podcast-artwork__symbol { width: 44px; height: 44px; right: 20px; bottom: 20px; }
+.episode-access { padding: 28px; background: var(--c-text); color: var(--c-bg); border-radius: var(--r-sm); }
+.episode-access > svg { color: var(--c-accent); }
+.episode-access h2 { font-family: var(--f-display); font-weight: 400; font-size: 26px; margin: 16px 0; }
+.episode-access p { line-height: 1.6; }
+.episode-access > strong { display: block; font-size: 22px; margin: 22px 0; }
+.episode-access > a { display: inline-flex; min-height: 44px; align-items: center; }
+@media (max-width: 700px) { .episode-access > a { display: flex; justify-content: center; } }

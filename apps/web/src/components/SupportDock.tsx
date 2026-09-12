@@ -25,7 +25,7 @@ export function SupportDock() {
   const crowRef = useRef<CrowInstance | null>(null);
   const mobile = useIsMobile();
   const pwa = useIsPwaShell();
-  const compact = mobile || pwa || pathname !== "/";
+  const compact = mobile || pwa;
   const hidden = pathname.startsWith("/admin") || pathname.includes("/support");
 
   useEffect(() => {
@@ -42,19 +42,8 @@ export function SupportDock() {
     const mount = () => {
       if (cancelled || crowRef.current || hit) return;
 
-      // В рабочих разделах и мобильной оболочке оставляем компактную кнопку.
-      if (compact) {
-        hit = document.createElement("button");
-        hit.type = "button";
-        hit.className = "club-support-pill foc";
-        hit.textContent = "Поддержка";
-        hit.setAttribute("aria-label", "Открыть бота поддержки");
-        hit.addEventListener("click", openBot);
-        document.body.appendChild(hit);
-        return;
-      }
-
-      const width = 112;
+      // На телефоне персонаж меньше, чтобы оставить место содержимому.
+      const width = compact ? 80 : 112;
       const height = Math.round((width * 1465) / 1400);
 
       hit = document.createElement("button");
@@ -79,11 +68,13 @@ export function SupportDock() {
         anchor: "bottom-right",
         width,
         zIndex: 40,
-        idleSeconds: 14,
+        idleSeconds: 0,
+        followCursor: false,
         idleAnim: "askQ",
         onClick: openBot,
         solo: true,
       }) as CrowInstance;
+      crow.play("idle");
       crow.host.classList.add("club-crow-corner");
       crowRef.current = crow;
     };
@@ -119,7 +110,7 @@ export function SupportDock() {
       open={open}
       onClose={() => {
         setOpen(false);
-        window.setTimeout(() => crowRef.current?.play("wave"), 50);
+        document.querySelector<HTMLButtonElement>(".club-crow-hit")?.focus({ preventScroll: true });
       }}
     />
   );
