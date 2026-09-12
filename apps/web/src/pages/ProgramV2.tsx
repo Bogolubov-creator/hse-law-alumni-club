@@ -9,6 +9,7 @@ import { HeroPicture } from "../components/HeroPicture.js";
 import { mediaUrl } from "../lib/public-url.js";
 import { V2Shell, mono, disp, pageTitle } from "../v2/Shell.js";
 import { action, actionGhost } from "../styles/primitives.js";
+import "../styles/program.css";
 
 /**
  * Карточка программы ДПО v2 (/dpo/:slug).
@@ -87,8 +88,9 @@ export default function ProgramV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
-        <nav style={{ ...label, paddingTop: 28 }} aria-label="Хлебные крошки">
+      <main id="main">
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <nav style={{ ...label, paddingTop: 24, paddingBottom: 8 }} aria-label="Хлебные крошки">
           <Link to="/dpo" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>витрина дпо</Link>
           {p?.direction && <> · {p.direction}</>}
         </nav>
@@ -108,39 +110,31 @@ export default function ProgramV2() {
           </div>
         )}
 
+        </div>
         {p && (
           <>
-          <div style={{ marginTop: 18, borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--c-line)", maxHeight: 320, background: "var(--c-bg-sunken)" }}>
-            {coverIsHeroFallback ? (
-              <HeroPicture path="assets/dpo-hero.jpg" alt="" width={1400} height={700} className="club-program-cover" />
-            ) : (
-              <img
-                className="club-program-cover"
-                src={mediaUrl(coverSrc)}
-                alt=""
-                width={1400}
-                height={700}
-                style={{ width: "100%", height: 320, objectFit: "contain", display: "block" }}
-                decoding="async"
-                loading="eager"
-                fetchPriority="high"
-              />
-            )}
-          </div>
-          <div style={{ paddingTop: 24, maxWidth: "58ch" }}>
-            <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1>
-            {p.tagline && (
-              <p style={{ margin: "12px 0 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{p.tagline}</p>
-            )}
-          </div>
+          {/* Мачта программы: обложка как предмет на графите с тёплым свечением, титул плитой справа */}
+          <header className="club-program-mast club-dark">
+            <div className="club-program-mast__art">
+              {coverIsHeroFallback ? (
+                <HeroPicture path="assets/dpo-hero.jpg" alt="" width={1400} height={700} className="club-program-cover" />
+              ) : (
+                <img className="club-program-cover" src={mediaUrl(coverSrc)} alt="" width={1400} height={788} decoding="async" loading="eager" fetchPriority="high" />
+              )}
+            </div>
+            <div className="club-program-mast__copy">
+              <h1>{p.title}</h1>
+              {p.tagline && <p className="club-program-mast__tagline">{p.tagline}</p>}
+              <p className="club-program-mast__meta">
+                {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration, totalHours > 0 ? `${totalHours} ак. ч.` : null].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+          </header>
+          <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
             {/* ── Содержание записи ── */}
             <div style={{ minWidth: 0 }}>
 
-              <div style={{ ...label, marginTop: 16 }}>
-                {[FORMAT_LABEL[p.format] ?? p.format, p.duration, totalHours > 0 ? `${totalHours} ак. ч.` : null]
-                  .filter(Boolean).join(" · ")}
-              </div>
               {p.enrollment === "nonactual" && (
                 <div style={{ ...label, color: "var(--c-danger-text)", marginTop: 8 }}>набор закрыт</div>
               )}
@@ -283,7 +277,7 @@ export default function ProgramV2() {
 
             {/* ── Бланк программы ── */}
             <aside className="v2-prog-aside" style={{ position: "sticky", top: 92 }}>
-              <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 22 }}>
+              <div className="club-program-blank">
                 <div style={{ ...mono, fontSize: 26, fontWeight: 600, color: "var(--c-text)" }}>{rub(priced)}</div>
                 {discount > 0 && (
                   <div style={{ ...mono, fontSize: 13, color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
@@ -340,6 +334,7 @@ export default function ProgramV2() {
                 )}
               </div>
             </aside>
+          </div>
           </div>
           </>
         )}

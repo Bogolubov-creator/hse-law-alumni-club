@@ -905,3 +905,10 @@ button[aria-disabled="true"],
 .crow-support-portrait img { position: absolute; width: 102px; max-width: none; height: auto; left: -30px; top: -17px; }
 .club-support-dock:has(.crow-support-portrait) { padding: 5px 16px 5px 5px; }
 @media (max-width: 700px) { .club-support-dock:has(.crow-support-portrait) { padding: 3px; } }
+
+/* Глубина витрин (12.09, вечер): дата события плитой охрой, предметы мерча с рассеянной тенью и подъёмом */
+.club-event-row > div:first-child > div:first-child { font-family: var(--f-display) !important; font-size: 22px !important; line-height: 1.1; color: var(--c-accent-text); }
+.club-merch-image { border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-ambient); transition: transform 520ms var(--ease-spring), box-shadow 520ms var(--ease-spring); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .club-merch-item:hover .club-merch-image { transform: translateY(-6px); box-shadow: var(--shadow-ambient-lift); }
+}
