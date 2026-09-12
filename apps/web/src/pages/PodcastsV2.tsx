@@ -1,10 +1,11 @@
+import { PodcastSubscription } from "../components/PodcastSubscription.js";
 import { PodcastArtwork } from "../components/PodcastArtwork.js";
 import { Mark } from "../v2/Mark.js";
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { rub, type PodcastItem } from "../lib/api.js";
+import { type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
-import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
+import { usePodcasts } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 import { action } from "../styles/primitives.js";
@@ -35,7 +36,6 @@ export default function PodcastsV2() {
 
   const t = token();
   const q = usePodcasts(t);
-  const subscribe = useSubscribePodcasts(t);
   const data = q.data;
   const { hash } = useLocation();
   useEffect(() => {
@@ -44,13 +44,7 @@ export default function PodcastsV2() {
     panel?.scrollIntoView({ block: "start" });
     panel?.focus({ preventScroll: true });
   }, [hash, data]);
-  const priceRub = data ? rub(data.price) : "4 999 ₽";
   const items = data?.items ?? [];
-
-  const onSubscribe = () =>
-    subscribe.mutate(undefined, {
-      onSuccess: (r) => { if (r.payment_url) window.location.assign(r.payment_url); },
-    });
 
   return (
     <V2Shell>
@@ -65,44 +59,13 @@ export default function PodcastsV2() {
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}
-        {data && !data.subscribed && (
-          <div id="podcast-subscription" tabIndex={-1} style={{ scrollMarginTop: 100, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "20px 22px", borderRadius: "var(--r-lg)", border: "1px solid var(--c-line)", background: "var(--c-bg-raised)", boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
-            <div style={{ minWidth: 0, flex: "1 1 240px" }}>
-              <div style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)" }}>Подписка · {priceRub} в год</div>
-              <p style={{ margin: "8px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5, maxWidth: "56ch" }}>
-                Все выпуски без ограничений. {t
-                  ? "Оформление – заявка; если онлайн-оплата подключена, сразу откроется оплата картой."
-                  : "Чтобы оформить, войдите в личный кабинет."}
-              </p>
-            </div>
-            {t ? (
-              <button onClick={onSubscribe} disabled={subscribe.isPending} className="foc"
-                style={{ ...action, flex: "none", cursor: subscribe.isPending ? "wait" : "pointer" }}>
-                {subscribe.isPending ? "Оформляем…" : "Оформить подписку"}
-              </button>
-            ) : (
-              <Link to="/lk?next=%2Fpodcasts%23podcast-subscription" className="foc"
-                style={{ ...action, flex: "none" }}>
-                Войти в кабинет
-              </Link>
-            )}
-          </div>
-        )}
+        {data && !data.subscribed && <PodcastSubscription token={t} price={data.price} />}
 
         {data?.subscribed && (
           <div className="podcast-member-panel">
             <Mark kind="scales" size={34} />
             <div><strong>Ваша подписка активна</strong><p>{data.sub_until ? `До ${new Date(data.sub_until).toLocaleDateString("ru-RU")} · ` : ""}Все выпуски доступны для прослушивания</p></div>
           </div>
-        )}
-
-        {subscribe.isSuccess && !subscribe.data.payment_url && (
-          <p role="status" style={{ ...label, color: "var(--c-status-text)", textTransform: "none", letterSpacing: 0, margin: "14px 0 0", lineHeight: 1.5 }}>
-            Заявка {subscribe.data.number} оформлена – менеджер учебного офиса свяжется для оплаты, после чего подписка включится.
-          </p>
-        )}
-        {subscribe.isError && (
-          <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "14px 0 0" }}>{(subscribe.error as Error).message}</p>
         )}
 
         {q.isLoading && <p style={{ ...label, margin: "26px 0 0" }}>загружаем выпуски…</p>}

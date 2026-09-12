@@ -11,6 +11,9 @@ vi.mock('../../lib/queries.js', () => ({
   usePodcasts: () => ({ data: { subscribed: state.subscribed, price: 499900, items: [
     { id: 'free', title: 'Пробный', is_free: true }, { id: 'paid', title: 'Закрытый', is_free: false },
   ] } }),
+  useMe: () => ({}),
+  useMyOrders: () => ({}),
+  usePaymentsEnabled: () => ({}),
   useSubscribePodcasts: () => ({ mutate: vi.fn() }),
 }));
 vi.mock('../../v2/Shell.js', () => ({ V2Shell: ({ children }: { children: ReactNode }) => children, ShowcaseHead: () => null, mono: {}, disp: {} }));

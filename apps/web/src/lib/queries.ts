@@ -109,7 +109,10 @@ export function useSubscribePodcasts(token: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => apiPost<{ number: string; payment_url?: string }>("/podcasts/subscribe", {}, undefined, token ?? undefined),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["podcasts"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["podcasts"] });
+      qc.invalidateQueries({ queryKey: ["my-orders", token] });
+    },
   });
 }
 
