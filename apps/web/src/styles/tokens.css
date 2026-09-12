@@ -10,6 +10,7 @@
  */
 
 :root {
+  color-scheme: light;
   /* ── Слой 1. Палитра ─────────────────────────────────────────── */
   /* Канон – неприкосновенны */
   --p-ohra: #ec5a13;         /* акцент клуба */
@@ -37,6 +38,13 @@
   /* Третичный текст. #6b7280 давал 4,39:1 на кости – провал AA на моно-подписи,
      которой набран весь реестр. #5c6470 даёт 5,44:1 на кости и 5,98:1 на белом. */
   --p-ink-mute: #5c6470;     /* третичный текст, подписи */
+  /* Тёмная тема: поверхности и текст на графите (раньше жили hex-ами в слое 2) */
+  --p-ink-raised: #1b202a;   /* приподнятая поверхность на графите */
+  --p-ink-sunken: #10141b;   /* утопленная поверхность на графите */
+  --p-paper-soft: #c9cdd6;   /* вторичный текст на графите */
+  --p-paper-mute: #8e95a3;   /* третичный текст на графите */
+  --p-ohra-light: #ff7a3d;   /* охра-текст на графите */
+  --p-blue-light: #6f9bd8;   /* якорь и ссылки на графите: 6,23:1 на графите, 5,72:1 на приподнятой */
   --p-paper: #ffffff;        /* белый: основной фон */
   --p-paper-2: #f3f5f7;      /* вторичная поверхность */
   --p-line: #e5e7eb;         /* разделители */
@@ -97,82 +105,70 @@
   /* Лид тянется: 20px на широком экране – это голос вступления, но на 375px
      он даёт пять строк и выталкивает кнопку под баннер cookie. */
   --t-lead: clamp(17px, 1.6vw, 20px);
-  --t-h3: clamp(21px, 1.8vw, 25px);
-  --t-h2: clamp(26px, 3vw, 32px);
+  --t-h3: 24px;
+  --t-h2: clamp(28px, 3.4vw, 48px);
   /* Титул главной и титул витрины – разные объекты. Один размер на все
      страницы уравнивал главную с корзиной и съедал первый экран каталога. */
-  --t-h1: clamp(32px, 6vw, 60px);
-  --t-h1-page: clamp(27px, 3.2vw, 40px);
+  --t-h1: clamp(40px, 5.6vw, 80px);
+  --t-h1-page: clamp(32px, 3.6vw, 48px);
 
   --tr-display: -0.01em;
   --tr-data: 0em;
+  /* Капс-лейблы референса: навигация, кнопки, eyebrow – HSE Sans 600 с разрядкой. */
+  --t-caps: 13px;
+  --tr-caps: 0.08em;
 
   /* ── Форма, ритм, движение ───────────────────────────────────── */
-  --r-sm: 8px;
-  --r-md: 8px;
-  --r-lg: 12px;
+  /* Референс: 4px – кнопки, поля, навигация; 8px – карточки и картинки; 9999 – чипы и бейджи. */
+  --r-sm: 4px;
+  --r-md: 4px;
+  --r-lg: 8px;
   --space: 4px;
-  --container: 1180px;
+  --container: 1280px;
 
   /* Вертикальный ритм страницы. До этого отступы стояли числами по месту, и
      шапка витрины уводила первую запись каталога на 693px из 900. */
   --rh-head-top: clamp(26px, 3.4vw, 44px);
   --rh-head-bottom: clamp(16px, 1.8vw, 24px);
-  --rh-section: clamp(40px, 5vw, 72px);
+  --rh-section: clamp(56px, 6vw, 80px);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Пружинная кривая для hover и материалов; тени – тональные, рассеянные, со смещением */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --shadow-ambient: 0 24px 60px -28px rgb(20 24 31 / 0.35), 0 8px 20px -12px rgb(20 24 31 / 0.18);
+  --shadow-ambient-lift: 0 36px 80px -30px rgb(20 24 31 / 0.42), 0 12px 28px -14px rgb(20 24 31 / 0.22);
+  --shadow-accent: 0 14px 36px -14px rgb(236 90 19 / 0.55);
   --dur-fast: 140ms;
   --dur-base: 200ms;
 }
 
 /**
- * Тёмная тема – подмена значений семантического слоя, палитра не трогается.
- * Канон-охра остаётся узнаваемой: на тёмном она читается и без осветления,
- * а вот текст-охру приходится поднимать до базовой, иначе проваливается.
+ * Тёмная панель (решение заказчика 12.09: одна светлая тема, тёмные панели внутри).
+ * Область `.club-dark` подменяет семантический слой – герой, мачта витрины и подвал
+ * получают класс и весь текст, линии и ссылки внутри читаются по тем же токенам.
  */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --c-bg: var(--p-ink);
-    --c-bg-raised: #1b202a;
-    --c-bg-sunken: #10141b;
-    --c-bg-inverse: var(--p-paper);
-
-    --c-text: var(--p-paper);
-    --c-text-2: #c9cdd6;
-    --c-text-3: #8e95a3;
-    --c-text-inverse: var(--p-ink);
-
-    --c-accent-text: #ff7a3d;
-    --c-anchor: #6f9bd8;
-    --c-link: var(--p-blue-bright);
-    --c-status: var(--p-brass-light);
-    --c-status-text: var(--p-brass-light);
-    --c-ok-text: var(--p-green-light);
-    --c-danger-text: var(--p-karmin-light);
-    --c-line: rgb(251 243 232 / 0.14);
-    --c-line-control: rgb(251 243 232 / 0.46);
-    --c-line-strong: rgb(251 243 232 / 0.28);
-  }
-}
-
-:root[data-theme="dark"] {
+.club-dark {
+  color-scheme: dark;
   --c-bg: var(--p-ink);
-  --c-bg-raised: #1b202a;
-  --c-bg-sunken: #10141b;
+  --c-bg-raised: var(--p-ink-raised);
+  --c-bg-sunken: var(--p-ink-sunken);
   --c-bg-inverse: var(--p-paper);
   --c-text: var(--p-paper);
-  --c-text-2: #c9cdd6;
-  --c-text-3: #8e95a3;
+  --c-text-2: var(--p-paper-soft);
+  --c-text-3: var(--p-paper-mute);
   --c-text-inverse: var(--p-ink);
-  --c-accent-text: #ff7a3d;
-  --c-anchor: #6f9bd8;
+  --c-accent-text: var(--p-ohra-light);
+  --c-anchor: var(--p-blue-light);
+  --c-link: var(--p-blue-light);
   --c-status: var(--p-brass-light);
   --c-status-text: var(--p-brass-light);
   --c-ok-text: var(--p-green-light);
   --c-danger-text: var(--p-karmin-light);
-  --c-line: rgb(251 243 232 / 0.14);
-  --c-line-control: rgb(251 243 232 / 0.46);
-  --c-line-strong: rgb(251 243 232 / 0.28);
+  --c-line: rgb(255 255 255 / 0.14);
+  --c-line-control: rgb(255 255 255 / 0.46);
+  --c-line-strong: rgb(255 255 255 / 0.28);
+  background: var(--c-bg);
+  color: var(--c-text);
 }
 
 /* Значение с пояснением. Историческое имя компонента сохранено для совместимости. */

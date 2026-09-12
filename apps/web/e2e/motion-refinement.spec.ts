@@ -2,14 +2,18 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 const out='/Users/macbook/alumni-staged-evidence/motion';
 test.beforeEach(async({page})=>{mkdirSync(out,{recursive:true});await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});});
-test('первый экран движется, reduced motion сохраняет содержание без анимации',async({page},info)=>{
+// Решение заказчика 12.09 (вечер): живое движение – один оркестрированный вход героя,
+// проявление полос при прокрутке; при reduced-motion всё гаснет, содержание видно сразу.
+test('герой входит один раз, reduced motion гасит движение без потери содержания',async({page},info)=>{
  await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/');
- const grain=page.locator('.vestnik-grain');await expect(page.locator('.vestnik-themis')).toBeVisible();await expect(grain).toBeVisible();
- expect(await grain.evaluate(e=>getComputedStyle(e).animationName)).toMatch(/vestnik-grain-drift/);
- await page.evaluate(()=>document.getAnimations().forEach(a=>{a.pause();a.currentTime=150}));await page.screenshot({path:`${out}/intro-moving-${info.project.name}.png`});
- await page.evaluate(()=>document.getAnimations().forEach(a=>{try{a.finish()}catch{a.cancel()}}));await page.screenshot({path:`${out}/intro-settled-${info.project.name}.png`});
- await page.emulateMedia({reducedMotion:'reduce'});expect(await grain.evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
- await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.getByRole('link',{name:'Вступить в клуб',exact:true})).toBeVisible();
+ expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBeGreaterThan(0);
+ await page.waitForTimeout(1800);
+ await expect(page.locator('.home-hero__photo img')).toBeVisible();
+ await page.screenshot({path:`${out}/intro-${info.project.name}.png`});
+ await page.emulateMedia({reducedMotion:'reduce'});await page.reload();
+ expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBe(0);
+ expect(await page.locator('.home-agenda').evaluate(e=>getComputedStyle(e).opacity)).toBe('1');
+ await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.getByRole('link',{name:/Вступить в клуб/})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
 test('афиша фильтрует название, место и формат без потери прямых ссылок',async({page},info)=>{
@@ -23,7 +27,14 @@ test('афиша фильтрует название, место и формат
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
 test('оператор в реквизитах и согласии одинаковый',async({page,request},info)=>{
- await page.goto('/requisites');await expect(page.locator('main')).toContainText('1257700005551');await expect(page.locator('main')).toContainText('9707041865');await expect(page.locator('main')).not.toContainText('7714030726');
+ await page.goto('/requisites');
+ await expect(page.locator('main')).toContainText('1257700005551');
+ await expect(page.locator('main')).toContainText('9707041865');
+ await expect(page.locator('main')).toContainText('Спиваков Алексей Игоревич');
+ await expect(page.locator('main')).toContainText('72293692');
+ await expect(page.locator('main')).not.toContainText('7714030726');
  await page.screenshot({path:`${out}/operator-${info.project.name}.png`});
- const config=await (await request.get('/api/support/config')).json();expect(config.consent).toContain('Автономная некоммерческая организация');expect(config.consent).toContain('Большая Черкизовская');
+ const config=await (await request.get('/api/support/config')).json();
+ expect(config.consent).toContain('Автономная некоммерческая организация');
+ expect(config.consent).toContain('Большая Черкизовская');
 });

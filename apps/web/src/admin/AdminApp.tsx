@@ -9,6 +9,7 @@ import { useHead } from "../lib/title.js";
 import { VisionToggle } from "../components/Vision.js";
 import { Mark } from "../v2/Mark.js";
 import { mono, disp, label, action, actionGhost, field, Panel, PanelTitle, Pill, Row, Stat, statusTone } from "./ui.js";
+import { caps, pageTitle } from "../styles/primitives.js";
 
 const DIRECTUS_URL = (import.meta.env.VITE_DIRECTUS_URL as string) || "http://localhost:8055";
 import {
@@ -53,22 +54,22 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
   };
   return (
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <form onSubmit={submit} style={{ width: "100%", maxWidth: 400, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
+      <form onSubmit={submit} style={{ width: "100%", maxWidth: 400, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32, boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
         <Mark kind="scales" size={38} style={{ color: "var(--c-accent-text)" }} />
-        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "16px 0 0" }}>Панель учебного офиса</h1>
+        <h1 style={{ ...pageTitle, fontSize: 28, lineHeight: 1.1, margin: "16px 0 0" }}>Панель учебного офиса</h1>
         <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "8px 0 0", lineHeight: 1.5 }}>
           Служебный вход. Все действия попадают в журнал безопасности.
         </p>
 
-        <label htmlFor={emailId} style={{ ...label, display: "block", marginTop: 22 }}>почта</label>
+        <label htmlFor={emailId} style={{ ...caps, color: "var(--c-text-2)", display: "block", marginTop: 22 }}>Почта</label>
         <input id={emailId} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="foc" style={{ ...field, width: "100%", marginTop: 7, padding: "12px 14px", fontSize: 15 }} />
 
-        <label htmlFor={passId} style={{ ...label, display: "block", marginTop: 16 }}>пароль</label>
+        <label htmlFor={passId} style={{ ...caps, color: "var(--c-text-2)", display: "block", marginTop: 16 }}>Пароль</label>
         <input id={passId} type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="foc" style={{ ...field, width: "100%", marginTop: 7, padding: "12px 14px", fontSize: 15 }} />
 
         {err && <p role="alert" style={{ ...mono, margin: "14px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
 
-        <button disabled={busy} className="foc" style={{ width: "100%", marginTop: 22, padding: "14px 20px", borderRadius: "var(--r-md)", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 15, cursor: busy ? "wait" : "pointer" }}>
+        <button disabled={busy} className="foc" style={{ ...action, width: "100%", marginTop: 22, cursor: busy ? "wait" : "pointer" }}>
           {busy ? "Входим…" : "Войти"}
         </button>
       </form>
@@ -107,12 +108,12 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="adm-grid" style={{ display: "grid", gridTemplateColumns: "232px 1fr", minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)" }}>
-      <aside className="adm-aside" style={{ position: "sticky", top: 0, height: "100dvh", display: "flex", flexDirection: "column", gap: 2, padding: 16, borderRight: "1px solid var(--c-line)" }}>
+      <aside className="adm-aside club-dark" style={{ position: "sticky", top: 0, height: "100dvh", display: "flex", flexDirection: "column", gap: 2, padding: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 6px 18px" }}>
-          <Mark kind="scales" size={26} style={{ color: "var(--c-accent-text)" }} />
-          <span style={{ ...disp, fontWeight: 800, fontSize: 13, lineHeight: 1.1 }}>
+          <Mark kind="scales" size={28} style={{ color: "var(--c-accent)" }} />
+          <span style={{ ...disp, fontWeight: 600, fontSize: 14, lineHeight: 1.1 }}>
             Учебный офис
-            <span style={{ ...label, display: "block", fontSize: 9, marginTop: 3 }}>клуб выпускников</span>
+            <span style={{ ...caps, display: "block", fontSize: 10, marginTop: 4, color: "var(--c-text-3)" }}>клуб выпускников</span>
           </span>
         </div>
         {nav.map((n) => {
@@ -122,9 +123,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
                 padding: "10px 12px", borderRadius: "var(--r-sm)", textAlign: "left", cursor: "pointer",
-                border: "none", background: on ? "var(--c-bg-sunken)" : "transparent",
-                color: on ? "var(--c-text)" : "var(--c-text-3)",
-                ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase",
+                border: "none", background: on ? "rgb(255 255 255 / 0.06)" : "transparent",
+                color: on ? "var(--c-text)" : "var(--c-text-2)",
+                ...caps,
                 borderLeft: `2px solid ${on ? "var(--c-accent)" : "transparent"}`,
               }}>
               {n.label}
@@ -138,7 +139,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
       {/* Низ панели не должен уезжать под cookie-баннер */}
       <main id="main" style={{ minWidth: 0, padding: "26px 32px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px))" }}>
-        <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", margin: "0 0 22px" }}>{titles[section]}</h1>
+        <h1 style={{ ...pageTitle, fontSize: 36, lineHeight: 1.1, margin: "0 0 24px" }}>{titles[section]}</h1>
         {ov.isError && (
           <p role="alert" style={{ margin: "0 0 20px", padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-danger-text)", ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>
             Не удалось загрузить данные (ошибка сети или сервера).{" "}
@@ -168,8 +169,13 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const orders = useAdminOrders({ limit: 5 }); // дашборду хватает пяти строк
   const members = useMembers({ status: "pending", limit: 100 });
   const { patchMember } = useAdminMutations();
+  const [sel, setSel] = useState<Member | null>(null);
   const pending = members.data?.items ?? [];
   const d = ov.data;
+  const inbox = [
+    { key: "orders", count: d?.new_orders ?? 0, title: "Новые заявки", hint: "разобрать статус и оплату", go: "orders" as Section },
+    { key: "verify", count: d?.pending_verifications ?? 0, title: "На верификацию", hint: "подтвердить выпуск", go: "members" as Section },
+  ].filter((x) => x.count > 0);
   // Вся статистика сайта – одним экраном.
   /**
    * Акцентом помечены только те два числа, по которым офис действует прямо
@@ -190,12 +196,30 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   ] as { label: string; value: number; note?: string; act?: boolean }[];
   return (
     <>
-      <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "0 28px" }}>
+      <Panel>
+        <PanelTitle>Требует действия</PanelTitle>
+        {inbox.length === 0 && (
+          <p style={{ ...label, margin: "12px 0 0", textTransform: "none", letterSpacing: 0, lineHeight: 1.5 }}>
+            Очередь пуста – новых заявок и ожидающих верификации нет.
+          </p>
+        )}
+        {inbox.map((item) => (
+          <Row key={item.key} cols="minmax(0,1fr) auto">
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{item.title} · {item.count}</div>
+              <div style={{ ...label, marginTop: 4, textTransform: "none", letterSpacing: 0, color: "var(--c-text-2)" }}>{item.hint}</div>
+            </div>
+            <button type="button" onClick={() => onGo(item.go)} className="foc" style={{ ...action, padding: "10px 14px" }}>открыть</button>
+          </Row>
+        ))}
+      </Panel>
+
+      <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "0 28px", marginTop: 26 }}>
         {stats.map((s) => <Stat key={s.label} name={s.label} value={s.value} note={s.note} accent={s.act} />)}
       </div>
       <div className="adm-two" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20, marginTop: 26 }}>
         <Panel>
-          <PanelTitle right={<button onClick={() => onGo("orders")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>все →</button>}>
+          <PanelTitle right={<button type="button" onClick={() => onGo("orders")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>все →</button>}>
             Последние заявки
           </PanelTitle>
           {(orders.data?.items ?? []).slice(0, 5).map((o) => (
@@ -209,15 +233,20 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
         </Panel>
 
         <Panel>
-          <PanelTitle>На верификацию</PanelTitle>
+          <PanelTitle right={<button type="button" onClick={() => onGo("members")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>все →</button>}>
+            На верификацию
+          </PanelTitle>
           {pending.length === 0 && <p style={{ ...label, margin: 0, textTransform: "none", letterSpacing: 0 }}>Нет ожидающих.</p>}
           {pending.map((m) => (
             <div key={m.id} style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{m.fio}</div>
-              <div style={{ ...label, fontSize: 10, marginTop: 3 }}>выпуск {m.cohort}</div>
+              <div style={{ ...label, fontSize: 10, marginTop: 3 }}>
+                {[m.email, m.cohort ? `выпуск ${m.cohort}` : null].filter(Boolean).join(" · ") || "анкета без почты"}
+              </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-                <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc" style={{ ...action, flex: 1, textAlign: "center" }}>Подтвердить</button>
-                <button disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center", color: "var(--c-danger-text)", borderColor: "var(--c-danger-text)" }}>Отклонить</button>
+                <button type="button" disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "verified" })} className="foc" style={{ ...action, flex: 1, textAlign: "center" }}>Подтвердить</button>
+                <button type="button" disabled={patchMember.isPending} onClick={() => patchMember.mutate({ id: m.id, verification_status: "rejected" })} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center", color: "var(--c-danger-text)", borderColor: "var(--c-danger-text)" }}>Отклонить</button>
+                <button type="button" onClick={() => setSel(m)} className="foc" style={{ ...actionGhost, flex: 1, textAlign: "center" }}>карточка</button>
               </div>
             </div>
           ))}
@@ -225,7 +254,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
       </div>
       <div className="adm-two" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 20, marginTop: 20 }}>
         <Panel>
-          <PanelTitle right={<button onClick={() => onGo("content")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>события →</button>}>
+          <PanelTitle right={<button type="button" onClick={() => onGo("content")} className="foc" style={{ ...label, color: "var(--c-accent-text)", background: "none", border: "none", cursor: "pointer" }}>события →</button>}>
             Ближайшее событие
           </PanelTitle>
           {d?.next_event ? (
@@ -242,6 +271,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
         </Panel>
         <PushBroadcast subs={d?.push_subs_count ?? 0} />
       </div>
+      {sel && <MemberModal member={sel} onClose={() => setSel(null)} />}
     </>
   );
 }
@@ -382,7 +412,7 @@ function Members() {
   const [sel, setSel] = useState<Member | null>(null);
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
-  const [vf, setVf] = useState<string>("all");
+  const [vf, setVf] = useState<string>("pending");
   const [page, setPage] = useState(1);
   const pendingCount = useOverview().data?.pending_verifications ?? 0;
 
@@ -406,8 +436,8 @@ function Members() {
     <>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 16 }}>
         {[
-          { key: "all", label: "все" },
           { key: "pending", label: `заявки на вступление${pendingCount ? ` · ${pendingCount}` : ""}` },
+          { key: "all", label: "все" },
           { key: "verified", label: "подтверждённые" },
           { key: "rejected", label: "отклонённые" },
         ].map((f) => {
@@ -502,8 +532,14 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
           style={{ position: "absolute", right: 16, top: 16, width: 34, height: 34, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}>✕</button>
 
         <h2 id="member-modal-title" style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: 0, paddingRight: 40 }}>{member.fio}</h2>
-        <div style={{ ...label, fontSize: 10, marginTop: 8 }}>
-          выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях {member.friends_count ?? 0}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14 }}>
+          {member.avatar
+            ? <img src={`/api/avatars/${member.avatar}`} alt="" width={56} height={56} style={{ width: 56, height: 56, borderRadius: "var(--r-md)", objectFit: "cover", flexShrink: 0 }} />
+            : <div aria-hidden style={{ width: 56, height: 56, borderRadius: "var(--r-md)", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: 18, color: "var(--c-text-2)", flexShrink: 0 }}>{(member.fio ?? "?").trim().charAt(0).toUpperCase()}</div>}
+          <div style={{ ...label, fontSize: 10, minWidth: 0 }}>
+            выпуск {member.cohort} · {LEVEL_RU[member.level_cached] ?? member.level_cached} · {member.points_cached} баллов · в друзьях {member.friends_count ?? 0}
+            {member.email && <div style={{ marginTop: 4, textTransform: "none", letterSpacing: 0, color: "var(--c-text-2)" }}>{member.email}</div>}
+          </div>
         </div>
 
         {/* Анкета из формы вступления – всё, что заполнил выпускник */}
@@ -765,22 +801,35 @@ const CATALOG_STATUS: Record<string, string> = { published: "На витрине
 function Content() {
   const [tab, setTab] = useState<"programs" | "products" | "events" | "news" | "timeline" | "podcasts" | "pages">("programs");
   const tabs = [
-    { key: "programs" as const, label: "Программы ДПО" },
-    { key: "products" as const, label: "Товары (мерч)" },
-    { key: "events" as const, label: "События" },
-    { key: "news" as const, label: "Новости" },
-    { key: "timeline" as const, label: "История" },
-    { key: "podcasts" as const, label: "Подкасты" },
-    { key: "pages" as const, label: "Страницы" },
+    { key: "programs" as const, label: "Программы ДПО", collection: "programs" },
+    { key: "products" as const, label: "Товары (мерч)", collection: "products" },
+    { key: "events" as const, label: "События", collection: "events" },
+    { key: "news" as const, label: "Новости", collection: "news" },
+    { key: "timeline" as const, label: "История", collection: "timeline_items" },
+    { key: "podcasts" as const, label: "Подкасты", collection: "podcasts" },
+    { key: "pages" as const, label: "Страницы", collection: "pages" },
   ];
+  const active = tabs.find((t) => t.key === tab) ?? tabs[0]!;
+  const directusCollection = `${DIRECTUS_URL.replace(/\/$/, "")}/admin/content/${active.collection}`;
+  const directusFiles = `${DIRECTUS_URL.replace(/\/$/, "")}/admin/files`;
   return (
     <>
       <div className="mb-5 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} className={`foc rounded-[11px] px-4 py-2.5 text-sm font-semibold ${tab === t.key ? "bg-[var(--c-accent)] text-[var(--c-on-accent)]" : "border border-[var(--c-line)] text-[var(--c-text-2)]"}`}>{t.label}</button>
         ))}
-        <a href={DIRECTUS_URL} target="_blank" rel="noopener noreferrer" className="foc ml-auto rounded-[11px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2.5 font-mono text-[12px] text-[var(--c-text-3)]">Directus Studio → медиа</a>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <a href={directusCollection} target="_blank" rel="noopener noreferrer" className="foc rounded-[11px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2.5 font-mono text-[12px] text-[var(--c-text-3)]">
+            Directus → {active.collection}
+          </a>
+          <a href={directusFiles} target="_blank" rel="noopener noreferrer" className="foc rounded-[11px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2.5 font-mono text-[12px] text-[var(--c-text-3)]">
+            Медиа
+          </a>
+        </div>
       </div>
+      <p className="mb-4 font-mono text-[11px] text-[var(--c-text-3)]">
+        Быстрые правки – здесь. Схемы полей, файлы и роли – в Directus Studio по ссылке коллекции выше.
+      </p>
       {tab === "programs" && <ProgramsAdmin />}
       {tab === "products" && <ProductsAdmin />}
       {tab === "events" && <EventsAdmin />}
@@ -1019,7 +1068,7 @@ function TimelineForm({ busy, onClose, onSave }: { busy: boolean; onClose: () =>
   );
 }
 
-// ── Подкасты (доступ слушателям – по подписке 3 999 ₽/год) ──────────
+// ── Подкасты (доступ слушателям – по подписке 4 999 ₽/год) ──────────
 function PodcastsAdmin() {
   const podcasts = useAdminPodcasts();
   const { createPodcast, patchPodcast, deletePodcast } = useAdminMutations();
@@ -1028,7 +1077,7 @@ function PodcastsAdmin() {
   return (
     <div className="overflow-hidden rounded-[18px] border border-[var(--c-line)] bg-[var(--c-bg-raised)]">
       <div className="flex items-center justify-between gap-3 bg-[var(--c-bg-sunken)] px-6 py-3.5">
-        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">Подкасты · {podcasts.data?.length ?? "…"} · доступ по подписке 3 999 ₽/год</span>
+        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">Подкасты · {podcasts.data?.length ?? "…"} · доступ по подписке 4 999 ₽/год</span>
         <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-[var(--c-accent)] px-4 py-2 text-sm font-semibold text-[var(--c-on-accent)]">+ Добавить подкаст</button>
       </div>
       {(podcasts.data ?? []).map((p) => (
@@ -1125,8 +1174,8 @@ function PagesAdmin() {
     const h = page.data.blocks.hero ?? {}, c = page.data.blocks.cta ?? {};
     setHero({ badge: h.badge ?? "", title_pre: h.title_pre ?? "", title_accent: h.title_accent ?? "", subtitle: h.subtitle ?? "", cta_primary: h.cta_primary ?? "", cta_secondary: h.cta_secondary ?? "" });
     setCta({ title: c.title ?? "", text: c.text ?? "", button: c.button ?? "" });
-    setHistory({ history_eyebrow: h.history_eyebrow ?? "История клуба", history_title: h.history_title ?? "От первого выпуска – к сообществу", history_hint: h.history_hint ?? "↓ листайте – таймлайн движется вбок" });
-    setMarquee((h.marquee?.length ? h.marquee : ["Выпуск ’24", "Выпуск ’25", "Менторы клуба", "Учебный офис", "Партнёры", "ДПО", "Мерч", "Нетворкинг"]).join(", "));
+    setHistory({ history_eyebrow: h.history_eyebrow ?? "История клуба", history_title: h.history_title ?? "Ключевые этапы", history_hint: h.history_hint ?? "Листайте вбок" });
+    setMarquee((h.marquee?.length ? h.marquee : ["Выпуск ’24", "Выпуск ’25", "Учебный офис", "ДПО", "Мерч", "События"]).join(", "));
     setLoaded(true);
   }, [page.data, loaded]);
 
@@ -1173,8 +1222,8 @@ function PagesAdmin() {
         <p className="mt-1 font-mono text-[11px] text-[var(--c-text-3)]">Заголовок секции «История клуба» и бегущая лента над ней.</p>
         <div className="mt-4 space-y-3">
           <FormField label="Надзаголовок (мелкий, оранжевый)" value={history.history_eyebrow ?? ""} onChange={(v) => xset("history_eyebrow", v)} ph="История клуба" />
-          <FormField label="Заголовок секции" value={history.history_title ?? ""} onChange={(v) => xset("history_title", v)} ph="От первого выпуска – к сообществу" />
-          <FormField label="Подсказка под заголовком" value={history.history_hint ?? ""} onChange={(v) => xset("history_hint", v)} ph="↓ листайте – таймлайн движется вбок" />
+          <FormField label="Заголовок секции" value={history.history_title ?? ""} onChange={(v) => xset("history_title", v)} ph="Ключевые этапы" />
+          <FormField label="Подсказка под заголовком" value={history.history_hint ?? ""} onChange={(v) => xset("history_hint", v)} ph="Листайте вбок" />
           <FormField label="Бегущая лента (пункты через запятую)" value={marquee} onChange={setMarquee} textarea ph="Выпуск ’24, Выпуск ’25, Менторы клуба, …" />
         </div>
       </Card>
@@ -1205,21 +1254,49 @@ function ProgramsAdmin() {
   const { createProgram, patchProgram, deleteProgram, syncDpo } = useAdminMutations();
   const [showCreate, setShowCreate] = useState(false);
   const [confirmDel, setConfirmDel] = useState<AdminProgram | null>(null);
+  const list = programs.data ?? [];
+  const actualCount = list.filter((p) => p.enrollment !== "nonactual" && p.status !== "archived").length;
+  const closedCount = list.filter((p) => p.enrollment === "nonactual" && p.status !== "archived").length;
+  const publishedCount = list.filter((p) => p.status === "published").length;
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-[var(--c-line)] bg-[var(--c-bg-raised)]">
       <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--c-bg-sunken)] px-6 py-3.5">
-        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">Каталог ДПО · {programs.data?.length ?? "…"} программ</span>
+        <div className="min-w-0">
+          <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">
+            Каталог ДПО · {list.length ? `${publishedCount} на витрине` : "…"} · актуальный набор {list.length ? actualCount : "…"} · закрытый {list.length ? closedCount : "…"}
+          </span>
+          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-[var(--c-text-3)]">
+            <a className="foc text-[var(--c-link)] underline-offset-2 hover:underline" href="https://www.hse.ru/edu/dpo/?orgUnit=22753" target="_blank" rel="noopener noreferrer">
+              hse.ru · актуальный набор
+            </a>
+            <a className="foc text-[var(--c-link)] underline-offset-2 hover:underline" href="https://www.hse.ru/edu/dpo/?onlyActual=0&orgUnit=22753" target="_blank" rel="noopener noreferrer">
+              hse.ru · весь каталог
+            </a>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => syncDpo.mutate()} disabled={syncDpo.isPending} title="Забрать актуальный набор с hse.ru (факультет права)" className="foc rounded-[10px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2 text-sm font-semibold disabled:opacity-60">
+          <button
+            onClick={() => syncDpo.mutate()}
+            disabled={syncDpo.isPending}
+            title="Синхронизация как на лендинге ДПО: актуальный набор + onlyActual=0 (весь каталог факультета права)"
+            className="foc rounded-[10px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2 text-sm font-semibold disabled:opacity-60"
+          >
             {syncDpo.isPending ? "Синхронизируем…" : "⟳ Обновить с hse.ru"}
           </button>
           <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-[var(--c-accent)] px-4 py-2 text-sm font-semibold text-[var(--c-on-accent)]">+ Добавить программу</button>
         </div>
       </div>
-      {syncDpo.isSuccess && <p className="border-t border-[var(--c-line)] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[var(--c-ok-text)]">Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив (актуальный набор {(syncDpo.data as any).actual ?? "–"}, закрытые {(syncDpo.data as any).nonactual ?? "–"}). Ночная автосинхронизация – ежедневно в 05:00.</p>}
+      {syncDpo.isSuccess && (
+        <p className="border-t border-[var(--c-line)] bg-[rgba(31,138,91,.07)] px-6 py-2.5 font-mono text-[12px] text-[var(--c-ok-text)]">
+          Синхронизировано с hse.ru: +{syncDpo.data.created} новых, {syncDpo.data.updated} обновлено, {syncDpo.data.archived} в архив
+          {" "}(актуальный набор {syncDpo.data.actual} / весь каталог {syncDpo.data.total},
+          {" "}закрытые {syncDpo.data.nonactual}).
+          {" "}Ночная автосинхронизация – ежедневно в 05:00.
+        </p>
+      )}
       {syncDpo.isError && <p className="border-t border-[var(--c-line)] px-6 py-2.5 font-mono text-[12px] text-[var(--c-danger-text)]">Синхронизация не удалась: {(syncDpo.error as Error).message}</p>}
-      {(programs.data ?? []).map((p) => (
+      {list.map((p) => (
         <div key={p.id} className="grid grid-cols-[1fr_150px_120px_130px_36px] items-center gap-3 border-t border-[var(--c-line)] px-6 py-3.5 text-sm max-md:grid-cols-1">
           <div className="min-w-0">
             <div className="truncate font-semibold">{p.title}</div>
@@ -1234,7 +1311,7 @@ function ProgramsAdmin() {
           <button aria-label={`Удалить ${p.title}`} onClick={() => setConfirmDel(p)} className="foc h-8 w-8 rounded-[9px] text-[var(--c-danger-text)] hover:bg-[rgba(181,51,27,.08)]">✕</button>
         </div>
       ))}
-      {programs.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-[var(--c-text-3)]">Программ нет – добавьте первую.</p>}
+      {list.length === 0 && <p className="p-10 text-center font-mono text-sm text-[var(--c-text-3)]">Программ нет – добавьте первую или обновите каталог с hse.ru.</p>}
       {(createProgram.isError || deleteProgram.isError || patchProgram.isError) && <p className="px-6 py-3 font-mono text-xs text-[var(--c-danger-text)]">Не удалось сохранить изменение – попробуйте ещё раз.</p>}
 
       {showCreate && <ProgramForm busy={createProgram.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createProgram.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
@@ -1307,7 +1384,7 @@ function ConfirmDelete({ title, hint, busy, onCancel, onConfirm }: { title: stri
 
 // Цена вводится в рублях, хранится в копейках.
 function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: ProgramInput) => void }) {
-  const [f, setF] = useState({ title: "", direction: "", format: "online", duration: "", priceRub: "", start: "", description: "" });
+  const [f, setF] = useState({ title: "", direction: "", format: "online", duration: "", priceRub: "", start: "", description: "", cover: "" });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
   const valid = f.title.trim().length >= 3 && f.direction.trim().length >= 2 && f.duration.trim() && Number(f.priceRub) > 0;
   const submit = (e: FormEvent) => {
@@ -1317,6 +1394,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
       title: f.title.trim(), direction: f.direction.trim(), format: f.format, duration: f.duration.trim(),
       price: Math.round(Number(f.priceRub) * 100),
       start: f.start.trim() || null, description: f.description.trim() || null,
+      cover: f.cover.trim() || null,
       document: "Удостоверение о повышении квалификации НИУ ВШЭ",
     });
   };
@@ -1341,6 +1419,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
             <FormField label="Цена, ₽" value={f.priceRub} onChange={(v) => set("priceRub", v.replace(/[^\d]/g, ""))} ph="50000" required />
           </div>
           <FormField label="Старт (дата словами)" value={f.start} onChange={(v) => set("start", v)} ph="напр. 15 сентября 2026" />
+          <FormField label="Обложка (ссылка или /assets/…)" value={f.cover} onChange={(v) => set("cover", v)} ph="/assets/dpo-hero.jpg" />
           <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
         </div>
         <div className="mt-5 flex gap-2">

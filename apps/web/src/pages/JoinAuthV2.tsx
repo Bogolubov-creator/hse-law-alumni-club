@@ -1,11 +1,12 @@
 import { useEffect, useId, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { LEGAL_INTERESTS, MAX_INTERESTS } from "@club/shared";
+import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR } from "@club/shared";
 import { apiPost } from "../lib/api.js";
 import { useHead } from "../lib/title.js";
-import { VisionCorner } from "../components/Vision.js";
-import { mono, disp } from "../v2/Shell.js";
+import { V2Shell, mono, disp } from "../v2/Shell.js";
+import { caps } from "../styles/primitives.js";
 import { Mark } from "../v2/Mark.js";
+import { publicUrl } from "../lib/public-url.js";
 
 /**
  * Воронка входа v2: /join – заявка на вступление, /forgot – запрос ссылки,
@@ -21,9 +22,9 @@ import { Mark } from "../v2/Mark.js";
 
 const TOKEN_KEY = "club_token";
 
+/* Капс-лейблы полей, как у навигации и кнопок (канон 12.09). */
 const label: CSSProperties = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "none", color: "var(--c-text-3)",
+  ...caps, color: "var(--c-text-3)",
 };
 
 const input: CSSProperties = {
@@ -32,25 +33,44 @@ const input: CSSProperties = {
   fontSize: 15, fontFamily: "inherit",
 };
 
+/* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
 const primary: CSSProperties = {
   border: "1px solid var(--c-accent)", background: "var(--c-accent)", color: "var(--c-on-accent)",
-  borderRadius: 999, padding: "13px 22px", minHeight: 44, fontWeight: 600, fontSize: 15,
+  borderRadius: "var(--r-sm)", padding: "13px 22px", minHeight: 44, fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase",
   cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", textAlign: "center",
 };
 
 const ghost: CSSProperties = {
-  ...primary, background: "var(--c-bg)", color: "var(--c-accent-text)",
-  border: "1px solid color-mix(in srgb, var(--c-accent) 35%, transparent)",
+  ...primary, background: "transparent", color: "var(--c-text)",
+  border: "1px solid var(--c-text)",
 };
 
 /** Общая оболочка экранов входа: знак, заголовок, карточка, юр-ссылки под ней. */
-function AuthShell({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
+/** Тёмная панель рядом с анкетой вступления: фото факультета, три шага, срок проверки. */
+function JoinAside() {
   return (
-    <main id="main" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
-      <VisionCorner />
-      <div style={{ width: "100%", maxWidth: 520, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <Link to="/" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
-        <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 18 }} />
+    <aside className="club-auth__aside club-auth__aside--photo club-dark" aria-label="Как проходит вступление">
+      <img src={publicUrl("assets/photos/graduates-2026.webp")} alt="Выпускники факультета права на выпускном 2026 года" width={1440} height={960} decoding="async" />
+      <div className="club-auth__aside-copy">
+        <h2>Пять минут анкеты, и вы <em>в клубе</em></h2>
+        <ol>
+          <li><strong>Заявка</strong><span>Анкета с годом выпуска и образовательной программой.</span></li>
+          <li><strong>Проверка учебным офисом</strong><span>Обычно 1–2 рабочих дня, ответ приходит на почту.</span></li>
+          <li><strong>Кабинет</strong><span>Цена выпускника на ДПО, запись на встречи, разделы клуба.</span></li>
+        </ol>
+      </div>
+    </aside>
+  );
+}
+
+function AuthShell({ title, sub, children, aside }: { title: string; sub?: string; children: ReactNode; aside?: ReactNode }) {
+  return (
+    <V2Shell>
+    <main id="main" className={aside ? "club-auth club-auth--split" : "club-auth"} style={{ paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
+      {aside}
+      <div className="club-auth__card">
+      <div style={{ width: "100%", maxWidth: 560, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32, boxShadow: "var(--shadow-ambient)" }}>
+        <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)" }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{title}</h1>
         {sub && <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>{sub}</p>}
         {children}
@@ -61,7 +81,9 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
         <Link to="/confidential" className="foc" style={{ color: "var(--c-text-3)" }}>Конфиденциальность</Link>
         <Link to="/requisites" className="foc" style={{ color: "var(--c-text-3)" }}>Реквизиты</Link>
       </div>
+      </div>
     </main>
+    </V2Shell>
   );
 }
 
@@ -98,7 +120,7 @@ const EDU_LEVELS = ["бакалавриат", "магистратура", "сп�
 export function JoinV2() {
   useHead({
     title: "Вступить в клуб",
-    description: "Заявка в клуб выпускников факультета права Вышки: подтвердите выпуск и получите статус, скидку на ДПО и доступ к сообществу.",
+    description: "Заявка в клуб выпускников факультета права Вышки: проверка выпуска учебным офисом, кабинет и цена выпускника на ДПО.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/join`,
     noindex: true,
   });
@@ -108,6 +130,10 @@ export function JoinV2() {
   const [authed, setAuthed] = useState(() => !!localStorage.getItem(TOKEN_KEY));
   const [params] = useSearchParams();
   const ref = params.get("ref") ?? "";
+  // Deep-link после заявки (например из корзины: ?next=/cart).
+  const nextRaw = params.get("next");
+  const next =
+    nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : null;
   const [f, setF] = useState({ fio: "", email: "", password: "", cohort: "", edu_level: "магистратура", edu_program: "", consent: false, website: "" });
   const [interests, setInterests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -163,7 +189,7 @@ export function JoinV2() {
         <ol style={{ margin: "18px 0 0", paddingLeft: 20, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
           <li><strong>Сейчас:</strong> подтвердите почту по ссылке из письма.</li>
           <li><strong>Затем:</strong> учебный офис сверит выпуск (обычно 1–2 рабочих дня).</li>
-          <li><strong>После верификации:</strong> откроются кабинет, скидка на ДПО и сообщество.</li>
+          <li><strong>После верификации:</strong> откроются кабинет и цена выпускника на ДПО.</li>
         </ol>
         <Note>Письма нет? Загляните в «Спам» – иногда оно попадает туда.</Note>
         <Link to="/" className="foc" style={{ ...ghost, marginTop: 20 }}>На главную</Link>
@@ -180,7 +206,9 @@ export function JoinV2() {
           <li>После подтверждения войдите в кабинет – откроются скидка на ДПО и разделы клуба.</li>
         </ol>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
-          <Link to="/lk" className="foc" style={primary}>Войти в кабинет</Link>
+          <Link to={next ?? "/lk"} className="foc" style={primary}>
+            {next?.includes("cart") || next?.includes("orders") ? "К заказу" : "Войти в кабинет"}
+          </Link>
           <Link to="/" className="foc" style={ghost}>На главную</Link>
         </div>
       </AuthShell>
@@ -188,7 +216,7 @@ export function JoinV2() {
   }
 
   return (
-    <AuthShell title="Вступить в клуб" sub="Заполните анкету – учебный офис подтвердит ваш выпуск, и кабинет со скидкой на ДПО, сообществом и подкастами станет доступен.">
+    <AuthShell title="Вступить в клуб" sub="Заполните анкету. Учебный офис подтвердит выпуск – после этого откроются кабинет и цена выпускника на ДПО." aside={<JoinAside />}>
       {ref && <Note tone="ok">Вы пришли по приглашению однокурсника – после подтверждения выпуска он получит баллы клуба.</Note>}
 
       <form onSubmit={submit} style={{ marginTop: 18 }}>
@@ -197,9 +225,10 @@ export function JoinV2() {
           value={f.website} onChange={(e) => set("website", e.target.value)}
           style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
+        {/* Две группы вместо одной ленты полей: «о вас» – что сверяет офис, «доступ» – что нужно вам. */}
+        <h2 style={{ ...disp, fontWeight: 600, fontSize: 18, margin: "8px 0 6px" }}>О вас</h2>
         <Field name="фио" value={f.fio} onChange={(v) => set("fio", v)} ph="Иван Иванов" autoComplete="name" />
         <Field name="почта" type="email" value={f.email} onChange={(v) => set("email", v)} ph="you@mail.ru" autoComplete="email" />
-        <Field name="пароль" type="password" value={f.password} onChange={(v) => set("password", v)} hint="от 8 символов" autoComplete="new-password" />
         <Field name="год выпуска" value={f.cohort} onChange={(v) => set("cohort", v.replace(/[^\d]/g, "").slice(0, 4))} ph="2026" inputMode="numeric" />
 
         <div style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -210,6 +239,9 @@ export function JoinV2() {
         </div>
 
         <Field name="образовательная программа" value={f.edu_program} onChange={(v) => set("edu_program", v)} ph="напр. Публичное право" />
+
+        <h2 style={{ ...disp, fontWeight: 600, fontSize: 18, margin: "28px 0 6px" }}>Доступ в кабинет</h2>
+        <Field name="пароль" type="password" value={f.password} onChange={(v) => set("password", v)} hint="от 8 символов" autoComplete="new-password" />
 
         <div style={{ padding: "14px 0", borderTop: "1px solid var(--c-line)" }}>
           <div style={label}>интересы в праве · необязательно, до {MAX_INTERESTS}</div>
@@ -222,9 +254,9 @@ export function JoinV2() {
                   style={{
                     ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                     padding: "7px 12px", borderRadius: 999,
-                    border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line-control)"}`,
-                    background: on ? "var(--c-accent)" : "transparent",
-                    color: on ? "var(--c-on-accent)" : "var(--c-text-2)",
+                    border: `1px solid ${on ? "var(--c-bg-inverse)" : "var(--c-line-control)"}`,
+                    background: on ? "var(--c-bg-inverse)" : "transparent",
+                    color: on ? "var(--c-text-inverse)" : "var(--c-text-2)",
                     opacity: !on && full ? 0.4 : 1,
                     cursor: !on && full ? "not-allowed" : "pointer",
                   }}>
@@ -237,27 +269,27 @@ export function JoinV2() {
 
         <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 14, cursor: "pointer", fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
           <input type="checkbox" checked={f.consent} required onChange={(e) => set("consent", e.target.checked)}
-            style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
+            style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-bg-inverse)" }} />
           <span>
-            Даю согласие на обработку персональных данных –{" "}
-            <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>
+            Даю согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} –{" "}
+            <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-link)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>
           </span>
         </label>
 
         {err && <p role="alert" style={{ ...mono, margin: "12px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
 
-        <button type="submit" disabled={busy || !f.consent} className="foc"
-          style={{
-            ...primary, width: "100%", marginTop: 16,
-            ...(busy || !f.consent
-              ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line-control)", cursor: busy ? "wait" : "not-allowed" }
-              : {}),
-          }}>
-          {busy ? "Отправляем…" : f.consent ? "Подать заявку на вступление" : "Нужно согласие на обработку данных"}
+        <p style={{ margin: "18px 0 0", fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
+          Учебный офис сверит выпуск с реестром факультета – обычно 1–2 рабочих дня. Ответ придёт на почту.
+        </p>
+
+        {/* Кнопка всегда активна: без согласия браузер подсветит чекбокс, а не «сломанную» серую кнопку. */}
+        <button type="submit" disabled={busy} className="foc"
+          style={{ ...primary, width: "100%", marginTop: 14, cursor: busy ? "wait" : "pointer" }}>
+          {busy ? "Отправляем…" : "Подать заявку на вступление"}
         </button>
 
         <p style={{ textAlign: "center", margin: "14px 0 0", fontSize: "var(--t-small)", color: "var(--c-text-3)" }}>
-          Уже в клубе? <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Войти</Link>
+          Уже в клубе? <Link to="/lk" className="foc" style={{ color: "var(--c-link)", fontWeight: 600 }}>Войти</Link>
         </p>
       </form>
     </AuthShell>
@@ -268,29 +300,41 @@ export function JoinV2() {
 
 export function ForgotV2() {
   useHead({ title: "Восстановление пароля", noindex: true });
+  const [params] = useSearchParams();
+  const returnTo = params.get("next") === "/podcasts#podcast-subscription"
+    ? "/lk?next=%2Fpodcasts%23podcast-subscription" : "/lk";
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    // Ответ всегда одинаковый: по нему нельзя узнать, есть ли такой аккаунт.
-    try { await apiPost("/auth/forgot", { email }); } catch { /* намеренно молча */ }
-    setSent(true);
-    setBusy(false);
+    setErr(null);
+    try {
+      // Сервер одинаково отвечает для существующих и неизвестных адресов.
+      await apiPost("/auth/forgot", { email, ...(returnTo !== "/lk" ? { next: "/podcasts#podcast-subscription" } : {}) });
+      setSent(true);
+    } catch {
+      setErr("Не удалось отправить запрос. Проверьте соединение и попробуйте ещё раз. Если ошибка повторяется, обратитесь в поддержку.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <AuthShell title="Восстановление пароля" sub="Укажите почту от аккаунта – пришлём ссылку для смены пароля, она действует 30 минут.">
+      {!sent && <Link to={returnTo} className="foc">← Вернуться ко входу</Link>}
       {sent ? (
         <>
           <Note tone="ok">Если такой аккаунт существует, письмо со ссылкой уже отправлено. Проверьте почту и папку «Спам».</Note>
-          <Link to="/lk" className="foc" style={{ ...primary, marginTop: 20 }}>К входу</Link>
+          <Link to={returnTo} className="foc" style={{ ...primary, marginTop: 20 }}>К входу</Link>
         </>
       ) : (
         <form onSubmit={submit} style={{ marginTop: 18 }}>
           <Field name="почта" type="email" value={email} onChange={setEmail} ph="you@mail.ru" autoComplete="email" />
+          {err && <p role="alert" style={{ color: "var(--c-danger-text)", lineHeight: 1.55 }}>{err} <Link to="/support" className="foc">Написать в поддержку</Link></p>}
           <button type="submit" disabled={busy} className="foc" style={{ ...primary, width: "100%", marginTop: 16, cursor: busy ? "wait" : "pointer" }}>
             {busy ? "Отправляем…" : "Прислать ссылку"}
           </button>
@@ -306,6 +350,9 @@ export function ResetV2() {
   useHead({ title: "Новый пароль", noindex: true });
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
+  const returning = params.get("next") === "/podcasts#podcast-subscription";
+  const loginUrl = returning ? "/lk?next=%2Fpodcasts%23podcast-subscription" : "/lk";
+  const forgotUrl = returning ? "/forgot?next=%2Fpodcasts%23podcast-subscription" : "/forgot";
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
   const [busy, setBusy] = useState(false);
@@ -330,24 +377,24 @@ export function ResetV2() {
   if (!token) {
     return (
       <AuthShell title="Ссылка неполная" sub="Откройте ссылку из письма целиком или запросите новую.">
-        <Link to="/forgot" className="foc" style={{ ...primary, marginTop: 20 }}>Запросить новую</Link>
+        <Link to={forgotUrl} className="foc" style={{ ...primary, marginTop: 20 }}>Запросить новую</Link>
       </AuthShell>
     );
   }
   if (done) {
     return (
-      <AuthShell title="Пароль обновлён" sub="Теперь войдите с новым паролем.">
-        <Link to="/lk" className="foc" style={{ ...primary, marginTop: 20 }}>Войти в кабинет</Link>
+      <AuthShell title="Пароль обновлён" sub={returning ? "Войдите с новым паролем – вернём вас к оформлению подписки на подкасты." : "Теперь войдите с новым паролем."}>
+        <Link to={loginUrl} className="foc" style={{ ...primary, marginTop: 20 }}>Войти в кабинет</Link>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell title="Новый пароль">
+    <AuthShell title="Новый пароль" sub={returning ? "После смены пароля войдите в кабинет, чтобы продолжить оформление подписки на подкасты." : undefined}>
       <form onSubmit={submit} style={{ marginTop: 18 }}>
         <Field name="новый пароль" type="password" value={p1} onChange={setP1} hint="от 8 символов" autoComplete="new-password" />
         <Field name="повторите пароль" type="password" value={p2} onChange={setP2} autoComplete="new-password" />
-        {err && <p role="alert" style={{ ...mono, margin: "12px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
+        {err && <p role="alert" style={{ ...mono, margin: "12px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err} <Link to={forgotUrl} className="foc">Запросить новую ссылку</Link></p>}
         <button type="submit" disabled={busy} className="foc" style={{ ...primary, width: "100%", marginTop: 16, cursor: busy ? "wait" : "pointer" }}>
           {busy ? "Сохраняем…" : "Сохранить пароль"}
         </button>

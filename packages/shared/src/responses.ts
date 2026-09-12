@@ -16,7 +16,7 @@ export const timelineItemSchema = z.object({
 export const timelineSchema = z.array(timelineItemSchema);
 
 // Подкасты клуба: audio_url отдаётся только активным подписчикам
-export const PODCAST_SUB_PRICE_KOP = 399_900; // 3 999 ₽ / год
+export const PODCAST_SUB_PRICE_KOP = 499_900; // 4 999 ₽ / год
 export const podcastItemSchema = z.object({
   id: z.string(), title: z.string(), description: z.string().nullable(),
   cover: z.string().nullable(), duration: z.string().nullable(),
@@ -51,16 +51,28 @@ export const programSchema = z.object({
   source_url: z.string().nullable().optional(),
   dates: z.object({ start: z.string().optional() }).nullable().optional(),
   document: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  cover: z.string().nullable().optional(), // путь/URL обложки программы
 });
 export const programsSchema = z.array(programSchema);
 export const programModuleSchema = z.object({ title: z.string(), hours: z.number().optional(), points: z.array(z.string()).optional() });
-export const programTeacherSchema = z.object({ name: z.string(), role: z.string().optional() });
+export const programTeacherSchema = z.object({
+  name: z.string(),
+  role: z.string().optional(),
+  photo: z.string().nullable().optional(),
+});
 export const programFullSchema = programSchema.extend({
   dates: z.object({ start: z.string() }).partial().nullable().optional(),
   modules: z.array(programModuleSchema).nullable().optional(),
   teachers: z.array(programTeacherSchema).nullable().optional(),
   description: z.string().nullable().optional(),
   document: z.string().nullable().optional(),
+  cover: z.string().nullable().optional(),
+  tagline: z.string().nullable().optional(),
+  audience: z.array(z.string()).nullable().optional(),
+  results: z.array(z.string()).nullable().optional(),
+  advantages: z.array(z.string()).nullable().optional(),
+  hse_id: z.string().nullable().optional(),
 });
 
 export const productVariantSchema = z.object({ sku: z.string(), size: z.string().optional(), color: z.string().optional(), stock: z.number() });

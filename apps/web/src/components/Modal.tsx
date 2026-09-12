@@ -43,7 +43,7 @@ export default function Modal({
   return createPortal(
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: "var(--layer-modal, 500)", background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "auto" }}
+      style={{ position: "fixed", inset: 0, zIndex: "var(--layer-modal, 500)", background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "auto", overscrollBehavior: "contain" }}
     >
       <div
         ref={ref}
@@ -52,7 +52,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         onClick={(e) => e.stopPropagation()}
-        style={{ position: "relative", width: "100%", maxWidth, outline: "none", maxHeight: "92dvh", overflowY: "auto", WebkitOverflowScrolling: "touch", borderRadius: 22 }}
+        style={{ position: "relative", width: "100%", maxWidth, outline: "none", maxHeight: "92dvh", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", borderRadius: 22 }}
       >
         {children}
       </div>

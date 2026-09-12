@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useIsMobile } from "../lib/use-mobile.js";
+import { useIsPwaShell } from "../lib/use-pwa.js";
 import { ClubSupportBot } from "./ClubSupportBot.js";
 import { crowMascotApi } from "../mascot/crow-mascot.js";
+import { publicUrl } from "../lib/public-url.js";
 import "./CrowSupportLauncher.css";
 
 type CrowInstance = {
@@ -20,6 +23,9 @@ export function SupportDock() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const crowRef = useRef<CrowInstance | null>(null);
+  const mobile = useIsMobile();
+  const pwa = useIsPwaShell();
+  const compact = mobile || pwa;
   const hidden = pathname.startsWith("/admin") || pathname.includes("/support");
 
   useEffect(() => {
@@ -34,9 +40,10 @@ export function SupportDock() {
     const openBot = () => setOpen(true);
 
     const mount = () => {
-      if (cancelled || crowRef.current) return;
-      const narrow = window.matchMedia("(max-width: 1023px)").matches;
-      const width = narrow ? 96 : 200;
+      if (cancelled || crowRef.current || hit) return;
+
+      // На телефоне персонаж меньше, чтобы оставить место содержимому.
+      const width = compact ? 80 : 112;
       const height = Math.round((width * 1465) / 1400);
 
       hit = document.createElement("button");
@@ -57,15 +64,17 @@ export function SupportDock() {
       document.body.appendChild(viBtn);
 
       crow = crowMascotApi.mount({
-        assetPath: "/assets/crow/",
+        assetPath: publicUrl("assets/crow/"),
         anchor: "bottom-right",
         width,
         zIndex: 40,
-        idleSeconds: 14,
+        idleSeconds: 0,
+        followCursor: false,
         idleAnim: "askQ",
         onClick: openBot,
         solo: true,
       }) as CrowInstance;
+      crow.play("idle");
       crow.host.classList.add("club-crow-corner");
       crowRef.current = crow;
     };
@@ -85,7 +94,7 @@ export function SupportDock() {
       hit?.remove();
       viBtn?.remove();
     };
-  }, [hidden]);
+  }, [hidden, compact]);
 
   useEffect(() => {
     const crow = crowRef.current;
@@ -101,7 +110,7 @@ export function SupportDock() {
       open={open}
       onClose={() => {
         setOpen(false);
-        window.setTimeout(() => crowRef.current?.play("wave"), 50);
+        document.querySelector<HTMLButtonElement>(".club-crow-hit")?.focus({ preventScroll: true });
       }}
     />
   );

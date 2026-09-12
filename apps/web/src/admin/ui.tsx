@@ -22,10 +22,10 @@ export { mono, disp, label, action, actionGhost } from "../styles/primitives.js"
 /** Поле панели плотнее кабинетного: ввод с клавиатуры, а не с телефона. */
 export { fieldCompact as field } from "../styles/primitives.js";
 
-/** Блок-запись. Рамка, а не тень: тень в плотном списке превращается в грязь. */
+/** Блок-запись: материал сайта – hairline и мягкая тень снизу (не тяжелее, чем у карточки кабинета). */
 export function Panel({ children, style }: { children: ReactNode; style?: CSSProperties }) {
   return (
-    <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 20, ...style }}>
+    <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 20, boxShadow: "0 14px 32px -24px rgb(20 24 31 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.9)", ...style }}>
       {children}
     </div>
   );
@@ -34,7 +34,7 @@ export function Panel({ children, style }: { children: ReactNode; style?: CSSPro
 export function PanelTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-      <h2 style={{ ...disp, fontWeight: 600, fontSize: 17, margin: 0 }}>{children}</h2>
+      <h2 style={{ fontFamily: "var(--f-display)", fontWeight: 400, letterSpacing: "var(--tr-display)", fontSize: 21, lineHeight: 1.2, margin: 0 }}>{children}</h2>
       {right}
     </div>
   );
@@ -70,12 +70,12 @@ export function Row({ children, cols, style }: { children: ReactNode; cols: stri
   );
 }
 
-/** Показатель обзора: число крупно моноширинным, подпись под ним. */
+/** Показатель обзора: число плитой HSE Slab, подпись под ним. */
 export function Stat({ name, value, note, accent }: { name: string; value: number | string; note?: string; accent?: boolean }) {
   return (
     <div style={{ padding: "16px 0", borderTop: "1px solid var(--c-line)" }}>
       <div style={label}>{name}</div>
-      <div style={{ ...mono, fontSize: 28, fontWeight: 500, marginTop: 6, color: accent ? "var(--c-accent-text)" : "var(--c-text)" }}>{value}</div>
+      <div style={{ fontFamily: "var(--f-display)", fontWeight: 400, fontVariantNumeric: "tabular-nums", fontSize: 34, lineHeight: 1.1, marginTop: 6, color: accent ? "var(--c-accent-text)" : "var(--c-text)" }}>{value}</div>
       {note && <div style={{ ...label, fontSize: 10, marginTop: 4 }}>{note}</div>}
     </div>
   );

@@ -1,18 +1,19 @@
+import { SiteNotice } from "./components/SiteNotice.js";
+import { RouteScroll } from "./components/RouteScroll.js";
 import { SupportDock } from "./components/SupportDock.js";
 import { lazy, Suspense, useEffect } from "react";
-import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { useIsMobile } from "./lib/use-mobile.js";
-import { useIsPwaShell } from "./lib/use-pwa.js";
+import { Routes, Route, Navigate, useNavigate, useLocation, Link } from "react-router-dom";
 import Stub from "./pages/Stub.js";
 import CookieBanner from "./components/CookieBanner.js";
+import { PageViewBeacon } from "./components/PageViewBeacon.js";
 import InstallPrompt from "./components/InstallPrompt.js";
 import { PwaShell } from "./components/PwaShell.js";
 import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./lib/cart.js";
 
-// Канон (этап 0): публичное лицо – бывший v2. Legacy UI под /legacy.
-// На телефоне (<768px) и в установленном PWA для ключевых маршрутов – MobileApp.
+// Канон: публичное лицо – бывший v2. /v2/* и /legacy/* – только редиректы на канон.
+// Телефон – та же адаптивная вёрстка (решение заказчика 12.09), отдельного «приложения» нет.
 
 const SupportV2 = lazy(() => import("./pages/SupportV2.js"));
 const SupportConsent = lazy(() => import("./pages/SupportV2.js").then(m => ({ default: m.SupportConsent })));
@@ -24,6 +25,7 @@ const ProgramV2 = lazy(() => import("./pages/ProgramV2.js"));
 const NewsV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsV2 })));
 const NewsPostV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsPostV2 })));
 const EventsV2 = lazy(() => import("./pages/EventsV2.js"));
+const PodcastEpisode = lazy(() => import("./pages/PodcastEpisode.js"));
 const PodcastsV2 = lazy(() => import("./pages/PodcastsV2.js"));
 const JoinV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.JoinV2 })));
 const ForgotV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ForgotV2 })));
@@ -36,25 +38,6 @@ const Privacy = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.
 const Confidential = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Confidential })));
 const Requisites = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Requisites })));
 const AdminApp = lazy(() => import("./admin/AdminApp.js"));
-const MobileApp = lazy(() => import("./mobile/MobileApp.js"));
-
-const Home = lazy(() => import("./pages/Home.js"));
-const News = lazy(() => import("./pages/News.js"));
-const NewsPost = lazy(() => import("./pages/NewsPost.js"));
-const Dpo = lazy(() => import("./pages/Dpo.js"));
-const Program = lazy(() => import("./pages/Program.js"));
-const Merch = lazy(() => import("./pages/Merch.js"));
-const Podcasts = lazy(() => import("./pages/Podcasts.js"));
-const Events = lazy(() => import("./pages/Events.js"));
-const Join = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Join })));
-const Forgot = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Forgot })));
-const Reset = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.Reset })));
-const ConfirmEmail = lazy(() => import("./pages/JoinAuth.js").then((m) => ({ default: m.ConfirmEmail })));
-const Lk = lazy(() => import("./pages/Lk.js"));
-const Profile = lazy(() => import("./pages/Profile.js"));
-const Cart = lazy(() => import("./pages/Cart.js"));
-
-const MOBILE_APP_ROUTES = new Set(["/", "/news", "/dpo", "/podcasts", "/merch"]);
 
 /** Старые закладки /v2/... → канонические пути. */
 function StripV2Prefix() {
@@ -63,18 +46,16 @@ function StripV2Prefix() {
   return <Navigate to={`${next}${search}${hash}`} replace />;
 }
 
+/** Soft-cutover: /legacy/... → канон без старого UI (файлы pages/* legacy – hard-remove позже). */
+function StripLegacyPrefix() {
+  const { pathname, search, hash } = useLocation();
+  const next = pathname === "/legacy" || pathname === "/legacy/" ? "/" : pathname.replace(/^\/legacy/, "") || "/";
+  return <Navigate to={`${next}${search}${hash}`} replace />;
+}
+
 export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isMobile = useIsMobile();
-  const isPwa = useIsPwaShell();
-  const appShell = (isMobile || isPwa) && !pathname.startsWith("/admin");
-  const mobileTakeover = appShell && (
-    MOBILE_APP_ROUTES.has(pathname)
-    || pathname.startsWith("/dpo/")
-    || pathname.startsWith("/news/")
-    || pathname === "/cart"
-  );
 
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {
@@ -90,11 +71,22 @@ export default function App() {
 
   return (
     <PwaShell>
-      {import.meta.env.VITE_LOCAL_REVIEW === "true" && <div className="club-local-notice">Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</div>}
+      {import.meta.env.VITE_LOCAL_REVIEW === "true" && <SiteNotice>Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</SiteNotice>}
+      {import.meta.env.VITE_MIRROR === "true" && (
+        <SiteNotice>
+          Публичное зеркало · демо-данные ·{" "}
+          <Link to="/lk" className="foc" style={{ color: "inherit", fontWeight: 600 }}>кабинет</Link>
+          {" · "}
+          <Link to="/admin" className="foc" style={{ color: "inherit", fontWeight: 600 }}>админка</Link>
+          {" · "}
+          <Link to="/?pwa=1" className="foc" style={{ color: "inherit", fontWeight: 600 }}>Смотреть как на телефоне</Link>
+          {" · отправка заявок отключена"}
+        </SiteNotice>
+      )}
       <VisionPanel />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
-        {mobileTakeover ? <MobileApp /> : (
+        <RouteScroll />
         <Routes>
           <Route path="/" element={<HomeV2 />} />
           <Route path="/support" element={<SupportV2 />} />
@@ -109,6 +101,7 @@ export default function App() {
           <Route path="/events" element={<EventsV2 />} />
           <Route path="/events/:eventId" element={<EventsV2 />} />
           <Route path="/podcasts" element={<PodcastsV2 />} />
+          <Route path="/podcasts/:id" element={<PodcastEpisode />} />
           <Route path="/join" element={<JoinV2 />} />
           <Route path="/forgot" element={<ForgotV2 />} />
           <Route path="/reset" element={<ResetV2 />} />
@@ -123,31 +116,15 @@ export default function App() {
           <Route path="/v2" element={<StripV2Prefix />} />
           <Route path="/v2/*" element={<StripV2Prefix />} />
 
-          <Route path="/legacy" element={<Home />} />
-          <Route path="/legacy/news" element={<News />} />
-          <Route path="/legacy/news/:slug" element={<NewsPost />} />
-          <Route path="/legacy/dpo" element={<Dpo />} />
-          <Route path="/legacy/dpo/:slug" element={<Program />} />
-          <Route path="/legacy/merch" element={<Merch />} />
-          <Route path="/legacy/cart" element={<Cart />} />
-          <Route path="/legacy/podcasts" element={<Podcasts />} />
-          <Route path="/legacy/events" element={<Events />} />
-          <Route path="/legacy/join" element={<Join />} />
-          <Route path="/legacy/forgot" element={<Forgot />} />
-          <Route path="/legacy/reset" element={<Reset />} />
-          <Route path="/legacy/confirm" element={<ConfirmEmail />} />
-          <Route path="/legacy/lk" element={<Lk />} />
-          <Route path="/legacy/lk/profile" element={<Profile />} />
-          <Route path="/legacy/privacy" element={<Privacy />} />
-          <Route path="/legacy/confidential" element={<Confidential />} />
-          <Route path="/legacy/requisites" element={<Requisites />} />
+          <Route path="/legacy" element={<StripLegacyPrefix />} />
+          <Route path="/legacy/*" element={<StripLegacyPrefix />} />
 
           <Route path="*" element={<Stub title="Страница не найдена" />} />
         </Routes>
-        )}
       </Suspense>
       </ErrorBoundary>
       <SupportDock />
+      <PageViewBeacon />
       <CookieBanner />
       <InstallPrompt />
     </PwaShell>

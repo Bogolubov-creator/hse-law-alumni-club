@@ -31,6 +31,7 @@ describe("admin-analytics helpers", () => {
         by_type: [{ key: "dpo", count: 2 }, { key: "=cmd", count: 1 }],
         by_status: [{ key: "new", count: 1 }],
         paid_sum_kop: 10000,
+        programs_top: [{ ref_id: "ip", title: "Право ИС", qty: 3, orders: 2 }],
       },
       community: {
         points_by_reason: [{ key: "event", count: 3 }],
@@ -40,6 +41,10 @@ describe("admin-analytics helpers", () => {
         events_top: [{ event_id: "e1", title: "Встреча", rsvps: 4, attended: 2 }],
         podcasts_top: [{ podcast_id: "p1", title: "Выпуск 1", plays: 5, listeners: 3 }],
       },
+      pageviews: {
+        hits: 12,
+        paths_top: [{ path: "/dpo", count: 5 }],
+      },
       support: {
         open: 1, created_in_range: 2,
         by_status: [{ status: "open", count: 1 }],
@@ -48,6 +53,7 @@ describe("admin-analytics helpers", () => {
       series: {
         joins_by_day: [{ day: "2026-09-01", count: 2 }],
         orders_by_day: [{ day: "2026-09-02", count: 3 }],
+        pageviews_by_day: [{ day: "2026-09-02", count: 4 }],
       },
     };
     const csv = analyticsToCsv(sample);
@@ -55,6 +61,7 @@ describe("admin-analytics helpers", () => {
     expect(csv).toContain("pulse");
     expect(csv).toContain("joins");
     expect(csv).toContain("joins_by_day");
+    expect(csv).toContain("programs_top");
     expect(csv).toContain("'=cmd"); // CSV-инъекция обезврежена
   });
 
@@ -66,5 +73,25 @@ describe("admin-analytics helpers", () => {
     expect(series.find((x) => x.day === "2026-09-09")?.count).toBe(2);
     expect(series.find((x) => x.day === "2026-09-08")?.count).toBe(0);
     expect(series.find((x) => x.day === "2026-09-07")?.count).toBe(1);
+  });
+
+  it("topProgramsFromItems агрегирует только dpo", async () => {
+    const { topProgramsFromItems } = await import("./admin-analytics.js");
+    const top = topProgramsFromItems([
+      [
+        { type: "dpo", ref_id: "ip", title: "Право ИС", qty: 1 },
+        { type: "merch", ref_id: "robe", title: "Мантия", qty: 2 },
+      ],
+      [
+        { type: "dpo", ref_id: "ip", title: "Право интеллектуальной собственности", qty: 2 },
+        { type: "dpo", ref_id: "tax", title: "Налоги", qty: 1 },
+      ],
+      null,
+      "noise",
+    ]);
+    expect(top[0]).toMatchObject({ ref_id: "ip", qty: 3, orders: 2 });
+    expect(top[0]?.title).toContain("интеллектуальной");
+    expect(top[1]).toMatchObject({ ref_id: "tax", qty: 1, orders: 1 });
+    expect(top.every((x) => x.ref_id !== "robe")).toBe(true);
   });
 });

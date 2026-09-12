@@ -1,11 +1,14 @@
-import { Link } from "react-router-dom";
-import { rub, type PodcastItem } from "../lib/api.js";
+import { PodcastSubscription } from "../components/PodcastSubscription.js";
+import { PodcastArtwork } from "../components/PodcastArtwork.js";
+import { Mark } from "../v2/Mark.js";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
-import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
+import { usePodcasts } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
-import { EpisodePlayer } from "../components/EpisodePlayer.js";
-import { VideoEmbed } from "../components/VideoEmbed.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { action } from "../styles/primitives.js";
 
 /**
  * Подкасты v2 (/podcasts) – выпуски как записи фонотеки: номер и
@@ -33,64 +36,36 @@ export default function PodcastsV2() {
 
   const t = token();
   const q = usePodcasts(t);
-  const subscribe = useSubscribePodcasts(t);
   const data = q.data;
-  const priceRub = data ? rub(data.price) : "3 999 ₽";
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash !== "#podcast-subscription" || !data || data.subscribed) return;
+    const panel = document.getElementById("podcast-subscription");
+    panel?.scrollIntoView({ block: "start" });
+    panel?.focus({ preventScroll: true });
+  }, [hash, data]);
   const items = data?.items ?? [];
-
-  const onSubscribe = () =>
-    subscribe.mutate(undefined, {
-      onSuccess: (r) => { if (r.payment_url) window.location.assign(r.payment_url); },
-    });
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         <ShowcaseHead
-          eyebrow="фонотека · подкасты"
-          title="Разговоры о праве и практике"
-          lead="Выпускники, преподаватели и практики права. Пробный выпуск открыт всем, остальное – по годовой подписке."
+          photo={{ src: "assets/photos/hall-audience.jpg", alt: "Аудитория факультета права во время лекции", side: "left" }}
+          eyebrow="подкасты"
+          title="Подкасты клуба"
+          lead="Выпуски о праве и практике. Один выпуск бесплатно, остальные – по годовой подписке."
           count={items.length ? `выпусков ${items.length}` : undefined}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}
-        {data && !data.subscribed && (
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "20px 22px", borderRadius: "var(--r-lg)", border: "1px solid var(--c-line-strong)", background: "var(--c-bg-raised)" }}>
-            <div style={{ minWidth: 240, flex: 1 }}>
-              <div style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)" }}>Подписка · {priceRub} в год</div>
-              <p style={{ margin: "8px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5, maxWidth: "56ch" }}>
-                Все выпуски без ограничений. {t
-                  ? "Оформление – заявка; если онлайн-оплата подключена, сразу откроется оплата картой."
-                  : "Чтобы оформить, войдите в личный кабинет."}
-              </p>
-            </div>
-            {t ? (
-              <button onClick={onSubscribe} disabled={subscribe.isPending} className="foc"
-                style={{ flex: "none", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15, cursor: subscribe.isPending ? "wait" : "pointer" }}>
-                {subscribe.isPending ? "Оформляем…" : "Оформить подписку"}
-              </button>
-            ) : (
-              <Link to="/lk" className="foc"
-                style={{ flex: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15, textDecoration: "none" }}>
-                Войти в кабинет
-              </Link>
-            )}
-          </div>
-        )}
+        {data && !data.subscribed && <PodcastSubscription token={t} price={data.price} />}
 
         {data?.subscribed && (
-          <div style={{ ...label, color: "var(--c-ok-text)", padding: "14px 0", borderTop: "1px solid var(--c-line)", borderBottom: "1px solid var(--c-line)" }}>
-            подписка активна{data.sub_until ? ` до ${new Date(data.sub_until).toLocaleDateString("ru-RU")}` : ""} · доступны все выпуски
+          <div className="podcast-member-panel">
+            <Mark kind="scales" size={34} />
+            <div><strong>Ваша подписка активна</strong><p>{data.sub_until ? `До ${new Date(data.sub_until).toLocaleDateString("ru-RU")} · ` : ""}Все выпуски доступны для прослушивания</p></div>
           </div>
-        )}
-
-        {subscribe.isSuccess && !subscribe.data.payment_url && (
-          <p role="status" style={{ ...label, color: "var(--c-status-text)", textTransform: "none", letterSpacing: 0, margin: "14px 0 0", lineHeight: 1.5 }}>
-            Заявка {subscribe.data.number} оформлена – менеджер учебного офиса свяжется для оплаты, после чего подписка включится.
-          </p>
-        )}
-        {subscribe.isError && (
-          <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "14px 0 0" }}>{(subscribe.error as Error).message}</p>
         )}
 
         {q.isLoading && <p style={{ ...label, margin: "26px 0 0" }}>загружаем выпуски…</p>}
@@ -98,45 +73,36 @@ export default function PodcastsV2() {
         {q.isError && (
           <div style={{ borderTop: "1px solid var(--c-line)", marginTop: 26, padding: "40px 0" }}>
             <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>выпуски не загрузились</p>
-            <button onClick={() => q.refetch()} className="foc" style={{ marginTop: 16, border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "12px 20px", fontWeight: 600, cursor: "pointer" }}>Повторить</button>
+            <button onClick={() => q.refetch()} className="foc" style={{ ...action, marginTop: 16 }}>Повторить</button>
           </div>
         )}
 
         <div style={{ marginTop: 26 }}>
-          {items.map((p: PodcastItem, i) => (
-            <article key={p.id} className="v2-row" style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
-              <div>
-                <div style={{ ...mono, fontSize: 17, fontWeight: 500, color: "var(--c-text)" }}>{String(i + 1).padStart(2, "0")}</div>
-                {p.duration && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 6 }}>{p.duration}</div>}
-                {p.cover && (
-                  <img src={p.cover} alt="" width={56} height={56} loading="lazy"
-                    style={{ width: 56, height: 56, marginTop: 10, borderRadius: "var(--r-sm)", objectFit: "cover" }}
-                    onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
-                )}
+          {items.map((p: PodcastItem, i) => {
+            const locked = !p.is_free && !data?.subscribed;
+            return (
+            <article key={p.id} className={`v2-row podcast-row${locked ? " podcast-row--locked" : ""}`} style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
+              <div className="podcast-row__meta">
+                <Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" aria-label={`Открыть выпуск: ${p.title}`}><PodcastArtwork key={p.id} cover={p.cover} number={i + 1} locked={locked} /></Link>
+                {p.duration && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 10 }}>{p.duration}</div>}
               </div>
 
               <div style={{ minWidth: 0 }}>
-                {p.is_free && <div style={{ ...label, fontSize: "var(--t-micro)", color: "var(--c-ok-text)", marginBottom: 6 }}>пробный выпуск · бесплатно</div>}
-                <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}>{p.title}</h2>
+                <h2 style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}><Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" style={{ color: "inherit", textDecoration: "none" }}>{p.title}</Link></h2>
+                {locked && <div className="podcast-access-label">По подписке</div>}
+                {p.is_free && <div style={{ ...label, fontSize: "var(--t-caption)", color: "var(--c-ok-text)", marginTop: 6 }}>Пробный выпуск, бесплатно</div>}
                 {p.description && (
                   <p style={{ margin: "9px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: "62ch" }}>{p.description}</p>
                 )}
 
-                <div style={{ marginTop: 14 }}>
-                  {/* Видеовыпуск: если есть запись на RuTube, показываем её вместо аудио */}
-                  {p.video_url ? (
-                    <VideoEmbed src={p.video_url} title={p.title} v2 />
-                  ) : p.audio_url ? (
-                    <EpisodePlayer id={p.id} src={p.audio_url} v2 />
-                  ) : (
-                    <div style={{ ...label, fontSize: "var(--t-micro)", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: "1px dashed var(--c-line)", borderRadius: "var(--r-md)" }}>
-                      <span aria-hidden>🔒</span> доступно по подписке {priceRub} в год
-                    </div>
-                  )}
-                </div>
+                {locked ? (
+                  <a href="#podcast-subscription" className="foc podcast-subscribe-link" onClick={() => document.getElementById("podcast-subscription")?.focus({ preventScroll: true })}>Оформить подписку</a>
+                ) : (
+                  <Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" style={{ ...action, display: "inline-flex", marginTop: 18 }}>Прослушать</Link>
+                )}
               </div>
             </article>
-          ))}
+          ); })}
           {items.length > 0 && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
         </div>
 
@@ -145,6 +111,7 @@ export default function PodcastsV2() {
             <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Выпусков пока нет. О новых напишем в новостях клуба.</p>
           </div>
         )}
+        </div>
       </main>
     </V2Shell>
   );

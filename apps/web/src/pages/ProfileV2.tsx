@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { LEGAL_INTERESTS, MAX_INTERESTS, type Achievement, type LedgerEntry } from "@club/shared";
+import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR, type LedgerEntry } from "@club/shared";
 import { apiPatch, apiPost, isAuthError, type Me } from "../lib/api.js";
 import { useMe, useLedger } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { logout as logoutSession } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { BlankField, mono, disp } from "../v2/Shell.js";
-import { CabinetShell, Section, Initial, Progress, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
+import { CabinetShell, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
 
 /**
  * Профиль выпускника v2 (/lk/profile) – тот же режим, что и кабинет:
@@ -81,13 +81,35 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
   };
 
   const sub = [a.cohort ? `выпуск ${a.cohort}` : null, a.edu_program].filter(Boolean).join(" · ") || "выпускник клуба";
+  const canUpload = a.verification_status === "verified" || a.verification_status === "pending";
+  const statusLabel =
+    a.verification_status === "verified" ? "подтверждён"
+      : a.verification_status === "rejected" ? "отклонён"
+        : "на проверке";
+  const statusColor =
+    a.verification_status === "verified" ? "var(--c-ok-text)"
+      : a.verification_status === "rejected" ? "var(--c-danger-text)"
+        : "var(--c-status-text)";
 
   return (
     <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 22, background: "var(--c-bg-raised)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        {a.avatar
-          ? <img src={`/api/avatars/${a.avatar}`} alt="" width={64} height={64} style={{ width: 64, height: 64, flexShrink: 0, borderRadius: "var(--r-md)", objectFit: "cover" }} />
-          : <Initial fio={a.fio} size={64} radius="var(--r-md)" />}
+        <button
+          type="button"
+          onClick={() => canUpload && !busy && fileRef.current?.click()}
+          disabled={!canUpload || busy}
+          className="foc"
+          aria-label={a.avatar ? "Сменить фото профиля" : "Загрузить фото профиля"}
+          title={canUpload ? (a.avatar ? "Нажмите, чтобы сменить фото" : "Нажмите, чтобы загрузить фото") : "Загрузка фото недоступна"}
+          style={{
+            padding: 0, border: "none", background: "transparent", cursor: canUpload && !busy ? "pointer" : "default",
+            borderRadius: "var(--r-md)", flexShrink: 0, position: "relative",
+          }}
+        >
+          {a.avatar
+            ? <img src={`/api/avatars/${a.avatar}`} alt="" width={64} height={64} style={{ width: 64, height: 64, borderRadius: "var(--r-md)", objectFit: "cover", display: "block" }} />
+            : <Initial fio={a.fio} size={64} radius="var(--r-md)" />}
+        </button>
         <div style={{ minWidth: 0, flex: 1 }}>
           <BlankField label={sub}>
             <span style={{ ...disp, display: "block", fontWeight: 700, fontSize: 20, lineHeight: 1.2 }}>{a.fio ?? "Выпускник"}</span>
@@ -95,14 +117,21 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
         </div>
       </div>
 
-      <button onClick={() => fileRef.current?.click()} disabled={busy} className="foc"
-        style={{ ...actionGhost, width: "100%", marginTop: 16, padding: "10px 14px", cursor: busy ? "wait" : "pointer" }}>
-        {busy ? "загружаем…" : a.avatar ? "сменить фото" : "загрузить фото"}
-      </button>
+      {canUpload && (
+        <button onClick={() => fileRef.current?.click()} disabled={busy} className="foc"
+          style={{ ...actionGhost, width: "100%", marginTop: 16, padding: "10px 14px", cursor: busy ? "wait" : "pointer" }}>
+          {busy ? "загружаем…" : a.avatar ? "сменить фото" : "загрузить фото"}
+        </button>
+      )}
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }}
         aria-label="Файл фотографии профиля"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
       {err && <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0" }}>{err}</p>}
+      {a.verification_status === "rejected" && (
+        <p style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0", lineHeight: 1.45 }}>
+          Заявка отклонена учебным офисом. Фото профиля недоступно для загрузки.
+        </p>
+      )}
 
       <div style={{ marginTop: 18 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -115,8 +144,8 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
         </div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
           <span style={label}>статус</span>
-          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: a.verification_status === "verified" ? "var(--c-ok-text)" : "var(--c-status-text)" }}>
-            {a.verification_status === "verified" ? "подтверждён" : "на проверке"}
+          <span style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", color: statusColor }}>
+            {statusLabel}
           </span>
         </div>
       </div>
@@ -196,7 +225,7 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
       </div>
 
       <p style={{ fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-3)", margin: "6px 0 0" }}>
-        Сохраняя, вы даёте согласие на обработку персональных данных –{" "}
+        Сохраняя, вы даёте согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} –{" "}
         <Link to="/privacy" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политика обработки</Link>.
       </p>
       {err && <p role="alert" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-danger-text)", margin: "10px 0 0" }}>{err}</p>}
@@ -214,50 +243,49 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
 function History({ token }: { token: string }) {
   const ledger = useLedger(token);
   const list = ledger.data ?? [];
+
+  useEffect(() => {
+    if (ledger.isLoading || window.location.hash !== "#ledger") return;
+    document.getElementById("ledger")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [ledger.isLoading, list.length]);
+
   return (
     <Section title="История баллов" note={list.length ? `записей ${list.length}` : undefined}>
-      {ledger.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
-      {!ledger.isLoading && list.length === 0 && (
-        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
-          Начислений пока нет. Баллы приходят за программы ДПО, события клуба и приглашённых однокурсников.
-        </p>
-      )}
-      {list.map((p: LedgerEntry) => (
-        <div key={p.id} style={{ display: "grid", gridTemplateColumns: "56px 1fr auto", gap: 14, alignItems: "baseline", padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
-          <span style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{fmtDay(p.created_at)}</span>
-          <span style={{ fontSize: "var(--t-body)", color: "var(--c-text-2)", lineHeight: 1.4 }}>{p.comment || REASON_TEXT[p.reason] || p.reason}</span>
-          <span style={{ ...mono, fontSize: 15, fontWeight: 500, whiteSpace: "nowrap", color: p.delta >= 0 ? "var(--c-ok-text)" : "var(--c-danger-text)" }}>
-            {p.delta >= 0 ? "+" : ""}{p.delta}
-          </span>
-        </div>
-      ))}
+      <div id="ledger">
+        {ledger.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
+        {!ledger.isLoading && list.length === 0 && (
+          <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
+            Начислений пока нет. Баллы приходят за программы ДПО, события клуба и приглашённых однокурсников.
+          </p>
+        )}
+        {list.map((p: LedgerEntry) => (
+          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "56px 1fr auto", gap: 14, alignItems: "baseline", padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
+            <span style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{fmtDay(p.created_at)}</span>
+            <span style={{ fontSize: "var(--t-body)", color: "var(--c-text-2)", lineHeight: 1.4 }}>{p.comment || REASON_TEXT[p.reason] || p.reason}</span>
+            <span style={{ ...mono, fontSize: 15, fontWeight: 500, whiteSpace: "nowrap", color: p.delta >= 0 ? "var(--c-ok-text)" : "var(--c-danger-text)" }}>
+              {p.delta >= 0 ? "+" : ""}{p.delta}
+            </span>
+          </div>
+        ))}
+      </div>
     </Section>
   );
 }
 
-/* ── Правила достижений ───────────────────────────────────────────── */
+/* ── Достижения: ссылка в кабинет, без второго каталога ───────────── */
 
-function Rules({ me }: { me: Me }) {
+function AchievementsLink({ me }: { me: Me }) {
   const earned = me.achievements.filter((a) => a.earned).length;
   if (!me.achievements.length) return null;
 
   return (
-    <Section title="Достижения: правила и прогресс" note={`открыто ${earned} из ${me.achievements.length}`}>
-      {me.achievements.map((b: Achievement) => (
-        <div key={b.key} style={{ display: "grid", gridTemplateColumns: "26px 1fr", gap: 14, padding: "14px 0", borderTop: "1px solid var(--c-line)" }}>
-          <span aria-hidden style={{ fontSize: 17, lineHeight: 1.2, filter: b.earned ? "none" : "grayscale(1)", opacity: b.earned ? 1 : 0.6 }}>{b.icon}</span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-              <span style={{ fontSize: "var(--t-body)", fontWeight: b.earned ? 500 : 400, color: b.earned ? "var(--c-text)" : "var(--c-text-2)" }}>{b.title}</span>
-              <span style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", textTransform: "none", whiteSpace: "nowrap", color: b.earned ? "var(--c-ok-text)" : "var(--c-text-3)" }}>
-                {b.earned ? "получено" : `${b.current} / ${b.target}`}
-              </span>
-            </div>
-            <p style={{ fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-3)", margin: "6px 0 10px" }}>{b.description}</p>
-            <Progress value={b.current} target={b.target} done={b.earned} />
-          </div>
-        </div>
-      ))}
+    <Section title="Достижения" note={`открыто ${earned} из ${me.achievements.length}`}>
+      <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14, lineHeight: 1.6 }}>
+        Полный каталог и прогресс – в кабинете. Здесь только краткий счётчик.
+      </p>
+      <Link to="/lk?section=achievements" className="foc" style={{ ...action, display: "inline-flex", marginTop: 14, padding: "11px 16px", borderRadius: "var(--r-md)", textDecoration: "none" }}>
+        Открыть достижения →
+      </Link>
     </Section>
   );
 }
@@ -302,17 +330,19 @@ function DataRights({ token }: { token: string }) {
   };
 
   return (
-    <section style={{ marginTop: 44, border: "1px solid var(--c-danger-text)", borderRadius: "var(--r-lg)", padding: 22 }}>
-      <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0, color: "var(--c-danger-text)" }}>Ваши данные</h2>
+    <section id="data-rights" className="profile-rights" aria-labelledby="profile-rights-title" style={{ marginTop: 48, padding: "28px 24px", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)" }}>
+      <p style={{ ...label, margin: 0, color: "var(--c-text-3)" }}>права субъекта · 152-ФЗ</p>
+      <h2 id="profile-rights-title" style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: "10px 0 0", color: "var(--c-text)" }}>Ваши персональные данные</h2>
       <p style={{ color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, margin: "10px 0 0", maxWidth: 620 }}>
-        По 152-ФЗ вы вправе получить копию своих данных, отозвать согласие и потребовать удаления персональных данных.
-        Профиль будет обезличен, контакты и фото стёрты, вход в аккаунт закрыт. Действие необратимо.
+        Этот блок отдельно от редактирования профиля. Вы вправе получить копию данных, отозвать согласие
+        и потребовать удаления. После удаления профиль обезличивается, контакты и фото стираются, вход закрывается.
+        Действие необратимо.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
-        <button onClick={exportData} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>скачать мои данные (json)</button>
+        <button type="button" onClick={exportData} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>скачать мои данные (json)</button>
         {!open && (
-          <button onClick={() => setOpen(true)} className="foc"
+          <button type="button" onClick={() => setOpen(true)} className="foc"
             style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)", borderColor: "var(--c-danger-text)", color: "var(--c-danger-text)" }}>
             удалить мой аккаунт
           </button>
@@ -327,12 +357,12 @@ function DataRights({ token }: { token: string }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
             <input id="v2-del-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="УДАЛИТЬ" className="foc"
               style={{ ...field, ...mono, width: "auto", marginTop: 0, minWidth: 160 }} />
-            <button onClick={del} disabled={confirm !== "УДАЛИТЬ" || busy} className="foc"
+            <button type="button" onClick={del} disabled={confirm !== "УДАЛИТЬ" || busy} className="foc"
               style={{ ...action, padding: "11px 16px", borderRadius: "var(--r-md)", background: "var(--c-danger)", color: "#fff",
                 cursor: confirm === "УДАЛИТЬ" && !busy ? "pointer" : "not-allowed", opacity: confirm === "УДАЛИТЬ" && !busy ? 1 : 0.5 }}>
               {busy ? "удаляем…" : "удалить навсегда"}
             </button>
-            <button onClick={() => { setOpen(false); setConfirm(""); }} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>отмена</button>
+            <button type="button" onClick={() => { setOpen(false); setConfirm(""); }} className="foc" style={{ ...actionGhost, padding: "11px 16px", borderRadius: "var(--r-md)" }}>отмена</button>
           </div>
         </div>
       )}
@@ -368,10 +398,29 @@ function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
             <IdentityCard me={me.data} token={token} onChanged={() => me.refetch()} />
           </div>
           <div>
-            <ContactsForm me={me.data} token={token} onSaved={() => me.refetch()} />
-            <History token={token} />
-            <Rules me={me.data} />
-            <DataRights token={token} />
+            {me.data.alumni.verification_status === "verified" ? (
+              <>
+                <div className="profile-edit-zone">
+                  <p style={{ ...label, margin: "0 0 18px", color: "var(--c-text-3)" }}>редактирование профиля</p>
+                  <ContactsForm me={me.data} token={token} onSaved={() => me.refetch()} />
+                  <History token={token} />
+                  <AchievementsLink me={me.data} />
+                </div>
+                <DataRights token={token} />
+              </>
+            ) : (
+              <section style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 22, background: "var(--c-bg-raised)" }}>
+                <p style={{ ...label, margin: 0, color: "var(--c-status-text)" }}>
+                  {me.data.alumni.verification_status === "rejected" ? "заявка отклонена" : "ожидает верификации"}
+                </p>
+                <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: 520 }}>
+                  {me.data.alumni.verification_status === "rejected"
+                    ? "Редактирование профиля и кабинет недоступны. При необходимости свяжитесь с учебным офисом."
+                    : "Пока офис проверяет выпуск, можно загрузить фото слева. Контакты, баллы и достижения откроются после подтверждения."}
+                </p>
+                <Link to="/lk" className="foc" style={{ ...actionGhost, display: "inline-block", marginTop: 16, textDecoration: "none" }}>к статусу заявки</Link>
+              </section>
+            )}
           </div>
         </div>
       )}

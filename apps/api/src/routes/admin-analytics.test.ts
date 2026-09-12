@@ -27,8 +27,21 @@ beforeEach(() => {
       { id: "a2", fio: "Б", joined_at: iso(40), verified_at: null, verification_status: "pending", referred_by: null, points_cached: 0 },
     ],
     orders: [
-      { id: "o1", type: "dpo", status: "new", payment_status: null, total_estimate: 500000, created_at: iso(1) },
-      { id: "o2", type: "merch", status: "done", payment_status: "succeeded", total_estimate: 350000, created_at: iso(5) },
+      {
+        id: "o1", type: "dpo", status: "new", payment_status: null, total_estimate: 500000, created_at: iso(1),
+        items_json: [{ type: "dpo", ref_id: "ip", title: "Право ИС", qty: 1 }],
+      },
+      {
+        id: "o2", type: "merch", status: "done", payment_status: "succeeded", total_estimate: 350000, created_at: iso(5),
+        items_json: [{ type: "merch", ref_id: "robe", title: "Мантия", qty: 1 }],
+      },
+      {
+        id: "o3", type: "dpo", status: "new", payment_status: null, total_estimate: 800000, created_at: iso(2),
+        items_json: [
+          { type: "dpo", ref_id: "ip", title: "Право ИС", qty: 1 },
+          { type: "dpo", ref_id: "tax", title: "Налоги", qty: 1 },
+        ],
+      },
     ],
     event_rsvps: [
       { id: "r1", event_id: "e1", alumni_id: "a1", attended: true, created_at: iso(2) },
@@ -72,8 +85,9 @@ describe("GET /admin/analytics", () => {
     const j = r.json();
     expect(j.range).toBe("30d");
     expect(j.pulse.joins).toBe(1); // a1 within 30d, a2 is 40d ago
-    expect(j.pulse.orders_created).toBe(2);
-    expect(j.orders.by_type.some((x: { key: string; count: number }) => x.key === "dpo" && x.count === 1)).toBe(true);
+    expect(j.pulse.orders_created).toBe(3);
+    expect(j.orders.by_type.some((x: { key: string; count: number }) => x.key === "dpo" && x.count === 2)).toBe(true);
+    expect(j.orders.programs_top[0]).toMatchObject({ ref_id: "ip", qty: 2, orders: 2 });
     expect(j.engagement.events_top[0]?.rsvps).toBe(2);
     expect(j.community.achievements_top[0]?.key).toBe("first_step");
     expect(j.pulse.login_ok).toBe(1);

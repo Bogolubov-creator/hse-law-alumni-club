@@ -5,7 +5,11 @@ import { ApiError, FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } 
 import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
+import { HeroPicture } from "../components/HeroPicture.js";
+import { mediaUrl } from "../lib/public-url.js";
 import { V2Shell, mono, disp, pageTitle } from "../v2/Shell.js";
+import { action, actionGhost } from "../styles/primitives.js";
+import "../styles/program.css";
 
 /**
  * Карточка программы ДПО v2 (/dpo/:slug).
@@ -60,7 +64,12 @@ export default function ProgramV2() {
   const priced = p ? p.price - Math.round((p.price * discount) / 100) : 0;
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];
   const teachers: ProgramTeacher[] = Array.isArray(p?.teachers) ? p!.teachers : [];
+  const audience = Array.isArray(p?.audience) ? p!.audience : [];
+  const results = Array.isArray(p?.results) ? p!.results : [];
+  const advantages = Array.isArray(p?.advantages) ? p!.advantages : [];
   const totalHours = modules.reduce((s, m) => s + (m.hours ?? 0), 0);
+  const coverSrc = p?.cover || "/assets/dpo-hero.jpg";
+  const coverIsHeroFallback = !p?.cover;
 
   useHead({
     title: q.isError ? (notFound ? "Программа не найдена" : "Не удалось загрузить программу") : p?.title ?? "Программа ДПО",
@@ -79,9 +88,10 @@ export default function ProgramV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
-        <nav style={{ ...label, paddingTop: 28 }} aria-label="Хлебные крошки">
-          <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>витрина дпо</Link>
+      <main id="main">
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <nav style={{ ...label, paddingTop: 24, paddingBottom: 8 }} aria-label="Хлебные крошки">
+          <Link to="/dpo" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>витрина дпо</Link>
           {p?.direction && <> · {p.direction}</>}
         </nav>
 
@@ -89,28 +99,42 @@ export default function ProgramV2() {
 
         {q.isError && (
           <div style={{ padding: "56px 0" }}>
-            <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h2)", margin: 0 }}>{notFound ? "Программа не найдена" : "Не удалось загрузить программу"}</h1>
+            <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: 0 }}>{notFound ? "Программа не найдена" : "Не удалось загрузить программу"}</h1>
             <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", maxWidth: 520, lineHeight: 1.55 }}>
               {notFound ? "Такой записи в каталоге нет – возможно, набор завершён и программа снята." : "Сервер временно недоступен. Повторите загрузку."}
             </p>
             {!notFound && <button className="foc" onClick={() => q.refetch()}>Повторить загрузку</button>}
-            <Link to="/dpo" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/dpo" className="foc" style={{ ...action, marginTop: 20 }}>
               Весь каталог программ
             </Link>
           </div>
         )}
 
+        </div>
         {p && (
           <>
-          <div style={{ paddingTop: 24, maxWidth: "58ch" }}><h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: 0 }}>{p.title}</h1></div>
+          {/* Мачта программы: обложка как предмет на графите с тёплым свечением, титул плитой справа */}
+          <header className="club-program-mast club-dark">
+            <div className="club-program-mast__art">
+              {coverIsHeroFallback ? (
+                <HeroPicture path="assets/dpo-hero.jpg" alt="" width={1400} height={700} className="club-program-cover" />
+              ) : (
+                <img className="club-program-cover" src={mediaUrl(coverSrc)} alt="" width={1400} height={788} decoding="async" loading="eager" fetchPriority="high" />
+              )}
+            </div>
+            <div className="club-program-mast__copy">
+              <h1>{p.title}</h1>
+              {p.tagline && <p className="club-program-mast__tagline">{p.tagline}</p>}
+              <p className="club-program-mast__meta">
+                {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration, totalHours > 0 ? `${totalHours} ак. ч.` : null].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+          </header>
+          <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
             {/* ── Содержание записи ── */}
             <div style={{ minWidth: 0 }}>
 
-              <div style={{ ...label, marginTop: 16 }}>
-                {[FORMAT_LABEL[p.format] ?? p.format, p.duration, totalHours > 0 ? `${totalHours} ак. ч.` : null]
-                  .filter(Boolean).join(" · ")}
-              </div>
               {p.enrollment === "nonactual" && (
                 <div style={{ ...label, color: "var(--c-danger-text)", marginTop: 8 }}>набор закрыт</div>
               )}
@@ -118,7 +142,49 @@ export default function ProgramV2() {
               {p.description && (
                 <section style={{ marginTop: 30 }}>
                   <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>О программе</h2>
-                  <p style={{ margin: "12px 0 0", fontSize: "var(--t-body)", lineHeight: 1.65, color: "var(--c-text-2)", maxWidth: "64ch" }}>{p.description}</p>
+                  <p style={{ margin: "12px 0 0", fontSize: "var(--t-body)", lineHeight: 1.65, color: "var(--c-text-2)", maxWidth: "64ch", whiteSpace: "pre-line" }}>{p.description}</p>
+                </section>
+              )}
+
+              {audience.length > 0 && (
+                <section style={{ marginTop: 36 }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Кому подойдёт</h2>
+                  <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
+                    {audience.map((item, i) => (
+                      <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
+                        <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {results.length > 0 && (
+                <section style={{ marginTop: 36 }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Чему научитесь</h2>
+                  <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
+                    {results.map((item, i) => (
+                      <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
+                        <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {advantages.length > 0 && (
+                <section style={{ marginTop: 36 }}>
+                  <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Преимущества</h2>
+                  <ul style={{ margin: "12px 0 0", padding: 0, listStyle: "none", maxWidth: "64ch" }}>
+                    {advantages.map((item, i) => (
+                      <li key={i} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "6px 0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)", borderTop: i ? "1px solid var(--c-line)" : undefined }}>
+                        <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
 
@@ -127,7 +193,7 @@ export default function ProgramV2() {
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
                     <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Программа курса</h2>
                     <span style={label}>
-                      {modules.length} {plural(modules.length, "модуль", "модуля", "модулей")}
+                      {modules.length} {plural(modules.length, "раздел", "раздела", "разделов")}
                       {totalHours > 0 && ` · ${totalHours} ак. ч.`}
                     </span>
                   </div>
@@ -162,7 +228,7 @@ export default function ProgramV2() {
                             <ul style={{ margin: 0, padding: "0 0 18px 58px", listStyle: "none" }}>
                               {points.map((pt, j) => (
                                 <li key={j} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 10, padding: "5px 0", fontSize: "var(--t-small)", lineHeight: 1.55, color: "var(--c-text-2)" }}>
-                                  <span aria-hidden style={{ color: "var(--c-accent)" }}>–</span>
+                                  <span aria-hidden style={{ color: "var(--c-text-3)" }}>–</span>
                                   <span>{pt}</span>
                                 </li>
                               ))}
@@ -181,10 +247,22 @@ export default function ProgramV2() {
                   <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Преподаватели</h2>
                   <div style={{ marginTop: 12 }}>
                     {teachers.map((t, i) => (
-                      <div key={i} style={{ display: "grid", gridTemplateColumns: "40px 1fr", gap: 14, alignItems: "center", padding: "13px 0", borderTop: "1px solid var(--c-line)" }}>
-                        <span aria-hidden style={{ width: 40, height: 40, borderRadius: "var(--r-sm)", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: 15, color: "var(--c-text-2)" }}>
-                          {t.name.trim().charAt(0).toUpperCase()}
-                        </span>
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "56px 1fr", gap: 14, alignItems: "center", padding: "13px 0", borderTop: "1px solid var(--c-line)" }}>
+                        {t.photo ? (
+                          <img
+                            src={mediaUrl(t.photo)}
+                            alt=""
+                            width={56}
+                            height={56}
+                            loading="lazy"
+                            decoding="async"
+                            style={{ width: 56, height: 56, borderRadius: "var(--r-sm)", objectFit: "cover", border: "1px solid var(--c-line)", background: "var(--c-bg-sunken)" }}
+                          />
+                        ) : (
+                          <span aria-hidden style={{ width: 56, height: 56, borderRadius: "var(--r-sm)", background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: 18, color: "var(--c-text-2)" }}>
+                            {t.name.trim().charAt(0).toUpperCase()}
+                          </span>
+                        )}
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{t.name}</div>
                           {t.role && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 3 }}>{t.role}</div>}
@@ -199,8 +277,8 @@ export default function ProgramV2() {
 
             {/* ── Бланк программы ── */}
             <aside className="v2-prog-aside" style={{ position: "sticky", top: 92 }}>
-              <div style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 22 }}>
-                <div style={{ ...mono, fontSize: 26, fontWeight: 600, color: discount > 0 ? "var(--c-accent-text)" : "var(--c-text)" }}>{rub(priced)}</div>
+              <div className="club-program-blank">
+                <div style={{ ...mono, fontSize: 26, fontWeight: 600, color: "var(--c-text)" }}>{rub(priced)}</div>
                 {discount > 0 && (
                   <div style={{ ...mono, fontSize: 13, color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
                 )}
@@ -234,19 +312,19 @@ export default function ProgramV2() {
                   </>
                 ) : p.source_url ? (
                   <>
-                    <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ display: "block", marginTop: 18, padding: "14px 16px", borderRadius: "var(--r-md)", background: "var(--c-anchor)", color: "#fff", textAlign: "center", fontWeight: 600, textDecoration: "none" }}>Записаться на hse.ru →</a>
+                    <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="foc" style={{ ...actionGhost, width: "100%", marginTop: 18 }}>Записаться на hse.ru ↗</a>
                     <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "12px 0 0", lineHeight: 1.5 }}>
-                      Запись и оплата – на официальном маркетплейсе ДПО НИУ ВШЭ. Скидка выпускника действует на все программы.
+                      Откроется официальный маркетплейс ДПО НИУ ВШЭ. Скидка выпускника учитывается после подтверждения выпуска в кабинете.
                     </p>
                   </>
                 ) : (
                   <>
                     <button disabled={add.isPending} onClick={leaveRequest} className="foc"
-                      style={{ width: "100%", marginTop: 18, padding: "14px 16px", borderRadius: "var(--r-md)", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 15, cursor: add.isPending ? "wait" : "pointer" }}>
+                      style={{ ...action, width: "100%", marginTop: 18, cursor: add.isPending ? "wait" : "pointer" }}>
                       Оставить заявку
                     </button>
                     <button disabled={add.isPending} onClick={addToCart} className="foc"
-                      style={{ width: "100%", marginTop: 8, padding: "12px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, fontSize: 15, cursor: add.isPending ? "wait" : "pointer" }}>
+                      style={{ ...actionGhost, width: "100%", marginTop: 8, cursor: add.isPending ? "wait" : "pointer" }}>
                       Положить в корзину
                     </button>
                     <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "12px 0 0", lineHeight: 1.5 }}>
@@ -256,6 +334,7 @@ export default function ProgramV2() {
                 )}
               </div>
             </aside>
+          </div>
           </div>
           </>
         )}

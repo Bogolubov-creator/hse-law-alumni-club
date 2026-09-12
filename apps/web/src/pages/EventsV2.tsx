@@ -8,6 +8,7 @@ import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { fmtEventDate, fmtEventDateFull, gcalUrl, type ClubEvent } from "../lib/events.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { action, actionGhost, caps } from "../styles/primitives.js";
 
 /** Афиша и прямая страница события используют общие данные и запись. */
 
@@ -16,9 +17,10 @@ const label = {
   textTransform: "none" as const, color: "var(--c-text-3)",
 };
 
+/* Бейдж: пилюля 999 – единственное место, где она уместна по канону 12.09. */
 const chip = {
   ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", textTransform: "none" as const,
-  padding: "4px 9px", borderRadius: 999, border: "1px solid var(--c-line)", color: "var(--c-text-2)",
+  padding: "4px 9px", borderRadius: 999, border: "1px solid var(--c-line-control)", color: "var(--c-text-2)",
 };
 
 export default function EventsV2() {
@@ -77,15 +79,9 @@ export default function EventsV2() {
         disabled={rsvp.isPending}
         aria-label={e.my_rsvp ? `Отменить запись: ${e.title}` : `Записаться: ${e.title}`}
         className="foc"
-        style={{
-          ...label, whiteSpace: "normal", cursor: rsvp.isPending ? "wait" : "pointer",
-          padding: "8px 14px", borderRadius: "var(--r-sm)",
-          border: e.my_rsvp ? "1px solid var(--c-ok-text)" : "none",
-          background: e.my_rsvp ? "transparent" : "var(--c-accent)",
-          color: e.my_rsvp ? "var(--c-ok-text)" : "var(--c-on-accent)",
-        }}
+        style={{ ...(e.my_rsvp ? actionGhost : action), padding: "10px 16px", minHeight: 40, whiteSpace: "normal", cursor: rsvp.isPending ? "wait" : "pointer" }}
       >
-        {e.my_rsvp ? "иду · отменить" : "пойду"}
+        {e.my_rsvp ? "Вы идёте · отменить" : "Пойду"}
       </button>
     );
   };
@@ -101,7 +97,7 @@ export default function EventsV2() {
       }}
     >
       <div>
-        <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: isPast ? "var(--c-text-3)" : "var(--c-accent-text)" }}>{fmtEventDate(e.starts_at)}</div>
+        <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: isPast ? "var(--c-text-3)" : "var(--c-text)" }}>{fmtEventDate(e.starts_at)}</div>
         <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 6 }}>{e.format === "online" ? "онлайн" : "очно"}</div>
       </div>
 
@@ -112,32 +108,34 @@ export default function EventsV2() {
         )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 12 }}>
           {e.location && <span style={{ ...label, fontSize: "var(--t-micro)" }}>{e.location}</span>}
-          {e.points > 0 && <span style={{ ...chip, color: "var(--c-status-text)", borderColor: "var(--c-status)" }}>+{e.points} баллов</span>}
+          {e.points > 0 && <span style={chip}>+{e.points} баллов</span>}
           <span style={{ ...label, fontSize: "var(--t-micro)" }}>{e.going > 0 ? `пойдут: ${e.going}` : "будьте первым"}</span>
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>{rsvpButton(e, isPast)}<button className="foc" onClick={(ev) => { ev.currentTarget.focus(); setOpenId(e.id); }} style={{ ...label, background: "transparent", border: "1px solid var(--c-line-control)", padding: 12, borderRadius: 8 }}>Быстрый просмотр</button></div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>{rsvpButton(e, isPast)}<button className="foc" onClick={(ev) => { ev.currentTarget.focus(); setOpenId(e.id); }} style={{ ...caps, color: "var(--c-text-2)", background: "transparent", border: "1px solid var(--c-line-control)", padding: "10px 14px", borderRadius: "var(--r-sm)", cursor: "pointer" }}>Быстрый просмотр</button></div>
     </article>
   );
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         {!eventId && <>
         <ShowcaseHead
-          eyebrow="календарь · события"
-          title="События и встречи клуба"
-          lead="Нетворкинги, лекции и встречи выпусков. Записывайтесь заранее – за участие начисляются баллы клуба."
+          photo={{ src: "assets/photos/hall-first-day.jpg", alt: "Зал факультета права в первый день учебного года" }}
+          eyebrow="события"
+          title="События клуба"
+          lead="Встречи выпусков и лекции. Запись заранее – за участие начисляются баллы."
           count={upcoming.length ? `ближайших ${upcoming.length}` : undefined}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         {events.isLoading && <p style={{ ...label, margin: 0 }}>загружаем афишу…</p>}
 
         {events.isError && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
             <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>афиша не загрузилась</p>
-            <button onClick={() => events.refetch()} className="foc" style={{ marginTop: 16, border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "12px 20px", fontWeight: 600, cursor: "pointer" }}>Повторить</button>
+            <button onClick={() => events.refetch()} className="foc" style={{ ...action, marginTop: 16 }}>Повторить</button>
           </div>
         )}
 
@@ -145,9 +143,10 @@ export default function EventsV2() {
           <label>Поиск по афише<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Название или место" /></label>
           <label>Формат<select value={format} onChange={e=>setFormat(e.target.value)}><option value="all">Все форматы</option><option value="online">Онлайн</option><option value="offline">Очно</option></select></label>
         </form>
+        {upcoming.length > 0 && <h2 style={{ ...caps, color: "var(--c-text-3)", margin: "0 0 4px" }}>Ближайшие</h2>}
         <div key={`${search}:${format}`} className="club-agenda-results">
           {upcoming.map((e, i) => (
-            <div key={e.id} className={i === 0 ? "club-event-featured" : undefined} style={i === 0 ? { background: "var(--c-bg-sunken)", borderRadius: 12, padding: "8px 20px 4px", marginBottom: 8 } : undefined}>
+            <div key={e.id} className={i === 0 ? "club-event-featured" : undefined}>
               {row(e, false)}
             </div>
           ))}
@@ -171,22 +170,24 @@ export default function EventsV2() {
           </section>
         )}
 
+        </div>
         </>}
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         {eventId && events.isLoading && <p role="status">Загружаем событие…</p>}
         {eventId && events.isError && <p role="alert">Не удалось загрузить событие. <button onClick={() => events.refetch()}>Повторить</button></p>}
         {eventId && events.isSuccess && !opened && <><h1>Событие не найдено</h1><Link to="/events">Вернуться к афише</Link></>}
         {opened && (
           <EventSurface detail={!!eventId} onClose={() => setOpenId(null)}>
             <div style={{ background: "var(--c-bg-raised)", color: "var(--c-text)", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--c-line)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: 20 }}><Link className="foc" to={eventId ? "/events" : `/events/${opened.id}`}>{eventId ? "← Вся афиша" : "Открыть страницу события"}</Link>{!eventId && <button className="foc" onClick={() => setOpenId(null)} style={{ ...label, padding: 12, border: "1px solid var(--c-line-control)", background: "transparent", borderRadius: 8 }}>Закрыть</button>}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: 20 }}><Link className="foc" to={eventId ? "/events" : `/events/${opened.id}`} style={{ color: "var(--c-link)" }}>{eventId ? "← Вся афиша" : "Открыть страницу события"}</Link>{!eventId && <button className="foc" onClick={() => setOpenId(null)} style={{ ...caps, color: "var(--c-text-2)", padding: "10px 14px", border: "1px solid var(--c-line-control)", background: "transparent", borderRadius: "var(--r-sm)", cursor: "pointer" }}>Закрыть</button>}</div>
               {opened.cover && (
-                <img src={opened.cover} alt={`Афиша: ${opened.title}`} style={{ display: "block", width: "100%", maxHeight: 240, objectFit: "cover" }}
+                <img src={opened.cover} alt={`Афиша: ${opened.title}`} width={1200} height={630} loading="lazy" decoding="async" style={{ display: "block", width: "100%", height: "auto", maxHeight: 240, objectFit: "cover" }}
                   onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
               )}
               <div style={{ padding: 26 }}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   <span style={chip}>{opened.format === "online" ? "онлайн" : "очно"}</span>
-                  {opened.points > 0 && <span style={{ ...chip, color: "var(--c-status-text)", borderColor: "var(--c-status)" }}>+{opened.points} баллов за участие</span>}
+                  {opened.points > 0 && <span style={chip}>+{opened.points} баллов за участие</span>}
                 </div>
                 <h1 id="ev2-modal-title" style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{opened.title}</h1>
 
@@ -212,7 +213,7 @@ export default function EventsV2() {
                   {rsvpButton(opened, new Date(opened.starts_at).getTime() < now || opened.status === "done")}
                   {opened.reg_url && (
                     <a href={opened.reg_url} target="_blank" rel="noopener noreferrer" className="foc"
-                      style={{ ...label, textDecoration: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-sm)", padding: "8px 14px" }}>
+                      style={{ ...label, textDecoration: "none", background: "var(--c-bg-inverse)", color: "var(--c-text-inverse)", borderRadius: "var(--r-sm)", padding: "8px 14px" }}>
                       регистрация ↗
                     </a>
                   )}
@@ -221,13 +222,14 @@ export default function EventsV2() {
 
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--c-line)" }}>
                   <span style={{ ...label, fontSize: "var(--t-micro)" }}>в календарь</span>
-                  <a href={`/api/events/${opened.id}.ics`} className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>.ics</a>
-                  <a href={gcalUrl(opened)} target="_blank" rel="noopener noreferrer" className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>google ↗</a>
+                  <a href={`/api/events/${opened.id}.ics`} className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>Файл .ics</a>
+                  <a href={gcalUrl(opened)} target="_blank" rel="noopener noreferrer" className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>Google Календарь ↗</a>
                 </div>
               </div>
             </div>
           </EventSurface>
         )}
+        </div>
       </main>
     </V2Shell>
   );

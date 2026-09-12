@@ -67,12 +67,13 @@ export type Member = {
   friends_count?: number; podcast_active?: boolean; duplicate?: boolean;
   email?: string | null; edu_level?: string | null; edu_program?: string | null;
   interests_json?: string[] | null; contacts_json?: Record<string, string> | null; joined_at?: string | null;
+  avatar?: string | null;
 };
 export type MembersPage = { items: Member[]; total: number; page: number; page_size: number };
 export type MembersQuery = { q?: string; status?: string; page?: number; limit?: number };
-export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; enrollment?: "actual" | "nonactual" | null; source_url?: string | null; dates?: { start?: string } | null; document?: string | null; description?: string | null };
+export type AdminProgram = { id: string; slug: string; title: string; direction: string; format: "online" | "offline" | "blended"; duration: string; price: number; status: string; enrollment?: "actual" | "nonactual" | null; source_url?: string | null; dates?: { start?: string } | null; document?: string | null; description?: string | null; cover?: string | null };
 export type AdminProduct = { id: string; slug: string; title: string; category: string; price: number; stock: number; status: string; variants_json?: { sku: string; size?: string; color?: string; stock: number }[] | null; description?: string | null };
-export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; start?: string | null; document?: string | null; status?: string };
+export type ProgramInput = { title: string; direction: string; format: string; duration: string; price: number; description?: string | null; cover?: string | null; start?: string | null; document?: string | null; status?: string };
 export type ProductInput = { title: string; category: string; price: number; stock?: number; description?: string | null; images?: string[] | null; status?: string };
 export type PageHeroInput = { badge?: string; title_pre?: string; title_accent?: string; subtitle?: string; cta_primary?: string; cta_secondary?: string; history_eyebrow?: string; history_title?: string; history_hint?: string; marquee?: string[] };
 export type PageCtaInput = { title?: string; text?: string; button?: string };
@@ -98,7 +99,12 @@ export type Analytics = {
     support_open: number | null; support_created: number | null;
   };
   snapshot: { alumni_count: number; alumni_verified: number; verified_ratio: number };
-  orders: { by_type: AnalyticsBucket[]; by_status: AnalyticsBucket[]; paid_sum_kop: number };
+  orders: {
+    by_type: AnalyticsBucket[];
+    by_status: AnalyticsBucket[];
+    paid_sum_kop: number;
+    programs_top: Array<{ ref_id: string; title: string; qty: number; orders: number }>;
+  };
   community: {
     points_by_reason: AnalyticsBucket[];
     achievements_top: Array<{ achievement_id: string; key: string; title: string; count: number }>;
@@ -115,6 +121,11 @@ export type Analytics = {
   series: {
     joins_by_day: Array<{ day: string; count: number }>;
     orders_by_day: Array<{ day: string; count: number }>;
+    pageviews_by_day: Array<{ day: string; count: number }>;
+  };
+  pageviews: {
+    hits: number | null;
+    paths_top: Array<{ path: string; count: number }>;
   };
 };
 
@@ -237,7 +248,19 @@ export function useAdminMutations() {
     createProduct: useMutation({ mutationFn: (v: ProductInput) => req("POST", "/admin/products", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
     patchProduct: useMutation({ mutationFn: (v: { id: string } & Partial<ProductInput>) => req("PATCH", `/admin/products/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
     deleteProduct: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/products/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
-    syncDpo: useMutation({ mutationFn: () => req<{ ok: boolean; created: number; updated: number; archived: number; total: number }>("POST", "/admin/dpo-sync"), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
+    syncDpo: useMutation({
+      mutationFn: () => req<{
+        ok: boolean;
+        created: number;
+        updated: number;
+        archived: number;
+        actual: number;
+        nonactual: number;
+        total: number;
+        sources?: { actual: string; all: string };
+      }>("POST", "/admin/dpo-sync"),
+      onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); },
+    }),
     savePage: useMutation({ mutationFn: (v: { slug: string; hero?: PageHeroInput; cta?: PageCtaInput }) => req("PATCH", `/admin/pages/${v.slug}`, { hero: v.hero, cta: v.cta }), onSuccess: (_r, v) => { refetch(); qc.invalidateQueries({ queryKey: ["page", v.slug] }); } }),
     // Новости
     createNews: useMutation({ mutationFn: (v: { title: string; excerpt?: string | null; body?: string | null }) => req("POST", "/admin/news", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["news"] }); } }),

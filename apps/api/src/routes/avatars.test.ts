@@ -116,9 +116,17 @@ describe("POST /me/avatar – доступ", () => {
     expect(r.statusCode).toBe(401);
   });
 
-  it("неверифицированному – 403", async () => {
+  it("pending – можно загрузить фото", async () => {
     const app = await build();
     db.alumni![0]!.verification_status = "pending";
+    const r = await upload(app, PNG, "image/png");
+    expect(r.statusCode).toBe(200);
+    expect(r.json().avatar).toBeTruthy();
+  });
+
+  it("rejected – 403", async () => {
+    const app = await build();
+    db.alumni![0]!.verification_status = "rejected";
     const r = await upload(app, PNG, "image/png");
     expect(r.statusCode).toBe(403);
   });

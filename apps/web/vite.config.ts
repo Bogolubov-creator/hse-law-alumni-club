@@ -5,9 +5,13 @@ import react from "@vitejs/plugin-react";
 // Абсолютный домен для статических og/JSON-LD в index.html (их читают превью-скрейперы
 // без JS). В проде задаётся VITE_SITE_URL=https://<домен>; по умолчанию – localhost.
 const SITE_URL = (process.env.VITE_SITE_URL || "http://localhost").replace(/\/$/, "");
+// GitHub Pages project site: VITE_BASE=/club-pravo-hse-mirror/
+const BASE = process.env.VITE_BASE || "/";
+const IS_MIRROR = process.env.VITE_MIRROR === "true";
 
 // В dev /api проксируется на локальный apps/api; в проде этим занимается Caddy.
 export default defineConfig({
+  base: BASE,
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
@@ -18,7 +22,19 @@ export default defineConfig({
       name: "html-site-url",
       // order:'pre' – заменяем плейсхолдеры ДО того, как Vite парсит URL-атрибуты
       // (иначе decodeURI спотыкается о «%SITE_URL%»).
-      transformIndexHtml: { order: "pre", handler: (html: string) => html.replace(/%SITE_URL%/g, SITE_URL) },
+      transformIndexHtml: {
+        order: "pre",
+        handler: (html: string) => {
+          let out = html.replace(/%SITE_URL%/g, SITE_URL);
+          if (IS_MIRROR) {
+            out = out.replace(
+              /<meta name="robots" content="index, follow"\s*\/>/,
+              '<meta name="robots" content="noindex, nofollow" />',
+            );
+          }
+          return out;
+        },
+      },
     },
   ],
   build: {

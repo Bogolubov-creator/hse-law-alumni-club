@@ -1,0 +1,56 @@
+/*
+ * Страница программы ДПО (12.09, вечер): мачта-разворот в языке главной – обложка
+ * как предмет на графите с тёплым свечением, титул HSE Slab справа; бланк цены –
+ * материал с рассеянной тенью.
+ */
+.club-program-mast {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: center;
+  min-height: clamp(360px, 48vh, 520px);
+  background: radial-gradient(55% 70% at 28% 50%, rgb(236 90 19 / 0.18), transparent 70%), var(--p-ink);
+}
+.club-program-mast__art {
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(32px, 4vw, 56px) clamp(24px, 4vw, 56px);
+  padding-left: max(clamp(24px, 4vw, 56px), calc((100vw - var(--container)) / 2 + 28px));
+}
+.club-program-mast__art picture, .club-program-mast__art img {
+  display: block; width: 100%; max-width: 560px; aspect-ratio: 16 / 9; object-fit: cover;
+  border-radius: var(--r-lg);
+  box-shadow: 0 40px 90px -30px rgb(236 90 19 / 0.5), var(--shadow-ambient-lift);
+}
+.club-program-mast__copy {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(40px, 6vw, 88px) clamp(28px, 5vw, 80px);
+  padding-right: max(clamp(28px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
+}
+.club-program-mast h1 {
+  margin: 0; font-family: var(--f-display); font-weight: 400; letter-spacing: var(--tr-display);
+  font-size: clamp(30px, 3.4vw, 50px); line-height: 1.08; text-wrap: balance; max-width: 20ch;
+}
+.club-program-mast__tagline { margin: 20px 0 0; max-width: 46ch; font-size: var(--t-lead); line-height: 1.5; color: var(--c-text-2); }
+.club-program-mast__meta { margin: 22px 0 0; font-size: var(--t-caps); font-weight: 600; letter-spacing: var(--tr-caps); text-transform: uppercase; color: var(--c-text-3); }
+.club-program-mast + * { padding-top: clamp(24px, 3vw, 40px) !important; }
+
+.club-program-blank {
+  padding: 24px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--c-bg-raised) 0%, color-mix(in srgb, var(--c-bg-sunken) 60%, var(--c-bg-raised)) 100%);
+  box-shadow: var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.8);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .club-program-mast__art img, .club-program-mast__art picture { transition: transform 900ms var(--ease-spring), box-shadow 900ms var(--ease-spring); }
+  .club-program-mast:hover .club-program-mast__art img { transform: translateY(-4px) scale(1.01); }
+}
+@media (max-width: 900px) {
+  .club-program-mast { grid-template-columns: 1fr; min-height: 0; }
+  .club-program-mast__art { padding: 28px 24px 0; }
+  .club-program-mast__copy { padding: 28px 24px 44px; }
+}
+@media (max-width: 480px) {
+  .club-program-mast__art { padding: 20px 16px 0; }
+  .club-program-mast__copy { padding: 24px 16px 40px; }
+}

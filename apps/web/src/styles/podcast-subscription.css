@@ -1,0 +1,13 @@
+.podcast-subscription { scroll-margin-top: 100px; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); border: 1px solid var(--c-line); border-radius: var(--r-lg); background: var(--c-bg-raised); box-shadow: var(--shadow-ambient); overflow: hidden; }
+.podcast-subscription__intro, .podcast-subscription__steps { padding: clamp(22px, 3vw, 36px); }
+.podcast-subscription__intro { background: var(--c-bg-sunken, var(--c-bg)); border-right: 1px solid var(--c-line); }
+.podcast-subscription h2, .podcast-subscription h3 { margin: 0; font-family: var(--f-display); font-weight: 400; line-height: 1.2; }
+.podcast-subscription h2 { font-size: clamp(26px, 3vw, 36px); }
+.podcast-subscription h3 { font-size: 24px; }
+.podcast-subscription p { color: var(--c-text-2); line-height: 1.6; overflow-wrap: anywhere; }
+.podcast-subscription__price { display: block; margin-top: 24px; color: var(--c-accent-text); font-size: 28px; font-variant-numeric: tabular-nums; }
+.podcast-subscription__price span { color: var(--c-text-3); font-size: 16px; font-weight: 400; }
+.podcast-subscription__steps > a, .podcast-subscription__steps > button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin: 6px 10px 0 0; max-width: 100%; text-align: center; }
+.podcast-subscription button:disabled { cursor: wait; opacity: .65; }
+.podcast-subscription [role="alert"] { color: var(--c-danger-text); }
+@media (max-width: 700px) { .podcast-subscription { grid-template-columns: minmax(0, 1fr); } .podcast-subscription__intro { border-right: 0; border-bottom: 1px solid var(--c-line); } }

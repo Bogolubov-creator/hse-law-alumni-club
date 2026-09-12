@@ -124,7 +124,7 @@ function verifyAudioSig(id: string, holder: string, exp: number, sig: string): b
 
 /**
  * Подкасты клуба. Список публичен (обложка/описание), но audio_url отдаётся
- * ТОЛЬКО активным подписчикам (подписка 3 999 ₽/год, alumni.podcast_sub_until).
+ * ТОЛЬКО активным подписчикам (подписка 4 999 ₽/год, alumni.podcast_sub_until).
  * Оформление подписки = заявка type=podcast (+онлайн-оплата ЮKassa при ключах);
  * подписку активирует оплата (webhook) или офис вручную из админ-панели.
  */

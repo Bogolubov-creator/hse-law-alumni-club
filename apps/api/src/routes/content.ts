@@ -1,12 +1,38 @@
 import type { FastifyInstance } from "fastify";
 import { readItems } from "@directus/sdk";
 import { z } from "zod";
+import { PRODUCTS_SEED, PROGRAMS_SEED } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 
 const NEWS_FIELDS = ["id", "slug", "title", "excerpt", "body", "published_at"] as const;
 const listQuery = z.object({ limit: z.coerce.number().int().positive().max(100).optional() });
 
+type ProgramSeedRow = (typeof PROGRAMS_SEED)[number];
+
+function seedBySlug(): Map<string, ProgramSeedRow> {
+  return new Map(PROGRAMS_SEED.map((p) => [p.slug, p]));
+}
+
+/** Пустые поля программы подставляем из сида по slug – как images у products. */
+function mergeProgramSeed<T extends Record<string, unknown>>(row: T, seed: ProgramSeedRow | undefined): T {
+  if (!seed) return row;
+  const emptyArr = (v: unknown) => !Array.isArray(v) || v.length === 0;
+  const emptyStr = (v: unknown) => v == null || v === "";
+  return {
+    ...row,
+    description: emptyStr(row.description) ? (seed.description ?? null) : row.description,
+    cover: emptyStr(row.cover) ? (seed.cover ?? null) : row.cover,
+    modules: emptyArr(row.modules) ? (seed.modules ?? null) : row.modules,
+    teachers: emptyArr(row.teachers) ? (seed.teachers ?? null) : row.teachers,
+    tagline: emptyStr(row.tagline) ? (seed.tagline ?? null) : row.tagline,
+    audience: emptyArr(row.audience) ? (seed.audience ?? null) : row.audience,
+    results: emptyArr(row.results) ? (seed.results ?? null) : row.results,
+    advantages: emptyArr(row.advantages) ? (seed.advantages ?? null) : row.advantages,
+    hse_id: emptyStr(row.hse_id) ? (seed.hse_id ?? null) : row.hse_id,
+    source_url: emptyStr(row.source_url) ? (seed.source_url ?? null) : row.source_url,
+  };
+}
 // Публичные чтения контента. Directus наружу не выставляем – только через apps/api.
 export async function contentRoutes(app: FastifyInstance) {
   // robots.txt из API: абсолютный Sitemap из PUBLIC_URL (единый источник домена).
@@ -90,30 +116,52 @@ export async function contentRoutes(app: FastifyInstance) {
     return rows[0];
   });
 
-  // Каталог ДПО.
-  app.get("/programs", async () =>
-    directus.request(readItems("programs", {
+  // Каталог ДПО. Пустые description/cover/modules/teachers – из сида по slug.
+  app.get("/programs", async () => {
+    const rows = (await directus.request(readItems("programs", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document"],
-    })),
-  );
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document", "description", "cover", "tagline", "hse_id"],
+    }))) as Record<string, unknown>[];
+    const seeds = seedBySlug();
+    return rows.map((row) => {
+      const seed = seeds.get(String(row.slug));
+      const emptyStr = (v: unknown) => v == null || v === "";
+      return {
+        ...row,
+        description: emptyStr(row.description) ? (seed?.description ?? null) : row.description,
+        cover: emptyStr(row.cover) ? (seed?.cover ?? null) : row.cover,
+        tagline: emptyStr(row.tagline) ? (seed?.tagline ?? null) : row.tagline,
+        source_url: emptyStr(row.source_url) ? (seed?.source_url ?? null) : row.source_url,
+      };
+    });
+  });
   app.get("/programs/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const rows = (await directus.request(readItems("programs", {
       filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document", "enrollment", "source_url"],
-    }))) as any[];
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document", "enrollment", "source_url", "cover", "tagline", "audience", "results", "advantages", "hse_id"],
+    }))) as Record<string, unknown>[];
     if (!rows.length) return reply.code(404).send({ error: "Программа не найдена" });
-    return rows[0];
+    return mergeProgramSeed(rows[0]!, seedBySlug().get(slug));
   });
 
-  // Каталог мерча.
-  app.get("/products", async () =>
-    directus.request(readItems("products", {
+  // Каталог мерча. Пустые images подставляем из сида – на стенде худи когда-то
+  // привязали вручную, а сид/V3 зеркало до этого не отдавали пути.
+  app.get("/products", async () => {
+    const rows = (await directus.request(readItems("products", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "category", "price", "images", "variants_json", "stock", "description"],
-    })),
-  );
+    }))) as { slug: string; images: unknown }[];
+    const seedImages = new Map(
+      PRODUCTS_SEED.filter((p) => p.images?.length).map((p) => [p.slug, p.images as string[]]),
+    );
+    return rows.map((row) => {
+      const cur = Array.isArray(row.images) ? row.images : [];
+      if (cur.length) return row;
+      const fallback = seedImages.get(row.slug);
+      return fallback ? { ...row, images: fallback } : row;
+    });
+  });
 
   // «История» на главной – редактируется в админ-панели.
   app.get("/timeline", async () =>

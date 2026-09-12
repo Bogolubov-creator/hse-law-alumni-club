@@ -5,9 +5,7 @@
   "type": "module",
   "dependencies": {
     "@club/shared": "workspace:*",
-    "@gsap/react": "^2.1.2",
     "@tanstack/react-query": "^5.59.20",
-    "gsap": "^3.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.18.2"
@@ -15,7 +13,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
+    "build:mirror": "tsc -p tsconfig.json && VITE_MIRROR=true VITE_BASE=/club-pravo-hse-mirror/ VITE_SITE_URL=https://bogolubov-creator.github.io/club-pravo-hse-mirror vite build && bash scripts/prepare-pages.sh",
     "preview": "vite preview",
+    "preview:mobile": "vite --host 127.0.0.1 --port 5285 --open http://127.0.0.1:5285/?pwa=1",
+    "preview:mirror": "vite preview --base /club-pravo-hse-mirror/",
     "test": "vitest run",
     "e2e": "playwright test",
     "e2e:safari": "playwright test --project=safari --project=iphone-safari --workers=1 e2e/public.spec.ts e2e/a11y.spec.ts e2e/lk-v2.spec.ts e2e/admin.spec.ts e2e/mobile-tabs-v2.spec.ts e2e/pwa-shell.spec.ts"

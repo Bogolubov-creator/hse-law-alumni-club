@@ -3,6 +3,7 @@ import { useNewsList, useNewsPost, formatNewsDate } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
 import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
+import { action } from "../styles/primitives.js";
 
 /**
  * Новости v2: список (/news) и публикация (/news/:slug).
@@ -22,7 +23,7 @@ const label = {
 export function NewsV2() {
   useHead({
     title: "Новости клуба",
-    description: "Новости клуба выпускников факультета права Вышки: события, программы, партнёрства и жизнь сообщества.",
+    description: "Новости клуба выпускников факультета права Вышки: встречи, программы ДПО и обновления портала.",
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news`,
     noindex: false,
   });
@@ -31,13 +32,15 @@ export function NewsV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         <ShowcaseHead
-          eyebrow="хроника · новости"
-          title="Что в клубе сейчас"
-          lead="События, программы, партнёрства и жизнь сообщества выпускников факультета права."
+          photo={{ src: "assets/photos/students-talk.jpg", alt: "Студенты факультета права после церемонии", side: "left" }}
+          eyebrow="новости"
+          title="Новости клуба"
+          lead="Анонсы встреч, программы ДПО и обновления портала."
           count={list.length ? `публикаций ${list.length}` : undefined}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         {news.isLoading && <p style={{ ...label, margin: 0 }}>загружаем новости…</p>}
 
@@ -45,7 +48,7 @@ export function NewsV2() {
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
             <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>новости не загрузились</p>
             <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Проверьте соединение и попробуйте ещё раз.</p>
-            <button onClick={() => news.refetch()} className="foc" style={{ marginTop: 16, border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "12px 20px", fontWeight: 600, cursor: "pointer" }}>Повторить</button>
+            <button onClick={() => news.refetch()} className="foc" style={{ ...action, marginTop: 16 }}>Повторить</button>
           </div>
         )}
 
@@ -65,11 +68,8 @@ export function NewsV2() {
                 gridTemplateColumns: i === 0 ? "1fr" : "150px 1fr",
                 gap: 24,
                 alignItems: "start",
-                padding: i === 0 ? "28px 24px" : "22px 0",
-                marginBottom: i === 0 ? 12 : 0,
-                borderTop: i === 0 ? "none" : "1px solid var(--c-line)",
-                borderRadius: i === 0 ? 12 : 0,
-                background: i === 0 ? "var(--c-surface-blue, var(--c-bg-sunken))" : undefined,
+                padding: i === 0 ? "28px 0" : "22px 0",
+                borderTop: i === 0 ? "1px solid var(--c-text)" : "1px solid var(--c-line)",
               }}
             >
               {i !== 0 && <div style={{ ...label }}>{formatNewsDate(item.published_at)}</div>}
@@ -86,6 +86,7 @@ export function NewsV2() {
             </article>
           ))}
           {list.length > 0 && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
+        </div>
         </div>
       </main>
     </V2Shell>
@@ -141,7 +142,7 @@ export function NewsPostV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: 720, margin: "0 auto", padding: "0 28px" }}>
         <nav style={{ ...label, paddingTop: 28 }}>
-          <Link to="/news" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "none" }}>← все новости</Link>
+          <Link to="/news" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← все новости</Link>
         </nav>
 
         {post.isLoading && <p style={{ ...label, paddingTop: 40 }}>загружаем публикацию…</p>}
@@ -152,7 +153,7 @@ export function NewsPostV2() {
             <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55 }}>
               Такой публикации нет – возможно, адрес устарел.
             </p>
-            <Link to="/news" className="foc" style={{ display: "inline-block", marginTop: 20, background: "var(--c-accent)", color: "var(--c-on-accent)", borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/news" className="foc" style={{ ...action, marginTop: 20 }}>
               Все новости
             </Link>
           </div>

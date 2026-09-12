@@ -1,8 +1,9 @@
 .club-bot-panel {
   position: fixed;
   right: 16px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tabs-h, 0px) + var(--cookie-h, 0px));
-  z-index: 45;
+  /* --tabs-h уже с safe-area */
+  bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px));
+  z-index: 50;
   width: min(380px, calc(100vw - 32px));
   max-height: min(70vh, 560px);
   display: flex;
@@ -54,6 +55,7 @@
 .club-bot-log {
   flex: 1 1 auto;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 14px 18px;
   display: flex;
   flex-direction: column;
@@ -135,7 +137,7 @@
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--p-blue) 35%, transparent);
   background: var(--c-bg);
-  color: var(--p-blue);
+  color: var(--c-accent-text);
   cursor: pointer;
 }
 
@@ -150,7 +152,7 @@
   min-height: 44px;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--p-blue);
+  color: var(--c-accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -220,7 +222,7 @@
 
 .club-bot-form input:focus-visible {
   outline: none;
-  border-color: var(--p-blue);
+  border-color: var(--c-accent-text);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-blue) 18%, transparent);
 }
 

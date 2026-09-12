@@ -28,11 +28,17 @@ test.describe("Вступление в клуб v2", () => {
 
   test("без согласия на обработку данных заявку не отправить", async ({ page }) => {
     await page.goto("/join");
-    const submit = page.getByRole("button", { name: "Нужно согласие на обработку данных" });
-    await expect(submit).toBeDisabled();
+    let posted = false;
+    await page.route("**/api/auth/register", (r) => { posted = true; r.abort(); });
+    const submit = page.getByRole("button", { name: "Подать заявку на вступление" });
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    // Кнопка не серая: браузер подсвечивает обязательный чекбокс, запрос не уходит
+    await expect(page.getByRole("checkbox")).toHaveJSProperty("validity.valid", false);
+    expect(posted).toBe(false);
 
     await page.getByRole("checkbox").check();
-    await expect(page.getByRole("button", { name: "Подать заявку на вступление" })).toBeEnabled();
+    await expect(page.getByRole("checkbox")).toHaveJSProperty("validity.valid", true);
   });
 
   test("год выпуска принимает только цифры и не длиннее четырёх", async ({ page }) => {
@@ -178,9 +184,17 @@ test.describe("Юридические страницы v2", () => {
 
   test("реквизиты оператора не потерялись при переносе", async ({ page }) => {
     await page.goto("/requisites");
-    await expect(page.getByText("1257700005551")).toBeVisible(); // ОГРН
-    await expect(page.getByText("9707041865")).toBeVisible();    // ИНН
-    await expect(page.getByText(/Большая Черкизовская/)).toBeVisible();
+    // Скоуп на main: ОГРН/ИНН/адрес дублируются строкой оператора в подвале.
+    const main = page.locator("main");
+    await expect(main.getByText("1257700005551", { exact: true })).toBeVisible(); // ОГРН
+    await expect(main.getByText("9707041865", { exact: true })).toBeVisible(); // ИНН
+    await expect(main.getByText("771801001", { exact: true })).toBeVisible(); // КПП
+    await expect(main.getByText(/Большая Черкизовская/)).toBeVisible();
+    await expect(main.getByText(/Спиваков Алексей Игоревич/)).toBeVisible();
+    await expect(main.getByRole("link", { name: /Rusprofile/i })).toHaveAttribute(
+      "href",
+      "https://www.rusprofile.ru/id/1257700005551",
+    );
   });
 });
 
@@ -199,3 +213,12 @@ for (const url of ["/", "/dpo", "/merch", "/cart", "/news", "/events", "/podcast
     expect(legacy, `${url} ведёт в legacy: ${[...new Set(legacy)].join(", ")}`).toEqual([]);
   });
 }
+
+test("soft-cutover: /legacy/* уводит на канон", async ({ page }) => {
+  await stubSw(page);
+  await page.goto("/legacy/dpo");
+  await expect(page).toHaveURL(/\/dpo$/);
+  await expect(page.locator("h1")).toBeVisible();
+  await page.goto("/legacy/lk/profile?x=1");
+  await expect(page).toHaveURL(/\/lk\/profile\?x=1$/);
+});

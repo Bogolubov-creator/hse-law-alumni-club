@@ -14,6 +14,7 @@ import {
   createCollection,
   readFieldsByCollection,
   createField,
+  updateField,
   readRelations,
   createRelation,
   readRoles,
@@ -23,6 +24,7 @@ import {
   updateUser,
   readItems,
   createItems,
+  updateItem,
 } from "@directus/sdk";
 import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, PRODUCTS_SEED, NEWS_SEED } from "@club/shared";
 
@@ -324,6 +326,18 @@ await ensureField("programs", "document", str());
 await ensureField("programs", "source_url", str()); // страница программы на hse.ru (управляется синком)
 await ensureField("programs", "enrollment", enumf(["actual", "nonactual"], "actual")); // актуальный набор / набор закрыт
 await ensureField("programs", "description", txt());
+await ensureField("programs", "cover", str()); // обложка карточки/героя: URL или /assets/…
+await ensureField("programs", "hse_id", str()); // числовой id на hse.ru
+await ensureField("programs", "tagline", txt());
+// Лид программы из источника может быть длиннее 255 символов. Расширяем старое
+// поле без обрезания данных; повторный bootstrap больше ничего не меняет.
+const programFields = await client.request(readFieldsByCollection("programs"));
+if (programFields.find(f => f.field === "tagline")?.schema?.data_type !== "text") {
+  await client.request(updateField("programs", "tagline", { type: "text", schema: { data_type: "text", max_length: null } }));
+}
+await ensureField("programs", "audience", json()); // string[]
+await ensureField("programs", "results", json()); // string[]
+await ensureField("programs", "advantages", json()); // string[]
 await ensureField("programs", "status", enumf(["draft", "published", "archived"], "draft"));
 
 // products (мерч)
@@ -394,7 +408,7 @@ await ensureField("block_hero", "cta_primary", str());
 await ensureField("block_hero", "cta_secondary", str());
 await ensureField("block_hero", "history_eyebrow", str()); // секция «История клуба»: надзаголовок
 await ensureField("block_hero", "history_title", str());   // ... заголовок
-await ensureField("block_hero", "history_hint", str());    // ... подсказка «листайте»
+await ensureField("block_hero", "history_hint", str());    // подсказка к таймлайну
 await ensureField("block_hero", "marquee", json());        // бегущая лента: массив строк
 
 await ensureCollection("block_cta", "campaign");
@@ -442,16 +456,16 @@ if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "
   const links = (await client.request((readItems as any)("pages_blocks", { filter: { pages_id: { _eq: homeId } }, limit: 1 }))) as any[];
   if (!links.length) {
     const hero = (await client.request((createItems as any)("block_hero", [{
-      badge: "Сообщество выпускников факультета права",
-      title_pre: "Статус выпускника, который",
-      title_accent: "работает",
-      subtitle: "Клуб выпускников факультета права Вышки: однокурсники, встречи и программы ДПО. Подтверждённый статус открывает цену выпускника на ДПО.",
+      badge: "Клуб выпускников факультета права",
+      title_pre: "Клуб выпускников",
+      title_accent: "факультета права",
+      subtitle: "Встречи, программы ДПО и кабинет участника. Статус выпускника – после проверки учебным офисом.",
       cta_primary: "Вступить в клуб",
       cta_secondary: "Как вступить",
     }]))) as any;
     const cta = (await client.request((createItems as any)("block_cta", [{
       title: "Вступить в клуб",
-      text: "Подтвердите выпуск у учебного офиса – и получите статус, скидки и доступ к витринам.",
+      text: "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет.",
       button: "Подать заявку",
     }]))) as any;
     const heroId = Array.isArray(hero) ? hero[0].id : hero.id;
@@ -615,11 +629,11 @@ await ensureSeed("programs", "slug", PROGRAMS_SEED.map((p) => ({ ...p, status: "
 await ensureSeed("news", "slug", NEWS_SEED.map((n) => ({ ...n, status: "published" })));
 // История главной – стартовый таймлайн (дальше редактируется в админ-панели)
 await ensureSeed("timeline_items", "title", [
-  { year: "2024", title: "Клуб основан", text: "Первый выпуск собирается в сообщество, появляется личный кабинет.", metric: "1-й выпуск · ~40 участников", sort: 1, status: "published" },
-  { year: "2024", title: "Витрина ДПО", text: "Открывается доступ к программам доп. образования со скидкой выпускника.", metric: "каталог ВШЭ · скидка выпускника", sort: 2, status: "published" },
-  { year: "2025", title: "Геймификация", text: "Запуск уровней статуса, баллов и бейджей за активность в клубе.", metric: "4 уровня · 16 достижений", sort: 3, status: "published" },
-  { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, фирменный мерч и первые партнёрские предложения.", metric: "2-й выпуск · мерч", sort: 4, status: "published" },
-  { year: "2026", title: "Сегодня", text: "Растущее сообщество выпускников факультета права с витринами и менторством.", metric: "и это только начало", sort: 5, status: "published" },
+  { year: "2024", title: "Клуб основан", text: "Первый выпуск и запуск личного кабинета.", metric: "1-й выпуск · ~40 участников", sort: 1, status: "published" },
+  { year: "2024", title: "Витрина ДПО", text: "Каталог программ доп. образования и цена выпускника после проверки.", metric: "каталог ВШЭ · скидка выпускника", sort: 2, status: "published" },
+  { year: "2025", title: "Уровни и баллы", text: "Уровни статуса, баллы и достижения за участие в жизни клуба.", metric: "4 уровня · 16 достижений", sort: 3, status: "published" },
+  { year: "2025", title: "Мерч и партнёры", text: "Второй выпуск, мерч клуба и первые партнёрские предложения.", metric: "2-й выпуск · мерч", sort: 4, status: "published" },
+  { year: "2026", title: "Сейчас", text: "Предрелизная версия портала: витрины, кабинет и афиша в работе.", metric: "предрелиз", sort: 5, status: "published" },
 ]);
 // Демо-события календаря
 await ensureSeed("events", "title", [
@@ -634,6 +648,26 @@ await ensureSeed("podcasts", "title", [
   { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "draft" },
 ]);
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
+// Дозаполнение images у уже созданных товаров: ensureSeed не обновляет строки,
+// а на живом стенде худи когда-то привязали вручную (a66558f) – в сидах путей не было.
+{
+  const want = new Map(
+    PRODUCTS_SEED.filter((p) => p.images?.length).map((p) => [p.slug, p.images as string[]]),
+  );
+  const rows = (await client.request(
+    (readItems as any)("products", { fields: ["id", "slug", "images"], limit: -1 }),
+  )) as { id: string; slug: string; images: unknown }[];
+  let patched = 0;
+  for (const row of rows) {
+    const imgs = want.get(row.slug);
+    if (!imgs) continue;
+    const cur = Array.isArray(row.images) ? row.images : [];
+    if (cur.length) continue;
+    await client.request((updateItem as any)("products", row.id, { images: imgs }));
+    patched += 1;
+  }
+  if (patched) log(`  products images backfill: ${patched}`);
+}
 
 // Профиль для тестового выпускника (если ещё нет)
 const alumniRows = (await client.request(

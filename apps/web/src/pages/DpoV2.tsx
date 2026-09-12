@@ -6,8 +6,26 @@ import { useToast } from "../components/Toast.js";
 import { rub, FORMAT_LABEL, type Program } from "../lib/api.js";
 import { usePrograms, useMemberDiscount, useCartMutations } from "../lib/cart.js";
 import ProgramCompare from "../components/ProgramCompare.js";
-import { field, actionGhost } from "../styles/primitives.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { field } from "../styles/primitives.js";
+import { HeroPicture } from "../components/HeroPicture.js";
+import { mediaUrl } from "../lib/public-url.js";
+import { V2Shell } from "../v2/Shell.js";
+import "../styles/dpo-vitrine.css";
+
+/** Русское склонение по числу: plural(31, ["программа", "программы", "программ"]). */
+function plural(n: number, forms: [string, string, string]): string {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return forms[0];
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return forms[1];
+  return forms[2];
+}
+
+/** Обложки с логотипом факультета (просмотрены 12.09); остальные с hse.ru – сток без символики. */
+const FACULTY_COVERS = new Set(["472681893", "474599435", "474776084", "494685723", "589527758", "802031223", "905186485", "906651510"]);
+function hasFacultyCover(cover: string | null | undefined): boolean {
+  const m = /\/programs\/(\d+)\.(?:jpe?g|png|webp)$/i.exec(cover ?? "");
+  return !!m && FACULTY_COVERS.has(m[1]!);
+}
 
 export default function DpoV2() {
   useHead({
@@ -52,107 +70,145 @@ export default function DpoV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
-        <ShowcaseHead
-          eyebrow="витрина · дпо"
-          title="Программы дополнительного образования"
-          lead="Содержание, формат и ближайшие старты – в каждой карточке. Цена выпускника открывается после подтверждения выпуска учебным офисом."
-          count={programs.isLoading ? "загружаем каталог" : `в каталоге ${catalog.length} · актуальный набор ${actual.length}`}
-        />
-
-        <form className="club-catalog-filters" onSubmit={(e) => e.preventDefault()} aria-label="Фильтры программ">
-          <label>Поиск программы<input type="search" style={field} value={search} onChange={(e) => update("q", e.target.value)} placeholder="Название или направление" /></label>
-          <label>Направление<select style={field} value={dir} onChange={(e) => update("direction", e.target.value)}><option value="">Все направления</option>{directions.map((d) => <option key={d}>{d}</option>)}</select></label>
-          <label>Формат<select style={field} value={format} onChange={(e) => update("format", e.target.value)}><option value="">Все форматы</option>{formats.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f] ?? f}</option>)}</select></label>
-          <label>Документ<select style={field} value={document} onChange={(e) => update("document", e.target.value)}><option value="">Все документы</option>{documents.map((d) => <option key={d}>{d}</option>)}</select></label>
-          <label>Порядок<select style={field} value={sort} onChange={(e) => update("sort", e.target.value)}><option value="title">По названию</option><option value="price">По цене</option><option value="start">По дате начала</option></select></label>
-          <label style={{ display: "flex", gap: 10, alignItems: "center" }}><input type="checkbox" checked={showAll} onChange={(e) => update("all", e.target.checked ? "1" : "")} />Включая закрытый набор</label>
-          <button type="button" className="foc" style={actionGhost} onClick={() => setParams(selected.length ? { compare: selected.join(",") } : {})}>Сбросить фильтры</button>
-        </form>
-        <p role="status">{programs.isLoading ? "Загружаем…" : `Найдено программ: ${list.length}`}. Для сравнения выберите от двух до трёх программ.</p>
-        {selected.length > 0 && <ProgramCompare slugs={selected} onRemove={toggleCompare} />}
-        {programs.isError && <p role="alert">Каталог не загрузился. <button onClick={() => programs.refetch()}>Повторить загрузку</button></p>}
-
-        {/* Записи каталога */}
-        {programs.isLoading && (
-          <div style={{ padding: "56px 0", ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", textTransform: "none" }}>
-            загружаем каталог…
+      <main id="main" className="club-dpo-vitrine">
+        <header className="club-dpo-masthead club-dark">
+          <div className="club-dpo-masthead__inner">
+            <h1>Программы дополнительного образования</h1>
+            <p className="club-dpo-lead" aria-live="polite">
+              {programs.isLoading
+                ? "Загружаем каталог факультета права…"
+                : `В каталоге ${catalog.length} ${plural(catalog.length, ["программа", "программы", "программ"])}, с открытым набором – ${actual.length}. ${discount > 0 ? `Цена выпускника со скидкой ${discount} % уже применена.` : "Цена выпускника открывается после подтверждения выпуска учебным офисом."}`}
+            </p>
           </div>
-        )}
-
-        {!programs.isLoading && !programs.isError && list.length === 0 && (
-          <div style={{ padding: "56px 0" }}>
-            <p style={{ ...disp, fontSize: "var(--t-h3)", fontWeight: 600, margin: 0 }}>По выбранным условиям программ нет</p>
-            <p style={{ margin: "10px 0 0", color: "var(--c-text-2)" }}>Снимите фильтр или посмотрите весь каталог, включая закрытый набор.</p>
-            <button onClick={() => { setParams({ all: "1" }); }} className="foc" style={{ marginTop: 18, ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none", padding: "10px 16px", borderRadius: "var(--r-md)", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", cursor: "pointer" }}>
-              показать весь каталог
-            </button>
+          <div className="club-dpo-masthead__media" aria-hidden="true">
+            <HeroPicture
+              path="assets/photos/diploma.jpg"
+              className="club-dpo-masthead__photo"
+              alt=""
+              width={1200}
+              height={700}
+            />
           </div>
-        )}
+        </header>
 
-        <div>
-          {list.map((p) => {
-            const closed = p.enrollment === "nonactual";
-            const external = !!p.source_url;
-            const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
-            return (
-              <article
-                key={p.id}
-                className="v2-prog club-program-row"
-                style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 150px 160px", gap: 24, alignItems: "start", padding: "24px 0", borderTop: "1px solid var(--c-line)" }}
-              >
-                {/* Содержание сначала (для чтения и a11y), цена – рядом. */}
-                <div className="club-program-description" style={{ minWidth: 0 }}>
-                  <Link to={`/dpo/${p.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
-                    <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.22, margin: 0 }}>{p.title}</h2>
+        <div className="club-dpo-body">
+          <div className="club-dpo-toolbar">
+            <div className="club-dpo-mode" role="tablist" aria-label="Режим каталога">
+              <button type="button" role="tab" aria-selected={!showAll} className={`foc club-dpo-mode__btn${!showAll ? " is-on" : ""}`} onClick={() => update("all", "")}>
+                Актуальный набор
+                <span className="club-dpo-mode__count">{programs.isLoading ? "…" : actual.length}</span>
+              </button>
+              <button type="button" role="tab" aria-selected={showAll} className={`foc club-dpo-mode__btn${showAll ? " is-on" : ""}`} onClick={() => update("all", "1")}>
+                Весь каталог
+                <span className="club-dpo-mode__count">{programs.isLoading ? "…" : catalog.length}</span>
+              </button>
+            </div>
+            <p className="club-dpo-toolbar__hint">
+              {showAll
+                ? "Показаны все программы, включая закрытый набор."
+                : "Только программы с открытым набором."}
+            </p>
+          </div>
+
+          <form className="club-catalog-filters" onSubmit={(e) => e.preventDefault()} aria-label="Фильтры программ">
+            <label>Поиск программы<input type="search" style={field} value={search} onChange={(e) => update("q", e.target.value)} placeholder="Название или направление" /></label>
+            <label>Направление<select style={field} value={dir} onChange={(e) => update("direction", e.target.value)}><option value="">Все направления</option>{directions.map((d) => <option key={d}>{d}</option>)}</select></label>
+            <label>Формат<select style={field} value={format} onChange={(e) => update("format", e.target.value)}><option value="">Все форматы</option>{formats.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f] ?? f}</option>)}</select></label>
+            <label>Документ<select style={field} value={document} onChange={(e) => update("document", e.target.value)}><option value="">Все документы</option>{documents.map((d) => <option key={d}>{d}</option>)}</select></label>
+            <label>Порядок<select style={field} value={sort} onChange={(e) => update("sort", e.target.value)}><option value="title">По названию</option><option value="price">По цене</option><option value="start">По дате начала</option></select></label>
+            <button type="button" className="foc club-btn club-btn--secondary" onClick={() => setParams(selected.length ? { compare: selected.join(",") } : {})}>Сбросить фильтры</button>
+          </form>
+
+          <p className="club-dpo-status" role="status">
+            <span>{programs.isLoading ? "Загружаем каталог…" : <>Найдено программ: <strong>{list.length}</strong></>}</span>
+            <span>Для сравнения выберите от двух до трёх программ.</span>
+          </p>
+
+          {selected.length > 0 && <ProgramCompare slugs={selected} onRemove={toggleCompare} />}
+
+          {programs.isError && (
+            <div className="club-dpo-error" role="alert">
+              <p style={{ margin: 0 }}>Каталог не загрузился.</p>
+              <button type="button" className="foc club-btn club-btn--secondary" style={{ marginTop: 14 }} onClick={() => programs.refetch()}>
+                Повторить загрузку
+              </button>
+            </div>
+          )}
+
+          {programs.isLoading && (
+            <div className="club-dpo-loading" aria-busy="true">
+              загружаем каталог…
+              <div className="club-dpo-loading__bars" aria-hidden="true">
+                <div className="club-dpo-loading__bar" />
+                <div className="club-dpo-loading__bar" />
+                <div className="club-dpo-loading__bar" />
+              </div>
+            </div>
+          )}
+
+          {!programs.isLoading && !programs.isError && list.length === 0 && (
+            <div className="club-dpo-empty">
+              <h2>По выбранным условиям программ нет</h2>
+              <p>Снимите фильтр или посмотрите весь каталог, включая закрытый набор.</p>
+              <button type="button" onClick={() => { setParams({ all: "1" }); }} className="foc club-btn club-btn--primary" style={{ marginTop: 18 }}>
+                Показать весь каталог
+              </button>
+            </div>
+          )}
+
+          {/* Программы как предметы на белом (референс 12.09): сначала плитки с факультетской обложкой,
+              затем остальные текстом в две колонки – так ряды не рвутся пустотами. Порядок сортировки
+              сохраняется внутри каждой группы. */}
+          {[list.filter((p) => hasFacultyCover(p.cover)), list.filter((p) => !hasFacultyCover(p.cover))].map((group, gi) => group.length === 0 ? null : (
+          <div key={gi} className={gi === 0 ? "club-dpo-grid" : "club-dpo-grid club-dpo-grid--text"}>
+            {gi === 1 && list.some((p) => hasFacultyCover(p.cover)) && <h2 className="club-dpo-grid__title">Ещё {group.length} {plural(group.length, ["программа", "программы", "программ"])}</h2>}
+            {group.map((p) => {
+              const closed = p.enrollment === "nonactual";
+              const external = !!p.source_url;
+              const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
+              // Обложка только с символикой факультета (решение заказчика 12.09): сток с hse.ru не показываем.
+              const cover = hasFacultyCover(p.cover) ? mediaUrl(p.cover!) : null;
+              return (
+                <article key={p.id} className={cover ? "club-dpo-tile" : "club-dpo-tile club-dpo-tile--text"}>
+                  {cover && (
+                    <Link to={`/dpo/${p.slug}`} className="foc club-dpo-tile__cover" aria-hidden="true" tabIndex={-1}>
+                      <img src={cover} alt="" width={640} height={360} loading="lazy" decoding="async" />
+                    </Link>
+                  )}
+                  <Link to={`/dpo/${p.slug}`} className="foc club-dpo-tile__link">
+                    <h2>{p.title}</h2>
                   </Link>
-                  <div style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", marginTop: 10, textTransform: "none" }}>
-                    {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration].filter(Boolean).join(" · ")}
+                  <div className="club-dpo-tile__meta">
+                    {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration, p.dates?.start ? `с ${programStart(p.dates.start)}` : null].filter(Boolean).join(" · ")}
                   </div>
-                  <p style={{ color: "var(--c-text-2)", margin: "10px 0" }}>{p.dates?.start ? `Начало: ${programStart(p.dates.start)}` : "Дата начала уточняется"}{p.document ? ` · ${p.document}` : ""}</p>
-                  {closed && (
-                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-danger-text)", marginTop: 8, textTransform: "none" }}>набор закрыт</div>
-                  )}
-                </div>
-
-                <div className="club-program-price">
-                  <div style={{ ...mono, fontSize: 21, whiteSpace: "nowrap", fontWeight: 500, color: discount > 0 ? "var(--c-accent-text)" : "var(--c-text)" }}>{rub(priced)}</div>
-                  {discount > 0 && (
-                    <div style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)", textDecoration: "line-through", marginTop: 4 }}>{rub(p.price)}</div>
-                  )}
-                  {discount > 0 && (
-                    <div style={{ ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", color: "var(--c-ok-text)", marginTop: 6, textTransform: "none" }}>−{discount}% выпускнику</div>
-                  )}
-                </div>
-
-                {/* Действие: своё – в корзину, программа ВШЭ – на маркетплейс */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "stretch", minWidth: 160 }}>
-                  <label style={{ display: "flex", gap: 8, minHeight: 44, alignItems: "center" }}><input type="checkbox" checked={selected.includes(p.slug)} disabled={!selected.includes(p.slug) && selected.length >= 3} onChange={() => toggleCompare(p.slug)} aria-label={`Сравнить: ${p.title}`} />Сравнить</label>
-                  <Link to={`/dpo/${p.slug}`} className="foc tap" style={{ textAlign: "center", textDecoration: "none", color: "var(--c-text)", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-md)", padding: "10px 16px", fontSize: 14, fontWeight: 600 }}>
-                    Подробнее
-                  </Link>
-                  {external ? (
-                    <a href={p.source_url!} target="_blank" rel="noopener noreferrer" className="foc tap" style={{ textAlign: "center", textDecoration: "none", color: "var(--c-anchor)", padding: "10px 16px", fontSize: 14, fontWeight: 600 }}>
-                      Запись на hse.ru<span aria-hidden="true"> ↗</span>
-                    </a>
-                  ) : closed ? (
-                    <span style={{ textAlign: "center", color: "var(--c-text-3)", border: "1px dashed var(--c-line)", borderRadius: "var(--r-md)", padding: "10px 16px", fontSize: 14 }}>Набор закрыт</span>
-                  ) : (
-                    <button onClick={() => addToCart(p)} disabled={add.isPending} className="foc tap" style={{ background: "var(--c-accent)", color: "var(--c-on-accent)", border: "none", borderRadius: "var(--r-md)", padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-                      В корзину
-                    </button>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-
-        {list.length > 0 && (
-          <div style={{ borderTop: "1px solid var(--c-line)", paddingTop: 20, ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", color: "var(--c-text-3)", textTransform: "none" }}>
-            Показано программ: {list.length}
+                  <div className="club-dpo-tile__price">
+                    <span>{rub(priced)}</span>
+                    {discount > 0 && <s>{rub(p.price)}</s>}
+                    {closed && <span className="club-dpo-tile__closed">набор закрыт</span>}
+                  </div>
+                  <div className="club-dpo-tile__actions">
+                    <label className="club-dpo-tile__compare">
+                      <input type="checkbox" checked={selected.includes(p.slug)} disabled={!selected.includes(p.slug) && selected.length >= 3} onChange={() => toggleCompare(p.slug)} aria-label={`Сравнить: ${p.title}`} />
+                      Сравнить
+                    </label>
+                    {!external && !closed && (
+                      <button type="button" onClick={() => addToCart(p)} disabled={add.isPending} className="foc club-btn club-btn--secondary">
+                        В корзину
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
-        )}
+          ))}
+
+          {list.length > 0 && (
+            <div className="club-dpo-foot">
+              Показано программ: {list.length}
+            </div>
+          )}
+        </div>
       </main>
     </V2Shell>
   );

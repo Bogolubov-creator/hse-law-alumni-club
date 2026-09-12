@@ -16,9 +16,6 @@ const V2 = ["/", "/dpo", "/cart", "/join"];
  *  там нет, пропускать нечего – требование 2.4.1 к ним не применяется. */
 const V2_WITH_NAV = ["/", "/dpo", "/cart"];
 
-/** Маршруты, которые на <768px отдаёт MobileApp (не SiteShell / Vision в шапке). */
-const MOBILE_APP_PATHS = new Set(["/", "/dpo", "/cart"]);
-
 /** Композит цвета с учётом прозрачности: полупрозрачный контур смешивается с фоном. */
 const CONTRAST_FN = `
   const parse = (c) => {
@@ -76,12 +73,12 @@ test.describe("2.4.1 Пропуск блоков", () => {
 });
 
 test.describe("1.4.11 Контраст нетекстовых элементов", () => {
-  for (const theme of ["light", "dark"] as const) {
+  // Одна светлая тема (решение заказчика 12.09); тёмные панели живут областью .club-dark.
+  for (const theme of ["light"] as const) {
     test(`контур полей и кнопок различим, тема ${theme}`, async ({ page }) => {
       await preparePage(page);
       await page.goto("/join");
       await page.locator("#main").waitFor();
-      await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
       const bad = await page.evaluate(`(() => {
         ${CONTRAST_FN}
         const bad = [];
@@ -117,9 +114,8 @@ test.describe("Версия для слабовидящих", () => {
    * и пользуются при слабом зрении.
    */
   for (const s of schemes) {
-    test(`${s.name}: обводка фокуса различима`, async ({ page, browserName, isMobile }) => {
+    test(`${s.name}: обводка фокуса различима`, async ({ page, browserName }) => {
       test.skip(browserName === "webkit", "Tab в WebKit требует Full Keyboard Access");
-      test.skip(!!isMobile, "на телефоне /dpo – MobileApp без Vision в шапке SiteShell");
       await preparePage(page);
       await page.goto("/dpo");
       await enableVision(page);
@@ -145,8 +141,7 @@ test.describe("Версия для слабовидящих", () => {
     });
   }
 
-  test("все органы управления панели получают обводку фокуса", async ({ page, isMobile }) => {
-    test.skip(!!isMobile, "на телефоне /dpo – MobileApp без Vision в шапке SiteShell");
+  test("все органы управления панели получают обводку фокуса", async ({ page }) => {
     await preparePage(page);
     await page.goto("/dpo");
     await enableVision(page);
@@ -162,8 +157,7 @@ test.describe("Версия для слабовидящих", () => {
    * оставляло текст висеть поверх страницы: cookie-баннер накрывал фильтры.
    * Согласие специально НЕ гасим – нужен живой dialog.
    */
-  test("у диалога остаётся непрозрачный фон", async ({ page, isMobile }) => {
-    test.skip(!!isMobile, "на телефоне /dpo – MobileApp без Vision в шапке SiteShell");
+  test("у диалога остаётся непрозрачный фон", async ({ page }) => {
     await stubSw(page);
     await page.goto("/dpo");
     await enableVision(page);
@@ -181,8 +175,7 @@ test.describe("Версия для слабовидящих", () => {
 
 test.describe("1.3.1 Структура страницы", () => {
   for (const path of V2) {
-    test(`${path} – ориентиры и заголовки на месте`, async ({ page, isMobile }) => {
-      test.skip(!!isMobile && MOBILE_APP_PATHS.has(path), "MobileApp: другая иерархия ориентиров, не SiteShell");
+    test(`${path} – ориентиры и заголовки на месте`, async ({ page }) => {
       await preparePage(page);
       await page.goto(path);
       await page.waitForLoadState("networkidle");

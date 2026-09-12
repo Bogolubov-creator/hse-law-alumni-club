@@ -65,10 +65,12 @@ function credentials() {
 function OperatorFooter() {
   return (
     <p className="club-support-legal" style={{ marginTop: 28, fontSize: "var(--t-small)", color: "var(--c-text-3)", lineHeight: 1.6 }}>
-      Оператор: {CLUB_OPERATOR.shortName}, ОГРН {CLUB_OPERATOR.ogrn}.{" "}
+      Оператор: {CLUB_OPERATOR.shortName}, ОГРН {CLUB_OPERATOR.ogrn}, ИНН {CLUB_OPERATOR.inn}.{" "}
       <Link to="/privacy">Политика обработки персональных данных</Link>
       {" · "}
       <Link to="/requisites">Реквизиты</Link>
+      {" · "}
+      <a href={CLUB_OPERATOR.rusprofileUrl} target="_blank" rel="noopener noreferrer">Rusprofile</a>
     </p>
   );
 }

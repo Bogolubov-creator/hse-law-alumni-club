@@ -27,6 +27,12 @@ export interface ProgramRow {
   id: string; slug: string; title: string; direction: string; format: string; duration: string;
   price: number; dates: unknown; modules: unknown; teachers: unknown; description: string | null; document: string | null;
   source_url: string | null; enrollment: "actual" | "nonactual" | null; status: string;
+  cover: string | null;
+  hse_id: string | null;
+  tagline: string | null;
+  audience: string[] | null;
+  results: string[] | null;
+  advantages: string[] | null;
 }
 export interface ProductRow {
   id: string; slug: string; title: string; category: string; price: number;

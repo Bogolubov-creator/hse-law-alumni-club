@@ -16,7 +16,7 @@ const RATES = [1, 1.25, 1.5, 2] as const;
 /** Плеер выпуска: запоминает позицию (localStorage) и умеет менять скорость.
     Подписанная ссылка живёт 2 часа – если вкладка провисела дольше и источник
     вернул ошибку, тихо берём свежую ссылку из API и продолжаем с того же места. */
-export function EpisodePlayer({ id, src, v2 = false }: { id: string; src: string; v2?: boolean }) {
+export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: string; src: string; v2?: boolean; expanded?: boolean }) {
   const ref = useRef<HTMLAudioElement>(null);
   const lastSave = useRef(0);
   const metadataReady = useRef(false);
@@ -69,6 +69,14 @@ export function EpisodePlayer({ id, src, v2 = false }: { id: string; src: string
     lastSave.current = now;
     localStorage.setItem(posKey, String(Math.floor(el.currentTime)));
   };
+  const seek = (delta: number) => {
+    const el = ref.current;
+    if (el && el.readyState >= 1 && Number.isFinite(el.duration)) {
+      el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + delta));
+      lastSave.current = 0;
+      savePos();
+    }
+  };
   const cycleRate = () => {
     const next = RATES[(RATES.indexOf(rate as (typeof RATES)[number]) + 1) % RATES.length]!;
     setRate(next);
@@ -103,6 +111,11 @@ export function EpisodePlayer({ id, src, v2 = false }: { id: string; src: string
           ×{rate}
         </button>
       </div>
+      {expanded && <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
+        <button type="button" className="foc episode-skip" onClick={() => seek(-15)}>−15 секунд</button>
+        <button type="button" className="foc episode-skip" onClick={() => seek(15)}>+15 секунд</button>
+        <span style={{ alignSelf: "center", fontSize: 13, color: "var(--c-text-3)" }}>Скорость – кнопка ×{rate}</span>
+      </div>}
       {stale && <div><p role="alert" className={v2 ? undefined : "font-mono text-[11px] text-karmin"} style={v2 ? { fontFamily: "var(--f-data)", fontSize: 11, color: "var(--c-danger-text)", margin: 0 } : undefined}>{stale}</p><button className="foc" onClick={() => { autoRetried.current = true; void refreshSrc(); }}>Повторить загрузку</button></div>}
     </div>
   );

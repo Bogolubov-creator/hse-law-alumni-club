@@ -275,7 +275,7 @@ export async function adminRoutes(app: FastifyInstance) {
     // показанным участникам – без полного скана alumni на каждый заход (масштаб).
     const pageRows = (await di.request((readItems as any)("alumni", {
       ...listOpts, sort: ["-points_cached", "id"], limit: qp.limit, offset: (qp.page - 1) * qp.limit,
-      fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at"],
+      fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at", "avatar"],
     }))) as any[];
     const pageIds = pageRows.map((m) => m.id);
     const pageFios = [...new Set(pageRows.map((m) => m.fio).filter(Boolean))];
@@ -399,6 +399,7 @@ export async function adminRoutes(app: FastifyInstance) {
     duration: z.string().min(1),
     price: z.number().int().min(0), // копейки
     description: z.string().nullish(),
+    cover: z.string().nullish(),
     start: z.string().nullish(), // человекочитаемая дата старта
     document: z.string().nullish(),
     status: z.enum(["draft", "published", "archived"]).default("published"),
@@ -408,7 +409,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!requireAdmin(req, reply)) return;
     return di.request(readItems("programs", {
       sort: ["title"], limit: -1,
-      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "status", "enrollment", "source_url", "dates", "document", "description"],
+      fields: ["id", "slug", "title", "direction", "format", "duration", "price", "status", "enrollment", "source_url", "dates", "document", "description", "cover"],
     }));
   });
 
@@ -421,7 +422,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const row = {
       slug: dup.length ? `${slug}-${Date.now() % 10000}` : slug,
       title: b.title, direction: b.direction, format: b.format, duration: b.duration, price: b.price,
-      description: b.description ?? null, document: b.document ?? null,
+      description: b.description ?? null, cover: b.cover ?? null, document: b.document ?? null,
       dates: b.start ? { start: b.start } : null, status: b.status,
     };
     const created = (await di.request((createItem as any)("programs", row))) as any;

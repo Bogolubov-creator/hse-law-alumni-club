@@ -73,9 +73,9 @@ export function SizeDialog({ product, onClose }: { product: Product; onClose: ()
                   className="foc"
                   style={{
                     ...mono, fontSize: 13, padding: "9px 15px", borderRadius: "var(--r-sm)", cursor: v.stock <= 0 ? "not-allowed" : "pointer",
-                    border: `1px solid ${sku === v.sku ? "var(--c-accent)" : "var(--c-line)"}`,
-                    background: sku === v.sku ? "var(--c-accent)" : "transparent",
-                    color: sku === v.sku ? "var(--c-on-accent)" : "var(--c-text)",
+                    border: `1px solid ${sku === v.sku ? "var(--c-bg-inverse)" : "var(--c-line-control)"}`,
+                    background: sku === v.sku ? "var(--c-bg-inverse)" : "transparent",
+                    color: sku === v.sku ? "var(--c-text-inverse)" : "var(--c-text)",
                     opacity: v.stock <= 0 ? 0.4 : 1,
                   }}
                 >
@@ -101,7 +101,7 @@ export function SizeDialog({ product, onClose }: { product: Product; onClose: ()
           onClick={submit}
           disabled={needsSize || add.isPending || (typeof stock === "number" && stock <= 0)}
           className="foc"
-          style={{ marginTop: 24, width: "100%", padding: "14px 20px", borderRadius: "var(--r-md)", border: "none", fontWeight: 600, fontSize: 15, cursor: needsSize ? "not-allowed" : "pointer", background: needsSize ? "var(--c-bg-sunken)" : "var(--c-accent)", color: needsSize ? "var(--c-text-3)" : "var(--c-on-accent)" }}
+          style={{ marginTop: 24, width: "100%", padding: "14px 20px", borderRadius: "var(--r-sm)", border: "1px solid transparent", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase", cursor: needsSize ? "not-allowed" : "pointer", background: needsSize ? "var(--c-bg-sunken)" : "var(--c-accent)", color: needsSize ? "var(--c-text-3)" : "var(--c-on-accent)" }}
         >
           {typeof stock === "number" && stock <= 0 ? "Нет в наличии" : needsSize ? (variants.some((v) => v.size) ? "Выберите размер" : "Выберите вариант") : "В корзину"}
         </button>
@@ -132,13 +132,15 @@ export default function MerchV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main">
         <ShowcaseHead
-          eyebrow="витрина · мерч"
+          photo={{ src: "assets/photos/alumni-field.jpg", alt: "Выпускники и студенты факультета права на спортивном поле" }}
+          eyebrow="мерч"
           title="Одежда и аксессуары клуба"
-          lead="Фирменные вещи с фасеточной Фемидой. Самовывоз в учебном офисе или доставка, выбирается при оформлении."
+          lead="Фирменные вещи с символикой клуба. Самовывоз в учебном офисе или доставка – выбирается при оформлении."
           count={products.isLoading ? "загружаем склад" : `позиций ${catalog.length} · на складе ${catalog.reduce((s, p) => s + totalStock(p), 0)}`}
         />
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", paddingBottom: 22, borderBottom: "1px solid var(--c-line)" }}>
           {[null, ...categories].map((c) => (
@@ -150,9 +152,9 @@ export default function MerchV2() {
               style={{
                 ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                 padding: "7px 12px", borderRadius: 999, cursor: "pointer",
-                border: `1px solid ${cat === c ? "var(--c-accent)" : "var(--c-line)"}`,
-                background: cat === c ? "var(--c-accent)" : "transparent",
-                color: cat === c ? "var(--c-on-accent)" : "var(--c-text-2)",
+                border: `1px solid ${cat === c ? "var(--c-bg-inverse)" : "var(--c-line-control)"}`,
+                background: cat === c ? "var(--c-bg-inverse)" : "transparent",
+                color: cat === c ? "var(--c-text-inverse)" : "var(--c-text-2)",
               }}
             >
               {c ?? "все категории"}
@@ -198,7 +200,7 @@ export default function MerchV2() {
                   onClick={() => setOpen(p)}
                   disabled={stock <= 0}
                   className="foc"
-                  style={{ minWidth: 160, background: stock <= 0 ? "transparent" : "var(--c-accent)", color: stock <= 0 ? "var(--c-text-3)" : "var(--c-on-accent)", border: stock <= 0 ? "1px dashed var(--c-line)" : "none", borderRadius: "var(--r-md)", padding: "11px 18px", fontSize: 14, fontWeight: 600, cursor: stock <= 0 ? "not-allowed" : "pointer" }}
+                  style={{ minWidth: 160, background: stock <= 0 ? "transparent" : "var(--c-accent)", color: stock <= 0 ? "var(--c-text-3)" : "var(--c-on-accent)", border: stock <= 0 ? "1px dashed var(--c-line-control)" : "1px solid var(--c-accent)", borderRadius: "var(--r-sm)", padding: "11px 18px", fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase", fontWeight: 600, cursor: stock <= 0 ? "not-allowed" : "pointer" }}
                 >
                   {stock <= 0 ? "Нет в наличии" : p.variants_json?.length ? (hasSizes ? "Выбрать размер" : "Выбрать вариант") : "В корзину"}
                 </button>
@@ -212,6 +214,7 @@ export default function MerchV2() {
             показано позиций: {list.length}
           </div>
         )}
+        </div>
       </main>
 
       {open && <SizeDialog product={open} onClose={() => setOpen(null)} />}

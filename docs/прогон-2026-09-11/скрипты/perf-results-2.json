@@ -1,0 +1,687 @@
+[
+  {
+    "profile": "desktop 1440x900",
+    "page": "/",
+    "wallMs": 20030,
+    "lcp": {
+      "t": 15540,
+      "size": 58206,
+      "url": "",
+      "el": "P.club-cookie-banner__text :: Мы используем необходимые cookies и локальное хранилище брау"
+    },
+    "cls": 0,
+    "paints": {
+      "first-paint": 3400,
+      "first-contentful-paint": 15540
+    },
+    "ttfb": 2157.800000000745,
+    "dcl": 15097.300000000745,
+    "load": 15098.900000002235,
+    "ttiRough": 19456.300000000745,
+    "longTasks": 4,
+    "longTaskTotal": 619,
+    "js": {
+      "n": 9,
+      "bytes": 638259
+    },
+    "css": {
+      "n": 2,
+      "bytes": 63535
+    },
+    "fonts": {
+      "n": 2,
+      "bytes": 40056,
+      "status": [
+        "200 HSESans-Regular.woff2",
+        "200 HSESans-Black.woff2"
+      ]
+    },
+    "img": {
+      "n": 0,
+      "bytes": 0,
+      "list": []
+    },
+    "total": {
+      "n": 14,
+      "bytes": 748859
+    },
+    "biggestJs": {
+      "url": "index-CJDViOF1.js",
+      "bytes": 395448
+    },
+    "jsList": [
+      "index-CJDViOF1.js 395448",
+      "react-Dz0Lc7Hv.js 179609",
+      "query-BFWLZ2an.js 46318",
+      "queries-BgBOKyTp.js 1973",
+      "HeroPicture-DsOvjpe_.js 469",
+      "Shell-nGj5baId.js 7797",
+      "ClubTabBar-DgoHYKZf.js 4021",
+      "primitives-BpZv9qK3.js 2543",
+      "social-DYgyd6ab.js 81"
+    ],
+    "transferJs": 186861,
+    "fontsLoaded": [],
+    "docHeight": 900,
+    "bodyHeight": 484,
+    "h1": [],
+    "headings": [],
+    "landmarks": [
+      "DIV[status](Загрузка)",
+      "DIV[dialog](Согласие на использование cookies)",
+      "DIV[status]"
+    ],
+    "scrollers": [],
+    "buttonsNoName": [],
+    "overflowX": false,
+    "failed": []
+  },
+  {
+    "profile": "desktop 1440x900",
+    "page": "/dpo",
+    "wallMs": 27039,
+    "lcp": {
+      "t": 24884,
+      "size": 164931,
+      "url": "https://bogolubov-creator.github.io/club-pravo-hse-mirror/assets/dpo-masthead.avif",
+      "el": "IMG.club-dpo-masthead__photo :: "
+    },
+    "cls": 0,
+    "paints": {
+      "first-paint": 19520,
+      "first-contentful-paint": 23096
+    },
+    "ttfb": 14550.20000000298,
+    "dcl": 21382.400000002235,
+    "load": 21385.5,
+    "ttiRough": 26640.300000000745,
+    "longTasks": 14,
+    "longTaskTotal": 3824,
+    "js": {
+      "n": 10,
+      "bytes": 650617
+    },
+    "css": {
+      "n": 3,
+      "bytes": 74057
+    },
+    "fonts": {
+      "n": 4,
+      "bytes": 40056,
+      "status": [
+        "200 HSESans-Regular.woff2",
+        "200 HSESans-Black.woff2",
+        "404 HSESans-Regular.woff2",
+        "404 HSESans-SemiBold.woff2"
+      ]
+    },
+    "img": {
+      "n": 1,
+      "bytes": 23280,
+      "list": [
+        "dpo-masthead.avif 23280"
+      ]
+    },
+    "total": {
+      "n": 19,
+      "bytes": 795019
+    },
+    "biggestJs": {
+      "url": "index-CJDViOF1.js",
+      "bytes": 395448
+    },
+    "jsList": [
+      "query-BFWLZ2an.js 46318",
+      "index-CJDViOF1.js 395448",
+      "react-Dz0Lc7Hv.js 179609",
+      "program-date-CvR0HjR_.js 217",
+      "primitives-BpZv9qK3.js 2543",
+      "HeroPicture-DsOvjpe_.js 469",
+      "Shell-nGj5baId.js 7797",
+      "ClubTabBar-DgoHYKZf.js 4021",
+      "social-DYgyd6ab.js 81",
+      "DpoV2--nIa1uzH.js 14114"
+    ],
+    "transferJs": 191393,
+    "fontsLoaded": [],
+    "docHeight": 7570,
+    "bodyHeight": 7570,
+    "h1": [
+      "Программы дополнительного образования"
+    ],
+    "headings": [
+      "H1: Программы дополнительного образования",
+      "H2: Авторское право в информационном обществе",
+      "H2: Актуальные вопросы гражданского права",
+      "H2: Актуальные вопросы налогового администрирования и ",
+      "H2: Английское контрактное право",
+      "H2: Безопасное внедрение цифровых инструментов в кадро",
+      "H2: Бизнес-медиация",
+      "H2: Введение в правовую систему Китая",
+      "H2: Деловые переговоры: правовые стратегии",
+      "H2: Имущественные отношения в семье: право и медиация",
+      "H2: Интеллектуальная собственность: от закона к практи",
+      "H2: Исламские финансы: правовые основы, комплаенс и би",
+      "H2: Контрактное право Гонконга",
+      "H2: Корпоративное право: основные проблемы",
+      "H2: Мастерство юридического английского: продвинутые н",
+      "H2: Международное частное право: трансграничные операц",
+      "H2: Морской арбитраж",
+      "H2: Нейроправо",
+      "H2: Общие вопросы договорного права",
+      "H2: Персональный ассистент PRO",
+      "H2: Право на английском / Legal English",
+      "H2: Правовые вопросы банкротства: теории и практики",
+      "H2: Правовые механизмы и стратегии эффективного взаимо",
+      "H2: Техники эффективного анализа юридических документо",
+      "H2: Транспортное право",
+      "H2: Французский юридический язык: право, терминология ",
+      "H2: Французское (европейское) экономическое право / Dr",
+      "H2: Цифровое право для бизнеса"
+    ],
+    "landmarks": [
+      "HEADER",
+      "NAV",
+      "MAIN",
+      "HEADER",
+      "DIV[tablist](Режим каталога)",
+      "BUTTON[tab]",
+      "BUTTON[tab]",
+      "P[status]",
+      "FOOTER",
+      "NAV(Основные разделы)",
+      "DIV[dialog](Согласие на использование cookies)",
+      "DIV[status]"
+    ],
+    "scrollers": [],
+    "buttonsNoName": [
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/avtorskoe-pravo-v-i",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/aktualnye-voprosy-g",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/aktualnye-voprosy-n",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/angliyskoe-kontrakt",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/bezopasnoe-vnedreni",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/biznes-mediatsiya-4",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/vvedenie-v-pravovuy",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/delovye-peregovory-",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/imuschestvennye-otn",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/intellektualnaya-so",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/islamskie-finansy-p",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/kontraktnoe-pravo-g",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/korporativnoe-pravo",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/masterstvo-yuridich",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/mezhdunarodnoe-chas",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/morskoy-arbitrazh-9",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/neyropravo-90518648",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/obschie-voprosy-dog",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/personalnyy-assiste",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/pravo-na-angliyskom",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/pravovye-voprosy-ba",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/pravovye-mehanizmy-",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/tehniki-effektivnog",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/transportnoe-pravo-",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/frantsuzskiy-yuridi",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/frantsuzskoe-evrope",
+      "<a class=\"foc club-dpo-row__thumb\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/tsifrovoe-pravo-dly"
+    ],
+    "overflowX": false,
+    "failed": [
+      "404 https://bogolubov-creator.github.io/club-pravo-hse-mirror/dpo",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Regular.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-SemiBold.woff2"
+    ]
+  },
+  {
+    "profile": "desktop 1440x900",
+    "page": "/merch",
+    "wallMs": 7143,
+    "lcp": {
+      "t": 5940,
+      "size": 97704,
+      "url": "https://bogolubov-creator.github.io/club-pravo-hse-mirror/assets/themis.webp",
+      "el": "IMG :: "
+    },
+    "cls": 0.0722,
+    "paints": {
+      "first-paint": 1768,
+      "first-contentful-paint": 4076
+    },
+    "ttfb": 1144.0999999977648,
+    "dcl": 2536,
+    "load": 2538.199999999255,
+    "ttiRough": 6689.800000000745,
+    "longTasks": 11,
+    "longTaskTotal": 2078,
+    "js": {
+      "n": 9,
+      "bytes": 648055
+    },
+    "css": {
+      "n": 2,
+      "bytes": 63535
+    },
+    "fonts": {
+      "n": 6,
+      "bytes": 40056,
+      "status": [
+        "200 HSESans-Regular.woff2",
+        "200 HSESans-Black.woff2",
+        "404 HSESans-Regular.woff2",
+        "404 HSESans-SemiBold.woff2",
+        "404 HSESlab-Regular.woff2",
+        "404 HSESans-Black.woff2"
+      ]
+    },
+    "img": {
+      "n": 2,
+      "bytes": 21638,
+      "list": [
+        "merch-hoodie.webp 11632",
+        "themis.webp 10006"
+      ]
+    },
+    "total": {
+      "n": 20,
+      "bytes": 780293
+    },
+    "biggestJs": {
+      "url": "index-CJDViOF1.js",
+      "bytes": 395448
+    },
+    "jsList": [
+      "query-BFWLZ2an.js 46318",
+      "index-CJDViOF1.js 395448",
+      "react-Dz0Lc7Hv.js 179609",
+      "Modal-DYdi7-LX.js 1835",
+      "ClubTabBar-DgoHYKZf.js 4021",
+      "Shell-nGj5baId.js 7797",
+      "primitives-BpZv9qK3.js 2543",
+      "social-DYgyd6ab.js 81",
+      "MerchV2-CIPx8TFg.js 10403"
+    ],
+    "transferJs": 190634,
+    "fontsLoaded": [],
+    "docHeight": 1656,
+    "bodyHeight": 1656,
+    "h1": [
+      "Одежда и аксессуары клуба"
+    ],
+    "headings": [
+      "H1: Одежда и аксессуары клуба",
+      "H2: Худи с логотипом факультета",
+      "H2: Шоппер с Фемидой",
+      "H2: Мантия выпускника"
+    ],
+    "landmarks": [
+      "HEADER",
+      "NAV",
+      "MAIN",
+      "DIV[group](Вид каталога)",
+      "FOOTER",
+      "NAV(Основные разделы)",
+      "DIV[dialog](Согласие на использование cookies)",
+      "DIV[status]"
+    ],
+    "scrollers": [],
+    "buttonsNoName": [
+      "<a class=\"foc club-merch-image\" href=\"/club-pravo-hse-mirror/merch/hoodie-faculty\" data-discover=\"true\"><img src=\"/club-",
+      "<a class=\"foc club-merch-image\" href=\"/club-pravo-hse-mirror/merch/shopper-themis\" data-discover=\"true\"><img src=\"/club-"
+    ],
+    "overflowX": false,
+    "failed": [
+      "404 https://bogolubov-creator.github.io/club-pravo-hse-mirror/merch",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Regular.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-SemiBold.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESlab-Regular.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Black.woff2"
+    ]
+  },
+  {
+    "profile": "mobile 390x844",
+    "page": "/",
+    "wallMs": 6176,
+    "lcp": {
+      "t": 2908,
+      "size": 64056,
+      "url": "",
+      "el": "P.club-cookie-banner__text :: Мы используем необходимые cookies и локальное хранилище брау"
+    },
+    "cls": 0.004,
+    "paints": {
+      "first-paint": 1052,
+      "first-contentful-paint": 2908
+    },
+    "ttfb": 419.80000000074506,
+    "dcl": 1534.300000000745,
+    "load": 1542.2000000029802,
+    "ttiRough": 4922,
+    "longTasks": 9,
+    "longTaskTotal": 2479,
+    "js": {
+      "n": 8,
+      "bytes": 692488
+    },
+    "css": {
+      "n": 2,
+      "bytes": 63535
+    },
+    "fonts": {
+      "n": 6,
+      "bytes": 40056,
+      "status": [
+        "200 HSESans-Regular.woff2",
+        "200 HSESans-Black.woff2",
+        "404 HSESans-SemiBold.woff2",
+        "404 HSESans-Regular.woff2",
+        "404 HSESans-Black.woff2",
+        "404 HSESans-Bold.woff2"
+      ]
+    },
+    "img": {
+      "n": 1,
+      "bytes": 47440,
+      "list": [
+        "themis.jpeg 47440"
+      ]
+    },
+    "total": {
+      "n": 18,
+      "bytes": 850528
+    },
+    "biggestJs": {
+      "url": "index-CJDViOF1.js",
+      "bytes": 395448
+    },
+    "jsList": [
+      "query-BFWLZ2an.js 46318",
+      "react-Dz0Lc7Hv.js 179609",
+      "index-CJDViOF1.js 395448",
+      "MobileApp-DiGz6fvC.js 64821",
+      "ClubTabBar-DgoHYKZf.js 4021",
+      "queries-BgBOKyTp.js 1973",
+      "program-date-CvR0HjR_.js 217",
+      "social-DYgyd6ab.js 81"
+    ],
+    "transferJs": 198683,
+    "fontsLoaded": [],
+    "docHeight": 844,
+    "bodyHeight": 844,
+    "h1": [
+      "Анна"
+    ],
+    "headings": [
+      "H1: Анна"
+    ],
+    "landmarks": [
+      "HEADER",
+      "NAV(Основные разделы)",
+      "DIV[dialog](Согласие на использование cookies)",
+      "DIV[status]"
+    ],
+    "scrollers": [
+      "DIV.noscroll 696/1080"
+    ],
+    "buttonsNoName": [],
+    "overflowX": false,
+    "failed": [
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-SemiBold.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Regular.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Black.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Bold.woff2"
+    ]
+  },
+  {
+    "profile": "mobile 390x844",
+    "page": "/dpo",
+    "wallMs": 7102,
+    "lcp": {
+      "t": 3376,
+      "size": 64056,
+      "url": "",
+      "el": "P.club-cookie-banner__text :: Мы используем необходимые cookies и локальное хранилище брау"
+    },
+    "cls": 0.0001,
+    "paints": {
+      "first-paint": 1036,
+      "first-contentful-paint": 3376
+    },
+    "ttfb": 554.1000000014901,
+    "dcl": 2424.60000000149,
+    "load": 2432.5,
+    "ttiRough": 5638.199999999255,
+    "longTasks": 8,
+    "longTaskTotal": 2754,
+    "js": {
+      "n": 8,
+      "bytes": 692488
+    },
+    "css": {
+      "n": 2,
+      "bytes": 63535
+    },
+    "fonts": {
+      "n": 6,
+      "bytes": 40056,
+      "status": [
+        "200 HSESans-Regular.woff2",
+        "200 HSESans-Black.woff2",
+        "404 HSESans-SemiBold.woff2",
+        "404 HSESans-Regular.woff2",
+        "404 HSESans-Black.woff2",
+        "404 HSESans-Bold.woff2"
+      ]
+    },
+    "img": {
+      "n": 11,
+      "bytes": 733380,
+      "list": [
+        "472681893.jpg 66806",
+        "958734693.jpg 52549",
+        "494685723.jpg 56624",
+        "1129129055.jpg 55928",
+        "856421092.jpg 73824",
+        "894108285.jpg 75958",
+        "816497962.jpg 45268",
+        "589527758.jpg 88096",
+        "814248062.jpg 71037",
+        "1025688553.jpg 85222",
+        "474596729.jpg 62068"
+      ]
+    },
+    "total": {
+      "n": 28,
+      "bytes": 1536468
+    },
+    "biggestJs": {
+      "url": "index-CJDViOF1.js",
+      "bytes": 395448
+    },
+    "jsList": [
+      "query-BFWLZ2an.js 46318",
+      "index-CJDViOF1.js 395448",
+      "react-Dz0Lc7Hv.js 179609",
+      "social-DYgyd6ab.js 81",
+      "queries-BgBOKyTp.js 1973",
+      "program-date-CvR0HjR_.js 217",
+      "MobileApp-DiGz6fvC.js 64821",
+      "ClubTabBar-DgoHYKZf.js 4021"
+    ],
+    "transferJs": 198683,
+    "fontsLoaded": [],
+    "docHeight": 844,
+    "bodyHeight": 844,
+    "h1": [
+      "Программы ДПО"
+    ],
+    "headings": [
+      "H1: Программы ДПО",
+      "H2: Авторское право в информационном обществе",
+      "H2: Актуальные вопросы гражданского права",
+      "H2: Актуальные вопросы налогового администрирования и ",
+      "H2: Английское контрактное право",
+      "H2: Безопасное внедрение цифровых инструментов в кадро",
+      "H2: Бизнес-медиация",
+      "H2: Введение в правовую систему Китая",
+      "H2: Деловые переговоры: правовые стратегии",
+      "H2: Имущественные отношения в семье: право и медиация",
+      "H2: Интеллектуальная собственность: от закона к практи",
+      "H2: Исламские финансы: правовые основы, комплаенс и би",
+      "H2: Контрактное право Гонконга",
+      "H2: Корпоративное право: основные проблемы",
+      "H2: Мастерство юридического английского: продвинутые н",
+      "H2: Международное частное право: трансграничные операц",
+      "H2: Морской арбитраж",
+      "H2: Нейроправо",
+      "H2: Общие вопросы договорного права",
+      "H2: Персональный ассистент PRO",
+      "H2: Право на английском / Legal English",
+      "H2: Правовые вопросы банкротства: теории и практики",
+      "H2: Правовые механизмы и стратегии эффективного взаимо",
+      "H2: Техники эффективного анализа юридических документо",
+      "H2: Транспортное право",
+      "H2: Французский юридический язык: право, терминология ",
+      "H2: Французское (европейское) экономическое право / Dr",
+      "H2: Цифровое право для бизнеса"
+    ],
+    "landmarks": [
+      "HEADER",
+      "DIV[status]",
+      "NAV(Основные разделы)",
+      "DIV[dialog](Согласие на использование cookies)",
+      "DIV[status]"
+    ],
+    "scrollers": [
+      "DIV.noscroll 696/11688"
+    ],
+    "buttonsNoName": [
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/avtorskoe-pravo-v-informatsionnom-obsch",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/aktualnye-voprosy-grazhdanskogo-prava-9",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/aktualnye-voprosy-nalogovogo-administri",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/angliyskoe-kontraktnoe-pravo-856421092\"",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/bezopasnoe-vnedrenie-tsifrovyh-instrume",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/biznes-mediatsiya-494685723\" data-disco",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/vvedenie-v-pravovuyu-sistemu-kitaya-894",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/delovye-peregovory-pravovye-strategii-5",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/imuschestvennye-otnosheniya-v-seme-prav",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/intellektualnaya-sobstvennost-ot-zakona",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/islamskie-finansy-pravovye-osnovy-kompl",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/kontraktnoe-pravo-gonkonga-1025688553\" ",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/korporativnoe-pravo-osnovnye-problemy-4",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/masterstvo-yuridicheskogo-angliyskogo-p",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/mezhdunarodnoe-chastnoe-pravo-transgran",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/morskoy-arbitrazh-906651510\" data-disco",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/neyropravo-905186485\" data-discover=\"tr",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/obschie-voprosy-dogovornogo-prava-90727",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/personalnyy-assistent-pro-829977883\" da",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/pravo-na-angliyskom-legal-english-47477",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/pravovye-voprosy-bankrotstva-teorii-i-p",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/pravovye-mehanizmy-i-strategii-effektiv",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/tehniki-effektivnogo-analiza-yuridiches",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/transportnoe-pravo-802031223\" data-disc",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/frantsuzskiy-yuridicheskiy-yazyk-pravo-",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/frantsuzskoe-evropeyskoe-ekonomicheskoe",
+      "<a class=\"foc\" aria-hidden=\"true\" tabindex=\"-1\" href=\"/club-pravo-hse-mirror/dpo/tsifrovoe-pravo-dlya-biznesa-837181759\""
+    ],
+    "overflowX": false,
+    "failed": [
+      "404 https://bogolubov-creator.github.io/club-pravo-hse-mirror/dpo",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-SemiBold.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Regular.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Black.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Bold.woff2"
+    ]
+  },
+  {
+    "profile": "mobile 390x844",
+    "page": "/merch",
+    "wallMs": 6411,
+    "lcp": {
+      "t": 2720,
+      "size": 64056,
+      "url": "",
+      "el": "P.club-cookie-banner__text :: Мы используем необходимые cookies и локальное хранилище брау"
+    },
+    "cls": 0,
+    "paints": {
+      "first-paint": 888,
+      "first-contentful-paint": 2720
+    },
+    "ttfb": 497.30000000074506,
+    "dcl": 1794.800000000745,
+    "load": 1796.6000000014901,
+    "ttiRough": 3791.2000000029802,
+    "longTasks": 9,
+    "longTaskTotal": 1737,
+    "js": {
+      "n": 8,
+      "bytes": 692488
+    },
+    "css": {
+      "n": 2,
+      "bytes": 63535
+    },
+    "fonts": {
+      "n": 6,
+      "bytes": 40056,
+      "status": [
+        "200 HSESans-Regular.woff2",
+        "200 HSESans-Black.woff2",
+        "404 HSESans-SemiBold.woff2",
+        "404 HSESans-Regular.woff2",
+        "404 HSESans-Black.woff2",
+        "404 HSESans-Bold.woff2"
+      ]
+    },
+    "img": {
+      "n": 2,
+      "bytes": 60422,
+      "list": [
+        "merch-hoodie.jpg 12982",
+        "themis.jpeg 47440"
+      ]
+    },
+    "total": {
+      "n": 19,
+      "bytes": 863510
+    },
+    "biggestJs": {
+      "url": "index-CJDViOF1.js",
+      "bytes": 395448
+    },
+    "jsList": [
+      "index-CJDViOF1.js 395448",
+      "query-BFWLZ2an.js 46318",
+      "react-Dz0Lc7Hv.js 179609",
+      "queries-BgBOKyTp.js 1973",
+      "MobileApp-DiGz6fvC.js 64821",
+      "ClubTabBar-DgoHYKZf.js 4021",
+      "program-date-CvR0HjR_.js 217",
+      "social-DYgyd6ab.js 81"
+    ],
+    "transferJs": 198683,
+    "fontsLoaded": [],
+    "docHeight": 844,
+    "bodyHeight": 844,
+    "h1": [
+      "Мерч"
+    ],
+    "headings": [
+      "H1: Мерч"
+    ],
+    "landmarks": [
+      "HEADER",
+      "NAV(Основные разделы)",
+      "DIV[dialog](Согласие на использование cookies)",
+      "DIV[status]"
+    ],
+    "scrollers": [],
+    "buttonsNoName": [],
+    "overflowX": false,
+    "failed": [
+      "404 https://bogolubov-creator.github.io/club-pravo-hse-mirror/merch",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-SemiBold.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Regular.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Black.woff2",
+      "404 https://bogolubov-creator.github.io/fonts/HSESans-Bold.woff2"
+    ]
+  }
+]

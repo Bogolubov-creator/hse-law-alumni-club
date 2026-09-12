@@ -1,12 +1,15 @@
+import "../styles/cabinet-gate.css";
+import { action as publicAction } from "../styles/primitives.js";
 import { CabinetClubOverview } from "../components/CabinetClubOverview.js";
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU, type Classmate, type LkEvent } from "@club/shared";
 import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Me, type MyOrder } from "../lib/api.js";
 import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../lib/queries.js";
-import { logout as logoutSession } from "../lib/cart.js";
+import { clearToken, logout as logoutSession } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
+import { useToast } from "../components/Toast.js";
 import { BlankField, mono, disp } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
 import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
@@ -30,7 +33,7 @@ import { MobileTabs } from "../v2/MobileTabs.js";
 
 /* ── Вход ─────────────────────────────────────────────────────────── */
 
-function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
+function Gate({ onAuthed, returnTo, sessionExpired }: { onAuthed: (r: LoginResponse) => void; returnTo: string | null; sessionExpired: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -52,13 +55,22 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
   return (
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <VisionCorner />
-      <form onSubmit={submit} style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
+      <div className="cabinet-gate">
+        <aside className="cabinet-gate__intro club-dark">
+          <Link to="/" className="foc cabinet-gate__brand"><Mark kind="scales" size={32} /><span>Клуб выпускников<small>факультета права Вышки</small></span></Link>
+          <h2>Ваше место <br />в <em>клубе</em></h2>
+          <p>Знакомые лица, новые встречи и знания после выпуска.</p>
+          <div className="cabinet-gate__benefits"><span>Программы ДПО с ценой выпускника</span><span>События и подкасты клуба</span><span>Ваши заявки и статус участия</span></div>
+        </aside>
+      <form onSubmit={submit} className="cabinet-gate__form">
         <Link to="/" className="foc" style={{ ...label, color: "var(--c-accent-text)", textDecoration: "none" }}>← на главную</Link>
-        <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", marginTop: 20 }} />
-        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "14px 0 0" }}>Вход для выпускников</h1>
+
+        <h1 style={{ fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "clamp(28px, 3vw, 36px)", margin: "24px 0 0", lineHeight: 1.12 }}>Вход для выпускников</h1>
         <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
-          Доступ открывается после верификации учебным офисом.
+          {returnTo ? "Войдите, чтобы продолжить оформление подписки на подкасты. После входа вернём вас к её условиям." : "Доступ открывается после верификации учебным офисом."}
         </p>
+
+        {sessionExpired && <p role="status" style={{ margin: "18px 0 0", padding: "12px 14px", borderLeft: "2px solid var(--c-accent)", background: "var(--c-bg)", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>Сессия завершилась. Войдите снова, чтобы продолжить работу в выбранном разделе.</p>}
 
         <label htmlFor="lkv2-email" style={{ ...label, display: "block", marginTop: 22 }}>Почта</label>
         <input id="lkv2-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="foc" style={field} />
@@ -69,15 +81,16 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
         {err && <p role="alert" style={{ ...mono, margin: "14px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
 
         <button type="submit" disabled={busy} className="foc"
-          style={{ width: "100%", marginTop: 22, padding: "14px 20px", borderRadius: "var(--r-md)", border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)", fontWeight: 600, fontSize: 15, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.7 : 1 }}>
+          style={{ ...publicAction, width: "100%", marginTop: 22, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.7 : 1 }}>
           {busy ? "Входим…" : "Войти в кабинет"}
         </button>
 
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "var(--t-small)" }}>
-          <Link to="/join" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
-          <Link to="/forgot" className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
+          <Link to={returnTo ? `/join?next=${encodeURIComponent(`/lk?next=${encodeURIComponent(returnTo)}`)}` : "/join"} className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Вступить в клуб</Link>
+          <Link to={returnTo ? `/forgot?next=${encodeURIComponent(returnTo)}` : "/forgot"} className="foc" style={{ color: "var(--c-text-3)" }}>Забыли пароль?</Link>
         </div>
       </form>
+      </div>
       {/* Без панели экран входа – тупик: во вкладках «кабинет» ведёт сюда */}
       <MobileTabs />
     </main>
@@ -85,21 +98,36 @@ function Gate({ onAuthed }: { onAuthed: (r: LoginResponse) => void }) {
 }
 
 function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => void }) {
+  const rejected = alumni.verification_status === "rejected";
   return (
     <main id="main" style={{ minHeight: "100dvh", background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: "calc(24px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>
       <div style={{ width: "100%", maxWidth: 420, background: "var(--c-bg-raised)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-lg)", padding: 32 }}>
-        <div style={{ ...label, color: "var(--c-status-text)" }}>статус · pending</div>
-        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "12px 0 0" }}>Ожидает верификации</h1>
+        <div style={{ ...label, color: rejected ? "var(--c-danger-text)" : "var(--c-status-text)" }}>
+          статус · {rejected ? "отклонена" : "на проверке"}
+        </div>
+        <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", margin: "12px 0 0" }}>
+          {rejected ? "Заявка отклонена" : "Заявка на проверке"}
+        </h1>
         <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
-          {alumni.fio ?? "Выпускник"}, учебный офис сверяет выпуск с реестром факультета.
+          {alumni.fio ?? "Выпускник"}, {rejected
+            ? "учебный офис не подтвердил выпуск по этой заявке. Напишите в поддержку, если нужна помощь."
+            : "учебный офис сверяет выпуск с реестром факультета. Кабинет и скидка на ДПО откроются после подтверждения."}
         </p>
-        <ul style={{ margin: "16px 0 0", paddingLeft: 18, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
-          <li>Кабинет, баллы и скидка на ДПО откроются после подтверждения.</li>
-          <li>Заявки из корзины уже можно подавать – скидка подтянется после верификации.</li>
-          <li>Обычно проверка занимает 1–2 рабочих дня.</li>
-        </ul>
+        {!rejected && (
+          <p style={{ margin: "14px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>
+            Пока можно загрузить фото профиля и смотреть каталог программ – заявки из корзины уже принимаются.
+          </p>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 22 }}>
-          <Link to="/dpo" className="foc" style={{ ...action, textAlign: "center", textDecoration: "none" }}>Смотреть программы ДПО</Link>
+          {!rejected && (
+            <Link to="/lk/profile" className="foc" style={{ ...action, textAlign: "center", textDecoration: "none" }}>Загрузить фото профиля</Link>
+          )}
+          <Link to="/dpo" className="foc" style={{ ...actionGhost, textAlign: "center", textDecoration: "none" }}>
+            {rejected ? "Смотреть программы ДПО" : "Пока смотреть ДПО"}
+          </Link>
+          {rejected && (
+            <Link to="/support" className="foc" style={{ ...actionGhost, textAlign: "center", textDecoration: "none" }}>Написать в поддержку</Link>
+          )}
           <button onClick={onBack} className="foc" style={{ width: "100%", padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад ко входу</button>
         </div>
       </div>
@@ -159,56 +187,143 @@ function Identity({ me }: { me: Me }) {
 function EventsFeed({ token }: { token: string }) {
   const [showAll, setShowAll] = useState(false);
   const events = useLkEvents(token);
-  const addFriend = useAddFriend(token);
-  const removeFriend = useRemoveFriend(token);
-  const list = events.data ?? [];
+  // Входящие в друзья – в разделе «Сообщество»; здесь остальное.
+  const list = (events.data ?? []).filter((e) => e.kind !== "friend_request");
   if (!list.length) return null;
+
+  const lineFor = (e: LkEvent): string | null => {
+    switch (e.kind) {
+      case "friend_accepted":
+        return `${e.by_fio ?? "Выпускник"} теперь у вас в друзьях`;
+      case "order_status":
+        return `Заявка ${e.number} ${ORDER_STATUS_VERB_RU[e.status] ?? e.status}${e.paid ? " · оплата прошла" : ""}`;
+      case "podcast_expiring":
+        return `Подписка на подкасты истекает через ${e.days_left} дн.`;
+      case "friend_request":
+        return null;
+      default: {
+        const _exhaustive: never = e;
+        return _exhaustive;
+      }
+    }
+  };
+
+  const hrefFor = (e: LkEvent): string | null => {
+    switch (e.kind) {
+      case "order_status":
+        return "/lk?section=orders";
+      case "podcast_expiring":
+        return "/podcasts";
+      case "friend_accepted":
+        return "/lk?section=community";
+      case "friend_request":
+        return "/lk?section=community";
+      default: {
+        const _exhaustive: never = e;
+        return _exhaustive;
+      }
+    }
+  };
 
   return (
     <Section title="Уведомления">
       {(showAll ? list : list.slice(0, 3)).map((e: LkEvent, i) => {
-        if (e.kind === "friend_request") {
+        const line = lineFor(e);
+        const href = hrefFor(e);
+        if (!line) return null;
+        const rowStyle = { padding: "12px 0", borderTop: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" } as const;
+        if (href) {
           return (
-            <div key={`fr-${e.from_id}-${i}`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
-              <span style={{ flex: 1, minWidth: 190, fontSize: "var(--t-body)" }}>
-                <b>{e.from_fio ?? "Выпускник"}</b> хочет добавить вас в друзья
-              </span>
-              <button onClick={() => addFriend.mutate(e.from_id)} disabled={addFriend.isPending} className="foc" style={action}
-                aria-label={`Принять заявку в друзья – ${e.from_fio ?? "выпускник"}`}>принять</button>
-              <button onClick={() => removeFriend.mutate(e.from_id)} disabled={removeFriend.isPending} className="foc" style={actionGhost}
-                aria-label={`Отклонить заявку в друзья – ${e.from_fio ?? "выпускник"}`}>отклонить</button>
-            </div>
+            <Link key={`ev-${i}`} to={href} className="foc" style={{ ...rowStyle, display: "block", textDecoration: "none" }}>
+              {line}
+              <span style={{ color: "var(--c-accent-text)", fontWeight: 600, marginLeft: 8 }}>Открыть →</span>
+            </Link>
           );
         }
-        const line =
-          e.kind === "friend_accepted" ? `${e.by_fio ?? "Выпускник"} теперь у вас в друзьях`
-          // В ленте – глагольная форма («заявка подтверждена»), в списке заявок – именительная
-          : e.kind === "order_status" ? `Заявка ${e.number} ${ORDER_STATUS_VERB_RU[e.status] ?? e.status}${e.paid ? " · оплата прошла" : ""}`
-          : `Подписка на подкасты истекает через ${e.days_left} дн.`;
         return (
-          <div key={`ev-${i}`} style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{line}</div>
+          <div key={`ev-${i}`} style={rowStyle}>{line}</div>
         );
       })}
-      {list.length > 3 && <button className="foc" style={{ ...actionGhost, marginTop: 14 }} onClick={() => setShowAll(v => !v)}>{showAll ? "Свернуть уведомления" : `Все уведомления (${list.length})`}</button>}
+      {list.length > 3 && <button type="button" className="foc" style={{ ...actionGhost, marginTop: 14 }} onClick={() => setShowAll(v => !v)}>{showAll ? "Свернуть уведомления" : `Все уведомления (${list.length})`}</button>}
     </Section>
   );
 }
 
+function orderNextHint(o: MyOrder): string {
+  if (o.status === "canceled") return "Заявка отменена. Новую можно оформить в каталоге.";
+  if (o.status === "expired") return "Резерв мерча истёк. Оформите заявку снова, если товар ещё нужен.";
+  if (o.status === "done") return "Заявка закрыта. Вопросы – в поддержку.";
+  if (o.payment_status === "succeeded") {
+    if (o.status === "confirmed") return "Оплата есть · офис готовит выдачу или доставку.";
+    if (o.status === "in_progress") return "Оплата есть · офис обрабатывает заявку.";
+    return "Оплата подтверждена · ждите обновления статуса.";
+  }
+  if (o.status === "new") return "Заявка у офиса. Ожидайте подтверждения или счёт на оплату.";
+  if (o.status === "in_progress") return "Офис взял в работу. При необходимости придёт письмо.";
+  if (o.status === "confirmed") return "Подтверждена. Если нужна оплата – ссылка придёт на почту.";
+  return "Следите за статусом в этом списке и на почте.";
+}
+
+const ORDER_FILTERS: Array<{ key: "all" | "open" | "done"; label: string }> = [
+  { key: "all", label: "Все" },
+  { key: "open", label: "В работе" },
+  { key: "done", label: "Закрытые" },
+];
+
 function Orders({ token, compact = false }: { token: string; compact?: boolean }) {
   const orders = useMyOrders(token);
+  const [filter, setFilter] = useState<"all" | "open" | "done">("all");
   const list = orders.data ?? [];
+  const filtered = compact
+    ? list
+    : list.filter((o) => {
+      if (filter === "open") return !["done", "canceled", "expired"].includes(o.status);
+      if (filter === "done") return ["done", "canceled", "expired"].includes(o.status);
+      return true;
+    });
+  const shown = compact ? filtered.slice(0, 3) : filtered;
+
   return (
     <Section title="Мои заявки" note={list.length ? `всего ${list.length}` : undefined}>
       {orders.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
-      {orders.isError && <p role="alert">Не удалось загрузить заявки. <button onClick={() => orders.refetch()}>Повторить</button></p>}
+      {orders.isError && <p role="alert">Не удалось загрузить заявки. <button type="button" onClick={() => orders.refetch()}>Повторить</button></p>}
       {!orders.isLoading && !orders.isError && list.length === 0 && (
-        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
-          Заявок пока нет. <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Посмотреть программы ДПО →</Link>
+        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14, lineHeight: 1.6 }}>
+          Заявок пока нет.{" "}
+          <Link to="/dpo" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Программы ДПО →</Link>
+          {" · "}
+          <Link to="/merch" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>Мерч клуба →</Link>
         </p>
       )}
-      {(compact ? list.slice(0, 3) : list).map((o: MyOrder) => (
+      {!compact && list.length > 0 && (
+        <div role="group" aria-label="Фильтр заявок" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 8px", paddingTop: 4 }}>
+          {ORDER_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              className="foc"
+              aria-pressed={filter === f.key}
+              onClick={() => setFilter(f.key)}
+              style={filter === f.key ? action : actionGhost}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {!compact && list.length > 0 && filtered.length === 0 && (
+        <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
+          В этом фильтре заявок нет.
+        </p>
+      )}
+      {shown.map((o: MyOrder) => (
         <details key={o.number} style={{ padding: "16px 0", borderTop: "1px solid var(--c-line)", overflowWrap: "anywhere" }}>
-          <summary className="foc" style={{ cursor: "pointer", padding: "8px 0", lineHeight: 1.6 }}><strong>{o.number}</strong> · {ORDER_STATUS_RU[o.status] ?? o.status} · {rub(o.total_estimate)}</summary>
+          <summary className="foc" style={{ cursor: "pointer", padding: "8px 0", lineHeight: 1.6 }}>
+            <strong>{o.number}</strong> · {ORDER_STATUS_RU[o.status] ?? o.status} · {rub(o.total_estimate)}
+          </summary>
+          <p style={{ margin: "10px 0 0", color: "var(--c-accent-text)", fontSize: "var(--t-small)", fontWeight: 600, lineHeight: 1.5 }}>
+            Что дальше: {orderNextHint(o)}
+          </p>
           <p>Создана: {new Date(o.created_at).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} (Москва)</p>
           {!!o.items_json?.length && <ul>{o.items_json.map((item, i) => <li key={i} style={{ marginBlock: 12 }}>{item.title}{item.variant_sku && ` · ${item.variant_sku}`} · {item.qty} шт. × {rub(item.price)}</li>)}</ul>}
           <p>До скидки: {rub(o.subtotal)}. Скидка на ДПО: {o.member_discount}%.</p>
@@ -230,7 +345,10 @@ function Achievements({ me }: { me: Me }) {
     setSearchParams(nextParams, { replace: true });
   };
   const earned = me.achievements.filter(a => a.earned);
-  const list = view === "earned" ? earned : me.achievements;
+  const next = me.achievements.find(a => !a.earned && a.star);
+  const list = view === "earned"
+    ? earned
+    : [...me.achievements].sort((a, b) => Number(!b.earned && b.star) - Number(!a.earned && a.star));
 
   if (!me.achievements.length) {
     return (
@@ -256,18 +374,29 @@ function Achievements({ me }: { me: Me }) {
       <button className="foc" aria-pressed={view === "earned"} onClick={() => setView("earned")}>Полученные ({earned.length})</button>
     </div>
     <p className="club-awards-hint">{view === "all" ? "Общий каталог для всех участников. Нажмите на знак, чтобы узнать условия." : "Здесь собраны ваши полученные достижения."}</p>
+    {view === "all" && next && (
+      <p className="club-awards-next" role="status">
+        Следующее: <strong>{next.title}</strong>
+        <span> · {next.current} / {next.target} · {next.kind}</span>
+      </p>
+    )}
     {list.length === 0 && <div className="club-awards-empty"><h3>Коллекция ещё впереди</h3><p>Посмотрите общий каталог и выберите, с чего начнёте.</p><button className="foc" onClick={() => setView("all")}>Посмотреть все достижения</button></div>}
     <div className="club-achievement-list">
-      {list.map(a => <details key={a.key} data-achievement={a.key} className={`club-award ${a.earned ? "is-earned" : ""}`}>
-        <summary className="foc">
-          <span className="club-award-medal" aria-hidden="true"><span>{a.icon}</span></span>
-          <h3>{a.title}</h3>
-          <span className="club-award-status">{a.earned ? "получено" : `${a.current} / ${a.target}`}</span>
-          <progress value={a.current} max={Math.max(1, a.target)} aria-label={`Прогресс: ${a.title}`} />
-          <span className="club-award-disclosure">Условия <span aria-hidden="true">+</span></span>
-        </summary>
-        <div className="club-award-description"><p>{a.description}</p><span>{a.kind}: {a.current} / {a.target}</span></div>
-      </details>)}
+      {list.map(a => {
+        const isNext = !a.earned && a.star;
+        return (
+          <details key={a.key} data-achievement={a.key} className={`club-award ${a.earned ? "is-earned" : ""}${isNext ? " is-next" : ""}`}>
+            <summary className="foc">
+              <span className="club-award-medal" aria-hidden="true"><span>{a.icon}</span></span>
+              <h3>{a.title}</h3>
+              <span className="club-award-status">{a.earned ? "получено" : isNext ? `следующее · ${a.current} / ${a.target}` : `${a.current} / ${a.target}`}</span>
+              <progress value={a.current} max={Math.max(1, a.target)} aria-label={`Прогресс: ${a.title}`} />
+              <span className="club-award-disclosure">Условия <span aria-hidden="true">+</span></span>
+            </summary>
+            <div className="club-award-description"><p>{a.description}</p><span>{a.kind}: {a.current} / {a.target}</span></div>
+          </details>
+        );
+      })}
     </div>
   </Section>;
 }
@@ -276,22 +405,96 @@ const FRIEND_LABEL: Record<Classmate["friend_status"], string> = {
   none: "в друзья", incoming: "принять", pending: "заявка отправлена", accepted: "в друзьях",
 };
 
-function Community({ token }: { token: string }) {
+function Community({ token, referralCode }: { token: string; referralCode?: string | null }) {
+  const toast = useToast();
   const classmates = useClassmates(token);
+  const feed = useLkEvents(token);
   const addFriend = useAddFriend(token);
   const removeFriend = useRemoveFriend(token);
+  const [q, setQ] = useState("");
+  const [sameProgram, setSameProgram] = useState(false);
   const list = classmates.data ?? [];
+  const incoming = (feed.data ?? []).filter((e): e is Extract<LkEvent, { kind: "friend_request" }> => e.kind === "friend_request");
   const friends = list.filter((c) => c.friend_status === "accepted").length;
+  const needle = q.trim().toLocaleLowerCase("ru");
+  const filtered = list.filter((c) => {
+    if (sameProgram && c.match !== "program" && c.match !== "both") return false;
+    if (!needle) return true;
+    const hay = [c.fio, c.edu_program, c.cohort, c.level_title].filter(Boolean).join(" ").toLocaleLowerCase("ru");
+    return hay.includes(needle);
+  });
+
+  const inviteCode = referralCode?.trim() || null;
+  const copyInvite = () => {
+    if (!inviteCode) return;
+    const link = `${window.location.origin}/join?ref=${encodeURIComponent(inviteCode)}`;
+    void navigator.clipboard?.writeText(link).then(
+      () => toast("Ссылка приглашения скопирована"),
+      () => toast("Не удалось скопировать ссылку", "err"),
+    );
+  };
 
   return (
     <Section title="Однокурсники" note={list.length ? `${list.length} чел. · в друзьях ${friends}` : undefined}>
+      {incoming.length > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <p style={{ ...label, margin: "0 0 8px", color: "var(--c-accent-text)" }}>входящие заявки · {incoming.length}</p>
+          {incoming.map((e, i) => (
+            <div key={`fr-${e.from_id}-${i}`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
+              <span style={{ flex: 1, minWidth: 190, fontSize: "var(--t-body)" }}>
+                <b>{e.from_fio ?? "Выпускник"}</b> хочет добавить вас в друзья
+              </span>
+              <button type="button" onClick={() => addFriend.mutate(e.from_id)} disabled={addFriend.isPending} className="foc" style={action}
+                aria-label={`Принять заявку в друзья – ${e.from_fio ?? "выпускник"}`}>принять</button>
+              <button type="button" onClick={() => removeFriend.mutate(e.from_id)} disabled={removeFriend.isPending} className="foc" style={actionGhost}
+                aria-label={`Отклонить заявку в друзья – ${e.from_fio ?? "выпускник"}`}>отклонить</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {list.length > 0 && (
+        <div style={{ display: "grid", gap: 10, padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
+          <label htmlFor="lk-community-q" style={{ ...label, display: "block" }}>поиск</label>
+          <input
+            id="lk-community-q"
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="ФИО, программа, выпуск"
+            className="foc"
+            style={field}
+          />
+          <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "var(--t-small)", color: "var(--c-text-2)" }}>
+            <input type="checkbox" checked={sameProgram} onChange={(e) => setSameProgram(e.target.checked)} className="foc" />
+            Только моя образовательная программа
+          </label>
+        </div>
+      )}
       {classmates.isLoading && <p style={{ ...label, margin: 0 }}>загружаем…</p>}
       {!classmates.isLoading && list.length === 0 && (
+        <div style={{ borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
+          <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
+            Из вашего выпуска и программы в клубе пока никого нет. Пригласите однокурсника – после верификации он появится здесь.
+          </p>
+          {inviteCode && (
+            <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+              <div>
+                <div style={label}>ваш код приглашения</div>
+                <div style={{ ...mono, fontSize: 17, fontWeight: 500, marginTop: 6, letterSpacing: "0.08em" }}>{inviteCode}</div>
+              </div>
+              <button type="button" className="foc" onClick={copyInvite} style={{ ...action, justifySelf: "start", padding: "11px 16px", borderRadius: "var(--r-md)" }}>
+                Скопировать ссылку приглашения
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {!classmates.isLoading && list.length > 0 && filtered.length === 0 && (
         <p style={{ margin: 0, color: "var(--c-text-2)", fontSize: "var(--t-body)", borderTop: "1px solid var(--c-line)", paddingTop: 14 }}>
-          Из вашего выпуска и программы в клубе пока никого нет. Появятся, как только учебный офис их верифицирует.
+          Никого не нашли по этому запросу.
         </p>
       )}
-      {list.map((c) => {
+      {filtered.map((c) => {
         const settled = c.friend_status === "accepted" || c.friend_status === "pending";
         return (
           <div key={c.id} className="lkv2-mate" style={{ display: "grid", gridTemplateColumns: "36px 1fr auto 34px", gap: 12, alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -301,14 +504,14 @@ function Community({ token }: { token: string }) {
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: "var(--t-body)", fontWeight: 500, overflowWrap: "anywhere" }}>{c.fio ?? "Выпускник"}</div>
               <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 3 }}>
-                {[c.cohort ? `выпуск ${c.cohort}` : null, c.level_title].filter(Boolean).join(" · ")}
+                {[c.cohort ? `выпуск ${c.cohort}` : null, c.edu_program, c.level_title].filter(Boolean).join(" · ")}
               </div>
             </div>
             <button
+              type="button"
               onClick={() => addFriend.mutate(c.id)}
               disabled={addFriend.isPending || settled}
               className="foc"
-              /* Без имени экранный диктор читает подряд десяток одинаковых «в друзья» */
               aria-label={`${FRIEND_LABEL[c.friend_status]} – ${c.fio ?? "выпускник"}`}
               style={
                 c.friend_status === "accepted" ? { ...actionGhost, color: "var(--c-ok-text)", cursor: "default" }
@@ -318,10 +521,8 @@ function Community({ token }: { token: string }) {
             >
               {FRIEND_LABEL[c.friend_status]}
             </button>
-            {/* Ячейка есть всегда, даже пустая: иначе строки без «✕» съезжают
-                и колонка действий перестаёт быть колонкой. */}
             {c.friend_status === "none" ? <span aria-hidden /> : (
-              <button onClick={() => removeFriend.mutate(c.id)} disabled={removeFriend.isPending} className="foc"
+              <button type="button" onClick={() => removeFriend.mutate(c.id)} disabled={removeFriend.isPending} className="foc"
                 aria-label={c.friend_status === "accepted" ? `Удалить ${c.fio ?? "выпускника"} из друзей` : `Отменить заявку к ${c.fio ?? "выпускнику"}`}
                 style={{ ...actionGhost, padding: "8px 9px", width: 34 }}>✕</button>
             )}
@@ -340,11 +541,10 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const me = useMe(token);
   const expired = me.isError && isAuthError(me.error);
 
-  // Протухшую сессию гасим сами: иначе кабинет остаётся в вечной ошибке,
-  // а localStorage продолжает держать мёртвый токен.
-  useEffect(() => {
-    if (expired) onLogout();
-  }, [expired, onLogout]);
+  const nextStar = me.data?.achievements.find((a) => !a.earned && a.star);
+  const identityNote = me.data
+    ? `${me.data.level.points} б. · скидка ${me.data.level.discount}%${nextStar ? ` · далее: ${nextStar.title}` : ""}`
+    : "";
 
   return (
     <CabinetShell active="lk" onLogout={onLogout}>
@@ -361,7 +561,14 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
       {me.data && (
         <div className="lkv2-grid" style={{ display: "grid", gridTemplateColumns: "300px minmax(0, 1fr)", gap: 28, alignItems: "start" }}>
           <div className="lkv2-aside" style={{ position: "sticky", top: 88 }}>
-            <div className="club-identity-desktop"><Identity me={me.data} /></div><details className="club-identity-mobile"><summary>{me.data.alumni.fio}<span>Статус, баллы и приглашение</span></summary><Identity me={me.data} /></details>
+            <div className="club-identity-desktop"><Identity me={me.data} /></div>
+            <details className="club-identity-mobile">
+              <summary>
+                {me.data.alumni.fio}
+                <span>{identityNote}</span>
+              </summary>
+              <Identity me={me.data} />
+            </details>
           </div>
           <div>
             <nav aria-label="Разделы кабинета" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
@@ -385,10 +592,19 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                 >{title}</button>
               ))}
             </nav>
-            {section === "overview" && <><CabinetClubOverview me={me.data} token={token} /><EventsFeed token={token} /></>}
-            {(section === "overview" || section === "orders") && <Orders token={token} compact={section === "overview"} />}
+            {section === "overview" && (
+              <>
+                <CabinetClubOverview me={me.data} token={token} />
+                <details className="cabinet-more">
+                  <summary className="foc">Уведомления и заявки</summary>
+                  <EventsFeed token={token} />
+                  <Orders token={token} compact />
+                </details>
+              </>
+            )}
+            {section === "orders" && <Orders token={token} />}
             {section === "achievements" && <Achievements me={me.data} />}
-            {section === "community" && <Community token={token} />}
+            {section === "community" && <Community token={token} referralCode={me.data.alumni.referral_code} />}
           </div>
         </div>
       )}
@@ -400,22 +616,80 @@ export default function LkV2() {
   useHead({ title: "Личный кабинет", noindex: true });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [pending, setPending] = useState<AlumniBrief | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  // Разрешён только известный маршрут оформления, внешние адреса не принимаются.
+  const returnTo = params.get("next") === "/podcasts#podcast-subscription"
+    ? "/podcasts#podcast-subscription" : null;
+  useEffect(() => {
+    if (token && returnTo) navigate(returnTo, { replace: true });
+  }, [token, returnTo, navigate]);
 
   const onAuthed = (resp: LoginResponse) => {
+    // Токен сохраняем и для pending – нужен для загрузки фото профиля.
+    localStorage.setItem(TOKEN_KEY, resp.token);
+    setSessionExpired(false);
     if (resp.alumni.verification_status === "verified") {
-      localStorage.setItem(TOKEN_KEY, resp.token);
       setToken(resp.token);
+      setPending(null);
     } else {
+      setToken(resp.token);
       setPending(resp.alumni);
     }
   };
   const doLogout = () => {
     logoutSession();
+    setSessionExpired(false);
     setToken(null);
     setPending(null);
   };
 
-  if (pending) return <PendingScreen alumni={pending} onBack={() => setPending(null)} />;
-  if (!token) return <Gate onAuthed={onAuthed} />;
-  return <Dashboard token={token} onLogout={doLogout} />;
+  const onExpired = () => {
+    clearToken();
+    setToken(null);
+    setPending(null);
+    setSessionExpired(true);
+  };
+
+  if (pending) return <PendingScreen alumni={pending} onBack={() => doLogout()} />;
+  if (!token) return <Gate onAuthed={onAuthed} returnTo={returnTo} sessionExpired={sessionExpired} />;
+  return <DashboardGate token={token} onExpired={onExpired} onLogout={doLogout} onPending={(a) => setPending(a)} />;
+}
+
+/** После refresh: если токен есть, но статус не verified – показать ожидание, не кабинет. */
+function DashboardGate({ token, onLogout, onPending, onExpired }: { token: string; onLogout: () => void; onPending: (a: AlumniBrief) => void; onExpired: () => void }) {
+  const me = useMe(token);
+  const expired = me.isError && isAuthError(me.error);
+  useEffect(() => {
+    if (expired) onExpired();
+  }, [expired, onExpired]);
+  useEffect(() => {
+    const a = me.data?.alumni;
+    if (a && a.verification_status !== "verified") onPending(a);
+  }, [me.data, onPending]);
+  if (expired) return null;
+  if (me.isLoading) {
+    return (
+      <main id="main" style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--c-bg)", color: "var(--c-text-3)" }}>
+        <p style={{ ...label, margin: 0 }}>загружаем кабинет…</p>
+      </main>
+    );
+  }
+  if (me.isError) {
+    return (
+      <main id="main" style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--c-bg)", color: "var(--c-text)", padding: 24 }}>
+        <div style={{ maxWidth: 420, textAlign: "center" }}>
+          <p style={{ ...label, color: "var(--c-danger-text)", margin: 0 }}>кабинет сейчас недоступен</p>
+          <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)" }}>Не удалось загрузить профиль. Попробуйте ещё раз.</p>
+          <button type="button" className="foc" onClick={() => me.refetch()} style={{ ...action, marginTop: 16, padding: "10px 16px", borderRadius: "var(--r-md)" }}>повторить</button>
+          <button type="button" className="foc" onClick={onLogout} style={{ ...actionGhost, display: "block", margin: "12px auto 0", padding: "10px 16px", borderRadius: "var(--r-md)" }}>выйти</button>
+        </div>
+      </main>
+    );
+  }
+  if (me.data?.alumni.verification_status && me.data.alumni.verification_status !== "verified") {
+    return null;
+  }
+  return <Dashboard token={token} onLogout={onLogout} />;
 }

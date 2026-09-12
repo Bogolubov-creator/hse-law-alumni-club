@@ -92,9 +92,9 @@ test("якорь #kak ведёт на объяснение вступления,
   test.skip(!!isMobile, "на телефоне главная – native app-shell");
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const kak = page.locator("#kak");
-  await expect(kak.getByRole("heading", { name: /Три шага и честные сроки/ })).toBeVisible();
-  await expect(kak.getByText(/обычно 1–3 рабочих дня/)).toBeVisible();
-  await expect(kak.getByText(/Оплаты на сайте нет/)).toBeVisible();
+  await expect(kak.getByRole("heading", { name: /Три шага и вы в клубе/ })).toBeVisible();
+  await expect(kak.getByText(/учебный офис сверит выпуск/i)).toBeVisible();
+  await expect(kak.getByText(/честные сроки|1–3 рабочих дня/)).toHaveCount(0);
 });
 
 test("новости: список открывается и ведёт на публикацию", async ({ page }) => {

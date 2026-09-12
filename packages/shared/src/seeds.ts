@@ -1,5 +1,5 @@
-// Сид каталога ДПО – взят из прототипа club-business-law.html.
-// price – в копейках (целое), как в схеме данных.
+// Сид каталога ДПО – полный зеркальный импорт itspecR/dpo-pravo-hse
+// (см. scripts/src/import-dpo-mirror-catalog.ts). price – в копейках.
 
 export interface ProgramModuleSeed {
   title: string;
@@ -9,6 +9,8 @@ export interface ProgramModuleSeed {
 export interface ProgramTeacherSeed {
   name: string;
   role: string;
+  /** Локальный путь обложки/фото (public) или URL. */
+  photo?: string | null;
 }
 export interface ProgramSeed {
   slug: string;
@@ -22,6 +24,22 @@ export interface ProgramSeed {
   description?: string;
   modules?: ProgramModuleSeed[];
   teachers?: ProgramTeacherSeed[];
+  /** Актуальный набор / набор закрыт. По умолчанию – actual. */
+  enrollment?: "actual" | "nonactual";
+  /** Обложка карточки/героя: путь в public или URL. */
+  cover?: string | null;
+  /** Страница программы на hse.ru. */
+  source_url?: string | null;
+  /** Числовой id программы на hse.ru. */
+  hse_id?: string;
+  /** Короткий слоган с витрины ДПО. */
+  tagline?: string;
+  /** «Кому подойдёт». */
+  audience?: string[];
+  /** «Чему научитесь». */
+  results?: string[];
+  /** «Преимущества». */
+  advantages?: string[];
 }
 
 export interface NewsSeed {
@@ -38,7 +56,7 @@ export const NEWS_SEED: NewsSeed[] = [
     slug: "novyy-nabor-dpo-osenyu",
     title: "Новый набор ДПО осенью",
     excerpt: "Открыта запись на осенние программы – со скидкой выпускника в витрине ДПО.",
-    body: "Учебный офис открыл осенний набор на программы дополнительного профессионального образования.\n\nВыпускникам клуба доступна цена со скидкой уровня – она показана прямо в витрине ДПО. Записаться можно через корзину: оформление ведёт к заявке с контактами, дальше с вами свяжется офис.",
+    body: "Учебный офис открыл осенний набор на программы дополнительного профессионального образования.\n\nВыпускникам клуба доступна цена со скидкой уровня – она показана прямо в витрине ДПО. Условия записи опубликованы в карточке каждой программы. Для программ НИУ ВШЭ кнопка записи ведёт на страницу университета.",
     published_at: "2026-06-24T09:00:00.000Z",
   },
   {
@@ -64,12 +82,17 @@ export interface ProductSeed {
   price: number; // копейки
   stock: number;
   variants_json: { sku: string; size?: string; color?: string; stock: number }[];
+  /** Пути/URL фото в apps/web/public – то, чего не хватало V3 vs живой стенд/V1. */
+  images?: string[] | null;
 }
 
 // Сид мерча – из админ-дизайна. price в копейках.
+// Фото: hoodie – assets/merch-hoodie.jpg (a66558f); shopper – фасеточная Фемида
+// (assets/themis.jpeg = design-export). Мантия – отдельного кадра в репо нет.
 export const PRODUCTS_SEED: ProductSeed[] = [
   {
     slug: "hoodie-faculty", title: "Худи с логотипом факультета", category: "Одежда", price: 420_000, stock: 18,
+    images: ["/assets/merch-hoodie.jpg"],
     variants_json: [
       { sku: "hoodie-graphite-M", size: "M", color: "графит", stock: 6 },
       { sku: "hoodie-graphite-L", size: "L", color: "графит", stock: 7 },
@@ -78,6 +101,7 @@ export const PRODUCTS_SEED: ProductSeed[] = [
   },
   {
     slug: "shopper-themis", title: "Шоппер с Фемидой", category: "Аксессуары", price: 120_000, stock: 30,
+    images: ["/assets/themis.jpeg"],
     variants_json: [{ sku: "shopper-kost", color: "кост", stock: 30 }],
   },
   {
@@ -89,94 +113,5 @@ export const PRODUCTS_SEED: ProductSeed[] = [
   },
 ];
 
-const DOC_PK = "Удостоверение о повышении квалификации НИУ ВШЭ";
-const DOC_PP = "Диплом о профессиональной переподготовке НИУ ВШЭ";
-
-// Каталог отражает реальные программы ДПО факультета права НИУ ВШЭ (orgUnit 22753,
-// набор на 2026). Title/price/format/start/document – по данным hse.ru; длительность
-// без данных в листинге помечена приблизительной и уточняется живой синхронизацией.
-// См. scripts/src/sync-hse-dpo.ts.
-export const PROGRAMS_SEED: ProgramSeed[] = [
-  // ── Повышение квалификации (ПК) ──
-  {
-    slug: "legal-english-mastery", title: "Мастерство юридического английского: продвинутые навыки для юристов", direction: "Юридический английский", format: "online", duration: "онлайн, свой темп", price: 4_500_000,
-    dates: { start: "1 июля 2026" }, document: DOC_PK,
-    description: "Продвинутые навыки юридического английского: терминология, документы и аргументация для практикующих юристов. Онлайн, асинхронный формат.",
-  },
-  {
-    slug: "civil-law-current", title: "Актуальные вопросы гражданского права", direction: "Гражданское право", format: "online", duration: "онлайн, свой темп", price: 2_200_000,
-    dates: { start: "6 июля 2026" }, document: DOC_PK,
-    description: "Разбор актуальных проблем гражданского права и свежей судебной практики. Онлайн, асинхронный формат.",
-  },
-  {
-    slug: "tax-administration", title: "Актуальные вопросы налогового администрирования и современные подходы в налоговой оптимизации бизнеса", direction: "Налоговое право", format: "online", duration: "онлайн, свой темп", price: 5_700_000,
-    dates: { start: "7 сентября 2026" }, document: DOC_PK,
-    description: "Налоговое администрирование и законные подходы к налоговой оптимизации бизнеса. Онлайн, асинхронный формат.",
-  },
-  {
-    slug: "bankruptcy-law", title: "Правовые вопросы банкротства: теории и практики", direction: "Банкротство", format: "online", duration: "около 6 недель", price: 5_000_000,
-    dates: { start: "10 сентября 2026" }, document: DOC_PK,
-    description: "Материальные и процессуальные вопросы банкротства: от возбуждения дела до оспаривания сделок. Онлайн, синхронный формат.",
-  },
-  {
-    slug: "hong-kong-contract-law", title: "Контрактное право Гонконга", direction: "Международное право", format: "online", duration: "около 1 месяца", price: 5_000_000,
-    dates: { start: "15 сентября 2026" }, document: DOC_PK,
-    description: "Основы контрактного права Гонконга для трансграничной практики. Онлайн, синхронный формат.",
-  },
-  {
-    slug: "china-legal-system", title: "Введение в правовую систему Китая", direction: "Международное право", format: "online", duration: "около 1,5 месяца", price: 12_500_000,
-    dates: { start: "18 сентября 2026" }, document: DOC_PK,
-    description: "Обзор правовой системы КНР: источники права, судоустройство и практика для работы с китайскими контрагентами. Онлайн, синхронный формат.",
-  },
-  {
-    slug: "personal-assistant-pro", title: "Персональный ассистент PRO", direction: "Soft skills", format: "blended", duration: "2 недели", price: 4_700_000,
-    dates: { start: "19 сентября 2026" }, document: DOC_PK,
-    description: "Практические навыки персонального и бизнес-ассистента: организация, коммуникация, документооборот. Смешанный формат.",
-  },
-  {
-    slug: "digital-law-business", title: "Цифровое право для бизнеса", direction: "Цифровое право", format: "online", duration: "1,5 месяца", price: 5_500_000,
-    dates: { start: "23 сентября 2026" }, document: DOC_PK,
-    description: "Правовое сопровождение цифрового бизнеса: данные, платформы, электронные сделки и новые технологии. Онлайн, синхронный формат.",
-  },
-  {
-    slug: "copyright-info-society", title: "Авторское право в информационном обществе", direction: "Интеллектуальная собственность", format: "offline", duration: "5 недель", price: 7_500_000,
-    dates: { start: "5 октября 2026" }, document: DOC_PK,
-    description: "Авторское право в цифровую эпоху: объекты, оборот прав и защита в информационном обществе. Очный формат.",
-  },
-  {
-    slug: "french-legal-language", title: "Французский юридический язык: право, терминология и аргументация", direction: "Юридический иностранный язык", format: "online", duration: "около 2 месяцев", price: 9_000_000,
-    dates: { start: "26 октября 2026" }, document: DOC_PK,
-    description: "Французский юридический язык: терминология, право и аргументация (le français juridique). Онлайн, синхронный формат.",
-  },
-  {
-    slug: "english-contract-law", title: "Английское контрактное право", direction: "Международное право", format: "online", duration: "1 месяц", price: 5_000_000,
-    dates: { start: "9 ноября 2026" }, document: DOC_PK,
-    description: "Английское договорное право для международной практики: заключение, толкование и средства защиты. Онлайн, синхронный формат.",
-  },
-  {
-    slug: "maritime-arbitration", title: "Морской арбитраж", direction: "Разрешение споров", format: "online", duration: "около 3 недель", price: 6_000_000,
-    dates: { start: "10 ноября 2026" }, document: DOC_PK,
-    description: "Разрешение споров в морском арбитраже: регламенты, оговорки и исполнение решений. Онлайн, синхронный формат.",
-  },
-  {
-    slug: "corporate-law-issues", title: "Корпоративное право: основные проблемы", direction: "Корпоративное право", format: "online", duration: "5 недель", price: 6_000_000,
-    dates: { start: "16 ноября 2026" }, document: DOC_PK,
-    description: "Ключевые проблемы корпоративного права: управление, сделки и корпоративные споры. Онлайн, синхронный формат.",
-  },
-  {
-    slug: "neurolaw", title: "Нейроправо", direction: "Цифровое право", format: "offline", duration: "около 4 недель", price: 5_000_000,
-    dates: { start: "30 ноября 2026" }, document: DOC_PK,
-    description: "Право на стыке нейротехнологий и когнитивных наук: регулирование, этика и практика. Очный формат.",
-  },
-  // ── Профессиональная переподготовка (ПП) ──
-  {
-    slug: "french-economic-law", title: "Французское (европейское) экономическое право", direction: "Международное право", format: "blended", duration: "около 6 месяцев", price: 18_000_000,
-    dates: { start: "14 сентября 2026" }, document: DOC_PP,
-    description: "Профпереподготовка по французскому и европейскому экономическому праву (droit économique). Смешанный формат.",
-  },
-  {
-    slug: "legal-english-retraining", title: "Право на английском / Legal English", direction: "Юридический английский", format: "blended", duration: "8 месяцев", price: 13_000_000,
-    dates: { start: "30 сентября 2026" }, document: DOC_PP,
-    description: "Программа профессиональной переподготовки «Право на английском»: изучение права на английском языке. Гибридный формат.",
-  },
-];
+// Источник – itspecR/dpo-pravo-hse `.catalog-data.json` (см. scripts/src/import-dpo-mirror-catalog.ts).
+export { DPO_MIRROR_PROGRAMS as PROGRAMS_SEED } from "./dpo-mirror-catalog.generated.js";
