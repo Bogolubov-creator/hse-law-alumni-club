@@ -322,3 +322,12 @@
 @media (prefers-reduced-motion: reduce) {
   .home-join__art { transform: none; }
 }
+
+/* Живой кадр сообщества сохраняет всю композицию и лица. */
+.home-community { background: var(--c-bg); scroll-margin-top: 64px; min-height: 0; }
+.home-community .home-voice__photo { align-self: center; }
+.home-community .home-voice__photo img { position: static; height: auto; aspect-ratio: 1280 / 853; }
+.home-community .home-voice__photo { overflow: hidden; }
+.home-community .home-voice__photo::after { display: none; }
+/* Масштабирование фотографии не расширяет мобильную страницу. */
+.home-hero__photo { overflow: hidden; }

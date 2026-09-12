@@ -367,3 +367,9 @@
   .club-auth__aside-copy { padding: 40px 24px; }
   .club-auth__aside img { position: absolute; }
 }
+
+/* Фотография выпуска отдельно от текста: лица остаются открытыми. */
+.club-auth__aside--photo { position: relative; top: auto; height: auto; min-height: 0; }
+.club-auth__aside--photo::after { display: none; }
+.club-auth__aside--photo img { position: static; height: auto; aspect-ratio: 3 / 2; opacity: 1; }
+.club-auth__aside--photo .club-auth__aside-copy { height: auto; padding-top: 40px; padding-bottom: 40px; }

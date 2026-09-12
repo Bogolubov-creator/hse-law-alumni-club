@@ -172,6 +172,18 @@ export default function HomeV2() {
           </div>
         </section>
 
+        {/* Сообщество: отдельный кадр со встречи выпускников 2025 года */}
+        <section id="community" className="home-voice home-community" aria-labelledby="home-community-title" data-reveal>
+          <div className="home-voice__photo">
+            <img src={mediaUrl("/assets/photos/alumni-conversation-2025.webp")} alt="Выпускники факультета права общаются на встрече 15 февраля 2025 года" width={1280} height={853} loading="lazy" decoding="async" />
+          </div>
+          <div className="home-voice__copy">
+            <h2 id="home-community-title">Свои люди <em>после выпуска</em></h2>
+            <p>Встретить однокурсников, познакомиться с коллегами из других выпусков, обменяться опытом. Клуб помогает оставаться на связи с факультетом и друг с другом.</p>
+            <Link to="/events" className="foc home-btn home-btn--ghost">Встречи клуба <span aria-hidden="true">→</span></Link>
+          </div>
+        </section>
+
         {/* 5. Голос выпускника: портрет слева, слово справа */}
         <section className="home-voice" aria-labelledby="home-voice-title" data-reveal>
           <div className="home-voice__photo">

@@ -49,8 +49,8 @@ const ghost: CSSProperties = {
 /** Тёмная панель рядом с анкетой вступления: фото факультета, три шага, срок проверки. */
 function JoinAside() {
   return (
-    <aside className="club-auth__aside club-dark" aria-label="Как проходит вступление">
-      <img src={publicUrl("assets/photos/hall-first-day.jpg")} alt="" width={1083} height={722} decoding="async" />
+    <aside className="club-auth__aside club-auth__aside--photo club-dark" aria-label="Как проходит вступление">
+      <img src={publicUrl("assets/photos/graduates-2026.webp")} alt="Выпускники факультета права на выпускном 2026 года" width={1440} height={960} decoding="async" />
       <div className="club-auth__aside-copy">
         <h2>Пять минут анкеты, и вы <em>в клубе</em></h2>
         <ol>
