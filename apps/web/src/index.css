@@ -951,3 +951,10 @@ button[aria-disabled="true"],
 .adm-aside { border-right: 1px solid rgb(255 255 255 / 0.1); overflow-y: auto; }
 .adm-aside > button[aria-current="page"] { color: var(--p-paper) !important; }
 .adm-aside > button:not([aria-current]):is(:hover, :focus-visible) { color: var(--p-paper) !important; background: rgb(255 255 255 / 0.04) !important; }
+
+/* Подкасты: на телефоне метаданные не сужают заголовок выпуска. */
+@media (max-width: 620px) {
+  .podcast-row { grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
+  .podcast-row__meta { display: flex; align-items: center; gap: 14px; }
+  .podcast-row__meta > * { margin-top: 0 !important; }
+}

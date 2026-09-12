@@ -59,9 +59,9 @@ export default function PodcastsV2() {
 
         {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}
         {data && !data.subscribed && (
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "20px 22px", borderRadius: "var(--r-lg)", border: "1px solid var(--c-line-strong)", background: "var(--c-bg-raised)" }}>
-            <div style={{ minWidth: 240, flex: 1 }}>
-              <div style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)" }}>Подписка · {priceRub} в год</div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "20px 22px", borderRadius: "var(--r-lg)", border: "1px solid var(--c-line)", background: "var(--c-bg-raised)", boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
+            <div style={{ minWidth: 0, flex: "1 1 240px" }}>
+              <div style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)" }}>Подписка · {priceRub} в год</div>
               <p style={{ margin: "8px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5, maxWidth: "56ch" }}>
                 Все выпуски без ограничений. {t
                   ? "Оформление – заявка; если онлайн-оплата подключена, сразу откроется оплата картой."
@@ -108,19 +108,19 @@ export default function PodcastsV2() {
 
         <div style={{ marginTop: 26 }}>
           {items.map((p: PodcastItem, i) => (
-            <article key={p.id} className="v2-row" style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
-              <div>
-                <div style={{ ...mono, fontSize: 17, fontWeight: 500, color: "var(--c-text)" }}>{String(i + 1).padStart(2, "0")}</div>
+            <article key={p.id} className="v2-row podcast-row" style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
+              <div className="podcast-row__meta">
+                <div style={{ ...disp, fontFamily: "var(--f-display)", fontSize: 30, fontWeight: 400, fontVariantNumeric: "tabular-nums", color: "var(--c-accent-text)" }}>{String(i + 1).padStart(2, "0")}</div>
                 {p.duration && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 6 }}>{p.duration}</div>}
                 {p.cover && (
                   <img src={p.cover} alt="" width={56} height={56} loading="lazy"
-                    style={{ width: 56, height: 56, marginTop: 10, borderRadius: "var(--r-sm)", objectFit: "cover" }}
+                    style={{ width: 56, height: 56, marginTop: 10, borderRadius: "var(--r-sm)", objectFit: "cover", boxShadow: "var(--shadow-ambient)" }}
                     onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
                 )}
               </div>
 
               <div style={{ minWidth: 0 }}>
-                <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}>{p.title}</h2>
+                <h2 style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}>{p.title}</h2>
                 {p.is_free && <div style={{ ...label, fontSize: "var(--t-caption)", color: "var(--c-ok-text)", marginTop: 6 }}>Пробный выпуск, бесплатно</div>}
                 {p.description && (
                   <p style={{ margin: "9px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: "62ch" }}>{p.description}</p>
