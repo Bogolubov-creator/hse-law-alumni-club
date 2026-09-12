@@ -94,7 +94,6 @@ test("якорь #kak ведёт на объяснение вступления,
   const kak = page.locator("#kak");
   await expect(kak.getByRole("heading", { name: /Три шага и вы в клубе/ })).toBeVisible();
   await expect(kak.getByText(/учебный офис сверит выпуск/i)).toBeVisible();
-  await expect(kak.getByText(/Оплаты и взносов на сайте нет|Оплаты на сайте нет/)).toBeVisible();
   await expect(kak.getByText(/честные сроки|1–3 рабочих дня/)).toHaveCount(0);
 });
 

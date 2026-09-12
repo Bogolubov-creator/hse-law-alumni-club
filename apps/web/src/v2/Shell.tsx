@@ -137,7 +137,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
             <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", flex: "none" }} />
             <div>
               <strong>Клуб выпускников факультета права Вышки</strong>
-              <p>Встречи, программы ДПО с ценой выпускника, подкасты и мерч. Оплаты и взносов на сайте нет.</p>
+              <p>Встречи, программы ДПО с ценой выпускника, подкасты и мерч.</p>
             </div>
           </div>
           <div>

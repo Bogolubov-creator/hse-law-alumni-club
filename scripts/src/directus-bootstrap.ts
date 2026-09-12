@@ -465,7 +465,7 @@ if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "
     }]))) as any;
     const cta = (await client.request((createItems as any)("block_cta", [{
       title: "Вступить в клуб",
-      text: "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет. Оплаты и взносов на сайте нет.",
+      text: "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет.",
       button: "Подать заявку",
     }]))) as any;
     const heroId = Array.isArray(hero) ? hero[0].id : hero.id;
