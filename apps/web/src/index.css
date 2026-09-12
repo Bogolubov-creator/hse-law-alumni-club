@@ -958,3 +958,9 @@ button[aria-disabled="true"],
   .podcast-row__meta { display: flex; align-items: center; gap: 14px; }
   .podcast-row__meta > * { margin-top: 0 !important; }
 }
+
+/* Закрытые выпуски различаются фоном и подписью, без снижения читаемости. */
+.podcast-row--locked { background: var(--c-bg-sunken); padding-left: 18px !important; padding-right: 18px !important; }
+.podcast-access-label { display: inline-block; margin-top: 10px; padding: 4px 8px; border: 1px solid var(--c-line-control); border-radius: var(--r-sm); font-size: 12px; color: var(--c-text-2); }
+.podcast-subscribe-link { display: inline-flex; margin-top: 18px; min-height: 44px; align-items: center; padding: 12px 18px; border: 1px solid var(--c-text); border-radius: var(--r-sm); color: var(--c-text); text-transform: uppercase; font-size: var(--t-caps); letter-spacing: var(--tr-caps); font-weight: 600; text-decoration: none; }
+.podcast-subscribe-link:hover { background: var(--c-bg-raised); }

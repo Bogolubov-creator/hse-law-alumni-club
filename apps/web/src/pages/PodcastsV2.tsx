@@ -56,7 +56,7 @@ export default function PodcastsV2() {
 
         {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}
         {data && !data.subscribed && (
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "20px 22px", borderRadius: "var(--r-lg)", border: "1px solid var(--c-line)", background: "var(--c-bg-raised)", boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
+          <div id="podcast-subscription" tabIndex={-1} style={{ scrollMarginTop: 100, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "20px 22px", borderRadius: "var(--r-lg)", border: "1px solid var(--c-line)", background: "var(--c-bg-raised)", boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
             <div style={{ minWidth: 0, flex: "1 1 240px" }}>
               <div style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)" }}>Подписка · {priceRub} в год</div>
               <p style={{ margin: "8px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.5, maxWidth: "56ch" }}>
@@ -104,8 +104,10 @@ export default function PodcastsV2() {
         )}
 
         <div style={{ marginTop: 26 }}>
-          {items.map((p: PodcastItem, i) => (
-            <article key={p.id} className="v2-row podcast-row" style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
+          {items.map((p: PodcastItem, i) => {
+            const locked = !p.is_free && !data?.subscribed;
+            return (
+            <article key={p.id} className={`v2-row podcast-row${locked ? " podcast-row--locked" : ""}`} style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 24, alignItems: "start", padding: "22px 0", borderTop: "1px solid var(--c-line)" }}>
               <div className="podcast-row__meta">
                 <div style={{ ...disp, fontFamily: "var(--f-display)", fontSize: 30, fontWeight: 400, fontVariantNumeric: "tabular-nums", color: "var(--c-accent-text)" }}>{String(i + 1).padStart(2, "0")}</div>
                 {p.duration && <div style={{ ...label, fontSize: "var(--t-micro)", marginTop: 6 }}>{p.duration}</div>}
@@ -118,15 +120,20 @@ export default function PodcastsV2() {
 
               <div style={{ minWidth: 0 }}>
                 <h2 style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}><Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" style={{ color: "inherit", textDecoration: "none" }}>{p.title}</Link></h2>
+                {locked && <div className="podcast-access-label">По подписке</div>}
                 {p.is_free && <div style={{ ...label, fontSize: "var(--t-caption)", color: "var(--c-ok-text)", marginTop: 6 }}>Пробный выпуск, бесплатно</div>}
                 {p.description && (
                   <p style={{ margin: "9px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: "62ch" }}>{p.description}</p>
                 )}
 
-                <Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" style={{ ...action, display: "inline-flex", marginTop: 18 }}>Открыть выпуск ↗</Link>
+                {locked ? (
+                  <a href="#podcast-subscription" className="foc podcast-subscribe-link" onClick={() => document.getElementById("podcast-subscription")?.focus({ preventScroll: true })}>Оформить подписку</a>
+                ) : (
+                  <Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" style={{ ...action, display: "inline-flex", marginTop: 18 }}>Прослушать</Link>
+                )}
               </div>
             </article>
-          ))}
+          ); })}
           {items.length > 0 && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
         </div>
 
