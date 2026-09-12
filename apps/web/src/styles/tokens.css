@@ -133,6 +133,11 @@
   --rh-section: clamp(56px, 6vw, 80px);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Пружинная кривая для hover и материалов; тени – тональные, рассеянные, со смещением */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --shadow-ambient: 0 24px 60px -28px rgb(20 24 31 / 0.35), 0 8px 20px -12px rgb(20 24 31 / 0.18);
+  --shadow-ambient-lift: 0 36px 80px -30px rgb(20 24 31 / 0.42), 0 12px 28px -14px rgb(20 24 31 / 0.22);
+  --shadow-accent: 0 14px 36px -14px rgb(236 90 19 / 0.55);
   --dur-fast: 140ms;
   --dur-base: 200ms;
 }

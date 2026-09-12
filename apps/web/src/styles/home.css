@@ -245,3 +245,80 @@
   .home-btn, .home-text-link { transition: background-color 220ms var(--ease-out), color 220ms var(--ease-out), border-color 220ms var(--ease-out), transform 220ms var(--ease-out); }
   .home-btn:active { transform: scale(0.98); }
 }
+
+/* ── Глубина и материалы (решение заказчика 12.09, вечер: «роскошнее, глубже») ── */
+
+/* Герой: фото растворяется в панель, панель дышит тёплым светом за титулом, кадр медленно приближается */
+.home-hero__photo::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 62%, rgb(20 24 31 / 0.55) 88%, var(--p-ink) 100%),
+    linear-gradient(180deg, rgb(20 24 31 / 0.18) 0%, transparent 30%, transparent 70%, rgb(20 24 31 / 0.35) 100%);
+}
+.home-hero__panel {
+  background:
+    radial-gradient(60% 50% at 18% 38%, rgb(236 90 19 / 0.14), transparent 70%),
+    radial-gradient(40% 40% at 90% 100%, rgb(255 255 255 / 0.05), transparent 70%),
+    var(--p-ink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero__photo img, .home-hero__photo picture { animation: home-breathe 22s var(--ease-out) both; transform-origin: 40% 30%; }
+  @keyframes home-breathe { from { transform: scale(1); } to { transform: scale(1.07); } }
+}
+
+/* Кнопки: стрелка в своём кружке, пружинная кривая, тёплая тень у главного действия */
+.home-btn > span[aria-hidden] {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; margin: -4px -8px -4px 4px; border-radius: 999px;
+  background: rgb(20 24 31 / 0.12); font-size: 14px; line-height: 1;
+  transition: transform 420ms var(--ease-spring), background-color 320ms var(--ease-spring);
+}
+.home-btn:not(.home-btn--ghost) { box-shadow: var(--shadow-accent); }
+.home-btn:not(.home-btn--ghost):hover { box-shadow: 0 20px 44px -14px rgb(236 90 19 / 0.6); }
+.home-btn:hover > span[aria-hidden] { transform: translateX(3px); background: rgb(255 255 255 / 0.22); }
+@media (prefers-reduced-motion: no-preference) {
+  .home-btn { transition: transform 420ms var(--ease-spring), box-shadow 420ms var(--ease-spring), background-color 320ms var(--ease-spring), border-color 320ms var(--ease-spring), color 320ms var(--ease-spring); }
+  .home-btn:hover { transform: translateY(-2px); }
+  .home-btn:active { transform: translateY(0) scale(0.98); }
+}
+
+/* Зал: фото с внутренним краем и растворением к тексту, даты – охрой */
+.home-agenda__photo::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(255 255 255 / 0.9) 0%, transparent 14%), linear-gradient(180deg, transparent 70%, rgb(20 24 31 / 0.25) 100%); }
+.home-agenda__item time strong { color: var(--c-accent); }
+.home-agenda__item { transition: padding-left 420ms var(--ease-spring); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) { .home-agenda__item:hover { padding-left: 8px; } }
+
+/* Витрина ДПО: обложки как предметы с рассеянной тенью и подъёмом */
+.home-dpo__cover { box-shadow: var(--shadow-ambient); transition: transform 520ms var(--ease-spring), box-shadow 520ms var(--ease-spring); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .home-dpo__item:hover .home-dpo__cover { transform: translateY(-6px); box-shadow: var(--shadow-ambient-lift); }
+}
+.home-dpo__price { color: var(--c-accent-text); }
+
+/* Встреча: фото растворяется в чёрную подпись */
+.home-meeting__photo::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(20 24 31 / 0.12) 0%, transparent 35%, transparent 62%, var(--p-ink) 100%); }
+.home-meeting__caption { background: linear-gradient(180deg, var(--p-ink) 0%, var(--p-ink-raised) 100%); }
+
+/* Голос выпускника: портрет уходит в свет полосы */
+.home-voice { background: linear-gradient(180deg, var(--c-bg-sunken) 0%, var(--c-bg) 100%); }
+.home-voice__photo::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 70%, rgb(243 245 247 / 0.9) 100%); }
+.home-voice__copy h2 em { color: var(--c-accent-text); }
+
+/* Вступление: постер Фемиды как предмет – тёплая тень, лёгкий наклон, выравнивание при наведении */
+.home-join { background: radial-gradient(50% 60% at 80% 40%, rgb(236 90 19 / 0.16), transparent 70%), var(--p-ink); }
+.home-join__art { box-shadow: 0 40px 90px -30px rgb(236 90 19 / 0.55), var(--shadow-ambient-lift); transform: rotate(-2deg); transition: transform 700ms var(--ease-spring), box-shadow 700ms var(--ease-spring); }
+.home-join__art::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), inset 0 0 0 1px rgb(255 255 255 / 0.08); pointer-events: none; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) { .home-join:hover .home-join__art { transform: rotate(0deg) translateY(-4px); } }
+.home-join__steps li::before { color: var(--c-accent); }
+
+/* Новости: дата плитой охрой */
+.home-news time { color: var(--c-accent-text); }
+
+/* Узкий десктоп: кнопки героя в одну строку, ворона не над действиями */
+@media (max-width: 1280px) and (min-width: 901px) {
+  .home-hero { grid-template-columns: 1.1fr 1fr; }
+  .home-btn { padding: 0 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-join__art { transform: none; }
+}

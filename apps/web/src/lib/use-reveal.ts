@@ -22,8 +22,11 @@ export function useReveal(root: RefObject<HTMLElement | null>) {
           io.unobserve(e.target);
         }
       }
-    }, { rootMargin: "0px 0px -5% 0px", threshold: 0.05 });
+    }, { rootMargin: "0px 0px -5% 0px", threshold: 0 });
     items.forEach((i) => io.observe(i));
-    return () => { io.disconnect(); el.classList.remove("reveal-armed"); };
+    // Страховка: что бы ни случилось с наблюдателем (быстрая прокрутка, печать,
+    // снимок страницы), через 2,5 с все полосы показаны полностью.
+    const timer = window.setTimeout(() => items.forEach((i) => i.classList.add("is-in")), 2500);
+    return () => { window.clearTimeout(timer); io.disconnect(); el.classList.remove("reveal-armed"); };
   }, [root]);
 }
