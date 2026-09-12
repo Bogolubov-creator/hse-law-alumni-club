@@ -182,7 +182,7 @@ export async function authRoutes(app: FastifyInstance) {
   // ── Восстановление пароля ───────────────────────────────────────
   // Ответ всегда одинаковый (не раскрываем существование аккаунта).
   app.post("/auth/forgot", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const { email, next } = z.object({ email: z.string().email(), next: z.string().max(200).optional() }).parse(req.body);
     // Без SMTP письмо физически не уйдёт. Раньше роут всё равно отвечал ok –
     // человек ждал ссылку, которой нет. Отвечаем честно и одинаково для всех
     // адресов (проверка про канал, а не про аккаунт – существование не раскрывается).
@@ -200,7 +200,10 @@ export async function authRoutes(app: FastifyInstance) {
         env.AUTH_SECRET,
         { expiresIn: "30m" },
       );
-      const url = `${env.PUBLIC_URL}/reset?token=${encodeURIComponent(token)}`;
+      // Разрешён только известный путь: произвольные адреса в письмо не попадают.
+      const continuation = next === "/podcasts#podcast-subscription"
+        ? `&next=${encodeURIComponent(next)}` : "";
+      const url = `${env.PUBLIC_URL}/reset?token=${encodeURIComponent(token)}${continuation}`;
       audit("password.forgot", { actor: `email:${email}`, req });
       await sendEmail(
         email,

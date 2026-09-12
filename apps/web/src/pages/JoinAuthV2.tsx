@@ -314,7 +314,7 @@ export function ForgotV2() {
     setErr(null);
     try {
       // Сервер одинаково отвечает для существующих и неизвестных адресов.
-      await apiPost("/auth/forgot", { email });
+      await apiPost("/auth/forgot", { email, ...(returnTo !== "/lk" ? { next: "/podcasts#podcast-subscription" } : {}) });
       setSent(true);
     } catch {
       setErr("Не удалось отправить запрос. Проверьте соединение и попробуйте ещё раз. Если ошибка повторяется, обратитесь в поддержку.");
@@ -350,6 +350,9 @@ export function ResetV2() {
   useHead({ title: "Новый пароль", noindex: true });
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
+  const returning = params.get("next") === "/podcasts#podcast-subscription";
+  const loginUrl = returning ? "/lk?next=%2Fpodcasts%23podcast-subscription" : "/lk";
+  const forgotUrl = returning ? "/forgot?next=%2Fpodcasts%23podcast-subscription" : "/forgot";
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
   const [busy, setBusy] = useState(false);
@@ -374,24 +377,24 @@ export function ResetV2() {
   if (!token) {
     return (
       <AuthShell title="Ссылка неполная" sub="Откройте ссылку из письма целиком или запросите новую.">
-        <Link to="/forgot" className="foc" style={{ ...primary, marginTop: 20 }}>Запросить новую</Link>
+        <Link to={forgotUrl} className="foc" style={{ ...primary, marginTop: 20 }}>Запросить новую</Link>
       </AuthShell>
     );
   }
   if (done) {
     return (
-      <AuthShell title="Пароль обновлён" sub="Теперь войдите с новым паролем.">
-        <Link to="/lk" className="foc" style={{ ...primary, marginTop: 20 }}>Войти в кабинет</Link>
+      <AuthShell title="Пароль обновлён" sub={returning ? "Войдите с новым паролем – вернём вас к оформлению подписки на подкасты." : "Теперь войдите с новым паролем."}>
+        <Link to={loginUrl} className="foc" style={{ ...primary, marginTop: 20 }}>Войти в кабинет</Link>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell title="Новый пароль">
+    <AuthShell title="Новый пароль" sub={returning ? "После смены пароля войдите в кабинет, чтобы продолжить оформление подписки на подкасты." : undefined}>
       <form onSubmit={submit} style={{ marginTop: 18 }}>
         <Field name="новый пароль" type="password" value={p1} onChange={setP1} hint="от 8 символов" autoComplete="new-password" />
         <Field name="повторите пароль" type="password" value={p2} onChange={setP2} autoComplete="new-password" />
-        {err && <p role="alert" style={{ ...mono, margin: "12px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
+        {err && <p role="alert" style={{ ...mono, margin: "12px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err} <Link to={forgotUrl} className="foc">Запросить новую ссылку</Link></p>}
         <button type="submit" disabled={busy} className="foc" style={{ ...primary, width: "100%", marginTop: 16, cursor: busy ? "wait" : "pointer" }}>
           {busy ? "Сохраняем…" : "Сохранить пароль"}
         </button>
