@@ -25,6 +25,7 @@ const ProgramV2 = lazy(() => import("./pages/ProgramV2.js"));
 const NewsV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsV2 })));
 const NewsPostV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsPostV2 })));
 const EventsV2 = lazy(() => import("./pages/EventsV2.js"));
+const PodcastEpisode = lazy(() => import("./pages/PodcastEpisode.js"));
 const PodcastsV2 = lazy(() => import("./pages/PodcastsV2.js"));
 const JoinV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.JoinV2 })));
 const ForgotV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ForgotV2 })));
@@ -100,6 +101,7 @@ export default function App() {
           <Route path="/events" element={<EventsV2 />} />
           <Route path="/events/:eventId" element={<EventsV2 />} />
           <Route path="/podcasts" element={<PodcastsV2 />} />
+          <Route path="/podcasts/:id" element={<PodcastEpisode />} />
           <Route path="/join" element={<JoinV2 />} />
           <Route path="/forgot" element={<ForgotV2 />} />
           <Route path="/reset" element={<ResetV2 />} />

@@ -3,8 +3,6 @@ import { rub, type PodcastItem } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { usePodcasts, useSubscribePodcasts } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
-import { EpisodePlayer } from "../components/EpisodePlayer.js";
-import { VideoEmbed } from "../components/VideoEmbed.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 import { action } from "../styles/primitives.js";
 
@@ -119,24 +117,13 @@ export default function PodcastsV2() {
               </div>
 
               <div style={{ minWidth: 0 }}>
-                <h2 style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}>{p.title}</h2>
+                <h2 style={{ ...disp, fontFamily: "var(--f-display)", fontWeight: 400, fontSize: "var(--t-h3)", lineHeight: 1.25, margin: 0 }}><Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" style={{ color: "inherit", textDecoration: "none" }}>{p.title}</Link></h2>
                 {p.is_free && <div style={{ ...label, fontSize: "var(--t-caption)", color: "var(--c-ok-text)", marginTop: 6 }}>Пробный выпуск, бесплатно</div>}
                 {p.description && (
                   <p style={{ margin: "9px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55, maxWidth: "62ch" }}>{p.description}</p>
                 )}
 
-                <div style={{ marginTop: 14 }}>
-                  {/* Видеовыпуск: если есть запись на RuTube, показываем её вместо аудио */}
-                  {p.video_url ? (
-                    <VideoEmbed src={p.video_url} title={p.title} v2 />
-                  ) : p.audio_url ? (
-                    <EpisodePlayer id={p.id} src={p.audio_url} v2 />
-                  ) : (
-                    <div style={{ ...label, fontSize: "var(--t-micro)", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: "1px dashed var(--c-line)", borderRadius: "var(--r-md)" }}>
-                      {p.is_free || data?.subscribed ? "Запись пока недоступна" : `Доступно по подписке ${priceRub} в год`}
-                    </div>
-                  )}
-                </div>
+                <Link to={`/podcasts/${encodeURIComponent(p.id)}`} className="foc" style={{ ...action, display: "inline-flex", marginTop: 18 }}>Открыть выпуск ↗</Link>
               </div>
             </article>
           ))}
