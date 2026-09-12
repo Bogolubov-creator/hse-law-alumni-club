@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { CLUB_OPERATOR } from "@club/shared";
 import { token, useCart } from "../lib/cart.js";
@@ -6,6 +6,7 @@ import { VisionToggle } from "../components/Vision.js";
 import { SiteSearch } from "../components/SiteSearch.js";
 import { Mark } from "./Mark.js";
 import { openCookieSettings } from "../lib/cookie-consent.js";
+import { useReveal } from "../lib/use-reveal.js";
 import { publicUrl } from "../lib/public-url.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 import "../styles/shell.css";
@@ -58,21 +59,23 @@ export function V2Shell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { pathname } = useLocation();
+  const shellRef = useRef<HTMLDivElement>(null);
+  useReveal(shellRef);
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   const cta = (
-    <Link to={authed ? "/lk" : "/join"} className="foc club-header__cta" style={action}>
+    <Link to={authed ? "/lk" : "/join"} viewTransition className="foc club-header__cta" style={action}>
       {authed ? "Кабинет" : "Вступить"}
     </Link>
   );
 
   return (
-    <div className="club-public-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
+    <div ref={shellRef} className="club-public-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
       <a href="#main" className="skip">К содержанию страницы</a>
       <header className="club-header">
         <div className="club-header__inner">
-          <Link to="/" className="foc club-header__brand">
+          <Link to="/" viewTransition className="foc club-header__brand">
             <Mark kind="scales" size={32} style={{ color: "var(--c-accent-text)" }} />
             <span className="club-header__lockup">
               Клуб выпускников
@@ -82,7 +85,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
 
           <nav className="club-header__nav" aria-label="Разделы">
             {NAV.map((n) => (
-              <NavLink key={n.to} to={n.to} className="foc club-caps club-header__link">{n.label}</NavLink>
+              <NavLink key={n.to} to={n.to} viewTransition className="foc club-caps club-header__link">{n.label}</NavLink>
             ))}
             <div className="club-header__tools">
               <button type="button" onClick={() => setSearchOpen(true)} className="foc club-chrome-icon-btn" aria-label="Поиск" title="Поиск по программам и новостям">
@@ -183,7 +186,7 @@ export function ShowcaseHead({ title, lead, count, photo }: { eyebrow?: string; 
   }
   return (
     <header className={photo.side === "left" ? "club-masthead club-masthead--photo-left club-dark" : "club-masthead club-dark"}>
-      <div className="club-masthead__copy">{copy}</div>
+      <div className="club-masthead__copy" data-reveal>{copy}</div>
       <div className="club-masthead__photo">
         <img src={publicUrl(photo.src)} alt={photo.alt} width={1083} height={722} decoding="async" fetchPriority="high" />
       </div>

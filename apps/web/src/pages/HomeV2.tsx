@@ -107,7 +107,7 @@ export default function HomeV2() {
         </section>
 
         {/* 2. Зал: ближайшие встречи слева, аудитория факультета во весь край справа */}
-        <section className="home-agenda" aria-labelledby="home-agenda-title">
+        <section className="home-agenda" aria-labelledby="home-agenda-title" data-reveal>
           <div className="home-agenda__copy">
             <h2 id="home-agenda-title">Ближайшие <em>встречи</em></h2>
             {upcoming.length > 0 ? (
@@ -136,7 +136,7 @@ export default function HomeV2() {
         </section>
 
         {/* 3. Витрина ДПО: обложки программ как предметы на белом */}
-        <section className="home-dpo" aria-labelledby="home-dpo-title">
+        <section className="home-dpo" aria-labelledby="home-dpo-title" data-reveal>
           <div className="home-dpo__head">
             <h2 id="home-dpo-title">Программы ДПО с ценой <em>выпускника</em></h2>
             <p>Курсы и интенсивы факультета права. После подтверждения выпуска цена участника клуба открывается в каждой записи.</p>
@@ -159,7 +159,7 @@ export default function HomeV2() {
         </section>
 
         {/* 4. Встреча клуба: фото во всю ширину, чёрная подпись под ним */}
-        <section className="home-meeting" aria-labelledby="home-meeting-title">
+        <section className="home-meeting" aria-labelledby="home-meeting-title" data-reveal>
           <div className="home-meeting__photo">
             <img src={mediaUrl("/assets/photos/alumni-meeting.jpg")} alt="Выпускники факультета права на первой встрече клуба в актовом зале Вышки" width={1083} height={722} loading="lazy" decoding="async" />
           </div>
@@ -171,7 +171,7 @@ export default function HomeV2() {
         </section>
 
         {/* 5. Голос выпускника: портрет слева, слово справа */}
-        <section className="home-voice" aria-labelledby="home-voice-title">
+        <section className="home-voice" aria-labelledby="home-voice-title" data-reveal>
           <div className="home-voice__photo">
             <img src={mediaUrl("/assets/photos/alumni-voice.jpg")} alt="Екатерина Салугина-Сорокова, выпускница факультета права 2006 года" width={1083} height={720} decoding="async" />
           </div>
@@ -183,22 +183,26 @@ export default function HomeV2() {
         </section>
 
         {/* 6. Вступление: чёрная полоса, три шага и одно действие */}
-        <section id="kak" className="home-join club-dark" aria-labelledby="home-join-title">
+        <section id="kak" className="home-join club-dark" aria-labelledby="home-join-title" data-reveal>
           <div className="home-join__copy">
             <h2 id="home-join-title">Три шага, и вы <em>в клубе</em></h2>
             <p>{ctaText}</p>
-            <Link to={joinTo} className="foc home-btn">{authed ? "Открыть кабинет" : text(cta.button, "Подать заявку")}</Link>
+            <ol className="home-join__steps">
+              <li><strong>Заявка</strong><span>Анкета с годом выпуска и образовательной программой.</span></li>
+              <li><strong>Проверка учебным офисом</strong><span>Офис сверяет выпуск с реестром факультета и подтверждает статус.</span></li>
+              <li><strong>Кабинет</strong><span>Откроются цена выпускника на ДПО, запись на встречи и разделы клуба.</span></li>
+            </ol>
+            <Link to={joinTo} className="foc home-btn">{authed ? "Открыть кабинет" : text(cta.button, "Подать заявку")}<span aria-hidden="true">→</span></Link>
           </div>
-          <ol className="home-join__steps">
-            <li><strong>Заявка</strong><span>Анкета с годом выпуска и образовательной программой.</span></li>
-            <li><strong>Проверка учебным офисом</strong><span>Офис сверяет выпуск с реестром факультета и подтверждает статус.</span></li>
-            <li><strong>Кабинет</strong><span>Откроются цена выпускника на ДПО, запись на встречи и разделы клуба.</span></li>
-          </ol>
+          {/* Фемида клуба выпускников – постер из фирменного набора клуба */}
+          <div className="home-join__art">
+            <img src={mediaUrl("/assets/photos/themis-club.jpg")} alt="Фемида – знак клуба выпускников факультета права" width={576} height={575} loading="lazy" decoding="async" />
+          </div>
         </section>
 
         {/* 7. Новости: три публикации, дата плитой */}
         {(news.data ?? []).length > 0 && (
-          <section className="home-news" aria-labelledby="home-news-title">
+          <section className="home-news" aria-labelledby="home-news-title" data-reveal>
             <div className="home-news__head">
               <h2 id="home-news-title">Новости</h2>
               <Link to="/news" className="foc club-caps home-news__all">Все новости</Link>

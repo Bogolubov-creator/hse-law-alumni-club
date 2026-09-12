@@ -318,9 +318,9 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .club-cookie-banner__btn--primary {
-  background: var(--c-bg-inverse);
-  border-color: var(--c-bg-inverse);
-  color: var(--c-text-inverse);
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-on-accent);
 }
 .club-cookie-banner__btn--primary:hover {
   opacity: 0.88;
@@ -499,9 +499,9 @@ html.vis .club-cookie-banner__btn--primary {
 }
 /* Референс 12.09: заливка контрастом и обводка; охра действий не красит. */
 .club-btn--primary {
-  background: var(--c-bg-inverse);
-  border-color: var(--c-bg-inverse);
-  color: var(--c-text-inverse);
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-on-accent);
 }
 .club-btn--secondary {
   background: transparent;

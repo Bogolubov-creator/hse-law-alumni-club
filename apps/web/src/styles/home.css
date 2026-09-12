@@ -21,7 +21,7 @@
 .home h1 { font-size: clamp(44px, 5vw, 76px); line-height: 1.02; }
 .home h2 { font-size: clamp(32px, 3.6vw, 52px); line-height: 1.06; }
 .home h1 em,
-.home h2 em { font-style: italic; font-weight: 400; }
+.home h2 em { font-style: italic; font-weight: 400; color: var(--c-accent); }
 .home h3 { font-family: var(--f-head); font-weight: 600; font-size: 20px; line-height: 1.3; margin: 0; }
 .home p { margin: 0; }
 
@@ -40,13 +40,13 @@
   min-height: 52px;
   padding: 0 26px;
   border-radius: var(--r-sm);
-  border: 1px solid var(--c-bg-inverse);
-  background: var(--c-bg-inverse);
-  color: var(--c-text-inverse);
+  border: 1px solid var(--c-accent);
+  background: var(--c-accent);
+  color: var(--c-on-accent);
   white-space: nowrap;
 }
 .home-btn--ghost { background: transparent; color: var(--c-text); border-color: var(--c-text); }
-.home-btn:hover { opacity: 0.86; }
+.home-btn:hover { background: var(--p-ohra-deep); border-color: var(--p-ohra-deep); color: var(--p-paper); }
 .home-btn--ghost:hover { opacity: 1; background: color-mix(in srgb, var(--c-text) 8%, transparent); }
 .home-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
 
@@ -161,13 +161,17 @@
 /* ── 6. Вступление: чёрная полоса ──────────────────────────────── */
 .home-join {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 48px 64px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 48px 72px;
+  align-items: center;
   padding: clamp(56px, 7vw, 104px) max(28px, calc((100vw - var(--container)) / 2 + 28px));
 }
 .home-join__copy p { margin-top: 24px; color: var(--c-text-2); max-width: 44ch; }
 .home-join__copy .home-btn { margin-top: 36px; }
-.home-join__steps { list-style: none; margin: 0; padding: 0; counter-reset: step; align-self: center; }
+.home-join__steps { list-style: none; margin: 36px 0 0; padding: 0; counter-reset: step; }
+/* Фемида клуба – постер на охре, знак клуба с первого дня */
+.home-join__art { position: relative; justify-self: end; width: min(100%, 520px); aspect-ratio: 1; border-radius: var(--r-lg); overflow: hidden; background: var(--c-accent); }
+.home-join__art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .home-join__steps li {
   counter-increment: step;
   display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 6px 20px;
@@ -203,6 +207,7 @@
 }
 @media (max-width: 900px) {
   .home-hero, .home-agenda, .home-voice, .home-join, .home-meeting__caption, .home-dpo__head { grid-template-columns: 1fr; min-height: 0; }
+  .home-join__art { justify-self: start; width: min(100%, 420px); }
   .home-hero__photo, .home-agenda__photo, .home-voice__photo { aspect-ratio: 3 / 2; }
   .home-agenda { display: flex; flex-direction: column-reverse; }
   .home-agenda__photo { flex: none; }
@@ -221,4 +226,22 @@
 
 @media print {
   .home-hero__photo, .home-agenda__photo, .home-meeting__photo, .home-voice__photo { display: none; }
+}
+
+/* ── Движение (решение заказчика 12.09: живое движение на публичном контуре) ──
+   Один оркестрированный вход героя: фото раскрывается слева направо, строки панели
+   всплывают каскадом. Экспоненциальный ease-out, всё гаснет при reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero__photo { animation: home-photo-in 1100ms var(--ease-out) both; }
+  .home-hero__panel > * { animation: home-rise 720ms var(--ease-out) both; animation-delay: 160ms; }
+  .home-hero__panel > :nth-child(2) { animation-delay: 300ms; }
+  .home-hero__panel > :nth-child(3) { animation-delay: 440ms; }
+  @keyframes home-photo-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+  @keyframes home-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .home-agenda__photo img, .home-dpo__cover img, .home-voice__photo img, .home-join__art img { transition: transform 1400ms var(--ease-out); }
+  .home-agenda:hover .home-agenda__photo img, .home-dpo__item:hover .home-dpo__cover img, .home-voice:hover .home-voice__photo img { transform: scale(1.035); }
+  .home-btn, .home-text-link { transition: background-color 220ms var(--ease-out), color 220ms var(--ease-out), border-color 220ms var(--ease-out), transform 220ms var(--ease-out); }
+  .home-btn:active { transform: scale(0.98); }
 }

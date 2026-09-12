@@ -34,7 +34,7 @@ const input: CSSProperties = {
 
 /* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
 const primary: CSSProperties = {
-  border: "1px solid var(--c-bg-inverse)", background: "var(--c-bg-inverse)", color: "var(--c-text-inverse)",
+  border: "1px solid var(--c-accent)", background: "var(--c-accent)", color: "var(--c-on-accent)",
   borderRadius: "var(--r-sm)", padding: "13px 22px", minHeight: 44, fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase",
   cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", textAlign: "center",
 };

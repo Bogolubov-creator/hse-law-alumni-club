@@ -54,18 +54,18 @@ export const caps: CSSProperties = {
 };
 
 /**
- * Действие (решение заказчика 12.09, референс Peak Design): прямоугольник 4px,
- * заливка контрастом – графит на белом, белый на тёмной панели (через .club-dark
- * токены --c-bg-inverse / --c-text-inverse). Охра действий больше не красит.
+ * Действие (решение заказчика 12.09, вечер: «оставь цвета клуба – оранжевый»):
+ * прямоугольник 4px, заливка охрой с графитовым текстом (5,12:1) – одинаково
+ * читается на белом холсте и на тёмной панели. Второстепенное – обводка.
  */
 export const action: CSSProperties = {
   ...caps,
   padding: "13px 20px",
   minHeight: 44,
   borderRadius: "var(--r-sm)",
-  border: "1px solid var(--c-bg-inverse)",
-  background: "var(--c-bg-inverse)",
-  color: "var(--c-text-inverse)",
+  border: "1px solid var(--c-accent)",
+  background: "var(--c-accent)",
+  color: "var(--c-on-accent)",
   cursor: "pointer",
   textAlign: "center",
   textDecoration: "none",

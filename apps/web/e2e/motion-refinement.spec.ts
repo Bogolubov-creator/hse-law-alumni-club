@@ -2,13 +2,18 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 const out='/Users/macbook/alumni-staged-evidence/motion';
 test.beforeEach(async({page})=>{mkdirSync(out,{recursive:true});await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});});
-// Решение заказчика 12.09: главная без зерна, маркизы и scrub – первый экран статичен и виден сразу.
-test('первый экран статичен: содержание видно без анимации',async({page},info)=>{
+// Решение заказчика 12.09 (вечер): живое движение – один оркестрированный вход героя,
+// проявление полос при прокрутке; при reduced-motion всё гаснет, содержание видно сразу.
+test('герой входит один раз, reduced motion гасит движение без потери содержания',async({page},info)=>{
  await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/');
+ expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBeGreaterThan(0);
+ await page.waitForTimeout(1800);
  await expect(page.locator('.home-hero__photo img')).toBeVisible();
- expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBe(0);
  await page.screenshot({path:`${out}/intro-${info.project.name}.png`});
- await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.getByRole('link',{name:'Вступить в клуб',exact:true})).toBeVisible();
+ await page.emulateMedia({reducedMotion:'reduce'});await page.reload();
+ expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBe(0);
+ expect(await page.locator('.home-agenda').evaluate(e=>getComputedStyle(e).opacity)).toBe('1');
+ await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.getByRole('link',{name:/Вступить в клуб/})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
 test('афиша фильтрует название, место и формат без потери прямых ссылок',async({page},info)=>{

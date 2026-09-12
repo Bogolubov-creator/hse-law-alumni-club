@@ -299,3 +299,23 @@
   padding-right: max(clamp(28px, 5vw, 80px), calc((100vw - var(--container)) / 2 + 28px));
 }
 @media (max-width: 900px) { .club-masthead--photo-left .club-masthead__photo { order: 0; } }
+
+/* ── Движение оболочки: проявление полос при прокрутке и переход между страницами ── */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-armed [data-reveal] {
+    opacity: 0.35;
+    transform: translateY(22px);
+    transition: opacity 760ms var(--ease-out), transform 760ms var(--ease-out);
+  }
+  .reveal-armed [data-reveal].is-in { opacity: 1; transform: none; }
+  .club-header { view-transition-name: club-header; }
+  ::view-transition-old(root) { animation: 220ms var(--ease-out) both club-vt-out; }
+  ::view-transition-new(root) { animation: 380ms var(--ease-out) both club-vt-in; }
+  @keyframes club-vt-out { to { opacity: 0; } }
+  @keyframes club-vt-in { from { opacity: 0; transform: translateY(12px); } }
+  .club-header__link, .club-chrome-icon-btn, .club-footer a { transition: color 200ms var(--ease-out); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .club-masthead__photo img { transition: transform 1400ms var(--ease-out); }
+  .club-masthead:hover .club-masthead__photo img { transform: scale(1.03); }
+}

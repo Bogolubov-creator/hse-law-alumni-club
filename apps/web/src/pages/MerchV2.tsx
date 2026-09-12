@@ -101,7 +101,7 @@ export function SizeDialog({ product, onClose }: { product: Product; onClose: ()
           onClick={submit}
           disabled={needsSize || add.isPending || (typeof stock === "number" && stock <= 0)}
           className="foc"
-          style={{ marginTop: 24, width: "100%", padding: "14px 20px", borderRadius: "var(--r-sm)", border: "1px solid transparent", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase", cursor: needsSize ? "not-allowed" : "pointer", background: needsSize ? "var(--c-bg-sunken)" : "var(--c-bg-inverse)", color: needsSize ? "var(--c-text-3)" : "var(--c-text-inverse)" }}
+          style={{ marginTop: 24, width: "100%", padding: "14px 20px", borderRadius: "var(--r-sm)", border: "1px solid transparent", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase", cursor: needsSize ? "not-allowed" : "pointer", background: needsSize ? "var(--c-bg-sunken)" : "var(--c-accent)", color: needsSize ? "var(--c-text-3)" : "var(--c-on-accent)" }}
         >
           {typeof stock === "number" && stock <= 0 ? "Нет в наличии" : needsSize ? (variants.some((v) => v.size) ? "Выберите размер" : "Выберите вариант") : "В корзину"}
         </button>
@@ -200,7 +200,7 @@ export default function MerchV2() {
                   onClick={() => setOpen(p)}
                   disabled={stock <= 0}
                   className="foc"
-                  style={{ minWidth: 160, background: stock <= 0 ? "transparent" : "var(--c-bg-inverse)", color: stock <= 0 ? "var(--c-text-3)" : "var(--c-text-inverse)", border: stock <= 0 ? "1px dashed var(--c-line-control)" : "1px solid var(--c-bg-inverse)", borderRadius: "var(--r-sm)", padding: "11px 18px", fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase", fontWeight: 600, cursor: stock <= 0 ? "not-allowed" : "pointer" }}
+                  style={{ minWidth: 160, background: stock <= 0 ? "transparent" : "var(--c-accent)", color: stock <= 0 ? "var(--c-text-3)" : "var(--c-on-accent)", border: stock <= 0 ? "1px dashed var(--c-line-control)" : "1px solid var(--c-accent)", borderRadius: "var(--r-sm)", padding: "11px 18px", fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase", fontWeight: 600, cursor: stock <= 0 ? "not-allowed" : "pointer" }}
                 >
                   {stock <= 0 ? "Нет в наличии" : p.variants_json?.length ? (hasSizes ? "Выбрать размер" : "Выбрать вариант") : "В корзину"}
                 </button>
