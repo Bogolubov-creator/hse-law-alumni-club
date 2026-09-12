@@ -240,9 +240,16 @@ export default function CartV2() {
           <div className="v2-cart" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 32, alignItems: "start" }}>
             {/* ── Позиции как записи описи ── */}
             <div>
+              {setQty.isError && (
+                <p role="alert" style={{ margin: "0 0 16px", padding: 16, border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", color: "var(--c-danger-text)", background: "var(--c-bg-raised)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
+                  {setQty.error?.message === "Недостаточно товара в наличии."
+                    ? "Не удалось увеличить количество: недостаточно товара в наличии. Выберите меньшее количество."
+                    : "Не удалось изменить корзину. Попробуйте ещё раз. Сейчас показан последний подтверждённый состав."}
+                </p>
+              )}
               {items.map((it: CartLine) => (
                 <article key={`${it.ref_id}-${it.variant_sku ?? ""}`} className="v2-cart-row"
-                  style={{ display: "grid", gridTemplateColumns: "72px 1fr auto auto 32px", gap: 16, alignItems: "center", padding: "16px 0", borderTop: "1px solid var(--c-line)" }}>
+                  style={{ display: "grid", gridTemplateColumns: "72px 1fr auto auto 44px", gap: 16, alignItems: "center", padding: "16px 0", borderTop: "1px solid var(--c-line)" }}>
                   <span style={{ ...label, color: "var(--c-text-3)" }}>
                     {it.type === "dpo" ? "дпо" : "мерч"}
                   </span>
@@ -258,11 +265,11 @@ export default function CartV2() {
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <button aria-label={`Уменьшить количество: ${it.title}`} disabled={setQty.isPending}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })}
-                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>−</button>
+                        className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>−</button>
                       <span aria-live="polite" style={{ ...mono, minWidth: 24, textAlign: "center", fontSize: 15 }}>{it.qty}</span>
                       <button aria-label={`Увеличить количество: ${it.title}`} disabled={setQty.isPending || it.qty >= 99}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })}
-                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>+</button>
+                        className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>+</button>
                     </div>
                   )}
 
@@ -270,7 +277,7 @@ export default function CartV2() {
 
                   <button aria-label={`Убрать из корзины: ${it.title}`} disabled={setQty.isPending}
                     onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: 0 })}
-                    className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
+                    className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
                 </article>
               ))}
 

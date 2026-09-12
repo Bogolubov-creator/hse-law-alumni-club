@@ -555,7 +555,7 @@ html.vis .club-cookie-banner__btn--primary {
   .v2-cart { grid-template-columns: 1fr !important; gap: 24px !important; }
 }
 @media (max-width: 620px) {
-  .v2-cart-row { grid-template-columns: 1fr auto 32px !important; row-gap: 10px !important; }
+  .v2-cart-row { grid-template-columns: 1fr auto 44px !important; row-gap: 10px !important; }
   .v2-cart-row > :nth-child(1) { grid-column: 1 / -1; }
   .v2-cart-row > :nth-child(2) { grid-column: 1 / -1; }
 }
