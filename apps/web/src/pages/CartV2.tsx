@@ -22,9 +22,10 @@ import { TELEGRAM_CHANNEL } from "../config/social.js";
  * корзине v1, включая honeypot и правило «доставка только когда есть мерч».
  */
 
+/* Капс-лейблы полей, как у вступления (канон 12.09). */
 const label = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "none" as const, color: "var(--c-text-3)",
+  ...mono, fontSize: "var(--t-caps)", fontWeight: 600, letterSpacing: "var(--tr-caps)",
+  textTransform: "uppercase" as const, color: "var(--c-text-3)",
 };
 
 const field = {
@@ -234,7 +235,7 @@ export default function CartV2() {
           </Empty>
         )}
 
-        {isMirror && <p role="note" style={{ padding: 18, border: "1px solid var(--c-line)", borderRadius: 12, color: "var(--c-text-2)" }}>Демо-корзина хранится только в этой вкладке. Можно менять состав и количество. Отправка заявки отключена; личные данные вводить не нужно.</p>}
+        {isMirror && <p role="note" style={{ padding: 18, border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-sunken)", color: "var(--c-text-2)" }}>Демо-корзина хранится только в этой вкладке. Можно менять состав и количество. Отправка заявки отключена; личные данные вводить не нужно.</p>}
         {items.length > 0 && (
           <div className="v2-cart" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 32, alignItems: "start" }}>
             {/* ── Позиции как записи описи ── */}
@@ -293,7 +294,7 @@ export default function CartV2() {
             </div>
 
             {/* ── Форма заявки ── */}
-            <form onSubmit={submit} style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 22 }}>
+            <form onSubmit={submit} style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 26, boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
               <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Ваши контакты</h2>
               <p style={{ margin: "8px 0 14px", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
                 По ним менеджер подтвердит заявку.
