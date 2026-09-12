@@ -28,7 +28,10 @@ export default function ProductV2() {
   return (
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "32px 28px" }}>
-        <Link to="/merch" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4, ...mono, fontSize: "var(--t-caption)" }}>← весь мерч</Link>
+        <nav aria-label="Хлебные крошки" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>
+          <Link to="/merch" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← весь мерч</Link>
+          {product?.category && <> · {product.category}</>}
+        </nav>
 
         {products.isLoading && <p role="status" style={{ marginTop: 28 }}>Загружаем товар…</p>}
         {products.isError && (
@@ -49,34 +52,33 @@ export default function ProductV2() {
           <div className="club-product-detail">
             <div>
               {images.map((src, i) => (
-                <div key={i} style={{ aspectRatio: "1", marginBottom: 20, background: "var(--c-bg-raised)", borderRadius: 16, overflow: "hidden" }}>
+                <div key={i} className="club-product-photo" style={{ aspectRatio: "1", marginBottom: 20 }}>
                   <ProductImage src={src} title={product.title} />
                 </div>
               ))}
             </div>
             <section>
-              <p style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)", margin: 0 }}>{product.category}</p>
-              <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", margin: "8px 0 0" }}>{product.title}</h1>
-              <p style={{ fontSize: 28, fontVariantNumeric: "tabular-nums", margin: "14px 0 0" }}>{rub(product.price)}</p>
+              <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.08, margin: 0 }}>{product.title}</h1>
+              <p style={{ ...mono, fontSize: 32, fontWeight: 500, fontVariantNumeric: "tabular-nums", color: "var(--c-accent-text)", margin: "18px 0 0" }}>{rub(product.price)}</p>
               {product.description && (
                 <p style={{ whiteSpace: "pre-line", lineHeight: 1.65, color: "var(--c-text-2)", marginTop: 18 }}>{product.description}</p>
               )}
-              <h2 style={{ fontSize: "var(--t-h3)", marginTop: 28 }}>Варианты и наличие</h2>
+              <h2 style={{ ...mono, fontSize: "var(--t-caps)", fontWeight: 600, letterSpacing: "var(--tr-caps)", textTransform: "uppercase", color: "var(--c-text-3)", marginTop: 32 }}>Варианты и наличие</h2>
               {product.variants_json?.length ? (
-                <ul style={{ paddingLeft: 18, lineHeight: 1.7 }}>
+                <ul className="club-product-variants">
                   {product.variants_json.map((v) => (
-                    <li key={v.sku}>
-                      {[v.size, v.color].filter(Boolean).join(" · ") || v.sku}:{" "}
-                      {v.stock > 0 ? `${v.stock} шт.` : "нет в наличии"}
+                    <li key={v.sku} data-out={v.stock <= 0 || undefined}>
+                      <strong>{[v.size, v.color].filter(Boolean).join(" · ") || v.sku}</strong>
+                      <span>{v.stock > 0 ? `${v.stock} шт.` : "нет"}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p>{(product.stock ?? 0) > 0 ? `В наличии: ${product.stock} шт.` : "Нет в наличии"}</p>
+                <p style={{ color: "var(--c-text-2)" }}>{(product.stock ?? 0) > 0 ? `В наличии: ${product.stock} шт.` : "Нет в наличии"}</p>
               )}
               <button
                 className="foc"
-                style={{ ...action, marginTop: 8, opacity: hasStock ? 1 : 0.55 }}
+                style={{ ...action, marginTop: 20, boxShadow: hasStock ? "var(--shadow-accent)" : "none", opacity: hasStock ? 1 : 0.55 }}
                 disabled={!hasStock}
                 onClick={() => setOpen(true)}
               >

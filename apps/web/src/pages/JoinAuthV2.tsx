@@ -6,6 +6,7 @@ import { useHead } from "../lib/title.js";
 import { V2Shell, mono, disp } from "../v2/Shell.js";
 import { caps } from "../styles/primitives.js";
 import { Mark } from "../v2/Mark.js";
+import { publicUrl } from "../lib/public-url.js";
 
 /**
  * Воронка входа v2: /join – заявка на вступление, /forgot – запрос ссылки,
@@ -45,11 +46,30 @@ const ghost: CSSProperties = {
 };
 
 /** Общая оболочка экранов входа: знак, заголовок, карточка, юр-ссылки под ней. */
-function AuthShell({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
+/** Тёмная панель рядом с анкетой вступления: фото факультета, три шага, срок проверки. */
+function JoinAside() {
+  return (
+    <aside className="club-auth__aside club-dark" aria-label="Как проходит вступление">
+      <img src={publicUrl("assets/photos/hall-first-day.jpg")} alt="" width={1083} height={722} decoding="async" />
+      <div className="club-auth__aside-copy">
+        <h2>Пять минут анкеты, и вы <em>в клубе</em></h2>
+        <ol>
+          <li><strong>Заявка</strong><span>Анкета с годом выпуска и образовательной программой.</span></li>
+          <li><strong>Проверка учебным офисом</strong><span>Обычно 1–2 рабочих дня, ответ приходит на почту.</span></li>
+          <li><strong>Кабинет</strong><span>Цена выпускника на ДПО, запись на встречи, разделы клуба.</span></li>
+        </ol>
+      </div>
+    </aside>
+  );
+}
+
+function AuthShell({ title, sub, children, aside }: { title: string; sub?: string; children: ReactNode; aside?: ReactNode }) {
   return (
     <V2Shell>
-    <main id="main" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "var(--rh-head-top) 20px 40px", paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
-      <div style={{ width: "100%", maxWidth: 560, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32 }}>
+    <main id="main" className={aside ? "club-auth club-auth--split" : "club-auth"} style={{ paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
+      {aside}
+      <div className="club-auth__card">
+      <div style={{ width: "100%", maxWidth: 560, background: "var(--c-bg-raised)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: 32, boxShadow: "var(--shadow-ambient)" }}>
         <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)" }} />
         <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{title}</h1>
         {sub && <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>{sub}</p>}
@@ -60,6 +80,7 @@ function AuthShell({ title, sub, children }: { title: string; sub?: string; chil
         <Link to="/privacy" className="foc" style={{ color: "var(--c-text-3)" }}>Политика обработки ПДн</Link>
         <Link to="/confidential" className="foc" style={{ color: "var(--c-text-3)" }}>Конфиденциальность</Link>
         <Link to="/requisites" className="foc" style={{ color: "var(--c-text-3)" }}>Реквизиты</Link>
+      </div>
       </div>
     </main>
     </V2Shell>
@@ -195,7 +216,7 @@ export function JoinV2() {
   }
 
   return (
-    <AuthShell title="Вступить в клуб" sub="Заполните анкету. Учебный офис подтвердит выпуск – после этого откроются кабинет и цена выпускника на ДПО.">
+    <AuthShell title="Вступить в клуб" sub="Заполните анкету. Учебный офис подтвердит выпуск – после этого откроются кабинет и цена выпускника на ДПО." aside={<JoinAside />}>
       {ref && <Note tone="ok">Вы пришли по приглашению однокурсника – после подтверждения выпуска он получит баллы клуба.</Note>}
 
       <form onSubmit={submit} style={{ marginTop: 18 }}>
