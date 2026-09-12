@@ -235,7 +235,6 @@ export default function CartV2() {
           </Empty>
         )}
 
-        {isMirror && <p role="note" style={{ padding: 18, border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-sunken)", color: "var(--c-text-2)" }}>Демо-корзина хранится только в этой вкладке. Можно менять состав и количество. Отправка заявки отключена; личные данные вводить не нужно.</p>}
         {items.length > 0 && (
           <div className="v2-cart" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 32, alignItems: "start" }}>
             {/* ── Позиции как записи описи ── */}
