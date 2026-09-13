@@ -1,3 +1,4 @@
+import "../styles/cart-checkout.css";
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,7 +32,7 @@ const label = {
 const field = {
   width: "100%", marginTop: 7, padding: "12px 14px", borderRadius: "var(--r-md)",
   border: "1px solid var(--c-line-control)", background: "var(--c-bg)", color: "var(--c-text)",
-  fontSize: 15, fontFamily: "inherit",
+  fontSize: 16, fontFamily: "inherit",
 };
 
 /* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
@@ -59,8 +60,8 @@ function Total({ name, value, strong, tone }: { name: string; value: string; str
   );
 }
 
-function Field({ name, value, onChange, type = "text", required, ph }: {
-  name: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; ph?: string;
+function Field({ name, value, onChange, type = "text", required, ph, autoComplete }: {
+  name: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; ph?: string; autoComplete?: string;
 }) {
   const id = useId();
   return (
@@ -70,7 +71,7 @@ function Field({ name, value, onChange, type = "text", required, ph }: {
       <label htmlFor={id} style={{ ...label, display: "block" }}>
         {name}{!required && <span style={{ textTransform: "none", letterSpacing: 0, opacity: 0.75 }}> · необязательно</span>}
       </label>
-      <input id={id} type={type} required={required} value={value} placeholder={ph}
+      <input id={id} autoComplete={autoComplete} type={type} required={required} value={value} placeholder={ph}
         onChange={(e) => onChange(e.target.value)} className="foc" style={field} />
     </div>
   );
@@ -189,6 +190,7 @@ export default function CartV2() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy || setQty.isPending) return;
     setErr(null);
     setBusy(true);
     try {
@@ -221,7 +223,7 @@ export default function CartV2() {
           count={items.length ? `позиций ${items.length} · на сумму ${rub(total)}` : undefined}
         />
 
-        {cart.isLoading && <p style={{ ...label, margin: 0, paddingTop: 20 }}>загружаем корзину…</p>}
+        {cart.isLoading && <p role="status" style={{ ...label, margin: 0, paddingTop: 20 }}>загружаем корзину…</p>}
 
         {cart.isError && (
           <Empty title="Корзина не загрузилась">
@@ -269,11 +271,11 @@ export default function CartV2() {
                     <span style={{ ...label, fontSize: "var(--t-micro)" }}>1 место</span>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <button aria-label={`Уменьшить количество: ${it.title}`} disabled={setQty.isPending}
+                      <button aria-label={`Уменьшить количество: ${it.title}`} disabled={setQty.isPending || busy}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })}
                         className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>−</button>
                       <span aria-live="polite" style={{ ...mono, minWidth: 24, textAlign: "center", fontSize: 15 }}>{it.qty}</span>
-                      <button aria-label={`Увеличить количество: ${it.title}`} disabled={setQty.isPending || it.qty >= 99}
+                      <button aria-label={`Увеличить количество: ${it.title}`} disabled={setQty.isPending || busy || it.qty >= 99}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })}
                         className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>+</button>
                     </div>
@@ -281,13 +283,13 @@ export default function CartV2() {
 
                   <span style={{ ...mono, fontSize: 15, fontWeight: 500, whiteSpace: "nowrap" }}>{rub(it.price * it.qty)}</span>
 
-                  <button aria-label={`Убрать из корзины: ${it.title}`} disabled={setQty.isPending}
+                  <button aria-label={`Убрать из корзины: ${it.title}`} disabled={setQty.isPending || busy}
                     onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: 0 })}
                     className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
                 </article>
               ))}
 
-              <div style={{ marginTop: 26, paddingTop: 4 }}>
+              <div className="club-cart-totals">
                 <Total name="подытог" value={rub(subtotal)} />
                 {discountAmount > 0 && <Total name={`скидка выпускника (дпо) −${discount}%`} value={`−${rub(discountAmount)}`} tone="ok" />}
                 <Total name="итого (справочно)" value={rub(total)} strong />
@@ -308,7 +310,8 @@ export default function CartV2() {
 
             {/* ── Форма заявки ── */}
             <form onSubmit={submit} style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 26, boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
-              <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Ваши контакты</h2>
+              <fieldset disabled={busy} className="club-checkout-fields">
+              <h2 style={{ ...pageTitle, fontSize: 28, margin: 0 }}>Ваши контакты</h2>
               <p style={{ margin: "8px 0 14px", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
                 По ним менеджер подтвердит заявку.
               </p>
@@ -318,9 +321,9 @@ export default function CartV2() {
                 value={form.website} onChange={(e) => set("website", e.target.value)}
                 style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
-              <Field name="фио" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required ph="Имя Фамилия" />
-              <Field name="телефон" type="tel" value={form.contact_phone} onChange={(v) => set("contact_phone", v)} required ph="+7 ___ ___-__-__" />
-              <Field name="почта" type="email" value={form.contact_email} onChange={(v) => set("contact_email", v)} required ph="you@mail.ru" />
+              <Field autoComplete="name" name="фио" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required ph="Имя Фамилия" />
+              <Field autoComplete="tel" name="телефон" type="tel" value={form.contact_phone} onChange={(v) => set("contact_phone", v)} required ph="+7 ___ ___-__-__" />
+              <Field autoComplete="email" name="почта" type="email" value={form.contact_email} onChange={(v) => set("contact_email", v)} required ph="you@mail.ru" />
 
               {hasShippable && (
                 <div style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -345,7 +348,7 @@ export default function CartV2() {
                 </div>
               )}
               {hasShippable && form.fulfillment === "delivery" && (
-                <Field name="адрес доставки" value={form.address} onChange={(v) => set("address", v)} required ph="город, улица, дом, квартира" />
+                <Field autoComplete="street-address" name="адрес доставки" value={form.address} onChange={(v) => set("address", v)} required ph="город, улица, дом, квартира" />
               )}
               <Field name="комментарий" value={form.comment} onChange={(v) => set("comment", v)} ph="если есть что уточнить" />
 
@@ -362,15 +365,16 @@ export default function CartV2() {
 
               {/* Недоступная кнопка становится нейтральной, а не бледно-охряной:
                   полупрозрачная охра читалась как активная и роняла контраст текста. */}
-              <button type="submit" disabled={isMirror || busy || !form.consent} className="foc"
+              <button type="submit" aria-busy={busy} disabled={isMirror || busy || setQty.isPending || !form.consent} className="foc"
                 style={{
                   ...primary, width: "100%", marginTop: 16,
-                  ...(busy || !form.consent
+                  ...(busy || setQty.isPending || !form.consent
                     ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line-control)", cursor: busy ? "wait" : "not-allowed" }
                     : {}),
                 }}>
-                {isMirror ? "Отправка недоступна на зеркале" : busy ? "Отправляем…" : form.consent ? "Оформить заявку" : "Нужно согласие на обработку данных"}
+                {isMirror ? "Отправка недоступна на зеркале" : busy ? "Отправляем…" : setQty.isPending ? "Обновляем корзину…" : form.consent ? "Оформить заявку" : "Нужно согласие на обработку данных"}
               </button>
+              </fieldset>
             </form>
           </div>
         )}
