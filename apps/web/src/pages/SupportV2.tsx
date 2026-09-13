@@ -1,3 +1,4 @@
+import { requestJson } from "../lib/http.js";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -41,7 +42,7 @@ export async function supportRequest<T>(
   body?: unknown,
   key?: string,
 ): Promise<T> {
-  const r = await fetch(`/api${path}`, {
+  return requestJson<T>(path, {
     method,
     cache: "no-store",
     headers: {
@@ -49,10 +50,7 @@ export async function supportRequest<T>(
       ...(key ? { "x-support-key": key } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const value = await r.json();
-  if (!r.ok) throw new Error(value.error || "Не удалось выполнить запрос");
-  return value;
+  }, { strictJson: true, errorMessage: (_status, data) => data.error || "Не удалось выполнить запрос" });
 }
 
 function credentials() {
