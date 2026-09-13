@@ -13,6 +13,10 @@ if (!token) {
   console.error("TELEGRAM_BOT_TOKEN не задан");
   process.exit(1);
 }
+if (!secret) {
+  console.error("TELEGRAM_WEBHOOK_SECRET обязателен");
+  process.exit(1);
+}
 if (!publicUrl.startsWith("https://")) {
   console.error("PUBLIC_URL должен быть https:// (для локали используйте туннель, напр. ngrok)");
   process.exit(1);

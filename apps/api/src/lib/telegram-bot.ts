@@ -5,6 +5,9 @@ import { verifyTgLinkCode } from "./tg-link.js";
 import { answerTelegramFaq } from "./site-faq-telegram.js";
 import {
   parseCommand,
+  BOT_COMMANDS,
+  formatLinkedReply,
+  formatNavigationReply,
   formatPointsReply,
   formatCalendarReply,
   formatStartReply,
@@ -79,7 +82,7 @@ export async function buildBotReply(cmd: string, arg: string, tgId: string): Pro
           const others = (await di.request((readItems as any)("alumni", { filter: { telegram_id: { _eq: tgId }, id: { _neq: linkId } }, limit: -1, fields: ["id"] }))) as any[];
           for (const o of others) await di.request((updateItem as any)("alumni", o.id, { telegram_id: null }));
           await di.request((updateItem as any)("alumni", linkId, { telegram_id: tgId }));
-          return `✅ Telegram привязан к аккаунту <b>${owner[0].fio ?? "выпускника"}</b>.\n\nТеперь /points покажет ваши баллы, а /calendar отметит события, куда вы записаны.`;
+          return formatLinkedReply(owner[0].fio ?? "выпускника");
         }
       }
       const linked = !!(await findAlumniByTelegram(tgId));
@@ -95,7 +98,7 @@ export async function buildBotReply(cmd: string, arg: string, tgId: string): Pro
     case "/calendar":
       return formatCalendarReply(await upcomingEvents(tgId), url);
     default:
-      return null;
+      return formatNavigationReply(cmd, url);
   }
 }
 
@@ -113,6 +116,11 @@ export async function tgSendMessage(chatId: number, text: string, token: string)
 export async function handleTelegramUpdate(update: TgUpdate, token: string): Promise<void> {
   const msg = update.message;
   if (!msg?.text || !msg.from?.id) return;
+  // Личные сведения и привязка доступны только в диалоге с ботом.
+  // Групповые апдейты не вызывают ни чтения профиля, ни записи в CMS.
+  if (msg.chat.type !== "private") return;
+  const addressed = /^\/[^\s@]+@([^\s]+)/.exec(msg.text.trim());
+  if (addressed && addressed[1]!.toLowerCase() !== env.TELEGRAM_BOT_USERNAME.toLowerCase()) return;
   const { cmd, arg } = parseCommand(msg.text);
   if (!cmd) {
     // Свободный текст – тот же FAQ, что у вороны на сайте.
@@ -121,7 +129,7 @@ export async function handleTelegramUpdate(update: TgUpdate, token: string): Pro
     return;
   }
   const reply = await buildBotReply(cmd, arg, String(msg.from.id));
-  if (reply) await tgSendMessage(msg.chat.id, reply, token);
+  await tgSendMessage(msg.chat.id, reply ?? "Не знаю такой команды. Нажмите /help или напишите вопрос про клуб и ДПО.", token);
 }
 
 /** Регистрация меню команд в Telegram (идемпотентно при старте API). */
@@ -131,12 +139,7 @@ export async function registerBotCommands(token: string): Promise<void> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        commands: [
-          { command: "start", description: "Приветствие и ссылки клуба" },
-          { command: "points", description: "Мои баллы и уровень" },
-          { command: "calendar", description: "Ближайшие события" },
-          { command: "help", description: "Список команд" },
-        ],
+        commands: BOT_COMMANDS,
       }),
     });
     if (!r.ok) console.warn("[telegram-bot] setMyCommands:", await r.text().catch(() => ""));

@@ -21,7 +21,7 @@ const schema = z.object({
   // Отдельный секрет для админ-сессий (defense-in-depth). Пусто = используется AUTH_SECRET.
   ADMIN_AUTH_SECRET: z.string().default(""),
   TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app + webhook-бот BLOCKED
-  // Секрет webhook (setWebhook secret_token). Пусто = проверка заголовка отключена.
+  // Секрет webhook (setWebhook secret_token). Пусто = endpoint отключён.
   TELEGRAM_WEBHOOK_SECRET: z.string().default(""),
   TELEGRAM_POLLING: z.string().default(""), // "true" = long-polling вместо вебхука (локальный стенд)
   TELEGRAM_BOT_USERNAME: z.string().default("pravohse_alumni_bot"),
