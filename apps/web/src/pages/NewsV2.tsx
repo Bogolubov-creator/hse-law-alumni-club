@@ -1,3 +1,5 @@
+import "../styles/editorial.css";
+import { ApiError } from "../lib/api.js";
 import { Link, useParams } from "react-router-dom";
 import { useNewsList, useNewsPost, formatNewsDate } from "../lib/queries.js";
 import { useHead } from "../lib/title.js";
@@ -42,7 +44,7 @@ export function NewsV2() {
         />
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
-        {news.isLoading && <p style={{ ...label, margin: 0 }}>загружаем новости…</p>}
+        {news.isLoading && <p role="status" style={{ ...label, margin: 0 }}>загружаем новости…</p>}
 
         {news.isError && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
@@ -62,26 +64,19 @@ export function NewsV2() {
           {list.map((item, i) => (
             <article
               key={item.id}
-              className={i === 0 ? "v2-row club-news-featured" : "v2-row"}
-              style={{
-                display: "grid",
-                gridTemplateColumns: i === 0 ? "1fr" : "150px 1fr",
-                gap: 24,
-                alignItems: "start",
-                padding: i === 0 ? "28px 0" : "22px 0",
-                borderTop: i === 0 ? "1px solid var(--c-text)" : "1px solid var(--c-line)",
-              }}
+              className={`v2-row club-news-row${i === 0 ? " club-news-row--featured" : ""}`}
+
             >
-              {i !== 0 && <div style={{ ...label }}>{formatNewsDate(item.published_at)}</div>}
+              {i !== 0 && <time dateTime={item.published_at ?? undefined} style={{ ...label, color: "var(--c-accent-text)" }}>{formatNewsDate(item.published_at)}</time>}
               <div style={{ minWidth: 0 }}>
-                {i === 0 && <div style={{ ...label, marginBottom: 10 }}>{formatNewsDate(item.published_at)} · главная публикация</div>}
+                {i === 0 && <div style={{ ...label, marginBottom: 10 }}><time dateTime={item.published_at ?? undefined}>{formatNewsDate(item.published_at)}</time> · последняя публикация</div>}
                 <Link to={`/news/${item.slug}`} className="foc" style={{ textDecoration: "none", color: "inherit" }}>
-                  <h2 style={{ ...disp, fontWeight: 600, fontSize: i === 0 ? "clamp(26px, 3vw, 34px)" : "var(--t-h3)", lineHeight: 1.18, margin: 0 }}>{item.title}</h2>
+                  <h2 style={{ ...(i === 0 ? pageTitle : disp), fontWeight: i === 0 ? 400 : 600, fontSize: i === 0 ? "clamp(28px, 3.5vw, 44px)" : "var(--t-h3)", lineHeight: 1.18, margin: 0 }}>{item.title}</h2>
                 </Link>
                 {item.excerpt && (
                   <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: i === 0 ? "var(--t-lead)" : "var(--t-body)", lineHeight: 1.55, maxWidth: i === 0 ? "68ch" : "62ch" }}>{item.excerpt}</p>
                 )}
-                <Link to={`/news/${item.slug}`} className="foc" style={{ display: "inline-block", marginTop: 10, ...label, color: "var(--c-link)", textDecoration: "none" }}>читать →</Link>
+                <Link to={`/news/${item.slug}`} aria-label={`Читать: ${item.title}`} className="foc club-news-read" style={{ marginTop: 10, ...label, color: "var(--c-link)", textDecoration: "none" }}>читать →</Link>
               </div>
             </article>
           ))}
@@ -97,9 +92,10 @@ export function NewsPostV2() {
   const { slug = "" } = useParams();
   const post = useNewsPost(slug);
   const d = post.data;
+  const notFound = post.error instanceof ApiError && post.error.status === 404;
 
   useHead({
-    title: post.isError ? "Новость не найдена" : d?.title ?? "Новость",
+    title: post.isError ? (notFound ? "Новость не найдена" : "Не удалось загрузить новость") : d?.title ?? "Новость",
     description: d?.excerpt ?? (d ? `${d.title} – новость клуба выпускников факультета права Вышки.` : null),
     canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/news/${slug}`,
     noindex: post.isError || !d,
@@ -140,19 +136,20 @@ export function NewsPostV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: 720, margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" className="club-news-post">
         <nav style={{ ...label, paddingTop: 28 }}>
           <Link to="/news" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← все новости</Link>
         </nav>
 
-        {post.isLoading && <p style={{ ...label, paddingTop: 40 }}>загружаем публикацию…</p>}
+        {post.isLoading && <p role="status" style={{ ...label, paddingTop: 40 }}>загружаем публикацию…</p>}
 
         {post.isError && (
-          <div style={{ padding: "56px 0" }}>
-            <h1 style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h2)", margin: 0 }}>Новость не найдена</h1>
+          <div role="alert" style={{ padding: "56px 0" }}>
+            <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", margin: 0 }}>{notFound ? "Новость не найдена" : "Не удалось загрузить новость"}</h1>
             <p style={{ margin: "12px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.55 }}>
-              Такой публикации нет – возможно, адрес устарел.
+              {notFound ? "Такой публикации нет – возможно, адрес устарел." : "Проверьте соединение и попробуйте ещё раз."}
             </p>
+            {!notFound && <button className="foc" style={{ ...action, margin: "20px 16px 0 0" }} onClick={() => post.refetch()}>Повторить</button>}
             <Link to="/news" className="foc" style={{ ...action, marginTop: 20 }}>
               Все новости
             </Link>
@@ -160,19 +157,20 @@ export function NewsPostV2() {
         )}
 
         {d && (
-          <article style={{ paddingTop: 26, paddingBottom: 20 }}>
-            <div style={label}>{formatNewsDate(d.published_at)}</div>
-            <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.12, margin: "12px 0 0" }}>{d.title}</h1>
+          <article>
+            <time dateTime={d.published_at ?? undefined} style={{ ...label, color: "var(--c-accent-text)" }}>{formatNewsDate(d.published_at)}</time>
+            <h1 style={{ ...pageTitle, fontSize: "clamp(32px, 4.5vw, 56px)", lineHeight: 1.12, margin: "12px 0 0" }}>{d.title}</h1>
             {d.excerpt && (
               <p style={{ margin: "18px 0 0", fontSize: "var(--t-lead)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{d.excerpt}</p>
             )}
             {paragraphs.length > 0 && (
-              <div style={{ marginTop: 26, paddingTop: 22, borderTop: "1px solid var(--c-line-strong)" }}>
+              <div className="club-news-post__body" style={{ marginTop: 26, paddingTop: 22, borderTop: "1px solid var(--c-line-strong)" }}>
                 {paragraphs.map((para, i) => (
                   <p key={i} style={{ margin: i ? "16px 0 0" : 0, fontSize: "var(--t-body)", lineHeight: 1.7, color: "var(--c-text)" }}>{para}</p>
                 ))}
               </div>
             )}
+            <footer className="club-news-post__footer"><Link className="foc" to="/news">Все новости</Link><Link className="foc" to="/events">Ближайшие встречи</Link></footer>
           </article>
         )}
       </main>

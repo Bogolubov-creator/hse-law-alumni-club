@@ -1,3 +1,4 @@
+import "../styles/editorial.css";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -92,7 +93,7 @@ export default function EventsV2() {
       key={e.id}
       className="v2-row club-event-row"
       style={{
-        display: "grid", gridTemplateColumns: "150px 1fr auto", gap: 24, alignItems: "start",
+        display: "grid", gridTemplateColumns: "150px minmax(0, 1fr)", gap: 24, alignItems: "start",
         padding: "22px 0", borderTop: "1px solid var(--c-line)", cursor: "pointer",
         opacity: isPast ? 0.6 : 1,
       }}
@@ -131,7 +132,7 @@ export default function EventsV2() {
         />
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
-        {events.isLoading && <p style={{ ...label, margin: 0 }}>загружаем афишу…</p>}
+        {events.isLoading && <p role="status" style={{ ...label, margin: 0 }}>загружаем афишу…</p>}
 
         {events.isError && (
           <div style={{ borderTop: "1px solid var(--c-line)", padding: "40px 0" }}>
@@ -143,6 +144,7 @@ export default function EventsV2() {
         <form className="club-agenda-filters" onSubmit={e=>e.preventDefault()} aria-label="Фильтры афиши">
           <label>Поиск по афише<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Название или место" /></label>
           <label>Формат<select value={format} onChange={e=>setFormat(e.target.value)}><option value="all">Все форматы</option><option value="online">Онлайн</option><option value="offline">Очно</option></select></label>
+          {(search || format !== "all") && <button type="button" className="foc club-agenda-reset" onClick={() => setParams(prev => { const n = new URLSearchParams(prev); n.delete("q"); n.delete("format"); return n; }, { replace: true })}>Сбросить фильтры</button>}
         </form>
         {upcoming.length > 0 && <h2 style={{ ...caps, color: "var(--c-text-3)", margin: "0 0 4px" }}>Ближайшие</h2>}
         <div key={`${search}:${format}`} className="club-agenda-results">
