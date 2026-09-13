@@ -104,3 +104,28 @@ describe("GET /admin/analytics", () => {
     expect(r.body).toContain("pulse");
   });
 });
+
+describe("GET /admin/overview", () => {
+  it("сохраняет авторизацию обзора", async () => {
+    const app = Fastify();
+    await app.register(adminRoutes);
+    try {
+      expect((await app.inject({ url: "/admin/overview" })).statusCode).toBe(401);
+    } finally { await app.close(); }
+  });
+
+  it("возвращает прежний контракт редактору через общий сервис статистики", async () => {
+    const app = Fastify();
+    registerErrorHandler(app);
+    await app.register(adminRoutes);
+    try {
+      const result = await app.inject({ url: "/admin/overview", headers: { authorization: `Bearer ${token()}` } });
+      expect(result.statusCode).toBe(200);
+      expect(result.json()).toMatchObject({
+        orders_count: 3, new_orders: 2, orders_paid: 1,
+        alumni_count: 2, alumni_verified: 1, pending_verifications: 1, points_total: 100,
+        next_event: { id: "e1", rsvps: 2 },
+      });
+    } finally { await app.close(); }
+  });
+});

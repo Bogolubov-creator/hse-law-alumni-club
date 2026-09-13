@@ -15,7 +15,8 @@ import { pushToAll, pushToAlumni } from "../lib/push.js";
 import { anonymizeAlumni } from "../lib/anonymize.js";
 import { readUsers } from "@directus/sdk";
 import { env } from "../env.js";
-import { count, sum, groupCount } from "../lib/agg.js";
+import { count, groupCount } from "../lib/agg.js";
+import { buildAdminOverview } from "../lib/admin-overview.js";
 import { analyticsToCsv, buildAdminAnalytics, parseAnalyticsRange } from "../lib/admin-analytics.js";
 
 /** E-mail выпускника по alumni_id (через привязанный аккаунт). */
@@ -127,47 +128,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    // Агрегатные count/sum (Directus считает в БД) вместо полного скана 10 таблиц –
-    // под масштаб не тащим тысячи строк в API ради .length.
-    const now = new Date().toISOString();
-    const [
-      orders_count, new_orders, orders_paid,
-      alumni_count, alumni_verified, pending_verifications, points_total, podcast_subscribers,
-      programs_total, programs_nonactual, products_count, news_count,
-      friendships, friend_requests, podcasts_count, push_subs_count,
-    ] = await Promise.all([
-      count("orders"),
-      count("orders", { status: { _eq: "new" } }),
-      count("orders", { payment_status: { _eq: "succeeded" } }),
-      count("alumni"),
-      count("alumni", { verification_status: { _eq: "verified" } }),
-      count("alumni", { verification_status: { _eq: "pending" } }),
-      sum("alumni", "points_cached"),
-      count("alumni", { podcast_sub_until: { _gte: now } }),
-      count("programs", { status: { _eq: "published" } }),
-      count("programs", { status: { _eq: "published" }, enrollment: { _eq: "nonactual" } }),
-      count("products", { status: { _eq: "published" } }),
-      count("news", { status: { _eq: "published" } }),
-      count("alumni_friends", { status: { _eq: "accepted" } }),
-      count("alumni_friends", { status: { _eq: "pending" } }),
-      count("podcasts", { status: { _eq: "published" } }),
-      count("push_subs"),
-    ]);
-    // «Актуальный набор» = опубликованные минус nonactual (null-enrollment – актуальные,
-    // как на сайте: enrollment !== "nonactual").
-    const programs_actual = programs_total - programs_nonactual;
-    // Ближайшее событие – маленькая выборка (1 строка) + count его RSVP.
-    const evRows = (await di.request((readItems as any)("events", {
-      filter: { status: { _eq: "published" }, starts_at: { _gte: now } }, sort: ["starts_at"], limit: 1, fields: ["id", "title", "starts_at"],
-    }))) as any[];
-    const ne = evRows[0] ?? null;
-    return {
-      new_orders, orders_count, orders_paid,
-      pending_verifications, alumni_count, alumni_verified, points_total,
-      programs_actual, programs_total, products_count, news_count,
-      friendships, friend_requests, podcasts_count, podcast_subscribers, push_subs_count,
-      next_event: ne ? { id: ne.id, title: ne.title, starts_at: ne.starts_at, rsvps: await count("event_rsvps", { event_id: { _eq: ne.id } }) } : null,
-    };
+    return buildAdminOverview();
   });
 
   /** Продуктовая аналитика за 7/30/90 дней – агрегаты без ПДн. */
