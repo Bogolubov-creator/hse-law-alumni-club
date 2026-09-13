@@ -1,0 +1,7 @@
+/* Выбор товара – спокойная форма с теми же материалами, что витрина. */
+.club-merch-selection { border: 1px solid var(--c-line); box-shadow: var(--shadow-ambient); }
+.club-merch-selection h2 { overflow-wrap: anywhere; line-height: 1.15; }
+.club-merch-selection button { min-height: 44px; }
+.club-merch-selection button:disabled { cursor: not-allowed; }
+.club-merch-selection__error { color: var(--c-danger-text); border-top: 1px solid var(--c-line); padding-top: 16px; margin: 20px 0 0; font-size: 14px; line-height: 1.5; }
+@media (max-width: 420px) { .club-merch-selection { padding: 20px !important; } }

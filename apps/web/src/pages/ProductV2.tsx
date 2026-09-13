@@ -4,7 +4,7 @@ import { useProducts } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
 import { rub } from "../lib/api.js";
 import { V2Shell, pageTitle, mono } from "../v2/Shell.js";
-import { SizeDialog } from "./MerchV2.js";
+import SizeDialog from "../components/MerchSelection.js";
 import ProductImage from "../components/ProductImage.js";
 import { action } from "../styles/primitives.js";
 
@@ -37,7 +37,7 @@ export default function ProductV2() {
         {products.isError && (
           <p role="alert" style={{ marginTop: 28 }}>
             Не удалось загрузить товар.{" "}
-            <button type="button" className="foc" onClick={() => products.refetch()}>Повторить</button>
+            <button type="button" className="foc club-btn club-btn--secondary" onClick={() => products.refetch()}>Повторить</button>
           </p>
         )}
         {products.isSuccess && !product && (
@@ -80,7 +80,7 @@ export default function ProductV2() {
                 className="foc"
                 style={{ ...action, marginTop: 20, boxShadow: hasStock ? "var(--shadow-accent)" : "none", opacity: hasStock ? 1 : 0.55 }}
                 disabled={!hasStock}
-                onClick={() => setOpen(true)}
+                onClick={(event) => { event.currentTarget.focus(); setOpen(true); }}
               >
                 {hasStock ? "Выбрать вариант и количество" : "Сейчас нет в наличии"}
               </button>

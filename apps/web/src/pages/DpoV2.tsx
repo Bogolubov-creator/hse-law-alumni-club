@@ -96,11 +96,11 @@ export default function DpoV2() {
             <div className="club-dpo-mode" role="tablist" aria-label="Режим каталога">
               <button type="button" role="tab" aria-selected={!showAll} className={`foc club-dpo-mode__btn${!showAll ? " is-on" : ""}`} onClick={() => update("all", "")}>
                 Актуальный набор
-                <span className="club-dpo-mode__count">{programs.isLoading ? "…" : actual.length}</span>
+                <span className="club-dpo-mode__count">{programs.isLoading || programs.isError ? "…" : actual.length}</span>
               </button>
               <button type="button" role="tab" aria-selected={showAll} className={`foc club-dpo-mode__btn${showAll ? " is-on" : ""}`} onClick={() => update("all", "1")}>
                 Весь каталог
-                <span className="club-dpo-mode__count">{programs.isLoading ? "…" : catalog.length}</span>
+                <span className="club-dpo-mode__count">{programs.isLoading || programs.isError ? "…" : catalog.length}</span>
               </button>
             </div>
             <p className="club-dpo-toolbar__hint">
@@ -120,7 +120,7 @@ export default function DpoV2() {
           </form>
 
           <p className="club-dpo-status" role="status">
-            <span>{programs.isLoading ? "Загружаем каталог…" : <>Найдено программ: <strong>{list.length}</strong></>}</span>
+            <span>{programs.isError ? "Данные каталога недоступны" : programs.isLoading ? "Загружаем каталог…" : <>Найдено программ: <strong>{list.length}</strong></>}</span>
             <span>Для сравнения выберите от двух до трёх программ.</span>
           </p>
 
