@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
 });
 
 // PWA: на зеркале Pages SW отключён (офлайн-страница всё равно с относительными
-// путями). В проде register под Vite base; sw.js сам резолвит scope (club-v6).
+// путями). В проде register под Vite base; sw.js изолирует кэш по scope.
 const serviceWorker = navigator.serviceWorker;
 const enableSw =
   !isMirror &&

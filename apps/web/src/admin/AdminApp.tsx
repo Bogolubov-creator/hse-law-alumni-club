@@ -63,7 +63,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   const [section, setSection] = useState<Section>("overview");
   const ov = useOverview();
   const nav: { key: Section; label: string; badge?: number }[] = [
-    { key: "overview", label: "Обзор" },
+    { key: "overview", label: "Дашборд" },
     { key: "analytics", label: "Аналитика" },
     { key: "orders", label: "Заявки", badge: ov.data?.new_orders },
     { key: "members", label: "Выпускники", badge: ov.data?.pending_verifications },
@@ -73,7 +73,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { key: "support", label: "Поддержка" },
   ];
   const titles: Record<Section, string> = {
-    overview: "Обзор",
+    overview: "Дашборд сайта",
     analytics: "Аналитика",
     orders: "Заявки и заказы",
     members: "Выпускники",

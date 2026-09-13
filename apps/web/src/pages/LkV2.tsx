@@ -13,7 +13,6 @@ import { useToast } from "../components/Toast.js";
 import { BlankField, mono, disp } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
 import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
-import { MobileTabs } from "../v2/MobileTabs.js";
 
 /**
  * Личный кабинет v2. Режим отличается от внешнего контура (DESIGN.md):
@@ -92,7 +91,6 @@ function Gate({ onAuthed, returnTo, sessionExpired }: { onAuthed: (r: LoginRespo
       </form>
       </div>
       {/* Без панели экран входа – тупик: во вкладках «кабинет» ведёт сюда */}
-      <MobileTabs />
     </main>
   );
 }
@@ -131,7 +129,6 @@ function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => 
           <button onClick={onBack} className="foc" style={{ width: "100%", padding: "13px 20px", borderRadius: "var(--r-md)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", fontWeight: 600, cursor: "pointer" }}>Назад ко входу</button>
         </div>
       </div>
-      <MobileTabs />
     </main>
   );
 }

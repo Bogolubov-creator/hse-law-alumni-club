@@ -324,3 +324,11 @@ export function useEventMutations() {
     markAttended: useMutation({ mutationFn: (rsvpId: string) => req("POST", `/admin/events/rsvp/${rsvpId}/attend`), onSuccess: refetch }),
   };
 }
+
+export type SystemHealth = {
+  checked_at: string; uptime_seconds: number | null; status: "degraded" | "partial";
+  checks: Array<{ id: string; name: string; status: "ok" | "error" | "unknown" | "disabled"; detail: string; latency_ms?: number }>;
+};
+export function useSystemHealth() {
+  return useQuery({ queryKey: ["adm", "system-health"], queryFn: () => req<SystemHealth>("GET", "/admin/system-health"), retry: false, staleTime: 30_000 });
+}

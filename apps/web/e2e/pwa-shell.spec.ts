@@ -25,7 +25,7 @@ test("PWA deep link /lk: оболочка не ломает кабинет", asy
 test("PWA meta: apple-touch-icon, theme-color, capable", async ({ page }) => {
   await preparePage(page);
   await page.goto("/");
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#EC5A13");
+  await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: light)"]')).toHaveAttribute("content", "#EC5A13");
   await expect(page.locator('meta[name="apple-mobile-web-app-capable"]')).toHaveAttribute("content", "yes");
   await expect(page.locator('link[rel="apple-touch-icon"][sizes="180x180"]')).toHaveAttribute("href", /icon-180\.png/);
   await expect(page.locator('link[rel="apple-touch-icon"][sizes="167x167"]')).toHaveAttribute("href", /icon-167\.png/);

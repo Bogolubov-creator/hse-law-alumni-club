@@ -76,7 +76,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
       <header className="club-header">
         <div className="club-header__inner">
           <Link to="/" viewTransition className="foc club-header__brand">
-            <Mark kind="scales" size={32} style={{ color: "var(--c-accent-text)" }} />
+            <img src={publicUrl("icon-192.png")} width={36} height={36} alt="" className="club-header__emblem" />
             <span className="club-header__lockup">
               Клуб выпускников
               <small>факультета права Вышки</small>

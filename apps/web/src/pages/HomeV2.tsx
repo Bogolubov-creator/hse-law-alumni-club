@@ -92,10 +92,10 @@ export default function HomeV2() {
         <section className="home-hero" aria-label="Клуб выпускников факультета права">
           <div className="home-hero__photo">
             <HeroPicture
-              path="assets/photos/themis-facade.jpg"
+              path="assets/photos/themis-facade-full.jpg"
               alt="Фемида с весами у входа в здание Высшей школы экономики"
-              width={1024}
-              height={597}
+              width={2226}
+              height={1298}
             />
           </div>
           <div className="home-hero__panel club-dark">
@@ -163,7 +163,7 @@ export default function HomeV2() {
         {/* 4. Встреча клуба: фото во всю ширину, чёрная подпись под ним */}
         <section className="home-meeting" aria-labelledby="home-meeting-title" data-reveal>
           <div className="home-meeting__photo">
-            <img src={mediaUrl("/assets/photos/alumni-meeting.jpg")} alt="Выпускники факультета права на первой встрече клуба в актовом зале Вышки" width={1083} height={722} loading="lazy" decoding="async" />
+            <img src={mediaUrl("/assets/photos/alumni-meeting.jpg")} alt="Выпускники факультета права на первой встрече клуба в актовом зале Вышки" width={1100} height={330} loading="lazy" decoding="async" />
           </div>
           <div className="home-meeting__caption club-dark">
             <h2 id="home-meeting-title">Первая встреча клуба, <em>27 февраля</em></h2>

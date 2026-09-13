@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
-import { MobileTabs } from "./MobileTabs.js";
 import { mono, disp, label, actionGhost } from "../styles/primitives.js";
 export { label, field, action, actionGhost } from "../styles/primitives.js";
 import { Mark } from "./Mark.js";
@@ -112,7 +111,6 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
 
       {/* Низ не должен уезжать под cookie-баннер: внизу профиля права по 152-ФЗ */}
       <main id="main" style={{ maxWidth: 1180, margin: "0 auto", padding: "26px 20px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>{children}</main>
-      <MobileTabs />
     </div>
   );
 }

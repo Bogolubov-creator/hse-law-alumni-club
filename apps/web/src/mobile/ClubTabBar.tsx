@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { isAndroid } from "../lib/use-mobile.js";
 
@@ -52,7 +52,7 @@ export const CLUB_TABS: Tab[] = [
 ];
 
 export function clubTabActive(pathname: string): string {
-  return CLUB_TABS.find((t) => t.match(pathname))?.to ?? "/";
+  return CLUB_TABS.find((t) => t.match(pathname))?.to ?? "";
 }
 
 type Props = {
@@ -67,8 +67,20 @@ type Props = {
 
 export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
   const { pathname } = useLocation();
+  const navRef = useRef<HTMLElement>(null);
   const active = activeProp ?? clubTabActive(pathname);
   const fixed = variant === "fixed";
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav || !fixed) return;
+    const root = document.documentElement;
+    const measure = () => root.style.setProperty("--tabs-h", `${nav.getBoundingClientRect().height}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    return () => { observer.disconnect(); root.style.removeProperty("--tabs-h"); };
+  }, [fixed]);
 
   const navStyle: CSSProperties = {
     flexShrink: 0,
@@ -77,7 +89,7 @@ export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
     padding: ANDROID
       ? "6px 6px calc(env(safe-area-inset-bottom, 0px) + 8px)"
       : "9px 6px calc(env(safe-area-inset-bottom, 0px) + 12px)",
-    background: ANDROID ? "var(--c-bg)" : "color-mix(in srgb, var(--c-bg) 95%, transparent)",
+    background: "var(--c-bg)",
     borderTop: "1px solid var(--c-line)",
     ...(ANDROID
       ? {}
@@ -87,6 +99,7 @@ export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
 
   return (
     <nav
+      ref={navRef}
       className={fixed ? "mob-only club-tab-bar v2-tabs" : "club-tab-bar v2-tabs"}
       aria-label="Основные разделы"
       style={navStyle}

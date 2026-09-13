@@ -1,3 +1,4 @@
+import { MobileTabs } from "./v2/MobileTabs.js";
 import { SiteNotice } from "./components/SiteNotice.js";
 import { RouteScroll } from "./components/RouteScroll.js";
 import { SupportDock } from "./components/SupportDock.js";
@@ -55,6 +56,7 @@ function StripLegacyPrefix() {
 
 export default function App() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {
@@ -83,6 +85,7 @@ export default function App() {
         </SiteNotice>
       )}
       <VisionPanel />
+      <div style={{ paddingBottom: "var(--tabs-h, 0px)" }}>
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <RouteScroll />
@@ -122,6 +125,8 @@ export default function App() {
         </Routes>
       </Suspense>
       </ErrorBoundary>
+      </div>
+      {!pathname.startsWith("/admin") && <MobileTabs />}
       <SupportDock />
       <PageViewBeacon />
       <CookieBanner />

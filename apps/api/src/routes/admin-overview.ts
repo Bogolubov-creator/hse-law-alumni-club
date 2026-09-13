@@ -1,3 +1,4 @@
+import { buildSystemHealth } from "../lib/system-health.js";
 import type { FastifyInstance } from "fastify";
 import { readItems } from "@directus/sdk";
 import { z } from "zod";
@@ -11,6 +12,12 @@ const di = directus;
 
 export async function adminOverviewRoutes(app: FastifyInstance) {
 
+
+  app.get("/admin/system-health", { config: { rateLimit: { max: 12, timeWindow: "1 minute" } } }, async (req, reply) => {
+    if (!requireAdmin(req, reply)) return reply;
+    reply.header("Cache-Control", "no-store");
+    return buildSystemHealth();
+  });
 
   // Обзор: вся статистика сайта одним запросом.
   app.get("/admin/overview", async (req, reply) => {

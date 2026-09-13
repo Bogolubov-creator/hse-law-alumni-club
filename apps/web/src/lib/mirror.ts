@@ -589,6 +589,12 @@ function mirrorGet(path: string): Response | null {
   // Демо-профили используют инициалы вместо отсутствующего фото.
 
   // ── Админка ──
+  if (clean === "/admin/system-health") return jsonResponse({
+    checked_at: new Date().toISOString(), uptime_seconds: null, status: "partial",
+    checks: ["API сайта", "CMS · Directus", "База заявок · PostgreSQL", "Telegram-бот", "Электронная почта", "Push-уведомления"].map((name, i) => ({
+      id: String(i), name, status: "unknown", detail: "На статическом зеркале не проверяется",
+    })),
+  });
   if (clean === "/admin/overview") return jsonResponse(OVERVIEW);
   if (clean === "/admin/analytics") return jsonResponse(analytics(q?.get("range") || "30d"));
   if (clean === "/admin/analytics/export.csv") {

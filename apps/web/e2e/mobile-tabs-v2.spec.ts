@@ -4,9 +4,7 @@ import { seedClientStorage, stubSw, mockPublicApi } from "./harness.js";
 test.beforeEach(async ({ page }) => { await mockPublicApi(page); });
 
 /**
- * Телефон после решения заказчика 12.09: публичные страницы – та же адаптивная
- * вёрстка с бургер-меню в шапке; нижняя панель вкладок (ClubTabBar) осталась
- * только кабинету.
+ * Телефон: адаптивные страницы, меню шапки и общая нижняя навигация (14.09).
  */
 
 const tabs = (page: Page) => page.getByRole("navigation", { name: "Основные разделы" });
@@ -19,9 +17,9 @@ test.describe("Меню шапки на телефоне", () => {
     await page.setViewportSize({ width: 390, height: 844 });
   });
 
-  test("на публичных страницах панели вкладок нет, есть бургер", async ({ page }) => {
+  test("на публичных страницах есть панель вкладок и бургер", async ({ page }) => {
     await page.goto("/events");
-    await expect(tabs(page)).toHaveCount(0);
+    await expect(tabs(page)).toBeVisible();
     await expect(page.getByRole("button", { name: "Открыть меню" })).toBeVisible();
   });
 
@@ -89,4 +87,27 @@ test.describe("cookie-баннер на телефоне", () => {
     await accept.click();
     await expect(accept).toHaveCount(0);
   });
+});
+
+test("общая панель: переходы, высота, отсутствие дублей и отключение на desktop", async ({ page }) => {
+  await stubSw(page);
+  await seedClientStorage(page);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto("/");
+  for (const [label, path] of [["Лента", "/news"], ["ДПО", "/dpo"], ["Мерч", "/merch"], ["Кабинет", "/lk"], ["Карта", "/"]]) {
+    await expect(tabs(page)).toHaveCount(1);
+    await tabs(page).getByRole("link", { name: label!, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${path}/?$`));
+    await expect(tabs(page).getByRole("link", { name: label!, exact: true })).toHaveAttribute("aria-current", "page");
+  }
+  const panelHeight = await tabs(page).evaluate((nav) => nav.getBoundingClientRect().height);
+  await expect.poll(() => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tabs-h")))).toBe(panelHeight);
+  for (const link of await tabs(page).getByRole("link").all()) {
+    const box = await link.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(tabs(page)).toBeHidden();
+  await expect.poll(() => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tabs-h")))).toBe(0);
 });

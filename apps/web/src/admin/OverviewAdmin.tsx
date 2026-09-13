@@ -1,3 +1,4 @@
+import { DashboardAdmin } from "./DashboardAdmin.js";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ORDER_STATUS_RU } from "@club/shared";
@@ -38,6 +39,8 @@ export function Overview({ onGo }: { onGo: (s: Section) => void }) {
   ] as { label: string; value: number; note?: string; act?: boolean }[];
   return (
     <>
+      <DashboardAdmin onAnalytics={() => onGo("analytics")} />
+      {!d ? <p role="status">{ov.isError ? "Операционная сводка недоступна." : "Загружаем сводку…"}</p> : <>
       <Panel>
         <PanelTitle>Требует действия</PanelTitle>
         {inbox.length === 0 && (
@@ -114,6 +117,7 @@ export function Overview({ onGo }: { onGo: (s: Section) => void }) {
         <PushBroadcast subs={d?.push_subs_count ?? 0} />
       </div>
       {sel && <MemberModal member={sel} onClose={() => setSel(null)} />}
+      </>}
     </>
   );
 }
