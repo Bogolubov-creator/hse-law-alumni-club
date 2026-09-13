@@ -13,7 +13,7 @@ test('герой входит один раз, reduced motion гасит дви�
  await page.emulateMedia({reducedMotion:'reduce'});await page.reload();
  expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBe(0);
  expect(await page.locator('.home-agenda').evaluate(e=>getComputedStyle(e).opacity)).toBe('1');
- await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.getByRole('link',{name:/Вступить в клуб/})).toBeVisible();
+ await expect(page.getByRole('heading',{level:1})).toBeVisible();await expect(page.locator('.home-hero').getByRole('link',{name:/Вступить в клуб/})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
 test('афиша фильтрует название, место и формат без потери прямых ссылок',async({page},info)=>{

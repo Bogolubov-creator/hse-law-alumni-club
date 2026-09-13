@@ -3,8 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { isAndroid } from "../lib/use-mobile.js";
 
 /**
- * Единая нижняя панель: Карта · Лента · ДПО · Мерч · Кабинет.
- * Подкасты и корзина – из шапки/карты; здесь один набор пунктов для витрин и ЛК.
+ * Единая нижняя панель: Клуб · Лента · ДПО · Мерч · Кабинет.
+ * Подкасты и корзина – из шапки/главной; здесь один набор пунктов для витрин и ЛК.
  */
 
 const ANDROID = isAndroid();
@@ -21,9 +21,9 @@ type Tab = {
 export const CLUB_TABS: Tab[] = [
   {
     to: "/",
-    label: "Карта",
-    match: (p) => p === "/",
-    icon: (<><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M3 10h18" /><path d="M7 15h5" /></>),
+    label: "Клуб",
+    match: (p) => p === "/" || p === "/tg",
+    icon: (<><path d="M3 10l9-7 9 7M5 9v12h14V9M9 21v-7h6v7" /></>),
   },
   {
     to: "/news",
@@ -120,7 +120,7 @@ export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
               <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 62, height: 32, borderRadius: 16, background: on ? "color-mix(in srgb, var(--c-accent) 16%, transparent)" : "transparent" }}>
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{t.icon}</svg>
               </span>
-              <span style={{ ...MONO, fontSize: 11, letterSpacing: ".02em", color: col }}>{t.label}</span>
+              <span style={{ ...MONO, fontSize: 12, letterSpacing: ".02em", color: col }}>{t.label}</span>
             </Link>
           );
         }
@@ -139,11 +139,11 @@ export function ClubTabBar({ active: activeProp, variant = "fixed" }: Props) {
               gap: 4,
               padding: "5px 0",
               textDecoration: "none",
-              color: on ? "#EC5A13" : "#6E675A",
+              color: on ? "var(--c-accent-text)" : "var(--c-text-3)",
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{t.icon}</svg>
-            <span style={{ ...MONO, fontSize: 11, letterSpacing: ".02em" }}>{t.label}</span>
+            <span style={{ ...MONO, fontSize: 12, letterSpacing: ".02em" }}>{t.label}</span>
           </Link>
         );
       })}

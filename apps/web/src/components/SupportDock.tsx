@@ -1,3 +1,4 @@
+import { isMiniApp } from "../telegram/bridge.js";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useIsMobile } from "../lib/use-mobile.js";
@@ -26,7 +27,8 @@ export function SupportDock() {
   const mobile = useIsMobile();
   const pwa = useIsPwaShell();
   const compact = mobile || pwa;
-  const hidden = pathname.startsWith("/admin") || pathname.includes("/support");
+  // На главной мини-приложения помощь доступна отдельной карточкой.
+  const hidden = pathname.startsWith("/admin") || pathname.includes("/support") || ((isMiniApp() || pwa) && (pathname === "/" || pathname === "/tg"));
 
   useEffect(() => {
     if (hidden) return;

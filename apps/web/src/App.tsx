@@ -1,3 +1,7 @@
+import { TelegramShell } from "./telegram/TelegramShell.js";
+import { isMiniApp } from "./telegram/bridge.js";
+import MiniHome from "./telegram/MiniHome.js";
+import { useIsPwaShell } from "./lib/use-pwa.js";
 import { MobileTabs } from "./v2/MobileTabs.js";
 import { SiteNotice } from "./components/SiteNotice.js";
 import { RouteScroll } from "./components/RouteScroll.js";
@@ -55,6 +59,7 @@ function StripLegacyPrefix() {
 }
 
 export default function App() {
+  const pwa = useIsPwaShell();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -84,13 +89,15 @@ export default function App() {
           {" · отправка заявок отключена"}
         </SiteNotice>
       )}
+      <TelegramShell />
       <VisionPanel />
       <div style={{ paddingBottom: "var(--tabs-h, 0px)" }}>
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <RouteScroll />
         <Routes>
-          <Route path="/" element={<HomeV2 />} />
+          <Route path="/" element={isMiniApp() || pwa ? <MiniHome /> : <HomeV2 />} />
+          <Route path="/tg" element={<MiniHome />} />
           <Route path="/support" element={<SupportV2 />} />
           <Route path="/support/consent" element={<SupportConsent />} />
           <Route path="/dpo" element={<DpoV2 />} />

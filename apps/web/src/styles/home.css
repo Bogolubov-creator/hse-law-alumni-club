@@ -297,7 +297,7 @@
 
 /* Встреча: фото растворяется в чёрную подпись */
 .home-meeting__photo::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(20 24 31 / 0.12) 0%, transparent 35%, transparent 62%, var(--p-ink) 100%); }
-.home-meeting__caption { background: linear-gradient(180deg, var(--p-ink) 0%, var(--p-ink-raised) 100%); }
+.home-meeting__caption { background: var(--p-ink) linear-gradient(180deg, var(--p-ink) 0%, var(--p-ink-raised) 100%); }
 
 /* Голос выпускника: портрет уходит в свет полосы */
 .home-voice { background: linear-gradient(180deg, var(--c-bg-sunken) 0%, var(--c-bg) 100%); }

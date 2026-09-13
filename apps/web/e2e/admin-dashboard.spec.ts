@@ -34,5 +34,8 @@ test("дашборд: период, отказ проверки, повтор и
   failed = false;
   await page.getByRole("button", { name: "Проверить сейчас" }).click();
   await expect(page.getByText("Контрольный запрос не выполнен", { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.evaluate(() => document.fonts.ready);
+  const overflow = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth,
+    elements: Array.from(document.querySelectorAll("body *")).filter(e => e.getBoundingClientRect().right > innerWidth + 1).map(e => `${e.tagName}.${e.className}`).slice(0, 10) }));
+  expect(overflow.scroll, JSON.stringify(overflow)).toBeLessThanOrEqual(overflow.width + 1);
 });

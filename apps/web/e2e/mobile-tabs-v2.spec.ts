@@ -69,7 +69,7 @@ test.describe("Панель вкладок в кабинете", () => {
     await page.goto("/lk");
     await expect(tabs(page)).toBeVisible();
     await expect(tabs(page).getByRole("link", { name: "Кабинет" })).toHaveAttribute("aria-current", "page");
-    await expect(tabs(page).getByRole("link", { name: "Карта" })).not.toHaveAttribute("aria-current", "page");
+    await expect(tabs(page).getByRole("link", { name: "Клуб" })).not.toHaveAttribute("aria-current", "page");
   });
 });
 
@@ -94,7 +94,7 @@ test("общая панель: переходы, высота, отсутств�
   await seedClientStorage(page);
   await page.setViewportSize({ width: 320, height: 740 });
   await page.goto("/");
-  for (const [label, path] of [["Лента", "/news"], ["ДПО", "/dpo"], ["Мерч", "/merch"], ["Кабинет", "/lk"], ["Карта", "/"]]) {
+  for (const [label, path] of [["Лента", "/news"], ["ДПО", "/dpo"], ["Мерч", "/merch"], ["Кабинет", "/lk"], ["Клуб", "/"]]) {
     await expect(tabs(page)).toHaveCount(1);
     await tabs(page).getByRole("link", { name: label!, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${path}/?$`));

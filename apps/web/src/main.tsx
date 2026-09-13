@@ -1,3 +1,4 @@
+import { prepareTelegram } from "./telegram/bridge.js";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -24,6 +25,7 @@ if (serviceWorker && enableSw) {
 }
 
 async function start() {
+  await prepareTelegram();
   // Перехват должен быть готов до первых запросов React; обычная сборка его не включает.
   if (import.meta.env.VITE_MIRROR === "true") {
     const { installMirrorFetch } = await import("./lib/mirror.js");

@@ -1,3 +1,4 @@
+import { isMiniApp } from "../telegram/bridge.js";
 import { programStart } from "../lib/program-date.js";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -68,6 +69,14 @@ export default function DpoV2() {
       { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") },
     );
 
+  const advancedFilters = <>
+            <label>Направление<select style={field} value={dir} onChange={(e) => update("direction", e.target.value)}><option value="">Все направления</option>{directions.map((d) => <option key={d}>{d}</option>)}</select></label>
+            <label>Формат<select style={field} value={format} onChange={(e) => update("format", e.target.value)}><option value="">Все форматы</option>{formats.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f] ?? f}</option>)}</select></label>
+            <label>Документ<select style={field} value={document} onChange={(e) => update("document", e.target.value)}><option value="">Все документы</option>{documents.map((d) => <option key={d}>{d}</option>)}</select></label>
+            <label>Порядок<select style={field} value={sort} onChange={(e) => update("sort", e.target.value)}><option value="title">По названию</option><option value="price">По цене</option><option value="start">По дате начала</option></select></label>
+            <button type="button" className="foc club-btn club-btn--secondary" onClick={() => setParams(selected.length ? { compare: selected.join(",") } : {})}>Сбросить фильтры</button>
+  </>;
+
   return (
     <V2Shell>
       <main id="main" className="club-dpo-vitrine">
@@ -112,11 +121,7 @@ export default function DpoV2() {
 
           <form className="club-catalog-filters" onSubmit={(e) => e.preventDefault()} aria-label="Фильтры программ">
             <label>Поиск программы<input type="search" style={field} value={search} onChange={(e) => update("q", e.target.value)} placeholder="Название или направление" /></label>
-            <label>Направление<select style={field} value={dir} onChange={(e) => update("direction", e.target.value)}><option value="">Все направления</option>{directions.map((d) => <option key={d}>{d}</option>)}</select></label>
-            <label>Формат<select style={field} value={format} onChange={(e) => update("format", e.target.value)}><option value="">Все форматы</option>{formats.map((f) => <option key={f} value={f}>{FORMAT_LABEL[f] ?? f}</option>)}</select></label>
-            <label>Документ<select style={field} value={document} onChange={(e) => update("document", e.target.value)}><option value="">Все документы</option>{documents.map((d) => <option key={d}>{d}</option>)}</select></label>
-            <label>Порядок<select style={field} value={sort} onChange={(e) => update("sort", e.target.value)}><option value="title">По названию</option><option value="price">По цене</option><option value="start">По дате начала</option></select></label>
-            <button type="button" className="foc club-btn club-btn--secondary" onClick={() => setParams(selected.length ? { compare: selected.join(",") } : {})}>Сбросить фильтры</button>
+            {isMiniApp() ? <details className="mini-catalog-options"><summary>Фильтры и сортировка</summary><div>{advancedFilters}</div></details> : advancedFilters}
           </form>
 
           <p className="club-dpo-status" role="status">

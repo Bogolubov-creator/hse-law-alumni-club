@@ -1,3 +1,4 @@
+import { seedClientStorage } from "./harness.js";
 import { test, expect, type Page } from "@playwright/test";
 
 /**
@@ -28,7 +29,7 @@ async function stubSw(page: Page) {
  */
 async function addProgram(page: Page): Promise<string> {
   await page.goto("/dpo");
-  const row = page.locator("article.v2-prog")
+  const row = page.locator("article.club-dpo-tile")
     .filter({ has: page.getByRole("button", { name: "В корзину" }) })
     .first();
   await expect(row).toBeVisible();
@@ -49,7 +50,7 @@ const ORDER = {
 };
 
 test.describe("Корзина v2", () => {
-  test.beforeEach(async ({ page }) => { await stubSw(page); });
+  test.beforeEach(async ({ page }) => { await stubSw(page); await seedClientStorage(page); });
 
   test("пустая корзина ведёт в витрины v2, а не в старые", async ({ page }) => {
     await page.goto("/cart");
@@ -114,7 +115,7 @@ test.describe("Корзина v2", () => {
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Оформить заявку" }).click();
 
-    await expect(page.getByRole("heading", { name: "Заявка в работе у учебного офиса" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Заявка отправлена в учебный офис" })).toBeVisible();
     await expect(page.getByText("ORD-000999")).toBeVisible();
 
     const body = sent as unknown as Record<string, unknown>;
@@ -140,7 +141,7 @@ test.describe("Корзина v2", () => {
     await page.getByRole("button", { name: "Оформить заявку" }).click();
 
     await expect(page.getByRole("alert")).toContainText("уведомление офиса не прошло");
-    await expect(page.getByRole("link", { name: "@pravohse" })).toBeVisible();
+    await expect(page.getByRole("alert").getByRole("link")).toHaveAttribute("href", /^https:\/\/t.me\//);
   });
 
   test("ошибка сервера показывается, корзина не теряется", async ({ page }) => {

@@ -25,7 +25,7 @@ test.describe("Новости v2", () => {
     const first = page.locator("article.v2-row").first();
     await expect(first).toBeVisible();
     const title = (await first.locator("h2").innerText()).trim();
-    await first.getByRole("link", { name: "читать →" }).click();
+    await first.getByRole("link", { name: `Читать: ${title}`, exact: true }).click();
 
     await expect(page).toHaveURL(/\/news\/[a-z0-9-]+$/);
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
@@ -73,7 +73,7 @@ test.describe("События v2", () => {
 
   test("афиша показывает ближайшие события с датой и местом", async ({ page }) => {
     await page.goto("/events");
-    await expect(page.getByRole("heading", { level: 1, name: "События и встречи клуба" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "События клуба" })).toBeVisible();
     await expect(page.locator("article.v2-row").first()).toBeVisible();
   });
 
@@ -143,9 +143,10 @@ test.describe("Подкасты v2", () => {
     }));
     await page.goto("/podcasts");
 
-    await expect(page.getByText("пробный выпуск · бесплатно")).toBeVisible();
+    await expect(page.getByText("Пробный выпуск, бесплатно")).toBeVisible();
+    await expect(page.getByText("По подписке", { exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Прослушать", exact: true }).click();
     await expect(page.locator("audio")).toHaveCount(1);
-    await expect(page.getByText(/доступно по подписке/)).toBeVisible();
   });
 
   test("гостя ведут в кабинет v2, а не в старый", async ({ page }) => {
@@ -155,7 +156,7 @@ test.describe("Подкасты v2", () => {
     await page.goto("/podcasts");
 
     const cta = page.getByRole("link", { name: "Войти в кабинет" });
-    await expect(cta).toHaveAttribute("href", "/lk");
+    await expect(cta).toHaveAttribute("href", "/lk?next=%2Fpodcasts%23podcast-subscription");
   });
 
   test("активная подписка показывается вместо предложения купить", async ({ page }) => {
@@ -175,6 +176,8 @@ test.describe("Подкасты v2", () => {
       body: JSON.stringify({ ...PODCASTS, items: [{ ...PODCASTS.items[0], title: "Видеовыпуск клуба", video_url: RUTUBE_SRC }] }),
     }));
     await page.goto("/podcasts");
+
+    await page.getByRole("link", { name: "Прослушать", exact: true }).click();
 
     let videoRequests = 0;
     await page.route("https://rutube.ru/**", async route => { videoRequests++; await route.fulfill({ contentType: "text/html", body: "<p>Тестовый плеер</p>" }); });
@@ -200,7 +203,7 @@ test.describe("Подкасты v2", () => {
 
     await expect(page.locator("iframe")).toHaveCount(0);
     await expect(page.locator("audio")).toHaveCount(0);
-    await expect(page.getByText(/доступно по подписке/)).toBeVisible();
+    await expect(page.getByText("По подписке", { exact: true })).toBeVisible();
   });
 
   test("на телефоне разделы не едут вбок", async ({ page }) => {

@@ -40,10 +40,10 @@ async function mockProgram(page: Page, over: Record<string, unknown> = {}) {
 test.describe("Программа v2", () => {
   test("реальная программа каталога открывается из витрины", async ({ page }) => {
     await page.goto("/dpo");
-    const row = page.locator("article.v2-prog")
+    const row = page.locator("article.club-dpo-tile")
       .filter({ has: page.getByRole("button", { name: "В корзину" }) }).first();
     const title = (await row.locator("h2").innerText()).trim();
-    await row.getByRole("link", { name: "Подробнее" }).click();
+    await row.locator(".club-dpo-tile__link").click();
 
     await expect(page).toHaveURL(/\/dpo\/[a-z0-9-]+$/);
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
@@ -54,7 +54,7 @@ test.describe("Программа v2", () => {
     await mockProgram(page);
     await page.goto("/dpo/test-program");
 
-    await expect(page.getByText("3 модуля · 48 ак. ч.")).toBeVisible();
+    await expect(page.getByText("3 раздела · 48 ак. ч.")).toBeVisible();
 
     // Первый модуль открыт по умолчанию – содержание видно сразу
     await expect(page.getByText("Простая письменная форма")).toBeVisible();
@@ -105,10 +105,10 @@ test.describe("Программа v2", () => {
       Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
     });
     await page.goto("/dpo");
-    const row = page.locator("article.v2-prog")
+    const row = page.locator("article.club-dpo-tile")
       .filter({ has: page.getByRole("button", { name: "В корзину" }) }).first();
     const title = (await row.locator("h2").innerText()).trim();
-    await row.getByRole("link", { name: "Подробнее" }).click();
+    await row.locator(".club-dpo-tile__link").click();
 
     await Promise.all([
       page.waitForResponse((r) => r.url().includes("/api/cart") && r.request().method() !== "GET" && r.ok()),

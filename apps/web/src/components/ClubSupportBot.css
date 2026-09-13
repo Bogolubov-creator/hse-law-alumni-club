@@ -261,9 +261,9 @@
   .club-bot-panel {
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px));
     width: 100%;
-    max-height: 82vh;
+    max-height: min(82dvh, calc(100dvh - var(--tabs-h, 0px) - var(--cookie-h, 0px) - 24px));
     border-radius: 18px 18px 0 0;
   }
 }

@@ -91,7 +91,10 @@ test.describe("1.4.11 Контраст нетекстовых элементов
           // Белая кнопка на кости не различима заливкой, но различима рамкой.
           const byFill = own.a >= 1 ? ratio(cs.backgroundColor, around) : 0;
           const byBorder = ratio(cs.borderTopColor, around);
-          const r = Math.max(byFill, byBorder);
+          // Иконка также обозначает действие, даже без рамки вокруг кнопки.
+          const svg = el.querySelector("svg");
+          const byIcon = svg ? ratio(getComputedStyle(svg).stroke, around) : 0;
+          const r = Math.max(byFill, byBorder, byIcon);
           if (r < 3) bad.push({ el: (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 24), r: Math.round(r * 100) / 100 });
         }
         return bad;

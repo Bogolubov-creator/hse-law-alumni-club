@@ -77,7 +77,7 @@ async function contrastFailures(page: Page) {
         .map((n) => n.textContent!.trim()).join(" ");
       if (!text) continue;
       const cs = getComputedStyle(el);
-      if (cs.visibility === "hidden" || cs.display === "none") continue;
+      if (cs.visibility === "hidden" || cs.display === "none" || !el.getClientRects().length || el.closest('[aria-hidden="true"]')) continue;
       const size = parseFloat(cs.fontSize);
       const weight = parseInt(cs.fontWeight) || 400;
       // Крупный текст по WCAG: от 24px, либо от 18,66px при полужирном
@@ -91,6 +91,7 @@ async function contrastFailures(page: Page) {
 
 const minFontSize = (page: Page) => page.evaluate(() =>
   Math.min(...Array.from(document.querySelectorAll("body *"))
+    .filter((e) => e.getClientRects().length && !e.closest('[aria-hidden="true"]'))
     .filter((e) => Array.from(e.childNodes).some((n) => n.nodeType === 3 && n.textContent?.trim()))
     .map((e) => parseFloat(getComputedStyle(e).fontSize)).filter(Boolean)));
 

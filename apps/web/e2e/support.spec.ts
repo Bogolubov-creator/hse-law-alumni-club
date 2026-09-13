@@ -1,10 +1,10 @@
 import {test,expect} from '@playwright/test';
 import {readFileSync,mkdirSync} from 'node:fs';
-const vars=Object.fromEntries(readFileSync('/Users/macbook/alumni-staged-evidence/local.env','utf8').split('\n').filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
+const vars=Object.fromEntries(readFileSync(process.env.LOCAL_QA_ENV || '/Users/macbook/alumni-staged-evidence/local.env','utf8').split('\n').filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
 test('поддержка: посетитель, ответ администратора, повторный вход и удаление',async({page,context,request},info)=>{
  test.setTimeout(60000);const out='/Users/macbook/alumni-staged-evidence/support';mkdirSync(out,{recursive:true});
- await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});
- await page.goto('/');await page.getByRole('link',{name:'Обратиться в поддержку'}).click();
+ await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','all');localStorage.setItem('club_pwa_dismiss','1')});
+ await page.goto('/support');
  const outgoing:string[]=[];page.on('request',r=>{if(new URL(r.url()).origin!==new URL(page.url()).origin)outgoing.push(r.url())});
  await expect(page.getByRole('button',{name:'Отправить обращение',exact:true})).toBeDisabled();
  await page.getByLabel('Сообщение',{exact:true}).fill('Тестовый вопрос <img src=x onerror=alert(1)>');

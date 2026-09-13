@@ -19,10 +19,12 @@ export async function authRoutes(app: FastifyInstance) {
   // Вход через Telegram Mini App (initData). BLOCKED без TELEGRAM_BOT_TOKEN.
   app.post("/auth/telegram", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram mini-app не настроен (нет TELEGRAM_BOT_TOKEN)" });
-    const { initData } = z.object({ initData: z.string().min(1) }).parse(req.body);
+    const { initData } = z.object({ initData: z.string().min(1).max(16384) }).parse(req.body);
     const v = validateInitData(initData, env.TELEGRAM_BOT_TOKEN, { maxAgeSec: 86400 });
     if (!v.ok) return reply.code(401).send({ error: "Невалидная подпись Telegram" });
-    const tgId = String((v.user as any)?.id ?? "");
+    const userId = (v.user as { id?: unknown } | null)?.id;
+    if (typeof userId !== "number" || !Number.isSafeInteger(userId) || userId <= 0) return reply.code(401).send({ error: "Нет корректного пользователя Telegram" });
+    const tgId = String(userId);
     const rows = (await directus.request(readItems("alumni", {
       filter: { telegram_id: { _eq: tgId } }, limit: 1,
       // token_version обязателен: resolveAlumni сверяет его с версией в токене.

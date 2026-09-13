@@ -75,6 +75,8 @@ async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
       sessionStorage.setItem("admin-fixture-seeded", "1");
     }
   });
+  await page.route("**/api/admin/analytics**", r => r.fulfill({ json: { pulse: {}, series: { pageviews_by_day: [] }, pageviews: { hits: 0, paths_top: [] } } }));
+  await page.route("**/api/admin/system-health", r => r.fulfill({ json: { checked_at: new Date().toISOString(), status: "unknown", checks: [] } }));
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   await page.route("**/api/admin/overview", (r) => r.fulfill(json(over.overview ?? OVERVIEW)));
   await page.route("**/api/admin/orders**", (r) =>
@@ -188,7 +190,7 @@ test.describe("Админ-панель", () => {
       ["Контент", "Контент"],
       ["Подписки", "Подписки на подкасты"],
       ["Журнал", "Журнал безопасности"],
-      ["Обзор", "Обзор"],
+      ["Дашборд", "Дашборд сайта"],
     ] as const) {
       await page.getByRole("button", { name: new RegExp(btn) }).click();
       await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
@@ -262,7 +264,7 @@ test.describe("Админ-панель", () => {
     await page.route("**/api/admin/overview", (r) => r.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
     await page.goto("/admin");
     // 5xx – это не разлогин: офис должен увидеть ретрай, а не форму входа
-    await expect(page.getByRole("button", { name: "Повторить" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Повторить", exact: true }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Войти" })).toHaveCount(0);
   });
 });

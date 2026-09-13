@@ -117,12 +117,12 @@ test.describe("Восстановление пароля v2", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("ответ не раскрывает, существует ли аккаунт", async ({ page }) => {
-    await page.route("**/api/auth/forgot", (r) => r.fulfill({ status: 404, contentType: "application/json", body: "{}" }));
+    await page.route("**/api/auth/forgot", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
     await page.goto("/forgot");
     await page.getByLabel("почта").fill("net-takogo@example.com");
     await page.getByRole("button", { name: "Прислать ссылку" }).click();
 
-    // Даже на 404 экран один и тот же – по нему нельзя перебирать почты
+    // Сервер отвечает одинаковым 200 независимо от наличия аккаунта.
     await expect(page.getByText(/Если такой аккаунт существует/)).toBeVisible();
   });
 

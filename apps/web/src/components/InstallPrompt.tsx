@@ -1,3 +1,4 @@
+import { isMiniApp } from "../telegram/bridge.js";
 import { useEffect, useRef, useState } from "react";
 import { hasCookieChoice } from "../lib/cookie-consent.js";
 
@@ -28,7 +29,7 @@ export default function InstallPrompt() {
   const [show, setShow] = useState(false);
   const [ios, setIos] = useState(false);
   const promptRef = useRef<HTMLDivElement>(null);
-  const visible = show && !isStandalone() && (ios || !!deferred);
+  const visible = !isMiniApp() && show && !isStandalone() && (ios || !!deferred);
 
   useEffect(() => {
     if (isStandalone() || localStorage.getItem(DISMISS_KEY)) return;
