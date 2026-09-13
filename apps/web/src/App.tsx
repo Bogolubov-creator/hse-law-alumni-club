@@ -1,5 +1,5 @@
 import { TelegramShell } from "./telegram/TelegramShell.js";
-import { isMiniApp } from "./telegram/bridge.js";
+import { isMiniApp, useTelegramApp } from "./telegram/bridge.js";
 import MiniHome from "./telegram/MiniHome.js";
 import { useIsPwaShell } from "./lib/use-pwa.js";
 import { MobileTabs } from "./v2/MobileTabs.js";
@@ -59,6 +59,7 @@ function StripLegacyPrefix() {
 }
 
 export default function App() {
+  useTelegramApp();
   const pwa = useIsPwaShell();
   const navigate = useNavigate();
   const { pathname } = useLocation();

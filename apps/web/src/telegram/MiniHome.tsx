@@ -5,7 +5,7 @@ import { V2Shell } from "../v2/Shell.js";
 import { publicUrl, isMirror } from "../lib/public-url.js";
 import { requestJson } from "../lib/http.js";
 import { usePrograms, token } from "../lib/cart.js";
-import { telegramApp } from "./bridge.js";
+import { useTelegramApp } from "./bridge.js";
 import { apiGet } from "../lib/api.js";
 import { fmtEventDate, type ClubEvent } from "../lib/events.js";
 import { useHead } from "../lib/title.js";
@@ -20,14 +20,15 @@ export default function MiniHome() {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const canTelegramLogin = !isMirror && !!telegramApp()?.initData;
+  const tg = useTelegramApp();
+  const canTelegramLogin = !isMirror && !!tg?.initData;
   async function login() {
     if (!canTelegramLogin || busy) return;
     setBusy(true); setError("");
     try {
       const data = await requestJson<{ token: string }>("/auth/telegram", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ initData: telegramApp()!.initData }),
+        body: JSON.stringify({ initData: tg!.initData }),
       }, { errorMessage: (status) => status === 404 ? "Telegram ещё не привязан к профилю. Войдите в кабинет по почте и подключите его в профиле." : status === 401 ? "Сессия Telegram устарела. Закройте и снова откройте мини-приложение." : "Вход через Telegram сейчас недоступен. Можно войти по почте." });
       if (!data.token) throw new Error("Не удалось подтвердить вход.");
       localStorage.setItem("club_token", data.token);

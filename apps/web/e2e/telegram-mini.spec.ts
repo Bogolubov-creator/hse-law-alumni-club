@@ -6,6 +6,41 @@ test.beforeEach(async ({ page }) => {
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) => route.abort());
 });
 
+test("прямая ссылка открывает раздел один раз и сохраняет нижнее меню", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/tg?startapp=dpo");
+  await expect(page).toHaveURL(/\/dpo$/);
+  const tabs = page.getByRole("navigation", { name: "Основные разделы" });
+  await expect(tabs).toBeVisible();
+  await tabs.getByRole("link", { name: "Клуб", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /Свои люди/ })).toBeVisible();
+  await page.goto("/tg?startapp=admin");
+  await expect(page.getByRole("heading", { name: /Свои люди/ })).toBeVisible();
+});
+
+test("поздний SDK подключается без перезагрузки и сохраняет выбранный экран", async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route("https://telegram.org/js/telegram-web-app.js", async route => {
+    await gate;
+    await route.fulfill({ contentType: "application/javascript", body: `window.Telegram = { WebApp: {
+      initData: "opaque-test", initDataUnsafe: { start_param: "news" },
+      ready() {}, expand() {}, isVersionAtLeast() { return true; },
+      setBottomBarColor(color) { window.testBottomColor = color; },
+      onEvent() {}, offEvent() {}
+    }};` });
+  });
+  await page.goto("/tg", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Предпросмотр мини-приложения", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("navigation", { name: "Основные разделы" }).getByRole("link", { name: "ДПО", exact: true }).click();
+  release();
+  await expect(page.getByText("Предпросмотр мини-приложения", { exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/dpo$/);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { testBottomColor: string }).testBottomColor)).toBe("#ffffff");
+  await page.getByRole("navigation", { name: "Основные разделы" }).getByRole("link", { name: "Клуб", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Войти через Telegram" })).toBeVisible();
+});
+
 test("предпросмотр: общие каталоги, нижнее меню, возврат к сайту", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/tg");
