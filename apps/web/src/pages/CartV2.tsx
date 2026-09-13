@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CLUB_OPERATOR } from "@club/shared";
@@ -87,16 +87,21 @@ function Empty({ title, children }: { title: string; children: ReactNode }) {
 
 /* ── Экран подтверждения ──────────────────────────────────────────── */
 
-function Submitted({ result }: { result: OrderResult }) {
+export function Submitted({ result }: { result: OrderResult }) {
   const authed = !!token();
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
   return (
     <V2Shell>
       <main id="main" style={{ maxWidth: 620, margin: "0 auto", padding: "0 28px" }}>
         <div style={{ paddingTop: 64 }}>
           <Mark kind="scales" size={44} style={{ color: "var(--c-accent-text)" }} />
           <div style={{ ...label, color: "var(--c-ok-text)", marginTop: 20 }}>заявка принята</div>
-          <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: "12px 0 0" }}>
-            Заявка в работе у учебного офиса
+          <h1 ref={heading} tabIndex={-1} style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: "12px 0 0" }}>
+            Заявка отправлена в учебный офис
           </h1>
 
           {/* Номер – главные данные экрана, поэтому он крупный и моноширинный */}
@@ -106,11 +111,13 @@ function Submitted({ result }: { result: OrderResult }) {
           </div>
 
           <p style={{ margin: "20px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
-            Заявка <strong>сохранена</strong> в системе (номер выше). Учебный офис свяжется по указанным контактам.
+            Учебный офис проверит состав и сумму заявки и свяжется с вами по указанным контактам.
             {result.payment_url && " Оплатить можно сразу, кнопкой ниже."}
           </p>
           <p style={{ margin: "10px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
-            Сохранение заявки и доставка уведомления офису – разные шаги: заявка уже у вас в кабинете даже если письмо/Telegram временно не ушли.
+            {authed
+              ? "Следить за статусом можно в разделе «Мои заявки» в кабинете."
+              : "Сохраните номер заявки, чтобы назвать его при обращении в учебный офис. Вы оформили её без входа, поэтому в кабинете она не отображается."}
           </p>
 
           {/* Уведомление офиса не прошло – это надо сказать, а не спрятать */}
