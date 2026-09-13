@@ -615,7 +615,15 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/admin/products") return jsonResponse(PRODUCTS);
   if (clean === "/admin/news") return jsonResponse(NEWS);
   if (clean === "/admin/timeline") return jsonResponse(TIMELINE);
-  if (clean === "/admin/events") return jsonResponse(EVENTS);
+  if (clean === "/admin/events") {
+    if (!q?.has("page") && !q?.has("limit")) return jsonResponse(EVENTS);
+    const page = Math.max(1, Number(q?.get("page")) || 1), limit = Math.max(1, Math.min(100, Number(q?.get("limit")) || 20));
+    return jsonResponse({ items: EVENTS.slice((page - 1) * limit, page * limit).map(({ rsvps, ...e }) => ({ ...e, rsvp_count: rsvps.length })), total: EVENTS.length, page, limit });
+  }
+  if (/^\/admin\/events\/[^/]+\/rsvps$/.test(clean)) {
+    const event = EVENTS.find(e => e.id === clean.split("/")[3]);
+    return event ? jsonResponse(event.rsvps) : jsonResponse({ error: "Событие не найдено" }, 404);
+  }
   if (clean === "/admin/podcasts") return jsonResponse(PODCASTS.items);
   if (clean === "/admin/podcast-subs") {
     return jsonResponse({ active: 1, expiring_30d: 0, expired: 0, plays_total: 0, by_podcast: PODCASTS.items.map(p => ({ id: p.id, title: p.title, is_free: p.is_free, plays: 0, listeners: 0, plays_30d: 0 })), items: [{ id: 'mem-1', fio: 'Анна Соколова', cohort: '2024', until: PODCASTS.sub_until, days_left: Math.max(0, Math.ceil((Date.parse(PODCASTS.sub_until!) - Date.now()) / 86400000)), reminded: false, email: 'alumni@club.example.com' }] });

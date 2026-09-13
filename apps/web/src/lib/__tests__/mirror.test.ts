@@ -47,3 +47,15 @@ describe("демо-витрина", () => {
     expect(meSchema.parse((await request('/me')).data).alumni.avatar).toBeNull();
   });
 });
+
+it("админка зеркала делит события на страницы и отдаёт roster отдельно", async () => {
+  const legacy = await request("/admin/events");
+  const first = await request("/admin/events?page=1&limit=1");
+  expect(first.data.total).toBe(legacy.data.length);
+  expect(first.data.items).toHaveLength(1);
+  expect(first.data.items[0].rsvps).toBeUndefined();
+  expect(first.data.items[0].rsvp_count).toBe(legacy.data[0].rsvps.length);
+  const roster = await request(`/admin/events/${first.data.items[0].id}/rsvps`);
+  expect(roster.data).toEqual(legacy.data[0].rsvps);
+  expect((await request("/admin/events/missing/rsvps")).status).toBe(404);
+});

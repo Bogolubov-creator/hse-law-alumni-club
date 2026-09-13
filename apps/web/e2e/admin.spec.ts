@@ -83,8 +83,9 @@ async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
     r.request().method() === "GET" ? r.fulfill(json(over.members ?? MEMBERS)) : r.fulfill(json({ ok: true })));
   await page.route("**/api/admin/audit**", (r) => r.fulfill(json([]))); // ручка отдаёт массив, не страницу
   await page.route("**/api/admin/podcast-subs", (r) => r.fulfill(json(over.subs ?? SUBS)));
+  await page.route("**/api/admin/events**", r => r.fulfill(json({ items: [], total: 0, page: 1, limit: 20 })));
   // Остальные разделы контента – пустыми списками, чтобы не падали
-  for (const p of ["programs", "products", "news", "timeline", "podcasts", "events"]) {
+  for (const p of ["programs", "products", "news", "timeline", "podcasts"]) {
     await page.route(`**/api/admin/${p}**`, (r) =>
       r.request().method() === "GET" ? r.fulfill(json([])) : r.fulfill(json({ ok: true })));
   }
@@ -291,4 +292,44 @@ test("CMS сохраняет действующие поля и не перез�
   expect(Object.keys(saved.cta).sort()).toEqual(["button", "text"]);
   await expect(page.getByText("сохранено ✓ – уже на сайте")).toBeVisible();
   if (process.env.CLEANUP_SCREENSHOTS) await page.screenshot({ path: process.env.CLEANUP_SCREENSHOTS + "/cms-" + info.project.name + ".png", fullPage: true });
+});
+
+test("события: страницы, ленивый roster, повтор ошибки и отметка посещения", async ({ page }, info) => {
+  await mockAdmin(page);
+  let rosterReads = 0, attended = false, failRoster = true, deleted = false;
+  const requests: string[] = [];
+  await page.route("**/api/admin/events**", r => {
+    const url = new URL(r.request().url()); requests.push(url.pathname + url.search);
+    if (r.request().method() === "DELETE") { deleted = true; return r.fulfill({ json: { ok: true } }); }
+    if (url.pathname.endsWith("/attend")) { attended = true; return r.fulfill({ json: { ok: true } }); }
+    if (url.pathname.endsWith("/rsvps")) {
+      rosterReads++;
+      if (failRoster) return r.fulfill({ status: 503, json: { error: "Недоступно" } });
+      return r.fulfill({ json: [{ id: "r1", alumni_id: "a1", fio: "Участник встречи", attended }] });
+    }
+    const current = Number(url.searchParams.get("page") || 1);
+    return r.fulfill({ json: { items: deleted && current === 2 ? [] : [{ id: `e${current}`, title: current === 1 ? "Встреча выпускников" : "Семинар клуба", starts_at: "2026-10-01T16:00:00Z", points: 60, status: "published", rsvp_count: 1 }], total: deleted ? 20 : 21, page: current, limit: 20 } });
+  });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Контент", exact: true }).click();
+  await page.getByRole("button", { name: "События", exact: true }).click();
+  await expect(page.getByText("Страница 1 из 2")).toBeVisible();
+  expect(rosterReads).toBe(0);
+  await page.getByRole("button", { name: "Далее", exact: true }).click();
+  await expect(page.getByText("Семинар клуба", { exact: true })).toBeVisible();
+  expect(rosterReads).toBe(0);
+  await page.getByRole("button", { name: /Участники · 1/ }).click();
+  await expect(page.getByText("Не удалось загрузить участников.")).toBeVisible();
+  failRoster = false;
+  await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  await page.getByRole("button", { name: "Участник встречи · был?" }).click();
+  await expect(page.getByRole("button", { name: "Участник встречи ✓" })).toBeDisabled();
+  expect(requests).toContain("/api/admin/events?page=2&limit=20");
+  expect(requests).toContain("/api/admin/events/e2/rsvps");
+  expect(requests.some(r => r.includes("e1/rsvps"))).toBe(false);
+  if (process.env.CLEANUP_SCREENSHOTS) await page.screenshot({ path: process.env.CLEANUP_SCREENSHOTS + "/events-" + info.project.name + ".png", fullPage: true });
+  await page.getByRole("button", { name: "Удалить Семинар клуба", exact: true }).click();
+  await page.getByRole("button", { name: "Удалить", exact: true }).click();
+  await expect(page.getByText("Страница 1 из 1")).toBeVisible();
+  await expect(page.getByText("Встреча выпускников", { exact: true })).toBeVisible();
 });

@@ -12,6 +12,24 @@ import { announceEventByEmail } from "../lib/event-announce.js";
 
 const di = directus;
 
+const adminEventFields = ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"];
+
+type EventRsvp = { id: string; event_id: string; alumni_id: string; attended: boolean };
+
+async function eventRoster(eventId?: string) {
+  const rsvps = await di.request((readItems as any)("event_rsvps", {
+    ...(eventId ? { filter: { event_id: { _eq: eventId } } } : {}),
+    limit: -1, fields: ["id", "event_id", "alumni_id", "attended"],
+  })) as EventRsvp[];
+  const alumniIds = [...new Set(rsvps.map(r => r.alumni_id))];
+  const names = new Map<string, string>();
+  if (alumniIds.length) {
+    const rows = await di.request((readItems as any)("alumni", { filter: { id: { _in: alumniIds } }, limit: -1, fields: ["id", "fio"] })) as any[];
+    for (const row of rows) names.set(row.id, row.fio ?? "–");
+  }
+  return rsvps.map(r => ({ id: r.id, event_id: r.event_id, alumni_id: r.alumni_id, attended: r.attended, fio: names.get(r.alumni_id) ?? "–" }));
+}
+
 /**
  * Календарь событий клуба: публичная афиша, RSVP («Пойду») для верифицированных,
  * отметка посещения офисом → автоначисление баллов (reason=event, идемпотентно).
@@ -136,22 +154,34 @@ export async function eventsRoutes(app: FastifyInstance) {
 
   app.get("/admin/events", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    const events = (await di.request((readItems as any)("events", { sort: ["-starts_at"], limit: -1, fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"] }))) as any[];
-    const rsvps = (await di.request((readItems as any)("event_rsvps", { limit: -1, fields: ["id", "event_id", "alumni_id", "attended"] }))) as any[];
-    const alumniIds = [...new Set(rsvps.map((r) => r.alumni_id))];
-    const names = new Map<string, string | null>();
-    if (alumniIds.length) {
-      const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _in: alumniIds } }, limit: -1, fields: ["id", "fio"] }))) as any[];
-      for (const r of rows) names.set(r.id, r.fio);
+    const q = z.object({ page: z.coerce.number().int().min(1).max(1000000).optional(), limit: z.coerce.number().int().min(1).max(100).optional() }).parse(req.query);
+    if (q.page !== undefined || q.limit !== undefined) {
+      const page = q.page ?? 1, limit = q.limit ?? 20;
+      const [events, total] = await Promise.all([
+        di.request((readItems as any)("events", { sort: ["-starts_at", "id"], limit, offset: (page - 1) * limit, fields: adminEventFields })) as Promise<any[]>,
+        count("events"),
+      ]);
+      const groups = events.length ? await groupCount("event_rsvps", ["event_id"], { event_id: { _in: events.map(e => e.id) } }) : [];
+      const counts = new Map(groups.map(g => [g.event_id, g.count]));
+      return { items: events.map(e => ({ ...e, rsvp_count: counts.get(e.id) ?? 0 })), total, page, limit };
     }
-    // Одно распределение регистраций вместо повторного прохода для каждого события.
-    const byEvent = new Map<string, { id: string; alumni_id: string; fio: string; attended: boolean }[]>();
-    for (const r of rsvps) {
-      const roster = byEvent.get(r.event_id) ?? [];
-      roster.push({ id: r.id, alumni_id: r.alumni_id, fio: names.get(r.alumni_id) ?? "–", attended: r.attended });
-      byEvent.set(r.event_id, roster);
+    // Контракт без параметров сохранён для существующих внешних клиентов.
+    const events = await di.request((readItems as any)("events", { sort: ["-starts_at"], limit: -1, fields: adminEventFields })) as any[];
+    const byEvent = new Map<string, (Omit<EventRsvp, "event_id"> & { fio: string })[]>();
+    for (const { event_id, ...rsvp } of await eventRoster()) {
+      const roster = byEvent.get(event_id) ?? [];
+      roster.push(rsvp);
+      byEvent.set(event_id, roster);
     }
-    return events.map((e) => ({ ...e, rsvps: byEvent.get(e.id) ?? [] }));
+    return events.map(e => ({ ...e, rsvps: byEvent.get(e.id) ?? [] }));
+  });
+
+  app.get("/admin/events/:id/rsvps", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
+    const events = await di.request((readItems as any)("events", { filter: { id: { _eq: id } }, limit: 1, fields: ["id"] })) as any[];
+    if (!events.length) return reply.code(404).send({ error: "Событие не найдено" });
+    return (await eventRoster(id)).map(({ event_id: _eventId, ...rsvp }) => rsvp);
   });
 
   app.post("/admin/events", async (req, reply) => {

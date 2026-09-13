@@ -214,9 +214,13 @@ export function useAdminNews() {
   return useQuery({ queryKey: ["adm", "news"], queryFn: () => req<AdminNews[]>("GET", "/admin/news"), retry: false });
 }
 export type AdminEventRsvp = { id: string; alumni_id: string; fio: string; attended: boolean };
-export type AdminEvent = { id: string; title: string; description: string | null; starts_at: string; location: string | null; cover: string | null; reg_url: string | null; format: string; points: number; status: string; rsvps: AdminEventRsvp[] };
-export function useAdminEvents() {
-  return useQuery({ queryKey: ["adm", "events"], queryFn: () => req<AdminEvent[]>("GET", "/admin/events"), retry: false });
+export type AdminEvent = { id: string; title: string; description: string | null; starts_at: string; location: string | null; cover: string | null; reg_url: string | null; format: string; points: number; status: string; rsvp_count: number };
+export type AdminEventsPage = { items: AdminEvent[]; total: number; page: number; limit: number };
+export function useAdminEvents(page: number) {
+  return useQuery({ queryKey: ["adm", "events", "list", page], queryFn: () => req<AdminEventsPage>("GET", "/admin/events?page=" + page + "&limit=20"), retry: false });
+}
+export function useAdminEventRoster(id: string) {
+  return useQuery({ queryKey: ["adm", "events", "roster", id], queryFn: () => req<AdminEventRsvp[]>("GET", "/admin/events/" + id + "/rsvps"), retry: false });
 }
 export function useAdminPodcasts() {
   return useQuery({ queryKey: ["adm", "podcasts"], queryFn: () => req<AdminPodcast[]>("GET", "/admin/podcasts"), retry: false });

@@ -1,11 +1,15 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import Modal from "../components/Modal.js";
-import { useEventMutations, useAdminEvents, type AdminEvent } from "../lib/admin.js";
+import { useEventMutations, useAdminEvents, useAdminEventRoster, type AdminEvent } from "../lib/admin.js";
 import { FormField, ConfirmDelete } from "./common.js";
 
 export function EventsAdmin() {
-  const events = useAdminEvents();
-  const { createEvent, patchEvent, deleteEvent, markAttended } = useEventMutations();
+  const [page, setPage] = useState(1);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const events = useAdminEvents(page);
+  const pageCount = Math.max(1, Math.ceil((events.data?.total ?? 0) / 20));
+  useEffect(() => { if (events.data && page > pageCount) setPage(pageCount); }, [events.data, page, pageCount]);
+  const { createEvent, patchEvent, deleteEvent } = useEventMutations();
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<AdminEvent | null>(null);
   const [confirmDel, setConfirmDel] = useState<AdminEvent | null>(null);
@@ -13,10 +17,10 @@ export function EventsAdmin() {
   return (
     <div className="overflow-hidden rounded-[18px] border border-[var(--c-line)] bg-[var(--c-bg-raised)]">
       <div className="flex items-center justify-between gap-3 bg-[var(--c-bg-sunken)] px-6 py-3.5">
-        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">События · {events.data?.length ?? "…"} · отметка «был ✓» начисляет баллы автоматически</span>
+        <span className="font-mono text-[11px] uppercase tracking-wide text-[var(--c-text-3)]">События · {events.data?.total ?? "…"} · отметка «был ✓» начисляет баллы автоматически</span>
         <button onClick={() => setShowCreate(true)} className="foc rounded-[10px] bg-[var(--c-accent)] px-4 py-2 text-sm font-semibold text-[var(--c-on-accent)]">+ Добавить событие</button>
       </div>
-      {(events.data ?? []).map((e) => (
+      {(events.data?.items ?? []).map((e) => (
         <div key={e.id} className="border-t border-[var(--c-line)] px-6 py-4">
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-mono text-[12px] text-[var(--c-text-3)]">{fmt(e.starts_at)}</span>
@@ -28,26 +32,41 @@ export function EventsAdmin() {
             <button aria-label={`Редактировать ${e.title}`} onClick={() => setEditing(e)} className="foc h-8 w-8 rounded-[9px] text-[var(--c-text-3)] hover:bg-[var(--c-bg-sunken)]">✎</button>
             <button aria-label={`Удалить ${e.title}`} onClick={() => setConfirmDel(e)} className="foc h-8 w-8 rounded-[9px] text-[var(--c-danger-text)] hover:bg-[rgba(181,51,27,.08)]">✕</button>
           </div>
-          {e.rsvps.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap gap-2 pl-1">
-              {e.rsvps.map((r) => (
-                <button key={r.id} disabled={r.attended || markAttended.isPending} onClick={() => markAttended.mutate(r.id)}
-                  title={r.attended ? "Баллы начислены" : "Отметить посещение (+баллы)"}
-                  className={`foc rounded-full px-3 py-1.5 font-mono text-[11px] ${r.attended ? "bg-[rgba(31,138,91,.14)] text-[var(--c-ok-text)]" : "border border-[var(--c-line)] bg-[var(--c-bg-raised)] hover:border-ohra"}`}>
-                  {r.fio} {r.attended ? "✓" : "· был?"}
-                </button>
-              ))}
-            </div>
-          )}
-          {e.rsvps.length === 0 && <p className="mt-2 pl-1 font-mono text-[11px] text-[var(--c-text-3)]">записей пока нет</p>}
+          <button className="foc mt-3 rounded-[9px] border border-[var(--c-line)] px-3 py-2 font-mono text-[12px]" aria-expanded={expanded === e.id} aria-controls={"roster-" + e.id} onClick={() => setExpanded(expanded === e.id ? null : e.id)}>
+            Участники · {e.rsvp_count} {expanded === e.id ? "↑" : "↓"}
+          </button>
+          {expanded === e.id && <EventRoster id={e.id} />}
         </div>
       ))}
-      {events.data?.length === 0 && <p className="p-10 text-center font-mono text-sm text-[var(--c-text-3)]">Событий нет – добавьте первое.</p>}
+      {events.data?.total === 0 && <p className="p-10 text-center font-mono text-sm text-[var(--c-text-3)]">Событий нет – добавьте первое.</p>}
+      {events.isLoading && <p role="status" className="p-6">Загрузка событий…</p>}
+      {events.isError && <p role="alert" className="p-6">Не удалось загрузить события. <button className="foc underline" onClick={() => events.refetch()}>Повторить</button></p>}
+      {events.data && events.data.total > 0 && <nav aria-label="Страницы событий" className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--c-line)] px-6 py-4 font-mono text-[12px]">
+        <button className="foc rounded-[9px] border border-[var(--c-line)] px-3 py-2 disabled:opacity-40" disabled={page <= 1 || events.isFetching} onClick={() => { setExpanded(null); setPage(p => p - 1); }}>Назад</button>
+        <span>Страница {page} из {pageCount}</span>
+        <button className="foc rounded-[9px] border border-[var(--c-line)] px-3 py-2 disabled:opacity-40" disabled={page >= pageCount || events.isFetching} onClick={() => { setExpanded(null); setPage(p => p + 1); }}>Далее</button>
+      </nav>}
       {showCreate && <EventForm busy={createEvent.isPending} onClose={() => setShowCreate(false)} onSave={(v) => createEvent.mutate(v, { onSuccess: () => setShowCreate(false) })} />}
       {editing && <EventForm initial={editing} busy={patchEvent.isPending} onClose={() => setEditing(null)} onSave={(v) => patchEvent.mutate({ id: editing.id, ...v }, { onSuccess: () => setEditing(null) })} />}
       {confirmDel && <ConfirmDelete title={confirmDel.title} busy={deleteEvent.isPending} hint="Событие и все записи на него будут удалены." onCancel={() => setConfirmDel(null)} onConfirm={() => deleteEvent.mutate(confirmDel.id, { onSuccess: () => setConfirmDel(null) })} />}
     </div>
   );
+}
+
+function EventRoster({ id }: { id: string }) {
+  const roster = useAdminEventRoster(id);
+  const { markAttended } = useEventMutations();
+  return <div id={"roster-" + id} className="mt-3 flex flex-wrap gap-2">
+    {roster.isLoading && <p role="status">Загрузка участников…</p>}
+    {roster.isError && <p role="alert">Не удалось загрузить участников. <button className="foc underline" onClick={() => roster.refetch()}>Повторить</button></p>}
+    {roster.data?.length === 0 && <p className="font-mono text-[12px] text-[var(--c-text-3)]">Записей пока нет.</p>}
+    {roster.data?.map(r => <button key={r.id} disabled={r.attended || markAttended.isPending} onClick={() => markAttended.mutate(r.id)}
+      title={r.attended ? "Баллы начислены" : "Отметить посещение (+баллы)"}
+      className={"foc rounded-full px-3 py-1.5 font-mono text-[11px] " + (r.attended ? "bg-[rgba(31,138,91,.14)] text-[var(--c-ok-text)]" : "border border-[var(--c-line)] bg-[var(--c-bg-raised)] hover:border-ohra")}>
+      {r.fio} {r.attended ? "✓" : "· был?"}
+    </button>)}
+    {markAttended.isError && <p role="alert">Не удалось отметить посещение. Попробуйте ещё раз.</p>}
+  </div>;
 }
 
 function EventForm({ initial, busy, onClose, onSave }: { initial?: AdminEvent; busy: boolean; onClose: () => void; onSave: (v: { title: string; description?: string | null; starts_at: string; location?: string | null; cover?: string | null; reg_url?: string | null; format?: string; points?: number }) => void }) {
