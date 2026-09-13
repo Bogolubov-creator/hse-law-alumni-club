@@ -1,3 +1,4 @@
+import { requestJson } from "./http.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const ADMIN_TOKEN = "club_admin_token";
@@ -26,21 +27,12 @@ export async function adminLogout(): Promise<void> {
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const t = adminToken();
   const hasBody = body !== undefined;
-  const res = await fetch(`/api${path}`, {
+  return requestJson<T>(path, {
     method,
     // content-type только при наличии тела – иначе Fastify падает на пустом JSON
     headers: { accept: "application/json", ...(hasBody ? { "content-type": "application/json" } : {}), ...(t ? { authorization: `Bearer ${t}` } : {}) },
     body: hasBody ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    // Пробрасываем HTTP-статус: 401 = истёкшая сессия (на вход), прочее (5xx/сеть) –
-    // показываем ретрай, а не выкидываем администратора на логин.
-    const e = new Error((data as any)?.error || `API ${res.status}`) as Error & { status?: number };
-    e.status = res.status;
-    throw e;
-  }
-  return data as T;
+  }, { errorMessage: (status, data) => data?.error || `API ${status}` });
 }
 
 export async function adminLogin(email: string, password: string): Promise<{ token: string; role: string }> {
@@ -57,7 +49,6 @@ export type Overview = {
   next_event: { id: string; title: string; starts_at: string; rsvps: number } | null;
 };
 export type AdminNews = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string };
-export type AdminTimeline = { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string };
 export type AdminPodcast = { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; video_url?: string | null; duration: string | null; is_free?: boolean; sort: number; status: string };
 export type AdminOrderItem = { title: string; qty: number; variant_sku?: string | null };
 export type AdminOrder = { id: string; number: string; type: string; contact_fio: string; contact_phone: string; contact_email: string; fulfillment: string; status: string; payment_status?: string | null; subtotal: number; total_estimate: number; created_at: string; items_json?: AdminOrderItem[] | null; address?: string | null; comment?: string | null };
@@ -222,9 +213,6 @@ export function useAdminPage(slug: string) {
 export function useAdminNews() {
   return useQuery({ queryKey: ["adm", "news"], queryFn: () => req<AdminNews[]>("GET", "/admin/news"), retry: false });
 }
-export function useAdminTimeline() {
-  return useQuery({ queryKey: ["adm", "timeline"], queryFn: () => req<AdminTimeline[]>("GET", "/admin/timeline"), retry: false });
-}
 export type AdminEventRsvp = { id: string; alumni_id: string; fio: string; attended: boolean };
 export type AdminEvent = { id: string; title: string; description: string | null; starts_at: string; location: string | null; cover: string | null; reg_url: string | null; format: string; points: number; status: string; rsvps: AdminEventRsvp[] };
 export function useAdminEvents() {
@@ -234,20 +222,39 @@ export function useAdminPodcasts() {
   return useQuery({ queryKey: ["adm", "podcasts"], queryFn: () => req<AdminPodcast[]>("GET", "/admin/podcasts"), retry: false });
 }
 
-export function useAdminMutations() {
+function useAdminRefresh(domains: string[]) {
   const qc = useQueryClient();
-  const refetch = () => { qc.invalidateQueries({ queryKey: ["adm"] }); };
+  return () => {
+    for (const domain of [...domains, "overview", "analytics", "audit"]) {
+      qc.invalidateQueries({ queryKey: ["adm", domain] });
+    }
+  };
+}
+
+export function useOrderMutations() {
+  const refetch = useAdminRefresh(["orders","podcast-subs","members"]);
   return {
     setOrderStatus: useMutation({ mutationFn: (v: { id: string; status: string }) => req("PATCH", `/admin/orders/${v.id}`, { status: v.status }), onSuccess: refetch }),
+  };
+}
+
+export function useMemberMutations() {
+  const refetch = useAdminRefresh(["members","podcast-subs","events","orders"]);
+  return {
     patchMember: useMutation({ mutationFn: (v: { id: string; verification_status?: string; personal_discount?: number }) => req("PATCH", `/admin/members/${v.id}`, { verification_status: v.verification_status, personal_discount: v.personal_discount }), onSuccess: refetch }),
     addPoints: useMutation({ mutationFn: (v: { id: string; delta: number; comment?: string }) => req("POST", `/admin/members/${v.id}/points`, { delta: v.delta, reason: "manual", comment: v.comment }), onSuccess: refetch }),
-    // Каталог: программы ДПО и мерч (инвалидация и публичных витрин тоже)
-    createProgram: useMutation({ mutationFn: (v: ProgramInput) => req("POST", "/admin/programs", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
-    patchProgram: useMutation({ mutationFn: (v: { id: string } & Partial<ProgramInput>) => req("PATCH", `/admin/programs/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
-    deleteProgram: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/programs/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); } }),
-    createProduct: useMutation({ mutationFn: (v: ProductInput) => req("POST", "/admin/products", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
-    patchProduct: useMutation({ mutationFn: (v: { id: string } & Partial<ProductInput>) => req("PATCH", `/admin/products/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
-    deleteProduct: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/products/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
+    grantPodcastSub: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/podcast-sub`), onSuccess: refetch }),
+    anonymizeMember: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/anonymize`), onSuccess: refetch }),
+  };
+}
+
+export function useProgramMutations() {
+  const qc = useQueryClient();
+  const refetch = useAdminRefresh(["programs"]);
+  return {
+    createProgram: useMutation({ mutationFn: (v: ProgramInput) => req("POST", "/admin/programs", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); qc.invalidateQueries({ queryKey: ["program"] }); } }),
+    patchProgram: useMutation({ mutationFn: (v: { id: string } & Partial<ProgramInput>) => req("PATCH", `/admin/programs/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); qc.invalidateQueries({ queryKey: ["program"] }); } }),
+    deleteProgram: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/programs/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); qc.invalidateQueries({ queryKey: ["program"] }); } }),
     syncDpo: useMutation({
       mutationFn: () => req<{
         ok: boolean;
@@ -259,27 +266,57 @@ export function useAdminMutations() {
         total: number;
         sources?: { actual: string; all: string };
       }>("POST", "/admin/dpo-sync"),
-      onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); },
+      onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["programs"] }); qc.invalidateQueries({ queryKey: ["program"] }); },
     }),
+  };
+}
+
+export function useProductMutations() {
+  const qc = useQueryClient();
+  const refetch = useAdminRefresh(["products"]);
+  return {
+    createProduct: useMutation({ mutationFn: (v: ProductInput) => req("POST", "/admin/products", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
+    patchProduct: useMutation({ mutationFn: (v: { id: string } & Partial<ProductInput>) => req("PATCH", `/admin/products/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
+    deleteProduct: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/products/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["products"] }); } }),
+  };
+}
+
+export function usePageMutations() {
+  const qc = useQueryClient();
+  const refetch = useAdminRefresh(["page"]);
+  return {
     savePage: useMutation({ mutationFn: (v: { slug: string; hero?: PageHeroInput; cta?: PageCtaInput }) => req("PATCH", `/admin/pages/${v.slug}`, { hero: v.hero, cta: v.cta }), onSuccess: (_r, v) => { refetch(); qc.invalidateQueries({ queryKey: ["page", v.slug] }); } }),
-    // Новости
+  };
+}
+
+export function useNewsMutations() {
+  const qc = useQueryClient();
+  const refetch = useAdminRefresh(["news"]);
+  return {
     createNews: useMutation({ mutationFn: (v: { title: string; excerpt?: string | null; body?: string | null }) => req("POST", "/admin/news", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["news"] }); } }),
     patchNews: useMutation({ mutationFn: (v: { id: string; title?: string; excerpt?: string | null; body?: string | null; status?: string }) => req("PATCH", `/admin/news/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["news"] }); } }),
     deleteNews: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/news/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["news"] }); } }),
-    // История главной
-    createTimeline: useMutation({ mutationFn: (v: { year: string; title: string; text?: string | null; metric?: string | null }) => req("POST", "/admin/timeline", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["timeline"] }); } }),
-    patchTimeline: useMutation({ mutationFn: (v: { id: string; year?: string; title?: string; text?: string | null; metric?: string | null; status?: string }) => req("PATCH", `/admin/timeline/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["timeline"] }); } }),
-    deleteTimeline: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/timeline/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["timeline"] }); } }),
-    // Подкасты
+  };
+}
+
+
+export function usePodcastMutations() {
+  const qc = useQueryClient();
+  const refetch = useAdminRefresh(["podcasts"]);
+  return {
     createPodcast: useMutation({ mutationFn: (v: { title: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null }) => req("POST", "/admin/podcasts", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
     patchPodcast: useMutation({ mutationFn: (v: { id: string; title?: string; description?: string | null; cover?: string | null; audio_url?: string | null; duration?: string | null; is_free?: boolean; status?: string }) => req("PATCH", `/admin/podcasts/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
     deletePodcast: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/podcasts/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["podcasts"] }); } }),
-    grantPodcastSub: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/podcast-sub`), onSuccess: refetch }),
-    // События
+  };
+}
+
+export function useEventMutations() {
+  const qc = useQueryClient();
+  const refetch = useAdminRefresh(["events","members"]);
+  return {
     createEvent: useMutation({ mutationFn: (v: { title: string; description?: string | null; starts_at: string; location?: string | null; cover?: string | null; reg_url?: string | null; format?: string; points?: number }) => req("POST", "/admin/events", v), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
     patchEvent: useMutation({ mutationFn: (v: { id: string; status?: string; points?: number; title?: string; description?: string | null; starts_at?: string; location?: string | null; cover?: string | null; reg_url?: string | null; format?: string }) => req("PATCH", `/admin/events/${v.id}`, { ...v, id: undefined }), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
     deleteEvent: useMutation({ mutationFn: (id: string) => req("DELETE", `/admin/events/${id}`), onSuccess: () => { refetch(); qc.invalidateQueries({ queryKey: ["events"] }); } }),
     markAttended: useMutation({ mutationFn: (rsvpId: string) => req("POST", `/admin/events/rsvp/${rsvpId}/attend`), onSuccess: refetch }),
-    anonymizeMember: useMutation({ mutationFn: (id: string) => req("POST", `/admin/members/${id}/anonymize`), onSuccess: refetch }),
   };
 }

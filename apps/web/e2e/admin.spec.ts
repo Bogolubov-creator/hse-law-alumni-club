@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { seedClientStorage, stubSw } from "./harness.js";
+import { seedClientStorage, stubSw, mockPublicApi } from "./harness.js";
 
 /**
  * Админ-панель офиса.
@@ -68,8 +68,12 @@ const SUBS = {
 async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
   await seedClientStorage(page);
   await stubSw(page);
+  await mockPublicApi(page);
   await page.addInitScript(() => {
-    localStorage.setItem("club_admin_token", "e2e-admin-stub");
+    if (!sessionStorage.getItem("admin-fixture-seeded")) {
+      localStorage.setItem("club_admin_token", "e2e-admin-stub");
+      sessionStorage.setItem("admin-fixture-seeded", "1");
+    }
   });
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   await page.route("**/api/admin/overview", (r) => r.fulfill(json(over.overview ?? OVERVIEW)));
@@ -92,7 +96,7 @@ test.describe("Админ-панель", () => {
     await stubSw(page);
     await page.goto("/admin");
     await expect(page.getByRole("button", { name: "Войти" })).toBeVisible();
-    await expect(page.getByText("Новые заявки")).toHaveCount(0);
+    await expect(page.getByText("Новые заявки", { exact: true })).toHaveCount(0);
   });
 
   test("панель не индексируется", async ({ page }) => {
@@ -105,7 +109,7 @@ test.describe("Админ-панель", () => {
     await mockAdmin(page);
     await page.goto("/admin");
 
-    await expect(page.getByText("Новые заявки")).toBeVisible();
+    await expect(page.getByText("Новые заявки", { exact: true })).toBeVisible();
     await expect(page.getByText("128", { exact: true })).toBeVisible();   // выпускников
     await expect(page.getByText("подтверждено 119")).toBeVisible();
     await expect(page.getByText("Встреча выпуска 2026")).toBeVisible();
@@ -260,4 +264,31 @@ test.describe("Админ-панель", () => {
     await expect(page.getByRole("button", { name: "Повторить" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Войти" })).toHaveCount(0);
   });
+});
+
+test("CMS сохраняет действующие поля и не перезаписывает скрытый контент", async ({ page }, info) => {
+  await mockAdmin(page);
+  let saved: any;
+  await page.route("**/api/admin/pages/home", r => {
+    if (r.request().method() === "PATCH") { saved = r.request().postDataJSON(); return r.fulfill({ json: { ok: true } }); }
+    return r.fulfill({ json: { slug: "home", title: "Главная", blocks: {
+      hero: { title_pre: "Клуб выпускников", title_accent: "факультета права", subtitle: "Встречи и возможности сообщества", cta_primary: "Вступить в клуб", badge: "Сохранённый бейдж", history_title: "Архив", marquee: ["История"], cta_secondary: "Архивная кнопка" },
+      cta: { title: "Сохранённый заголовок", text: "Подайте заявку, чтобы присоединиться к клубу.", button: "Подать заявку" },
+    } } });
+  });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Контент", exact: true }).click();
+  await expect(page.getByRole("button", { name: "История", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Страницы", exact: true }).click();
+  await expect(page.getByLabel("Заголовок (начало)")).toHaveValue("Клуб выпускников");
+  await expect(page.getByLabel("Бейдж")).toHaveCount(0);
+  await expect(page.getByLabel("Кнопка (вторая)")).toHaveCount(0);
+  await page.getByLabel("Заголовок (начало)").fill("Наш клуб");
+  await page.getByRole("button", { name: "Сохранить все секции" }).click();
+  await expect.poll(() => saved).toBeTruthy();
+  expect(Object.keys(saved.hero).sort()).toEqual(["cta_primary", "subtitle", "title_accent", "title_pre"]);
+  expect(saved.hero.title_pre).toBe("Наш клуб");
+  expect(Object.keys(saved.cta).sort()).toEqual(["button", "text"]);
+  await expect(page.getByText("сохранено ✓ – уже на сайте")).toBeVisible();
+  if (process.env.CLEANUP_SCREENSHOTS) await page.screenshot({ path: process.env.CLEANUP_SCREENSHOTS + "/cms-" + info.project.name + ".png", fullPage: true });
 });

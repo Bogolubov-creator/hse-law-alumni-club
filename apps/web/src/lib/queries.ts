@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, timelineSchema, podcastsResSchema, lkEventsSchema, type Classmate, type TimelineItem, type PodcastsRes, type LkEvent } from "@club/shared";
+import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, podcastsResSchema, lkEventsSchema, type Classmate, type PodcastsRes, type LkEvent } from "@club/shared";
 import { apiGet, apiPost, apiDelete, retryUnlessClientError, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
 
 export function useLedger(token: string | null) {
@@ -90,11 +90,6 @@ export function useLkEvents(token: string | null) {
     enabled: !!token,
     retry: false,
   });
-}
-
-// «История» на главной (редактируется в админ-панели).
-export function useTimeline() {
-  return useQuery({ queryKey: ["timeline"], queryFn: () => apiGet<TimelineItem[]>("/timeline", undefined, timelineSchema) });
 }
 
 // Подкасты: audio_url приходит только активным подписчикам.

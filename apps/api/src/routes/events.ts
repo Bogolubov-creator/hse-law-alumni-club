@@ -144,10 +144,14 @@ export async function eventsRoutes(app: FastifyInstance) {
       const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _in: alumniIds } }, limit: -1, fields: ["id", "fio"] }))) as any[];
       for (const r of rows) names.set(r.id, r.fio);
     }
-    return events.map((e) => ({
-      ...e,
-      rsvps: rsvps.filter((r) => r.event_id === e.id).map((r) => ({ id: r.id, alumni_id: r.alumni_id, fio: names.get(r.alumni_id) ?? "–", attended: r.attended })),
-    }));
+    // Одно распределение регистраций вместо повторного прохода для каждого события.
+    const byEvent = new Map<string, { id: string; alumni_id: string; fio: string; attended: boolean }[]>();
+    for (const r of rsvps) {
+      const roster = byEvent.get(r.event_id) ?? [];
+      roster.push({ id: r.id, alumni_id: r.alumni_id, fio: names.get(r.alumni_id) ?? "–", attended: r.attended });
+      byEvent.set(r.event_id, roster);
+    }
+    return events.map((e) => ({ ...e, rsvps: byEvent.get(e.id) ?? [] }));
   });
 
   app.post("/admin/events", async (req, reply) => {
