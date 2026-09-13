@@ -1,3 +1,4 @@
+import { lookup, type CatalogInfo } from "../lib/catalog-lookup.js";
 import { withCartLock } from "../lib/checkout-store.js";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
@@ -24,34 +25,12 @@ async function saveCart(token: string, items: StoredCartItem[]) {
   else await di.request((createItem as any)("carts", { session_token: token, items_json: items, updated_at: new Date().toISOString() }));
 }
 
-export interface CatalogInfo {
-  title: string;
-  price: number;
-  enrollment?: string | null;
-  source_url?: string | null;
-  stock?: number | null;
-  variants?: { sku: string; stock: number }[] | null;
-}
-
 /** Неизвестный остаток не блокирует заявку; наличие повторно проверяется при оформлении. */
 function exceedsStock(info: CatalogInfo, sku: string | null | undefined, qty: number): boolean {
   const available = info.variants?.length
     ? info.variants.find((variant) => variant.sku === sku)?.stock
     : info.stock;
   return typeof available === "number" && qty > available;
-}
-
-export async function lookup(type: "dpo" | "merch", slug: string): Promise<CatalogInfo | null> {
-  const collection = type === "dpo" ? "programs" : "products";
-  const fields = type === "dpo" ? ["title", "price", "enrollment", "source_url"] : ["title", "price", "stock", "variants_json"];
-  const rows = (await di.request((readItems as any)(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields }))) as any[];
-  if (!rows[0]) return null;
-  return {
-    title: rows[0].title, price: rows[0].price ?? 0,
-    enrollment: rows[0].enrollment ?? null, source_url: rows[0].source_url ?? null,
-    stock: typeof rows[0].stock === "number" ? rows[0].stock : null,
-    variants: Array.isArray(rows[0].variants_json) ? rows[0].variants_json : null,
-  };
 }
 
 export async function cartRoutes(app: FastifyInstance) {
