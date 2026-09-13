@@ -12,15 +12,22 @@ docker run --rm -d --name "$CONTAINER" \
   -e POSTGRES_DB=alumni_staged -e POSTGRES_USER=club \
   -e POSTGRES_PASSWORD=integration-test-only \
   -p 127.0.0.1::5432 postgres:16-alpine >/dev/null
+# Временный сервер initdb принимает Unix socket, затем останавливается.
+# TCP становится доступен только у окончательно запущенного PostgreSQL.
+READY=false
 for attempt in $(seq 1 30); do
-  if docker exec "$CONTAINER" pg_isready -U club -d alumni_staged >/dev/null 2>&1; then break; fi
+  if docker exec "$CONTAINER" pg_isready -h 127.0.0.1 -U club -d alumni_staged >/dev/null 2>&1; then READY=true; break; fi
   sleep 1
 done
+if [[ "$READY" != true ]]; then
+  echo "Одноразовый PostgreSQL не готов по TCP за 30 секунд" >&2
+  exit 1
+fi
 PORT="$(docker port "$CONTAINER" 5432/tcp | cut -d: -f2)"
 for sql in "$REPO_DIR/apps/api/src/test/integration-schema.sql" \
   "$REPO_DIR/apps/api/migrations/20260908-checkout.sql" \
   "$REPO_DIR/apps/api/migrations/20260908-support.sql"; do
-  docker exec -i "$CONTAINER" psql -v ON_ERROR_STOP=1 -U club -d alumni_staged < "$sql" >/dev/null
+  docker exec -i "$CONTAINER" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U club -d alumni_staged < "$sql" >/dev/null
 done
 cd "$REPO_DIR"
 CHECKOUT_DATABASE_URL="postgres://club:integration-test-only@127.0.0.1:$PORT/alumni_staged" \
