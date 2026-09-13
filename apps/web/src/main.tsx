@@ -4,11 +4,8 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.js";
 import { ToastProvider } from "./components/Toast.js";
-import { installMirrorFetch } from "./lib/mirror.js";
 import { isMirror, publicUrl, routerBasename } from "./lib/public-url.js";
 import "./index.css";
-
-installMirrorFetch();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
@@ -26,14 +23,23 @@ if (serviceWorker && enableSw) {
   });
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={routerBasename()}>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </React.StrictMode>,
-);
+async function start() {
+  // Перехват должен быть готов до первых запросов React; обычная сборка его не включает.
+  if (import.meta.env.VITE_MIRROR === "true") {
+    const { installMirrorFetch } = await import("./lib/mirror.js");
+    installMirrorFetch();
+  }
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename={routerBasename()}>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </React.StrictMode>,
+  );
+}
+
+void start();

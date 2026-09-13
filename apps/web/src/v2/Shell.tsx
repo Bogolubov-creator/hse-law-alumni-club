@@ -18,7 +18,7 @@ import "../styles/shell.css";
  */
 
 // Определения – в styles/primitives.ts, здесь только точка входа для витрин.
-import { mono, disp, pageTitle, action, caps } from "../styles/primitives.js";
+import { pageTitle, action, caps } from "../styles/primitives.js";
 export { mono, disp, pageTitle } from "../styles/primitives.js";
 
 /**

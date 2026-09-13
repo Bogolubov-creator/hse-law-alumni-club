@@ -5,7 +5,7 @@ import { z } from "zod";
 import { PODCAST_SUB_PRICE_KOP, orderNumber, rutubeEmbed } from "@club/shared";
 import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
-import { lastOrderSeq } from "../lib/order-number.js";
+import { isUniqueViolation, lastOrderSeq } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
@@ -239,7 +239,8 @@ export async function podcastsRoutes(app: FastifyInstance) {
         }));
         created = true;
       } catch (e) {
-        if (attempt === 5) { req.log.error({ err: e }, "podcast sub order failed"); return reply.code(500).send({ error: "Не удалось оформить подписку, попробуйте ещё раз" }); }
+        // При потере ответа запись могла сохраниться: новый номер создаст дубль.
+        if (!isUniqueViolation(e) || attempt === 5) { req.log.error({ err: e }, "podcast sub order failed"); return reply.code(500).send({ error: "Не удалось оформить подписку, попробуйте ещё раз" }); }
       }
     }
 

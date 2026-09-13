@@ -55,7 +55,6 @@ function StripLegacyPrefix() {
 
 export default function App() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
 
   useEffect(() => {
     if (window.location.hash.startsWith("#/")) {
@@ -106,9 +105,9 @@ export default function App() {
           <Route path="/forgot" element={<ForgotV2 />} />
           <Route path="/reset" element={<ResetV2 />} />
           <Route path="/confirm" element={<ConfirmEmailV2 />} />
-          <Route path="/privacy" element={<Privacy v2 />} />
-          <Route path="/confidential" element={<Confidential v2 />} />
-          <Route path="/requisites" element={<Requisites v2 />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/confidential" element={<Confidential />} />
+          <Route path="/requisites" element={<Requisites />} />
           <Route path="/lk" element={<LkV2 />} />
           <Route path="/lk/profile" element={<ProfileV2 />} />
           <Route path="/admin/*" element={<AdminApp />} />

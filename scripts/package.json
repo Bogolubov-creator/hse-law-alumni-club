@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "bootstrap": "tsx src/directus-bootstrap.ts",
     "import-dpo": "tsx src/import-dpo-mirror-catalog.ts",
     "refresh-dpo-enrollment": "tsx src/refresh-dpo-enrollment-from-hse.ts",

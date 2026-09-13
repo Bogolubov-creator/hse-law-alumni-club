@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 
 vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
 vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+// Проверяем маршрут и письмо, не DNS/SMTP внешнего сервера.
+vi.mock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail: vi.fn(async () => ({ messageId: "test" })) }) } }));
 
 const { db, resetDb } = await import("../test/fake-directus.js");
 const { authRoutes } = await import("./auth.js");

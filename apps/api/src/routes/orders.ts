@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { commitCheckout, findCheckout, checkoutKey, digest, saveReceipt } from "../lib/checkout-store.js";
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem } from "@directus/sdk";
+import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
 import { effectiveDiscount, computeOrderTotals, repriceItems } from "@club/shared";
 import { directus } from "../lib/directus.js";

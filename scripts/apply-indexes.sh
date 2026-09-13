@@ -12,6 +12,6 @@ PGUSER="${POSTGRES_USER:-$(val POSTGRES_USER)}"; PGUSER="${PGUSER:-club}"
 PGDB="${POSTGRES_DB:-$(val POSTGRES_DB)}"; PGDB="${PGDB:-club}"
 
 echo "Применяю infra/indexes.sql к $PG ($PGDB)…"
-docker exec -i "$PG" psql -U "$PGUSER" -d "$PGDB" < "$REPO_DIR/infra/indexes.sql"
+docker exec -i "$PG" psql -v ON_ERROR_STOP=1 -U "$PGUSER" -d "$PGDB" < "$REPO_DIR/infra/indexes.sql"
 echo "Готово. Индексов idx_/uq_:"
 docker exec "$PG" psql -U "$PGUSER" -d "$PGDB" -tAc "select count(*) from pg_indexes where indexname like 'idx_%' or indexname like 'uq_%'"

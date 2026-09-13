@@ -1,5 +1,5 @@
 import { changeOrderStatus } from "../lib/checkout-store.js";
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
 import { z } from "zod";
 import { directus } from "../lib/directus.js";

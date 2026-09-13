@@ -117,11 +117,6 @@ function formatStartMs(ms: number | null | undefined): string | undefined {
   return `${day} ${month} ${year}`;
 }
 
-function startIsoFromMs(ms: number | null | undefined): string | null {
-  if (ms == null || !Number.isFinite(ms)) return null;
-  return new Date(ms).toISOString();
-}
-
 function slugFromIndexUrl(url: string | undefined, title: string, id: string): string {
   if (url) {
     const base = url.replace(/^programs\//, "").replace(/\.html?$/i, "").trim();

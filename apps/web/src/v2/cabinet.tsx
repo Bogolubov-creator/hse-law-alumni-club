@@ -1,8 +1,8 @@
-import { type CSSProperties, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
 import { MobileTabs } from "./MobileTabs.js";
-import { mono, disp, label, actionGhost, caps } from "../styles/primitives.js";
+import { mono, disp, label, actionGhost } from "../styles/primitives.js";
 export { label, field, action, actionGhost } from "../styles/primitives.js";
 import { Mark } from "./Mark.js";
 import "../styles/shell.css";

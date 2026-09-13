@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cartSummarySchema, programsSchema, programFullSchema, productsSchema, meSchema, orderResultSchema } from "@club/shared";
-import { apiGet, retryUnlessClientError, type CartSummary, type Program, type ProgramFull, type Product, type Me } from "./api.js";
+import { cartSummarySchema, programsSchema, programFullSchema, productsSchema, orderResultSchema } from "@club/shared";
+import { apiGet, retryUnlessClientError, type CartSummary, type Program, type ProgramFull, type Product } from "./api.js";
+import { useMe } from "./queries.js";
 
 const CART_KEY = "club_cart";
 const TOKEN_KEY = "club_token";
@@ -49,7 +50,7 @@ export function useProducts() {
 /** Скидка выпускника (если вошёл и верифицирован) – для справочного бейджа на витринах. */
 export function useMemberDiscount(): number {
   const token = localStorage.getItem(TOKEN_KEY);
-  const q = useQuery({ queryKey: ["me-discount", token], queryFn: () => apiGet<Me>("/me", token!, meSchema), enabled: !!token, retry: false });
+  const q = useMe(token);
   return q.data?.level.discount ?? 0;
 }
 

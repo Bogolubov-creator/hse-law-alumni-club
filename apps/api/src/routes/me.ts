@@ -3,7 +3,7 @@ import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
 import { achievementProgress, sanitizeInterests } from "@club/shared";
 import { directus } from "../lib/directus.js";
-import { levelInfo, alumniStats } from "../lib/engine.js";
+import { levelInfo, statsFromLedger } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { makeTgLinkCode } from "../lib/tg-link.js";
 import { anonymizeAlumni } from "../lib/anonymize.js";
@@ -50,8 +50,8 @@ export async function meRoutes(app: FastifyInstance) {
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
 
     const ledger = (await di.request(
-      readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at"], limit: -1 }),
-    )) as { delta: number; created_at: string }[];
+      readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at", "reason"], limit: -1 }),
+    )) as { delta: number; created_at: string; reason: string }[];
 
     // Рефералка: сколько человек пришло по моей ссылке.
     const referred = (await di.request(
@@ -71,7 +71,7 @@ export async function meRoutes(app: FastifyInstance) {
         referrals_pending: referred.filter((r) => r.verification_status === "pending").length,
       },
       level,
-      achievements: verified ? achievementProgress(await alumniStats(a.id)) : [],
+      achievements: verified ? achievementProgress(statsFromLedger(a, ledger)) : [],
       activity: verified ? lastSixMonths(ledger) : [],
     };
   });

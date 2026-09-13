@@ -6,7 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "vitest run"
   },
@@ -36,5 +36,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.5"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

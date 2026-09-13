@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { z, ZodError } from "zod";
 import { checkoutPool } from "../lib/checkout-store.js";
 import { env } from "../env.js";
-import { requireAdmin, requireFullAdmin } from "../lib/auth.js";
+import { requireAdmin } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
 import { faqGapStats, logFaqEvent } from "../lib/faq-events.js";
 import { rangeSince } from "../lib/admin-analytics.js";
