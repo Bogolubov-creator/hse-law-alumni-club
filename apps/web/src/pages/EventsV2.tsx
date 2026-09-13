@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import EventDetails from "../components/EventDetails.js";
 import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
 import { apiGet, apiPost } from "../lib/api.js";
 import { token } from "../lib/cart.js";
 import { useHead } from "../lib/title.js";
-import { fmtEventDate, fmtEventDateFull, gcalUrl, type ClubEvent } from "../lib/events.js";
+import { fmtEventDate, type ClubEvent } from "../lib/events.js";
 import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
 import { action, actionGhost, caps } from "../styles/primitives.js";
 
@@ -173,60 +174,13 @@ export default function EventsV2() {
         </div>
         </>}
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
-        {eventId && events.isLoading && <p role="status">Загружаем событие…</p>}
-        {eventId && events.isError && <p role="alert">Не удалось загрузить событие. <button onClick={() => events.refetch()}>Повторить</button></p>}
-        {eventId && events.isSuccess && !opened && <><h1>Событие не найдено</h1><Link to="/events">Вернуться к афише</Link></>}
+        {eventId && events.isLoading && <div className="club-event-state" role="status">Загружаем событие…</div>}
+        {eventId && events.isError && <div className="club-event-state" role="alert">Не удалось загрузить событие. <button className="foc" style={action} onClick={() => events.refetch()}>Повторить</button></div>}
+        {eventId && events.isSuccess && !opened && <div className="club-event-state"><h1>Событие не найдено</h1><Link className="foc" to="/events">Вернуться к афише</Link></div>}
         {opened && (
           <EventSurface detail={!!eventId} onClose={() => setOpenId(null)}>
-            <div style={{ background: "var(--c-bg-raised)", color: "var(--c-text)", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--c-line)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: 20 }}><Link className="foc" to={eventId ? "/events" : `/events/${opened.id}`} style={{ color: "var(--c-link)" }}>{eventId ? "← Вся афиша" : "Открыть страницу события"}</Link>{!eventId && <button className="foc" onClick={() => setOpenId(null)} style={{ ...caps, color: "var(--c-text-2)", padding: "10px 14px", border: "1px solid var(--c-line-control)", background: "transparent", borderRadius: "var(--r-sm)", cursor: "pointer" }}>Закрыть</button>}</div>
-              {opened.cover && (
-                <img src={opened.cover} alt={`Афиша: ${opened.title}`} width={1200} height={630} loading="lazy" decoding="async" style={{ display: "block", width: "100%", height: "auto", maxHeight: 240, objectFit: "cover" }}
-                  onError={(ev) => { (ev.target as HTMLImageElement).style.display = "none"; }} />
-              )}
-              <div style={{ padding: 26 }}>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  <span style={chip}>{opened.format === "online" ? "онлайн" : "очно"}</span>
-                  {opened.points > 0 && <span style={chip}>+{opened.points} баллов за участие</span>}
-                </div>
-                <h1 id="ev2-modal-title" style={{ ...disp, fontWeight: 700, fontSize: "var(--t-h3)", lineHeight: 1.2, margin: "14px 0 0" }}>{opened.title}</h1>
-
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "10px 0", borderTop: "1px solid var(--c-line)" }}>
-                    <span style={label}>когда</span>
-                    <span style={{ ...mono, fontSize: 13, textAlign: "right" }}>{fmtEventDateFull(opened.starts_at)}</span>
-                  </div>
-                  {opened.location && (
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "10px 0", borderTop: "1px solid var(--c-line)" }}>
-                      <span style={label}>где</span>
-                      <span style={{ ...mono, fontSize: 13, textAlign: "right" }}>{opened.location}</span>
-                    </div>
-                  )}
-                  <div style={{ borderTop: "1px solid var(--c-line)" }} />
-                </div>
-
-                {opened.description && (
-                  <p style={{ margin: "16px 0 0", whiteSpace: "pre-line", fontSize: "var(--t-body)", lineHeight: 1.6, color: "var(--c-text-2)" }}>{opened.description}</p>
-                )}
-
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 20 }}>
-                  {rsvpButton(opened, new Date(opened.starts_at).getTime() < now || opened.status === "done")}
-                  {opened.reg_url && (
-                    <a href={opened.reg_url} target="_blank" rel="noopener noreferrer" className="foc"
-                      style={{ ...label, textDecoration: "none", background: "var(--c-bg-inverse)", color: "var(--c-text-inverse)", borderRadius: "var(--r-sm)", padding: "8px 14px" }}>
-                      регистрация ↗
-                    </a>
-                  )}
-                  <span style={{ ...label, fontSize: "var(--t-micro)", marginLeft: "auto" }}>{opened.going > 0 ? `пойдут: ${opened.going}` : "будьте первым"}</span>
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--c-line)" }}>
-                  <span style={{ ...label, fontSize: "var(--t-micro)" }}>в календарь</span>
-                  <a href={`/api/events/${opened.id}.ics`} className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>Файл .ics</a>
-                  <a href={gcalUrl(opened)} target="_blank" rel="noopener noreferrer" className="foc" style={{ ...label, textDecoration: "none", color: "var(--c-text-2)", border: "1px solid var(--c-line-control)", borderRadius: "var(--r-sm)", padding: "7px 12px" }}>Google Календарь ↗</a>
-                </div>
-              </div>
-            </div>
+            <EventDetails event={opened} detail={!!eventId} onClose={() => setOpenId(null)}
+              rsvp={rsvpButton(opened, new Date(opened.starts_at).getTime() < now || opened.status === "done")} />
           </EventSurface>
         )}
         </div>
@@ -236,5 +190,5 @@ export default function EventsV2() {
 }
 
 function EventSurface({ detail, onClose, children }: { detail: boolean; onClose: () => void; children: React.ReactNode }) {
-  return detail ? <section style={{ maxWidth: 850, margin: "36px auto" }}>{children}</section> : <Modal onClose={onClose} labelledBy="ev2-modal-title" maxWidth={620}>{children}</Modal>;
+  return detail ? <section>{children}</section> : <Modal onClose={onClose} labelledBy="ev2-modal-title" maxWidth={620}>{children}</Modal>;
 }
