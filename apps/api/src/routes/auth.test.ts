@@ -170,6 +170,14 @@ describe("POST /auth/confirm", () => {
     expect(db.directus_users!.find((u) => u.id === "user-2")?.status).toBe("active");
   });
 
+  it("старая ссылка не активирует заблокированного пользователя", async () => {
+    db.directus_users!.find(u => u.id === "user-2")!.status = "suspended";
+    const token = jwt.sign({ sub: "user-2", purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
+    const app = await build();
+    expect((await app.inject({ method: "POST", url: "/auth/confirm", payload: { token } })).statusCode).toBe(400);
+    expect(db.directus_users!.find(u => u.id === "user-2")!.status).toBe("suspended");
+  });
+
   it("повторный переход по той же ссылке безопасен", async () => {
     const token = jwt.sign({ sub: "user-2", purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
     const app = await build();
@@ -211,7 +219,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
   });
 
   it("сброс пароля поднимает token_version – выданные ранее сессии отзываются", async () => {
-    const token = jwt.sign({ sub: USER_ID, purpose: "reset" }, env.AUTH_SECRET, { expiresIn: "30m" });
+    const token = jwt.sign({ sub: USER_ID, purpose: "reset", jti: "reset-version-test" }, env.AUTH_SECRET, { expiresIn: "30m" });
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "newstrongpass" } });
     expect(r.statusCode).toBe(200);

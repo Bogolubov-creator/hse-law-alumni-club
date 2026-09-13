@@ -30,6 +30,10 @@ import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, PRODUCTS_SEED, NEWS_S
 
 type Schema = Record<string, any>;
 
+if (process.env.APP_ENV === "production" && process.env.SEED_DEMO === "true") {
+  throw new Error("SEED_DEMO=true запрещён в production");
+}
+
 const URL = req("DIRECTUS_URL");
 const ADMIN_EMAIL = req("ADMIN_EMAIL");
 const ADMIN_PASSWORD = req("ADMIN_PASSWORD");

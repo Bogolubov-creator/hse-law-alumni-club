@@ -1,3 +1,5 @@
+import { restoreAdminRevocations } from "./lib/auth.js";
+import { buildSystemHealth } from "./lib/system-health.js";
 import { supportRoutes, purgeSupport } from "./routes/support.js";
 import { safeRequestLog } from "./lib/request-log.js";
 import Fastify from "fastify";
@@ -6,7 +8,6 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import cron from "node-cron";
 import { env, assertProdConfig } from "./env.js";
-import { checkDirectus } from "./lib/directus.js";
 import { contentRoutes } from "./routes/content.js";
 import { pointsRoutes } from "./routes/points.js";
 import { authRoutes } from "./routes/auth.js";
@@ -34,16 +35,15 @@ import { initSentry } from "./lib/sentry.js";
 import { registerErrorHandler } from "./lib/errors.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
 
-// trustProxy: 1 – доверяем ТОЛЬКО одному прокси-хопу (Caddy). true доверял бы всей
-// цепочке X-Forwarded-For, и клиент мог бы подделать req.ip (обход rate-limit,
-// IP-allowlist вебхука ЮKassa, отравление IP в аудите). Число хопов = 1 (Caddy → api).
+// Caddy доступен из доверенной внутренней сети. Публичный origin API закрыт;
+// доверие к X-Forwarded-* определяется адресом прокси, а не количеством хопов.
 const app = Fastify({
   logger: {
     // Подписанные ссылки и токены подтверждения не попадают в журнал URL.
     serializers: { req: safeRequestLog },
     redact: ["req.headers.authorization", "req.headers.cookie", "res.headers.set-cookie", "password", "token"],
   },
-  trustProxy: 1, bodyLimit: 256 * 1024,
+  trustProxy: env.TRUST_PROXY.split(",").map(value => value.trim()).filter(Boolean), bodyLimit: 256 * 1024,
 });
 
 // Валидационные ошибки zod → 400 (не 500).
@@ -184,17 +184,12 @@ app.get("/health", async () => ({
   ts: new Date().toISOString(),
 }));
 
-// Готовность – проверяет связь с Directus сервисным токеном (критерий приёмки Фазы 0).
-// Эндпоинт публичный (Caddy проксирует /api/*), поэтому наружу отдаём только факт
-// готовности: e-mail сервисного аккаунта и детали сидов – подсказка для атакующего.
-// Полный ответ checkDirectus() остаётся в логе оператора.
+// Readiness включает CMS и служебную схему БД. Публичный ответ не раскрывает инфраструктуру.
 app.get("/ready", async (_req, reply) => {
-  const directus = await checkDirectus();
-  if (!directus.ok) {
-    app.log.error({ directus }, "readiness: Directus недоступен");
-    return reply.code(503).send({ status: "degraded", directus: { ok: false } });
-  }
-  return { status: "ok", directus: { ok: true } };
+  const result = await buildSystemHealth();
+  const ready = ["cms", "database"].every(id => result.checks.find(c => c.id === id)?.status === "ok");
+  reply.header("Cache-Control", "no-store");
+  return reply.code(ready ? 200 : 503).send({ status: ready ? "ok" : "degraded" });
 });
 
 // Плавная остановка: по SIGTERM/SIGINT (docker stop, редеплой) останавливаем cron
@@ -216,6 +211,7 @@ process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => void gracefulShutdown("SIGINT"));
 
 try {
+  await restoreAdminRevocations();
   await app.listen({ host: env.API_HOST, port: env.API_PORT });
   app.log.info(`club-api слушает :${env.API_PORT}`);
   if (env.TELEGRAM_BOT_TOKEN) void registerBotCommands(env.TELEGRAM_BOT_TOKEN);

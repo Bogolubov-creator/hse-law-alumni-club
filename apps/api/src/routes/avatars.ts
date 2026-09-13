@@ -36,7 +36,7 @@ const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "
 export async function avatarsRoutes(app: FastifyInstance) {
   await app.register(multipart, { limits: { fileSize: MAX_AVATAR_BYTES, files: 1 } });
 
-  app.post("/me/avatar", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
+  app.post("/me/avatar", { bodyLimit: 4 * 1024 * 1024, config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
     // Фото можно загрузить до подтверждения выпуска; отклонённым – нет.
@@ -78,13 +78,21 @@ export async function avatarsRoutes(app: FastifyInstance) {
     const fileId = ((await up.json()) as any)?.data?.id as string | undefined;
     if (!fileId) return reply.code(502).send({ error: "Не удалось сохранить файл" });
 
+    // Сначала сохраняем новую ссылку. При ошибке старое фото остаётся рабочим.
+    try {
+      await di.request((updateItem as any)("alumni", me.id, { avatar: fileId }));
+    } catch (error) {
+      await fetch(`${env.DIRECTUS_URL}/files/${fileId}`, {
+        method: "DELETE", headers: { authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}` },
+      }).catch(() => undefined);
+      throw error;
+    }
     // Старый аватар подчищаем (не копим мусор в uploads).
     if (me.avatar) {
       await fetch(`${env.DIRECTUS_URL}/files/${me.avatar}`, {
         method: "DELETE", headers: { authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}` },
       }).catch(() => undefined);
     }
-    await di.request((updateItem as any)("alumni", me.id, { avatar: fileId }));
     audit("avatar.upload", { actor: `alumni:${me.id}`, detail: { fileId, size: buf.length }, req });
     return { ok: true, avatar: fileId };
   });

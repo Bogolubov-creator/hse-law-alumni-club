@@ -131,3 +131,19 @@ describe("POST /me/avatar – доступ", () => {
     expect(r.statusCode).toBe(403);
   });
 });
+
+it("ошибка сохранения профиля не удаляет прежнее фото", async () => {
+  const { directusModuleMock } = await import("../test/fake-directus.js");
+  const original = directusModuleMock.directus.request;
+  db.alumni![0]!.avatar = "old-file";
+  vi.spyOn(directusModuleMock.directus, "request").mockImplementation(async (op: any) => {
+    if (op.kind === "updateItem" && op.collection === "alumni") throw new Error("storage unavailable");
+    return original(op);
+  });
+  const app = await build();
+  expect((await upload(app, PNG, "image/png")).statusCode).toBe(500);
+  expect(db.alumni![0]!.avatar).toBe("old-file");
+  const deleted = vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "DELETE").map(([url]) => String(url));
+  expect(deleted.some(url => url.endsWith("/file-1"))).toBe(true);
+  expect(deleted.some(url => url.endsWith("/old-file"))).toBe(false);
+});

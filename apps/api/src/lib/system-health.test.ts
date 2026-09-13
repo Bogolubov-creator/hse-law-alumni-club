@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const query = vi.hoisted(() => vi.fn());
 vi.mock("./checkout-store.js", () => ({ checkoutPool: () => ({ query }) }));
 import { env } from "../env.js";
-import { buildSystemHealth } from "./system-health.js";
+import { buildSystemHealth, DATABASE_READY_SQL } from "./system-health.js";
 const original = { ...env };
 beforeEach(() => {
   Object.assign(env, { CHECKOUT_DATABASE_URL: "postgres://private-test", TELEGRAM_BOT_TOKEN: "secret-test", SMTP_HOST: "", VAPID_PUBLIC_KEY: "", VAPID_PRIVATE_KEY: "" });
@@ -17,7 +17,7 @@ it("проверяет CMS и БД, но не выдаёт токен Telegram �
   expect(result.checks.find((c) => c.id === "telegram")?.status).toBe("unknown");
   expect(result.status).toBe("partial");
   expect(JSON.stringify(result)).not.toContain("secret-test");
-  expect(query).toHaveBeenCalledWith({ text: "SELECT 1", query_timeout: 3000 });
+  expect(query).toHaveBeenCalledWith({ text: DATABASE_READY_SQL, query_timeout: 3000 });
 });
 it("показывает частичный отказ и скрывает внутренние причины ошибок", async () => {
   query.mockRejectedValue(new Error("postgres://secret-database"));

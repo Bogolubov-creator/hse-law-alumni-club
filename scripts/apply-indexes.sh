@@ -6,8 +6,9 @@
 #   ./scripts/apply-indexes.sh
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ENV_FILE:-$REPO_DIR/.env}"
 PG="${PG_CONTAINER:-club-pravo-hse-postgres-1}"
-val() { grep "^$1=" "$REPO_DIR/.env" 2>/dev/null | cut -d= -f2-; }
+val() { grep "^$1=" "$ENV_FILE" 2>/dev/null | cut -d= -f2-; }
 PGUSER="${POSTGRES_USER:-$(val POSTGRES_USER)}"; PGUSER="${PGUSER:-club}"
 PGDB="${POSTGRES_DB:-$(val POSTGRES_DB)}"; PGDB="${PGDB:-club}"
 

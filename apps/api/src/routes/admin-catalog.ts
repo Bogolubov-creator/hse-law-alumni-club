@@ -123,7 +123,7 @@ export async function adminCatalogRoutes(app: FastifyInstance) {
     const row = {
       slug: dup.length ? `${slug}-${Date.now() % 10000}` : slug,
       title: b.title, category: b.category, price: b.price, stock: b.stock,
-      description: b.description ?? null, variants_json: b.variants_json ?? null, status: b.status,
+      description: b.description ?? null, variants_json: b.variants_json ?? null, images: b.images ?? null, status: b.status,
     };
     const created = (await di.request((createItem as any)("products", row))) as any;
     audit("product.create", { actor: `admin:${ctx.userId}`, subject: `product:${created.id}`, detail: { title: b.title, price: b.price, stock: b.stock, status: b.status }, req });

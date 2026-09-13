@@ -1,6 +1,11 @@
 import { env } from "../env.js";
 import { checkoutPool } from "./checkout-store.js";
 
+// Проверяем наличие миграций и право читать таблицы, а не только соединение SELECT 1.
+export const DATABASE_READY_SQL = `SELECT c.key_hash, s.id, p.path, o.status, f.kind, t.token_hash, r.token_key
+  FROM club_checkout_commits c, club_support_tickets s, club_page_views p,
+    club_mail_outbox o, club_faq_events f, club_telegram_links t, club_auth_revocations r LIMIT 0`;
+
 export type HealthCheck = {
   id: string; name: string; status: "ok" | "error" | "unknown" | "disabled";
   detail: string; latency_ms?: number;
@@ -27,7 +32,7 @@ export async function buildSystemHealth() {
     }),
     env.CHECKOUT_DATABASE_URL
       ? probe("database", "База заявок · PostgreSQL", async () => {
-        const config = { text: "SELECT 1", query_timeout: 3000 };
+        const config = { text: DATABASE_READY_SQL, query_timeout: 3000 };
         await checkoutPool().query(config);
       })
       : Promise.resolve<HealthCheck>({ id: "database", name: "База заявок · PostgreSQL", status: "disabled", detail: "Подключение не настроено; оформление недоступно" }),

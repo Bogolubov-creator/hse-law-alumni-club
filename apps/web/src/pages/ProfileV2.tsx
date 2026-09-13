@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR, type LedgerEntry } from "@club/shared";
-import { apiPatch, apiPost, isAuthError, type Me } from "../lib/api.js";
+import { apiGet, apiPatch, apiPost, isAuthError, type Me } from "../lib/api.js";
 import { useMe, useLedger } from "../lib/queries.js";
 import { useToast } from "../components/Toast.js";
 import { logout as logoutSession } from "../lib/cart.js";
@@ -151,6 +151,35 @@ function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChang
       </div>
     </div>
   );
+}
+
+function TelegramLink({ me, token }: { me: Me; token: string }) {
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const createLink = async () => {
+    setBusy(true); setError(""); setUrl("");
+    try {
+      const result = await apiGet<{ url: string }>("/me/tg-link", token);
+      setUrl(result.url);
+    } catch { setError("Не удалось подготовить ссылку. Попробуйте ещё раз."); }
+    finally { setBusy(false); }
+  };
+  return <Section title="Telegram клуба">
+    <p style={{ color: "var(--c-text-2)", lineHeight: 1.55 }}>
+      {me.alumni.telegram_linked ? "Аккаунт связан с Telegram. В боте доступны ваши баллы, календарь и переход в кабинет."
+        : "Свяжите аккаунт с ботом, чтобы видеть свои баллы и входить в мини-приложение клуба."}
+    </p>
+    {me.alumni.telegram_linked ? <Link to="/tg" className="foc" style={actionGhost}>Мини-приложение клуба</Link>
+      : me.alumni.telegram_available ? <>
+        <button type="button" className="foc" style={actionGhost} disabled={busy} onClick={createLink}>
+          {busy ? "Готовим ссылку…" : url ? "Получить новую ссылку" : "Связать с Telegram"}
+        </button>
+        {url && <div style={{ marginTop: 16 }}><a href={url} className="foc" style={action} target="_blank" rel="noopener noreferrer">Открыть бота</a>
+          <p style={{ color: "var(--c-text-2)", lineHeight: 1.5 }}>Нажмите «Старт» в боте. Ссылка действует 10 минут и используется один раз.</p></div>}
+      </> : <p style={{ color: "var(--c-text-3)" }}>Подключение бота готовится. Кабинет доступен на сайте.</p>}
+    {error && <p role="alert">{error}</p>}
+  </Section>;
 }
 
 /* ── Контакты и интересы ──────────────────────────────────────────── */
@@ -403,6 +432,7 @@ function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
                 <div className="profile-edit-zone">
                   <p style={{ ...label, margin: "0 0 18px", color: "var(--c-text-3)" }}>редактирование профиля</p>
                   <ContactsForm me={me.data} token={token} onSaved={() => me.refetch()} />
+                  <TelegramLink me={me.data} token={token} />
                   <History token={token} />
                   <AchievementsLink me={me.data} />
                 </div>

@@ -7,7 +7,7 @@ DO $$ BEGIN
 END $$;
 CREATE TABLE alumni (
   id uuid PRIMARY KEY, verification_status varchar(255), points_cached integer,
-  personal_discount integer
+  personal_discount integer, fio text, telegram_id varchar(255)
 );
 CREATE TABLE products (
   id uuid PRIMARY KEY, slug varchar(255) UNIQUE, title varchar(255), price integer,

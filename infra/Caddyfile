@@ -17,7 +17,12 @@
 {$WEB_DOMAIN} {
 	encode gzip
 	# Тело запроса к API ограничено (доп. к bodyLimit самого API).
-	request_body {
+	@avatar_upload path /api/me/avatar
+	request_body @avatar_upload {
+		max_size 4MB
+	}
+	@regular_request not path /api/me/avatar
+	request_body @regular_request {
 		max_size 512kb
 	}
 	# Ловушка для ботов-сканеров: типовые «дыры» чужих CMS сразу 404,

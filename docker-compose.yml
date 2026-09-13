@@ -77,6 +77,8 @@ services:
       directus:
         condition: service_healthy
     environment:
+      APP_ENV: ${APP_ENV:-development}
+      SEED_DEMO: ${SEED_DEMO:-false}
       DIRECTUS_URL: http://directus:8055
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -89,6 +91,27 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  migrate:
+    image: postgres:16.14-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGDATABASE: ${POSTGRES_DB}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      CHECKOUT_DB_USER: ${CHECKOUT_DB_USER:-club_api}
+      CHECKOUT_DB_PASSWORD: ${CHECKOUT_DB_PASSWORD:-}
+    volumes:
+      - ./apps/api/migrations:/migrations:ro
+      - ./infra/indexes.sql:/indexes.sql:ro
+      - ./scripts/migrate.sh:/migrate.sh:ro
+    entrypoint: ["sh", "/migrate.sh"]
+    restart: "no"
+    security_opt: ["no-new-privileges:true"]
+    logging: *default-logging
+
   api:
     build:
       context: .
@@ -97,13 +120,24 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      directus:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       API_PORT: "3000"
+      TRUST_PROXY: ${TRUST_PROXY:-loopback,uniquelocal}
       DIRECTUS_URL: ${DIRECTUS_URL}
       DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN}
-      CHECKOUT_DATABASE_URL: ${CHECKOUT_DATABASE_URL:-}
+      CHECKOUT_DATABASE_URL: ${CHECKOUT_DATABASE_URL:-postgresql://${CHECKOUT_DB_USER:-club_api}:${CHECKOUT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}}
+      SUPPORT_OPERATOR_NAME: "${SUPPORT_OPERATOR_NAME:-Автономная некоммерческая организация «Клуб выпускников факультета права НИУ ВШЭ»}"
+      SUPPORT_OPERATOR_ADDRESS: "${SUPPORT_OPERATOR_ADDRESS:-107061, г. Москва, ул. Большая Черкизовская, д. 3, к. 2, помещ. 17/1}"
+      SUPPORT_OPERATOR_CONTACT: "${SUPPORT_OPERATOR_CONTACT:-Письменное обращение по юридическому адресу оператора}"
+      SUPPORT_ENABLED: ${SUPPORT_ENABLED:-false}
+      SUPPORT_RETENTION_DAYS: ${SUPPORT_RETENTION_DAYS:-30}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      RESERVE_TTL_HOURS: ${RESERVE_TTL_HOURS:-72}
+      MAIL_OUTBOX_MAX_ATTEMPTS: ${MAIL_OUTBOX_MAX_ATTEMPTS:-8}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-1000}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-pravohse_alumni_bot}
       OFFICE_EMAIL: ${OFFICE_EMAIL:-}
       AUTH_SECRET: ${AUTH_SECRET}
       ADMIN_AUTH_SECRET: ${ADMIN_AUTH_SECRET:-}

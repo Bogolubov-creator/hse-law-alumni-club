@@ -1,3 +1,4 @@
+import { loadAdminRevocations, saveAdminRevocation } from "./auth-state.js";
 import { randomUUID } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
@@ -62,11 +63,7 @@ export async function findUserWithRole(email: string): Promise<{ id: string; rol
 // ── Админ-сессия (роли editor/admin) ──────────────────────────
 export interface AdminCtx { userId: string; role: string; jti?: string }
 
-/**
- * Отозванные админ-токены (выход из панели). Хранение в памяти процесса:
- * деплой одноинстансный (см. deploy-runbook), а сам токен живёт 12 ч – после
- * рестарта запись не нужна дольше срока жизни токена. Чистим по расписанию.
- */
+// Список отозванных сессий восстанавливается из БД до открытия HTTP-порта.
 const revokedAdminJti = new Map<string, number>();
 setInterval(() => {
   const now = Date.now();
@@ -79,8 +76,13 @@ export function signAdmin(userId: string, role: string): string {
   // jti нужен, чтобы конкретную сессию можно было погасить выходом из панели.
   return jwt.sign({ sub: userId, role, scope: "admin", jti: randomUUID() }, adminSecret(), { expiresIn: "12h" });
 }
-export function revokeAdmin(jti: string): void {
-  revokedAdminJti.set(jti, Date.now() + ADMIN_TTL_MS);
+export async function restoreAdminRevocations(): Promise<void> {
+  for (const [jti, expires] of await loadAdminRevocations()) revokedAdminJti.set(jti, expires);
+}
+export async function revokeAdmin(jti: string): Promise<void> {
+  const expires = Date.now() + ADMIN_TTL_MS;
+  await saveAdminRevocation(jti, expires);
+  revokedAdminJti.set(jti, expires);
 }
 export function resolveAdmin(req: FastifyRequest): AdminCtx | null {
   const token = bearer(req);
@@ -106,6 +108,7 @@ export function isFullAdmin(ctx: AdminCtx): boolean {
 }
 
 export interface AlumniCtx {
+  telegram_id?: string | null;
   id: string;
   fio: string | null;
   cohort: string | null;
@@ -125,7 +128,7 @@ export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null
   const rows = (await di.request(
     readItems("alumni", {
       filter: { user_id: { _eq: userId } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version"],
+      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version", "telegram_id"],
     }),
   )) as (AlumniCtx & { token_version?: number | null })[];
   return rows[0] ?? null;
@@ -140,7 +143,7 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   const rows = (await di.request(
     readItems("alumni", {
       filter: { id: { _eq: payload.alumni_id } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version"],
+      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version", "telegram_id"],
     }),
   )) as (AlumniCtx & { token_version?: number | null })[];
   const alumni = rows[0];

@@ -37,7 +37,7 @@ export async function adminAuthRoutes(app: FastifyInstance) {
   app.post("/auth/admin-logout", async (req, reply) => {
     const ctx = resolveAdmin(req);
     if (!ctx) return reply.code(401).send({ error: "Требуется вход администратора" });
-    if (ctx.jti) revokeAdmin(ctx.jti);
+    if (ctx.jti) await revokeAdmin(ctx.jti);
     audit("admin.logout", { actor: `admin:${ctx.userId}`, req });
     return { ok: true };
   });

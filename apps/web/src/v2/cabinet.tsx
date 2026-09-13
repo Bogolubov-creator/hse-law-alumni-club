@@ -78,7 +78,7 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
   const { pathname } = useLocation();
   return (
     <div className="cabinet-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
-      {/* Шапка кабинета – тот же материал, что у сайта (стекло, локап, капс), но со своими вкладками */}
+      {/* Шапка кабинета – общий локап и вкладки на непрозрачной поверхности формы */}
       <header className="club-header cabinet-header">
         <div className="club-header__inner">
           <Link to="/" className="foc club-header__brand">

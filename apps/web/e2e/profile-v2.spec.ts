@@ -163,3 +163,17 @@ test.describe("Профиль v2", () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 });
+
+test("Telegram: одноразовая ссылка появляется только по явному действию", async ({ page }) => {
+  await seedClientStorage(page);
+  await mockProfile(page, { me: { ...ME, alumni: { ...ME.alumni, telegram_available: true, telegram_linked: false } } });
+  let calls = 0;
+  await page.route("**/api/me/tg-link", r => { calls++; return r.fulfill({ json: { linked: false, url: "https://t.me/pravohse_alumni_bot?start=l" + "x".repeat(32) } }); });
+  await page.goto("/lk/profile");
+  await expect(page.getByRole("button", { name: "Связать с Telegram" })).toBeVisible();
+  expect(calls).toBe(0);
+  await page.getByRole("button", { name: "Связать с Telegram" }).click();
+  await expect(page.getByRole("link", { name: "Открыть бота" })).toHaveAttribute("href", /start=l/);
+  await expect(page.getByText(/Ссылка действует 10 минут/)).toBeVisible();
+  expect(calls).toBe(1);
+});

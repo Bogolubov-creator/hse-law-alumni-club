@@ -1,3 +1,4 @@
+import { consumeReset } from "../lib/auth-state.js";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
@@ -174,6 +175,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!users[0]) return reply.code(400).send({ error: "Аккаунт не найден" });
     if (users[0].status === "active") return { ok: true, already: true };
 
+    if (users[0].status !== "unverified") return reply.code(400).send({ error: "Подтверждение недоступно для этого аккаунта" });
     await directus.request((updateUser as any)(payload.sub, { status: "active" }));
     audit("email.confirm", { actor: `user:${payload.sub}`, req });
     // Теперь адрес доказан – зовём офис проверять выпуск.
@@ -238,6 +240,7 @@ export async function authRoutes(app: FastifyInstance) {
       audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
       return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     }
+    if (!payload.jti || !(await consumeReset(payload.jti))) return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     await directus.request((updateUser as any)(payload.sub, { password }));
     // Ревокация всех выданных JWT этого выпускника: старые сессии гаснут.
     if (linked[0]) await directus.request((updateItem as any)("alumni", linked[0].id, { token_version: (linked[0].token_version ?? 0) + 1 }));

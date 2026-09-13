@@ -99,6 +99,7 @@ export const achievementResSchema = z.object({
 });
 export const activityPointSchema = z.object({ month: z.string(), points: z.number() });
 export const alumniBriefSchema = z.object({
+  telegram_linked: z.boolean().optional(), telegram_available: z.boolean().optional(),
   fio: z.string().nullable(), cohort: z.string().nullable(), verification_status: z.string(),
   contacts: z.record(z.string()).optional(), edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
   interests: z.array(z.string()).optional(),

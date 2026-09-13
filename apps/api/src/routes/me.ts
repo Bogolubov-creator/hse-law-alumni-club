@@ -31,14 +31,16 @@ function lastSixMonths(ledger: { delta: number; created_at: string }[], now = ne
 
 export async function meRoutes(app: FastifyInstance) {
   // Ссылка привязки Telegram-бота: t.me/<бот>?start=<подписанный код>.
-  app.get("/me/tg-link", async (req, reply) => {
+  app.get("/me/tg-link", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
     if (a.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
+    if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram пока не подключён" });
+    reply.header("Cache-Control", "no-store");
     const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: a.id } }, limit: 1, fields: ["telegram_id"] }))) as any[];
     return {
       linked: !!rows[0]?.telegram_id,
-      url: `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${makeTgLinkCode(a.id)}`,
+      url: `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${await makeTgLinkCode(a.id)}`,
     };
   });
 
@@ -64,6 +66,7 @@ export async function meRoutes(app: FastifyInstance) {
 
     return {
       alumni: {
+        telegram_linked: !!a.telegram_id, telegram_available: !!env.TELEGRAM_BOT_TOKEN,
         fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {},
         edu_program: a.edu_program, edu_level: a.edu_level, interests: a.interests_json ?? [], avatar: a.avatar,
         referral_code: a.referral_code,
