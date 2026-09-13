@@ -99,9 +99,9 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
               );
             })}
           </nav>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="cabinet-header__tools">
             <VisionToggle compact v2 />
-            <button onClick={onLogout} className="foc" style={{ ...actionGhost, minHeight: 40, padding: "8px 14px" }}>выйти</button>
+            <button onClick={onLogout} className="foc cabinet-header__logout" style={{ ...actionGhost, minHeight: 40, padding: "8px 14px" }}>выйти</button>
           </div>
         </div>
       </header>

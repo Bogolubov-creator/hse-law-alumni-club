@@ -18,7 +18,9 @@ export default function Modal({
     background.forEach((el) => { el.inert = true; });
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    ref.current?.focus();
+    // autoFocus дочернего поля уже мог сработать при монтировании.
+    // Не отбираем у него фокус, иначе поиск открывается без готового ввода.
+    if (!ref.current?.contains(document.activeElement)) ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { closeRef.current(); return; }
       // Ловушка фокуса: Tab не должен уходить за пределы модалки (требование aria-modal).

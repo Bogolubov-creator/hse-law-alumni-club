@@ -62,6 +62,23 @@
   font-weight: 400;
   color: var(--c-text-3);
 }
+.cabinet-header__tools { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+/* На узком экране все действия остаются видны: бренд и доступность сверху,
+   разделы кабинета и выход снизу. Не скрываем переполнение вместе с кнопками. */
+@media (max-width: 700px) {
+  .cabinet-header .club-header__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    height: auto;
+    padding: 8px 16px;
+    gap: 4px 8px;
+  }
+  .cabinet-header .club-header__brand { grid-area: 1 / 1; min-width: 0; min-height: 44px; }
+  .cabinet-header .cabinet-header__tabs { grid-area: 2 / 1; margin-left: 0; }
+  .cabinet-header__tools { display: contents; }
+  .cabinet-header__tools > .club-chrome-icon-btn { grid-area: 1 / 2; justify-self: end; }
+  .cabinet-header__logout { grid-area: 2 / 2; justify-self: end; }
+}
 .club-header__nav {
   display: flex;
   align-items: center;

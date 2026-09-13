@@ -1,5 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { seedClientStorage, stubSw } from "./harness.js";
+import { seedClientStorage, stubSw, mockPublicApi } from "./harness.js";
+
+test.beforeEach(async ({ page }) => { await mockPublicApi(page); });
 
 /**
  * Телефон после решения заказчика 12.09: публичные страницы – та же адаптивная
@@ -26,9 +28,16 @@ test.describe("Меню шапки на телефоне", () => {
   test("меню открывает все разделы, поиск и корзину", async ({ page }) => {
     await page.goto("/events");
     await page.getByRole("button", { name: "Открыть меню" }).click();
-    const labels = await menu(page).getByRole("link").allInnerTexts();
-    expect(labels.map((t) => t.trim().replace(/\d+$/, "").trim())).toEqual(["ДПО", "События", "Новости", "Подкасты", "Мерч", "Корзина", "Вступить в клуб"]);
-    await expect(menu(page).getByRole("button", { name: /Поиск/ })).toBeVisible();
+    for (const [label, href] of [["ДПО", "/dpo"], ["События", "/events"], ["Новости", "/news"], ["Подкасты", "/podcasts"], ["Мерч", "/merch"], ["Корзина", "/cart"], ["Вступить в клуб", "/join"]]) {
+      const link = menu(page).getByRole("link", { name: label!, exact: true });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute("href", href!);
+    }
+    await menu(page).getByRole("button", { name: /Поиск/ }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("searchbox")).toBeFocused();
+    await page.getByRole("button", { name: "Закрыть поиск" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
   test("счётчик корзины виден в меню шапки", async ({ page }) => {

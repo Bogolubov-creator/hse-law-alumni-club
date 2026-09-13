@@ -1,8 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
-import { seedClientStorage } from "./harness.js";
+import { seedClientStorage, mockPublicApi } from "./harness.js";
+
+test.beforeEach(async ({ page }) => { await mockPublicApi(page); });
 
 /**
- * Кабинет v2 (/v2/lk).
+ * Кабинет (/lk).
  *
  * Авторизованный экран проверяется на подменённых ответах API, а не реальным
  * логином: настоящие учётные данные в тесты не кладём, а отрисовку и пустые
@@ -64,7 +66,11 @@ const EVENTS = [
 async function stubSession(page: Page) {
   await seedClientStorage(page);
   await page.addInitScript(() => {
-    localStorage.setItem("club_token", "e2e-stub-token");
+    // Полная навигация после выхода не должна заново создавать тестовую сессию.
+    if (!sessionStorage.getItem("e2e-session-seeded")) {
+      localStorage.setItem("club_token", "e2e-stub-token");
+      sessionStorage.setItem("e2e-session-seeded", "1");
+    }
     Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
   });
 }
@@ -75,6 +81,8 @@ async function mockCabinet(page: Page, over: Partial<Record<"me" | "orders" | "c
   await page.route("**/api/me/orders", (r) => r.fulfill(json(over.orders ?? ORDERS)));
   await page.route("**/api/me/classmates", (r) => r.fulfill(json(over.classmates ?? CLASSMATES)));
   await page.route("**/api/me/events", (r) => r.fulfill(json(over.events ?? EVENTS)));
+  await page.route("**/api/podcasts", r => r.fulfill(json({ items: [], subscribed: false, sub_until: null, price: 0 })));
+  await page.route("**/api/cart", r => r.fulfill(json({ items: [], count: 0, subtotal: 0 })));
   await page.route("**/api/events", (r) => r.fulfill(json([])));
   await page.route("**/api/news**", (r) => r.fulfill(json([])));
   await stubSession(page);
@@ -110,6 +118,8 @@ test.describe("Кабинет v2", () => {
     await expect(page.locator(".cabinet-next-action")).toContainText("Следующее достижение: Пятеро однокурсников");
     await expect(page.locator(".cabinet-next-action").getByRole("link", { name: /К прогрессу/ })).toBeVisible();
 
+    // Подробности обзора открываются по запросу пользователя.
+    await page.locator("summary").filter({ hasText: /^Уведомления и заявки$/ }).click();
     // Заявки: номер и посчитанная сумма
     await expect(page.getByRole("heading", { name: "Мои заявки" })).toBeVisible();
     await expect(page.getByText("ORD-000418", { exact: true })).toBeVisible();
@@ -119,7 +129,7 @@ test.describe("Кабинет v2", () => {
     await page.getByRole("button", { name: "Мои заявки", exact: true }).click();
     await expect(page.getByRole("group", { name: "Фильтр заявок" })).toBeVisible();
     await page.locator("summary").filter({ hasText: "ORD-000377" }).click();
-    await expect(page.getByText(/Что дальше:/).first()).toBeVisible();
+    await expect(page.locator("details[open]").filter({ has: page.locator("summary").filter({ hasText: "ORD-000377" }) }).getByText(/Что дальше:/)).toBeVisible();
     await page.getByRole("button", { name: "Закрытые", exact: true }).click();
     await expect(page.getByText("В этом фильтре заявок нет.")).toBeVisible();
     await page.getByRole("button", { name: "Все", exact: true }).click();
@@ -127,8 +137,8 @@ test.describe("Кабинет v2", () => {
     await page.getByRole("button", { name: "Достижения", exact: true }).click();
     // Достижения: полученное и заметное «следующее»
     await expect(page.getByRole("heading", { name: "Первая заявка", exact: true })).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Следующее:");
-    await expect(page.getByRole("status")).toContainText("Пятеро однокурсников");
+    await expect(page.locator("main").getByRole("status")).toContainText("Следующее:");
+    await expect(page.locator("main").getByRole("status")).toContainText("Пятеро однокурсников");
     await expect(page.locator(".club-award.is-next")).toContainText("следующее · 2 / 5");
 
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();
@@ -146,7 +156,8 @@ test.describe("Кабинет v2", () => {
     await expect(page.getByText("Орлова Мария Петровна")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Обзор", exact: true }).click();
-    await expect(page.getByText("Заявка ORD-000418 подтверждена · оплата прошла")).toBeVisible();
+    await page.locator("summary").filter({ hasText: /^Уведомления и заявки$/ }).click();
+    await expect(page.getByText("Заявка ORD-000418 подтверждена · оплата прошла", { exact: false })).toBeVisible();
     // Входящие в друзья больше не дублируются в ленте обзора
     await expect(page.getByText("хочет добавить вас в друзья")).toHaveCount(0);
   });
@@ -160,8 +171,9 @@ test.describe("Кабинет v2", () => {
     });
     await page.goto("/lk");
 
-    await expect(page.getByText("Заявок пока нет.")).toBeVisible();
-    await expect(page.getByRole("link", { name: /Посмотреть программы ДПО/ })).toBeVisible();
+    await page.getByRole("button", { name: "Мои заявки", exact: true }).click();
+    await expect(page.getByText("Заявок пока нет.", { exact: false })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Программы ДПО →", exact: true })).toHaveAttribute("href", "/dpo");
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();
     await expect(page.getByText(/в клубе пока никого нет/)).toBeVisible();
     // Пустые разделы не рисуются вовсе, а не пустыми заголовками
@@ -199,10 +211,34 @@ test.describe("Кабинет v2", () => {
 });
 
 // Обзор остаётся компактным, полная история доступна отдельным переходом.
+for (const width of [320, 390, 700]) {
+  test(`шапка кабинета на ${width}px сохраняет профиль и выход в пределах экрана`, async ({ page }) => {
+    await mockCabinet(page);
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/lk");
+    await expect(page.getByRole("heading", { name: "Мой кабинет", exact: true })).toBeVisible();
+    const header = page.getByRole("banner");
+    for (const button of [header.getByRole("button", { name: "выйти", exact: true }), header.getByRole("button", { name: "Версия для слабовидящих" })]) {
+      await expect(button).toBeInViewport();
+      const box = await button.boundingBox();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await header.getByRole("link", { name: "профиль", exact: true }).click();
+    await expect(page).toHaveURL(/\/lk\/profile$/);
+    await expect(header.getByRole("link", { name: "профиль", exact: true })).toHaveAttribute("aria-current", "page");
+    await header.getByRole("button", { name: "выйти", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem("club_token"))).toBeNull();
+  });
+}
+
 test("все заявки доступны из компактного обзора", async ({ page }) => {
   const orders = Array.from({ length: 6 }, (_, i) => ({ ...ORDERS[0], number: "HISTORY-" + i }));
   await mockCabinet(page, { orders, events: [] });
   await page.goto("/lk");
+  await page.locator("summary").filter({ hasText: /^Уведомления и заявки$/ }).click();
   await expect(page.getByText("HISTORY-2", { exact: true })).toBeVisible();
   await expect(page.getByText("HISTORY-3", { exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "Все заявки (6)", exact: true }).click();
@@ -212,9 +248,15 @@ test("все заявки доступны из компактного обзо�
   await expect(page.getByText("HISTORY-5", { exact: true })).toBeVisible();
 });
 test("уведомления раскрываются без потери действий", async ({ page }) => {
-  await mockCabinet(page, { events: [EVENTS[1], EVENTS[1], EVENTS[1], EVENTS[0]] });
+  await mockCabinet(page, { events: [EVENTS[1], EVENTS[1], EVENTS[1], { kind: "podcast_expiring", days_left: 3, until: "2026-10-01" }, EVENTS[0]] });
   await page.goto("/lk");
+  await page.locator("summary").filter({ hasText: /^Уведомления и заявки$/ }).click();
+  await expect(page.getByRole("link", { name: /Подписка на подкасты истекает/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Все уведомления (4)", exact: true }).click();
+  await expect(page.getByRole("link", { name: /Подписка на подкасты истекает через 3 дн/ })).toHaveAttribute("href", "/podcasts");
+  await page.getByRole("button", { name: "Свернуть уведомления", exact: true }).click();
+  await expect(page.getByRole("link", { name: /Подписка на подкасты истекает/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Сообщество", exact: true }).click();
   await expect(page.getByRole("button", { name: "Принять заявку в друзья – Белов Роман Игоревич" })).toBeVisible();
 });
 
@@ -245,13 +287,20 @@ test('общий каталог достижений целиком и в одн
 test('из кабинета доступны все разделы клуба и возврат из новостей', async ({ page }) => {
   await mockCabinet(page);
   await page.goto('/lk');
-  const nav = page.getByRole('navigation', { name: 'Разделы клуба', exact: true });
-  for (const [name, route] of [['Новости','news'],['События','events'],['ДПО','dpo'],['Мерч','merch'],['Подкасты','podcasts'],['Корзина','cart'],['Поддержка','support']]) {
-    await expect(nav.getByRole('link',{name,exact:true})).toHaveAttribute('href', `/${route}`);
-  }
   await expect(page.getByRole('heading',{name:'Ближайшая встреча',exact:true})).toBeVisible();
+  await page.locator("summary").filter({ hasText: /^Ещё в клубе$/ }).click();
   await expect(page.getByRole('heading',{name:'Новости клуба',exact:true})).toBeVisible();
-  await nav.getByRole('link',{name:'Новости',exact:true}).click();
+  const nav = page.getByRole('navigation', { name: 'Разделы клуба', exact: true });
+  if (await nav.isVisible()) {
+    for (const [name, route] of [['Новости','news'],['События','events'],['ДПО','dpo'],['Мерч','merch'],['Подкасты','podcasts'],['Корзина','cart'],['Поддержка','support']]) {
+      await expect(nav.getByRole('link',{name,exact:true})).toHaveAttribute('href', `/${route}`);
+    }
+  } else {
+    for (const route of ['news', 'events', 'dpo', 'merch', 'podcasts', 'support']) {
+      await expect(page.locator(`a[href="/${route}"]`).filter({ visible: true }).first()).toBeVisible();
+    }
+  }
+  await page.getByRole("link", { name: "Все новости", exact: true }).click();
   await expect(page).toHaveURL(/\/news$/);
   await page.goBack();
   await expect(page.getByRole('heading',{name:'Мой кабинет',exact:true})).toBeVisible();
