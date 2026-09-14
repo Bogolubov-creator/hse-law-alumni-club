@@ -240,8 +240,6 @@
   @keyframes home-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .home-agenda__photo img, .home-dpo__cover img, .home-voice__photo img, .home-join__art img { transition: transform 1400ms var(--ease-out); }
-  .home-agenda:hover .home-agenda__photo img, .home-dpo__item:hover .home-dpo__cover img, .home-voice:hover .home-voice__photo img { transform: scale(1.035); }
   .home-btn, .home-text-link { transition: background-color 220ms var(--ease-out), color 220ms var(--ease-out), border-color 220ms var(--ease-out), transform 220ms var(--ease-out); }
   .home-btn:active { transform: scale(0.98); }
 }
@@ -260,10 +258,6 @@
     radial-gradient(60% 50% at 18% 38%, rgb(236 90 19 / 0.14), transparent 70%),
     radial-gradient(40% 40% at 90% 100%, rgb(255 255 255 / 0.05), transparent 70%),
     var(--p-ink);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .home-hero__photo img { animation: home-breathe 22s var(--ease-out) both; transform-origin: 40% 30%; }
-  @keyframes home-breathe { from { transform: scale(1); } to { transform: scale(1.07); } }
 }
 
 /* Кнопки: стрелка в своём кружке, пружинная кривая, тёплая тень у главного действия */
@@ -291,7 +285,7 @@
 /* Витрина ДПО: обложки как предметы с рассеянной тенью и подъёмом */
 .home-dpo__cover { box-shadow: var(--shadow-ambient); transition: transform 520ms var(--ease-spring), box-shadow 520ms var(--ease-spring); }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .home-dpo__item:hover .home-dpo__cover { transform: translateY(-6px); box-shadow: var(--shadow-ambient-lift); }
+  .home-dpo__item:hover .home-dpo__cover { box-shadow: var(--shadow-ambient-lift); }
 }
 .home-dpo__price { color: var(--c-accent-text); }
 
@@ -331,3 +325,8 @@
 .home-community .home-voice__photo::after { display: none; }
 /* Масштабирование фотографии не расширяет мобильную страницу. */
 .home-hero__photo { overflow: hidden; }
+
+/* Картинка остаётся внутри кадра; целый главный исходник сохраняет запас детализации. */
+.home-hero__photo, .home-agenda__photo, .home-voice__photo, .home-meeting__photo { overflow: hidden; isolation: isolate; }
+.home-hero__photo { background: var(--p-ink); }
+.home-hero__photo img { object-fit: contain; object-position: center; }

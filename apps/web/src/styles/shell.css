@@ -353,7 +353,6 @@ html.pwa-shell .club-header__inner { padding-inline: 16px; }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .club-masthead__photo img { transition: transform 1400ms var(--ease-out); }
-  .club-masthead:hover .club-masthead__photo img { transform: scale(1.03); }
 }
 /* Мачта: фото растворяется в графитовую панель, а не упирается в неё */
 .club-masthead__photo::before {
@@ -401,3 +400,5 @@ html.pwa-shell .club-header__inner { padding-inline: 16px; }
 
 /* Квадратная Фемида клуба рядом с названием, без повторного фонового бейджа. */
 .club-header__emblem { display: block; flex: none; width: 36px; height: 36px; object-fit: contain; border-radius: 4px; }
+
+.club-masthead__photo { overflow: hidden; isolation: isolate; }

@@ -53,7 +53,7 @@ export default function ProductImage({ src, title, priority = false }: Props) {
       loading={priority ? "eager" : "lazy"}
       decoding="async"
       fetchPriority={priority ? "high" : undefined}
-      style={{ display: "block", width: "100%", height: "100%", objectFit: "contain" }}
+      style={{ display: "block", width: "100%", height: "100%", objectFit: "scale-down" }}
       onError={() => {
         if (!useOrig && webp) {
           setUseOrig(true);

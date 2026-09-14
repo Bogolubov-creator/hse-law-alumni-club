@@ -43,7 +43,6 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .club-program-mast__art img, .club-program-mast__art picture { transition: transform 900ms var(--ease-spring), box-shadow 900ms var(--ease-spring); }
-  .club-program-mast:hover .club-program-mast__art img { transform: translateY(-4px) scale(1.01); }
 }
 @media (max-width: 900px) {
   .club-program-mast { grid-template-columns: 1fr; min-height: 0; }
