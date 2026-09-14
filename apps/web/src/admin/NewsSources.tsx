@@ -21,7 +21,7 @@ export default function NewsSources() {
   const sources = data.data?.sources || NEWS_SOURCES.map(s => ({...s,checked_at:isMirror?snapshot.checked_at:undefined}));
   const items = (data.data?.items || (isMirror ? snapshot.items : [])).filter(i=>(selected==="all"||i.sources.includes(selected))&&(showDismissed||i.state!=="dismissed"));
   return <section className="mb-6 rounded-[18px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] p-5" aria-labelledby="news-sources-title">
-    <h3 id="news-sources-title" className="font-display text-xl">Источники и обзоры</h3>
+    <h3 id="news-sources-title" className="text-xl" style={{fontFamily:"var(--f-display)",fontWeight:400}}>Источники и обзоры</h3>
     <p className="mt-2 text-sm text-[var(--c-text-2)]">Обновите источник, выберите материал и подготовьте анонс. В ленту попадут только опубликованные новости. Повторные ссылки объединяются.</p>
     {isMirror && <p role="status" className="mt-3 text-sm">На зеркале показан сохранённый снимок источников. Обновление и импорт доступны в админке с подключённым сервером.</p>}
     {data.data && <p className="mt-3 text-sm">{data.data.automatic ? "Автосбор включён: каждый час, на 17-й минуте." : "Автосбор выключен. Доступно ручное обновление; включение – в настройках сервера."}</p>}
@@ -45,7 +45,7 @@ export default function NewsSources() {
       </div>
     </article>)}
     {edit && <Modal onClose={()=>setEdit(null)} labelledBy="source-import-title" maxWidth={600}><form className="rounded-[18px] bg-[var(--c-bg-raised)] p-6" onSubmit={e=>{e.preventDefault();mutation.mutate({path:`/admin/news-sources/${edit.id}/import`,body:{title,excerpt}});}}>
-      <h3 id="source-import-title" className="font-display text-xl">Анонс материала</h3><p className="my-3 text-sm">Напишите короткий обзор своими словами. Ссылка и дата оригинала сохранятся.</p>
+      <h3 id="source-import-title" className="text-xl" style={{fontFamily:"var(--f-display)",fontWeight:400}}>Анонс материала</h3><p className="my-3 text-sm">Напишите короткий обзор своими словами. Ссылка и дата оригинала сохранятся.</p>
       <FormField label="Заголовок" value={title} onChange={setTitle} required/><FormField label="Ваш анонс" value={excerpt} onChange={setExcerpt} textarea/>
       <button disabled={mutation.isPending||title.trim().length<3||title.length>240||excerpt.length>2000} className="foc mt-4 rounded-xl bg-[var(--c-accent)] px-4 py-3 font-semibold text-[var(--c-on-accent)] disabled:opacity-50">Сохранить черновик</button>
       {mutation.isError && <p role="alert">{mutation.error.message}</p>}
