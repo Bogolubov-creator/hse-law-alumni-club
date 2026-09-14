@@ -1,3 +1,4 @@
+import { useMirrorPodcastDemo } from "./mirror-podcast-demo.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { newsListSchema, newsItemSchema, pageHomeSchema, meSchema, ledgerListSchema, myOrdersSchema, classmatesSchema, podcastsResSchema, lkEventsSchema, type Classmate, type PodcastsRes, type LkEvent } from "@club/shared";
 import { apiGet, apiPost, apiDelete, retryUnlessClientError, type NewsItem, type PageHome, type Me, type LedgerEntry, type MyOrder } from "./api.js";
@@ -94,8 +95,9 @@ export function useLkEvents(token: string | null) {
 
 // Подкасты: audio_url приходит только активным подписчикам.
 export function usePodcasts(token: string | null) {
+  const demo = useMirrorPodcastDemo();
   return useQuery({
-    queryKey: ["podcasts", token ?? "guest"],
+    queryKey: ["podcasts", token ?? "guest", demo],
     queryFn: () => apiGet<PodcastsRes>("/podcasts", token ?? undefined, podcastsResSchema),
   });
 }

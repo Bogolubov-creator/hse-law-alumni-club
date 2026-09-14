@@ -83,6 +83,11 @@ export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: s
     if (ref.current) ref.current.playbackRate = next;
   };
 
+  const handleError = () => {
+    if (autoRetried.current) setStale("Не удалось загрузить аудио. Проверьте соединение и повторите.");
+    else { autoRetried.current = true; void refreshSrc(); }
+  };
+
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-3">
@@ -90,17 +95,15 @@ export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: s
           ref={ref}
           controls
           preload="none"
-          src={liveSrc}
           className="min-w-0 flex-1"
+          onError={handleError}
           onEmptied={() => { metadataReady.current = false; }}
           onLoadedMetadata={restore}
           onTimeUpdate={savePos}
           onPause={() => { lastSave.current = 0; savePos(); }}
-          onError={() => {
-            if (autoRetried.current) setStale("Не удалось загрузить аудио. Проверьте соединение и повторите.");
-            else { autoRetried.current = true; void refreshSrc(); }
-          }}
-        />
+        >
+          <source src={liveSrc} type={/\.mp3(?:[?#]|$)/i.test(liveSrc) ? "audio/mpeg" : undefined} onError={(event) => { event.stopPropagation(); handleError(); }} />
+        </audio>
         <button
           onClick={cycleRate}
           title="Скорость воспроизведения"

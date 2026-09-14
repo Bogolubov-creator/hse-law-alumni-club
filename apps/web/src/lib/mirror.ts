@@ -1,3 +1,4 @@
+import { mirrorPodcastDemo } from "./mirror-podcast-demo.js";
 /**
  * Статические ответы «API» для публичного зеркала на GitHub Pages.
  * Витрина + демо ЛК + демо админки без бэкенда (сиды и фикстуры).
@@ -567,8 +568,8 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/timeline") return jsonResponse(TIMELINE);
   if (clean === "/events") return jsonResponse(EVENTS);
   if (clean === "/podcasts") return jsonResponse({
-    ...PODCASTS, subscribed: false, sub_until: null,
-    items: PODCASTS.items.map(p => ({...p, audio_url: p.is_free ? p.audio_url : null, video_url: p.is_free ? p.video_url : null})),
+    ...PODCASTS, subscribed: mirrorPodcastDemo(), sub_until: null,
+    items: PODCASTS.items.map(p => ({...p, audio_url: p.is_free ? p.audio_url : mirrorPodcastDemo() ? `https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/${p.id.replace("mirror-pod-", "")}.mp3` : null, video_url: null})),
   });
   if (clean === "/payments/config") return jsonResponse({ enabled: false });
   if (clean === "/support/config") {

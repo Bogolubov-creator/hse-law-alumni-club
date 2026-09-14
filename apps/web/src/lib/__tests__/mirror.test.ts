@@ -1,3 +1,4 @@
+import { setMirrorPodcastDemo } from "../mirror-podcast-demo.js";
 // @vitest-environment happy-dom
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { cartSummarySchema, meSchema } from "@club/shared";
@@ -65,4 +66,15 @@ it("админка зеркала делит события на страниц�
   const roster = await request(`/admin/events/${first.data.items[0].id}/rsvps`);
   expect(roster.data).toEqual(legacy.data[0].rsvps);
   expect((await request("/admin/events/missing/rsvps")).status).toBe(404);
+});
+
+it("открывает все семь записей только при явном включении деморежима и закрывает обратно", async () => {
+  setMirrorPodcastDemo(true);
+  const { data } = await request("/podcasts");
+  expect(data.subscribed).toBe(true); expect(data.sub_until).toBeNull();
+  expect(data.items.every((p: any) => p.audio_url?.endsWith(".mp3"))).toBe(true);
+  setMirrorPodcastDemo(false);
+  const guest = (await request("/podcasts")).data;
+  expect(guest.subscribed).toBe(false);
+  expect(guest.items.filter((p: any) => p.audio_url)).toHaveLength(1);
 });

@@ -1,3 +1,5 @@
+import { isMirror } from "../lib/public-url.js";
+import { MirrorPodcastDemo } from "../components/MirrorPodcastDemo.js";
 import { PodcastSubscription } from "../components/PodcastSubscription.js";
 import { PodcastArtwork } from "../components/PodcastArtwork.js";
 import { Mark } from "../v2/Mark.js";
@@ -58,13 +60,14 @@ export default function PodcastsV2() {
         />
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
 
+        <MirrorPodcastDemo />
         {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}
         {data && !data.subscribed && <PodcastSubscription token={t} price={data.price} />}
 
         {data?.subscribed && (
           <div className="podcast-member-panel">
             <Mark kind="scales" size={34} />
-            <div><strong>Ваша подписка активна</strong><p>{data.sub_until ? `До ${new Date(data.sub_until).toLocaleDateString("ru-RU")} · ` : ""}Все выпуски доступны для прослушивания</p></div>
+            <div><strong>{isMirror ? "Демонстрационный доступ" : "Ваша подписка активна"}</strong><p>{data.sub_until ? `До ${new Date(data.sub_until).toLocaleDateString("ru-RU")} · ` : ""}Все выпуски доступны для прослушивания</p></div>
           </div>
         )}
 

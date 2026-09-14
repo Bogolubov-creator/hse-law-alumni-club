@@ -1,3 +1,4 @@
+import { MirrorPodcastDemo } from "../components/MirrorPodcastDemo.js";
 import { isMirror } from "../lib/public-url.js";
 import { Link, useParams } from "react-router-dom";
 import { usePodcasts } from "../lib/queries.js";
@@ -22,6 +23,7 @@ export default function PodcastEpisode() {
   useHead({ title: episode?.title ?? "Выпуск подкаста", noindex: true });
   return <V2Shell><main id="main" className="episode-page">
     <Link to="/podcasts" className="foc episode-back">← Все подкасты</Link>
+    <MirrorPodcastDemo />
     {q.isLoading ? <p role="status">Загружаем выпуск…</p> : q.isError ? <div role="alert"><p>Не удалось загрузить выпуск.</p><button className="foc" style={action} onClick={() => q.refetch()}>Повторить</button></div> : !episode ? <h1>Выпуск не найден</h1> : <>
       <div className="episode-layout">
         <div className="episode-cover"><PodcastArtwork key={episode.id} cover={episode.cover} number={index + 1} locked={locked} /></div>
@@ -31,7 +33,7 @@ export default function PodcastEpisode() {
           {episode.description && <p className="episode-description">{episode.description}</p>}
           {locked ? <section className="episode-access" aria-label="Доступ по подписке">
             <PodcastLock /><h2>Этот выпуск – по подписке</h2>
-            <p>{isMirror ? "На зеркале платные выпуски закрыты. Демонстрационный кабинет не предоставляет подписку." : !session ? "Войдите в кабинет. Для прослушивания этого выпуска нужна действующая подписка." : "Для прослушивания этого выпуска нужна действующая подписка."}</p>
+            <p>{isMirror ? "В гостевом просмотре этот выпуск закрыт. Для проверки записи включите деморежим подписчика выше." : !session ? "Войдите в кабинет. Для прослушивания этого выпуска нужна действующая подписка." : "Для прослушивания этого выпуска нужна действующая подписка."}</p>
             <strong>{q.data ? rub(q.data.price) : "4 999 ₽"} / год</strong>
             {!session && !isMirror ? <Link to="/lk?next=%2Fpodcasts%23podcast-subscription" className="foc" style={action}>Войти в кабинет</Link> : <Link to="/podcasts#podcast-subscription" className="foc" style={action}>Условия подписки</Link>}
           </section> : <section className="episode-player" aria-label="Плеер выпуска">

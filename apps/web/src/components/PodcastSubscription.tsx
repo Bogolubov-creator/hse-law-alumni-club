@@ -1,3 +1,4 @@
+import { isMirror } from "../lib/public-url.js";
 import { Link, useNavigate } from "react-router-dom";
 import { isAuthError, rub } from "../lib/api.js";
 import { clearToken } from "../lib/cart.js";
@@ -32,7 +33,10 @@ export function PodcastSubscription({ token, price }: { token: string | null; pr
       <strong className="podcast-subscription__price">{rub(price)} <span>/ год</span></strong>
     </div>
     <div className="podcast-subscription__steps">
-      {!token ? <>
+      {isMirror ? <>
+        <h3>Оформление на зеркале недоступно</h3>
+        <p>Заявки и оплата здесь не отправляются. Бесплатный выпуск открыт, а для проверки остальных записей используйте переключатель деморежима выше.</p>
+      </> : !token ? <>
         <h3>Начните со входа</h3>
         <p>Подписка доступна выпускникам после подтверждения учебным офисом. Войдите, чтобы продолжить оформление.</p>
         <Link className="foc" style={action} to={loginUrl}>Войти в кабинет</Link>

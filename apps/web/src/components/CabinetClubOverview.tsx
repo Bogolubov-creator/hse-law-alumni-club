@@ -1,3 +1,4 @@
+import { isMirror } from "../lib/public-url.js";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet, type Me } from "../lib/api.js";
@@ -81,9 +82,9 @@ function BenefitsStrip({ me, token }: { me: Me; token: string }) {
       <div className="cabinet-benefits__row">
         <div>
           <strong>Подкасты</strong>
-          <span>{podcastNote(podcasts.isLoading, podcasts.data?.subscribed, podcasts.data?.sub_until)}</span>
+          <span>{isMirror && subscribed ? "Деморежим подписчика, без оплаты" : podcastNote(podcasts.isLoading, podcasts.data?.subscribed, podcasts.data?.sub_until)}</span>
         </div>
-        <Link className="foc" to="/podcasts">{subscribed ? "Слушать" : "Оформить"}</Link>
+        <Link className="foc" to="/podcasts">{subscribed ? "Слушать" : isMirror ? "Посмотреть" : "Оформить"}</Link>
       </div>
     </section>
   );
