@@ -34,7 +34,7 @@ function sober(value: string | null | undefined, fallback: string, stale: RegExp
   return v;
 }
 
-/** Одно курсивное слово в титуле – как в референсе; остальное прямым Slab. */
+/** Последнее слово титула охрой; начертание то же, что у остального текста. */
 function Emphasized({ title }: { title: string }) {
   const words = title.split(" ");
   if (words.length < 3) return <>{title}</>;
@@ -164,7 +164,7 @@ export default function HomeV2() {
         {/* 4. Встреча клуба: фото во всю ширину, чёрная подпись под ним */}
         <section className="home-meeting" aria-labelledby="home-meeting-title" data-reveal>
           <div className="home-meeting__photo">
-            <img src={mediaUrl("/assets/photos/alumni-meeting.jpg")} alt="Выпускники факультета права на первой встрече клуба в актовом зале Вышки" width={1100} height={330} loading="lazy" decoding="async" />
+            <img src={mediaUrl("/assets/photos/alumni-meeting-full.jpg")} alt="Выпускники факультета права на первой встрече клуба в актовом зале Вышки" width={1083} height={722} loading="lazy" decoding="async" />
           </div>
           <div className="home-meeting__caption club-dark">
             <h2 id="home-meeting-title">Первая встреча клуба, <em>27 февраля</em></h2>
