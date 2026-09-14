@@ -46,7 +46,7 @@ export interface OrderRow {
   fulfillment: string; address: string | null; comment: string | null; consent_pdn: boolean; status: string; created_at: string;
   payment_id: string | null; payment_status: string | null; paid_at: string | null;
 }
-export interface NewsRow { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; status: string }
+export interface NewsRow { id: string; slug: string; title: string; excerpt: string | null; body: string | null; published_at: string | null; source_url?: string | null; status: string }
 export interface PushSubRow { id: string; alumni_id: string; endpoint: string; keys: { p256dh: string; auth: string }; created_at: string }
 export interface TimelineItemRow { id: string; year: string; title: string; text: string | null; metric: string | null; sort: number; status: string }
 export interface PodcastRow { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; video_url: string | null; duration: string | null; is_free: boolean; sort: number; status: string; created_at: string }

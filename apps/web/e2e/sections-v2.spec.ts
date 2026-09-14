@@ -22,7 +22,7 @@ test.describe("Новости v2", () => {
     await page.goto("/news");
     await expect(page.getByRole("heading", { level: 1, name: "Новости клуба" })).toBeVisible();
 
-    const first = page.locator("article.v2-row").first();
+    const first = page.locator("article").filter({ has: page.getByRole("heading", { level: 2 }) }).first();
     await expect(first).toBeVisible();
     const title = (await first.locator("h2").innerText()).trim();
     await first.getByRole("link", { name: `Читать: ${title}`, exact: true }).click();

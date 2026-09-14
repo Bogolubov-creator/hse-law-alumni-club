@@ -70,6 +70,7 @@ function newsRow(n: NewsSeed, i: number) {
     excerpt: n.excerpt,
     body: n.body,
     published_at: n.published_at,
+    source_url: n.source_url ?? null,
     status: "published",
   };
 }

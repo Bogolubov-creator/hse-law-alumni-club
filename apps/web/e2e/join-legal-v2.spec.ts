@@ -219,6 +219,8 @@ test("soft-cutover: /legacy/* уводит на канон", async ({ page }) =>
   await page.goto("/legacy/dpo");
   await expect(page).toHaveURL(/\/dpo$/);
   await expect(page.locator("h1")).toBeVisible();
-  await page.goto("/legacy/lk/profile?x=1");
-  await expect(page).toHaveURL(/\/lk\/profile\?x=1$/);
+  await page.goto("/legacy/support/consent?x=1");
+  await expect(page).toHaveURL(/\/support\/consent\?x=1$/);
+  await page.goto("/legacy/lk/profile");
+  await expect(page).toHaveURL(/\/lk$/);
 });

@@ -5,7 +5,7 @@ import { PRODUCTS_SEED, PROGRAMS_SEED } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 
-const NEWS_FIELDS = ["id", "slug", "title", "excerpt", "body", "published_at"] as const;
+const NEWS_FIELDS = ["id", "slug", "title", "excerpt", "body", "published_at", "source_url"] as const;
 const listQuery = z.object({ limit: z.coerce.number().int().positive().max(100).optional() });
 
 type ProgramSeedRow = (typeof PROGRAMS_SEED)[number];

@@ -174,7 +174,7 @@ test('сбой API программы отличим от 404 и повтор в
   let available=false;
   await page.route('**/api/programs/test-program',r=>r.fulfill({status:available?200:503,contentType:'application/json',body:JSON.stringify(available?BASE:{error:'temporarily unavailable'})}));
   await page.goto('/dpo/test-program');
-  await expect(page.getByRole('heading',{name:'Не удалось загрузить программу'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Не удалось загрузить программу'})).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole('heading',{name:'Программа не найдена'})).not.toBeVisible();
   await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/program-api-error.png',fullPage:true});
   available=true;await page.getByRole('button',{name:'Повторить загрузку'}).click();

@@ -10,6 +10,13 @@ for (const width of [320, 768, 1440]) test(`news list and article ${width}`, asy
   await page.goto(route); await expect(page.getByRole('heading', { name: route === '/news' ? 'Новости клуба' : post.title, level: 1 })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  if (route === '/news' && width <= 700) {
+   // Карточка может не переполнять экран, но сжимать весь текст в узкую колонку.
+   const card = page.locator('.club-news-row--featured');
+   const heading = await card.getByRole('heading', { level: 2 }).boundingBox();
+   const box = await card.boundingBox();
+   expect(heading!.width / box!.width).toBeGreaterThan(0.7);
+  }
   if (process.env.EDITORIAL_SCREENSHOTS) await page.screenshot({ path: `${process.env.EDITORIAL_SCREENSHOTS}/${route === '/news' ? 'news' : 'article'}-${info.project.name}-${width}.png`, fullPage: true });
  }
  await expect(page.locator('article')).toContainText('Вторая строка');

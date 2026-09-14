@@ -76,6 +76,7 @@ export function NewsV2() {
                 {item.excerpt && (
                   <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: i === 0 ? "var(--t-lead)" : "var(--t-body)", lineHeight: 1.55, maxWidth: i === 0 ? "68ch" : "62ch" }}>{item.excerpt}</p>
                 )}
+                {item.source_url && <p style={{ ...label, margin: "12px 0 0" }}>По материалам сайта факультета права НИУ ВШЭ</p>}
                 <Link to={`/news/${item.slug}`} aria-label={`Читать: ${item.title}`} className="foc club-news-read" style={{ marginTop: 10, ...label, color: "var(--c-link)", textDecoration: "none" }}>читать →</Link>
               </div>
             </article>
@@ -171,6 +172,11 @@ export function NewsPostV2() {
               </div>
             )}
             <footer className="club-news-post__footer"><Link className="foc" to="/news">Все новости</Link><Link className="foc" to="/events">Ближайшие встречи</Link></footer>
+            {d.source_url && /^https:\/\/pravo\.hse\.ru\/news\/\d+\.html$/.test(d.source_url) && (
+              <p style={{ fontSize: "var(--t-body)", lineHeight: 1.5 }}>
+                Краткий пересказ. <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="foc club-news-read">Читать оригинал на сайте факультета права НИУ ВШЭ ↗</a>
+              </p>
+            )}
           </article>
         )}
       </main>

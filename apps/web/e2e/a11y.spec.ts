@@ -212,3 +212,22 @@ test.describe("Доступ к версии для слабовидящих", ()
     await expect(page.locator(".vis-bar")).toBeVisible();
   });
 });
+
+for (const width of [320, 390, 430]) test(`cookies: обе кнопки доступны на узком экране ${width}`, async ({ page }) => {
+  await stubSw(page);
+  await page.setViewportSize({ width, height: 500 });
+  await page.goto('/');
+  const dialog = page.getByRole('dialog', { name: 'Согласие на использование cookies' });
+  await expect(dialog).toBeVisible();
+  for (const name of ['Принять все', 'Только необходимые']) {
+    const button = dialog.getByRole('button', { name, exact: true });
+    await button.scrollIntoViewIfNeeded();
+    const bounds = await button.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(500);
+  }
+  await dialog.getByRole('button', { name: 'Только необходимые', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+});

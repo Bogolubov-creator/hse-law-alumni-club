@@ -5,6 +5,7 @@ import { z } from "zod";
 export const newsItemSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(),
   excerpt: z.string().nullable(), body: z.string().nullable(), published_at: z.string().nullable(),
+  source_url: z.string().nullable().optional(),
 });
 export const newsListSchema = z.array(newsItemSchema);
 
