@@ -64,7 +64,7 @@ export function NewsV2() {
           {list.map((item, i) => (
             <article
               key={item.id}
-              className={`v2-row club-news-row${i === 0 ? " club-news-row--featured" : ""}`}
+              className={`club-news-row${i === 0 ? " club-news-row--featured" : ""}`}
 
             >
               {i !== 0 && <time dateTime={item.published_at ?? undefined} style={{ ...label, color: "var(--c-accent-text)" }}>{formatNewsDate(item.published_at)}</time>}
