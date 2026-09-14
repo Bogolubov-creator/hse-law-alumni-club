@@ -1,3 +1,4 @@
+import { adminNewsSourceRoutes } from "./admin-news-sources.js";
 import type { FastifyInstance } from "fastify";
 import { adminAuthRoutes } from "./admin-auth.js";
 import { adminOverviewRoutes } from "./admin-overview.js";
@@ -15,5 +16,6 @@ export async function adminRoutes(app: FastifyInstance) {
   await adminMembersRoutes(app);
   await adminCatalogRoutes(app);
   await adminContentRoutes(app);
+  await adminNewsSourceRoutes(app);
   await adminPodcastsRoutes(app);
 }

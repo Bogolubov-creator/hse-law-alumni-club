@@ -50,7 +50,6 @@ export interface AchievementDef {
   rule_json: { type: string; gte: number };
   sort: number;
   star?: boolean; // «следующее» достижение – оранжевая подсветка
-  demo?: number; // временное значение для метрик, которые ещё не трекаются (соцсети/лайки)
 }
 
 // База – «Дашборд ЛК.dc.html» (Claude Design); плюс ступени из продуктового движка и Kimi.
@@ -58,9 +57,9 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { key: "first_step", title: "Первый шаг", description: "Посетите своё первое мероприятие клуба – встречу, лекцию или нетворкинг.", icon: "1", kind: "мероприятия", rule_json: { type: "events_attended", gte: 1 }, sort: 1 },
   { key: "office_seal", title: "Печать офиса", description: "Пройдите верификацию профиля у учебного офиса и подтвердите свой выпуск.", icon: "✓", kind: "статус", rule_json: { type: "verified", gte: 1 }, sort: 2 },
   { key: "activist", title: "Активист", description: "Посетите три мероприятия клуба – встречи, лекции или нетворкинг.", icon: "3", kind: "мероприятия", rule_json: { type: "events_attended", gte: 3 }, sort: 3 },
-  { key: "on_radar", title: "На радаре", description: "Подпишитесь на все соцсети факультета права, чтобы ничего не пропускать.", icon: "@", kind: "соцсети", rule_json: { type: "socials", gte: 1 }, sort: 4, demo: 1 },
-  { key: "on_wave", title: "На волне", description: "Наберите 50 лайков под постами факультета за один месяц.", icon: "♥", kind: "лайки за месяц", rule_json: { type: "likes_month", gte: 50 }, sort: 5, demo: 38 },
-  { key: "club_voice", title: "Голос клуба", description: "Оставьте 10 комментариев в соцсетях факультета за один месяц.", icon: "✎", kind: "комментарии за месяц", rule_json: { type: "comments_month", gte: 10 }, sort: 6, demo: 7 },
+  { key: "on_radar", title: "На радаре", description: "Подпишитесь на @AlumniLawHSE и привяжите Telegram в профиле. Подписка проверяется при открытии кабинета.", icon: "@", kind: "подписка", rule_json: { type: "telegram_subscribed", gte: 1 }, sort: 4 },
+  { key: "on_wave", title: "На волне", description: "Поставьте реакции на 10 разных сообщений в подключённом чате клуба после привязки Telegram. Анонимные реакции канала не учитываются.", icon: "♥", kind: "сообщения с реакцией", rule_json: { type: "telegram_reactions", gte: 10 }, sort: 5 },
+  { key: "club_voice", title: "Голос клуба", description: "Автоматический учёт комментариев пока не подключён. Прогресс появится после подключения источника.", icon: "✎", kind: "комментарии за месяц", rule_json: { type: "comments_month", gte: 10 }, sort: 6 },
   { key: "regular", title: "Завсегдатай", description: "Посетите 5 мероприятий клуба. Вы уже на полпути – продолжайте!", icon: "5", kind: "мероприятия", rule_json: { type: "events_attended", gte: 5 }, sort: 7, star: true },
   { key: "student_again", title: "Снова студент", description: "Завершите первую программу ДПО со скидкой выпускника.", icon: "С", kind: "программы ДПО", rule_json: { type: "programs_completed", gte: 1 }, sort: 8 },
   { key: "eternal_student", title: "Вечный студент", description: "Пройдите 3 программы ДПО со скидкой выпускника.", icon: "Д", kind: "программы ДПО", rule_json: { type: "programs_completed", gte: 3 }, sort: 9 },
@@ -83,7 +82,7 @@ export function achievementProgress(stats: AchievementStats): AchievementProgres
   const s = stats as Record<string, number | undefined>;
   return ACHIEVEMENTS.map((a) => {
     const target = a.rule_json.gte;
-    const raw = (a.rule_json.type in s ? s[a.rule_json.type] : a.demo) ?? 0;
+    const raw = s[a.rule_json.type] ?? 0;
     return {
       key: a.key, title: a.title, description: a.description, icon: a.icon, kind: a.kind,
       current: Math.min(raw, target), target, earned: raw >= target, star: a.star ?? false,
@@ -123,6 +122,8 @@ export function decayDelta(points: number): number {
 }
 
 export interface AchievementStats {
+  telegram_subscribed?: number;
+  telegram_reactions?: number;
   programs_completed?: number;
   events_attended?: number;
   mentorship_count?: number;

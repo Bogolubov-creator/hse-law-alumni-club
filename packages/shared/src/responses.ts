@@ -130,6 +130,7 @@ export const lkEventSchema = z.discriminatedUnion("kind", [
 export const lkEventsSchema = z.array(lkEventSchema);
 export type LkEvent = z.infer<typeof lkEventSchema>;
 export const meSchema = z.object({
+  social: z.object({subscription:z.enum(["not_linked","unavailable","subscribed","not_subscribed"]),reactions_available:z.boolean()}).optional(),
   alumni: alumniBriefSchema, level: levelInfoSchema, achievements: z.array(achievementResSchema), activity: z.array(activityPointSchema),
 });
 export const loginResponseSchema = z.object({ token: z.string(), alumni: alumniBriefSchema });

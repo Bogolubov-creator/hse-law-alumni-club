@@ -1,3 +1,4 @@
+import AlumniOpportunities from "../components/AlumniOpportunities.js";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,6 +63,7 @@ export default function MiniHome() {
     <nav className="mini-shortcuts" aria-label="Возможности клуба">
       {[['/podcasts','Слушать','Подкасты клуба'],['/events','Встречаться','Афиша клуба'],['/news','Читать','Новости сообщества'],['/support','Спросить','Помощь офиса']].map(([to,title,note]) => <Link to={to!} key={to} className="foc"><h2>{title} <span aria-hidden="true">↗</span></h2><p>{note}</p></Link>)}
     </nav>
+    <AlumniOpportunities />
     <section className="mini-learning"><div><h2>Продолжайте учиться</h2><p>{programs.data ? `${programs.data.length} программ факультета права` : programs.isError ? "Каталог временно недоступен" : "Загружаем программы…"}</p><Link to="/dpo" className="foc">Выбрать программу →</Link></div><img src={publicUrl("assets/photos/students-talk.jpg")} width={1083} height={722} alt="Студенты факультета права" loading="lazy" /></section>
     <Link className="mini-shop foc" to="/merch">Вещи с символикой клуба <span>Мерч →</span></Link>
   </main></V2Shell>;

@@ -1,3 +1,4 @@
+import { refreshNewsSource } from "./lib/news-sources.js";
 import { restoreAdminRevocations } from "./lib/auth.js";
 import { buildSystemHealth } from "./lib/system-health.js";
 import { supportRoutes, purgeSupport } from "./routes/support.js";
@@ -175,6 +176,14 @@ cronTasks.push(cron.schedule("*/5 * * * *", () => {
   drainMailOutbox()
     .then((r) => { if (r.sent || r.failed) app.log.info(r, "mail outbox drained"); })
     .catch((e) => app.log.error(e, "mail outbox failed"));
+}, { timezone: "Europe/Moscow" }));
+
+// Очередь источников пополняется каждый час; публикацией управляет редактор.
+cronTasks.push(cron.schedule("17 * * * *", () => {
+  if (env.NEWS_SYNC_ENABLED !== "true") return;
+  void (async () => { for (const source of ["alumni", "career", "telegram"] as const) {
+    try { await refreshNewsSource(source); } catch { app.log.warn({source}, "news source refresh failed"); }
+  } })();
 }, { timezone: "Europe/Moscow" }));
 
 // Базовый health – для healthcheck'а docker и Caddy.

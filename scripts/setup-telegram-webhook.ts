@@ -23,7 +23,7 @@ if (!publicUrl.startsWith("https://")) {
 }
 
 const webhookUrl = `${publicUrl}/api/telegram/webhook`;
-const body: Record<string, string> = { url: webhookUrl };
+const body = { url: webhookUrl, secret_token: secret, allowed_updates: ["message", "message_reaction"] };
 if (secret) body.secret_token = secret;
 
 const r = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {

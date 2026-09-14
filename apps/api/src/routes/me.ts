@@ -1,3 +1,4 @@
+import { socialProgress } from "../lib/social-progress.js";
 import type { FastifyInstance } from "fastify";
 import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
@@ -64,7 +65,9 @@ export async function meRoutes(app: FastifyInstance) {
     const level = levelInfo(a.points_cached ?? 0, verified ? (a.personal_discount ?? 0) : 0);
     if (!verified) level.discount = 0;
 
+    const social = verified ? await socialProgress(a.id, a.telegram_id) : null;
     return {
+      social: social ? {subscription:social.subscription,reactions_available:social.reactions_available} : undefined,
       alumni: {
         telegram_linked: !!a.telegram_id, telegram_available: !!env.TELEGRAM_BOT_TOKEN,
         fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {},
@@ -74,7 +77,7 @@ export async function meRoutes(app: FastifyInstance) {
         referrals_pending: referred.filter((r) => r.verification_status === "pending").length,
       },
       level,
-      achievements: verified ? achievementProgress(statsFromLedger(a, ledger)) : [],
+      achievements: verified ? achievementProgress({ ...statsFromLedger(a, ledger), ...social }) : [],
       activity: verified ? lastSixMonths(ledger) : [],
     };
   });

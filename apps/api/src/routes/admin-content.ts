@@ -22,7 +22,7 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
   app.get("/admin/news", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return di.request(readItems("news", { sort: ["-published_at"], limit: -1, fields: ["id", "slug", "title", "excerpt", "body", "published_at", "status"] }));
+    return di.request(readItems("news", { sort: ["-published_at"], limit: -1, fields: ["id", "slug", "title", "excerpt", "body", "published_at", "status", "source_url"] }));
   });
 
 

@@ -5,6 +5,7 @@ import { handleTelegramUpdate, type TgUpdate } from "../lib/telegram-bot.js";
 
 const updateSchema = z.object({
   update_id: z.number(),
+  message_reaction: z.object({ chat:z.object({id:z.number().int()}),message_id:z.number().int(),user:z.object({id:z.number().int(),is_bot:z.boolean().optional()}).optional(),date:z.number().int(),new_reaction:z.array(z.unknown()).max(100) }).optional(),
   message: z.object({
     message_id: z.number(),
     text: z.string().optional(),
@@ -28,7 +29,9 @@ export async function telegramRoutes(app: FastifyInstance) {
     }
 
     const update = updateSchema.parse(req.body) as TgUpdate;
-    // Telegram ждёт быстрый 200 – обработку не блокируем.
+    // Персональные реакции подтверждаем только после сохранения: Telegram повторит ошибочный запрос.
+    if (update.message_reaction) { await handleTelegramUpdate(update, env.TELEGRAM_BOT_TOKEN); return { ok: true }; }
+    // Telegram ждёт быстрый 200 – обработку команд не блокируем.
     void handleTelegramUpdate(update, env.TELEGRAM_BOT_TOKEN).catch((e) => {
       app.log.error(e, "telegram webhook handler failed");
     });

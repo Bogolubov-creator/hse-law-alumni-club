@@ -24,7 +24,7 @@ export async function adminLogout(): Promise<void> {
   clearAdminToken();
 }
 
-async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+export async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const t = adminToken();
   const hasBody = body !== undefined;
   return requestJson<T>(path, {

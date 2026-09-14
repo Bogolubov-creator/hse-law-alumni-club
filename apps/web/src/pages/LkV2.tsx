@@ -1,3 +1,4 @@
+import { isMirror } from "../lib/public-url.js";
 import "../styles/cabinet-gate.css";
 import { action as publicAction } from "../styles/primitives.js";
 import { CabinetClubOverview } from "../components/CabinetClubOverview.js";
@@ -366,6 +367,8 @@ function Achievements({ me }: { me: Me }) {
       <div><h3>Ваша коллекция клуба</h3><p>Встречи, учёба и участие в жизни сообщества становятся частью вашей истории.</p></div>
       <div className="club-awards-total"><strong>{earned.length}<span> / {me.achievements.length}</span></strong><span>достижений получено</span></div>
     </div>
+    <p className="club-awards-hint" role="status">{!me.social ? (isMirror ? "На зеркале подписка и реакции не проверяются." : "Проверка подписки и реакций пока недоступна.") : me.social.subscription === "not_linked" ? "Для проверки подписки подключите Telegram в профиле." : me.social.subscription === "unavailable" ? "Проверка подписки временно недоступна. Достижение появится после подтверждения Telegram." : me.social.subscription === "subscribed" ? "Подписка на @AlumniLawHSE подтверждена." : "Подписка на @AlumniLawHSE пока не подтверждена. Проверка повторится при открытии кабинета, кэш – до 5 минут."} <Link to="/lk/profile" className="foc">Telegram в профиле →</Link></p>
+    {me.social && !me.social.reactions_available && <p className="club-awards-hint">Чат для учёта персональных реакций пока не подключён.</p>}
     <div className="club-awards-switch" role="group" aria-label="Показать достижения">
       <button className="foc" aria-pressed={view === "all"} onClick={() => setView("all")}>Все достижения ({me.achievements.length})</button>
       <button className="foc" aria-pressed={view === "earned"} onClick={() => setView("earned")}>Полученные ({earned.length})</button>

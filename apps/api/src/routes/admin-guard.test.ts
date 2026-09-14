@@ -17,6 +17,10 @@ const ALUMNI_ID = "alumni-1";
 
 /** Маршруты админки, которые обязаны быть закрыты гардом. */
 const GUARDED = [
+  { method: "GET" as const, url: "/admin/news-sources" },
+  { method: "POST" as const, url: "/admin/news-sources/telegram/refresh" },
+  { method: "POST" as const, url: "/admin/news-sources/" + "a".repeat(64) + "/import" },
+  { method: "PATCH" as const, url: "/admin/news-sources/" + "a".repeat(64) },
   { method: "GET" as const, url: "/admin/overview" },
   { method: "GET" as const, url: "/admin/system-health" },
   { method: "GET" as const, url: "/admin/orders" },

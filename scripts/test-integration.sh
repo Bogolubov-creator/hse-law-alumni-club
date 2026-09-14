@@ -31,4 +31,4 @@ done
 cd "$REPO_DIR"
 CHECKOUT_DATABASE_URL="postgres://club:integration-test-only@127.0.0.1:$PORT/alumni_staged" \
 RUN_CHECKOUT_INTEGRATION=true RUN_SUPPORT_INTEGRATION=true RUN_TELEGRAM_INTEGRATION=true \
-  pnpm --filter @club/api exec vitest run src/lib/checkout.integration.test.ts src/routes/support.integration.test.ts src/lib/tg-link.integration.test.ts
+  pnpm --filter @club/api exec vitest run src/lib/checkout.integration.test.ts src/routes/support.integration.test.ts src/lib/tg-link.integration.test.ts src/lib/news-social.integration.test.ts

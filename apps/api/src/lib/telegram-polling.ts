@@ -35,12 +35,12 @@ export function startTelegramPolling(): void {
     console.log("[telegram-bot] long-polling запущен");
     for (;;) {
       try {
-        const r = await api("getUpdates", { offset, timeout: 25, allowed_updates: ["message"] });
+        const r = await api("getUpdates", { offset, timeout: 25, allowed_updates: ["message", "message_reaction"] });
         if (!r.ok) { await new Promise((s) => setTimeout(s, 5000)); continue; }
         const data = (await r.json()) as { ok: boolean; result?: TgUpdate[] };
         for (const u of data.result ?? []) {
+          await handleTelegramUpdate(u, token);
           offset = u.update_id + 1;
-          await handleTelegramUpdate(u, token).catch((e) => console.error("[telegram-bot] update failed:", (e as Error).message));
         }
       } catch (e) {
         console.error("[telegram-bot] polling error:", (e as Error).message);

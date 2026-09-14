@@ -13,3 +13,5 @@ export * from "./rutube.js";
 export * from "./operator.js";
 export * from "./support-bot/index.js";
 export * from "./dpo-sync.js";
+
+export * from "./news-sources.js";

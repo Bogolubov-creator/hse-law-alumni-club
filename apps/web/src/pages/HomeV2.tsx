@@ -1,3 +1,4 @@
+import AlumniOpportunities from "../components/AlumniOpportunities.js";
 import { Link } from "react-router-dom";
 import { computeOrderTotals } from "@club/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -195,6 +196,8 @@ export default function HomeV2() {
             <a href={FACULTY_ALUMNI_PAGE} target="_blank" rel="noopener noreferrer" className="foc home-btn home-btn--ghost">Читать интервью ↗</a>
           </div>
         </section>
+
+        <AlumniOpportunities />
 
         {/* 6. Вступление: чёрная полоса, три шага и одно действие */}
         <section id="kak" className="home-join club-dark" aria-labelledby="home-join-title" data-reveal>

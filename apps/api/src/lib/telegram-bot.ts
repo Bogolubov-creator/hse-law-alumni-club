@@ -1,3 +1,4 @@
+import { recordReaction, type ReactionUpdate } from "./social-progress.js";
 import { readItems } from "@directus/sdk";
 import { directus } from "./directus.js";
 import { env } from "../env.js";
@@ -29,6 +30,7 @@ export interface TgMessage {
 export interface TgUpdate {
   update_id: number;
   message?: TgMessage;
+  message_reaction?: ReactionUpdate;
 }
 
 async function findAlumniByTelegram(tgId: string) {
@@ -107,6 +109,7 @@ export async function tgSendMessage(chatId: number, text: string, token: string)
 
 /** Обработка входящего update от Telegram webhook. */
 export async function handleTelegramUpdate(update: TgUpdate, token: string): Promise<void> {
+  if (update.message_reaction) { await recordReaction(update.message_reaction, update.update_id); return; }
   const msg = update.message;
   if (!msg?.text || !msg.from?.id) return;
   // Личные сведения и привязка доступны только в диалоге с ботом.

@@ -27,3 +27,8 @@ CREATE TABLE orders (
   contact_email varchar(255), fulfillment varchar(255), address text, comment text,
   consent_pdn boolean, status varchar(255), payment_status varchar(255), created_at timestamptz
 );
+
+CREATE TABLE news (
+ id uuid PRIMARY KEY, slug varchar(255) UNIQUE, title varchar(255), excerpt text, body text,
+ source_url varchar(255), published_at timestamptz, status varchar(255)
+);
