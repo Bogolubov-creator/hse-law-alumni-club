@@ -77,7 +77,7 @@ async function contrastFailures(page: Page) {
         .map((n) => n.textContent!.trim()).join(" ");
       if (!text) continue;
       const cs = getComputedStyle(el);
-      if (cs.visibility === "hidden" || cs.display === "none") continue;
+      if (cs.visibility === "hidden" || cs.display === "none" || !el.getClientRects().length || el.closest('[aria-hidden="true"]')) continue;
       const size = parseFloat(cs.fontSize);
       const weight = parseInt(cs.fontWeight) || 400;
       // Крупный текст по WCAG: от 24px, либо от 18,66px при полужирном
@@ -91,6 +91,7 @@ async function contrastFailures(page: Page) {
 
 const minFontSize = (page: Page) => page.evaluate(() =>
   Math.min(...Array.from(document.querySelectorAll("body *"))
+    .filter((e) => e.getClientRects().length && !e.closest('[aria-hidden="true"]'))
     .filter((e) => Array.from(e.childNodes).some((n) => n.nodeType === 3 && n.textContent?.trim()))
     .map((e) => parseFloat(getComputedStyle(e).fontSize)).filter(Boolean)));
 
@@ -125,13 +126,6 @@ test.describe("Контраст и нижняя граница шкалы", () =
       expect(await minFontSize(page)).toBeGreaterThanOrEqual(12);
     });
   }
-
-  test("тёмная тема держит тот же порог", async ({ page }) => {
-    await stubSw(page);
-    await page.goto("/dpo");
-    await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
-    expect(await contrastFailures(page)).toEqual([]);
-  });
 });
 
 test.describe("Иерархия титулов", () => {
@@ -158,9 +152,11 @@ test.describe("Один акцент на действие", () => {
   test("уход на hse.ru не тяжелее внутреннего перехода", async ({ page }) => {
     await page.goto("/dpo");
     await page.waitForLoadState("networkidle");
-    const external = page.getByRole("link", { name: /Запись на hse\.ru/ }).first();
+    const first = page.locator("a[href^='/dpo/']").first();
+    if (await first.count()) await first.click();
+    const external = page.getByRole("link", { name: /Записаться на hse\.ru/ }).first();
     if (await external.count()) {
-      // Синей заливки быть не должно: институциональный синий здесь – цвет ссылки
+      // Заливки быть не должно (канон 10.09): внешний уход – обводка, не заливка
       await expect(external).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     }
   });

@@ -1,10 +1,14 @@
-import { readItems, updateItem } from "@directus/sdk";
+import { recordReaction, type ReactionUpdate } from "./social-progress.js";
+import { readItems } from "@directus/sdk";
 import { directus } from "./directus.js";
 import { env } from "../env.js";
-import { verifyTgLinkCode } from "./tg-link.js";
+import { consumeTgLinkCode } from "./tg-link.js";
 import { answerTelegramFaq } from "./site-faq-telegram.js";
 import {
   parseCommand,
+  BOT_COMMANDS,
+  formatLinkedReply,
+  formatNavigationReply,
   formatPointsReply,
   formatCalendarReply,
   formatStartReply,
@@ -26,6 +30,7 @@ export interface TgMessage {
 export interface TgUpdate {
   update_id: number;
   message?: TgMessage;
+  message_reaction?: ReactionUpdate;
 }
 
 async function findAlumniByTelegram(tgId: string) {
@@ -70,17 +75,10 @@ export async function buildBotReply(cmd: string, arg: string, tgId: string): Pro
   const url = env.PUBLIC_URL;
   switch (cmd) {
     case "/start": {
-      // Deep-link привязки из ЛК: /start l-<код> → пишем telegram_id выпускнику.
-      const linkId = arg ? verifyTgLinkCode(arg) : null;
-      if (linkId) {
-        const owner = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: linkId } }, limit: 1, fields: ["id", "fio", "telegram_id"] }))) as any[];
-        if (owner[0]) {
-          // Один Telegram – один аккаунт: снимаем этот tgId с прочих записей.
-          const others = (await di.request((readItems as any)("alumni", { filter: { telegram_id: { _eq: tgId }, id: { _neq: linkId } }, limit: -1, fields: ["id"] }))) as any[];
-          for (const o of others) await di.request((updateItem as any)("alumni", o.id, { telegram_id: null }));
-          await di.request((updateItem as any)("alumni", linkId, { telegram_id: tgId }));
-          return `✅ Telegram привязан к аккаунту <b>${owner[0].fio ?? "выпускника"}</b>.\n\nТеперь /points покажет ваши баллы, а /calendar отметит события, куда вы записаны.`;
-        }
+      if (arg.startsWith("l")) {
+        const owner = await consumeTgLinkCode(arg, tgId);
+        if (owner) return formatLinkedReply(owner.fio);
+        return "Ссылка привязки истекла, уже использована или аккаунт уже связан с Telegram. Откройте кабинет и получите новую ссылку. Для смены связанного аккаунта обратитесь в поддержку.";
       }
       const linked = !!(await findAlumniByTelegram(tgId));
       return formatStartReply(arg, linked, url);
@@ -95,7 +93,7 @@ export async function buildBotReply(cmd: string, arg: string, tgId: string): Pro
     case "/calendar":
       return formatCalendarReply(await upcomingEvents(tgId), url);
     default:
-      return null;
+      return formatNavigationReply(cmd, url);
   }
 }
 
@@ -111,8 +109,14 @@ export async function tgSendMessage(chatId: number, text: string, token: string)
 
 /** Обработка входящего update от Telegram webhook. */
 export async function handleTelegramUpdate(update: TgUpdate, token: string): Promise<void> {
+  if (update.message_reaction) { await recordReaction(update.message_reaction, update.update_id); return; }
   const msg = update.message;
   if (!msg?.text || !msg.from?.id) return;
+  // Личные сведения и привязка доступны только в диалоге с ботом.
+  // Групповые апдейты не вызывают ни чтения профиля, ни записи в CMS.
+  if (msg.chat.type !== "private") return;
+  const addressed = /^\/[^\s@]+@([^\s]+)/.exec(msg.text.trim());
+  if (addressed && addressed[1]!.toLowerCase() !== env.TELEGRAM_BOT_USERNAME.toLowerCase()) return;
   const { cmd, arg } = parseCommand(msg.text);
   if (!cmd) {
     // Свободный текст – тот же FAQ, что у вороны на сайте.
@@ -121,7 +125,7 @@ export async function handleTelegramUpdate(update: TgUpdate, token: string): Pro
     return;
   }
   const reply = await buildBotReply(cmd, arg, String(msg.from.id));
-  if (reply) await tgSendMessage(msg.chat.id, reply, token);
+  await tgSendMessage(msg.chat.id, reply ?? "Не знаю такой команды. Нажмите /help или напишите вопрос про клуб и ДПО.", token);
 }
 
 /** Регистрация меню команд в Telegram (идемпотентно при старте API). */
@@ -131,16 +135,18 @@ export async function registerBotCommands(token: string): Promise<void> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        commands: [
-          { command: "start", description: "Приветствие и ссылки клуба" },
-          { command: "points", description: "Мои баллы и уровень" },
-          { command: "calendar", description: "Ближайшие события" },
-          { command: "help", description: "Список команд" },
-        ],
+        commands: BOT_COMMANDS,
       }),
     });
-    if (!r.ok) console.warn("[telegram-bot] setMyCommands:", await r.text().catch(() => ""));
+    if (!r.ok) throw new Error(`setMyCommands: HTTP ${r.status}`);
+    if (env.APP_ENV === "production" && env.PUBLIC_URL.startsWith("https://")) {
+      const menu = await fetch(`https://api.telegram.org/bot${token}/setChatMenuButton`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(8000),
+        body: JSON.stringify({ menu_button: { type: "web_app", text: "Клуб", web_app: { url: `${env.PUBLIC_URL.replace(/\/$/, "")}/tg` } } }),
+      });
+      if (!menu.ok) throw new Error(`setChatMenuButton: HTTP ${menu.status}`);
+    }
   } catch (e) {
-    console.warn("[telegram-bot] setMyCommands failed:", (e as Error).message);
+    console.warn("[telegram-bot] Не удалось настроить меню команд/мини-приложения");
   }
 }

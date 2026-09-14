@@ -6,12 +6,13 @@
 #   ./scripts/apply-indexes.sh
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ENV_FILE:-$REPO_DIR/.env}"
 PG="${PG_CONTAINER:-club-pravo-hse-postgres-1}"
-val() { grep "^$1=" "$REPO_DIR/.env" 2>/dev/null | cut -d= -f2-; }
+val() { grep "^$1=" "$ENV_FILE" 2>/dev/null | cut -d= -f2-; }
 PGUSER="${POSTGRES_USER:-$(val POSTGRES_USER)}"; PGUSER="${PGUSER:-club}"
 PGDB="${POSTGRES_DB:-$(val POSTGRES_DB)}"; PGDB="${PGDB:-club}"
 
 echo "Применяю infra/indexes.sql к $PG ($PGDB)…"
-docker exec -i "$PG" psql -U "$PGUSER" -d "$PGDB" < "$REPO_DIR/infra/indexes.sql"
+docker exec -i "$PG" psql -v ON_ERROR_STOP=1 -U "$PGUSER" -d "$PGDB" < "$REPO_DIR/infra/indexes.sql"
 echo "Готово. Индексов idx_/uq_:"
 docker exec "$PG" psql -U "$PGUSER" -d "$PGDB" -tAc "select count(*) from pg_indexes where indexname like 'idx_%' or indexname like 'uq_%'"

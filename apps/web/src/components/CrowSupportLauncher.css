@@ -2,7 +2,7 @@
 
 body > .crow-mascot.club-crow-corner {
   right: 18px !important;
-  bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px)) !important;
+  bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--install-h, 0px)) !important;
   pointer-events: none;
   z-index: 40 !important;
 }
@@ -10,7 +10,7 @@ body > .crow-mascot.club-crow-corner {
 .club-crow-hit {
   position: fixed;
   right: 18px;
-  bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px));
+  bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--install-h, 0px));
   z-index: 41;
   background: transparent;
   border: 0;
@@ -29,7 +29,8 @@ body > .crow-mascot.club-crow-corner {
   display: none;
   position: fixed;
   right: 18px;
-  bottom: calc(16px + var(--tabs-h, 0px) + var(--cookie-h, 0px) + env(safe-area-inset-bottom, 0px));
+  /* --tabs-h уже с safe-area; не дублируем env(safe-area-inset-bottom). */
+  bottom: calc(16px + var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--install-h, 0px));
   z-index: 41;
   min-height: 44px;
   padding: 0 16px;
@@ -69,4 +70,9 @@ html.crow-inline-live .club-crow-hit {
 /* Панель бота выше вороны */
 .club-bot-panel {
   z-index: 50;
+}
+
+/* При разговоре с поддержкой предложение установки не закрывает ввод. */
+body:has(.club-bot-panel) [role="dialog"][aria-label="Установка приложения"] {
+  display: none !important;
 }

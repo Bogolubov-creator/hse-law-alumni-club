@@ -18,7 +18,9 @@ export default function Modal({
     background.forEach((el) => { el.inert = true; });
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    ref.current?.focus();
+    // autoFocus дочернего поля уже мог сработать при монтировании.
+    // Не отбираем у него фокус, иначе поиск открывается без готового ввода.
+    if (!ref.current?.contains(document.activeElement)) ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { closeRef.current(); return; }
       // Ловушка фокуса: Tab не должен уходить за пределы модалки (требование aria-modal).
@@ -43,7 +45,7 @@ export default function Modal({
   return createPortal(
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: "var(--layer-modal, 500)", background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "auto" }}
+      style={{ position: "fixed", inset: 0, zIndex: "var(--layer-modal, 500)", background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "auto", overscrollBehavior: "contain" }}
     >
       <div
         ref={ref}
@@ -52,7 +54,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         onClick={(e) => e.stopPropagation()}
-        style={{ position: "relative", width: "100%", maxWidth, outline: "none", maxHeight: "92dvh", overflowY: "auto", WebkitOverflowScrolling: "touch", borderRadius: 22 }}
+        style={{ position: "relative", width: "100%", maxWidth, outline: "none", maxHeight: "92dvh", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", borderRadius: 22 }}
       >
         {children}
       </div>

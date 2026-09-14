@@ -19,6 +19,8 @@ const SAFE = {
   SMTP_HOST: "smtp.example.ru",
   SMTP_FROM: "club@example.ru",
   SEED_DEMO: "false",
+  OFFICE_NOTIFY_CHANNEL: "email",
+  OFFICE_EMAIL: "office@club.test",
   TELEGRAM_BOT_TOKEN: "",
   TELEGRAM_WEBHOOK_SECRET: "",
   TELEGRAM_POLLING: "",
@@ -109,4 +111,13 @@ describe("assertProdConfig – каждая небезопасная настр�
 
 it("production требует транзакционное хранилище заявок", async () => {
   expect(await errorsFor({ CHECKOUT_DATABASE_URL: "" })).toContain("CHECKOUT_DATABASE_URL обязателен для транзакционного оформления");
+});
+
+it.each([
+  { ADMIN_AUTH_SECRET: SAFE.AUTH_SECRET }, { ADMIN_AUTH_SECRET: "short" },
+  { PUBLIC_URL: "https://" }, { PUBLIC_URL: "https://user:password@club.test" },
+  { OFFICE_EMAIL: "" }, { OFFICE_NOTIFY_CHANNEL: "telegram", OFFICE_TG_BOT_TOKEN: "", OFFICE_TG_CHAT_ID: "" },
+  { YOOKASSA_SHOP_ID: "shop", YOOKASSA_SECRET_KEY: "" }, { VAPID_PUBLIC_KEY: "public", VAPID_PRIVATE_KEY: "" },
+])("не разрешает неполную конфигурацию %j", async overrides => {
+  expect((await errorsFor(overrides as Record<string, string>)).length).toBeGreaterThan(0);
 });

@@ -1,11 +1,15 @@
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import "../styles/cart-checkout.css";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { CLUB_OPERATOR } from "@club/shared";
 import { useHead } from "../lib/title.js";
 import { rub, type CartLine, type OrderResult } from "../lib/api.js";
+import { isMirror } from "../lib/public-url.js";
 import { useCart, useMemberDiscount, useCartMutations, submitOrder, token } from "../lib/cart.js";
 import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
 import { Mark } from "../v2/Mark.js";
+import { TELEGRAM_CHANNEL } from "../config/social.js";
 
 /**
  * Корзина v2 (/cart) – заявка в учебный офис на языке реестра.
@@ -19,25 +23,27 @@ import { Mark } from "../v2/Mark.js";
  * корзине v1, включая honeypot и правило «доставка только когда есть мерч».
  */
 
+/* Капс-лейблы полей, как у вступления (канон 12.09). */
 const label = {
-  ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
-  textTransform: "none" as const, color: "var(--c-text-3)",
+  ...mono, fontSize: "var(--t-caps)", fontWeight: 600, letterSpacing: "var(--tr-caps)",
+  textTransform: "uppercase" as const, color: "var(--c-text-3)",
 };
 
 const field = {
   width: "100%", marginTop: 7, padding: "12px 14px", borderRadius: "var(--r-md)",
   border: "1px solid var(--c-line-control)", background: "var(--c-bg)", color: "var(--c-text)",
-  fontSize: 15, fontFamily: "inherit",
+  fontSize: 16, fontFamily: "inherit",
 };
 
+/* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
 const primary = {
-  border: "none", background: "var(--c-accent)", color: "var(--c-on-accent)",
-  borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15, cursor: "pointer",
+  border: "1px solid var(--c-accent)", background: "var(--c-accent)", color: "var(--c-on-accent)",
+  borderRadius: "var(--r-sm)", padding: "13px 22px", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase" as const, cursor: "pointer",
 };
 
 const ghost = {
-  border: "1px solid var(--c-line)", background: "transparent", color: "var(--c-text)",
-  borderRadius: "var(--r-md)", padding: "13px 22px", fontWeight: 600, fontSize: 15,
+  border: "1px solid var(--c-text)", background: "transparent", color: "var(--c-text)",
+  borderRadius: "var(--r-sm)", padding: "13px 22px", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase" as const,
   cursor: "pointer", textDecoration: "none", display: "inline-block",
 };
 
@@ -54,8 +60,8 @@ function Total({ name, value, strong, tone }: { name: string; value: string; str
   );
 }
 
-function Field({ name, value, onChange, type = "text", required, ph }: {
-  name: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; ph?: string;
+function Field({ name, value, onChange, type = "text", required, ph, autoComplete }: {
+  name: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; ph?: string; autoComplete?: string;
 }) {
   const id = useId();
   return (
@@ -65,7 +71,7 @@ function Field({ name, value, onChange, type = "text", required, ph }: {
       <label htmlFor={id} style={{ ...label, display: "block" }}>
         {name}{!required && <span style={{ textTransform: "none", letterSpacing: 0, opacity: 0.75 }}> · необязательно</span>}
       </label>
-      <input id={id} type={type} required={required} value={value} placeholder={ph}
+      <input id={id} autoComplete={autoComplete} type={type} required={required} value={value} placeholder={ph}
         onChange={(e) => onChange(e.target.value)} className="foc" style={field} />
     </div>
   );
@@ -82,15 +88,21 @@ function Empty({ title, children }: { title: string; children: ReactNode }) {
 
 /* ── Экран подтверждения ──────────────────────────────────────────── */
 
-function Submitted({ result }: { result: OrderResult }) {
+export function Submitted({ result }: { result: OrderResult }) {
+  const authed = !!token();
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
   return (
     <V2Shell>
       <main id="main" style={{ maxWidth: 620, margin: "0 auto", padding: "0 28px" }}>
         <div style={{ paddingTop: 64 }}>
           <Mark kind="scales" size={44} style={{ color: "var(--c-accent-text)" }} />
           <div style={{ ...label, color: "var(--c-ok-text)", marginTop: 20 }}>заявка принята</div>
-          <h1 style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: "12px 0 0" }}>
-            Заявка в работе у учебного офиса
+          <h1 ref={heading} tabIndex={-1} style={{ ...pageTitle, fontSize: "var(--t-h2)", lineHeight: 1.1, margin: "12px 0 0" }}>
+            Заявка отправлена в учебный офис
           </h1>
 
           {/* Номер – главные данные экрана, поэтому он крупный и моноширинный */}
@@ -100,18 +112,20 @@ function Submitted({ result }: { result: OrderResult }) {
           </div>
 
           <p style={{ margin: "20px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-body)", lineHeight: 1.6 }}>
-            Заявка <strong>сохранена</strong> в системе (номер выше). Учебный офис свяжется по указанным контактам.
+            Учебный офис проверит состав и сумму заявки и свяжется с вами по указанным контактам.
             {result.payment_url && " Оплатить можно сразу, кнопкой ниже."}
           </p>
           <p style={{ margin: "10px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
-            Сохранение заявки и доставка уведомления офису – разные шаги: заявка уже у вас в кабинете даже если письмо/Telegram временно не ушли.
+            {authed
+              ? "Следить за статусом можно в разделе «Мои заявки» в кабинете."
+              : "Сохраните номер заявки, чтобы назвать его при обращении в учебный офис. Вы оформили её без входа, поэтому в кабинете она не отображается."}
           </p>
 
           {/* Уведомление офиса не прошло – это надо сказать, а не спрятать */}
           {!result.notified.ok && (
             <p role="alert" style={{ margin: "18px 0 0", padding: "14px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-danger-text)", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>
               Заявка сохранена, но автоматическое уведомление офиса не прошло. Продублируйте её в Telegram{" "}
-              <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "var(--c-accent-text)", fontWeight: 600 }}>@pravohse</a> – так офис точно увидит заявку.
+              <a href={TELEGRAM_CHANNEL.url} target="_blank" rel="noopener noreferrer" className="foc" style={{ color: "var(--c-link)", fontWeight: 600 }}>{TELEGRAM_CHANNEL.handle}</a> – так офис точно увидит заявку.
             </p>
           )}
 
@@ -130,7 +144,13 @@ function Submitted({ result }: { result: OrderResult }) {
           )}
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
-            <Link to="/lk" className="foc" style={{ ...ghost, borderColor: "var(--c-accent)" }}>В личный кабинет</Link>
+            <Link
+              to={authed ? "/lk?section=orders" : "/lk"}
+              className="foc"
+              style={ghost}
+            >
+              {authed ? "К моим заявкам" : "Войти в кабинет"}
+            </Link>
             <Link to="/" className="foc" style={ghost}>На главную</Link>
           </div>
         </div>
@@ -170,6 +190,7 @@ export default function CartV2() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy || setQty.isPending) return;
     setErr(null);
     setBusy(true);
     try {
@@ -196,13 +217,13 @@ export default function CartV2() {
     <V2Shell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
         <ShowcaseHead
-          eyebrow="корзина · заявка"
+          eyebrow="корзина"
           title="Заявка в учебный офис"
           lead="Учебный офис подтвердит состав и сумму. Скидка клуба – только на ДПО и только после верификации выпуска. На мерч скидка не действует."
           count={items.length ? `позиций ${items.length} · на сумму ${rub(total)}` : undefined}
         />
 
-        {cart.isLoading && <p style={{ ...label, margin: 0, paddingTop: 20 }}>загружаем корзину…</p>}
+        {cart.isLoading && <p role="status" style={{ ...label, margin: 0, paddingTop: 20 }}>загружаем корзину…</p>}
 
         {cart.isError && (
           <Empty title="Корзина не загрузилась">
@@ -227,10 +248,17 @@ export default function CartV2() {
           <div className="v2-cart" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 32, alignItems: "start" }}>
             {/* ── Позиции как записи описи ── */}
             <div>
+              {setQty.isError && (
+                <p role="alert" style={{ margin: "0 0 16px", padding: 16, border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", color: "var(--c-danger-text)", background: "var(--c-bg-raised)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
+                  {setQty.error?.message === "Недостаточно товара в наличии."
+                    ? "Не удалось увеличить количество: недостаточно товара в наличии. Выберите меньшее количество."
+                    : "Не удалось изменить корзину. Попробуйте ещё раз. Сейчас показан последний подтверждённый состав."}
+                </p>
+              )}
               {items.map((it: CartLine) => (
                 <article key={`${it.ref_id}-${it.variant_sku ?? ""}`} className="v2-cart-row"
-                  style={{ display: "grid", gridTemplateColumns: "72px 1fr auto auto 32px", gap: 16, alignItems: "center", padding: "16px 0", borderTop: "1px solid var(--c-line)" }}>
-                  <span style={{ ...label, color: it.type === "dpo" ? "var(--c-anchor)" : "var(--c-accent-text)" }}>
+                  style={{ display: "grid", gridTemplateColumns: "72px 1fr auto auto 44px", gap: 16, alignItems: "center", padding: "16px 0", borderTop: "1px solid var(--c-line)" }}>
+                  <span style={{ ...label, color: "var(--c-text-3)" }}>
                     {it.type === "dpo" ? "дпо" : "мерч"}
                   </span>
 
@@ -243,25 +271,25 @@ export default function CartV2() {
                     <span style={{ ...label, fontSize: "var(--t-micro)" }}>1 место</span>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <button aria-label={`Уменьшить количество: ${it.title}`} disabled={setQty.isPending}
+                      <button aria-label={`Уменьшить количество: ${it.title}`} disabled={setQty.isPending || busy}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty - 1 })}
-                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>−</button>
+                        className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>−</button>
                       <span aria-live="polite" style={{ ...mono, minWidth: 24, textAlign: "center", fontSize: 15 }}>{it.qty}</span>
-                      <button aria-label={`Увеличить количество: ${it.title}`} disabled={setQty.isPending || it.qty >= 99}
+                      <button aria-label={`Увеличить количество: ${it.title}`} disabled={setQty.isPending || busy || it.qty >= 99}
                         onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: it.qty + 1 })}
-                        className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>+</button>
+                        className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text)", cursor: "pointer", fontSize: 16 }}>+</button>
                     </div>
                   )}
 
                   <span style={{ ...mono, fontSize: 15, fontWeight: 500, whiteSpace: "nowrap" }}>{rub(it.price * it.qty)}</span>
 
-                  <button aria-label={`Убрать из корзины: ${it.title}`} disabled={setQty.isPending}
+                  <button aria-label={`Убрать из корзины: ${it.title}`} disabled={setQty.isPending || busy}
                     onClick={() => setQty.mutate({ ref_id: it.ref_id, variant_sku: it.variant_sku, qty: 0 })}
-                    className="foc" style={{ width: 32, height: 32, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
+                    className="foc" style={{ width: 44, height: 44, borderRadius: "var(--r-sm)", border: "1px solid var(--c-line-control)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>✕</button>
                 </article>
               ))}
 
-              <div style={{ marginTop: 26, paddingTop: 4 }}>
+              <div className="club-cart-totals">
                 <Total name="подытог" value={rub(subtotal)} />
                 {discountAmount > 0 && <Total name={`скидка выпускника (дпо) −${discount}%`} value={`−${rub(discountAmount)}`} tone="ok" />}
                 <Total name="итого (справочно)" value={rub(total)} strong />
@@ -269,7 +297,7 @@ export default function CartV2() {
                   <p style={{ margin: "12px 0 0", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
                     {token()
                       ? "Скидка на ДПО откроется после верификации выпуска учебным офисом."
-                      : <>Скидка на ДПО – для подтверждённых выпускников. <Link to="/join" className="foc" style={{ color: "var(--c-accent-text)" }}>Вступить</Link> или <Link to="/lk" className="foc" style={{ color: "var(--c-accent-text)" }}>войти</Link>.</>}
+                      : <>Скидка на ДПО – для подтверждённых выпускников. <Link to="/join?next=/cart" className="foc" style={{ color: "var(--c-link)" }}>Вступить</Link> или <Link to="/lk" className="foc" style={{ color: "var(--c-link)" }}>войти</Link>.</>}
                   </p>
                 )}
                 {items.some((i) => i.type === "merch") && (
@@ -281,8 +309,9 @@ export default function CartV2() {
             </div>
 
             {/* ── Форма заявки ── */}
-            <form onSubmit={submit} style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 22 }}>
-              <h2 style={{ ...disp, fontWeight: 600, fontSize: "var(--t-h3)", margin: 0 }}>Ваши контакты</h2>
+            <form onSubmit={submit} style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 26, boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
+              <fieldset disabled={busy} className="club-checkout-fields">
+              <h2 style={{ ...pageTitle, fontSize: 28, margin: 0 }}>Ваши контакты</h2>
               <p style={{ margin: "8px 0 14px", color: "var(--c-text-3)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
                 По ним менеджер подтвердит заявку.
               </p>
@@ -292,9 +321,9 @@ export default function CartV2() {
                 value={form.website} onChange={(e) => set("website", e.target.value)}
                 style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
-              <Field name="фио" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required ph="Имя Фамилия" />
-              <Field name="телефон" type="tel" value={form.contact_phone} onChange={(v) => set("contact_phone", v)} required ph="+7 ___ ___-__-__" />
-              <Field name="почта" type="email" value={form.contact_email} onChange={(v) => set("contact_email", v)} required ph="you@mail.ru" />
+              <Field autoComplete="name" name="фио" value={form.contact_fio} onChange={(v) => set("contact_fio", v)} required ph="Имя Фамилия" />
+              <Field autoComplete="tel" name="телефон" type="tel" value={form.contact_phone} onChange={(v) => set("contact_phone", v)} required ph="+7 ___ ___-__-__" />
+              <Field autoComplete="email" name="почта" type="email" value={form.contact_email} onChange={(v) => set("contact_email", v)} required ph="you@mail.ru" />
 
               {hasShippable && (
                 <div style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -307,9 +336,9 @@ export default function CartV2() {
                           style={{
                             ...mono, flex: 1, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
                             padding: "10px 8px", borderRadius: "var(--r-sm)", cursor: "pointer",
-                            border: `1px solid ${on ? "var(--c-accent)" : "var(--c-line)"}`,
-                            background: on ? "var(--c-accent)" : "transparent",
-                            color: on ? "var(--c-on-accent)" : "var(--c-text-2)",
+                            border: `1px solid ${on ? "var(--c-bg-inverse)" : "var(--c-line-control)"}`,
+                            background: on ? "var(--c-bg-inverse)" : "transparent",
+                            color: on ? "var(--c-text-inverse)" : "var(--c-text-2)",
                           }}>
                           {f === "pickup" ? "самовывоз" : "доставка"}
                         </button>
@@ -319,16 +348,16 @@ export default function CartV2() {
                 </div>
               )}
               {hasShippable && form.fulfillment === "delivery" && (
-                <Field name="адрес доставки" value={form.address} onChange={(v) => set("address", v)} required ph="город, улица, дом, квартира" />
+                <Field autoComplete="street-address" name="адрес доставки" value={form.address} onChange={(v) => set("address", v)} required ph="город, улица, дом, квартира" />
               )}
               <Field name="комментарий" value={form.comment} onChange={(v) => set("comment", v)} ph="если есть что уточнить" />
 
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 14, cursor: "pointer", fontSize: "var(--t-small)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
                 <input type="checkbox" checked={form.consent} required onChange={(e) => set("consent", e.target.checked)}
-                  style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-accent)" }} />
+                  style={{ marginTop: 3, width: 17, height: 17, flexShrink: 0, accentColor: "var(--c-bg-inverse)" }} />
                 <span>
-                  Даю согласие на обработку персональных данных в соответствии с{" "}
-                  <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-accent-text)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
+                  Даю согласие на обработку персональных данных оператору {CLUB_OPERATOR.shortName} в соответствии с{" "}
+                  <Link to="/privacy" target="_blank" className="foc" style={{ color: "var(--c-link)", textDecoration: "underline", textUnderlineOffset: 2 }}>политикой обработки</Link>
                 </span>
               </label>
 
@@ -336,15 +365,16 @@ export default function CartV2() {
 
               {/* Недоступная кнопка становится нейтральной, а не бледно-охряной:
                   полупрозрачная охра читалась как активная и роняла контраст текста. */}
-              <button type="submit" disabled={busy || !form.consent} className="foc"
+              <button type="submit" aria-busy={busy} disabled={isMirror || busy || setQty.isPending || !form.consent} className="foc"
                 style={{
                   ...primary, width: "100%", marginTop: 16,
-                  ...(busy || !form.consent
+                  ...(busy || setQty.isPending || !form.consent
                     ? { background: "transparent", color: "var(--c-text-3)", border: "1px solid var(--c-line-control)", cursor: busy ? "wait" : "not-allowed" }
                     : {}),
                 }}>
-                {busy ? "Отправляем…" : form.consent ? "Оформить заявку" : "Нужно согласие на обработку данных"}
+                {isMirror ? "Отправка недоступна на зеркале" : busy ? "Отправляем…" : setQty.isPending ? "Обновляем корзину…" : form.consent ? "Оформить заявку" : "Нужно согласие на обработку данных"}
               </button>
+              </fieldset>
             </form>
           </div>
         )}

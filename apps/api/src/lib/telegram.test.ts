@@ -37,3 +37,11 @@ describe("Telegram initData validation", () => {
     expect(validateInitData(fresh, TOKEN, { maxAgeSec: 86400 }).ok).toBe(true);
   });
 });
+
+it("отклоняет дату из будущего и повторяющиеся параметры", () => {
+  const future = signInitData({ auth_date: String(Math.floor(Date.now() / 1000) + 3600), user: '{"id":42}' }, TOKEN);
+  expect(validateInitData(future, TOKEN, { maxAgeSec: 86400 }).ok).toBe(false);
+  const fresh = signInitData({ auth_date: String(Math.floor(Date.now() / 1000)), user: '{"id":42}' }, TOKEN);
+  expect(validateInitData(fresh + "&user=%7B%22id%22%3A42%7D", TOKEN).ok).toBe(false);
+  expect(validateInitData(fresh + "zz", TOKEN).ok).toBe(false);
+});

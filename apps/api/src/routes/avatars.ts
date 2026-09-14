@@ -36,10 +36,14 @@ const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "
 export async function avatarsRoutes(app: FastifyInstance) {
   await app.register(multipart, { limits: { fileSize: MAX_AVATAR_BYTES, files: 1 } });
 
-  app.post("/me/avatar", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
+  app.post("/me/avatar", { bodyLimit: 4 * 1024 * 1024, config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
-    if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
+    // Фото можно загрузить до подтверждения выпуска; отклонённым – нет.
+    if (me.verification_status === "rejected") return reply.code(403).send({ error: "Заявка отклонена – загрузка фото недоступна" });
+    if (me.verification_status !== "verified" && me.verification_status !== "pending") {
+      return reply.code(403).send({ error: "Доступно после подачи заявки" });
+    }
 
     const file = await req.file();
     if (!file) return reply.code(400).send({ error: "Прикрепите файл изображения" });
@@ -74,13 +78,21 @@ export async function avatarsRoutes(app: FastifyInstance) {
     const fileId = ((await up.json()) as any)?.data?.id as string | undefined;
     if (!fileId) return reply.code(502).send({ error: "Не удалось сохранить файл" });
 
+    // Сначала сохраняем новую ссылку. При ошибке старое фото остаётся рабочим.
+    try {
+      await di.request((updateItem as any)("alumni", me.id, { avatar: fileId }));
+    } catch (error) {
+      await fetch(`${env.DIRECTUS_URL}/files/${fileId}`, {
+        method: "DELETE", headers: { authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}` },
+      }).catch(() => undefined);
+      throw error;
+    }
     // Старый аватар подчищаем (не копим мусор в uploads).
     if (me.avatar) {
       await fetch(`${env.DIRECTUS_URL}/files/${me.avatar}`, {
         method: "DELETE", headers: { authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}` },
       }).catch(() => undefined);
     }
-    await di.request((updateItem as any)("alumni", me.id, { avatar: fileId }));
     audit("avatar.upload", { actor: `alumni:${me.id}`, detail: { fileId, size: buf.length }, req });
     return { ok: true, avatar: fileId };
   });

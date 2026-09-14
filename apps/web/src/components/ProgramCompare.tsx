@@ -17,7 +17,7 @@ export default function ProgramCompare({ slugs, onRemove }: { slugs: string[]; o
     { title: "Начало", value: (p) => programStart(p.dates?.start) },
     { title: "Набор", value: (p) => p.enrollment === "nonactual" ? "Закрыт" : "Актуальный набор" },
     { title: "Документ", value: (p) => p.document || "Не указан" },
-    { title: "Содержание", value: (p) => p.modules?.length ? <ul>{p.modules.map((m, i) => <li key={i}>{m.title}{m.hours != null && ` (${m.hours} ч)`}{!!m.points?.length && <ul>{m.points.map((point, j) => <li key={j}>{point}</li>)}</ul>}</li>)}</ul> : p.description || "Содержание не опубликовано" },
+    { title: "Содержание", value: (p) => p.modules?.length ? <details><summary>Посмотреть содержание · {p.modules.length} разделов</summary><ul>{p.modules.map((m, i) => <li key={i}>{m.title}{(m.hours ?? 0) > 0 && ` (${m.hours} ч)`}{!!m.points?.length && <ul>{m.points.map((point, j) => <li key={j}>{point}</li>)}</ul>}</li>)}</ul></details> : p.description || "Содержание не опубликовано" },
     { title: "Преподаватели", value: (p) => p.teachers?.length ? <ul>{p.teachers.map((t, i) => <li key={i}>{t.name}{t.role && `, ${t.role}`}</li>)}</ul> : "Состав уточняется" },
     { title: "Запись", value: (p) => <Link to={`/dpo/${p.slug}`}>Условия и запись</Link> },
   ];

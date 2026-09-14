@@ -25,8 +25,8 @@ const ORDER = "ALU-2026-000001";
 const ALUMNI_ID = "alumni-1";
 
 async function build(): Promise<FastifyInstance> {
-  // trustProxy: 1 – как в проде: req.ip берётся из X-Forwarded-For, поставленного Caddy.
-  const app = Fastify({ trustProxy: 1 });
+  // Как в production: доверяем адресу прокси, а не количеству хопов.
+  const app = Fastify({ trustProxy: env.TRUST_PROXY.split(",") });
   registerErrorHandler(app);
   await app.register(paymentsRoutes);
   return app;

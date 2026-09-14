@@ -1,0 +1,42 @@
+# Только локальный стенд. Секреты передаются через внешний --env-file.
+name: alumni-local-qa
+services:
+  postgres:
+    image: postgres@sha256:e013e867e712fec275706a6c51c966f0bb0c93cfa8f51000f85a15f9865a28cb
+    environment:
+      POSTGRES_DB: alumni_qa
+      POSTGRES_USER: alumni_qa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: ["127.0.0.1:55439:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alumni_qa -d alumni_qa"]
+      interval: 3s
+      retries: 30
+  directus:
+    image: directus/directus@sha256:eb326f679ae847c0a776f93b972761dc2ebe84980e0b9d274a6bc31cd62809f7
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      SECRET: ${DIRECTUS_SECRET}
+      DB_CLIENT: pg
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: alumni_qa
+      DB_USER: alumni_qa
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      PUBLIC_URL: http://127.0.0.1:8059
+      TELEMETRY: "false"
+    ports: ["127.0.0.1:8059:8055"]
+    volumes: ["uploads:/directus/uploads"]
+  mail:
+    image: axllent/mailpit@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    ports: ["127.0.0.1:8039:8025", "127.0.0.1:1039:1025"]
+networks:
+  default:
+    internal: false
+volumes:
+  pgdata:
+  uploads:
