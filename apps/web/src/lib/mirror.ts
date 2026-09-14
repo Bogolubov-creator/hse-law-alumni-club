@@ -164,7 +164,7 @@ const PODCASTS = {
       cover: null as string | null,
       duration: "108 мин",
       is_free: false,
-      audio_url: "https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/volos.mp3",
+      audio_url: null as string | null,
       video_url: null as string | null,
       sort: 2,
       status: "published",
@@ -176,7 +176,7 @@ const PODCASTS = {
       cover: null as string | null,
       duration: "71 мин",
       is_free: false,
-      audio_url: "https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/besedin.mp3",
+      audio_url: null as string | null,
       video_url: null as string | null,
       sort: 3,
       status: "published",
@@ -188,7 +188,7 @@ const PODCASTS = {
       cover: null as string | null,
       duration: "112 мин",
       is_free: false,
-      audio_url: "https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/balashov.mp3",
+      audio_url: null as string | null,
       video_url: null as string | null,
       sort: 4,
       status: "published",
@@ -200,7 +200,7 @@ const PODCASTS = {
       cover: null as string | null,
       duration: "115 мин",
       is_free: false,
-      audio_url: "https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/matveeva.mp3",
+      audio_url: null as string | null,
       video_url: null as string | null,
       sort: 5,
       status: "published",
@@ -212,7 +212,7 @@ const PODCASTS = {
       cover: null as string | null,
       duration: "76 мин",
       is_free: false,
-      audio_url: "https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/dzgoeva.mp3",
+      audio_url: null as string | null,
       video_url: null as string | null,
       sort: 6,
       status: "published",
@@ -224,7 +224,7 @@ const PODCASTS = {
       cover: null as string | null,
       duration: "117 мин",
       is_free: false,
-      audio_url: "https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/nikolaev.mp3",
+      audio_url: null as string | null,
       video_url: null as string | null,
       sort: 7,
       status: "published",
@@ -566,7 +566,10 @@ function mirrorGet(path: string): Response | null {
   }
   if (clean === "/timeline") return jsonResponse(TIMELINE);
   if (clean === "/events") return jsonResponse(EVENTS);
-  if (clean === "/podcasts") return jsonResponse(PODCASTS);
+  if (clean === "/podcasts") return jsonResponse({
+    ...PODCASTS, subscribed: false, sub_until: null,
+    items: PODCASTS.items.map(p => ({...p, audio_url: p.is_free ? p.audio_url : null, video_url: p.is_free ? p.video_url : null})),
+  });
   if (clean === "/payments/config") return jsonResponse({ enabled: false });
   if (clean === "/support/config") {
     return jsonResponse({

@@ -11,11 +11,18 @@ const request = async (path: string, method = "GET", body?: unknown) => {
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); window.fetch = original; installMirrorFetch(); });
 afterEach(() => { window.fetch = original; });
 describe("демо-витрина", () => {
-  it("все семь выпусков имеют отдельные постоянные ссылки на аудио", async () => {
-    const { data } = await request('/podcasts');
-    expect(data.items).toHaveLength(7);
-    expect(new Set(data.items.map((item: any) => item.audio_url)).size).toBe(7);
-    for (const item of data.items) expect(item.audio_url).toMatch(/^https:\/\/github\.com\/Bogolubov-creator\/hse-law-alumni-club\/releases\/download\/podcast-audio-v1\/[a-z]+\.mp3$/);
+  it("не выдаёт подписку и платные аудиоссылки даже демо-кабинету", async () => {
+    for (const session of [null, "mirror-alumni"]) {
+      if (session) localStorage.setItem("club_token", session); else localStorage.removeItem("club_token");
+      const { data } = await request('/podcasts');
+      expect(data.items).toHaveLength(7);
+      expect(data.subscribed).toBe(false); expect(data.sub_until).toBeNull();
+      const free = data.items.filter((item: any) => item.is_free);
+      expect(free).toHaveLength(1); expect(free[0].audio_url).toMatch(/danyukov\.mp3$/);
+      for (const item of data.items.filter((item: any) => !item.is_free)) {
+        expect(item.audio_url).toBeNull(); expect(item.video_url).toBeNull();
+      }
+    }
   });
   it("сохраняет товар, количество и итог между запросами и повторной установкой перехвата", async () => {
     const { data: products } = await request('/products');

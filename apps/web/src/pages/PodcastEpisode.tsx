@@ -1,3 +1,4 @@
+import { isMirror } from "../lib/public-url.js";
 import { Link, useParams } from "react-router-dom";
 import { usePodcasts } from "../lib/queries.js";
 import { token } from "../lib/cart.js";
@@ -12,7 +13,8 @@ import "../styles/podcast-episode.css";
 
 export default function PodcastEpisode() {
   const { id } = useParams();
-  const q = usePodcasts(token());
+  const session = token();
+  const q = usePodcasts(session);
   const items = q.data?.items ?? [];
   const index = items.findIndex(item => item.id === id);
   const episode = items[index];
@@ -29,9 +31,9 @@ export default function PodcastEpisode() {
           {episode.description && <p className="episode-description">{episode.description}</p>}
           {locked ? <section className="episode-access" aria-label="Доступ по подписке">
             <PodcastLock /><h2>Этот выпуск – по подписке</h2>
-            <p>Откройте все выпуски подкастов клуба на год.</p>
+            <p>{isMirror ? "На зеркале платные выпуски закрыты. Демонстрационный кабинет не предоставляет подписку." : !session ? "Войдите в кабинет. Для прослушивания этого выпуска нужна действующая подписка." : "Для прослушивания этого выпуска нужна действующая подписка."}</p>
             <strong>{q.data ? rub(q.data.price) : "4 999 ₽"} / год</strong>
-            <Link to="/podcasts#podcast-subscription" className="foc" style={action}>Оформить подписку</Link>
+            {!session && !isMirror ? <Link to="/lk?next=%2Fpodcasts%23podcast-subscription" className="foc" style={action}>Войти в кабинет</Link> : <Link to="/podcasts#podcast-subscription" className="foc" style={action}>Условия подписки</Link>}
           </section> : <section className="episode-player" aria-label="Плеер выпуска">
             {episode.video_url ? <VideoEmbed src={episode.video_url} title={episode.title} v2 /> : episode.audio_url ? <EpisodePlayer key={episode.id} id={episode.id} src={episode.audio_url} v2 expanded /> : <p>Запись пока недоступна.</p>}
           </section>}
