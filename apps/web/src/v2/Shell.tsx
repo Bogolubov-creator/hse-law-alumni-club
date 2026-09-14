@@ -4,7 +4,6 @@ import { CLUB_OPERATOR } from "@club/shared";
 import { token, useCart } from "../lib/cart.js";
 import { VisionToggle } from "../components/Vision.js";
 import { SiteSearch } from "../components/SiteSearch.js";
-import { Mark } from "./Mark.js";
 import { openCookieSettings } from "../lib/cookie-consent.js";
 import { useReveal } from "../lib/use-reveal.js";
 import { publicUrl } from "../lib/public-url.js";
@@ -134,7 +133,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
       <footer className="club-footer club-dark">
         <div className="club-footer__inner">
           <div className="club-footer__brand">
-            <Mark kind="scales" size={40} style={{ color: "var(--c-accent-text)", flex: "none" }} />
+            <img src={publicUrl("icon-192.png")} width={48} height={48} alt="" className="club-footer__emblem" />
             <div>
               <strong>Клуб выпускников факультета права Вышки</strong>
               <p>Встречи, программы ДПО с ценой выпускника, подкасты и мерч.</p>
