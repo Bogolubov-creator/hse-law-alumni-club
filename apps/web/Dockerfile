@@ -19,7 +19,7 @@ ENV VITE_DIRECTUS_URL=$VITE_DIRECTUS_URL
 RUN pnpm --filter @club/shared build && pnpm --filter @club/web build
 
 # Статика отдаётся отдельным Caddy внутри контейнера; внешний Caddy проксирует на него.
-FROM caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648 AS runtime
+FROM caddy:2.11.4-alpine@sha256:de23def33b17fb5d1290b0f6c2add1d70780e52341896c00a4c8a2a2fe9d355e AS runtime
 COPY --from=build /repo/apps/web/dist /srv
 COPY apps/web/Caddyfile.static /etc/caddy/Caddyfile
 EXPOSE 80
