@@ -1,5 +1,5 @@
 # Контекст сборки – корень монорепо (см. docker-compose.yml).
-FROM node:20.20.2-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS build
+FROM node:26.9.0-alpine@sha256:dbaa92e5758cbbcf85d65d5403fdb530fe3442cbe8c6dbfb7ef23365450d5070 AS build
 RUN corepack enable
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml* ./
@@ -12,7 +12,7 @@ COPY apps/api apps/api
 RUN pnpm --filter @club/shared build && pnpm --filter @club/api build
 RUN pnpm --filter @club/api deploy --prod /app
 
-FROM node:20.20.2-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS runtime
+FROM node:26.9.0-alpine@sha256:dbaa92e5758cbbcf85d65d5403fdb530fe3442cbe8c6dbfb7ef23365450d5070 AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /app .
