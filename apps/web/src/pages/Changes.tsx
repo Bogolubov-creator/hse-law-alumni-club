@@ -143,14 +143,14 @@ export default function Changes() {
             <div className="changes-attribution"><strong>Автоматический материал LegisDigest</strong><span>Опубликован в Telegram {changeDate(selected.published)}. Пояснения перенесены из канала; проверка человеком не подтверждена.</span></div>
             <div className="changes-brief">{selected.blocks.map((block, i) => { const content = block.segments.map((segment, j) => segment.url ? <a key={j} href={segment.url} target="_blank" rel="noopener noreferrer">{segment.text}</a> : <span key={j}>{segment.text}</span>); return block.heading ? <h3 key={i}>{content}</h3> : <p key={i}>{content}</p>; })}</div>
           </> : <><dl className="changes-facts"><div><dt>Дата акта</dt><dd>{changeDate(selected.date)}</dd></div><div><dt>Опубликован</dt><dd>{changeDate(selected.published)}</dd></div><div><dt>Вступление в силу</dt><dd>Дата не установлена</dd></div><div><dt>Источник</dt><dd>Официальный портал опубликования</dd></div></dl>
-          <h3>О документе</h3><p>В архиве сохранены название, номер и даты документа из legis-digest. Для чтения полного текста откройте официальную публикацию.</p>
+          <h3>О документе</h3><p>Полный текст доступен на портале официального опубликования.</p>
           <p className="changes-muted">Дата опубликования не заменяет дату вступления в силу.</p></>}
           <div className="changes-actions"><a className="changes-button changes-button--primary" href={selected.url} target="_blank" rel="noopener noreferrer">{selected.entryType === "digest" ? "Оригинал в Telegram ↗" : "Открыть первоисточник ↗"}</a><button className="changes-button" onClick={copyLink}>Скопировать ссылку</button></div>
           <p role="status" className="changes-muted">{copied}</p>
           {manualLink && <label className="changes-copy">Постоянная ссылка<input readOnly value={manualLink} onFocus={e => e.currentTarget.select()} /></label>}
           <footer className="changes-reader-footer">{selected.entryType === "digest" ? "Ссылки в тексте сохранены из исходного сообщения. Информация не является индивидуальной юридической консультацией; перед применением нормы проверьте официальный документ." : "Архив реквизитов. Текущая редакция и действие акта здесь не подтверждаются."}</footer>
         </article> : id ? <div className="changes-empty"><h2 ref={heading} tabIndex={-1}>Документ не найден</h2><p>В загруженном архиве такой записи нет.</p><button className="changes-button" onClick={back}>К списку изменений</button></div>
-        : <div className="changes-reader-hint"><span aria-hidden="true">§</span><h2>Суть изменения – рядом</h2><p>Выберите справку или обзор слева. Текст откроется здесь, со всеми пояснениями и ссылками из канала.</p><div>Поиск по полному тексту материалов<br />Новые публикации подхватываются автоматически</div></div>}
+        : <div className="changes-reader-hint"><span aria-hidden="true">§</span><h2>Выберите материал</h2><p>Откройте справку или обзор из списка.</p></div>}
       </section>
     </div>}
   </main></V2Shell>;

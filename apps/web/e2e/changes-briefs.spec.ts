@@ -21,9 +21,9 @@ test("справки из Telegram читаются на сайте и нахо�
 
 test("успешная синхронизация не маскирует старую дату поста", async ({ page }) => {
   await page.goto(`${base}/changes`);
-  await expect(page.locator(".changes-notice")).toContainText("Последняя успешная загрузка:");
-  await expect(page.locator(".changes-notice")).toContainText("Последний материал в канале:");
-  await expect(page.locator(".changes-notice")).toContainText("давно нет новых публикаций");
+  await expect(page.locator(".changes-notice")).toContainText("Обновлено:");
+  await expect(page.locator(".changes-notice")).toContainText("Последняя публикация:");
+  await expect(page.locator(".changes-notice")).not.toContainText("Архивный срез");
   await page.getByRole("button", { name: "Архив актов", exact: true }).click();
   await expect(page.getByText("Найдено: 65", { exact: true })).toBeVisible();
 });
