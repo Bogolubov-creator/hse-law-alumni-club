@@ -11,7 +11,10 @@ vi.mock("../../lib/cart.js", () => ({
   useMemberDiscount: () => state.discount,
   usePrograms: () => ({ data: [{ slug: "copyright", title: "Авторское право", direction: "Право", price: 7500000, cover: "/covers/472681893.jpg", enrollment: "actual" }] }),
 }));
-vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
+// Список событий и архив имеют разные контракты данных.
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: ({ queryKey }: { queryKey: readonly unknown[] }) => ({ data: queryKey[0] === "events" ? [] : undefined }),
+}));
 vi.mock("../../lib/queries.js", () => ({ usePage: () => ({}), useNewsList: () => ({ data: [] }), formatNewsDate: () => "" }));
 vi.mock("../../lib/title.js", () => ({ useHead: () => {} }));
 vi.mock("../../v2/Shell.js", () => ({ V2Shell: ({ children }: { children: ReactNode }) => children, text: (value: string, fallback: string) => value || fallback }));
