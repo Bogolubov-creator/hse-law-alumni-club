@@ -3,6 +3,7 @@ const base = (process.env.E2E_BASE_URL || "http://127.0.0.1:4297/club-pravo-hse-
 
 async function openSearch(page: import("@playwright/test").Page) {
   const burger = page.getByRole("button", { name: "Открыть меню", exact: true });
+  await expect(burger.or(page.getByRole("button", { name: "Поиск", exact: true }))).toBeVisible();
   if (await burger.isVisible()) {
     await burger.click();
     await page.getByRole("button", { name: "Поиск по клубу", exact: true }).click();
