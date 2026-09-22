@@ -1,4 +1,5 @@
 import AlumniOpportunities from "../components/AlumniOpportunities.js";
+import ChangesPreview from "../components/ChangesPreview.js";
 import { Link } from "react-router-dom";
 import { computeOrderTotals } from "@club/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -160,6 +161,8 @@ export default function HomeV2() {
           )}
           <Link to="/dpo" className="foc home-btn home-dpo__all">Весь каталог</Link>
         </section>
+
+        <ChangesPreview />
 
         {/* 4. Встреча клуба: фото во всю ширину, чёрная подпись под ним */}
         <section className="home-meeting" aria-labelledby="home-meeting-title" data-reveal>

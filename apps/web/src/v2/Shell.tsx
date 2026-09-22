@@ -42,6 +42,7 @@ const NAV = [
   { to: "/events", label: "События" },
   { to: "/news", label: "Новости" },
   { to: "/podcasts", label: "Подкасты" },
+  { to: "/changes", label: "Изменения в праве" },
   { to: "/merch", label: "Мерч" },
 ];
 
