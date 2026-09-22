@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { parseChanges, selectChanges } from "./changes.js";
 
-const archive = () => JSON.parse(readFileSync(new URL("../../public/data/changes.json", import.meta.url), "utf8"));
+const archive = () => {
+  const data = JSON.parse(readFileSync(new URL("../../public/data/changes.json", import.meta.url), "utf8"));
+  return { version: 1, mode: "archive", periodFrom: "2026-06-30", periodTo: "2026-07-06", items: data.items.filter((item: { entryType?: string }) => !item.entryType || item.entryType === "act") };
+};
 describe("Архив изменений", () => {
   it("принимает реквизиты, отбрасывает посторонние поля", () => {
     const raw = archive(); raw.items[0].draft = "Не публиковать";

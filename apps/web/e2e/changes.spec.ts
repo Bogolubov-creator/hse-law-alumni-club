@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const base = process.env.E2E_BASE_URL || "http://127.0.0.1:4297/club-pravo-hse-mirror/";
-const url = (path = "changes") => `${base.replace(/\/$/, "")}/${path}`;
+const url = (path = "changes?view=act") => `${base.replace(/\/$/, "")}/${path}`;
 
 test("поиск, чтение, возврат и прямая ссылка", async ({ page }) => {
   await page.goto(url());
