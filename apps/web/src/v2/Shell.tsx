@@ -9,6 +9,7 @@ import { useReveal } from "../lib/use-reveal.js";
 import { publicUrl } from "../lib/public-url.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 import "../styles/shell.css";
+import { CLUB_NAV as NAV } from "../config/navigation.js";
 
 /**
  * Общая оболочка публичного контура: шапка и подвал для всех страниц.
@@ -37,14 +38,7 @@ export function BlankField({ children, label }: { children: ReactNode; label: st
   );
 }
 
-const NAV = [
-  { to: "/dpo", label: "ДПО" },
-  { to: "/events", label: "События" },
-  { to: "/news", label: "Новости" },
-  { to: "/podcasts", label: "Подкасты" },
-  { to: "/changes", label: "Изменения в праве" },
-  { to: "/merch", label: "Мерч" },
-];
+
 
 const SearchIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
@@ -59,10 +53,27 @@ export function V2Shell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { pathname } = useLocation();
+  const menuButton = useRef<HTMLButtonElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   useReveal(shellRef);
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setMenuOpen(false); menuButton.current?.focus(); }
+    };
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !shellRef.current?.querySelector("header")?.contains(event.target)) setMenuOpen(false);
+    };
+    const wide = window.matchMedia("(min-width: 1281px)");
+    const resize = () => { if (wide.matches && !document.documentElement.classList.contains("pwa-shell")) setMenuOpen(false); };
+    document.addEventListener("keydown", close);
+    document.addEventListener("pointerdown", outside);
+    wide.addEventListener("change", resize);
+    return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); wide.removeEventListener("change", resize); };
+  }, [menuOpen]);
 
   const cta = (
     <Link to={authed ? "/lk" : "/join"} viewTransition className="foc club-header__cta" style={action}>
@@ -88,7 +99,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
               <NavLink key={n.to} to={n.to} viewTransition className="foc club-caps club-header__link">{n.label}</NavLink>
             ))}
             <div className="club-header__tools">
-              <button type="button" onClick={() => setSearchOpen(true)} className="foc club-chrome-icon-btn" aria-label="Поиск" title="Поиск по программам и новостям">
+              <button type="button" onClick={() => setSearchOpen(true)} className="foc club-chrome-icon-btn" aria-label="Поиск" title="Поиск по клубу">
                 {SearchIcon}
               </button>
               <VisionToggle compact v2 />
@@ -100,14 +111,14 @@ export function V2Shell({ children }: { children: ReactNode }) {
             {cta}
           </nav>
 
-          <button onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-controls="club-menu" aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc club-header__burger">
+          <button ref={menuButton} onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-controls="club-menu" aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} className="foc club-header__burger">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={menuOpen ? "M6 6l12 12M6 18L18 6" : "M4 6h16M4 12h16M4 18h16"} /></svg>
           </button>
         </div>
 
         <nav id="club-menu" className="club-menu" data-open={menuOpen} aria-label="Меню">
           <button type="button" onClick={() => { setMenuOpen(false); setSearchOpen(true); }} className="foc">
-            Поиск по программам и новостям
+            Поиск по клубу
             {SearchIcon}
           </button>
           {NAV.map((n) => (
@@ -127,7 +138,14 @@ export function V2Shell({ children }: { children: ReactNode }) {
         </nav>
       </header>
 
-      {searchOpen && <SiteSearch onClose={() => setSearchOpen(false)} />}
+      {searchOpen && <SiteSearch onClose={() => {
+        setSearchOpen(false);
+        requestAnimationFrame(() => {
+          const desktopSearch = shellRef.current?.querySelector<HTMLButtonElement>('.club-header__tools button[aria-label="Поиск"]');
+          if (desktopSearch?.getClientRects().length) desktopSearch.focus({ preventScroll: true });
+          else menuButton.current?.focus({ preventScroll: true });
+        });
+      }} />}
 
       {children}
 
@@ -137,7 +155,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
             <img src={publicUrl("icon-192.png")} width={48} height={48} alt="" className="club-footer__emblem" />
             <div>
               <strong>Клуб выпускников факультета права Вышки</strong>
-              <p>Встречи, программы ДПО с ценой выпускника, подкасты и мерч.</p>
+              <p>Встречи выпускников, программы ДПО, подкасты и изменения в праве.</p>
             </div>
           </div>
           <div>

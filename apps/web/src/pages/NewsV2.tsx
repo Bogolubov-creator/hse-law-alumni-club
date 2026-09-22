@@ -43,7 +43,7 @@ export function NewsV2() {
           lead="Анонсы встреч, программы ДПО и обновления портала."
           count={list.length ? `публикаций ${list.length}` : undefined}
         />
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
 
         {news.isLoading && <p role="status" style={{ ...label, margin: 0 }}>загружаем новости…</p>}
 

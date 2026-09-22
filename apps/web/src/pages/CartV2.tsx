@@ -97,7 +97,7 @@ export function Submitted({ result }: { result: OrderResult }) {
   }, []);
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: 620, margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: 620, margin: "0 auto", padding: "0 var(--page-gutter)" }}>
         <div style={{ paddingTop: 64 }}>
           <Mark kind="scales" size={44} style={{ color: "var(--c-accent-text)" }} />
           <div style={{ ...label, color: "var(--c-ok-text)", marginTop: 20 }}>заявка принята</div>
@@ -215,11 +215,11 @@ export default function CartV2() {
 
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+      <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
         <ShowcaseHead
           eyebrow="корзина"
           title="Заявка в учебный офис"
-          lead="Учебный офис подтвердит состав и сумму. Скидка клуба – только на ДПО и только после верификации выпуска. На мерч скидка не действует."
+          lead="Проверьте выбранные программы и товары. Учебный офис подтвердит сумму заявки."
           count={items.length ? `позиций ${items.length} · на сумму ${rub(total)}` : undefined}
         />
 

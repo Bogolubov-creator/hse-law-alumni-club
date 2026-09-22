@@ -104,7 +104,7 @@ export function CabinetClubOverview({ me, token }: { me: Me; token: string }) {
     <div className="cabinet-club-overview">
       <div className="cabinet-welcome">
         <h1>Мой кабинет</h1>
-        <p>Одно следующее действие и ближайшая встреча.</p>
+        <p>Ваши заявки, встречи и возможности клуба.</p>
       </div>
       <BenefitsStrip me={me} token={token} />
       <section className="cabinet-next-action" aria-labelledby="cabinet-next-action-title">

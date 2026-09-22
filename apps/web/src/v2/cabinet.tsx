@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { VisionToggle } from "../components/Vision.js";
 import { mono, disp, label, actionGhost } from "../styles/primitives.js";
 export { label, field, action, actionGhost } from "../styles/primitives.js";
-import { Mark } from "./Mark.js";
+import { publicUrl } from "../lib/public-url.js";
 import "../styles/shell.css";
 
 /**
@@ -78,11 +78,12 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
   const { pathname } = useLocation();
   return (
     <div className="cabinet-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
+      <a href="#main" className="skip">К содержанию страницы</a>
       {/* Шапка кабинета – общий локап и вкладки на непрозрачной поверхности формы */}
       <header className="club-header cabinet-header">
         <div className="club-header__inner">
           <Link to="/" className="foc club-header__brand">
-            <Mark kind="scales" size={32} style={{ color: "var(--c-accent-text)" }} />
+            <img src={publicUrl("icon-192.png")} width={36} height={36} alt="" className="club-header__emblem" />
             <span className="club-header__lockup">
               Клуб выпускников
               <small>факультета права Вышки</small>

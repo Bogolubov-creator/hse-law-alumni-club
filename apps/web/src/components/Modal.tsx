@@ -9,10 +9,11 @@ export default function Modal({
   onClose, children, labelledBy, maxWidth = 460,
 }: { onClose: () => void; children: ReactNode; labelledBy?: string; maxWidth?: number }) {
   const ref = useRef<HTMLDivElement>(null);
+  const restoreFocus = useRef(document.activeElement as HTMLElement | null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
-    const prev = document.activeElement as HTMLElement | null;
+    const prev = restoreFocus.current;
     const background = Array.from(document.body.children).filter((el): el is HTMLElement => el instanceof HTMLElement && !el.contains(ref.current));
     const inert = background.map((el) => el.inert);
     background.forEach((el) => { el.inert = true; });
@@ -45,7 +46,7 @@ export default function Modal({
   return createPortal(
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: "var(--layer-modal, 500)", background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "auto", overscrollBehavior: "contain" }}
+      style={{ position: "fixed", inset: 0, zIndex: "var(--layer-modal, 500)", background: "rgba(15,18,24,.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "clamp(12px, 3vw, 24px)", overflow: "auto", overscrollBehavior: "contain" }}
     >
       <div
         ref={ref}
@@ -54,7 +55,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         onClick={(e) => e.stopPropagation()}
-        style={{ position: "relative", width: "100%", maxWidth, outline: "none", maxHeight: "92dvh", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", borderRadius: 22 }}
+        style={{ position: "relative", width: "100%", maxWidth, outline: "none", maxHeight: "92dvh", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", borderRadius: "var(--r-lg)" }}
       >
         {children}
       </div>

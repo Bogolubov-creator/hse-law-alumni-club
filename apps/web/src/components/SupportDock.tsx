@@ -45,7 +45,7 @@ export function SupportDock() {
       if (cancelled || crowRef.current || hit) return;
 
       // На телефоне персонаж меньше, чтобы оставить место содержимому.
-      const width = compact ? 80 : 112;
+      const width = compact ? 56 : 96;
       const height = Math.round((width * 1465) / 1400);
 
       hit = document.createElement("button");

@@ -58,7 +58,7 @@ export default function PodcastsV2() {
           lead="Выпуски о праве и практике. Один выпуск бесплатно, остальные – по годовой подписке."
           count={items.length ? `выпусков ${items.length}` : undefined}
         />
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
 
         <MirrorPodcastDemo />
         {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}

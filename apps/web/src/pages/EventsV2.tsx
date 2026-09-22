@@ -130,7 +130,7 @@ export default function EventsV2() {
           lead="Встречи выпусков и лекции. Запись заранее – за участие начисляются баллы."
           count={upcoming.length ? `ближайших ${upcoming.length}` : undefined}
         />
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
 
         {events.isLoading && <p role="status" style={{ ...label, margin: 0 }}>загружаем афишу…</p>}
 
@@ -175,7 +175,7 @@ export default function EventsV2() {
 
         </div>
         </>}
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
         {eventId && events.isLoading && <div className="club-event-state" role="status">Загружаем событие…</div>}
         {eventId && events.isError && <div className="club-event-state" role="alert">Не удалось загрузить событие. <button className="foc" style={action} onClick={() => events.refetch()}>Повторить</button></div>}
         {eventId && events.isSuccess && !opened && <div className="club-event-state"><h1>Событие не найдено</h1><Link className="foc" to="/events">Вернуться к афише</Link></div>}

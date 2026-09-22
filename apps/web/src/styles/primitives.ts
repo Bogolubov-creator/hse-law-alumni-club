@@ -101,7 +101,8 @@ export const field: CSSProperties = {
   border: "1px solid var(--c-line-control)",
   background: "var(--c-bg)",
   color: "var(--c-text)",
-  fontSize: 15,
+  fontSize: 16,
+  minHeight: 48,
   fontFamily: "inherit",
 };
 

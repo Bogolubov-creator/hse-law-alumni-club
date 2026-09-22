@@ -1,3 +1,4 @@
+import { isMirror } from "../lib/public-url.js";
 import { requestJson } from "../lib/http.js";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
@@ -203,7 +204,7 @@ export default function SupportV2() {
 
         {config.data?.draft && (
           <p className="club-support-note">
-            Локальная проверка поддержки. Используйте только тестовые сообщения: публикация сервиса ещё не выполнена.
+            {isMirror ? "На зеркале обращения не отправляются." : "Тестовый режим поддержки. Используйте только тестовые сообщения."}
           </p>
         )}
 

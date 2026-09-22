@@ -5,7 +5,7 @@
 .club-news-row--featured { grid-template-columns: 1fr; padding: 32px; margin: 24px 0; border: 1px solid var(--c-line); border-radius: var(--r-lg); background: var(--c-bg-raised); box-shadow: var(--shadow-ambient); }
 .club-news-row--featured h2 { max-width: 30ch; }
 .club-news-read { display: inline-flex; align-items: center; min-height: 44px; }
-.club-news-post { max-width: 1000px; margin: 0 auto; padding: 0 28px; }
+.club-news-post { max-width: 1000px; margin: 0 auto; padding: 0 var(--page-gutter); }
 .club-news-post article { margin: 28px 0 48px; padding: 40px; border: 1px solid var(--c-line); border-radius: var(--r-lg); background: var(--c-bg-raised); box-shadow: var(--shadow-ambient); }
 .club-news-post article > time { color: var(--c-accent-text); }
 .club-news-post article h1 { overflow-wrap: anywhere; }

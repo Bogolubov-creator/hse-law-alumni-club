@@ -82,12 +82,11 @@ export default function App() {
       {import.meta.env.VITE_LOCAL_REVIEW === "true" && <SiteNotice>Локальный стенд · тестовые участники, товары и события · заявки обрабатываются только здесь</SiteNotice>}
       {import.meta.env.VITE_MIRROR === "true" && (
         <SiteNotice>
-          Публичное зеркало · демо-данные ·{" "}
+          Демоверсия ·{" "}
           <Link to="/lk" className="foc" style={{ color: "inherit", fontWeight: 600 }}>кабинет</Link>
           {" · "}
           <Link to="/admin" className="foc" style={{ color: "inherit", fontWeight: 600 }}>админка</Link>
-          {" · "}
-          <Link to="/?pwa=1" className="foc" style={{ color: "inherit", fontWeight: 600 }}>Смотреть как на телефоне</Link>
+
           {" · отправка заявок отключена"}
         </SiteNotice>
       )}

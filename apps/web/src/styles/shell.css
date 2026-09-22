@@ -17,7 +17,7 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--c-bg) 72%, transparent);
+  background: color-mix(in srgb, var(--c-bg) 94%, transparent);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
   border-bottom: 1px solid color-mix(in srgb, var(--c-text) 8%, transparent);
@@ -159,7 +159,7 @@
   flex-direction: column;
   border-top: 1px solid var(--c-line);
   padding: 8px 20px 20px;
-  max-height: calc(100dvh - 64px - var(--cookie-h, 0px));
+  max-height: calc(100dvh - 64px - var(--tabs-h, 0px) - var(--cookie-h, 0px));
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--c-bg);
@@ -199,7 +199,7 @@ html.pwa-shell .club-header__nav { display: none; }
 html.pwa-shell .club-header__burger { display: inline-flex; }
 html.pwa-shell .club-header__inner { padding-inline: 16px; }
 
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   .club-header__nav { display: none; }
   .club-header__burger { display: inline-flex; }
 }
@@ -404,3 +404,19 @@ html.pwa-shell .club-header__inner { padding-inline: 16px; }
 .club-footer__emblem { display: block; flex: none; width: 48px; height: 48px; object-fit: contain; border-radius: 4px; }
 
 .club-masthead__photo { overflow: hidden; isolation: isolate; }
+
+/* Выбранный раздел одинаково заметен в раскрытом меню и в шапке. */
+.club-menu a[aria-current="page"] { color: var(--c-accent-text); background: var(--c-bg-sunken); padding-inline: 12px; border-radius: var(--r-sm); }
+.club-menu a, .club-menu button { min-height: 44px; }
+.club-header__brand { flex-shrink: 0; }
+.club-footer li a, .club-footer li button { display: inline-flex; align-items: center; min-height: 44px; }
+.club-footer ul { gap: 0; }
+.club-search__shortcuts { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 8px 20px; }
+.club-search__shortcuts a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--c-line-control); border-radius: var(--r-sm); color: var(--c-text); text-decoration: none; }
+.club-search__shortcuts a:hover { background: var(--c-bg-sunken); }
+@media (max-width: 600px) {
+  .club-search { padding: 16px 16px 8px; }
+  .club-masthead__photo { aspect-ratio: auto; height: 200px; }
+}
+
+@media (max-width: 600px) { .club-masthead--photo-left .club-masthead__copy { padding-inline: var(--page-gutter); } }

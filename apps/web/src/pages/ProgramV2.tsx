@@ -89,7 +89,7 @@ export default function ProgramV2() {
   return (
     <V2Shell>
       <main id="main">
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
         <nav style={{ ...label, paddingTop: 24, paddingBottom: 8 }} aria-label="Хлебные крошки">
           <Link to="/dpo" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>витрина дпо</Link>
           {p?.direction && <> · {p.direction}</>}
@@ -130,7 +130,7 @@ export default function ProgramV2() {
               </p>
             </div>
           </header>
-          <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+          <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
             {/* ── Содержание записи ── */}
             <div style={{ minWidth: 0 }}>

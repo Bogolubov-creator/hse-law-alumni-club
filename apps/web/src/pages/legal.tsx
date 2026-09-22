@@ -16,7 +16,7 @@ function LegalShell({ title, updated, children }: { title: string; updated: stri
   });
   return (
     <V2Shell>
-      <main id="main" style={{ maxWidth: 820, margin: "0 auto", padding: "48px 28px 0", fontSize: "var(--t-body)", lineHeight: 1.7 }}>
+      <main id="main" style={{ maxWidth: 820, margin: "0 auto", padding: "48px var(--page-gutter) 0", fontSize: "var(--t-body)", lineHeight: 1.7 }}>
         {import.meta.env.VITE_LOCAL_REVIEW === "true" && <p role="note" className="club-support-note">Проект юридических документов. Оператор определён. Размещение данных и перечень сервисов требуют подтверждения перед публикацией. Не отправляйте реальные персональные данные на этот стенд.</p>}
         <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.14, margin: 0 }}>{title}</h1>
         <p style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: "var(--c-text-3)", margin: "12px 0 0" }}>

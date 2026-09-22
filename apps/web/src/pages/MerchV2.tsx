@@ -46,7 +46,7 @@ export default function MerchV2() {
           lead="Фирменные вещи с символикой клуба. Самовывоз в учебном офисе или доставка – выбирается при оформлении."
           count={products.isError ? undefined : products.isLoading ? "загружаем склад" : `позиций ${catalog.length} · на складе ${catalog.reduce((s, p) => s + totalStock(p), 0)}`}
         />
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px" }}>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", paddingBottom: 22, borderBottom: "1px solid var(--c-line)" }}>
           {[null, ...categories].map((c) => (
@@ -57,7 +57,7 @@ export default function MerchV2() {
               className="foc"
               style={{
                 ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
-                padding: "7px 12px", borderRadius: 999, cursor: "pointer",
+                padding: "10px 14px", minHeight: 44, borderRadius: "var(--r-sm)", cursor: "pointer",
                 border: `1px solid ${cat === c ? "var(--c-bg-inverse)" : "var(--c-line-control)"}`,
                 background: cat === c ? "var(--c-bg-inverse)" : "transparent",
                 color: cat === c ? "var(--c-text-inverse)" : "var(--c-text-2)",

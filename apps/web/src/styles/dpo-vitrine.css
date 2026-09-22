@@ -398,3 +398,14 @@ html.vis .club-dpo-masthead {
 /* Панорамный исходник показывается целиком, без увеличения по короткой стороне. */
 .club-dpo-masthead__media { min-height: 0; aspect-ratio: 1100 / 330; align-self: center; overflow: hidden; isolation: isolate; }
 .club-dpo-masthead__photo { object-fit: contain; object-position: center; }
+
+/* Каталог на телефоне начинается ближе к заголовку; поля совпадают с витринами. */
+@media (max-width: 900px) {
+  .club-dpo-masthead { gap: 0; padding: 0; }
+  .club-dpo-masthead__inner { padding: 32px 24px; }
+}
+@media (max-width: 620px) {
+  .club-dpo-masthead__inner { padding: 28px 16px; }
+  .club-dpo-body { padding-inline: 16px; }
+  .club-dpo-masthead h1 { margin-top: 0; }
+}
