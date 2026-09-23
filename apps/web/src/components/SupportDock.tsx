@@ -112,7 +112,8 @@ export function SupportDock() {
       open={open}
       onClose={() => {
         setOpen(false);
-        document.querySelector<HTMLButtonElement>(".club-crow-hit")?.focus({ preventScroll: true });
+        // Кнопка становится видимой после удаления панели из DOM.
+        requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".club-crow-hit")?.focus({ preventScroll: true }));
       }}
     />
   );

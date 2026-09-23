@@ -81,6 +81,6 @@ body:has(.club-bot-panel) [role="dialog"][aria-label="Установка при�
 @media (max-width: 1280px) {
   body:has(.club-menu[data-open="true"]) > .club-crow-hit,
   body:has(.club-menu[data-open="true"]) > .crow-mascot,
-  body:has(input:focus, textarea:focus, select:focus, [role="dialog"], dialog[open]) > .club-crow-hit,
-  body:has(input:focus, textarea:focus, select:focus, [role="dialog"], dialog[open]) > .crow-mascot { visibility: hidden; }
+  body:has(input:focus, textarea:focus, select:focus, [role="dialog"][aria-modal="true"], .club-bot-panel, dialog[open]) > .club-crow-hit,
+  body:has(input:focus, textarea:focus, select:focus, [role="dialog"][aria-modal="true"], .club-bot-panel, dialog[open]) > .crow-mascot { visibility: hidden; }
 }

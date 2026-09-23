@@ -137,8 +137,8 @@ test.describe("Кабинет v2", () => {
     await page.getByRole("button", { name: "Достижения", exact: true }).click();
     // Достижения: полученное и заметное «следующее»
     await expect(page.getByRole("heading", { name: "Первая заявка", exact: true })).toBeVisible();
-    await expect(page.locator("main").getByRole("status")).toContainText("Следующее:");
-    await expect(page.locator("main").getByRole("status")).toContainText("Пятеро однокурсников");
+    await expect(page.locator("main").getByRole("status").filter({ hasText: "Следующее:" })).toContainText("Следующее:");
+    await expect(page.locator("main").getByRole("status").filter({ hasText: "Следующее:" })).toContainText("Пятеро однокурсников");
     await expect(page.locator(".club-award.is-next")).toContainText("следующее · 2 / 5");
 
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();

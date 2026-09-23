@@ -1,5 +1,7 @@
 import SaveMaterial from "./SaveMaterial.js";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { isMirror, publicUrl } from "../lib/public-url.js";
+import { eventCalendar } from "../lib/event-calendar.js";
 import { Link } from "react-router-dom";
 import { fmtEventDateFull, gcalUrl, type ClubEvent } from "../lib/events.js";
 import "../styles/event-details.css";
@@ -9,6 +11,13 @@ export default function EventDetails({ event, detail, onClose, rsvp }: {
   event: ClubEvent; detail: boolean; onClose: () => void; rsvp: ReactNode;
 }) {
   const [failedCover, setFailedCover] = useState<string | null>(null);
+  const [calendarUrl, setCalendarUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isMirror) return;
+    const url = URL.createObjectURL(new Blob([eventCalendar(event, new URL(publicUrl(`events/${event.id}`), location.origin).href)], { type: "text/calendar;charset=utf-8" }));
+    setCalendarUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [event]);
   const Heading = detail ? "h1" : "h2";
   const SectionHeading = detail ? "h2" : "h3";
   const past = event.status === "done" || Date.parse(event.starts_at) < Date.now();
@@ -48,7 +57,7 @@ export default function EventDetails({ event, detail, onClose, rsvp }: {
           {!past && <p className="club-event-detail__attendance">{event.going > 0 ? `Пойдут: ${event.going}` : "Будьте первым"}</p>}
           <div className="club-event-detail__calendar">
             <span>В календарь</span>
-            <a href={`/api/events/${event.id}.ics`} className="foc">Файл .ics</a>
+            <a href={isMirror ? calendarUrl ?? undefined : `/api/events/${event.id}.ics`} download={isMirror ? "club-event.ics" : undefined} className="foc">Файл .ics</a>
             <a href={gcalUrl(event)} target="_blank" rel="noopener noreferrer" className="foc">Google Календарь ↗</a>
           </div>
         </aside>
