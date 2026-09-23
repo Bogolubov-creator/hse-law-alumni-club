@@ -1,3 +1,4 @@
+import { updateReading, useReading } from "../lib/reading-list.js";
 import SaveMaterial from "../components/SaveMaterial.js";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -23,10 +24,12 @@ export default function Changes() {
   const [manualLink, setManualLink] = useState("");
   const q = useQuery({ queryKey: ["law-changes"], queryFn: ({ signal }) => loadChanges(signal), staleTime: 60000, refetchInterval: 60000, retry: false });
   const items = q.data?.items ?? [];
+  const reading = useReading();
+  const [readError, setReadError] = useState(false);
   const loaded = !!q.data;
   const view = params.get("view") || (q.data?.mode === "channel" ? "digest" : "all");
   const selection = new URLSearchParams(params); selection.set("view", view);
-  const matches = selectChanges(items, selection);
+  const matches = selectChanges(items, selection).filter(item => params.get("read") !== "unread" || !reading.read.includes(`/changes/${item.id}`));
   const maxPage = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
   const page = Math.min(maxPage, Math.max(1, Number.parseInt(params.get("page") || "1", 10) || 1));
   const visible = matches.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -36,7 +39,7 @@ export default function Changes() {
   useHead({ title: selected ? selected.title : "Изменения в праве", description: "Краткие справки и пояснения LegisDigest: что изменилось, кого касается, ссылки на источники.", noindex: true });
 
   useEffect(() => {
-    setCopied(""); setManualLink("");
+    setCopied(""); setManualLink(""); setReadError(false);
     if (id && loaded) {
       heading.current?.focus({ preventScroll: true });
       document.querySelector(".changes-workspace")?.scrollIntoView({ block: "start", behavior: "instant" });
@@ -86,6 +89,7 @@ export default function Changes() {
 
     <section className="changes-controls" aria-label="Поиск и фильтры">
       <div className="changes-views" role="group" aria-label="Материалы и документы">{[["digest", "Справки и обзоры"], ["act", "Архив актов"], ["all", "Всё"]].map(([value, label]) => <button key={value} aria-pressed={view === value} onClick={() => { const next = new URLSearchParams(params); next.set("view", value!); next.delete("page"); next.delete("kind"); next.delete("topic"); setParams(next, { replace: true }); }}>{label}</button>)}</div>
+      <div className="changes-reading-filter"><label><input type="checkbox" checked={params.get("read") === "unread"} onChange={e => update("read", e.target.checked ? "unread" : "")} /> Только непрочитанные</label><span className="changes-reading-note">Отметки сохраняются в этом браузере.</span>{reading.unavailable && <span role="status">Отметки прочтения недоступны в этом браузере.</span>}</div>
       <div className="changes-search-row"><label className="changes-search">Название, номер акта или ключевые слова
         <input type="search" value={params.get("q") || ""} onChange={e => update("q", e.target.value)} placeholder="Например, налоги, перевозки или номер акта" />
       </label><button className="changes-button" onClick={() => {
@@ -128,6 +132,7 @@ export default function Changes() {
       <section className="changes-list" aria-label="Документы">
         {visible.map(item => <article key={item.id} className={`changes-row${item.id === id ? " is-selected" : ""}`}>
           <div className="changes-row-meta"><time dateTime={item.published}>{changeDate(item.published)}</time><span>{item.kind}</span></div>
+          {reading.read.includes(`/changes/${item.id}`) && <span className="changes-read-label">Прочитано</span>}
           <h2><Link id={`change-${item.id}`} to={`/changes/${item.id}${location.search}`} onClick={() => remember(item)} aria-current={item.id === id ? "page" : undefined}>{item.title}</Link></h2>
           {item.summary && <p className="changes-row-summary">{item.summary}</p>}
           <p className="changes-row-foot">{item.entryType === "digest" ? "LegisDigest · Telegram" : `№ ${item.number || "не указан"}`}<span>{item.entryType === "digest" ? "Читать материал ↗" : "Открыть запись ↗"}</span></p>
@@ -143,10 +148,12 @@ export default function Changes() {
           <SaveMaterial item={{ kind: "change", id: selected.id, title: selected.title, path: `/changes/${selected.id}` }} />
           {selected.entryType === "digest" ? <>
             <div className="changes-attribution"><strong>Автоматический материал LegisDigest</strong><span>Опубликован в Telegram {changeDate(selected.published)}. Пояснения перенесены из канала; проверка человеком не подтверждена.</span></div>
-            <div className="changes-brief">{selected.blocks.map((block, i) => { const content = block.segments.map((segment, j) => segment.url ? <a key={j} href={segment.url} target="_blank" rel="noopener noreferrer">{segment.text}</a> : <span key={j}>{segment.text}</span>); return block.heading ? <h3 key={i}>{content}</h3> : <p key={i}>{content}</p>; })}</div>
+            {selected.blocks.filter(block => block.heading).length >= 2 && <nav className="changes-contents" aria-label="Содержание справки"><h3>В справке</h3>{selected.blocks.map((block, i) => block.heading && <button key={i} onClick={() => { const target = document.getElementById(`brief-${selected.id}-${i}`); target?.focus({ preventScroll: true }); target?.scrollIntoView({ block: "start", behavior: "instant" }); }}>{block.segments.map(s => s.text).join("")}</button>)}</nav>}
+            <div className="changes-brief">{selected.blocks.map((block, i) => { const content = block.segments.map((segment, j) => segment.url ? <a key={j} href={segment.url} target="_blank" rel="noopener noreferrer">{segment.text}</a> : <span key={j}>{segment.text}</span>); return block.heading ? <h3 id={`brief-${selected.id}-${i}`} tabIndex={-1} key={i}>{content}</h3> : <p key={i}>{content}</p>; })}</div>
           </> : <><dl className="changes-facts"><div><dt>Дата акта</dt><dd>{changeDate(selected.date)}</dd></div><div><dt>Опубликован</dt><dd>{changeDate(selected.published)}</dd></div><div><dt>Вступление в силу</dt><dd>Дата не установлена</dd></div><div><dt>Источник</dt><dd>Официальный портал опубликования</dd></div></dl>
           <h3>О документе</h3><p>Полный текст доступен на портале официального опубликования.</p>
           <p className="changes-muted">Дата опубликования не заменяет дату вступления в силу.</p></>}
+          <div className="changes-read-action"><button className="reading-button" aria-pressed={reading.read.includes(`/changes/${selected.id}`)} onClick={() => setReadError(!updateReading(data => ({ ...data, read: data.read.includes(`/changes/${selected.id}`) ? data.read.filter(path => path !== `/changes/${selected.id}`) : [`/changes/${selected.id}`, ...data.read].slice(0, 500) })))}>{reading.read.includes(`/changes/${selected.id}`) ? "Прочитано" : "Отметить прочитанным"}</button>{readError && <span role="alert">Не удалось сохранить отметку.</span>}</div>
           <div className="changes-actions"><a className="changes-button changes-button--primary" href={selected.url} target="_blank" rel="noopener noreferrer">{selected.entryType === "digest" ? "Оригинал в Telegram ↗" : "Открыть первоисточник ↗"}</a><button className="changes-button" onClick={copyLink}>Скопировать ссылку</button></div>
           <p role="status" className="changes-muted">{copied}</p>
           {manualLink && <label className="changes-copy">Постоянная ссылка<input readOnly value={manualLink} onFocus={e => e.currentTarget.select()} /></label>}

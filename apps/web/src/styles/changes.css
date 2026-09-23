@@ -68,3 +68,10 @@ html.pwa-shell .changes-workspace{display:block}html.pwa-shell .changes-reader{d
 .changes-brief h3{font:400 22px/1.4 var(--f-display);margin:24px 0 12px}.changes-brief p{margin:16px 0;white-space:pre-wrap}
 .changes-reader:has(.changes-brief){scroll-padding-block:20px}
 @media(max-width:600px){.changes-preview{padding:32px 18px}.changes-preview-head{display:block}.changes-preview-head>.changes-button{margin-top:8px}.changes-preview-row{grid-template-columns:1fr 20px;gap:8px}.changes-preview-row time{grid-column:1/-1}}
+
+.changes-reading-filter { margin: 0 0 18px; font-size: 14px; }.changes-reading-filter label { display: inline-flex; align-items: center; min-height: 44px; gap: 10px; }.changes-reading-filter input { width: 18px; min-height: 18px; padding: 0; accent-color: var(--c-accent); }
+.changes-read-label { display: inline-block; color: var(--c-text-3); font-size: 13px; margin-top: 8px; }
+.changes-contents { margin: 24px 0; padding: 16px 0; border-block: 1px solid var(--c-line); }.changes-contents h3 { margin: 0 0 8px; }.changes-contents button { display: block; min-height: 44px; padding: 8px 0; color: var(--c-link); background: none; border: 0; font: 16px var(--f-body); text-align: left; cursor: pointer; }
+.changes-brief h3 { scroll-margin-top: 90px; }.changes-read-action { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+
+.changes-reading-note { display: block; color: var(--c-text-3); font-size: 13px; }

@@ -16,7 +16,7 @@ test("сохранение, перезагрузка, фильтр, удален
   await page.getByRole("button", { name: /^Удалить из сохранённого:/ }).click();
   await expect(page.getByRole("heading", { name: "Сохраните первый материал" })).toBeVisible();
   await page.getByRole("button", { name: "Отменить", exact: true }).click();
-  await page.getByRole("link", { name: /№ 941/ }).click();
+  await page.locator("article").getByRole("link", { name: /№ 941/ }).click();
   await expect(page.getByRole("button", { name: "Сохранено", exact: true })).toBeVisible();
 });
 test("отказ хранилища не отображается как сохранение", async ({ page }) => {
@@ -26,4 +26,23 @@ test("отказ хранилища не отображается как сох�
   await page.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Не удалось сохранить");
   await expect(page.getByRole("button", { name: "Сохранить", exact: true })).toHaveAttribute("aria-pressed", "false");
+});
+test("недавние материалы и ручная отметка прочтения", async ({ page }) => {
+  await page.goto(`${base}/changes/tg-9`);
+  await page.getByRole("button", { name: "Только необходимые" }).click();
+  await expect(page.getByRole("button", { name: "Отметить прочитанным", exact: true })).toBeVisible();
+  await page.getByRole("navigation", { name: "Содержание справки" }).getByRole("button", { name: "Что делать", exact: true }).click();
+  await expect(page.locator(".changes-brief h3").filter({ hasText: "Что делать" })).toBeFocused();
+  await page.getByRole("button", { name: "Отметить прочитанным", exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Прочитано", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.goto(`${base}/changes?q=казначейского&read=unread`);
+  await expect(page.locator(".changes-row a[href*='/tg-9']")).toHaveCount(0);
+  await page.goto(`${base}/lk`);
+  const recent = page.getByRole("region", { name: "Продолжить", exact: true });
+  await expect(recent.getByRole("link", { name: /№ 941/ })).toBeVisible();
+  await recent.getByRole("button", { name: "Очистить историю" }).click();
+  await expect(recent).toHaveCount(0);
+  await page.reload();
+  await expect(recent).toHaveCount(0);
 });

@@ -1,3 +1,4 @@
+import ContinueReading from "../components/ContinueReading.js";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { V2Shell } from "../v2/Shell.js";
@@ -19,5 +20,6 @@ export default function Saved() {
     <p role="status">Найдено: {items.length}</p>
     {items.map(item => <article key={item.path} className="reading-row"><div><span>{READING_LABELS[item.kind]}</span><h2><Link to={item.path}>{item.title}</Link></h2></div><button className="reading-button" aria-label={`Удалить из сохранённого: ${item.title}`} onClick={() => { const ok = toggleSaved(item); setError(!ok); if (ok) setRemoved(item); }}>Удалить</button></article>)}
     {!items.length && !unavailable && <section className="reading-empty"><h2>{saved.length ? "Ничего не найдено" : "Сохраните первый материал"}</h2><p>{saved.length ? "Измените запрос или выберите другой раздел." : "Нажмите «Сохранить» в справке, программе, подкасте или событии."}</p><Link to="/changes">Открыть правовую базу →</Link></section>}
+    <ContinueReading />
   </main></V2Shell>;
 }

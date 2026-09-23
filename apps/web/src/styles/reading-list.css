@@ -17,3 +17,5 @@
 .reading-cabinet h2 { font: 400 26px var(--f-display); margin: 0 0 14px; }
 .reading-cabinet ul { padding: 0; list-style: none; }.reading-cabinet li { padding: 12px 0; }
 @media(max-width:600px) { .reading-filters { grid-template-columns: 1fr; }.reading-row { align-items: start; flex-direction: column; gap: 8px; } }
+
+.reading-meta { display: block; color: var(--c-text-3); font-size: 13px; margin-bottom: 4px; }.reading-resume { display: inline-block; color: var(--c-text); font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }

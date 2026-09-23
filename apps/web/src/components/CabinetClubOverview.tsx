@@ -1,3 +1,4 @@
+import ContinueReading from "./ContinueReading.js";
 import "../styles/reading-list.css";
 import { isMirror } from "../lib/public-url.js";
 import { Link } from "react-router-dom";
@@ -108,6 +109,7 @@ export function CabinetClubOverview({ me, token }: { me: Me; token: string }) {
         <p>Ваши заявки, встречи и возможности клуба.</p>
       </div>
       <BenefitsStrip me={me} token={token} />
+      <ContinueReading />
       <section className="reading-cabinet"><h2>Сохранённое</h2><Link to="/saved">Все сохранённые материалы →</Link></section>
       <section className="cabinet-next-action" aria-labelledby="cabinet-next-action-title">
         <p className="cabinet-next-action-eyebrow">Сейчас</p>
