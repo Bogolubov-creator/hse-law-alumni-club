@@ -1,0 +1,54 @@
+import { test, expect } from '@playwright/test';
+import { preparePage, mockPublicApi } from './harness';
+const product = { id: 'shirt', slug: 'shirt', title: 'Футболка клуба выпускников', category: 'Одежда', price: 250000, stock: 2, images: [], description: 'Фирменная футболка с символикой клуба.', variants_json: [{ sku: 's', size: 'S', stock: 0 }, { sku: 'm', size: 'M', stock: 2 }] };
+test.beforeEach(async ({ page }) => { await preparePage(page); await mockPublicApi(page); await page.route('**/api/products', r => r.fulfill({ json: [product] })); });
+for (const path of ['/merch', '/merch/shirt']) test(`selection and retry from ${path}`, async ({ page }, info) => {
+ let succeed = false; let release!: () => void;
+ let payload: any;
+ await page.route('**/api/cart', async r => {
+  if (r.request().method() !== 'POST') return r.fallback();
+  payload = r.request().postDataJSON();
+  await new Promise<void>(resolve => { release = resolve; });
+  return r.fulfill(succeed ? { json: { items: [{ ...payload, title: product.title, price: product.price }], count: payload.qty, subtotal: product.price * payload.qty } } : { status: 503, json: { error: 'Сервис временно недоступен' } });
+ });
+ await page.goto(path);
+ const trigger = page.getByRole('button', { name: path === '/merch' ? 'Выбрать размер' : 'Выбрать вариант и количество', exact: true });
+ await trigger.click();
+ const dialog = page.getByRole('dialog', { name: product.title });
+ await expect(dialog.getByRole('button', { name: 'Выберите размер', exact: true })).toBeDisabled();
+ await expect(dialog.getByRole('button', { name: 'S', exact: true })).toBeDisabled();
+ await dialog.getByRole('button', { name: 'M', exact: true }).click();
+ await dialog.getByRole('button', { name: 'Увеличить', exact: true }).click();
+ await expect(dialog.getByRole('button', { name: 'Увеличить', exact: true })).toBeDisabled();
+ await dialog.getByRole('button', { name: 'В корзину', exact: true }).click();
+ await expect(dialog.getByRole('button', { name: 'Добавляем…', exact: true })).toBeDisabled();
+ await expect(dialog.getByRole('button', { name: 'M', exact: true })).toBeDisabled();
+ await expect.poll(() => Boolean(release)).toBe(true); release();
+ await expect(dialog.getByRole('alert')).toBeVisible();
+ await page.evaluate(() => document.fonts.ready);
+ if (process.env.MERCH_SCREENSHOTS) await page.screenshot({ path: `${process.env.MERCH_SCREENSHOTS}/selection-${info.project.name}-${path === '/merch' ? 'catalog' : 'detail'}.png` });
+ expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+ succeed = true; release = undefined as any;
+ await dialog.getByRole('button', { name: 'В корзину', exact: true }).click();
+ await expect.poll(() => Boolean(release)).toBe(true); release();
+ await expect(dialog).not.toBeVisible();
+ expect(payload).toMatchObject({ type: 'merch', ref_id: 'shirt', variant_sku: 'm', qty: 2 });
+ await expect(trigger).toBeFocused();
+});
+test('category reset preserves chosen list layout', async ({ page }) => {
+ await page.goto('/merch?category=missing&view=list');
+ await expect(page.getByText('В этой категории пока пусто')).toBeVisible();
+ await page.getByRole('button', { name: 'Все категории', exact: true }).click();
+ await expect(page.locator('.club-merch-list')).toContainText(product.title);
+ await expect(page).toHaveURL(/view=list/);
+});
+test('catalog failures do not claim empty inventory', async ({ page }) => {
+ await page.route('**/api/products', r => r.fulfill({ status: 503 }));
+ await page.goto('/merch');
+ await expect(page.getByRole('alert').filter({ hasText: 'Не удалось загрузить товары' })).toBeVisible();
+ await expect(page.getByText(/позиций 0/)).toHaveCount(0);
+ await page.route('**/api/programs', r => r.fulfill({ status: 503 }));
+ await page.goto('/dpo');
+ await expect(page.getByText('Данные каталога недоступны')).toBeVisible({ timeout: 15000 });
+ await expect(page.getByText('Найдено программ: 0')).toHaveCount(0);
+});

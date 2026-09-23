@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseQuery, search, stem } from "../bot-match.js";
+import { parseQuery, search, stem } from "@club/shared";
 import { detectIntent, findByTriggers, reply, triggerMatches, tokenize } from "../bot-reply.js";
 import type { BotProgram, BotReplyData } from "../types.js";
 

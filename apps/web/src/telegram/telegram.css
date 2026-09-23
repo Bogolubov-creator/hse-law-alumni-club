@@ -1,0 +1,62 @@
+html.telegram-mini { --mini-top: 0px; --mini-bottom: 0px; }
+.telegram-mini body { padding-top: var(--mini-top); }
+.telegram-mini .mob-only { display: flex !important; }
+.telegram-mini .club-footer { display: none; }
+.telegram-mini .club-header__nav { display: none; }
+.telegram-mini .club-header__burger { display: inline-flex; }
+.telegram-mini .club-header__inner { padding-inline: 16px; }
+.telegram-mini .club-tab-bar { padding-bottom: calc(12px + max(env(safe-area-inset-bottom, 0px), var(--mini-bottom))) !important; }
+.telegram-mini .club-dpo-masthead__media, .telegram-mini .club-masthead__photo { display: none; }
+.telegram-mini .club-dpo-masthead, .telegram-mini .club-masthead { display: block; min-height: 0; }
+.telegram-mini .club-dpo-masthead__inner, .telegram-mini .club-masthead__copy { padding: 28px 20px; }
+.telegram-mini .club-masthead h1, .telegram-mini .club-dpo-masthead h1 { font-size: 30px !important; }
+.mini-preview { padding: 8px 16px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--c-bg-sunken); font-size: 11px; color: var(--c-text-2); }
+.mini-preview button { background: none; border: 0; font: inherit; text-decoration: underline; color: inherit; cursor: pointer; }
+.mini-home { max-width: 680px; margin-inline: auto; padding: 24px 20px 32px; }
+ .mini-welcome { margin-bottom: 22px; }
+.mini-eyebrow { display: block; font: 500 10px/1.4 var(--f-body); letter-spacing: .12em; text-transform: uppercase; }
+.mini-welcome .mini-eyebrow { margin: 0 0 12px; color: var(--c-accent-text); }
+.mini-welcome h1 { font: 400 35px/1.12 var(--f-display); margin: 0; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.mini-welcome h1 em { font-style: normal; color: var(--c-accent-text); }
+.mini-welcome > p:last-child { font-size: 13px; line-height: 1.5; color: var(--c-text-2); margin: 12px 0 0; }
+.mini-agenda { border: 1px solid var(--c-line); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+.mini-agenda > img { display: block; width: 100%; height: auto; }
+.mini-agenda__link { padding: 16px; display: flex; align-items: center; gap: 16px; color: inherit; text-decoration: none; }
+.mini-agenda__body { display: grid; gap: 7px; min-width: 0; flex: 1; }
+.mini-agenda .mini-eyebrow { color: var(--c-text-3); }
+.mini-agenda strong { font: 400 23px/1.2 var(--f-display); overflow-wrap: anywhere; }
+.mini-agenda__body > span:last-child { font-size: 12px; line-height: 1.5; color: var(--c-text-2); }
+.mini-arrow { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border-radius: 50%; background: var(--c-bg-sunken); color: var(--c-accent-text); font-size: 22px; }
+.mini-membership { background: var(--p-ink); color: white; border-radius: 12px; padding: 18px; }
+.mini-membership .mini-eyebrow { color: #d1d5db; margin-bottom: 6px; }
+.mini-membership h2 { font: 400 25px/1.2 var(--f-display); margin: 0 0 6px; }
+.mini-membership p { margin: 0 0 14px; font-size: 12px; line-height: 1.5; }
+.mini-membership .club-btn { width: 100%; text-align: center; text-decoration: none; display: block; white-space: normal; }
+.mini-membership small { display: block; margin-top: 10px; font-size: 10px; color: #d1d5db; line-height: 1.5; }
+.mini-email { display: block; color: white; margin-top: 16px; text-align: center; }
+.mini-membership .mini-error { color: #fecaca; margin-top: 14px; }
+.mini-shortcuts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 20px; margin: 20px 0; }
+.mini-shortcuts a { min-width: 0; padding: 16px 0; border-bottom: 1px solid var(--c-line); color: inherit; text-decoration: none; }
+.mini-shortcuts h2 { display: flex; justify-content: space-between; gap: 6px; font-size: 15px; margin: 0 0 6px; overflow-wrap: anywhere; }
+.mini-shortcuts h2 span { color: var(--c-accent-text); }
+.mini-shortcuts p { font-size: 12px; line-height: 1.5; color: var(--c-text-2); margin: 0; }
+@media (max-width: 359px) { .mini-home { padding-inline: 16px; } .mini-welcome h1 { font-size: 30px; } .mini-shortcuts { gap: 0 14px; } }
+.mini-learning { border: 1px solid var(--c-line); border-radius: 12px; overflow: hidden; background: var(--c-bg-raised); }
+.mini-learning > div { padding: 20px; }
+.mini-learning h2 { font: 400 24px var(--f-display); margin: 0; }
+.mini-learning p { font-size: 13px; color: var(--c-text-2); }
+.mini-learning a { color: var(--c-accent-text); font-size: 14px; }
+.mini-learning img { width: 100%; height: auto; display: block; }
+.mini-shop { padding: 20px 0; display: flex; justify-content: space-between; gap: 16px; color: inherit; text-decoration: none; font-size: 14px; }
+.mini-shop span { color: var(--c-accent-text); white-space: nowrap; }
+
+.telegram-mini .club-dpo-masthead__inner { padding: 20px; }
+.telegram-mini .club-dpo-masthead h1 { margin-top: 0; font-size: 26px !important; }
+.telegram-mini .club-dpo-lead { font-size: 13px; margin-top: 10px; }
+.telegram-mini .club-dpo-masthead + .club-dpo-body { padding: 18px 20px 32px; }
+.telegram-mini .club-dpo-toolbar { gap: 8px; margin-bottom: 12px; }
+.telegram-mini .club-dpo-toolbar__hint { font-size: 12px; }
+.telegram-mini .club-dpo-vitrine .club-catalog-filters { display: grid; grid-template-columns: 1fr; padding: 12px 0; gap: 10px; }
+.mini-catalog-options summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; font-size: 14px; color: var(--c-accent-text); }
+.mini-catalog-options > div { display: grid; gap: 12px; padding-bottom: 12px; }
+.telegram-mini .club-dpo-status { font-size: 12px; }

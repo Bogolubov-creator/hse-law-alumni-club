@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
+import rateLimit from "@fastify/rate-limit";
 import jwt from "jsonwebtoken";
 
 vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
 vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+// Проверяем маршрут и письмо, не DNS/SMTP внешнего сервера.
+vi.mock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail: vi.fn(async () => ({ messageId: "test" })) }) } }));
 
 const { db, resetDb } = await import("../test/fake-directus.js");
 const { authRoutes } = await import("./auth.js");
@@ -167,6 +170,14 @@ describe("POST /auth/confirm", () => {
     expect(db.directus_users!.find((u) => u.id === "user-2")?.status).toBe("active");
   });
 
+  it("старая ссылка не активирует заблокированного пользователя", async () => {
+    db.directus_users!.find(u => u.id === "user-2")!.status = "suspended";
+    const token = jwt.sign({ sub: "user-2", purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
+    const app = await build();
+    expect((await app.inject({ method: "POST", url: "/auth/confirm", payload: { token } })).statusCode).toBe(400);
+    expect(db.directus_users!.find(u => u.id === "user-2")!.status).toBe("suspended");
+  });
+
   it("повторный переход по той же ссылке безопасен", async () => {
     const token = jwt.sign({ sub: "user-2", purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
     const app = await build();
@@ -208,7 +219,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
   });
 
   it("сброс пароля поднимает token_version – выданные ранее сессии отзываются", async () => {
-    const token = jwt.sign({ sub: USER_ID, purpose: "reset" }, env.AUTH_SECRET, { expiresIn: "30m" });
+    const token = jwt.sign({ sub: USER_ID, purpose: "reset", jti: "reset-version-test" }, env.AUTH_SECRET, { expiresIn: "30m" });
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "newstrongpass" } });
     expect(r.statusCode).toBe(200);
@@ -287,5 +298,50 @@ describe("POST /auth/forgot и /auth/reset", () => {
     const known = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "ivan@example.com" } });
     const unknown = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "nobody@example.com" } });
     expect(known.body).toBe(unknown.body);
+  });
+});
+
+describe("auth rate limits (@fastify/rate-limit)", () => {
+  it("POST /auth/login: 6-й запрос с одного IP → 429 (max 5 / мин)", async () => {
+    const app = Fastify();
+    registerErrorHandler(app);
+    await app.register(rateLimit);
+    await app.register(authRoutes);
+    for (let i = 0; i < 5; i++) {
+      const r = await app.inject({
+        method: "POST",
+        url: "/auth/login",
+        payload: { email: `spray${i}@example.com`, password: "wrong" },
+      });
+      expect(r.statusCode).toBe(401);
+    }
+    const blocked = await app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: "spray-final@example.com", password: "wrong" },
+    });
+    expect(blocked.statusCode).toBe(429);
+    await app.close();
+  });
+
+  it("POST /auth/forgot: 4-й запрос → 429 (max 3 / мин), даже при 503 SMTP", async () => {
+    vi.stubEnv("SMTP_HOST", "");
+    const app = Fastify();
+    registerErrorHandler(app);
+    await app.register(rateLimit);
+    await app.register(authRoutes);
+    for (let i = 0; i < 3; i++) {
+      expect((await app.inject({
+        method: "POST",
+        url: "/auth/forgot",
+        payload: { email: `forgot${i}@example.com` },
+      })).statusCode).toBe(503);
+    }
+    expect((await app.inject({
+      method: "POST",
+      url: "/auth/forgot",
+      payload: { email: "forgot-final@example.com" },
+    })).statusCode).toBe(429);
+    await app.close();
   });
 });

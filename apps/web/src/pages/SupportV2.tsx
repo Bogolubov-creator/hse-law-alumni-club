@@ -1,3 +1,5 @@
+import { isMirror } from "../lib/public-url.js";
+import { requestJson } from "../lib/http.js";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -41,7 +43,7 @@ export async function supportRequest<T>(
   body?: unknown,
   key?: string,
 ): Promise<T> {
-  const r = await fetch(`/api${path}`, {
+  return requestJson<T>(path, {
     method,
     cache: "no-store",
     headers: {
@@ -49,10 +51,7 @@ export async function supportRequest<T>(
       ...(key ? { "x-support-key": key } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const value = await r.json();
-  if (!r.ok) throw new Error(value.error || "Не удалось выполнить запрос");
-  return value;
+  }, { strictJson: true, errorMessage: (_status, data) => data.error || "Не удалось выполнить запрос" });
 }
 
 function credentials() {
@@ -65,10 +64,12 @@ function credentials() {
 function OperatorFooter() {
   return (
     <p className="club-support-legal" style={{ marginTop: 28, fontSize: "var(--t-small)", color: "var(--c-text-3)", lineHeight: 1.6 }}>
-      Оператор: {CLUB_OPERATOR.shortName}, ОГРН {CLUB_OPERATOR.ogrn}.{" "}
+      Оператор: {CLUB_OPERATOR.shortName}, ОГРН {CLUB_OPERATOR.ogrn}, ИНН {CLUB_OPERATOR.inn}.{" "}
       <Link to="/privacy">Политика обработки персональных данных</Link>
       {" · "}
       <Link to="/requisites">Реквизиты</Link>
+      {" · "}
+      <a href={CLUB_OPERATOR.rusprofileUrl} target="_blank" rel="noopener noreferrer">Rusprofile</a>
     </p>
   );
 }
@@ -203,7 +204,7 @@ export default function SupportV2() {
 
         {config.data?.draft && (
           <p className="club-support-note">
-            Локальная проверка поддержки. Используйте только тестовые сообщения: публикация сервиса ещё не выполнена.
+            {isMirror ? "На зеркале обращения не отправляются." : "Тестовый режим поддержки. Используйте только тестовые сообщения."}
           </p>
         )}
 

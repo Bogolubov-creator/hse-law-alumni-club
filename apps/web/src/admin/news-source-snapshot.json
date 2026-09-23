@@ -1,0 +1,86 @@
+{
+  "checked_at": "2026-09-14T09:16:07.003236+00:00",
+  "items": [
+    {
+      "id": "d3e1a78dafe3344f2a03d6f16e7bab2409a25b2ebbca177dad712d9edbc19ed3",
+      "source_url": "https://t.me/AlumniLawHSE/1587",
+      "sources": [
+        "telegram"
+      ],
+      "title": "⭐️ 7 сентября на факультете права стартует курс ДПО «Актуальные вопросы налогового администрирования и современные подходы в налоговой оптимизации бизнеса»",
+      "published_at": "2026-09-04T14:06:31.000Z",
+      "state": "new"
+    },
+    {
+      "id": "0264d2d7d9148f8ebc01d94dbdc3df7bd6f1d43bf2835fc7d0f45bf541ddd067",
+      "source_url": "https://t.me/AlumniLawHSE/1586",
+      "sources": [
+        "telegram"
+      ],
+      "title": "🤩 Кто на самом деле автор «Третьего сентября»?",
+      "published_at": "2026-09-03T09:00:39.000Z",
+      "state": "new"
+    },
+    {
+      "id": "235b3e26a3474bfe6e4782c5ba6375b6b81b3186ebba863be62d5e1a8caf40f3",
+      "source_url": "https://t.me/AlumniLawHSE/1579",
+      "sources": [
+        "telegram"
+      ],
+      "title": "🤩 22 августа – День Государственного флага Российской Федерации",
+      "published_at": "2026-08-22T07:38:10.000Z",
+      "state": "new"
+    },
+    {
+      "id": "bb2d9ee8b86da445045ac0222227e91666dfea0fc198f576373973c1e4f8f55f",
+      "source_url": "https://pravo.hse.ru/news/1175414216.html",
+      "sources": [
+        "career"
+      ],
+      "title": "28 июня состоялась ежегодная спартакиада «Право.Вышка» – 2026",
+      "published_at": "2026-06-29T12:00:00.000Z",
+      "state": "new"
+    },
+    {
+      "id": "95e46f7be2d52d8d843fed35c15c3cb1267683094da6cd549670f339d5895040",
+      "source_url": "https://pravo.hse.ru/news/1133936920.html",
+      "sources": [
+        "alumni",
+        "career"
+      ],
+      "title": "Состоялась встреча выпускников факультета права НИУ ВШЭ",
+      "published_at": "2026-03-02T12:00:00.000Z",
+      "state": "imported"
+    },
+    {
+      "id": "30fc1a28462a10ee4cd7dbf6d6e790651078a096bdb42a1246915a3a987e3adb",
+      "source_url": "https://pravo.hse.ru/news/997979202.html",
+      "sources": [
+        "career"
+      ],
+      "title": "Подписано соглашение о сотрудничестве между факультетом права НИУ ВШЭ и юридической фирмой Better Chance",
+      "published_at": "2024-12-17T12:00:00.000Z",
+      "state": "new"
+    },
+    {
+      "id": "da2362644e4d3295eec7ebb1abaaa32b3db4369a2d4d455362dbda8ae1aaa16a",
+      "source_url": "https://pravo.hse.ru/news/997499808.html",
+      "sources": [
+        "career"
+      ],
+      "title": "На факультете права прошел День открытых дверей",
+      "published_at": "2024-12-14T12:00:00.000Z",
+      "state": "new"
+    },
+    {
+      "id": "98004bd5a6f3de5ccb27c92da3bb0f35a72ac2645534e24f1f423f1f87c260f2",
+      "source_url": "https://pravo.hse.ru/news/894336073.html",
+      "sources": [
+        "alumni"
+      ],
+      "title": "Екатерина Салугина-Сороковая: \"Вышка в моей жизни сыграла огромную роль\"",
+      "published_at": "2024-02-06T12:00:00.000Z",
+      "state": "imported"
+    }
+  ]
+}

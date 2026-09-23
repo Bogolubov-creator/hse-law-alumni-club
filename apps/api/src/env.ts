@@ -2,6 +2,8 @@ import { CLUB_OPERATOR } from "@club/shared";
 import { z } from "zod";
 
 const schema = z.object({
+  TRUST_PROXY: z.string().default("loopback,uniquelocal"),
+  API_HOST: z.string().default("0.0.0.0"),
   API_PORT: z.coerce.number().default(3000),
   // Явный флаг «боевой прод». NODE_ENV в образе всегда production, поэтому для
   // fail-fast нужен отдельный сигнал, который оператор включает на VPS (APP_ENV=production).
@@ -19,8 +21,10 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET минимум 32 символа"),
   // Отдельный секрет для админ-сессий (defense-in-depth). Пусто = используется AUTH_SECRET.
   ADMIN_AUTH_SECRET: z.string().default(""),
+  NEWS_SYNC_ENABLED: z.string().default("false"),
+  TELEGRAM_REACTIONS_CHAT_ID: z.string().regex(/^(-[0-9]+)?$/).default(""),
   TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app + webhook-бот BLOCKED
-  // Секрет webhook (setWebhook secret_token). Пусто = проверка заголовка отключена.
+  // Секрет webhook (setWebhook secret_token). Пусто = endpoint отключён.
   TELEGRAM_WEBHOOK_SECRET: z.string().default(""),
   TELEGRAM_POLLING: z.string().default(""), // "true" = long-polling вместо вебхука (локальный стенд)
   TELEGRAM_BOT_USERNAME: z.string().default("pravohse_alumni_bot"),
@@ -73,10 +77,15 @@ export function assertProdConfig(): string[] {
   const errs: string[] = [];
   if (!env.CHECKOUT_DATABASE_URL) errs.push("CHECKOUT_DATABASE_URL обязателен для транзакционного оформления");
   const looksPlaceholder = (v: string) => /replace_with|сгенерируйте|changeme|your[_-]?secret|example/i.test(v);
+  if (looksPlaceholder(env.CHECKOUT_DATABASE_URL)) errs.push("CHECKOUT_DATABASE_URL содержит плейсхолдер");
   if (looksPlaceholder(env.AUTH_SECRET)) errs.push("AUTH_SECRET выглядит как плейсхолдер – сгенерируйте настоящий (openssl rand -hex 32)");
   if (looksPlaceholder(env.DIRECTUS_SERVICE_TOKEN)) errs.push("DIRECTUS_SERVICE_TOKEN выглядит как плейсхолдер");
   if (!env.ADMIN_AUTH_SECRET) errs.push("ADMIN_AUTH_SECRET пуст – задайте отдельный секрет админ-сессий (defense-in-depth)");
-  if (!env.PUBLIC_URL.startsWith("https://")) errs.push("PUBLIC_URL должен быть https://<домен> на проде (return_url оплаты, sitemap, canonical)");
+  else if (env.ADMIN_AUTH_SECRET.length < 32 || looksPlaceholder(env.ADMIN_AUTH_SECRET) || env.ADMIN_AUTH_SECRET === env.AUTH_SECRET)
+    errs.push("ADMIN_AUTH_SECRET должен быть отдельным случайным секретом длиной не менее 32 символов");
+  let publicUrl: URL | undefined;
+  try { publicUrl = new URL(env.PUBLIC_URL); } catch { /* Ошибка включается в список ниже. */ }
+  if (!publicUrl || publicUrl.protocol !== "https:" || publicUrl.username || publicUrl.password || publicUrl.search || publicUrl.hash || publicUrl.pathname !== "/") errs.push("PUBLIC_URL должен быть https://<домен> на проде (return_url оплаты, sitemap, canonical)");
   if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_POLLING !== "true" && !env.TELEGRAM_WEBHOOK_SECRET)
     errs.push("бот на webhook без TELEGRAM_WEBHOOK_SECRET – кто угодно сможет слать поддельные апдейты");
   // Почта – не опция: без неё молча ломаются восстановление пароля и подтверждение
@@ -85,6 +94,12 @@ export function assertProdConfig(): string[] {
     errs.push("SMTP_HOST пуст – без почты не работают восстановление пароля и подтверждение адреса при регистрации");
   if (env.SMTP_HOST && !env.SMTP_FROM && !env.SMTP_USER)
     errs.push("SMTP настроен, но не задан отправитель (SMTP_FROM или SMTP_USER)");
+  if ((env.OFFICE_NOTIFY_CHANNEL === "email" || env.OFFICE_NOTIFY_CHANNEL === "both") && !env.OFFICE_EMAIL)
+    errs.push("OFFICE_EMAIL обязателен для выбранного канала уведомлений офиса");
+  if ((env.OFFICE_NOTIFY_CHANNEL === "telegram" || env.OFFICE_NOTIFY_CHANNEL === "both") && (!env.OFFICE_TG_BOT_TOKEN || !env.OFFICE_TG_CHAT_ID))
+    errs.push("Для Telegram-уведомлений офиса нужны OFFICE_TG_BOT_TOKEN и OFFICE_TG_CHAT_ID");
+  if (!!env.YOOKASSA_SHOP_ID !== !!env.YOOKASSA_SECRET_KEY) errs.push("Оба ключа YOOKASSA должны быть заданы вместе");
+  if (!!env.VAPID_PUBLIC_KEY !== !!env.VAPID_PRIVATE_KEY) errs.push("Оба ключа VAPID должны быть заданы вместе");
   // Демо-контент в проде: витрины и лента забиты тестовыми позициями.
   if (env.SEED_DEMO === "true")
     errs.push("SEED_DEMO=true на проде – демо-новости, события и товары попадут на витрины и в sitemap");

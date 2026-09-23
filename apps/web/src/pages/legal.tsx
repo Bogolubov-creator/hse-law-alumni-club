@@ -1,66 +1,45 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "../components/SiteShell.js";
 import { useHead } from "../lib/title.js";
 import { V2Shell, mono, disp } from "../v2/Shell.js";
 
 /** Реквизиты оператора общие для политики и согласия поддержки. */
-export { CLUB_OPERATOR as OWNER } from "@club/shared";
 import { CLUB_OPERATOR as OWNER } from "@club/shared";
 
-/**
- * Один общий каркас юридической страницы: читаемый текст >= 14px.
- *
- * `v2` меняет ТОЛЬКО оболочку и оформление. Сам юридический текст остаётся в
- * одном экземпляре: две копии политики обработки ПДн неминуемо разошлись бы,
- * и одна из них стала бы неверной.
- */
-function LegalShell({ title, updated, v2, children }: { title: string; updated: string; v2?: boolean; children: ReactNode }) {
-  // Свой title/description/canonical (иначе canonical «залипнет» на главной из index.html).
+/** Единый каркас юридических страниц; текст хранится в одном экземпляре. */
+function LegalShell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   useHead({
     title,
     description: `${title} – Клуб выпускников факультета права Вышки.`,
-    ...(v2 ? { canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/${title.includes("Реквизиты") ? "requisites" : title.includes("конфиденц") ? "confidential" : "privacy"}`, noindex: true } : {}),
+    canonical: `${typeof window !== "undefined" ? window.location.origin : ""}/${title.includes("Реквизиты") ? "requisites" : title.includes("конфиденц") ? "confidential" : "privacy"}`,
+    noindex: true,
   });
-
-  const body = (
-    <>
-      {import.meta.env.VITE_LOCAL_REVIEW === "true" && <p role="note" className="club-support-note">Проект юридических документов. Оператор определён. Размещение данных и перечень сервисов требуют подтверждения перед публикацией. Не отправляйте реальные персональные данные на этот стенд.</p>}
-      <h1 className={v2 ? undefined : "font-display text-3xl font-bold tracking-tight"} style={v2 ? { ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.14, margin: 0 } : undefined}>{title}</h1>
-      <p className={v2 ? undefined : "mt-2 font-mono text-[12px] text-grafit-soft"}
-        style={v2 ? { ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: "var(--c-text-3)", margin: "12px 0 0" } : undefined}>
-        редакция от {updated}
-      </p>
-      <div className="legal mt-8 space-y-4 [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6"
-        style={v2 ? { paddingTop: 22, marginTop: 22, borderTop: "1px solid var(--c-line-strong)", color: "var(--c-text-2)" } : undefined}>
-        {children}
-      </div>
-    </>
-  );
-
-  if (v2) {
-    return (
-      <V2Shell>
-        <main id="main" style={{ maxWidth: 820, margin: "0 auto", padding: "48px 28px 0", fontSize: "var(--t-body)", lineHeight: 1.7 }}>{body}</main>
-      </V2Shell>
-    );
-  }
   return (
-    <SiteShell>
-      <main id="main" className="mx-auto max-w-[820px] px-7 py-12 text-[15px] leading-relaxed">{body}</main>
-    </SiteShell>
+    <V2Shell>
+      <main id="main" style={{ maxWidth: 820, margin: "0 auto", padding: "48px var(--page-gutter) 0", fontSize: "var(--t-body)", lineHeight: 1.7 }}>
+        {import.meta.env.VITE_LOCAL_REVIEW === "true" && <p role="note" className="club-support-note">Проект юридических документов. Оператор определён. Размещение данных и перечень сервисов требуют подтверждения перед публикацией. Не отправляйте реальные персональные данные на этот стенд.</p>}
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.14, margin: 0 }}>{title}</h1>
+        <p style={{ ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "uppercase", color: "var(--c-text-3)", margin: "12px 0 0" }}>
+          редакция от {updated}
+        </p>
+        <div className="legal mt-8 space-y-4 [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6"
+          style={{ paddingTop: 22, marginTop: 22, borderTop: "1px solid var(--c-line-strong)", color: "var(--c-text-2)" }}>
+          {children}
+        </div>
+      </main>
+    </V2Shell>
   );
 }
 
 /** Политика обработки персональных данных (152-ФЗ). */
-export function Privacy({ v2 }: { v2?: boolean } = {}) {
+export function Privacy() {
   return (
-    <LegalShell title="Политика обработки персональных данных" updated="9 сентября 2026 года" v2={v2}>
+    <LegalShell title="Политика обработки персональных данных" updated="10 сентября 2026 года">
       <p>
-        Настоящая Политика определяет порядок обработки персональных данных пользователей сайта
-        Клуба выпускников факультета права НИУ ВШЭ (далее – «Сайт») и меры по их защите.
+        Настоящая Политика определяет порядок обработки персональных данных пользователей сайта{" "}
+        {OWNER.shortName} (далее – «Сайт») и меры по их защите.
         Оператор персональных данных – {OWNER.name}, ОГРН {OWNER.ogrn}, ИНН {OWNER.inn},
-        адрес: {OWNER.address} (далее – «Оператор»).
+        КПП {OWNER.kpp}, адрес: {OWNER.address} (далее – «Оператор»).
       </p>
 
       <h2>1. Цели обработки</h2>
@@ -124,13 +103,14 @@ export function Privacy({ v2 }: { v2?: boolean } = {}) {
         <li>корзина заявок и идентификатор сессии корзины;</li>
         <li>токен входа в личный кабинет и токен администратора;</li>
         <li>выбранные настройки интерфейса (тема, доступность) и отметка о выборе cookies;</li>
+        <li>отметка о скрытии приглашения в Telegram-канал клуба (до 30 дней);</li>
         <li>позиция прослушивания подкаста в браузере.</li>
       </ul>
       <p>
-        Необязательные (аналитические, рекламные, маркетинговые) cookies и сторонние счётчики на Сайте
-        сейчас не подключаются. Кнопка «Принять все» сохраняет согласие на их возможное использование
-        в будущем; до фактического подключения таких скриптов они не загружаются. При выборе
-        «Только необходимые» необязательные cookies не применяются.
+        Необязательные: при выборе «Принять все» сайт отправляет на сервер клуба обезличенный
+        маяк просмотра (только путь страницы и день UTC). IP-адрес, user-agent, cookie сессии и
+        идентификатор участника в этот учёт не входят; сторонние аналитические и рекламные
+        счётчики не подключаются. При «Только необходимые» маяк не отправляется.
       </p>
       <p>
         Встроенный плеер RuTube загружается только после нажатия кнопки посетителем.
@@ -156,12 +136,13 @@ export function Privacy({ v2 }: { v2?: boolean } = {}) {
 }
 
 /** Политика конфиденциальности. */
-export function Confidential({ v2 }: { v2?: boolean } = {}) {
+export function Confidential() {
   return (
-    <LegalShell title="Политика конфиденциальности" updated="8 сентября 2026 года" v2={v2}>
+    <LegalShell title="Политика конфиденциальности" updated="10 сентября 2026 года">
       <p>
-        Настоящая Политика конфиденциальности описывает, как {OWNER.shortName}
-        обеспечивает конфиденциальность информации пользователей сайта Клуба выпускников.
+        Настоящая Политика конфиденциальности описывает, как {OWNER.shortName}{" "}
+        (ОГРН {OWNER.ogrn}, ИНН {OWNER.inn}) обеспечивает конфиденциальность информации
+        пользователей сайта клуба.
       </p>
       <h2>1. Какие данные мы получаем</h2>
       <p>
@@ -194,25 +175,36 @@ export function Confidential({ v2 }: { v2?: boolean } = {}) {
 }
 
 /** Реквизиты владельца сайта (информация об операторе). */
-export function Requisites({ v2 }: { v2?: boolean } = {}) {
-  const row = (k: string, v: string) => (
+export function Requisites() {
+  const row = (k: string, v: ReactNode) => (
     <div className="club-requisites-row gap-2 border-b border-[#f0ece2] py-3">
-      <span className="w-56 flex-none font-mono text-[12px] uppercase tracking-wide text-grafit-soft">{k}</span>
+      <span className="w-56 flex-none font-mono text-[12px] uppercase tracking-wide " style={{ color: "var(--c-text-2)" }}>{k}</span>
       <span className="min-w-0 flex-1">{v}</span>
     </div>
   );
   return (
-    <LegalShell title="Реквизиты" updated="8 сентября 2026 года" v2={v2}>
-      <p>Информация о владельце сайта Клуба выпускников факультета права.</p>
-      <div className="mt-6 rounded-[18px] border border-[#7C828C] bg-white px-6 py-3">
+    <LegalShell title="Реквизиты" updated="10 сентября 2026 года">
+      <p>
+        Информация о владельце сайта – {OWNER.shortName}. Сверка по ЕГРЮЛ:{" "}
+        <a href={OWNER.rusprofileUrl} target="_blank" rel="noopener noreferrer" className="foc underline underline-offset-2">
+          карточка на Rusprofile
+        </a>
+        .
+      </p>
+      <div className="mt-6 rounded-[18px] border px-6 py-3" style={{ background: "var(--c-bg-raised)", color: "var(--c-text)", borderColor: "var(--c-line)" }}>
         {row("Полное наименование", OWNER.name)}
-        {row("КПП", OWNER.kpp)}
+        {row("Сокращённое наименование", OWNER.shortName)}
         {row("ОГРН", OWNER.ogrn)}
         {row("ИНН", OWNER.inn)}
+        {row("КПП", OWNER.kpp)}
+        {row("ОКПО", OWNER.okpo)}
+        {row("Дата регистрации", OWNER.registeredAt)}
+        {row("Руководитель", `${OWNER.directorTitle} ${OWNER.director}`)}
         {row("Юридический адрес", OWNER.address)}
         {row("Обращения по персональным данным", OWNER.contact)}
       </div>
       <p className="mt-6">
+        Банковские реквизиты в открытой карточке ЕГРЮЛ / Rusprofile не опубликованы и здесь не указываются.
         Оператор сайта и исполнитель образовательной программы могут быть разными организациями.
         Исполнитель, лицензия и выдаваемый документ определяются условиями конкретной программы и договором.
       </p>

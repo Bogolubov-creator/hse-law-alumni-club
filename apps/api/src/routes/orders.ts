@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { commitCheckout, findCheckout, checkoutKey, digest, saveReceipt } from "../lib/checkout-store.js";
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem } from "@directus/sdk";
+import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
 import { effectiveDiscount, computeOrderTotals, repriceItems } from "@club/shared";
 import { directus } from "../lib/directus.js";
@@ -9,7 +9,8 @@ import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
 import { audit } from "../lib/audit.js";
-import { lookup, cartSession, type CatalogInfo } from "./cart.js";
+import { cartSession } from "./cart.js";
+import { lookupCatalog, type CatalogInfo } from "../lib/catalog-lookup.js";
 
 
 const di = directus;
@@ -52,12 +53,13 @@ export async function ordersRoutes(app: FastifyInstance) {
     // Позиция, ставшая недоступной, пока лежала в корзине (снята с публикации, удалена,
     // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает – иначе
     // заказ уходит по устаревшей цене на то, что больше не продаётся.
+    const catalog = await lookupCatalog(items);
     const priceMap = new Map<string, CatalogInfo>();
     const unavailableTitles = new Set<string>();
     for (const i of items) {
       const key = `${i.type}:${i.ref_id}`;
       if (priceMap.has(key)) continue;
-      const info = await lookup(i.type, i.ref_id);
+      const info = catalog.get(key);
       if (!info || (i.type === "dpo" && (info.source_url || info.enrollment === "nonactual"))) {
         unavailableTitles.add(i.title || i.ref_id);
       } else {
@@ -75,9 +77,8 @@ export async function ordersRoutes(app: FastifyInstance) {
     }
     const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
 
-    // Проверка остатков мерча (без атомарного декремента – single-instance, риск
-    // гонки минимален; декремент склада – задача на будущее). Суммируем спрос по
-    // позиции/варианту и сверяем с наличием. Товары без учёта остатков не блокируем.
+    // Предварительная проверка остатков по позиции/варианту. commitCheckout повторно
+    // проверяет цену и доступность под блокировками и атомарно резервирует остатки.
     const need = new Map<string, number>();
     for (const i of priced) {
       if (i.type !== "merch") continue;

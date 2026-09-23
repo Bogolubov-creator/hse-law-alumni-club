@@ -4,7 +4,8 @@
 
 ## Что готово локально
 
-- Канон UI на `/` (ветка `codex/v3`), `/v2/*` → редирект, legacy под `/legacy/*`
+- Канон UI на `/`; `/v2/*` и `/legacy/*` → редирект на канон
+  (план hard-remove: [legacy-cutover-plan.md](./legacy-cutover-plan.md))
 - 7 выпусков «Правовая грамотность» в Directus стенда `alumni-staged-comparison` (том uploads, не в git)
 - Пробный: Данюков; остальные по подписке
 - Admin API принимает UUID файла Directus в `audio_url` (+ `video_url`)

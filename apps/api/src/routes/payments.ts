@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
 import { formatRub } from "@club/shared";
