@@ -1,3 +1,4 @@
+import SaveMaterial from "../components/SaveMaterial.js";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -139,6 +140,7 @@ export default function Changes() {
           <button onClick={back} className="changes-back">← К списку изменений</button>
           <p className="changes-eyebrow">{selected.kind}{selected.entryType === "act" ? ` · № ${selected.number || "не указан"}` : " · LegisDigest"}</p>
           <h2 ref={heading} tabIndex={-1}>{selected.title}</h2>
+          <SaveMaterial item={{ kind: "change", id: selected.id, title: selected.title, path: `/changes/${selected.id}` }} />
           {selected.entryType === "digest" ? <>
             <div className="changes-attribution"><strong>Автоматический материал LegisDigest</strong><span>Опубликован в Telegram {changeDate(selected.published)}. Пояснения перенесены из канала; проверка человеком не подтверждена.</span></div>
             <div className="changes-brief">{selected.blocks.map((block, i) => { const content = block.segments.map((segment, j) => segment.url ? <a key={j} href={segment.url} target="_blank" rel="noopener noreferrer">{segment.text}</a> : <span key={j}>{segment.text}</span>); return block.heading ? <h3 key={i}>{content}</h3> : <p key={i}>{content}</p>; })}</div>

@@ -102,6 +102,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
               <button type="button" onClick={() => setSearchOpen(true)} className="foc club-chrome-icon-btn" aria-label="Поиск" title="Поиск по клубу">
                 {SearchIcon}
               </button>
+              <Link to="/saved" className="foc club-chrome-icon-btn" aria-label="Сохранённое" title="Сохранённое"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg></Link>
               <VisionToggle compact v2 />
               <Link to="/cart" className="foc club-chrome-icon-btn club-header__cart" aria-label={cartCount > 0 ? `Корзина, ${cartCount}` : "Корзина"} title="Корзина">
                 {CartIcon}
@@ -124,6 +125,7 @@ export function V2Shell({ children }: { children: ReactNode }) {
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} className="foc" style={{ fontWeight: 600 }}>{n.label}</NavLink>
           ))}
+          <NavLink to="/saved" className="foc" style={{ fontWeight: 600 }}>Сохранённое</NavLink>
           <Link to="/cart" className="foc" style={{ fontWeight: 600 }}>
             Корзина
             {cartCount > 0 && <span className="club-header__count" style={{ position: "static" }}>{cartCount}</span>}

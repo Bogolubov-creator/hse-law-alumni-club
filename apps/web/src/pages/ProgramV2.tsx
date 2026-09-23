@@ -1,3 +1,4 @@
+import SaveMaterial from "../components/SaveMaterial.js";
 import { programStart } from "../lib/program-date.js";
 import { useState, type CSSProperties } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -124,6 +125,7 @@ export default function ProgramV2() {
             </div>
             <div className="club-program-mast__copy">
               <h1>{p.title}</h1>
+          <SaveMaterial item={{ kind: "program", id: p.slug, title: p.title, path: `/dpo/${p.slug}` }} />
               {p.tagline && <p className="club-program-mast__tagline">{p.tagline}</p>}
               <p className="club-program-mast__meta">
                 {[p.direction, FORMAT_LABEL[p.format] ?? p.format, p.duration, totalHours > 0 ? `${totalHours} ак. ч.` : null].filter(Boolean).join(" · ")}

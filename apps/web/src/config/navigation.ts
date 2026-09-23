@@ -9,6 +9,7 @@ export const CLUB_NAV = [
 ];
 export const SEARCH_NAV = [
   ...CLUB_NAV,
+  { to: "/saved", label: "Сохранённое" },
   { to: "/lk", label: "Кабинет" },
   { to: "/cart", label: "Корзина" },
   { to: "/support", label: "Поддержка" },

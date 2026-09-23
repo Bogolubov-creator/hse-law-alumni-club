@@ -1,3 +1,4 @@
+import SaveMaterial from "../components/SaveMaterial.js";
 import { MirrorPodcastDemo } from "../components/MirrorPodcastDemo.js";
 import { isMirror } from "../lib/public-url.js";
 import { Link, useParams } from "react-router-dom";
@@ -30,6 +31,7 @@ export default function PodcastEpisode() {
         <div className="episode-content">
           <p className="episode-meta">Выпуск {String(index + 1).padStart(2, "0")} · {episode.duration || "Подкаст"}{episode.is_free ? " · Бесплатно" : ""}</p>
           <h1>{episode.title}</h1>
+          <SaveMaterial item={{ kind: "podcast", id: episode.id, title: episode.title, path: `/podcasts/${episode.id}` }} />
           {episode.description && <p className="episode-description">{episode.description}</p>}
           {locked ? <section className="episode-access" aria-label="Доступ по подписке">
             <PodcastLock /><h2>Этот выпуск – по подписке</h2>

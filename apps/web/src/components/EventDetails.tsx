@@ -1,3 +1,4 @@
+import SaveMaterial from "./SaveMaterial.js";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { fmtEventDateFull, gcalUrl, type ClubEvent } from "../lib/events.js";
@@ -41,6 +42,7 @@ export default function EventDetails({ event, detail, onClose, rsvp }: {
           </dl>
           <div className="club-event-detail__actions">
             {rsvp}
+            <SaveMaterial item={{ kind: "event", id: event.id, title: event.title, path: `/events/${event.id}` }} />
             {event.reg_url && <a href={event.reg_url} target="_blank" rel="noopener noreferrer" className="foc club-event-detail__registration">Регистрация ↗</a>}
           </div>
           {!past && <p className="club-event-detail__attendance">{event.going > 0 ? `Пойдут: ${event.going}` : "Будьте первым"}</p>}
