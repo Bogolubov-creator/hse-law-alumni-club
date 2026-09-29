@@ -12,12 +12,13 @@ const state = vi.hoisted(() => ({
   eventsError: false,
   programsPending: false,
   programsError: false,
+  programsEmpty: false,
 }));
 vi.mock("../../lib/cart.js", () => ({
   token: () => null,
   useMemberDiscount: () => state.discount,
   usePrograms: () => ({
-    data: state.programsPending || state.programsError ? undefined : [{ slug: "copyright", title: "Авторское право", direction: "Право", price: 7500000, cover: "/covers/472681893.jpg", enrollment: "actual" }],
+    data: state.programsPending || state.programsError ? undefined : state.programsEmpty ? [] : [{ slug: "copyright", title: "Авторское право", direction: "Право", price: 7500000, cover: "/covers/472681893.jpg", enrollment: "actual" }],
     isPending: state.programsPending,
     isError: state.programsError,
     refetch: () => {},
@@ -56,6 +57,7 @@ describe("Главная клуба", () => {
     state.eventsError = false;
     state.programsPending = false;
     state.programsError = false;
+    state.programsEmpty = false;
   });
 
   it.each([
@@ -98,6 +100,15 @@ describe("Главная клуба", () => {
       expect(host.querySelector(".home-agenda__empty")?.textContent).toBe("Не удалось загрузить ближайшие встречи.");
       expect(host.querySelector(".home-dpo__status")?.textContent).toContain("Не удалось загрузить программы.");
       expect(host.querySelectorAll('button[type="button"]')).toHaveLength(2);
+    });
+  });
+
+  it("объясняет отсутствие программ на главной без обещания показанных цен", () => {
+    state.programsEmpty = true;
+    withHome((host) => {
+      expect(host.querySelector(".home-dpo__status")?.textContent).toBe("На главной пока нет программ. Посмотрите весь каталог.");
+      expect(host.querySelector(".home-dpo__head")?.textContent).not.toContain("Показаны базовые цены");
+      expect(host.querySelector(".home-dpo__all")?.getAttribute("href")).toBe("/dpo");
     });
   });
 });

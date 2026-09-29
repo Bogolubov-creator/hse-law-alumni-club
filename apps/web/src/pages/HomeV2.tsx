@@ -17,7 +17,7 @@ type EventItem = { id: string; title: string; starts_at: string; location?: stri
 /* Шапка уже держит бренд – H1 = одно обещание, не третье «Клуб выпускников». */
 const HERO_FALLBACK_TITLE = "Встречи, знания и связи после выпуска";
 const HERO_FALLBACK_SUB =
-  "Клуб выпускников факультета права Вышки: встречи, программы ДПО с ценой выпускника и кабинет участника.";
+  "Клуб выпускников факультета права Вышки: встречи, программы ДПО и кабинет участника.";
 const CTA_FALLBACK =
   "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет. Обычно это 1–2 рабочих дня.";
 
@@ -152,7 +152,7 @@ export default function HomeV2() {
         <section className="home-dpo" aria-labelledby="home-dpo-title" data-reveal>
           <div className="home-dpo__head">
             <h2 id="home-dpo-title">{discount > 0 ? <>Программы ДПО с ценой <em>выпускника</em></> : <>Программы ДПО факультета <em>права</em></>}</h2>
-            <p>Курсы и интенсивы факультета права. {discount > 0 ? `Скидка ${discount}% уже учтена в ценах программ.` : "Показаны базовые цены. Цена участника клуба открывается после подтверждения выпуска."}</p>
+            <p>Курсы и интенсивы факультета права. {discount > 0 ? `Скидка ${discount}% уже учтена в ценах программ.` : "Цена участника клуба открывается после подтверждения выпуска."}</p>
           </div>
           {programs.isPending ? (
             <p className="home-dpo__status" role="status">Загружаем программы…</p>
@@ -161,7 +161,7 @@ export default function HomeV2() {
               <p role="alert">Не удалось загрузить программы.</p>
               <button type="button" className="foc home-btn home-btn--ghost home-dpo__retry" onClick={() => void programs.refetch()}>Повторить</button>
             </div>
-          ) : featured.length > 0 && (
+          ) : featured.length > 0 ? (
             <div className="home-dpo__grid">
               {featured.map((p) => (
                 <Link key={p.slug} to={`/dpo/${p.slug}`} className="foc home-dpo__item">
@@ -175,6 +175,8 @@ export default function HomeV2() {
                 </Link>
               ))}
             </div>
+          ) : (
+            <p className="home-dpo__status">На главной пока нет программ. Посмотрите весь каталог.</p>
           )}
           <Link to="/dpo" className="foc home-btn home-dpo__all">Весь каталог</Link>
         </section>
