@@ -1,10 +1,9 @@
 import { it, expect, vi } from "vitest";
 import Fastify from "fastify";
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 const mail = vi.hoisted(() => ({ send: vi.fn() }));
 vi.mock("../lib/notify.js", () => ({ mailEnabled: () => true, sendEmail: mail.send, notifyOfficeText: vi.fn() }));
-const { resetDb } = await import("../test/fake-directus.js");
+const { resetDb } = await import("../test/fake-data.js");
 const { authRoutes } = await import("./auth.js");
 it.each([undefined, "/podcasts#podcast-subscription", "https://example.com", "//example.com"])("письмо восстановления: путь %s", async next => {
   resetDb({

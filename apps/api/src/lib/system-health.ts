@@ -1,10 +1,12 @@
+import { access } from "node:fs/promises";
+import { constants } from "node:fs";
 import { env } from "../env.js";
 import { checkoutPool } from "./checkout-store.js";
 
 // Проверяем наличие миграций и право читать таблицы, а не только соединение SELECT 1.
-export const DATABASE_READY_SQL = `SELECT c.key_hash, s.id, p.path, o.status, f.kind, t.token_hash, r.token_key
+export const DATABASE_READY_SQL = `SELECT c.key_hash, s.id, p.path, o.status, f.kind, t.token_hash, r.token_key, a.id, u.password, l.id, m.filename_disk
   FROM club_checkout_commits c, club_support_tickets s, club_page_views p,
-    club_mail_outbox o, club_faq_events f, club_telegram_links t, club_auth_revocations r LIMIT 0`;
+    club_mail_outbox o, club_faq_events f, club_telegram_links t, club_auth_revocations r, alumni a, directus_users u, levels l, directus_files m LIMIT 0`;
 
 export type HealthCheck = {
   id: string; name: string; status: "ok" | "error" | "unknown" | "disabled";
@@ -23,15 +25,10 @@ async function probe(id: string, name: string, run: () => Promise<unknown>): Pro
 }
 
 export async function buildSystemHealth() {
-  const [cms, database] = await Promise.all([
-    probe("cms", "CMS · Directus", async () => {
-      const response = await fetch(new URL("items/levels?limit=1&fields=id", `${env.DIRECTUS_URL.replace(/\/$/, "")}/`), {
-        headers: { Authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}` }, signal: AbortSignal.timeout(3000),
-      });
-      if (!response.ok || !Array.isArray((await response.json() as { data?: unknown }).data)) throw new Error("probe failed");
-    }),
+  const [storage, database] = await Promise.all([
+    probe("storage", "Файлы сайта", () => access(env.UPLOADS_PATH, constants.R_OK | constants.W_OK)),
     env.CHECKOUT_DATABASE_URL
-      ? probe("database", "База заявок · PostgreSQL", async () => {
+      ? probe("database", "База сайта · PostgreSQL", async () => {
         const config = { text: DATABASE_READY_SQL, query_timeout: 3000 };
         await checkoutPool().query(config);
       })
@@ -41,7 +38,7 @@ export async function buildSystemHealth() {
     id, name, status: configured ? "unknown" : "disabled", detail: configured ? detail : "Не настроено",
   });
   const checks: HealthCheck[] = [
-    { id: "api", name: "API сайта", status: "ok", detail: "Обработал этот запрос" }, cms, database,
+    { id: "api", name: "API сайта", status: "ok", detail: "Обработал этот запрос" }, storage, database,
     integration("telegram", "Telegram-бот", !!env.TELEGRAM_BOT_TOKEN, "Токен задан; работа обработчика и доставка не проверены"),
     integration("email", "Электронная почта", !!env.SMTP_HOST, "SMTP задан; соединение и доставка не проверены"),
     integration("push", "Push-уведомления", !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY), "Ключи заданы; доставка на устройства не проверена"),

@@ -1,12 +1,12 @@
-import { consumeReset } from "../lib/auth-state.js";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
-import { readItems, createItem, createUser, updateUser, updateItem, readRoles, readUsers } from "@directus/sdk";
+import { readItems } from "../lib/data-commands.js";
+import { authenticateNativeUser, createAlumniAuthUser, confirmAlumniAuthUser, resetAlumniPassword, findActiveAlumni } from "../lib/native-auth.js";
 import { z } from "zod";
 import { sanitizeInterests } from "@club/shared";
-import { directusCredsValid, findUserByEmail, findAlumniByUser, findAlumniAuthUser, signSession } from "../lib/auth.js";
-import { directus } from "../lib/directus.js";
+import { findUserByEmail, findAlumniByUser, findAlumniAuthUser, signSession } from "../lib/auth.js";
+import { data } from "../lib/data.js";
 import { env } from "../env.js";
 import { validateInitData } from "../lib/telegram.js";
 import { audit } from "../lib/audit.js";
@@ -44,7 +44,7 @@ export async function authRoutes(app: FastifyInstance) {
     const userId = (v.user as { id?: unknown } | null)?.id;
     if (typeof userId !== "number" || !Number.isSafeInteger(userId) || userId <= 0) return reply.code(401).send({ error: "Нет корректного пользователя Telegram" });
     const tgId = String(userId);
-    const rows = (await directus.request(readItems("alumni", {
+    const rows = (await data.request(readItems("alumni", {
       filter: { telegram_id: { _eq: tgId } }, limit: 1,
       // token_version обязателен: resolveAlumni сверяет его с версией в токене.
       // Без него в сессию всегда писался 0, и у любого, кто хоть раз сбрасывал
@@ -53,12 +53,13 @@ export async function authRoutes(app: FastifyInstance) {
     }))) as any[];
     const alumni = rows[0];
     if (!alumni) return reply.code(404).send({ error: "Профиль выпускника не привязан к Telegram" });
-    // sub – id аккаунта Directus (как в обычном логине); для непривязанного профиля
+    if (alumni.user_id && !await findActiveAlumni(alumni.user_id)) return reply.code(403).send({ error: "Вход в профиль закрыт – обратитесь в учебный офис" });
+    // sub – UUID аккаунта (как в обычном логине); для непривязанного профиля
     // остаётся telegram-id, чтобы сессия всё равно была идентифицируемой.
     return { token: signSession(alumni.id, (alumni as any).user_id ?? tgId, (alumni as any).token_version ?? 0), alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });
 
-  // Логин выпускника: креды проверяет Directus, сессию (JWT с alumni_id) выдаёт apps/api.
+  // Вход выпускника: пароль и роль проверяются на сервере, сессия содержит alumni_id.
   app.post("/auth/login", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
     const parsed = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
     // Регистрация/восстановление хранят email в нижнем регистре – логин должен
@@ -71,25 +72,24 @@ export async function authRoutes(app: FastifyInstance) {
       audit("login.locked", { actor: `email:${email}`, req });
       return reply.code(429).send({ error: "Слишком много неудачных попыток – попробуйте позже" });
     }
-    if (!(await directusCredsValid(email, password))) {
+    const result = await authenticateNativeUser(email, password, "alumni");
+    if (result.status !== "ok") {
       registerLoginFail(email);
       registerIpFail(req.ip);
       audit("login.fail", { actor: `email:${email}`, req });
-      // Неподтверждённую почту Directus отвергает так же, как неверный пароль. Молчать
-      // тут вредно (человек не поймёт, почему не пускает), а факт существования аккаунта
-      // и так виден на регистрации – она отвечает 409 «аккаунт уже есть».
-      const pending = (await directus.request((readUsers as any)({ filter: { email: { _eq: email }, status: { _eq: "unverified" } }, limit: 1, fields: ["id"] }))) as any[];
-      if (pending[0]) return reply.code(403).send({ error: "Почта не подтверждена – откройте ссылку из письма (проверьте папку «Спам»)" });
+      if (result.status === "unverified") return reply.code(403).send({ error: "Почта не подтверждена – откройте ссылку из письма (проверьте папку «Спам»)" });
+      if (result.status === "forbidden") return reply.code(403).send({ error: "Аккаунт не привязан к профилю выпускника" });
       return reply.code(401).send({ error: "Неверная почта или пароль" });
     }
-    const user = await findUserByEmail(email);
-    if (!user) return reply.code(401).send({ error: "Пользователь не найден" });
+    const user = result.user;
     const alumni = await findAlumniByUser(user.id);
-    if (!alumni) return reply.code(403).send({ error: "Аккаунт не привязан к профилю выпускника" });
+    if (!alumni || alumni.id !== user.alumni_id) return reply.code(403).send({ error: "Аккаунт не привязан к профилю выпускника" });
     registerLoginSuccess(email);
     registerIpSuccess(req.ip);
     audit("login.ok", { actor: `alumni:${alumni.id}`, req });
-    const token = signSession(alumni.id, user.id, (alumni as any).token_version ?? 0);
+    // Пароль и поколение прочитаны одним SQL-снимком: сброс во время проверки
+    // старого пароля не должен выдавать сессию уже нового поколения.
+    const token = signSession(user.alumni_id, user.id, user.alumni_version);
     return { token, alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });
 
@@ -116,44 +116,34 @@ export async function authRoutes(app: FastifyInstance) {
     const existing = await findUserByEmail(email);
     if (existing) return reply.code(409).send({ error: "Аккаунт с этой почтой уже есть – войдите или восстановите пароль" });
 
-    const roles = (await directus.request((readRoles as any)({ filter: { name: { _eq: "alumni" } }, limit: 1, fields: ["id"] }))) as any[];
-    if (!roles[0]) return reply.code(500).send({ error: "Роль выпускника не настроена – обратитесь в учебный офис" });
-
-    // Подтверждение почты. Без него любой мог занять чужой адрес: аккаунт создавался
-    // сразу активным, а настоящий владелец потом получал «аккаунт уже есть».
-    // Включается автоматически при настроенном SMTP. На проде отсутствие SMTP
-    // не даёт стартовать вовсе (assertProdConfig), так что режим «без подтверждения»
-    // остаётся только для локального стенда.
+    // В production SMTP обязателен; без него активный аккаунт допустим только локально.
     const confirmRequired = mailEnabled();
-    const user = (await directus.request((createUser as any)({
-      email, password: b.password, role: roles[0].id,
-      first_name: b.fio.split(" ")[0] ?? b.fio, last_name: b.fio.split(" ").slice(1).join(" ") || "-",
-      // unverified: Directus не пускает такого пользователя по паролю, пока не активирован.
-      status: confirmRequired ? "unverified" : "active",
-    }))) as any;
 
     // Рефералка: пришёл по ссылке однокурсника → привязываем пригласившего
     // (баллы рефереру начислятся автоматически при верификации офисом).
     let referredBy: string | null = null;
     if (b.ref) {
-      const referrer = (await directus.request(readItems("alumni", {
+      const referrer = (await data.request(readItems("alumni", {
         filter: { referral_code: { _eq: b.ref } }, limit: 1, fields: ["id"],
       }))) as any[];
       referredBy = referrer[0]?.id ?? null;
     }
 
-    await directus.request((createItem as any)("alumni", {
-      user_id: user.id, fio: b.fio.trim(), cohort: b.cohort,
-      edu_level: b.edu_level, edu_program: b.edu_program.trim(),
-      interests_json: sanitizeInterests(b.interests ?? []),
-      status: "active", verification_status: "pending",
-      points_cached: 0, level_cached: "graduate", personal_discount: 0,
-      referral_code: `RC-${randomBytes(4).toString("hex")}`,
-      referred_by: referredBy,
-      // 152-ФЗ: фиксируем факт согласия (доказательство) – когда и какая редакция политики.
-      consent_at: new Date().toISOString(),
-      consent_version: PDN_POLICY_VERSION,
-    }));
+    const user = await createAlumniAuthUser({
+      email, password: b.password,
+      first_name: b.fio.split(" ")[0] ?? b.fio, last_name: b.fio.split(" ").slice(1).join(" ") || "-",
+      status: confirmRequired ? "unverified" : "active",
+      profile: {
+        fio: b.fio.trim(), cohort: b.cohort,
+        edu_level: b.edu_level, edu_program: b.edu_program.trim(),
+        interests_json: sanitizeInterests(b.interests ?? []),
+        referral_code: `RC-${randomBytes(4).toString("hex")}`,
+        referred_by: referredBy,
+        // Факт согласия: время и редакция политики.
+        consent_at: new Date().toISOString(),
+        consent_version: PDN_POLICY_VERSION,
+      },
+    });
 
     audit("register", { actor: `email:${email}`, detail: { cohort: b.cohort, edu_program: b.edu_program, confirm_required: confirmRequired }, req });
 
@@ -203,7 +193,7 @@ export async function authRoutes(app: FastifyInstance) {
 
       const user = await findAlumniAuthUser({ email });
       if (user?.status !== "unverified") return response;
-      const alumni = (await directus.request((readItems as any)("alumni", {
+      const alumni = (await data.request((readItems as any)("alumni", {
         filter: { user_id: { _eq: user.id } }, limit: 1, fields: ["id"],
       }))) as { id: string }[];
       if (!alumni[0]) return response;
@@ -227,12 +217,9 @@ export async function authRoutes(app: FastifyInstance) {
     }
     if (payload.purpose !== "email-confirm" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
 
-    const user = await findAlumniAuthUser({ id: payload.sub });
-    if (!user) return reply.code(400).send({ error: "Ссылка недействительна" });
-    if (user.status === "active") return { ok: true, already: true };
-
-    if (user.status !== "unverified") return reply.code(400).send({ error: "Подтверждение недоступно для этого аккаунта" });
-    await directus.request((updateUser as any)(payload.sub, { status: "active" }));
+    const result = await confirmAlumniAuthUser(payload.sub);
+    if (result === "invalid") return reply.code(400).send({ error: "Ссылка недействительна" });
+    if (result === "already") return { ok: true, already: true };
     audit("email.confirm", { actor: `user:${payload.sub}`, req });
     // Теперь адрес доказан – зовём офис проверять выпуск.
     await notifyOfficeText("🎓 Новая заявка на вступление в клуб (почта подтверждена) – очередь верификации в админ-панели.");
@@ -254,7 +241,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (user) {
       // Токен одноразовый: jti гасится после применения, а ver привязывает ссылку
       // к текущему поколению сессий выпускника (после сброса версия растёт).
-      const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: user.id } }, limit: 1, fields: ["token_version"] }))) as any[];
+      const linked = (await data.request((readItems as any)("alumni", { filter: { user_id: { _eq: user.id } }, limit: 1, fields: ["token_version"] }))) as any[];
       if (!linked[0]) return { ok: true };
       const token = jwt.sign(
         { sub: user.id, purpose: "reset", jti: randomBytes(16).toString("hex"), ver: linked[0]?.token_version ?? null },
@@ -291,19 +278,13 @@ export async function authRoutes(app: FastifyInstance) {
       audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
       return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     }
-    const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: payload.sub } }, limit: 1, fields: ["id", "token_version"] }))) as any[];
-    if (!linked[0]) return reply.code(400).send({ error: "Ссылка недействительна" });
-    // Одноразовость, слой 2 (переживает рестарт): ссылка выпущена под конкретное
-    // поколение сессий. Первый успешный сброс поднимает token_version – второй
-    // переход по той же ссылке видит расхождение и не срабатывает.
-    if (linked[0] && payload.ver != null && (linked[0].token_version ?? 0) !== payload.ver) {
+    if (!payload.jti) return reply.code(400).send({ error: "Ссылка недействительна" });
+    const result = await resetAlumniPassword({ userId: payload.sub, password, jti: payload.jti, expectedVersion: payload.ver });
+    if (result === "invalid") return reply.code(400).send({ error: "Ссылка недействительна" });
+    if (result === "used") {
       audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
       return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     }
-    if (!payload.jti || !(await consumeReset(payload.jti))) return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
-    await directus.request((updateUser as any)(payload.sub, { password }));
-    // Ревокация всех выданных JWT этого выпускника: старые сессии гаснут.
-    if (linked[0]) await directus.request((updateItem as any)("alumni", linked[0].id, { token_version: (linked[0].token_version ?? 0) + 1 }));
     if (payload.jti) markResetTokenUsed(payload.jti);
     audit("password.reset", { actor: `user:${payload.sub}`, req });
     return { ok: true };

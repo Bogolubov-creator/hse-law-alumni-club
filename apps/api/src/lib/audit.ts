@@ -1,6 +1,6 @@
 import type { FastifyRequest } from "fastify";
-import { createItem } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { createItem } from "./data-commands.js";
+import { data } from "./data.js";
 
 /**
  * Append-only аудит-след критичных операций: логины (успех/провал), платежи,
@@ -15,7 +15,7 @@ export function audit(
   opts: { actor?: string; subject?: string; detail?: Record<string, unknown>; req?: FastifyRequest } = {},
 ): void {
   const ip = opts.req?.ip ?? null; // за Caddy – реальный IP (trustProxy)
-  void directus
+  void data
     .request((createItem as any)("audit_log", {
       event,
       actor: opts.actor ?? "system",

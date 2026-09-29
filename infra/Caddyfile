@@ -1,4 +1,4 @@
-# Один Caddyfile для локали и VPS — меняются только переменные окружения.
+# Один Caddyfile для локали и VPS – меняются только переменные окружения.
 # Локально WEB_DOMAIN=:80 / ADMIN_DOMAIN=:8081 → обычный HTTP (без TLS).
 # На VPS WEB_DOMAIN=club.example.ru / ADMIN_DOMAIN=admin.club.example.ru → Caddy сам берёт TLS.
 {
@@ -6,7 +6,7 @@
 	# Периметр против медленных/жадных запросов (Slowloris, гигантские тела).
 	servers {
 		timeouts {
-			read_body 10s
+			read_body 300s
 			read_header 5s
 			idle 60s
 		}
@@ -21,15 +21,24 @@
 	request_body @avatar_upload {
 		max_size 4MB
 	}
-	@regular_request not path /api/me/avatar
+	@office_upload path /api/admin/media
+	request_body @office_upload {
+		max_size 129MB
+	}
+	@regular_request not path /api/me/avatar /api/admin/media
 	request_body @regular_request {
 		max_size 512kb
 	}
 	# Ловушка для ботов-сканеров: типовые «дыры» чужих CMS сразу 404,
-	# не доходя до приложения (handle-блоки матчатся по порядку — этот первый).
+	# не доходя до приложения (handle-блоки матчатся по порядку – этот первый).
 	@bot_probe path /wp-admin* /wp-login.php /.env /.env.* /.git/* /xmlrpc.php /phpmyadmin* /vendor/* /.aws/* /config.php
 	handle @bot_probe {
 		respond 404
+	}
+	@legacy_asset path_regexp legacy_asset ^/assets/[0-9a-fA-F-]{36}(/.*)?$
+	handle @legacy_asset {
+		uri replace /assets/ /media/
+		reverse_proxy api:3000
 	}
 	handle_path /api/* {
 		reverse_proxy api:3000
@@ -53,7 +62,7 @@
 			# CSP: Vite 'self'; React style=; обложки https; RuTube frame;
 			# connect same-origin (/api: pageviews, auth). ЮKassa – top-level
 			# redirect, не iframe. Дублирует static-контейнер – одинаковые CSP OK.
-			Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; media-src 'self' https: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-src https://rutube.ru https://www.rutube.ru; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
+			Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' https: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-src https://rutube.ru https://www.rutube.ru; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
 			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 			-Server
 		}
@@ -61,16 +70,13 @@
 	}
 }
 
+# Прежний домен сохраняет ссылки на файлы; офис находится внутри сайта.
 {$ADMIN_DOMAIN} {
-	encode gzip
-	header {
-		# Заголовки безопасности и на Studio-домене (раньше их не было вовсе).
-		# CSP тут НЕ задаём: Directus присылает собственную политику для админки.
-		Strict-Transport-Security "max-age=15552000; includeSubDomains"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-		-Server
+	handle /assets/* {
+		uri replace /assets/ /media/
+		reverse_proxy api:3000
 	}
-	reverse_proxy directus:8055
+	handle {
+		redir {$PUBLIC_URL}/admin 308
+	}
 }

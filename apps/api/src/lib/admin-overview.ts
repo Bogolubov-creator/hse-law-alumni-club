@@ -1,5 +1,5 @@
-import { readItems } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems } from "./data-commands.js";
+import { data } from "./data.js";
 import { count, groupCount, sum } from "./agg.js";
 
 type CountGroup = Record<string, unknown> & { count: number };
@@ -22,7 +22,7 @@ export async function buildAdminOverview(now = new Date().toISOString()) {
     groupCount("alumni_friends", ["status"], { status: { _in: ["accepted", "pending"] } }),
     count("podcasts", { status: { _eq: "published" } }),
     count("push_subs"),
-    directus.request((readItems as any)("events", {
+    data.request((readItems as any)("events", {
       filter: { status: { _eq: "published" }, starts_at: { _gte: now } },
       sort: ["starts_at"], limit: 1, fields: ["id", "title", "starts_at"],
     })) as Promise<Array<{ id: string; title: string; starts_at: string }>>,

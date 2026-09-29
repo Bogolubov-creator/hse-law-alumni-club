@@ -1,9 +1,9 @@
-import { readItems, readUsers } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems, readUsers } from "./data-commands.js";
+import { data } from "./data.js";
 import { sendEmail } from "./notify.js";
 import { env } from "../env.js";
 
-const di = directus;
+const di = data;
 
 /**
  * Email-анонс нового события тем, до кого пуш и Telegram не дотянутся:

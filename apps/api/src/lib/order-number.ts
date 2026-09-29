@@ -1,5 +1,5 @@
-import { readItems } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems } from "./data-commands.js";
+import { data } from "./data.js";
 
 /**
  * Последний использованный порядковый номер заявки за год – через индекс по number
@@ -20,7 +20,7 @@ export function isUniqueViolation(e: unknown): boolean {
 }
 
 export async function lastOrderSeq(year: number): Promise<number> {
-  const rows = (await directus.request((readItems as any)("orders", {
+  const rows = (await data.request((readItems as any)("orders", {
     filter: { number: { _starts_with: `ALU-${year}-` } },
     sort: ["-number"], limit: 1, fields: ["number"],
   }))) as { number: string }[];

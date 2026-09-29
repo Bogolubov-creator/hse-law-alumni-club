@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 
-const { db, resetDb, directusModuleMock } = await import("../test/fake-directus.js");
+const { db, resetDb, dataModuleMock } = await import("../test/fake-data.js");
 const { runDecay, addPoints, recompute } = await import("./engine.js");
 
 const A = "al-1";
@@ -24,9 +23,9 @@ function pauseFirstBalanceRead() {
   let resume!: () => void, reached!: () => void;
   const paused = new Promise<void>(resolve => { reached = resolve; });
   const released = new Promise<void>(resolve => { resume = resolve; });
-  const original = directusModuleMock.directus.request;
+  const original = dataModuleMock.data.request;
   let intercepted = false;
-  const spy = vi.spyOn(directusModuleMock.directus, "request").mockImplementation(async query => {
+  const spy = vi.spyOn(dataModuleMock.data, "request").mockImplementation(async query => {
     const result = await original(query);
     if (!intercepted && query.kind === "readItems" && query.collection === "points_ledger" && query.query?.fields?.[0] === "delta") {
       intercepted = true;

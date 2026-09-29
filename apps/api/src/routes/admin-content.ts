@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "../lib/data-commands.js";
 import { z } from "zod";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { slugifyRu } from "@club/shared";
 import { requireAdmin } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
-const di = directus;
+const di = data;
 const slugify = slugifyRu;
 
 export async function adminContentRoutes(app: FastifyInstance) {

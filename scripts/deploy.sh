@@ -33,9 +33,10 @@ trap 'result=$?; if [[ "$result" != 0 ]]; then record failed; echo "Обновл
 if [[ -n "$("${compose[@]}" ps -q postgres)" ]]; then backup_snapshot keep-stopped; fi
 # Локальный почтовый приёмник определён только в QA override.
 if "${compose[@]}" config --services | grep -qx mailpit; then "${compose[@]}" up -d --wait --no-deps mailpit; fi
-"${compose[@]}" up -d --wait postgres directus
-"${compose[@]}" up -d --force-recreate bootstrap permissions migrate
-"${compose[@]}" up -d --wait api web caddy
+"${compose[@]}" up -d --wait --no-deps postgres
+"${compose[@]}" run --rm --no-deps migrate
+"${compose[@]}" run --rm --no-deps bootstrap
+"${compose[@]}" up -d --wait --no-deps api web caddy
 "${compose[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile
 # На первом локальном TLS-запуске CA создаётся Caddy. Экспорт разрешён только для localhost.
 if [[ -n "${HTTPS_CA_FILE:-}" && ! -f "$HTTPS_CA_FILE" ]]; then

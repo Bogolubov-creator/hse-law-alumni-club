@@ -7,18 +7,13 @@ import { supportRoutes, supportConfig, purgeSupport } from "./support.js";
 import { signAdmin } from "../lib/auth.js";
 import { env } from "../env.js";
 vi.mock("../lib/audit.js",()=>({audit:vi.fn()}));
-// Этот набор проверяет SQL поддержки. Текущая роль CMS задаётся отдельно от JWT;
-// цепочка с работающим Directus проверяется в тесте полного локального стека.
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
-const { resetDb } = await import("../test/fake-directus.js");
 const enabled=process.env.RUN_SUPPORT_INTEGRATION==="true";
 if(enabled&&new URL(process.env.CHECKOUT_DATABASE_URL!).pathname!=="/alumni_staged")throw new Error("Only alumni_staged is allowed");
-const pool=enabled?checkoutPool():null;const ids:string[]=[];
+const pool=enabled?checkoutPool():null;const ids:string[]=[];const userIds:string[]=[];const roleIds:string[]=[];
 async function app(){const a=Fastify();await a.register(supportRoutes);return a;}
 function body(){const id=randomUUID();ids.push(id);return {id,key:randomBytes(32).toString("hex"),topic:"account",message:"Тестовое обращение без персональных данных",consent:true,consentVersion:supportConfig().version};}
 async function fixture(){const a=await app(),b=body();expect((await a.inject({method:"POST",url:"/support",payload:b})).statusCode).toBe(200);return {a,b};}
-afterAll(async()=>{if(pool){await pool.query("DELETE FROM club_support_tickets WHERE id=ANY($1::uuid[])",[ids]);await pool.end();}});
+afterAll(async()=>{if(pool){await pool.query("DELETE FROM club_support_tickets WHERE id=ANY($1::uuid[])",[ids]);await pool.query("DELETE FROM directus_users WHERE id=ANY($1::uuid[])",[userIds]);await pool.query("DELETE FROM directus_roles WHERE id=ANY($1::uuid[])",[roleIds]);await pool.end();}});
 describe.skipIf(!enabled)("Поддержка: реальная БД, доступ и жизненный цикл",()=>{
  it("без согласия и со старой версией не записывает обращение",async()=>{const a=await app(),b=body();expect((await a.inject({method:"POST",url:"/support",payload:{...b,consent:false}})).statusCode).toBe(400);expect((await a.inject({method:"POST",url:"/support",payload:{...b,consentVersion:"old"}})).statusCode).toBe(409);expect((await pool!.query("SELECT id FROM club_support_tickets WHERE id=$1",[b.id])).rowCount).toBe(0);await a.close();});
  it("повтор и конкурирующее создание сохраняют одну запись и текст согласия",async()=>{const a=await app(),b=body();const results=await Promise.all([a.inject({method:"POST",url:"/support",payload:b}),a.inject({method:"POST",url:"/support",payload:b})]);expect(results.map(r=>r.statusCode)).toEqual([200,200]);const row=(await pool!.query("SELECT * FROM club_support_tickets WHERE id=$1",[b.id])).rows[0];expect(row.messages).toHaveLength(1);expect(row.key_hash).not.toBe(b.key);expect(row.consent_text).toBe(supportConfig().consent);expect(row.consent_at).toBeTruthy();expect((await a.inject({method:"POST",url:"/support",payload:{...b,message:"Другой текст сообщения"}})).statusCode).toBe(409);await a.close();});
@@ -29,10 +24,10 @@ describe.skipIf(!enabled)("Поддержка: реальная БД, досту
    expect((await a.inject({ url: "/admin/support" })).statusCode).toBe(401);
    expect((await a.inject({ method: "PATCH", url: "/admin/support/" + b.id, payload: { status: "closed" } })).statusCode).toBe(401);
    const editorId = randomUUID(), adminId = randomUUID();
-   resetDb({ directus_users: [
-    { id: editorId, status: "active", role: { name: "editor" } },
-    { id: adminId, status: "active", role: { name: "admin" } },
-   ] });
+   const editorRole = randomUUID(), adminRole = randomUUID();
+   roleIds.push(editorRole, adminRole); userIds.push(editorId, adminId);
+   await pool!.query("INSERT INTO directus_roles(id,name) VALUES($1,'editor'),($2,'admin')", [editorRole, adminRole]);
+   await pool!.query("INSERT INTO directus_users(id,role,status,provider) VALUES($1,$2,'active','default'),($3,$4,'active','default')", [editorId, editorRole, adminId, adminRole]);
    const editorHeaders = { authorization: "Bearer " + signAdmin(editorId, "editor") };
    expect((await a.inject({ url: "/admin/support", headers: editorHeaders })).statusCode).toBe(403);
    expect((await a.inject({ method: "PATCH", url: "/admin/support/" + b.id, headers: editorHeaders, payload: { message: "Ответ редактора", status: "answered" } })).statusCode).toBe(403);

@@ -24,11 +24,14 @@ if [[ "$READY" != true ]]; then
   exit 1
 fi
 PORT="$(docker port "$CONTAINER" 5432/tcp | cut -d: -f2)"
-for sql in "$REPO_DIR/apps/api/src/test/integration-schema.sql" \
-  "$REPO_DIR"/apps/api/migrations/*.sql; do
+for sql in "$REPO_DIR"/apps/api/migrations/*.sql; do
   docker exec -i "$CONTAINER" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U club -d alumni_staged < "$sql" >/dev/null
 done
 cd "$REPO_DIR"
 CHECKOUT_DATABASE_URL="postgres://club:integration-test-only@127.0.0.1:$PORT/alumni_staged" \
-RUN_CHECKOUT_INTEGRATION=true RUN_SUPPORT_INTEGRATION=true RUN_TELEGRAM_INTEGRATION=true \
-  pnpm --filter @club/api exec vitest run src/lib/checkout.integration.test.ts src/lib/payment-store.integration.test.ts src/routes/support.integration.test.ts src/lib/tg-link.integration.test.ts src/lib/news-social.integration.test.ts
+RUN_NATIVE_AUTH_INTEGRATION=true RUN_DATA_INTEGRATION=true RUN_CHECKOUT_INTEGRATION=true RUN_SUPPORT_INTEGRATION=true RUN_TELEGRAM_INTEGRATION=true \
+  pnpm --filter @club/api exec vitest run src/lib/data.integration.test.ts src/lib/native-auth.integration.test.ts src/lib/checkout.integration.test.ts src/lib/payment-store.integration.test.ts src/routes/support.integration.test.ts src/lib/tg-link.integration.test.ts src/lib/news-social.integration.test.ts
+# Bootstrap создаёт отдельные временные БД для fresh/repeat/rollback.
+docker exec "$CONTAINER" createdb -h 127.0.0.1 -U club club_native_test
+NATIVE_BOOTSTRAP_TEST_DATABASE_URL="postgres://club:integration-test-only@127.0.0.1:$PORT/club_native_test" \
+  pnpm --filter @club/scripts test

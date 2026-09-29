@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import { readItems } from "@directus/sdk";
+import { readItems } from "../lib/data-commands.js";
 import { z } from "zod";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { addPoints, runDecay } from "../lib/engine.js";
 import { isServiceToken, resolveAlumni } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
@@ -41,7 +41,7 @@ export async function pointsRoutes(app: FastifyInstance) {
     if (!alumni) return reply.code(401).send({ error: "Не авторизован" });
     if (alumni.verification_status !== "verified")
       return reply.code(403).send({ error: "ЛК активируется после верификации учебным офисом" });
-    const rows = await directus.request(
+    const rows = await data.request(
       readItems("points_ledger", {
         filter: { alumni_id: { _eq: alumni.id } },
         sort: ["-created_at"], limit: 50,

@@ -1,18 +1,18 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, updateItem } from "@directus/sdk";
+import { readItems, updateItem } from "../lib/data-commands.js";
 import { z } from "zod";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { requireAdmin, requireFullAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
 import { extendPodcastSub, subActive } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { sendEmail } from "../lib/notify.js";
 import { anonymizeAlumni } from "../lib/anonymize.js";
-import { readUsers } from "@directus/sdk";
+import { readUsers } from "../lib/data-commands.js";
 import { env } from "../env.js";
 import { count, groupCount } from "../lib/agg.js";
 import { alumniEmail } from "../lib/alumni-email.js";
-const di = directus;
+const di = data;
 
 export async function adminMembersRoutes(app: FastifyInstance) {
 

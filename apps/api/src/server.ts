@@ -19,6 +19,7 @@ import { communityRoutes } from "./routes/community.js";
 import { paymentsRoutes } from "./routes/payments.js";
 import { podcastsRoutes } from "./routes/podcasts.js";
 import { avatarsRoutes } from "./routes/avatars.js";
+import { registerMediaRoutes } from "./routes/media.js";
 import { eventsRoutes } from "./routes/events.js";
 import { pushRoutes } from "./routes/push.js";
 import { telegramRoutes } from "./routes/telegram.js";
@@ -107,6 +108,7 @@ await app.register(communityRoutes);
 await app.register(paymentsRoutes);
 await app.register(podcastsRoutes);
 await app.register(avatarsRoutes);
+await app.register(registerMediaRoutes);
 await app.register(eventsRoutes);
 await app.register(pushRoutes);
 await app.register(telegramRoutes);
@@ -121,10 +123,10 @@ app.get("/health", async () => ({
   ts: new Date().toISOString(),
 }));
 
-// Readiness включает CMS и служебную схему БД. Публичный ответ не раскрывает инфраструктуру.
+// Публичный ответ не раскрывает инфраструктуру.
 app.get("/ready", async (_req, reply) => {
   const result = await buildSystemHealth();
-  const ready = ["cms", "database"].every(id => result.checks.find(c => c.id === id)?.status === "ok");
+  const ready = ["storage", "database"].every(id => result.checks.find(c => c.id === id)?.status === "ok");
   reply.header("Cache-Control", "no-store");
   return reply.code(ready ? 200 : 503).send({ status: ready ? "ok" : "degraded" });
 });

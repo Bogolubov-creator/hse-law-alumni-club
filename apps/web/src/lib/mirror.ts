@@ -596,7 +596,7 @@ function mirrorGet(path: string): Response | null {
   // ── Админка ──
   if (clean === "/admin/system-health") return jsonResponse({
     checked_at: new Date().toISOString(), uptime_seconds: null, status: "partial",
-    checks: ["API сайта", "CMS · Directus", "База заявок · PostgreSQL", "Telegram-бот", "Электронная почта", "Push-уведомления"].map((name, i) => ({
+    checks: ["API сайта", "Файлы", "База данных · PostgreSQL", "Telegram-бот", "Электронная почта", "Push-уведомления"].map((name, i) => ({
       id: String(i), name, status: "unknown", detail: "На статическом зеркале не проверяется",
     })),
   });

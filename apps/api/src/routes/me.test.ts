@@ -3,11 +3,11 @@ import Fastify from "fastify";
 import jwt from "jsonwebtoken";
 import { achievementProgress } from "@club/shared";
 
-vi.mock("@directus/sdk", async () => import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 
-const { db, resetDb } = await import("../test/fake-directus.js");
-const { directus } = await import("../lib/directus.js");
+const { db } = await import("../test/fake-data.js");
+const { resetAuthDb: resetDb } = await import("../test/fake-native-auth-store.js");
+const { data } = await import("../lib/data.js");
 const { meRoutes } = await import("./me.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
@@ -26,12 +26,12 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("GET /me", () => {
   it("сохраняет всю историю достижений, ограничивает график и не перечитывает профиль/ledger", async () => {
-    const spy = vi.spyOn(directus, "request");
+    const spy = vi.spyOn(data, "request");
     const app = Fastify();
     registerErrorHandler(app);
     await app.register(meRoutes);
     try {
-      const token = jwt.sign({ alumni_id: "member", ver: 0 }, env.AUTH_SECRET);
+      const token = jwt.sign({ alumni_id: "member", sub: "u-member", ver: 0 }, env.AUTH_SECRET);
       const result = await app.inject({ url: "/me", headers: { authorization: `Bearer ${token}` } });
       expect(result.statusCode).toBe(200);
       expect(result.json().activity.reduce((sum: number, row: { points: number }) => sum + row.points, 0)).toBe(400);
@@ -46,11 +46,11 @@ describe("GET /me", () => {
 
   it("отозванная сессия не получает профиль или статистику", async () => {
     db.alumni![0]!.token_version = 1;
-    const spy = vi.spyOn(directus, "request");
+    const spy = vi.spyOn(data, "request");
     const app = Fastify();
     await app.register(meRoutes);
     try {
-      const token = jwt.sign({ alumni_id: "member", ver: 0 }, env.AUTH_SECRET);
+      const token = jwt.sign({ alumni_id: "member", sub: "u-member", ver: 0 }, env.AUTH_SECRET);
       expect((await app.inject({ url: "/me", headers: { authorization: `Bearer ${token}` } })).statusCode).toBe(401);
       expect(spy).toHaveBeenCalledTimes(1);
     } finally { await app.close(); }

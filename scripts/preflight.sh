@@ -10,6 +10,7 @@ done
 docker info >/dev/null
 docker compose version >/dev/null
 docker buildx version >/dev/null
+ops_assert_native_project
 [[ -z "$(git status --porcelain)" ]] || { echo 'Checkout содержит изменения; сначала зафиксируйте проверяемую версию' >&2; exit 1; }
 [[ "$(stat -c '%a' "$ENV_FILE")" = 600 ]] || { echo 'Рабочий env должен иметь права 0600' >&2; exit 1; }
 [[ "$(stat -c '%u' "$ENV_FILE")" = "$(id -u)" ]] || { echo 'Рабочий env должен принадлежать оператору команды' >&2; exit 1; }

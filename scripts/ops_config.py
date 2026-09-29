@@ -1,20 +1,24 @@
-"""Проверка, что приложение использует БД и CMS своего Compose-проекта."""
+"""Проверка, что приложение использует БД и bootstrap своего Compose-проекта."""
 from urllib.parse import unquote, urlsplit
 
 
 def validate_local_services(config):
     services = config['services']
+    for name in ('api', 'migrate', 'bootstrap', 'postgres'):
+        service = services[name]
+        if service.get('extra_hosts') or service.get('network_mode') or service.get('links'):
+            raise ValueError(name + ': запрещено перенаправлять сетевые имена локальных сервисов')
     api = services['api']['environment']
-    cms = services['directus']['environment']
     pg = services['postgres']['environment']
     migration = services['migrate']['environment']
-    if api.get('DIRECTUS_URL', '').rstrip('/') != 'http://directus:8055':
-        raise ValueError('API должен использовать локальный http://directus:8055')
-    if (cms.get('DB_HOST') != 'postgres' or str(cms.get('DB_PORT')) != '5432'
-            or cms.get('DB_DATABASE') != pg['POSTGRES_DB']
-            or cms.get('DB_USER') != pg['POSTGRES_USER']
-            or cms.get('DB_PASSWORD') != pg['POSTGRES_PASSWORD']):
-        raise ValueError('Directus должен использовать PostgreSQL своего Compose-проекта')
+    bootstrap = services['bootstrap']['environment']
+    for name, settings in (('migrate', migration), ('bootstrap', bootstrap)):
+        if (settings.get('PGHOST') != 'postgres' or settings.get('PGDATABASE') != pg['POSTGRES_DB']
+                or settings.get('PGUSER') != pg['POSTGRES_USER'] or settings.get('PGPASSWORD') != pg['POSTGRES_PASSWORD']
+                or settings.get('BOOTSTRAP_DATABASE_URL') or settings.get('DATABASE_URL')
+                or settings.get('PGHOSTADDR') or settings.get('PGSERVICE') or settings.get('PGSERVICEFILE')
+                or str(settings.get('PGPORT', '5432')) != '5432'):
+            raise ValueError(name + ': разрешена только PostgreSQL своего Compose-проекта')
     sql = urlsplit(api.get('CHECKOUT_DATABASE_URL', ''))
     if (sql.scheme not in ('postgres', 'postgresql') or sql.hostname != 'postgres'
             or sql.port not in (None, 5432) or unquote(sql.path) != '/'+pg['POSTGRES_DB']

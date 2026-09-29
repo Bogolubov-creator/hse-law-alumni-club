@@ -1,9 +1,9 @@
-import { updateItems, deleteItems } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { updateItems, deleteItems } from "./data-commands.js";
+import { data } from "./data.js";
 import { env } from "../env.js";
 import { count } from "./agg.js";
 
-const di = directus;
+const di = data;
 
 /**
  * Ретенция ПДн (152-ФЗ: хранение не дольше, чем нужно для целей обработки).

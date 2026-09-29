@@ -1,10 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import Fastify from "fastify";
 import jwt from "jsonwebtoken";
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
-const { resetDb } = await import("../test/fake-directus.js");
+const { resetDb } = await import("../test/fake-data.js");
 const { eventsRoutes } = await import("./events.js");
 const { env } = await import("../env.js");
 beforeEach(() => resetDb({
@@ -29,8 +28,8 @@ it("сохраняет порядок событий, полные roster, от�
 });
 
 it("пагинация возвращает счётчики без чтения roster и имён", async () => {
-  const { directusModuleMock } = await import("../test/fake-directus.js");
-  const spy = vi.spyOn(directusModuleMock.directus, "request");
+  const { dataModuleMock } = await import("../test/fake-data.js");
+  const spy = vi.spyOn(dataModuleMock.data, "request");
   const app = Fastify(); await app.register(eventsRoutes);
   const token = jwt.sign({ sub: "editor", scope: "admin", role: "editor", jti: "page-test" }, env.ADMIN_AUTH_SECRET || env.AUTH_SECRET, { expiresIn: "1h" });
   try {

@@ -10,9 +10,11 @@ x-logging: &default-logging
 services:
   postgres:
     # Пин по digest (не только по тегу): major-тег молча тянет любой новый минор.
-    # Обновление — осознанным PR (Dependabot умеет обновлять digest). Проверить/обновить
+    # Обновление – осознанным PR (Dependabot умеет обновлять digest). Проверить/обновить
     # digest: docker manifest inspect postgres:16-alpine
-    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    build:
+      context: .
+      dockerfile: infra/postgres.Dockerfile
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -21,7 +23,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data   # named volume — переживает пересоздание (доп. п.4)
+      - pgdata:/var/lib/postgresql/data   # named volume – переживает пересоздание (доп. п.4)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -30,89 +32,38 @@ services:
     mem_limit: 1g   # подберите под размер VPS; защита от OOM всего хоста
     logging: *default-logging
 
-  directus:
-    # Пин по digest: админка с ПДн не должна молча съезжать на непроверенный минор.
-    # Обновлять осознанным PR. Проверить digest: docker manifest inspect directus/directus:11
-    image: directus/directus:11.17.4@sha256:eb326f679ae847c0a776f93b972761dc2ebe84980e0b9d274a6bc31cd62809f7
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      KEY: ${DIRECTUS_KEY}
-      SECRET: ${DIRECTUS_SECRET}
-      DB_CLIENT: pg
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_DATABASE: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL}
-      WEBSOCKETS_ENABLED: "true"
-      CORS_ENABLED: "true"
-      # Studio-домен из env; "true" (любой origin) — только для локали.
-      CORS_ORIGIN: ${DIRECTUS_CORS_ORIGIN:-true}
-    volumes:
-      - directus_uploads:/directus/uploads
-    ports:
-      - "127.0.0.1:8055:8055"   # прямой доступ только с localhost; наружу — через Caddy
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8055/server/health').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 30s
-    mem_limit: 1g
-    logging: *default-logging
-
   bootstrap:
     build:
       context: .
       dockerfile: scripts/Dockerfile
     depends_on:
-      directus:
-        condition: service_healthy
-    environment: &bootstrap-environment
-      APP_ENV: ${APP_ENV:-development}
-      SEED_DEMO: ${SEED_DEMO:-false}
-      DIRECTUS_URL: http://directus:8055
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN}
-      TEST_EDITOR_EMAIL: ${TEST_EDITOR_EMAIL}
-      TEST_EDITOR_PASSWORD: ${TEST_EDITOR_PASSWORD}
-      TEST_ALUMNI_EMAIL: ${TEST_ALUMNI_EMAIL}
-      TEST_ALUMNI_PASSWORD: ${TEST_ALUMNI_PASSWORD}
-    restart: "no"   # одноразовый прогон; идемпотентен — можно запускать повторно
-    security_opt:
-      - no-new-privileges:true
-
-  permissions:
-    build:
-      context: .
-      dockerfile: scripts/Dockerfile
-    depends_on:
-      bootstrap:
+      migrate:
         condition: service_completed_successfully
     environment:
-      <<: *bootstrap-environment
-      SERVICE_PERMISSIONS_BACKUP_FILE: /ops-state/service-permissions-v1.json
-    volumes:
-      - service_permission_backups:/ops-state
-    command: ["pnpm", "--filter", "@club/scripts", "migrate-service-permissions"]
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGDATABASE: ${POSTGRES_DB}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      APP_ENV: ${APP_ENV:-development}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      TEST_EDITOR_EMAIL: ${TEST_EDITOR_EMAIL:-}
+      TEST_EDITOR_PASSWORD: ${TEST_EDITOR_PASSWORD:-}
+      TEST_ALUMNI_EMAIL: ${TEST_ALUMNI_EMAIL:-}
+      TEST_ALUMNI_PASSWORD: ${TEST_ALUMNI_PASSWORD:-}
     restart: "no"
     security_opt: ["no-new-privileges:true"]
     logging: *default-logging
 
   migrate:
-    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    build:
+      context: .
+      dockerfile: infra/postgres.Dockerfile
     depends_on:
-      permissions:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       PGHOST: postgres
       PGUSER: ${POSTGRES_USER}
@@ -138,12 +89,11 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      migrate:
+      bootstrap:
         condition: service_completed_successfully
     environment:
       API_PORT: "3000"
-      DIRECTUS_URL: ${DIRECTUS_URL}
-      DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN}
+      UPLOADS_PATH: /data/uploads
       CHECKOUT_DATABASE_URL: ${CHECKOUT_DATABASE_URL:-postgresql://${CHECKOUT_DB_USER:-club_api}:${CHECKOUT_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}}
       SUPPORT_OPERATOR_NAME: "${SUPPORT_OPERATOR_NAME:-Автономная некоммерческая организация «Клуб выпускников факультета права НИУ ВШЭ»}"
       SUPPORT_OPERATOR_ADDRESS: "${SUPPORT_OPERATOR_ADDRESS:-107061, г. Москва, ул. Большая Черкизовская, д. 3, к. 2, помещ. 17/1}"
@@ -155,6 +105,7 @@ services:
       NEWS_SYNC_ENABLED: ${NEWS_SYNC_ENABLED:-false}
       TELEGRAM_REACTIONS_CHAT_ID: ${TELEGRAM_REACTIONS_CHAT_ID:-}
       OFFICE_EMAIL: ${OFFICE_EMAIL:-}
+      POINTS_SERVICE_TOKEN: ${POINTS_SERVICE_TOKEN:-}
       AUTH_SECRET: ${AUTH_SECRET}
       ADMIN_AUTH_SECRET: ${ADMIN_AUTH_SECRET:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
@@ -176,7 +127,7 @@ services:
       # Явный прод-флаг: включает fail-fast небезопасной конфигурации (env.ts).
       APP_ENV: ${APP_ENV:-development}
       SEED_DEMO: ${SEED_DEMO:-false}
-      # Публичный адрес — return_url оплаты, абсолютные URL sitemap/robots/canonical.
+      # Публичный адрес – return_url оплаты, абсолютные URL sitemap/robots/canonical.
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
       # Оплата ЮKassa (пусто = контур выключен, «заявка без оплаты»).
       YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
@@ -187,6 +138,9 @@ services:
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-1000}
       RESERVE_TTL_HOURS: ${RESERVE_TTL_HOURS:-72}
       MAIL_OUTBOX_MAX_ATTEMPTS: ${MAIL_OUTBOX_MAX_ATTEMPTS:-8}
+    volumes:
+      # Имя тома сохраняет файлы прежней установки.
+      - directus_uploads:/data/uploads
     # API доступен только контейнерам Compose; с хоста запросы идут через Caddy.
     # Публикация localhost-порта позволяла подделать X-Forwarded-For через Docker gateway.
     expose:
@@ -204,12 +158,13 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: infra/edge.Dockerfile
+      target: web
       args:
-        # Build-time конфиг SPA (Vite инлайнит в бандл — рантаймом не задать).
-        # Site — публичный домен для og/canonical; Directus — база Studio/ассетов.
+        # Build-time конфиг SPA (Vite инлайнит в бандл – рантаймом не задать).
+        # Site – публичный домен для og/canonical; Media – адрес файлов API.
         VITE_SITE_URL: ${PUBLIC_URL:-http://localhost}
-        VITE_DIRECTUS_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
+        VITE_MEDIA_URL: ${PUBLIC_URL:-http://localhost}
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -225,18 +180,21 @@ services:
     logging: *default-logging
 
   caddy:
-    image: caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    build:
+      context: .
+      dockerfile: infra/edge.Dockerfile
+      target: caddy
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     depends_on:
       - web
       - api
-      - directus
     environment:
       WEB_DOMAIN: ${WEB_DOMAIN}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
     ports:
       - "80:80"
       - "443:443"
@@ -246,7 +204,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:
-      # Admin API Caddy на localhost:2019 — не зависит от домена/Host сайта.
+      # Admin API Caddy на localhost:2019 – не зависит от домена/Host сайта.
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2019/config/ >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 5s
@@ -260,4 +218,3 @@ volumes:
   directus_uploads:
   caddy_data:
   caddy_config:
-  service_permission_backups:

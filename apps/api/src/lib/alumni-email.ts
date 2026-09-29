@@ -1,5 +1,5 @@
-import { readItems, readUsers } from "@directus/sdk";
-import { directus as di } from "./directus.js";
+import { readItems, readUsers } from "./data-commands.js";
+import { data as di } from "./data.js";
 
 export async function alumniEmail(alumniId: string): Promise<string | null> {
   const a = (await di.request(readItems("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["user_id", "contacts_json"] }))) as any[];

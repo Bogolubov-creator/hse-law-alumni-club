@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@directus/sdk", async () => import("../test/fake-sdk.js"));
-vi.mock("./directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("./data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 
-const { resetDb } = await import("../test/fake-directus.js");
-const { directus } = await import("./directus.js");
+const { resetDb } = await import("../test/fake-data.js");
+const { data } = await import("./data.js");
 const { buildAdminOverview } = await import("./admin-overview.js");
 const now = "2026-09-13T12:00:00.000Z";
 
@@ -46,7 +45,7 @@ describe("обзор админки", () => {
       ],
       event_rsvps: [{ event_id: "next" }, { event_id: "next" }, { event_id: "later" }],
     });
-    const spy = vi.spyOn(directus, "request");
+    const spy = vi.spyOn(data, "request");
     expect(await buildAdminOverview(now)).toEqual({
       new_orders: 3, orders_count: 6, orders_paid: 3,
       pending_verifications: 1, alumni_count: 5, alumni_verified: 2, points_total: 90,
@@ -55,13 +54,15 @@ describe("обзор админки", () => {
       next_event: { id: "next", title: "Встреча", starts_at: now, rsvps: 2 },
     });
     expect(spy).toHaveBeenCalledTimes(12);
-    const commands = spy.mock.calls.map(([c]) => c as unknown as { kind: string; query?: { groupBy?: string[]; query?: { limit?: number } } });
+    const commands = spy.mock.calls.map(([command]) => command);
     expect(commands.filter(c => c.kind === "readItems")).toHaveLength(1);
-    for (const command of commands.filter(c => c.query?.groupBy)) expect(command.query?.query?.limit).toBe(-1);
+    const grouped = commands.filter(command => command.groupBy?.length);
+    expect(grouped).toHaveLength(4);
+    for (const command of grouped) expect(command.query?.limit).toBe(-1);
   });
 
   it("пустая база возвращает нули и не запрашивает участников отсутствующего события", async () => {
-    const spy = vi.spyOn(directus, "request");
+    const spy = vi.spyOn(data, "request");
     const result = await buildAdminOverview(now);
     expect(result.next_event).toBeNull();
     for (const [key, value] of Object.entries(result)) if (key !== "next_event") expect(value, key).toBe(0);

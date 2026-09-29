@@ -7,6 +7,8 @@ ops_lock
 : "${RESTORE_PROJECT:?Укажите новое имя club-restore-...}"
 : "${SNAPSHOT_DIR:?Укажите каталог snapshot-...}"
 : "${RESTORE_CODE_DIR:?Укажите чистый checkout версии приложения из снимка}"
+RESTORE_MODE="${RESTORE_MODE:-exact}"
+[[ "$RESTORE_MODE" = exact || "$RESTORE_MODE" = migrate-legacy ]] || { echo 'RESTORE_MODE: exact или migrate-legacy' >&2; exit 1; }
 OPS_REPO_DIR="$REPO_DIR"
 [[ -d "$RESTORE_CODE_DIR/.git" || -f "$RESTORE_CODE_DIR/.git" ]] || { echo 'RESTORE_CODE_DIR должен быть git checkout' >&2; exit 1; }
 compose=(docker compose --env-file "$ENV_FILE" -f "$RESTORE_CODE_DIR/docker-compose.yml" -f "$DEPLOY_COMPOSE_OVERRIDE")
@@ -66,25 +68,38 @@ for line in (work/'SHA256SUMS').read_text().splitlines():
     if line.split(maxsplit=1)[1].lstrip('*') not in allowed - {'SHA256SUMS'}: raise ValueError('Недопустимый checksum path')
 PY
 (cd "$work" && sha256sum -c SHA256SUMS)
-[[ "$(cat "$work/commit.txt")" = "$(git -C "$RESTORE_CODE_DIR" rev-parse HEAD)" ]] || { echo 'RESTORE_CODE_DIR не совпадает с версией приложения в snapshot commit.txt' >&2; exit 1; }
+target_revision="$(git -C "$RESTORE_CODE_DIR" rev-parse HEAD)"
+if [[ "$RESTORE_MODE" = exact ]]; then
+  [[ "$(cat "$work/commit.txt")" = "$target_revision" ]] || { echo 'RESTORE_CODE_DIR не совпадает с версией приложения в snapshot commit.txt' >&2; exit 1; }
+else
+  [[ "${LEGACY_APP_REVISION:-}" =~ ^[a-f0-9]{40}$ && "$(cat "$work/commit.txt")" = "$LEGACY_APP_REVISION" ]] || { echo 'Укажите проверенный LEGACY_APP_REVISION снимка старого приложения' >&2; exit 1; }
+  [[ -f "$RESTORE_CODE_DIR/apps/api/migrations/001_native_base.sql" ]] || { echo 'Для переноса нужен checkout нативной архитектуры' >&2; exit 1; }
+fi
 [[ ! -s "$work/worktree-status.txt" && -z "$(git -C "$RESTORE_CODE_DIR" status --porcelain)" ]] || { echo 'Снимок и восстановление должны использовать чистый checkout' >&2; exit 1; }
+"${compose[@]}" build --build-arg "VCS_REF=$target_revision" postgres api web caddy
 "${compose[@]}" up -d --wait --no-deps postgres
 pg="$("${compose[@]}" ps -q postgres)"
 "${compose[@]}" exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --exit-on-error --no-owner --no-acl' < "$work/database.dump"
-"${compose[@]}" create --no-deps directus
-cms="$("${compose[@]}" ps -aq directus)"
+"${compose[@]}" create --no-deps api
+files="$("${compose[@]}" ps -aq api)"
 image="$(docker inspect -f '{{.Image}}' "$pg")"
-docker run --rm -i --network none --volumes-from "$cms" --entrypoint sh "$image" -c 'tar -C /directus/uploads -xzf - && chown -R 1000:1000 /directus/uploads' < "$work/uploads.tar.gz"
-"${compose[@]}" exec -T postgres sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' > "$work/restored-counts.json" <<'SQL'
+docker run --rm -i --network none --volumes-from "$files" --entrypoint sh "$image" -c 'tar -C /data/uploads -xzf - && chown -R 1000:1000 /data/uploads' < "$work/uploads.tar.gz"
+"${compose[@]}" exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' > "$work/restored-counts.json" <<'SQL'
 SELECT json_build_object('alumni',(SELECT count(*) FROM alumni),'orders',(SELECT count(*) FROM orders),'points_ledger',(SELECT count(*) FROM points_ledger),'directus_files',(SELECT count(*) FROM directus_files));
 SQL
 python3 - "$work" <<'PY'
 import json,pathlib,sys
 p=pathlib.Path(sys.argv[1]); assert json.loads((p/'counts.json').read_text()) == json.loads((p/'restored-counts.json').read_text()), 'Количество строк не совпало'
 PY
-docker exec -i -e CHECKOUT_DB_USER -e CHECKOUT_DB_PASSWORD "$pg" sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < "$OPS_REPO_DIR/scripts/runtime-role.sql"
-# Схема и роли Directus уже в дампе. Bootstrap/миграции при восстановлении не запускаются.
-"${compose[@]}" build --build-arg "VCS_REF=$(cat "$work/commit.txt")" api web
-"${compose[@]}" up -d --wait --no-deps directus mailpit
+if [[ "$RESTORE_MODE" = migrate-legacy ]]; then
+  # Перенос выполняется только в новой изолированной копии; исходный проект не меняется.
+  "${compose[@]}" build --build-arg "VCS_REF=$target_revision" migrate bootstrap
+  "${compose[@]}" run --rm --no-deps migrate
+  "${compose[@]}" run --rm --no-deps bootstrap
+else
+  # При точном восстановлении схема уже в дампе; bootstrap/миграции не запускаются.
+  docker exec -i -e CHECKOUT_DB_USER -e CHECKOUT_DB_PASSWORD "$pg" sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < "$RESTORE_CODE_DIR/scripts/runtime-role.sql"
+fi
+"${compose[@]}" up -d --wait --no-deps mailpit
 "${compose[@]}" up -d --wait --no-deps api web caddy
 echo "БД и файлы восстановлены в $RESTORE_PROJECT. Проверьте HTTPS, вход, данные и медиа до переключения пользователей. Исходный проект не изменён."

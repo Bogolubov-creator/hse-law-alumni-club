@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 vi.mock("./push.js", () => ({ pushToAlumniMany: vi.fn(async () => 0) }));
 vi.mock("./notify.js", () => ({
   sendEmail: vi.fn(async () => true),
@@ -10,7 +9,7 @@ vi.mock("./notify.js", () => ({
   notifyOfficeText: vi.fn(),
 }));
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db, resetDb } = await import("../test/fake-data.js");
 const { runPodcastSubReminders, REMIND_DAYS_BEFORE } = await import("./podcast-reminders.js");
 const push = await import("./push.js");
 const notify = await import("./notify.js");

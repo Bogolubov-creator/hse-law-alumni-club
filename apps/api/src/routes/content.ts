@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
-import { readItems } from "@directus/sdk";
+import { readItems } from "../lib/data-commands.js";
 import { z } from "zod";
 import { PRODUCTS_SEED, PROGRAMS_SEED } from "@club/shared";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { env } from "../env.js";
 
 const NEWS_FIELDS = ["id", "slug", "title", "excerpt", "body", "published_at", "source_url"] as const;
@@ -61,8 +61,8 @@ export async function contentRoutes(app: FastifyInstance) {
     if (!smCache || Date.now() - smCache.at > 3_600_000) {
       const base = env.PUBLIC_URL.replace(/\/$/, "");
       const [news, programs] = await Promise.all([
-        directus.request((readItems as any)("news", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug", "published_at"] })),
-        directus.request((readItems as any)("programs", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug"] })),
+        data.request((readItems as any)("news", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug", "published_at"] })),
+        data.request((readItems as any)("programs", { filter: { status: { _eq: "published" } }, limit: -1, fields: ["slug"] })),
       ]) as [any[], any[]];
       const urls: { loc: string; lastmod?: string; prio: string; freq: string }[] = [
         { loc: "/", prio: "1.0", freq: "weekly" },
@@ -93,7 +93,7 @@ export async function contentRoutes(app: FastifyInstance) {
 
   app.get("/news", async (req) => {
     const { limit } = listQuery.parse(req.query);
-    return directus.request(
+    return data.request(
       readItems("news", {
         filter: { status: { _eq: "published" } },
         sort: ["-published_at"],
@@ -105,7 +105,7 @@ export async function contentRoutes(app: FastifyInstance) {
 
   app.get("/news/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
-    const rows = await directus.request(
+    const rows = await data.request(
       readItems("news", {
         filter: { slug: { _eq: slug }, status: { _eq: "published" } },
         limit: 1,
@@ -118,7 +118,7 @@ export async function contentRoutes(app: FastifyInstance) {
 
   // Каталог ДПО. Пустые description/cover/modules/teachers – из сида по slug.
   app.get("/programs", async () => {
-    const rows = (await directus.request(readItems("programs", {
+    const rows = (await data.request(readItems("programs", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "direction", "format", "duration", "price", "enrollment", "source_url", "dates", "document", "description", "cover", "tagline", "hse_id"],
     }))) as Record<string, unknown>[];
@@ -137,7 +137,7 @@ export async function contentRoutes(app: FastifyInstance) {
   });
   app.get("/programs/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
-    const rows = (await directus.request(readItems("programs", {
+    const rows = (await data.request(readItems("programs", {
       filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1,
       fields: ["id", "slug", "title", "direction", "format", "duration", "price", "dates", "modules", "teachers", "description", "document", "enrollment", "source_url", "cover", "tagline", "audience", "results", "advantages", "hse_id"],
     }))) as Record<string, unknown>[];
@@ -148,7 +148,7 @@ export async function contentRoutes(app: FastifyInstance) {
   // Каталог мерча. Пустые images подставляем из сида – на стенде худи когда-то
   // привязали вручную, а сид/V3 зеркало до этого не отдавали пути.
   app.get("/products", async () => {
-    const rows = (await directus.request(readItems("products", {
+    const rows = (await data.request(readItems("products", {
       filter: { status: { _eq: "published" } }, sort: ["title"], limit: -1,
       fields: ["id", "slug", "title", "category", "price", "images", "variants_json", "stock", "description"],
     }))) as { slug: string; images: unknown }[];
@@ -165,14 +165,14 @@ export async function contentRoutes(app: FastifyInstance) {
 
   // «История» на главной – редактируется в админ-панели.
   app.get("/timeline", async () =>
-    directus.request(readItems("timeline_items", {
+    data.request(readItems("timeline_items", {
       filter: { status: { _eq: "published" } }, sort: ["sort"], limit: -1,
       fields: ["id", "year", "title", "text", "metric", "sort"],
     })));
 
   app.get("/pages/:slug", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
-    const rows = (await directus.request(
+    const rows = (await data.request(
       (readItems as any)("pages", {
         filter: { slug: { _eq: slug }, status: { _eq: "published" } },
         limit: 1,

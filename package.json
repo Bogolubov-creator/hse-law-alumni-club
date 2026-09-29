@@ -2,7 +2,7 @@
   "name": "club-pravo-hse",
   "version": "0.0.0",
   "private": true,
-  "description": "Клуб выпускников факультета права НИУ ВШЭ — монорепо (web + api + directus)",
+  "description": "Клуб выпускников факультета права НИУ ВШЭ – React, Fastify и PostgreSQL",
   "packageManager": "pnpm@9.12.0",
   "engines": {
     "node": ">=24 <25"
@@ -15,7 +15,7 @@
     "up": "docker compose up -d --build",
     "down": "docker compose down",
     "logs": "docker compose logs -f",
-    "lint": "eslint apps/api/src apps/web/src packages/shared/src scripts/src"
+    "lint": "eslint apps/api/src apps/web/src packages scripts/src"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 vi.mock("../lib/push.js", () => ({ pushEnabled: () => false, pushToAll: vi.fn(), pushToAlumni: vi.fn() }));
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db } = await import("../test/fake-data.js");
+const { resetAuthDb: resetDb } = await import("../test/fake-native-auth-store.js");
 const { communityRoutes } = await import("./community.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");

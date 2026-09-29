@@ -1,11 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { Pool } from "pg";
+import sharp from "sharp";
+import { MediaStore, mediaStore } from "../lib/media-store.js";
 
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+vi.mock("../lib/data.js", async () => ({ data: (await import("../test/fake-data.js")).dataModuleMock.data }));
+
+const { db } = await import("../test/fake-data.js");
+const { resetAuthDb: resetDb } = await import("../test/fake-native-auth-store.js");
 const { avatarsRoutes } = await import("./avatars.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
@@ -13,10 +20,11 @@ const { env } = await import("../env.js");
 const ME = "alumni-1";
 const token = (id = ME) => jwt.sign({ alumni_id: id, sub: `u-${id}`, ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
 
-// Минимальные валидные заголовки форматов – проверяется именно сигнатура.
-const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(32, 1)]);
-const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 1)]);
-const WEBP = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4, 0), Buffer.from("WEBP"), Buffer.alloc(32, 1)]);
+// Настоящие небольшие изображения проходят и проверку сигнатуры, и декодирование.
+const source = { create: { width: 32, height: 48, channels: 3 as const, background: "#247b9c" } };
+const JPEG = await sharp(source).jpeg().toBuffer();
+const PNG = await sharp(source).png().toBuffer();
+const WEBP = await sharp(source).webp().toBuffer();
 const HTML = Buffer.from('<html><script>alert(1)</script></html>');
 const PDF = Buffer.concat([Buffer.from("%PDF-1.7"), Buffer.alloc(32, 1)]);
 
@@ -43,13 +51,30 @@ const upload = (app: FastifyInstance, body: Buffer, declaredType: string, filena
   return app.inject({ method: "POST", url: "/me/avatar", headers: { ...m.headers, authorization: `Bearer ${token()}` }, payload: m.payload });
 };
 
-beforeEach(() => {
+let directory:string;
+let deleted:string[];
+afterEach(async () => { await rm(directory,{recursive:true,force:true}); });
+beforeEach(async () => {
   vi.restoreAllMocks();
   resetDb({
     alumni: [{ id: ME, fio: "Иван", verification_status: "verified", token_version: 0, avatar: null }],
   });
-  // Загрузку в Directus Files подменяем: проверяем гард, а не сеть.
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ data: { id: "file-1" } }), { status: 200, headers: { "content-type": "application/json" } })));
+  directory=await mkdtemp(join(tmpdir(),"club-avatar-test-"));
+  deleted=[];
+  const stored=new Map<string,Record<string,unknown>>();
+  const query=vi.fn(async (sql:string,args:unknown[] = []) => {
+    if(sql.startsWith("INSERT INTO directus_files")) {
+      const file={id:args[0],storage:"local",filename_disk:args[1],filename_download:args[2],type:args[3],filesize:args[5],metadata:JSON.parse(args[6] as string)};
+      stored.set(file.id as string,file);return {rows:[file]};
+    }
+    if(sql.startsWith("SELECT * FROM directus_files"))return {rows:stored.has(args[0] as string)?[stored.get(args[0] as string)]:[]};
+    if(sql.startsWith("DELETE FROM directus_files")){deleted.push(args[0] as string);stored.delete(args[0] as string);}
+    return {rows:[]};
+  });
+  const native=new MediaStore({directory:() => directory,pool:() => ({query,connect:async () => ({query,release:vi.fn()})}) as unknown as Pool});
+  vi.spyOn(mediaStore,"save").mockImplementation(native.save.bind(native));
+  vi.spyOn(mediaStore,"delete").mockImplementation(native.delete.bind(native));
+
 });
 
 describe("POST /me/avatar – тип определяется по содержимому", () => {
@@ -80,7 +105,7 @@ describe("POST /me/avatar – тип определяется по содерж�
     const app = await build();
     const r = await upload(app, JPEG, "image/jpeg", "a.jpg");
     expect(r.statusCode).toBe(200);
-    expect(db.alumni![0]!.avatar).toBe("file-1");
+    expect(db.alumni![0]!.avatar).toMatch(/^[\da-f-]{36}$/);
   });
 
   it("настоящий PNG принимается", async () => {
@@ -133,17 +158,16 @@ describe("POST /me/avatar – доступ", () => {
 });
 
 it("ошибка сохранения профиля не удаляет прежнее фото", async () => {
-  const { directusModuleMock } = await import("../test/fake-directus.js");
-  const original = directusModuleMock.directus.request;
+  const { dataModuleMock } = await import("../test/fake-data.js");
+  const original = dataModuleMock.data.request;
   db.alumni![0]!.avatar = "old-file";
-  vi.spyOn(directusModuleMock.directus, "request").mockImplementation(async (op: any) => {
+  vi.spyOn(dataModuleMock.data, "request").mockImplementation(async (op: any) => {
     if (op.kind === "updateItem" && op.collection === "alumni") throw new Error("storage unavailable");
     return original(op);
   });
   const app = await build();
   expect((await upload(app, PNG, "image/png")).statusCode).toBe(500);
   expect(db.alumni![0]!.avatar).toBe("old-file");
-  const deleted = vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "DELETE").map(([url]) => String(url));
-  expect(deleted.some(url => url.endsWith("/file-1"))).toBe(true);
-  expect(deleted.some(url => url.endsWith("/old-file"))).toBe(false);
+  expect(deleted).toHaveLength(1);
+  expect(deleted).not.toContain("old-file");
 });

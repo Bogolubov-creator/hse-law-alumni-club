@@ -8,9 +8,17 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build-test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -28,9 +36,14 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint
+
       - name: Validate deployment configuration
         run: |
           for script in scripts/*.sh; do bash -n "$script"; done
+          python3 scripts/test-ops.py
+          node --test scripts/measure-load.test.mjs
           docker compose --env-file .env.example config --quiet
           docker compose --env-file .env.example config --format json | node -e '
             let input = "";
@@ -67,6 +80,7 @@ jobs:
 
   postgres-integration:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: pnpm/action-setup@v6.1.0
@@ -77,6 +91,45 @@ jobs:
           node-version: "24.21.0"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @club/shared build
+      - run: pnpm --filter @club/shared build && pnpm --filter @club/server-auth build
       - name: Checkout and support against disposable PostgreSQL
         run: bash scripts/test-integration.sh
+
+  live-stack:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: "24.21.0"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck live browser tests
+        run: pnpm --filter @club/web exec tsc --noEmit --module ESNext --moduleResolution Bundler --target ES2022 --skipLibCheck e2e/live-stack.spec.ts playwright.live.config.ts
+      - name: Install Chromium and its Ubuntu libraries
+        run: pnpm --filter @club/web exec playwright install --with-deps chromium
+      - name: Build images and check real persistence in desktop and mobile browsers
+        run: bash scripts/test-live.sh
+      - name: Scan application images (HIGH and CRITICAL)
+        run: |
+          for service in api bootstrap web caddy postgres; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
+              aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+              image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "club-ci-live-$service"
+          done
+
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Scan repository files with Gitleaks
+        run: >-
+          docker run --rm --network none --read-only
+          -v "$PWD:/repo:ro"
+          ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          dir /repo --config /repo/.gitleaks.toml --redact --no-banner

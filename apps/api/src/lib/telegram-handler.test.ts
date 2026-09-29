@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("./directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("./data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 vi.mock("./site-faq-telegram.js", () => ({ answerTelegramFaq: vi.fn(async () => "Ответ FAQ") }));
-const { db, resetDb, directusModuleMock } = await import("../test/fake-directus.js");
+const { db, resetDb, dataModuleMock } = await import("../test/fake-data.js");
 const { handleTelegramUpdate, buildBotReply, registerBotCommands } = await import("./telegram-bot.js");
 vi.mock("./tg-link.js", () => ({ consumeTgLinkCode: vi.fn() }));
 const { consumeTgLinkCode } = await import("./tg-link.js");
@@ -15,7 +14,7 @@ beforeEach(() => { resetDb(); vi.clearAllMocks(); vi.stubGlobal("fetch", send); 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 it.each(["group", "supergroup", "channel"])("не читает профиль и не отвечает в %s", async type => {
-  const read = vi.spyOn(directusModuleMock.directus, "request");
+  const read = vi.spyOn(dataModuleMock.data, "request");
   for (const text of ["/points", "/start " + "l" + "x".repeat(32), "/calendar", "как вступить"]) await handleTelegramUpdate(update(text, type), "test-token");
   expect(read).not.toHaveBeenCalled(); expect(send).not.toHaveBeenCalled(); expect(answerTelegramFaq).not.toHaveBeenCalled();
 });

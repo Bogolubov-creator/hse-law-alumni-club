@@ -2,14 +2,15 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import jwt from "jsonwebtoken";
+import { hashPassword, verifyPassword } from "@club/server-auth";
+const initialHash = await hashPassword("correct-horse");
 
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 // Проверяем маршрут и письмо, не DNS/SMTP внешнего сервера.
 const { sendMailMock } = vi.hoisted(() => ({ sendMailMock: vi.fn() }));
 vi.mock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail: sendMailMock }) } }));
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db, resetDb } = await import("../test/fake-data.js");
 const { authRoutes } = await import("./auth.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
@@ -17,17 +18,6 @@ const { env } = await import("../env.js");
 const ALUMNI_ROLE = "role-alumni";
 const USER_ID = "user-1";
 const ALUMNI_ID = "alumni-1";
-
-/** Directus-логин, который роут дёргает через глобальный fetch. */
-function stubDirectusLogin(valid: (email: string, password: string) => boolean) {
-  vi.stubGlobal("fetch", vi.fn(async (url: string, init?: any) => {
-    if (String(url).endsWith("/auth/login")) {
-      const body = JSON.parse(String(init?.body ?? "{}"));
-      return { ok: valid(body.email, body.password) } as Response;
-    }
-    return { ok: true, json: async () => ({}) } as unknown as Response;
-  }));
-}
 
 async function build(): Promise<FastifyInstance> {
   const app = Fastify();
@@ -41,10 +31,9 @@ beforeEach(() => {
   sendMailMock.mockReset().mockResolvedValue({ messageId: "test" });
   resetDb({
     directus_roles: [{ id: ALUMNI_ROLE, name: "alumni" }],
-    directus_users: [{ id: USER_ID, email: "ivan@example.com", status: "active", first_name: "Иван", last_name: "Петров", role: ALUMNI_ROLE }],
+    directus_users: [{ id: USER_ID, email: "ivan@example.com", status: "active", password: initialHash, first_name: "Иван", last_name: "Петров", role: ALUMNI_ROLE }],
     alumni: [{ id: ALUMNI_ID, user_id: USER_ID, fio: "Иван Петров", cohort: "2020", verification_status: "verified", token_version: 0, points_cached: 0, personal_discount: 0 }],
   });
-  stubDirectusLogin((email, password) => email === "ivan@example.com" && password === "correct-horse");
 });
 
 describe("POST /auth/login", () => {
@@ -73,7 +62,6 @@ describe("POST /auth/login", () => {
 
   it("неподтверждённая почта → 403 с понятным текстом, а не глухое 401", async () => {
     db.directus_users![0]!.status = "unverified";
-    stubDirectusLogin(() => false); // Directus не пускает неактивного пользователя
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/login", payload: { email: "ivan@example.com", password: "correct-horse" } });
     expect(r.statusCode).toBe(403);
@@ -284,7 +272,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
       const token = jwt.sign({ sub: USER_ID, purpose: "reset", jti: `former-alumni-${role}`, ver: 0 }, env.AUTH_SECRET, { expiresIn: "30m" });
       const reset = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "newstrongpass" } });
       expect(reset.statusCode).toBe(400);
-      expect(db.directus_users![0]!.password).toBeUndefined();
+      expect(db.directus_users![0]!.password).toBe(initialHash);
       expect(db.alumni![0]!.token_version).toBe(0);
       await app.close();
     } finally { env.SMTP_HOST = previousHost; }
@@ -302,7 +290,8 @@ describe("POST /auth/forgot и /auth/reset", () => {
       const url = new URL(text.match(/https?:\/\/\S+\/reset\?token=\S+/)![0]);
       const reset = await app.inject({ method: "POST", url: "/auth/reset", payload: { token: url.searchParams.get("token"), password: "newstrongpass" } });
       expect(reset.statusCode).toBe(200);
-      expect(db.directus_users![0]!.password).toBe("newstrongpass");
+      expect(await verifyPassword(db.directus_users![0]!.password, "newstrongpass")).toBe(true);
+      expect(db.directus_users![0]!.password).not.toBe("newstrongpass");
       await app.close();
     } finally { env.SMTP_HOST = previousHost; }
   });
@@ -321,7 +310,8 @@ describe("POST /auth/forgot и /auth/reset", () => {
     const r = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "newstrongpass" } });
     expect(r.statusCode).toBe(200);
     expect(db.alumni![0]!.token_version).toBe(1);
-    expect(db.directus_users![0]!.password).toBe("newstrongpass");
+    expect(await verifyPassword(db.directus_users![0]!.password, "newstrongpass")).toBe(true);
+      expect(db.directus_users![0]!.password).not.toBe("newstrongpass");
   });
 
   it("токен не того назначения не меняет пароль", async () => {
@@ -329,7 +319,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/reset", payload: { token: session, password: "newstrongpass" } });
     expect(r.statusCode).toBe(400);
-    expect(db.directus_users![0]!.password).toBeUndefined();
+    expect(db.directus_users![0]!.password).toBe(initialHash);
     expect(db.alumni![0]!.token_version).toBe(0);
   });
 
@@ -353,7 +343,8 @@ describe("POST /auth/forgot и /auth/reset", () => {
     expect(second.statusCode).toBe(400);
     expect(second.json().error).toMatch(/уже использована/i);
     // Пароль остался от первого применения – перехват не прошёл.
-    expect(db.directus_users![0]!.password).toBe("firstpass123");
+    expect(await verifyPassword(db.directus_users![0]!.password, "firstpass123")).toBe(true);
+      expect(db.directus_users![0]!.password).not.toBe("firstpass123");
   });
 
   it("ссылка, выпущенная до прошлого сброса, не срабатывает (переживает рестарт)", async () => {
@@ -365,7 +356,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
 
     const r = await app.inject({ method: "POST", url: "/auth/reset", payload: { token: stale, password: "hijacked-pass" } });
     expect(r.statusCode).toBe(400);
-    expect(db.directus_users![0]!.password).toBeUndefined();
+    expect(db.directus_users![0]!.password).toBe(initialHash);
     expect(db.alumni![0]!.token_version).toBe(1);
   });
 

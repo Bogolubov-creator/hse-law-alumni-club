@@ -24,6 +24,7 @@ function plural(n: number, forms: [string, string, string]): string {
 /** Обложки с логотипом факультета (просмотрены 12.09); остальные с hse.ru – сток без символики. */
 const FACULTY_COVERS = new Set(["472681893", "474599435", "474776084", "494685723", "589527758", "802031223", "905186485", "906651510"]);
 function hasFacultyCover(cover: string | null | undefined): boolean {
+  if (cover && mediaUrl(cover).startsWith("/api/media/")) return true;
   const m = /\/programs\/(\d+)\.(?:jpe?g|png|webp)$/i.exec(cover ?? "");
   return !!m && FACULTY_COVERS.has(m[1]!);
 }

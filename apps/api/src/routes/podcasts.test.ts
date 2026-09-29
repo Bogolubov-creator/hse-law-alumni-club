@@ -1,10 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { Pool } from "pg";
+import { MediaStore, mediaStore } from "../lib/media-store.js";
 
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+
+vi.mock("../lib/data.js", async () => ({ data:(await import("../test/fake-data.js")).dataModuleMock.data }));
 vi.mock("../lib/notify.js", () => ({
   notifyOffice: vi.fn(async () => ({ channel: "test", ok: true })),
   notifyOfficeText: vi.fn(async () => undefined),
@@ -17,16 +22,20 @@ vi.mock("../lib/yookassa.js", () => ({
   fetchPayment: vi.fn(),
 }));
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db } = await import("../test/fake-data.js");
+const { resetAuthDb: resetDb } = await import("../test/fake-native-auth-store.js");
 const { podcastsRoutes } = await import("./podcasts.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
 const notify = await import("../lib/notify.js");
-const { directus } = await import("../lib/directus.js");
-const { request: fakeRequest } = await import("../test/fake-directus.js");
-import type { Descriptor } from "../test/fake-sdk.js";
+const { data } = await import("../lib/data.js");
+const { request: fakeRequest } = await import("../test/fake-data.js");
+import type { DataCommand } from "../lib/data-commands.js";
 
-afterEach(() => vi.restoreAllMocks());
+let mediaDirectory:string;
+const MEDIA_FILE="13a8c2fc-f5ba-4f04-95fc-10e23c37cab6";
+const MEDIA_AUDIO=Buffer.concat([Buffer.from("ID3"),Buffer.alloc(90,7)]);
+afterEach(async () => {vi.restoreAllMocks();await rm(mediaDirectory,{recursive:true,force:true});});
 
 const ALUMNI = "alumni-1";
 const token = () => jwt.sign({ alumni_id: ALUMNI, sub: "user-1", ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
@@ -41,10 +50,15 @@ async function build(): Promise<FastifyInstance> {
 const subscribe = (app: FastifyInstance) =>
   app.inject({ method: "POST", url: "/podcasts/subscribe", headers: { authorization: `Bearer ${token()}` }, payload: {} });
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  mediaDirectory=await mkdtemp(join(tmpdir(),"club-podcast-"));
+  await writeFile(join(mediaDirectory,"legacy.mp3"),MEDIA_AUDIO);
+  const native=new MediaStore({directory:() => mediaDirectory,pool:() => ({query:async (_sql:string,args:string[]) => ({rows:args[0]===MEDIA_FILE ? [{id:MEDIA_FILE,storage:"local",filename_disk:"legacy.mp3",type:"audio/mpeg"}] : []})}) as unknown as Pool});
+  vi.spyOn(mediaStore,"isAvatar").mockImplementation(async id => (db.alumni ?? []).some(a => a.avatar===id));
+  vi.spyOn(mediaStore,"stream").mockImplementation(native.stream.bind(native));
   resetDb({
-    alumni: [{ id: ALUMNI, fio: "Иван", verification_status: "verified", token_version: 0, podcast_sub_until: null, contacts_json: { email: "ivan@example.com" } }],
+    alumni: [{ id: ALUMNI, user_id: "user-1", fio: "Иван", verification_status: "verified", token_version: 0, podcast_sub_until: null, contacts_json: { email: "ivan@example.com" } }],
     orders: [],
     podcasts: [],
   });
@@ -53,8 +67,8 @@ beforeEach(() => {
 describe("POST /podcasts/subscribe – заявка не задваивается", () => {
   it("потеря ответа после записи не создаёт второй заказ", async () => {
     let writes = 0;
-    vi.spyOn(directus, "request").mockImplementation(async (command: any) => {
-      const desc = command as Descriptor;
+    vi.spyOn(data, "request").mockImplementation(async (command: any) => {
+      const desc = command as DataCommand;
       const result = await fakeRequest(desc);
       if (desc.kind === "createItem" && desc.collection === "orders") {
         writes++;
@@ -77,11 +91,11 @@ describe("POST /podcasts/subscribe – заявка не задваиваетс�
 
   it("коллизия номера повторяет запись со следующим номером", async () => {
     const numbers: string[] = [];
-    vi.spyOn(directus, "request").mockImplementation(async (command: any) => {
-      const desc = command as Descriptor;
+    vi.spyOn(data, "request").mockImplementation(async (command: any) => {
+      const desc = command as DataCommand;
       if (desc.kind === "createItem" && desc.collection === "orders") {
-        numbers.push(desc.data.number);
-        if (numbers.length === 1) throw { errors: [{ extensions: { code: "RECORD_NOT_UNIQUE" } }] };
+        numbers.push((desc.data as { number: string }).number);
+        if (numbers.length === 1) throw Object.assign(new Error("duplicate key value violates unique constraint"), { code: "23505" });
       }
       return fakeRequest(desc);
     });
@@ -164,125 +178,52 @@ describe("POST /podcasts/subscribe – заявка не задваиваетс�
   });
 });
 
-/**
- * Отдача аудио. Ручка умеет два источника, и обе ветки должны работать:
- * сторонний хостинг (редирект, как было) и файл в Directus (наш прокси).
- *
- * Прокси появился потому, что хранилище Directus закрыто от публики – и
- * открывать его нельзя, там же лежат аватары выпускников.
- */
-describe("GET /podcasts/:id/audio – источники аудио", () => {
-  const PID = "11111111-1111-4111-8111-111111111111";
-  const FILE = "13a8c2fc-f5ba-4f04-95fc-10e23c37cab6";
+describe("GET /podcasts/:id/audio – локальное хранилище и доступ", () => {
+  const PID="11111111-1111-4111-8111-111111111111";
+  const FILE=MEDIA_FILE;
+  async function signed(app:FastifyInstance,headers?:Record<string,string>) {
+    const list=await app.inject("/podcasts");
+    return app.inject({url:list.json().items[0].audio_url.replace(/^\/api/,""),headers});
+  }
+  const episode=(audio_url=FILE) => {db.podcasts=[{id:PID,title:"Выпуск",status:"published",is_free:true,audio_url,sort:0}];};
 
-  /** Подписанная ссылка строится ровно так же, как её выдаёт список. */
-  const signed = async (app: FastifyInstance, headers?: Record<string, string>) => {
-    const list = await app.inject({ method: "GET", url: "/podcasts" });
-    const url = list.json().items[0].audio_url as string;
-    return app.inject({ method: "GET", url: url.replace(/^\/api/, ""), headers });
-  };
-
-  it("внешний URL по-прежнему отдаётся редиректом", async () => {
-    const app = await build();
-    db.podcasts = [{ id: PID, title: "Внешний", status: "published", is_free: true, audio_url: "https://example.org/a.mp3", sort: 0 }];
-    const r = await signed(app);
-    expect(r.statusCode).toBe(302);
-    expect(r.headers.location).toBe("https://example.org/a.mp3");
+  it("внешний URL по-прежнему отдаётся редиректом",async () => {
+    const app=await build();episode("https://example.org/a.mp3");
+    const result=await signed(app);expect(result.statusCode).toBe(302);expect(result.headers.location).toBe("https://example.org/a.mp3");
   });
-
-  it("файл из Directus отдаётся нашим прокси, а не редиректом на закрытое хранилище", async () => {
-    const app = await build();
-    db.podcasts = [{ id: PID, title: "Свой файл", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
-    const calls: { url: string; range?: string }[] = [];
-    vi.stubGlobal("fetch", vi.fn(async (url: string, init: any) => {
-      calls.push({ url: String(url), range: init?.headers?.range });
-      return new Response(new Uint8Array([1, 2, 3]), {
-        status: 200,
-        headers: { "content-type": "audio/mpeg", "content-length": "3" },
-      });
-    }));
-
-    const r = await signed(app);
-    expect(r.statusCode).toBe(200);
-    expect(r.headers["content-type"]).toBe("audio/mpeg");
-    // Без Accept-Ranges плеер не умеет перематывать и тянет выпуск целиком
-    expect(r.headers["accept-ranges"]).toBe("bytes");
-    expect(r.headers["x-content-type-options"]).toBe("nosniff");
-    // Наружу не должен утечь сервисный токен: файл тянет сервер, а не браузер
-    expect(calls[0]!.url).toContain(`/assets/${FILE}`);
-    vi.unstubAllGlobals();
+  it("legacy UUID отдаёт реальные локальные байты",async () => {
+    const app=await build();episode();const result=await signed(app);
+    expect(result.statusCode).toBe(200);expect(result.rawPayload).toEqual(MEDIA_AUDIO);
+    expect(result.headers["content-type"]).toBe("audio/mpeg");expect(result.headers["accept-ranges"]).toBe("bytes");
+    expect(result.headers["x-content-type-options"]).toBe("nosniff");
   });
-
-  it("UUID аватара выпускника не отдаётся через аудио-прокси", async () => {
-    const app = await build();
-    db.alumni![0]!.avatar = FILE;
-    db.podcasts = [{ id: PID, title: "Утечка", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
-
-    const r = await signed(app);
-    expect(r.statusCode).toBe(404);
-    expect(fetchSpy).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
+  it("старый абсолютный CMS assets URL читается локально",async () => {
+    const app=await build();episode(`https://old-cms.example/assets/${FILE}`);
+    const result=await signed(app);expect(result.statusCode).toBe(200);expect(result.rawPayload).toEqual(MEDIA_AUDIO);
   });
-
-  it("не-audio файл из хранилища не маскируется под audio/mpeg", async () => {
-    const app = await build();
-    db.podcasts = [{ id: PID, title: "Картинка", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), {
-      status: 200,
-      headers: { "content-type": "image/jpeg", "content-length": "3" },
-    })));
-
-    const r = await signed(app);
-    expect(r.statusCode).toBe(404);
-    vi.unstubAllGlobals();
+  it("UUID аватара не выдаётся под видом аудио",async () => {
+    const app=await build();episode();db.alumni![0]!.avatar=FILE;
+    expect((await signed(app)).statusCode).toBe(404);expect(mediaStore.stream).not.toHaveBeenCalled();
   });
-
-  it("перемотка пробрасывается в хранилище и возвращает 206", async () => {
-    const app = await build();
-    db.podcasts = [{ id: PID, title: "Свой файл", status: "published", is_free: true, audio_url: FILE, sort: 0 }];
-    let seenRange: string | undefined;
-    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: any) => {
-      seenRange = init?.headers?.range;
-      return new Response(new Uint8Array([9]), {
-        status: 206,
-        headers: { "content-type": "audio/mpeg", "content-range": "bytes 10-10/999", "content-length": "1" },
-      });
-    }));
-
-    const r = await signed(app, { range: "bytes=10-10" });
-    expect(seenRange).toBe("bytes=10-10");
-    expect(r.statusCode).toBe(206);
-    expect(r.headers["content-range"]).toBe("bytes 10-10/999");
-    vi.unstubAllGlobals();
+  it("не-audio файл не маскируется под audio/mpeg",async () => {
+    const app=await build();episode();
+    await writeFile(join(mediaDirectory,"legacy.mp3"),Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),Buffer.alloc(40)]));
+    expect((await signed(app)).statusCode).toBe(404);
   });
-
-  /**
-   * Ссылка живёт 2 часа, а подписка может кончиться раньше. Держатель уже
-   * выданной подписи не должен получить аудио после окончания подписки –
-   * иначе годовой доступ продлевался бы сохранённой ссылкой.
-   */
-  it("истёкшая подписка закрывает аудио, даже если подпись ещё верна", async () => {
-    const app = await build();
-    db.podcasts = [{ id: PID, title: "Платный", status: "published", is_free: false, audio_url: FILE, sort: 0 }];
-
-    // Пока подписка активна – список выдаёт подписанную ссылку
-    db.alumni![0]!.podcast_sub_until = new Date(Date.now() + 864e5).toISOString();
-    const list = await app.inject({ method: "GET", url: "/podcasts", headers: { authorization: `Bearer ${token()}` } });
-    const url = list.json().items[0].audio_url as string;
-    expect(url).toBeTruthy();
-
-    // Подписка кончилась – та же ссылка больше не работает
-    db.alumni![0]!.podcast_sub_until = new Date(Date.now() - 864e5).toISOString();
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
-
-    const r = await app.inject({ method: "GET", url: url.replace(/^\/api/, "") });
-    expect(r.statusCode).toBe(403);
-    // До хранилища дело дойти не должно вообще
-    expect(fetchSpy).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
+  it("Range возвращает нужный фрагмент локального файла",async () => {
+    const app=await build();episode();const bytes=Buffer.concat([Buffer.from("ID3"),Buffer.alloc(996,9)]);
+    await writeFile(join(mediaDirectory,"legacy.mp3"),bytes);
+    const result=await signed(app,{range:"bytes=10-10"});
+    expect(result.statusCode).toBe(206);expect(result.headers["content-range"]).toBe("bytes 10-10/999");expect(result.rawPayload).toEqual(Buffer.from([9]));
+  });
+  it("истёкшая подписка закрывает аудио при действующей подписи",async () => {
+    const app=await build();episode();db.podcasts![0]!.is_free=false;
+    db.alumni![0]!.podcast_sub_until=new Date(Date.now()+864e5).toISOString();
+    const list=await app.inject({url:"/podcasts",headers:{authorization:`Bearer ${token()}`}});
+    const url=list.json().items[0].audio_url as string;expect(url).toBeTruthy();
+    db.alumni![0]!.podcast_sub_until=new Date(Date.now()-864e5).toISOString();
+    expect((await app.inject(url.replace(/^\/api/,""))).statusCode).toBe(403);
+    expect(mediaStore.stream).not.toHaveBeenCalled();
   });
 });
 
@@ -331,7 +272,7 @@ describe("Учёт прослушиваний", () => {
    */
   it("перемотка не считается прослушиванием", async () => {
     const app = await build();
-    await play(app, { range: "bytes=5000000-5001000" });
+    await play(app, { range: "bytes=32-63" });
     expect(db.podcast_plays).toHaveLength(0);
     vi.unstubAllGlobals();
   });

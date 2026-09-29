@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { db } from "./fake-directus.js";
+import { db } from "./fake-data.js";
 import type { commitCheckout as commit } from "../lib/checkout-store.js";
 // Адаптер только для unit-проверок HTTP-валидации. Транзакции проверяются отдельно на PostgreSQL.
 export const digest = (s: string) => createHash('sha256').update(s).digest('hex');

@@ -11,8 +11,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 const SAFE = {
   APP_ENV: "production",
   CHECKOUT_DATABASE_URL: "postgresql://checkout@database.test/club",
-  DIRECTUS_URL: "https://directus.club.example",
-  DIRECTUS_SERVICE_TOKEN: "8f2c1a9d7e5b3c04f6a8d2e1b9c7a5f3",
+  POINTS_SERVICE_TOKEN: "8f2c1a9d7e5b3c04f6a8d2e1b9c7a5f3",
   AUTH_SECRET: "0123456789abcdef0123456789abcdef01234567",
   ADMIN_AUTH_SECRET: "fedcba9876543210fedcba9876543210fedcba98",
   PUBLIC_URL: "https://club.example.ru",
@@ -64,9 +63,9 @@ describe("assertProdConfig – каждая небезопасная настр�
     expect(errs.some((e) => /AUTH_SECRET/.test(e))).toBe(true);
   });
 
-  it("плейсхолдер в сервисном токене Directus", async () => {
-    const errs = await errorsFor({ DIRECTUS_SERVICE_TOKEN: "replace_with_service_token" });
-    expect(errs.some((e) => /DIRECTUS_SERVICE_TOKEN/.test(e))).toBe(true);
+  it("плейсхолдер в сервисном токене начисления баллов", async () => {
+    const errs = await errorsFor({ POINTS_SERVICE_TOKEN: "replace_with_service_token" });
+    expect(errs.some((e) => /POINTS_SERVICE_TOKEN/.test(e))).toBe(true);
   });
 
   it("пустой ADMIN_AUTH_SECRET – админ-сессии подписывались бы общим ключом", async () => {

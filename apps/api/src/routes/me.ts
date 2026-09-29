@@ -1,9 +1,9 @@
 import { socialProgress } from "../lib/social-progress.js";
 import type { FastifyInstance } from "fastify";
-import { readItems, updateItem } from "@directus/sdk";
+import { readItems, updateItem } from "../lib/data-commands.js";
 import { z } from "zod";
 import { achievementProgress, sanitizeInterests } from "@club/shared";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { levelInfo, statsFromLedger } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { makeTgLinkCode } from "../lib/tg-link.js";
@@ -11,7 +11,7 @@ import { anonymizeAlumni } from "../lib/anonymize.js";
 import { audit } from "../lib/audit.js";
 import { env } from "../env.js";
 
-const di = directus;
+const di = data;
 const MONTHS_RU = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
 
 function lastSixMonths(ledger: { delta: number; created_at: string }[], now = new Date()) {

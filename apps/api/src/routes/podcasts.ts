@@ -1,11 +1,12 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { recordCreatedPayment, extendPodcastSubscription } from "../lib/payment-store.js";
-import { readItems, createItem } from "@directus/sdk";
+import { readItems, createItem } from "../lib/data-commands.js";
 import { z } from "zod";
 import { PODCAST_SUB_PRICE_KOP, orderNumber, rutubeEmbed, securePaymentUrl } from "@club/shared";
 import { env } from "../env.js";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
+import { mediaId, mediaStore } from "../lib/media-store.js";
 import { isUniqueViolation, lastOrderSeq } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
@@ -13,61 +14,16 @@ import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js
 import { withCartLock } from "../lib/checkout-store.js";
 import { audit } from "../lib/audit.js";
 
-const di = directus;
+const di = data;
 
 export function subActive(until: string | null | undefined): boolean {
   return !!until && new Date(until).getTime() > Date.now();
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Отдача аудио из хранилища Directus через наш прокси.
- *
- * Хранилище закрыто от публики (роль Public не читает файлы), и открывать его
- * нельзя: там же лежат аватары выпускников – это персональные данные. Поэтому
- * файл тянется сервисным токеном, как это уже сделано для аватаров.
- *
- * UUID из podcast.audio_url не должен совпадать с alumni.avatar: иначе редактор
- * мог бы опубликовать чужой аватар как «пробный выпуск» и обойти /avatars gate.
- * Не-audio Content-Type отвергаем, а не переименовываем в audio/mpeg.
- *
- * Range пробрасывается в обе стороны: без него плеер не умеет перематывать
- * и вынужден тянуть весь выпуск целиком, а это десятки мегабайт. Тело
- * передаётся потоком – класть часовой подкаст в память нельзя.
- */
-async function streamAudio(reply: any, fileId: string, range: string | undefined) {
-  // Не отдаём файлы, которые являются чьим-то аватаром (PII / обход /avatars).
-  const avatarHits = (await di.request((readItems as any)("alumni", {
-    filter: { avatar: { _eq: fileId } },
-    limit: 1,
-    fields: ["id"],
-  }))) as any[];
-  if (avatarHits.length) return reply.code(404).send({ error: "Выпуск не найден" });
-
-  const res = await fetch(`${env.DIRECTUS_URL}/assets/${fileId}`, {
-    headers: {
-      authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}`,
-      ...(range ? { range } : {}),
-    },
-  });
-  if (!res.ok || !res.body) return reply.code(404).send({ error: "Выпуск не найден" });
-
-  const upstream = (res.headers.get("content-type") ?? "").split(";")[0]!.trim();
-  if (!upstream.startsWith("audio/")) return reply.code(404).send({ error: "Выпуск не найден" });
-
-  reply.code(res.status === 206 ? 206 : 200);
-  reply.header("Content-Type", upstream);
-  reply.header("Accept-Ranges", "bytes");
-  reply.header("X-Content-Type-Options", "nosniff");
-  // Подписанная ссылка живёт 2 часа, поэтому кэш только приватный и короткий.
-  reply.header("Cache-Control", "private, max-age=3600");
-  for (const h of ["content-length", "content-range"]) {
-    const v = res.headers.get(h);
-    if (v) reply.header(h, v);
-  }
-  const { Readable } = await import("node:stream");
-  return reply.send(Readable.fromWeb(res.body as any));
+/** Права проверены подписанным маршрутом; аудио читается потоком из общего uploads. */
+async function streamAudio(reply: import("fastify").FastifyReply, fileId: string, range: string | undefined) {
+  if (await mediaStore.isAvatar(fileId)) return reply.code(404).send({ error: "Выпуск не найден" });
+  return mediaStore.stream(reply, fileId, { kind: "audio", range, cache: "private, max-age=3600" });
 }
 
 /** Не чаще одной записи на связку «выпуск + слушатель» за это время. */
@@ -182,10 +138,8 @@ export async function podcastsRoutes(app: FastifyInstance) {
       void recordPlay(id, q.data.h).catch(() => undefined); // учёт не должен ломать выдачу
     }
 
-    // Файл, залитый в Directus, отдаём через прокси: хранилище закрыто от
-    // публики, и открывать его нельзя – там же лежат аватары выпускников.
-    // Внешний URL (сторонний хостинг) по-прежнему отдаётся редиректом.
-    if (UUID_RE.test(podcast.audio_url)) return streamAudio(reply, podcast.audio_url, req.headers.range);
+    const localFile = mediaId(podcast.audio_url);
+    if (localFile) return streamAudio(reply, localFile, req.headers.range);
     return reply.redirect(podcast.audio_url, 302);
   });
 

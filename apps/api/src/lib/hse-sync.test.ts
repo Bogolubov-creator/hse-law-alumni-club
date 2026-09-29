@@ -1,6 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-vi.mock('@directus/sdk', async () => await import('../test/fake-sdk.js'));
-vi.mock('./directus.js', async () => (await import('../test/fake-directus.js')).directusModuleMock);
+vi.mock('./data.js', async () => (await import('../test/fake-data.js')).dataModuleMock);
 
 const collectMock = vi.fn();
 vi.mock('@club/shared', async (actual) => ({
@@ -10,7 +9,7 @@ vi.mock('@club/shared', async (actual) => ({
   HSE_DPO_ALL_URL: 'https://www.hse.ru/edu/dpo/?onlyActual=0&orgUnit=22753',
 }));
 
-const { db, resetDb } = await import('../test/fake-directus.js');
+const { db, resetDb } = await import('../test/fake-data.js');
 const { syncDpoCatalog } = await import('./hse-sync.js');
 
 const cards = [1, 2, 3].map(id => ({

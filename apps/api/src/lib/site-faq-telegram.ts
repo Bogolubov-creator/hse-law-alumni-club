@@ -2,7 +2,7 @@
  * FAQ-бот сайта для Telegram @pravohse_alumni_bot.
  * Те же ответы, что у ClubSupportBot; каталог – из Directus programs.
  */
-import { readItems } from "@directus/sdk";
+import { readItems } from "./data-commands.js";
 import {
   BOT_FAQ,
   programsFromApi,
@@ -13,13 +13,13 @@ import {
   type BotProgram,
   type BotReply,
 } from "@club/shared";
-import { directus } from "./directus.js";
+import { data } from "./data.js";
 import { env } from "../env.js";
 import { logFaqEvent } from "./faq-events.js";
 
 async function loadPrograms(): Promise<BotProgram[]> {
   try {
-    const rows = (await directus.request(
+    const rows = (await data.request(
       (readItems as any)("programs", {
         filter: { status: { _eq: "published" } },
         limit: -1,

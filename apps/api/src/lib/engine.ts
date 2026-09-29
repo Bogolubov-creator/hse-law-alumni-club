@@ -1,12 +1,12 @@
-import { readItems, createItem, updateItem } from "@directus/sdk";
+import { readItems, createItem, updateItem } from "./data-commands.js";
 import {
   computeLevel, evaluateAchievements, decayDelta,
   POINT_RULES, LEVELS, type PointReason,
 } from "@club/shared";
-import { directus } from "./directus.js";
+import { data } from "./data.js";
 import { withLock } from "./mutex.js";
 
-const di = directus; // типизированный клиент; касты остаются на записях/реляциях
+const di = data; // типизированный клиент; касты остаются на записях/реляциях
 
 export interface AddPointsInput {
   reason: PointReason;

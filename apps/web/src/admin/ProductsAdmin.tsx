@@ -75,7 +75,6 @@ function ProductForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
           </div>
           <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
           <FormField label="Фото (ссылка или /assets/…)" value={f.image} onChange={(v) => set("image", v)} ph="/assets/merch-hoodie.jpg" />
-          <p className="font-mono text-[11px] text-[var(--c-text-3)]">Размеры/варианты добавляются позже в Directus Studio (поле variants_json).</p>
         </div>
         <div className="mt-5 flex gap-2">
           <button type="submit" disabled={!valid || busy} className="foc flex-1 rounded-[11px] bg-[var(--c-accent)] py-2.5 font-semibold text-[var(--c-on-accent)] disabled:opacity-50">{busy ? "Создаём…" : "Создать"}</button>

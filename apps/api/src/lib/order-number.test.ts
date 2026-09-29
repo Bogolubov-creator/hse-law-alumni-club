@@ -5,7 +5,7 @@ describe("isUniqueViolation – ретраить со следующим ном�
   it("Directus code RECORD_NOT_UNIQUE → true", () => {
     expect(isUniqueViolation({ errors: [{ extensions: { code: "RECORD_NOT_UNIQUE" } }] })).toBe(true);
   });
-  it("текст постгрес-констрейнта (как в fake-directus) → true", () => {
+  it("текст постгрес-констрейнта (как в fake-data) → true", () => {
     expect(isUniqueViolation(new Error("duplicate key value violates unique constraint (orders.number)"))).toBe(true);
   });
   it("таймаут/сеть → false (не ретраим, иначе дубль заявки)", () => {

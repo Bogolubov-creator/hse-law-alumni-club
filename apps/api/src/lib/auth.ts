@@ -1,12 +1,13 @@
 import { loadAdminRevocations, saveAdminRevocation } from "./auth-state.js";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
-import { readItems, readRoles, readUsers } from "@directus/sdk";
+import { readItems } from "./data-commands.js";
+import { findActiveAdmin, findAuthUser, findActiveAlumni } from "./native-auth.js";
 import { env } from "../env.js";
-import { directus } from "./directus.js";
+import { data } from "./data.js";
 
-const di = directus;
+export { findAlumniAuthUser } from "./native-auth.js";
 
 function bearer(req: FastifyRequest): string | null {
   const h = req.headers.authorization;
@@ -15,13 +16,15 @@ function bearer(req: FastifyRequest): string | null {
 }
 
 export function isServiceToken(req: FastifyRequest): boolean {
-  return bearer(req) === env.DIRECTUS_SERVICE_TOKEN;
+  const supplied = bearer(req);
+  const expected = env.POINTS_SERVICE_TOKEN;
+  return !!supplied && !!expected && timingSafeEqual(createHash("sha256").update(supplied).digest(), createHash("sha256").update(expected).digest());
 }
 
 // Отдельный секрет для админ-токенов (если задан), иначе общий.
 const adminSecret = (): string => env.ADMIN_AUTH_SECRET || env.AUTH_SECRET;
 
-// Собственная сессия apps/api (Directus наружу не светим).
+// Сессия приложения; хеш пароля остаётся в серверном хранилище.
 export function signSession(alumniId: string, userId: string, tokenVersion = 0): string {
   return jwt.sign({ alumni_id: alumniId, sub: userId, ver: tokenVersion }, env.AUTH_SECRET, { expiresIn: "7d" });
 }
@@ -33,40 +36,8 @@ function verifySession(token: string): { alumni_id?: string; sub?: string; ver?:
   }
 }
 
-/** Валидация пары email/пароль через Directus (логин на стороне сервера). */
-export async function directusCredsValid(email: string, password: string): Promise<boolean> {
-  try {
-    const r = await fetch(`${env.DIRECTUS_URL}/auth/login`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    return r.ok;
-  } catch (e) {
-    // Сетевой сбой (Directus недоступен) – не молча: оставляем след в логах.
-    console.error("[auth] Directus /auth/login недоступен:", (e as Error).message);
-    return false;
-  }
-}
-
-export async function findUserByEmail(email: string): Promise<{ id: string; first_name?: string; last_name?: string } | null> {
-  const rows = (await di.request(readUsers({ filter: { email: { _eq: email } }, limit: 1, fields: ["id", "first_name", "last_name"] }))) as any[];
-  return rows[0] ?? null;
-}
-
-export async function findUserWithRole(email: string): Promise<{ id: string; role: string } | null> {
-  const rows = (await di.request((readUsers as any)({ filter: { email: { _eq: email } }, limit: 1, fields: ["id", "role.name"] }))) as any[];
-  if (!rows[0]) return null;
-  return { id: rows[0].id, role: (rows[0].role?.name as string) ?? "" };
-}
-
-/** Публичные операции с аккаунтом доступны только действующей роли alumni. */
-export async function findAlumniAuthUser(identity: { id: string } | { email: string }): Promise<{ id: string; status: string } | null> {
-  const roles = await di.request(readRoles({ filter: { name: { _eq: "alumni" } }, fields: ["id"], limit: 2 }));
-  if (roles.length !== 1) return null;
-  const filter = "id" in identity ? { id: { _eq: identity.id } } : { email: { _eq: identity.email } };
-  const users = await di.request(readUsers({ filter: { ...filter, role: { _eq: roles[0]!.id } }, fields: ["id", "status"], limit: 1 }));
-  return users[0] as { id: string; status: string } | undefined ?? null;
+export async function findUserByEmail(email: string) {
+  return findAuthUser({ email });
 }
 
 // ── Админ-сессия (роли editor/admin) ──────────────────────────
@@ -81,9 +52,9 @@ setInterval(() => {
 
 const ADMIN_TTL_MS = 12 * 60 * 60 * 1000;
 
-export function signAdmin(userId: string, role: string): string {
+export function signAdmin(userId: string, role: string, tokenVersion = 0): string {
   // jti нужен, чтобы конкретную сессию можно было погасить выходом из панели.
-  return jwt.sign({ sub: userId, role, scope: "admin", jti: randomUUID() }, adminSecret(), { expiresIn: "12h" });
+  return jwt.sign({ sub: userId, role, scope: "admin", jti: randomUUID(), ver: tokenVersion }, adminSecret(), { expiresIn: "12h" });
 }
 export async function restoreAdminRevocations(): Promise<void> {
   for (const [jti, expires] of await loadAdminRevocations()) revokedAdminJti.set(jti, expires);
@@ -95,20 +66,18 @@ export async function revokeAdmin(jti: string): Promise<void> {
 }
 export async function resolveAdmin(req: FastifyRequest): Promise<AdminCtx | null> {
   const token = bearer(req);
-  if (!token || token === env.DIRECTUS_SERVICE_TOKEN) return null;
+  if (!token || isServiceToken(req)) return null;
+  let p: { scope?: string; sub?: string; role?: string; jti?: string; ver?: number };
+  try { p = jwt.verify(token, adminSecret(), { algorithms: ["HS256"] }) as typeof p; }
+  catch { return null; }
+  if (p?.scope !== "admin" || !p?.sub) return null;
+  if (p.jti && revokedAdminJti.has(p.jti)) return null; // сессия погашена выходом
   try {
-    const p = jwt.verify(token, adminSecret(), { algorithms: ["HS256"] }) as { scope?: string; sub?: string; role?: string; jti?: string };
-    if (p?.scope !== "admin" || !p?.sub) return null;
-    if (p.jti && revokedAdminJti.has(p.jti)) return null; // сессия погашена выходом
-    // JWT подтверждает вход, но действующие права и блокировка хранятся в CMS.
-    const users = await di.request((readUsers as any)({
-      filter: { id: { _eq: p.sub } }, fields: ["id", "status", "role.name"], limit: 1,
-    })) as { id: string; status: string; role?: { name?: string } | null }[];
-    const user = users[0];
-    const role = user?.role?.name ?? "";
-    if (user?.status !== "active" || !["editor", "admin", "Administrator"].includes(role)) return null;
-    return { userId: user.id, role, jti: p.jti };
+    // JWT подтверждает вход, а действующие права проверяются в PostgreSQL.
+    const user = await findActiveAdmin(p.sub);
+    return user && (p.ver ?? 0) === user.staff_version ? { userId: user.id, role: user.role, jti: p.jti } : null;
   } catch {
+    req.log.warn({ event: "admin.role_check.failed" }, "Не удалось проверить текущие права администратора");
     return null;
   }
 }
@@ -124,6 +93,7 @@ export function isFullAdmin(ctx: AdminCtx): boolean {
 }
 
 export interface AlumniCtx {
+  user_id?: string | null;
   telegram_id?: string | null;
   id: string;
   fio: string | null;
@@ -141,10 +111,10 @@ export interface AlumniCtx {
 }
 
 export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null> {
-  const rows = (await di.request(
+  const rows = (await data.request(
     readItems("alumni", {
       filter: { user_id: { _eq: userId } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version", "telegram_id"],
+      fields: ["id", "user_id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version", "telegram_id"],
     }),
   )) as (AlumniCtx & { token_version?: number | null })[];
   return rows[0] ?? null;
@@ -153,19 +123,28 @@ export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null
 /** Текущий выпускник по нашей сессии (Bearer JWT). */
 export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | null> {
   const token = bearer(req);
-  if (!token || token === env.DIRECTUS_SERVICE_TOKEN) return null;
+  if (!token || isServiceToken(req)) return null;
   const payload = verifySession(token);
   if (!payload?.alumni_id) return null;
-  const rows = (await di.request(
+  const rows = (await data.request(
     readItems("alumni", {
       filter: { id: { _eq: payload.alumni_id } }, limit: 1,
-      fields: ["id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version", "telegram_id"],
+      fields: ["id", "user_id", "fio", "cohort", "verification_status", "personal_discount", "points_cached", "contacts_json", "edu_program", "edu_level", "interests_json", "podcast_sub_until", "avatar", "referral_code", "token_version", "telegram_id"],
     }),
   )) as (AlumniCtx & { token_version?: number | null })[];
   const alumni = rows[0];
   if (!alumni) return null;
   // Ревокация: сброс пароля поднимает token_version – старые JWT перестают действовать.
   if ((payload.ver ?? 0) !== (alumni.token_version ?? 0)) return null;
+  if (alumni.user_id) {
+    if (payload.sub !== alumni.user_id) return null;
+    try {
+      if (!await findActiveAlumni(alumni.user_id)) return null;
+    } catch {
+      req.log.warn({ event: "alumni.role_check.failed" }, "Не удалось проверить доступ выпускника");
+      return null;
+    }
+  } else if (!alumni.telegram_id || payload.sub !== alumni.telegram_id) return null;
   return alumni;
 }
 

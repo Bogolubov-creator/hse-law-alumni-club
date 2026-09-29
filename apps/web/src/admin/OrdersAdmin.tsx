@@ -73,7 +73,6 @@ export function Orders() {
               {ORDER_FLOW.map((s) => <option key={s} value={s}>{ORDER_STATUS_RU[s]}</option>)}
             </select>
           </div>
-          {/* Состав заявки – офис видит позиции без похода в Directus */}
           {(o.items_json?.length || o.address || o.comment) && (
             <div className="adm-order-items" style={{ ...mono, fontSize: 11, lineHeight: 1.6, color: "var(--c-text-3)", marginTop: 6, paddingLeft: 122 }}>
               {o.items_json?.map((i) => `${i.title}${i.variant_sku ? ` (${i.variant_sku})` : ""} ×${i.qty}`).join("; ")}

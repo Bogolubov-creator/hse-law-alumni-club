@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import type { Descriptor } from "./fake-sdk.js";
+import type { DataCommand } from "../lib/data-commands.js";
 
 /**
- * Directus в памяти: хранит коллекции как массивы объектов и исполняет описания
- * запросов из fake-sdk. Нужен, чтобы тесты роутов проверяли настоящую логику
- * (гарды, переоценку, идемпотентность), а не моки на каждый вызов.
+ * Хранилище HTTP-тестов исполняет настоящие команды data-commands по данным
+ * в памяти. Гарды и бизнес-правила остаются в модулях приложения;
+ * SQL-транзакции и ограничения проверяются отдельно на PostgreSQL.
  *
  * Поддержан тот минимум операторов фильтра, который реально используют роуты.
  * Неизвестный оператор – исключение, а не тихое «ничего не нашлось»: молчаливое
@@ -39,7 +39,7 @@ function matchOp(value: any, op: string, operand: any): boolean {
     case "_contains": return String(value ?? "").includes(String(operand));
     case "_starts_with": return String(value ?? "").startsWith(String(operand));
     case "_empty": return operand ? !value || (Array.isArray(value) && !value.length) : !!value;
-    default: throw new Error(`fake-directus: оператор ${op} не реализован – добавьте его, иначе тест проверяет не то`);
+    default: throw new Error(`fake-data: оператор ${op} не реализован – добавьте его, иначе тест проверяет не то`);
   }
 }
 
@@ -56,7 +56,7 @@ function matchFilter(row: Row, filter: any): boolean {
   });
 }
 
-function applySort(rows: Row[], sort?: string[]): Row[] {
+function applySort(rows: Row[], sort?: readonly string[]): Row[] {
   if (!sort?.length) return rows;
   const keys = sort.map((s) => (s.startsWith("-") ? { key: s.slice(1), dir: -1 } : { key: s, dir: 1 }));
   return [...rows].sort((a, b) => {
@@ -68,8 +68,7 @@ function applySort(rows: Row[], sort?: string[]): Row[] {
   });
 }
 
-/** Разворачивает точечные поля («role.name») в вложенный объект, как это делает Directus. */
-function project(row: Row, fields?: string[]): Row {
+function project(row: Row, fields?: readonly string[]): Row {
   if (!fields?.length || fields.includes("*")) return { ...row };
   const out: Row = {};
   for (const f of fields) {
@@ -87,26 +86,25 @@ function table(name: string): Row[] {
   return db[name];
 }
 
-export async function request(desc: Descriptor): Promise<any> {
+export async function request(desc: DataCommand): Promise<any> {
   switch (desc.kind) {
-    case "readItems":
-    case "readUsers": {
-      const rows = table(desc.collection!).filter((r) => matchFilter(r, desc.query?.filter));
+    case "readItems": {
+      const rows = table(desc.collection).filter((r) => matchFilter(r, desc.query?.filter));
       const sorted = applySort(rows, desc.query?.sort);
-      const limit = desc.query?.limit;
-      const offset = desc.query?.offset ?? 0;
+      const limit = desc.query?.limit ?? 100;
+      const offset = desc.query?.offset ?? ((desc.query?.page ?? 1) - 1) * (limit === -1 ? 0 : limit);
       const limited = typeof limit === "number" && limit >= 0 ? sorted.slice(offset, offset + limit) : sorted.slice(offset);
       return limited.map((r) => project(r, desc.query?.fields));
     }
     case "readItem": {
-      const row = table(desc.collection!).find((r) => r.id === desc.id);
-      return row ? project(row, desc.query?.fields) : null;
+      const row = table(desc.collection).find((r) => r.id === desc.id && matchFilter(r, desc.query?.filter));
+      if (!row) throw Object.assign(new Error("Запись не найдена"), { statusCode: 404 });
+      return project(row, desc.query?.fields);
     }
     case "createItem": {
-      // created_at в Directus заполняется само (special: date-created). Без этого
-      // фильтры по времени в фейке молча не находили ничего, и логика, которая
-      // на них опирается (например дедупликация прослушиваний), выглядела рабочей.
-      const row = { id: randomUUID(), created_at: new Date().toISOString(), ...desc.data };
+      // В рабочей БД UUID и created_at заполняются DEFAULT; временные фильтры
+      // (например дедупликация прослушиваний) должны видеть эти поля и в тесте.
+      const row: Row = { id: randomUUID(), created_at: new Date().toISOString(), ...desc.data };
       // Уникальность номера заявки: в БД это UNIQUE-индекс, роут рассчитывает на отказ.
       if (desc.collection === "orders" && table("orders").some((r) => r.number === row.number)) {
         throw new Error("duplicate key value violates unique constraint (orders.number)");
@@ -121,7 +119,7 @@ export async function request(desc: Descriptor): Promise<any> {
     }
     case "updateItem": {
       const row = table(desc.collection!).find((r) => r.id === desc.id);
-      if (!row) throw new Error(`fake-directus: нет записи ${desc.collection}/${desc.id}`);
+      if (!row) throw new Error(`fake-data: нет записи ${desc.collection}/${desc.id}`);
       Object.assign(row, desc.data);
       return { ...row };
     }
@@ -132,13 +130,13 @@ export async function request(desc: Descriptor): Promise<any> {
       return null;
     }
     case "aggregate": {
-      const rows = table(desc.collection!).filter((r) => matchFilter(r, desc.query?.query?.filter));
-      const agg = desc.query?.aggregate ?? {};
-      const groupBy = desc.query?.groupBy as string[] | undefined;
+      const rows = table(desc.collection).filter((r) => matchFilter(r, desc.query?.filter));
+      const agg = desc.aggregate ?? {};
+      const groupBy = desc.groupBy;
       if (groupBy?.length && agg.count) {
         const buckets = new Map<string, Row & { count: string }>();
         for (const r of rows) {
-          const key = groupBy.map((g) => String(r[g] ?? "")).join("\0");
+          const key = JSON.stringify(groupBy.map(g => r[g] ?? null));
           const prev = buckets.get(key);
           if (prev) {
             prev.count = String(Number(prev.count) + 1);
@@ -152,18 +150,15 @@ export async function request(desc: Descriptor): Promise<any> {
       }
       if (agg.count) return [{ count: String(rows.length) }];
       if (agg.sum) {
-        const field = Array.isArray(agg.sum) ? agg.sum[0] : agg.sum;
-        return [{ sum: { [field]: rows.reduce((s, r) => s + (Number(r[field]) || 0), 0) } }];
+        const field = agg.sum;
+        const values = rows.map(r => r[field]).filter(value => value !== null && value !== undefined);
+        return [{ sum: { [field]: values.length ? String(values.reduce((total, value) => total + Number(value), 0)) : null } }];
       }
-      return [{}];
+      throw new Error("fake-data: неподдерживаемый агрегат; проверьте SQL-интеграционный тест");
     }
     default:
-      throw new Error(`fake-directus: операция ${desc.kind} не реализована`);
+      throw new Error(`fake-data: операция ${desc.kind} не реализована`);
   }
 }
 
-/** Мок модуля lib/directus.js целиком (роуты импортируют именно его). */
-export const directusModuleMock = {
-  directus: { request },
-  checkDirectus: async () => ({ ok: true, serviceUser: "service@test", levelsSeeded: table("levels").length }),
-};
+export const dataModuleMock = { data: { request } };

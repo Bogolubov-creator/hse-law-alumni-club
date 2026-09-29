@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "../lib/data-commands.js";
 import { z } from "zod";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { env } from "../env.js";
 import { resolveAlumni, requireAdmin } from "../lib/auth.js";
 import { addPoints } from "../lib/engine.js";
@@ -10,7 +10,7 @@ import { count, groupCount } from "../lib/agg.js";
 import { pushToAll } from "../lib/push.js";
 import { announceEventByEmail } from "../lib/event-announce.js";
 
-const di = directus;
+const di = data;
 
 const adminEventFields = ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"];
 

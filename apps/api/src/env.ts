@@ -9,14 +9,14 @@ const schema = z.object({
   // Локальный стенд оставляет development → проверки только предупреждают, не роняют старт.
   APP_ENV: z.enum(["development", "production"]).default("development"),
   CHECKOUT_DATABASE_URL: z.string().default(""),
+  UPLOADS_PATH: z.string().default("/data/uploads"),
   SUPPORT_ENABLED: z.string().default("false"),
   SUPPORT_OPERATOR_NAME: z.string().trim().default(CLUB_OPERATOR.name),
   SUPPORT_OPERATOR_ADDRESS: z.string().trim().default(CLUB_OPERATOR.address),
   SUPPORT_OPERATOR_CONTACT: z.string().trim().default(CLUB_OPERATOR.contact),
   SUPPORT_RETENTION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
   OFFICE_EMAIL: z.string().email().or(z.literal("")).default(""),
-  DIRECTUS_URL: z.string().url(),
-  DIRECTUS_SERVICE_TOKEN: z.string().min(1, "DIRECTUS_SERVICE_TOKEN обязателен"),
+  POINTS_SERVICE_TOKEN: z.string().default(""),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET минимум 32 символа"),
   // Отдельный секрет для админ-сессий (defense-in-depth). Пусто = используется AUTH_SECRET.
   ADMIN_AUTH_SECRET: z.string().default(""),
@@ -81,9 +81,9 @@ export function assertProdConfig(): string[] {
     errs.push("CHECKOUT_DATABASE_URL содержит пароль из шаблона .env.example");
   const looksPlaceholder = (v: string) => /replace_with|сгенерируйте|changeme|your[_-]?secret|example/i.test(v);
   if (looksPlaceholder(env.CHECKOUT_DATABASE_URL)) errs.push("CHECKOUT_DATABASE_URL содержит плейсхолдер");
+  if (env.POINTS_SERVICE_TOKEN && (env.POINTS_SERVICE_TOKEN.length < 32 || looksPlaceholder(env.POINTS_SERVICE_TOKEN))) errs.push("POINTS_SERVICE_TOKEN должен быть случайным секретом длиной не менее 32 символов");
   if (looksPlaceholder(env.AUTH_SECRET)) errs.push("AUTH_SECRET выглядит как плейсхолдер – сгенерируйте настоящий (openssl rand -hex 32)");
   if (looksPlaceholder(env.ADMIN_AUTH_SECRET)) errs.push("ADMIN_AUTH_SECRET выглядит как плейсхолдер");
-  if (looksPlaceholder(env.DIRECTUS_SERVICE_TOKEN)) errs.push("DIRECTUS_SERVICE_TOKEN выглядит как плейсхолдер");
   if (!env.ADMIN_AUTH_SECRET) errs.push("ADMIN_AUTH_SECRET пуст – задайте отдельный секрет админ-сессий (defense-in-depth)");
   else if (env.ADMIN_AUTH_SECRET.length < 32 || looksPlaceholder(env.ADMIN_AUTH_SECRET) || env.ADMIN_AUTH_SECRET === env.AUTH_SECRET)
     errs.push("ADMIN_AUTH_SECRET должен быть отдельным случайным секретом длиной не менее 32 символов");

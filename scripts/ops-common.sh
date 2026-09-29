@@ -42,6 +42,15 @@ ops_lock() {
   flock -n 9 || { echo 'Другая операция обслуживания уже выполняется' >&2; return 1; }
 }
 
+ops_assert_native_project() {
+  local project
+  project="$("${compose[@]}" config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])')"
+  if [[ -n "$(docker ps -aq --filter "label=com.docker.compose.project=$project" --filter 'label=com.docker.compose.service=directus')" ]]; then
+    echo 'В проекте остался Directus. Перенесите полную копию в новый изолированный проект по runbook; прямое обновление запрещено.' >&2
+    return 1
+  fi
+}
+
 ops_http_check() {
   local base
   base="$(ops_value PUBLIC_URL)"

@@ -3,10 +3,9 @@ import Fastify from "fastify";
 import jwt from "jsonwebtoken";
 
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 
-const { resetDb } = await import("../test/fake-directus.js");
+const { resetDb } = await import("../test/fake-data.js");
 const { adminRoutes } = await import("./admin.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");

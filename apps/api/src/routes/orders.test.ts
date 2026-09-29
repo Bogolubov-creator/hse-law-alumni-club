@@ -3,8 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 // Оплата в этих тестах выключена: проверяем сам контур заявки.
 vi.mock("../lib/yookassa.js", () => ({
   paymentsEnabled: () => false,
@@ -12,7 +11,8 @@ vi.mock("../lib/yookassa.js", () => ({
   fetchPayment: vi.fn(),
 }));
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db } = await import("../test/fake-data.js");
+const { resetAuthDb: resetDb } = await import("../test/fake-native-auth-store.js");
 const { ordersRoutes } = await import("./orders.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");

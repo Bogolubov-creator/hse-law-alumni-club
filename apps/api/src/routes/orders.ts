@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { commitCheckout, findCheckout, checkoutKey, digest, saveReceipt } from "../lib/checkout-store.js";
 import type { FastifyInstance } from "fastify";
-import { readItems } from "@directus/sdk";
+import { readItems } from "../lib/data-commands.js";
 import { recordCreatedPayment } from "../lib/payment-store.js";
 import { z } from "zod";
 import { effectiveDiscount, computeOrderTotals, repriceItems, securePaymentUrl } from "@club/shared";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice, confirmApplicant } from "../lib/notify.js";
 import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
@@ -14,7 +14,7 @@ import { cartSession } from "./cart.js";
 import { lookupCatalog, type CatalogInfo } from "../lib/catalog-lookup.js";
 
 
-const di = directus;
+const di = data;
 
 
 

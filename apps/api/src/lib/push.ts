@@ -1,7 +1,7 @@
 import webpush from "web-push";
-import { readItems, deleteItem } from "@directus/sdk";
+import { readItems, deleteItem } from "./data-commands.js";
 import { env } from "../env.js";
-import { directus } from "./directus.js";
+import { data } from "./data.js";
 
 /**
  * Web-push: браузерные уведомления участникам («заявка в друзья», «новое
@@ -25,7 +25,7 @@ async function sendToSubs(subs: { id: string; endpoint: string; keys: { p256dh: 
       await webpush.sendNotification({ endpoint: s.endpoint, keys: s.keys }, body, { TTL: 3600 });
     } catch (e: any) {
       if (e?.statusCode === 404 || e?.statusCode === 410) {
-        await directus.request((deleteItem as any)("push_subs", s.id)).catch(() => undefined);
+        await data.request((deleteItem as any)("push_subs", s.id)).catch(() => undefined);
       } else {
         console.error("[push] send failed:", e?.statusCode ?? e?.message);
       }
@@ -37,7 +37,7 @@ async function sendToSubs(subs: { id: string; endpoint: string; keys: { p256dh: 
 export function pushToAlumni(alumniId: string, payload: PushPayload): void {
   if (!enabled) return;
   void (async () => {
-    const subs = (await directus.request((readItems as any)("push_subs", {
+    const subs = (await data.request((readItems as any)("push_subs", {
       filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["id", "endpoint", "keys"],
     }))) as any[];
     if (subs.length) await sendToSubs(subs, payload);
@@ -52,7 +52,7 @@ export function pushToAlumni(alumniId: string, payload: PushPayload): void {
 export async function pushToAlumniMany(alumniIds: string[], payload: PushPayload): Promise<number> {
   if (!enabled || !alumniIds.length) return 0;
   const uniq = [...new Set(alumniIds)];
-  const subs = (await directus.request((readItems as any)("push_subs", {
+  const subs = (await data.request((readItems as any)("push_subs", {
     filter: { alumni_id: { _in: uniq } }, limit: -1, fields: ["id", "endpoint", "keys"],
   }))) as any[];
   if (subs.length) await sendToSubs(subs, payload);
@@ -63,7 +63,7 @@ export async function pushToAlumniMany(alumniIds: string[], payload: PushPayload
 export function pushToAll(payload: PushPayload): void {
   if (!enabled) return;
   void (async () => {
-    const subs = (await directus.request((readItems as any)("push_subs", { limit: -1, fields: ["id", "endpoint", "keys"] }))) as any[];
+    const subs = (await data.request((readItems as any)("push_subs", { limit: -1, fields: ["id", "endpoint", "keys"] }))) as any[];
     if (subs.length) await sendToSubs(subs, payload);
   })().catch((e) => console.error("[push] broadcast failed:", (e as Error).message));
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
+import { mediaUrl } from "../lib/public-url.js";
 import Modal from "../components/Modal.js";
 import { useEventMutations, useAdminEvents, useAdminEventRoster, type AdminEvent } from "../lib/admin.js";
 import { FormField, ConfirmDelete } from "./common.js";
@@ -118,7 +119,7 @@ function EventForm({ initial, busy, onClose, onSave }: { initial?: AdminEvent; b
             </label>
           </div>
           <FormField label="Картинка-анонс (ссылка или /assets/…)" value={f.cover} onChange={(v) => set("cover", v)} ph="/assets/event-networking.jpg" />
-          {f.cover.trim() && <img src={f.cover.trim()} alt="Предпросмотр анонса" className="h-24 w-full rounded-[10px] object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+          {f.cover.trim() && <img src={mediaUrl(f.cover.trim())} alt="Предпросмотр анонса" className="h-24 w-full rounded-[10px] object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
           <FormField label="Ссылка на регистрацию (если есть внешняя форма)" value={f.reg_url} onChange={(v) => set("reg_url", v)} ph="https://hse-law.timepad.ru/event/…" />
           {!regOk && <p className="font-mono text-[11px] text-[var(--c-danger-text)]">Ссылка должна начинаться с http(s)://</p>}
         </div>

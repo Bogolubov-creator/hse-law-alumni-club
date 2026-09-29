@@ -1,8 +1,5 @@
-import { createDirectus, rest, staticToken, readMe, readItems } from "@directus/sdk";
 import type { LevelKey, PointReason } from "@club/shared";
-import { env } from "../env.js";
 
-// Типизированная схема коллекций – компилятор ловит опечатки в именах полей.
 export interface AlumniRow {
   id: string; user_id: string | null; fio: string | null; cohort: string | null;
   status: string; verification_status: string; points_cached: number; level_cached: LevelKey;
@@ -52,41 +49,3 @@ export interface TimelineItemRow { id: string; year: string; title: string; text
 export interface PodcastRow { id: string; title: string; description: string | null; cover: string | null; audio_url: string | null; video_url: string | null; duration: string | null; is_free: boolean; sort: number; status: string; created_at: string }
 export interface PodcastPlayRow { id: string; podcast_id: string; alumni_id: string | null; created_at: string }
 export interface PageRow { id: string; slug: string; title: string; status: string; sort: number; blocks: unknown }
-
-interface Schema {
-  alumni: AlumniRow[];
-  points_ledger: PointsLedgerRow[];
-  alumni_achievements: AlumniAchievementRow[];
-  alumni_friends: AlumniFriendRow[];
-  achievements: AchievementRow[];
-  levels: LevelRow[];
-  programs: ProgramRow[];
-  products: ProductRow[];
-  carts: CartRow[];
-  orders: OrderRow[];
-  news: NewsRow[];
-  pages: PageRow[];
-  timeline_items: TimelineItemRow[];
-  push_subs: PushSubRow[];
-  podcasts: PodcastRow[];
-  podcast_plays: PodcastPlayRow[];
-}
-
-export const directus = createDirectus<Schema>(env.DIRECTUS_URL)
-  .with(staticToken(env.DIRECTUS_SERVICE_TOKEN))
-  .with(rest());
-
-/** Проверка: сервисный токен валиден и схема засеяна. */
-export async function checkDirectus() {
-  try {
-    const me = await directus.request(readMe({ fields: ["id", "email"] }));
-    const levels = await directus.request(readItems("levels", { limit: 4 }));
-    return {
-      ok: true,
-      serviceUser: (me as any)?.email ?? null,
-      levelsSeeded: Array.isArray(levels) ? levels.length : 0,
-    };
-  } catch (e) {
-    return { ok: false, error: (e as Error).message };
-  }
-}

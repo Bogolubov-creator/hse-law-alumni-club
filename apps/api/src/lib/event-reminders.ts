@@ -1,8 +1,8 @@
-import { readItems, updateItem } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems, updateItem } from "./data-commands.js";
+import { data } from "./data.js";
 import { pushToAlumniMany } from "./push.js";
 
-const di = directus;
+const di = data;
 
 /**
  * Пуш-напоминание записавшимся за сутки до события. Запускается кроном раз в

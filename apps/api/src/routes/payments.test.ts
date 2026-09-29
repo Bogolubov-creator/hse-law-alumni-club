@@ -4,8 +4,7 @@ import jwt from "jsonwebtoken";
 
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
 vi.mock("../lib/payment-store.js", async () => await import("../test/fake-payment-store.js"));
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 
 // ЮKassa наружу не ходит: подменяем клиент, чтобы задавать ответы платёжного API.
 const yk = vi.hoisted(() => ({
@@ -15,7 +14,8 @@ const yk = vi.hoisted(() => ({
 }));
 vi.mock("../lib/yookassa.js", () => yk);
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db } = await import("../test/fake-data.js");
+const { resetAuthDb: resetDb } = await import("../test/fake-native-auth-store.js");
 const { paymentsRoutes } = await import("./payments.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { trustDockerProxy } = await import("../lib/security.js");
@@ -158,6 +158,7 @@ describe("POST /orders/:number/pay – ссылка на оплату", () => {
 
   it("чужую заявку оплатить нельзя", async () => {
     const otherToken = jwt.sign({ alumni_id: "alumni-2", sub: "user-2", ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
+    db.directus_users!.push({ id: "user-2", role: { name: "alumni" }, status: "active" });
     db.alumni!.push({ id: "alumni-2", user_id: "user-2", verification_status: "verified", token_version: 0, points_cached: 0, personal_discount: 0 });
     const app = await build();
     const r = await app.inject({ method: "POST", url: `/orders/${ORDER}/pay`, headers: { authorization: `Bearer ${otherToken}` } });

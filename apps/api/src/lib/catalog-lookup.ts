@@ -1,5 +1,5 @@
-import { readItems } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems } from "./data-commands.js";
+import { data } from "./data.js";
 
 export interface CatalogInfo {
   title: string;
@@ -22,7 +22,7 @@ export async function lookupCatalog(items: { type: "dpo" | "merch"; ref_id: stri
   await Promise.all((["dpo", "merch"] as const).map(async type => {
     const slugs = [...new Set(items.filter(item => item.type === type).map(item => item.ref_id))];
     if (!slugs.length) return;
-    const rows = await directus.request((readItems as any)(type === "dpo" ? "programs" : "products", {
+    const rows = await data.request((readItems as any)(type === "dpo" ? "programs" : "products", {
       filter: { slug: { _in: slugs }, status: { _eq: "published" } }, limit: -1, fields: fieldsFor(type),
     })) as any[];
     for (const row of rows) result.set(type + ":" + row.slug, catalogInfo(row));

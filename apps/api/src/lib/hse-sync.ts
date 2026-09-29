@@ -1,4 +1,4 @@
-import { readItems, createItem, updateItem } from "@directus/sdk";
+import { readItems, createItem, updateItem } from "./data-commands.js";
 import {
   collectHseDpoCards,
   HSE_DPO_ACTUAL_URL,
@@ -6,7 +6,7 @@ import {
   collectDpoSyncCards, planDpoSync,
   type TaggedCard, type ExistingDpoProgram,
 } from "@club/shared";
-import { directus } from "./directus.js";
+import { data } from "./data.js";
 
 /**
  * Автосинхронизация каталога ДПО с сайтом ВШЭ (факультет права, orgUnit 22753).
@@ -28,7 +28,7 @@ import { directus } from "./directus.js";
 const ACTUAL_URL = process.env.HSE_DPO_URL || HSE_DPO_ACTUAL_URL;
 const ALL_URL = process.env.HSE_DPO_ALL_URL || HSE_DPO_ALL_URL;
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36";
-const di = directus;
+const di = data;
 
 async function fetchPageHtml(url: string): Promise<string> {
   const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html" } });

@@ -1,14 +1,14 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "../lib/data-commands.js";
 import { z } from "zod";
 import { computeLevel } from "@club/shared";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { subActive } from "./podcasts.js";
 import { pushToAlumni } from "../lib/push.js";
 import { audit } from "../lib/audit.js";
 
-const di = directus;
+const di = data;
 
 /**
  * «Сообщество» ЛК: найти своих – однокурсники того же выпуска (cohort)

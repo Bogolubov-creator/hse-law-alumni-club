@@ -1,13 +1,13 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "../lib/data-commands.js";
 import { z } from "zod";
 import { env } from "../env.js";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { pushEnabled } from "../lib/push.js";
 import { audit } from "../lib/audit.js";
 
-const di = directus;
+const di = data;
 
 /** Подписка браузера участника на web-push. */
 export async function pushRoutes(app: FastifyInstance) {

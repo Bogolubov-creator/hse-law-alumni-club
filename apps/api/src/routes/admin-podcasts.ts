@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem, deleteItem } from "@directus/sdk";
+import { readItems, createItem, updateItem, deleteItem } from "../lib/data-commands.js";
 import { z } from "zod";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { requireAdmin } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
 import { pushToAll } from "../lib/push.js";
-const di = directus;
+const di = data;
 
 export async function adminPodcastsRoutes(app: FastifyInstance) {
 

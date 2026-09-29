@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
+import { hashPassword } from "@club/server-auth";
+const officeHash = await hashPassword("ok");
+const outsiderHash = await hashPassword("any");
 
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db, resetDb } = await import("../test/fake-data.js");
 const { adminRoutes } = await import("./admin.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
@@ -30,16 +32,6 @@ const GUARDED = [
   { method: "GET" as const, url: "/admin/analytics/export.csv" },
 ];
 
-function stubDirectusLogin(valid: (email: string, password: string) => boolean) {
-  vi.stubGlobal("fetch", vi.fn(async (url: string, init?: any) => {
-    if (String(url).endsWith("/auth/login")) {
-      const body = JSON.parse(String(init?.body ?? "{}"));
-      return { ok: valid(body.email, body.password) } as Response;
-    }
-    return { ok: true, json: async () => ({}) } as unknown as Response;
-  }));
-}
-
 async function build(): Promise<FastifyInstance> {
   const app = Fastify();
   registerErrorHandler(app);
@@ -52,14 +44,13 @@ const adminSecret = () => env.ADMIN_AUTH_SECRET || env.AUTH_SECRET;
 beforeEach(() => {
   resetDb({
     directus_users: [
-      { id: EDITOR_ID, email: "office@example.com", status: "active", role: { name: "editor" } },
-      { id: ADMIN_ID, email: "chief@example.com", status: "active", role: { name: "admin" } },
-      { id: "user-outsider", email: "outsider@example.com", status: "active", role: { name: "alumni" } },
+      { id: EDITOR_ID, email: "office@example.com", status: "active", password: officeHash, role: { name: "editor" } },
+      { id: ADMIN_ID, email: "chief@example.com", status: "active", password: officeHash, role: { name: "admin" } },
+      { id: "user-outsider", email: "outsider@example.com", status: "active", password: outsiderHash, role: { name: "alumni" } },
     ],
     alumni: [{ id: ALUMNI_ID, user_id: "user-1", fio: "Иван Петров", verification_status: "verified", token_version: 0, points_cached: 0, personal_discount: 0 }],
     orders: [], levels: [], audit_log: [], points_ledger: [],
   });
-  stubDirectusLogin(() => true);
 });
 
 describe("POST /auth/admin-login", () => {
@@ -71,7 +62,6 @@ describe("POST /auth/admin-login", () => {
   });
 
   it("неверный пароль → 401", async () => {
-    stubDirectusLogin(() => false);
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/admin-login", payload: { email: "office@example.com", password: "wrong" } });
     expect(r.statusCode).toBe(401);
@@ -104,7 +94,7 @@ describe("гарды админских маршрутов", () => {
 
   it("сервисный токен не открывает админку (он для cron-задач)", async () => {
     const app = await build();
-    const r = await app.inject({ method: "GET", url: "/admin/overview", headers: { authorization: `Bearer ${env.DIRECTUS_SERVICE_TOKEN}` } });
+    const r = await app.inject({ method: "GET", url: "/admin/overview", headers: { authorization: `Bearer ${env.POINTS_SERVICE_TOKEN}` } });
     expect(r.statusCode).toBe(401);
   });
 
@@ -159,14 +149,26 @@ describe("гарды админских маршрутов", () => {
     await app.close();
   });
 
-  it("при сбое CMS старый JWT не открывает админку", async () => {
-    const { directusModuleMock } = await import("../test/fake-directus.js");
-    const spy = vi.spyOn(directusModuleMock.directus, "request").mockRejectedValueOnce(new Error("CMS unavailable"));
+  it("при сбое БД старый JWT не открывает админку", async () => {
+    const { authStore } = await import("../lib/native-auth-store.js");
+    const spy = vi.spyOn(authStore, "findUser").mockRejectedValueOnce(new Error("Database unavailable"));
     const token = jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
     const app = await build();
     try {
       expect((await app.inject({ url: "/admin/orders", headers: { authorization: `Bearer ${token}` } })).statusCode).toBe(401);
     } finally { spy.mockRestore(); await app.close(); }
+  });
+
+  it("операторский сброс гасит старое поколение staff JWT, новый вход использует текущее", async () => {
+    const token = jwt.sign({ sub: EDITOR_ID, role: "editor", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    db.club_staff_sessions = [{ user_id: EDITOR_ID, token_version: 1 }];
+    const app = await build();
+    expect((await app.inject({ url: "/admin/orders", headers: { authorization: `Bearer ${token}` } })).statusCode).toBe(401);
+    const login = await app.inject({ method: "POST", url: "/auth/admin-login", payload: { email: "office@example.com", password: "ok" } });
+    expect(login.statusCode).toBe(200);
+    expect((jwt.verify(login.json().token, adminSecret()) as { ver: number }).ver).toBe(1);
+    expect((await app.inject({ url: "/admin/orders", headers: { authorization: `Bearer ${login.json().token}` } })).statusCode).toBe(200);
+    await app.close();
   });
 });
 

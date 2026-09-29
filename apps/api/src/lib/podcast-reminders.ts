@@ -1,9 +1,9 @@
-import { readItems, updateItem } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems, updateItem } from "./data-commands.js";
+import { data } from "./data.js";
 import { pushToAlumniMany } from "./push.js";
 import { sendEmail, mailEnabled } from "./notify.js";
 
-const di = directus;
+const di = data;
 
 /** За сколько дней до конца подписки предупреждаем. */
 export const REMIND_DAYS_BEFORE = 10;

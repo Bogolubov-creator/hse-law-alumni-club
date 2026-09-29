@@ -17,7 +17,7 @@ metrics = {}
 now = time.time()
 state = pathlib.Path(os.environ['STATE_DIR'])
 containers = json.loads(subprocess.check_output(['docker', 'inspect', *sys.argv[1:]]))
-expected_services = {'postgres', 'directus', 'api', 'web', 'caddy'}
+expected_services = {'postgres', 'api', 'web', 'caddy'}
 actual_services = {container['Config']['Labels']['com.docker.compose.service'] for container in containers}
 for missing in sorted(expected_services - actual_services): issues.append(f'{missing}: контейнер отсутствует')
 for container in containers:

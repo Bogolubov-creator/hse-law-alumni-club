@@ -1,15 +1,15 @@
 import { changeOrderStatus } from "../lib/checkout-store.js";
 import type { FastifyInstance } from "fastify";
-import { readItems } from "@directus/sdk";
+import { readItems } from "../lib/data-commands.js";
 import { z } from "zod";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { ORDER_STATUS_RU, ORDER_STATUS_VERB_RU } from "@club/shared";
 import { requireAdmin, requireFullAdmin } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
 import { sendEmail } from "../lib/notify.js";
 import { pushToAlumni } from "../lib/push.js";
 import { count } from "../lib/agg.js";
-const di = directus;
+const di = data;
 
 export async function adminOrdersRoutes(app: FastifyInstance) {
 

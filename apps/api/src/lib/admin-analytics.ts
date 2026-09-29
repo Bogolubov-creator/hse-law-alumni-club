@@ -1,5 +1,5 @@
-import { readItems } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems } from "./data-commands.js";
+import { data } from "./data.js";
 import { count, groupCount, sum } from "./agg.js";
 import { env } from "../env.js";
 import { checkoutPool } from "./checkout-store.js";
@@ -130,7 +130,7 @@ async function supportStats(since: string): Promise<{
 /** Продуктовая аналитика за окно – только уже существующие факты в БД. */
 export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now()) {
   const since = rangeSince(range, now);
-  const di = directus;
+  const di = data;
 
   const [
     joins,

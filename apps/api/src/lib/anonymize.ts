@@ -1,9 +1,10 @@
 import { checkoutPool } from "./checkout-store.js";
 import { env } from "../env.js";
-import { readItems, updateItem, deleteItem, deleteUser, updateUser, deleteFile } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems, updateItem, deleteItem, deleteUser, updateUser } from "./data-commands.js";
+import { deleteStoredFile } from "./media-store.js";
+import { data } from "./data.js";
 
-const di = directus;
+const di = data;
 const warn = (where: string, e: unknown) => console.error(`[anonymize] ${where}:`, (e as Error)?.message ?? e);
 
 /**
@@ -26,8 +27,6 @@ export async function anonymizeAlumni(alumniId: string): Promise<boolean> {
     await checkoutPool().query("DELETE FROM club_social_reactions WHERE alumni_id=$1", [alumniId]);
     await checkoutPool().query("DELETE FROM club_social_membership WHERE alumni_id=$1", [alumniId]);
   }
-  // Файл аватара в Directus Files.
-  if (a.avatar) await di.request((deleteFile as any)(a.avatar)).catch((e) => warn("avatar", e));
 
   // Профиль: снять ПДн (включая сведения об образовании), исключить из выборок
   // (rejected + alumni_left), обнулить баллы, убить сессии (token_version+1).
@@ -46,6 +45,8 @@ export async function anonymizeAlumni(alumniId: string): Promise<boolean> {
     user_id: null,
     token_version: (a.token_version ?? 0) + 1,
   }));
+
+  if (a.avatar) await deleteStoredFile(a.avatar).catch((e) => warn("avatar", e));
 
   // Заявки: обезличить контактные ПДн. contact_email = "-" (сентинел «нет адреса»),
   // иначе значение прошло бы гард уведомлений (contact_email && !== "-") → письмо в никуда.

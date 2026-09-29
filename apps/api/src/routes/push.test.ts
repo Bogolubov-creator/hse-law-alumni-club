@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
-vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
-vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+vi.mock("../lib/data.js", async () => (await import("../test/fake-data.js")).dataModuleMock);
 vi.mock("../lib/push.js", () => ({ pushEnabled: () => true, pushToAll: vi.fn(), pushToAlumni: vi.fn() }));
 
-const { db, resetDb } = await import("../test/fake-directus.js");
+const { db } = await import("../test/fake-data.js");
+const { resetAuthDb: resetDb } = await import("../test/fake-native-auth-store.js");
 const { pushRoutes } = await import("./push.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
@@ -23,7 +23,7 @@ async function build(): Promise<FastifyInstance> {
   return app;
 }
 
-const tokenFor = (id: string) => jwt.sign({ alumni_id: id, sub: `user-${id}`, ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
+const tokenFor = (id: string) => jwt.sign({ alumni_id: id, sub: `u-${id}`, ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
 
 const subscribe = (app: FastifyInstance, who: string, keys = KEYS) =>
   app.inject({

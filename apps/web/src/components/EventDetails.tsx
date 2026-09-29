@@ -1,6 +1,6 @@
 import SaveMaterial from "./SaveMaterial.js";
 import { useEffect, useState, type ReactNode } from "react";
-import { isMirror, publicUrl } from "../lib/public-url.js";
+import { isMirror, publicUrl, mediaUrl } from "../lib/public-url.js";
 import { eventCalendar } from "../lib/event-calendar.js";
 import { Link } from "react-router-dom";
 import { fmtEventDateFull, gcalUrl, type ClubEvent } from "../lib/events.js";
@@ -38,7 +38,7 @@ export default function EventDetails({ event, detail, onClose, rsvp }: {
       <div className="club-event-detail__body">
         <div className="club-event-detail__story">
       {event.cover && event.cover !== failedCover && (
-        <img className="club-event-detail__cover" src={event.cover} alt={`Афиша: ${event.title}`} width={1200} height={630}
+        <img className="club-event-detail__cover" src={mediaUrl(event.cover)} alt={`Афиша: ${event.title}`} width={1200} height={630}
           decoding="async" onError={() => setFailedCover(event.cover)} />
       )}
           <SectionHeading>О встрече</SectionHeading>

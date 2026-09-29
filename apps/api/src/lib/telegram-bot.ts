@@ -1,6 +1,6 @@
 import { recordReaction, type ReactionUpdate } from "./social-progress.js";
-import { readItems } from "@directus/sdk";
-import { directus } from "./directus.js";
+import { readItems } from "./data-commands.js";
+import { data } from "./data.js";
 import { env } from "../env.js";
 import { consumeTgLinkCode } from "./tg-link.js";
 import { answerTelegramFaq } from "./site-faq-telegram.js";
@@ -18,7 +18,7 @@ import {
 
 export { parseCommand, formatPointsReply, formatCalendarReply, formatStartReply, formatHelpReply } from "./telegram-bot-text.js";
 
-const di = directus;
+const di = data;
 
 export interface TgMessage {
   message_id: number;

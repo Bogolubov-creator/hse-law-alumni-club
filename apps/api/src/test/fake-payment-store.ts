@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import { db } from "./fake-directus.js";
+import { db } from "./fake-data.js";
 import type { PaymentOrder, PaymentResult } from "../lib/payment-store.js";
 import type { YkPayment } from "../lib/yookassa.js";
 

@@ -1,12 +1,24 @@
 # Контекст сборки – корень монорепо. Одноразовый прогон bootstrap'а.
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
 RUN corepack enable
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml* ./
 COPY packages/shared/package.json packages/shared/
+COPY packages/server-auth/package.json packages/server-auth/
 COPY scripts/package.json scripts/
 RUN pnpm install --frozen-lockfile
 COPY packages/shared packages/shared
+COPY packages/server-auth packages/server-auth
 COPY scripts scripts
-RUN pnpm --filter @club/shared build
-CMD ["pnpm", "--filter", "@club/scripts", "bootstrap"]
+RUN pnpm --filter @club/shared build && pnpm --filter @club/server-auth build && pnpm --filter @club/scripts build
+RUN pnpm --filter @club/scripts deploy --prod /app
+
+FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+ARG VCS_REF
+LABEL org.opencontainers.image.revision=$VCS_REF
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+WORKDIR /app
+COPY --from=build /app .
+USER node
+CMD ["node", "dist/native-bootstrap.js"]

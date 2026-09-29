@@ -1,14 +1,14 @@
 import { buildSystemHealth } from "../lib/system-health.js";
 import type { FastifyInstance } from "fastify";
-import { readItems } from "@directus/sdk";
+import { readItems } from "../lib/data-commands.js";
 import { z } from "zod";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 import { resolveAdmin, requireAdmin, requireFullAdmin } from "../lib/auth.js";
 import { audit } from "../lib/audit.js";
 import { pushToAll } from "../lib/push.js";
 import { buildAdminOverview } from "../lib/admin-overview.js";
 import { analyticsToCsv, buildAdminAnalytics, parseAnalyticsRange } from "../lib/admin-analytics.js";
-const di = directus;
+const di = data;
 
 export async function adminOverviewRoutes(app: FastifyInstance) {
 

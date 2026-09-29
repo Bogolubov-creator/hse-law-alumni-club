@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Один снимок БД и файлов: на время чтения остановлены оба писателя (API и CMS).
+# Один снимок БД и файлов: на время чтения остановлен API.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/ops-common.sh"
 
 backup_snapshot() (
-  local pg cms image work partial output stamp key remote keep application_revision api_id web_id
+  ops_assert_native_project
+  local pg files image work partial output stamp key remote keep application_revision api_id web_id
   local -a stopped=()
   key="$(ops_value BACKUP_ENCRYPTION_KEY)"
   [[ "$key" =~ ^[a-fA-F0-9]{64}$ ]] || { echo 'Нужен BACKUP_ENCRYPTION_KEY: 64 hex-символа' >&2; exit 1; }
@@ -14,8 +15,8 @@ backup_snapshot() (
   remote="$(ops_value BACKUP_OFFSITE_REMOTE)"
   if [[ -n "$remote" ]]; then command -v rclone >/dev/null; fi
   pg="$("${compose[@]}" ps -q postgres)"
-  cms="$("${compose[@]}" ps -aq directus)"
-  [[ -n "$pg" && -n "$cms" ]] || { echo 'Для снимка нужны PostgreSQL и созданный контейнер Directus' >&2; exit 1; }
+  files="$("${compose[@]}" ps -aq api)"
+  [[ -n "$pg" && -n "$files" ]] || { echo 'Для снимка нужны PostgreSQL и созданный контейнер API' >&2; exit 1; }
   api_id="$("${compose[@]}" ps -aq api)"
   web_id="$("${compose[@]}" ps -aq web)"
   application_revision="$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$api_id")"
@@ -32,10 +33,17 @@ backup_snapshot() (
   partial="$BACKUP_DIR/.snapshot-$stamp.partial"
   output="$BACKUP_DIR/snapshot-$stamp"
   mkdir "$partial"
+  resume_stopped() {
+    local service
+    # Возвращаем те же контейнеры: Compose start может повторно запустить bootstrap.
+    for service in "${stopped[@]}"; do
+      docker start "$("${compose[@]}" ps -aq "$service")" >/dev/null || return 1
+    done
+  }
   cleanup() {
     local result=$?
     if ((${#stopped[@]})); then
-      if ! "${compose[@]}" start "${stopped[@]}"; then
+      if ! resume_stopped; then
         echo 'Не удалось вернуть сервисы после копирования; проверьте compose ps' >&2
         result=1
       fi
@@ -46,29 +54,35 @@ backup_snapshot() (
   trap cleanup EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
-  for service in api directus; do
+  for service in api; do
     if [[ -n "$("${compose[@]}" ps --status running -q "$service")" ]]; then stopped+=("$service"); fi
   done
   if ((${#stopped[@]})); then "${compose[@]}" stop --timeout 60 "${stopped[@]}"; fi
   local db_bytes upload_bytes available
-  db_bytes="$("${compose[@]}" exec -T postgres sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select pg_database_size(current_database())"')"
-  upload_bytes="$(docker run --rm --network none --volumes-from "$cms:ro" --entrypoint du "$image" -sk /directus/uploads | awk '{print $1 * 1024}')"
+  db_bytes="$("${compose[@]}" exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select pg_database_size(current_database())"')"
+  upload_bytes="$(docker run --rm --network none --volumes-from "$files:ro" --entrypoint du "$image" -sk /data/uploads | awk '{print $1 * 1024}')"
   available="$(df -Pk "$BACKUP_DIR" | awk 'NR==2 {printf "%.0f", $4*1024}')"
   (( available >= 3 * (db_bytes + upload_bytes) + 268435456 )) || { echo 'Недостаточно места для копии и временных файлов' >&2; exit 1; }
   "${compose[@]}" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --no-owner --no-acl' > "$work/database.dump"
-  docker run --rm --network none --volumes-from "$cms:ro" --entrypoint tar "$image" -C /directus/uploads -czf - . > "$work/uploads.tar.gz"
-  "${compose[@]}" exec -T postgres sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' > "$work/counts.json" <<'SQL'
+  docker run --rm --network none --volumes-from "$files:ro" --entrypoint tar "$image" -C /data/uploads -czf - . > "$work/uploads.tar.gz"
+  "${compose[@]}" exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' > "$work/counts.json" <<'SQL'
 SELECT json_build_object('alumni',(SELECT count(*) FROM alumni),'orders',(SELECT count(*) FROM orders),'points_ledger',(SELECT count(*) FROM points_ledger),'directus_files',(SELECT count(*) FROM directus_files));
 SQL
+  python3 - "$work/counts.json" <<'PY'
+import json,sys
+counts=json.load(open(sys.argv[1]))
+if set(counts) != {'alumni','orders','points_ledger','directus_files'} or not all(type(v) is int and v >= 0 for v in counts.values()):
+    raise ValueError('Не удалось проверить счётчики снимка')
+PY
   if [[ "${1:-}" != keep-stopped ]] && ((${#stopped[@]})); then
-    "${compose[@]}" start "${stopped[@]}"
+    resume_stopped
     stopped=()
   fi
   printf '%s\n' "$application_revision" > "$work/commit.txt"
   git rev-parse HEAD > "$work/tool-commit.txt"
   git status --porcelain > "$work/worktree-status.txt"
   git ls-tree -r "$application_revision" -- apps/api/migrations infra/indexes.sql > "$work/migrations.txt"
-  docker inspect "$api_id" "$web_id" "$pg" "$cms" | python3 -c 'import json,sys; print(json.dumps([{ "image":r["Image"],"service":r["Config"]["Labels"]["com.docker.compose.service"]} for r in json.load(sys.stdin)],indent=2))' > "$work/images.json"
+  docker inspect "$api_id" "$web_id" "$pg" "$files" | python3 -c 'import json,sys; print(json.dumps([{ "image":r["Image"],"service":r["Config"]["Labels"]["com.docker.compose.service"]} for r in json.load(sys.stdin)],indent=2))' > "$work/images.json"
   date -u +%FT%TZ > "$work/created-at.txt"
   (cd "$work" && sha256sum database.dump uploads.tar.gz counts.json commit.txt tool-commit.txt worktree-status.txt migrations.txt images.json created-at.txt > SHA256SUMS)
   tar -C "$work" -czf - . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY -out "$partial/snapshot.tar.gz.enc"

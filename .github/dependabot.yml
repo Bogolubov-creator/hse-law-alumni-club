@@ -37,7 +37,7 @@ updates:
   - package-ecosystem: docker
     directories:
       - "/"
-      - "/apps/web"
+      - "/infra"
       - "/apps/api"
       - "/scripts"
     schedule:
@@ -47,3 +47,15 @@ updates:
       timezone: Europe/Moscow
     commit-message:
       prefix: "chore(docker)"
+
+  # Зависимости пересобираемого Caddy проверяются отдельно от базового образа.
+  - package-ecosystem: gomod
+    directory: "/infra/caddy"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(edge)"

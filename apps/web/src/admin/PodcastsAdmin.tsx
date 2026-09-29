@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { mediaUrl } from "../lib/public-url.js";
 import Modal from "../components/Modal.js";
 import { rutubeEmbed } from "@club/shared";
 import { mono, label } from "./ui.js";
@@ -18,7 +19,7 @@ export function PodcastsAdmin() {
       </div>
       {(podcasts.data ?? []).map((p) => (
         <div key={p.id} className="grid grid-cols-[52px_1fr_110px_90px_130px_36px] items-center gap-3 border-t border-[var(--c-line)] px-6 py-3.5 text-sm">
-          {p.cover ? <img src={p.cover} alt="" className="h-12 w-12 rounded-[10px] object-cover" /> : <div className="h-12 w-12 rounded-[10px] bg-[var(--c-bg-sunken)]" />}
+          {p.cover ? <img src={mediaUrl(p.cover)} alt="" className="h-12 w-12 rounded-[10px] object-cover" /> : <div className="h-12 w-12 rounded-[10px] bg-[var(--c-bg-sunken)]" />}
           <div className="min-w-0">
             <div className="truncate font-semibold">{p.title}</div>
             <div className="truncate font-mono text-[11px] text-[var(--c-text-3)]">{p.description}</div>
@@ -69,7 +70,7 @@ function PodcastForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
           <FormField label="Описание" value={f.description} onChange={(v) => set("description", v)} textarea />
           <FormField label="Картинка (ссылка или /assets/…)" value={f.cover} onChange={(v) => set("cover", v)} ph="/assets/dpo-hero.jpg" />
           <div className="grid grid-cols-[1fr_120px] gap-3">
-            <FormField label="Аудио (https или UUID файла Directus)" value={f.audio_url} onChange={(v) => set("audio_url", v)} ph="https://…/episode.mp3 или UUID" />
+            <FormField label="Аудио (ссылка или код из раздела «Медиа»)" value={f.audio_url} onChange={(v) => set("audio_url", v)} ph="https://…/episode.mp3 или UUID" />
             <FormField label="Длительность" value={f.duration} onChange={(v) => set("duration", v)} ph="42 мин" />
           </div>
           <div>

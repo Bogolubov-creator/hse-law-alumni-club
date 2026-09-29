@@ -1,12 +1,12 @@
 import { lookup, type CatalogInfo } from "../lib/catalog-lookup.js";
 import { withCartLock } from "../lib/checkout-store.js";
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { readItems, createItem, updateItem } from "@directus/sdk";
+import { readItems, createItem, updateItem } from "../lib/data-commands.js";
 import { z } from "zod";
 import { cartItemSchema, addLine, setLineQty, summarizeCart, cartLineLimitReached, MAX_CART_LINES, type StoredCartItem } from "@club/shared";
-import { directus } from "../lib/directus.js";
+import { data } from "../lib/data.js";
 
-const di = directus;
+const di = data;
 
 export function cartSession(req: FastifyRequest): string | null {
   const s = req.headers["x-cart-session"];
