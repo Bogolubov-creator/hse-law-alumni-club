@@ -57,8 +57,8 @@ Workflow в `club-pravo-hse-mirror` чекаутит этот репозитор
 `build:mirror` и публикует артефакт через `actions/deploy-pages`
 (как у `dpo-pravo-hse-mirror`, но со сборкой, а не копированием чужого `gh-pages`).
 
-Dispatch: `source_ref=codex/v3-backlog-polish` (или тег/SHA), чтобы на Pages
-попали актуальные PWA/mobile/perf с PR #23.
+Обычная публикация собирается из `main`. При ручном запуске можно указать
+`source_ref` с конкретным тегом или SHA для проверки версии до обновления `main`.
 
 ## Overnight Phase 6 · открытые хвосты (11.09.2026)
 
