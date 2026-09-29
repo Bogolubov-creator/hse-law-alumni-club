@@ -21,7 +21,7 @@ export function hasCookieChoice(): boolean {
   return readCookieConsent() !== null;
 }
 
-/** Нужно ли загружать необязательные трекеры (сейчас на сайте их нет). */
+/** Нужно ли включать необязательную аналитику (page-view маяк клуба). */
 export function allowsOptionalCookies(): boolean {
   return readCookieConsent() === "all";
 }

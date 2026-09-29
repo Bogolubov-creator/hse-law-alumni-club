@@ -1,9 +1,10 @@
+import { socialProgress } from "../lib/social-progress.js";
 import type { FastifyInstance } from "fastify";
 import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
 import { achievementProgress, sanitizeInterests } from "@club/shared";
 import { directus } from "../lib/directus.js";
-import { levelInfo, alumniStats } from "../lib/engine.js";
+import { levelInfo, statsFromLedger } from "../lib/engine.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { makeTgLinkCode } from "../lib/tg-link.js";
 import { anonymizeAlumni } from "../lib/anonymize.js";
@@ -31,45 +32,53 @@ function lastSixMonths(ledger: { delta: number; created_at: string }[], now = ne
 
 export async function meRoutes(app: FastifyInstance) {
   // Ссылка привязки Telegram-бота: t.me/<бот>?start=<подписанный код>.
-  app.get("/me/tg-link", async (req, reply) => {
+  app.get("/me/tg-link", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
     if (a.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
+    if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram пока не подключён" });
+    reply.header("Cache-Control", "no-store");
     const rows = (await di.request((readItems as any)("alumni", { filter: { id: { _eq: a.id } }, limit: 1, fields: ["telegram_id"] }))) as any[];
     return {
       linked: !!rows[0]?.telegram_id,
-      url: `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${makeTgLinkCode(a.id)}`,
+      url: `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${await makeTgLinkCode(a.id)}`,
     };
   });
 
 
-  // Сводка ЛК (профиль + уровень + достижения + активность). Только для верифицированных.
+  // Сводка ЛК (профиль + уровень + достижения + активность).
+  // Pending/rejected тоже получают профиль (фото и статус); скидка – только verified.
   app.get("/me", async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });
-    if (a.verification_status !== "verified")
-      return reply.code(403).send({ error: "ЛК активируется после верификации учебным офисом" });
 
     const ledger = (await di.request(
-      readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at"], limit: -1 }),
-    )) as { delta: number; created_at: string }[];
+      readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, fields: ["delta", "created_at", "reason"], limit: -1 }),
+    )) as { delta: number; created_at: string; reason: string }[];
 
     // Рефералка: сколько человек пришло по моей ссылке.
     const referred = (await di.request(
       (readItems as any)("alumni", { filter: { referred_by: { _eq: a.id } }, limit: -1, fields: ["verification_status"] }),
     )) as { verification_status: string }[];
 
+    const verified = a.verification_status === "verified";
+    const level = levelInfo(a.points_cached ?? 0, verified ? (a.personal_discount ?? 0) : 0);
+    if (!verified) level.discount = 0;
+
+    const social = verified ? await socialProgress(a.id, a.telegram_id) : null;
     return {
+      social: social ? {subscription:social.subscription,reactions_available:social.reactions_available} : undefined,
       alumni: {
+        telegram_linked: !!a.telegram_id, telegram_available: !!env.TELEGRAM_BOT_TOKEN,
         fio: a.fio, cohort: a.cohort, verification_status: a.verification_status, contacts: a.contacts_json ?? {},
         edu_program: a.edu_program, edu_level: a.edu_level, interests: a.interests_json ?? [], avatar: a.avatar,
         referral_code: a.referral_code,
         referrals_verified: referred.filter((r) => r.verification_status === "verified").length,
         referrals_pending: referred.filter((r) => r.verification_status === "pending").length,
       },
-      level: levelInfo(a.points_cached ?? 0, a.personal_discount ?? 0),
-      achievements: achievementProgress(await alumniStats(a.id)),
-      activity: lastSixMonths(ledger),
+      level,
+      achievements: verified ? achievementProgress({ ...statsFromLedger(a, ledger), ...social }) : [],
+      activity: verified ? lastSixMonths(ledger) : [],
     };
   });
 

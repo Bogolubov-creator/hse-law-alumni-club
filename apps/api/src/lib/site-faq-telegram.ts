@@ -5,30 +5,17 @@
 import { readItems } from "@directus/sdk";
 import {
   BOT_FAQ,
+  programsFromApi,
+  tokenize, triggerMatches, findByTriggers,
+  type ClubProgramApi,
   formatPrice,
   reply,
   type BotProgram,
   type BotReply,
-  type BotReplyData,
 } from "@club/shared";
 import { directus } from "./directus.js";
 import { env } from "../env.js";
 import { logFaqEvent } from "./faq-events.js";
-
-function mapFormat(raw: string | null | undefined): string {
-  const f = String(raw || "").toLowerCase();
-  if (/онлайн|online|дистанц/.test(f)) return "online";
-  if (/смешан|mixed|гибрид/.test(f)) return "mixed";
-  if (/очн|offline|офлайн/.test(f)) return "offline";
-  return f || "offline";
-}
-
-function mapType(document: string | null | undefined, title: string): string {
-  const d = `${document || ""} ${title}`.toLowerCase();
-  if (/переподготов/.test(d)) return "ПП";
-  if (/повышен|удостоверен|квалификац/.test(d)) return "ПК";
-  return "";
-}
 
 async function loadPrograms(): Promise<BotProgram[]> {
   try {
@@ -38,32 +25,8 @@ async function loadPrograms(): Promise<BotProgram[]> {
         limit: -1,
         fields: ["id", "slug", "title", "direction", "format", "duration", "price", "document", "dates", "description"],
       }),
-    )) as Array<{
-      id: string;
-      slug: string;
-      title: string;
-      direction?: string | null;
-      format?: string | null;
-      duration?: string | null;
-      price?: number | null;
-      document?: string | null;
-      dates?: { start?: string | null } | null;
-      description?: string | null;
-    }>;
-    return rows.map((p) => ({
-      id: p.id,
-      title: p.title,
-      url: `/dpo/${p.slug}`,
-      sphere: p.direction || "Программы ДПО",
-      type: mapType(p.document, p.title),
-      format: mapFormat(p.format),
-      formatLabel: p.format || undefined,
-      price: typeof p.price === "number" ? Math.round(p.price / 100) : null,
-      duration: p.duration || null,
-      start: p.dates?.start ? `Старт: ${p.dates.start}` : null,
-      startIso: null,
-      keywords: p.description ? [p.description] : [],
-    }));
+    )) as ClubProgramApi[];
+    return programsFromApi(rows);
   } catch {
     return [];
   }
@@ -119,9 +82,16 @@ function formatReply(out: BotReply, base: string): string {
 export async function answerTelegramFaq(query: string): Promise<string | null> {
   const q = String(query || "").trim();
   if (!q || q.length < 2) return null;
-  const programs = await loadPrograms();
-  const data: BotReplyData = { programs, ...BOT_FAQ };
-  const out = reply(q, data);
+  const tokens = tokenize(q);
+  // Telegram не показывает extra-рекомендации для FAQ. Длительность имеет
+  // приоритет над FAQ и вычисляется по каталогу, поэтому её не сокращаем.
+  const needsDuration = BOT_FAQ.duration?.triggers.some(t => triggerMatches(t, tokens));
+  const answer = !needsDuration ? findByTriggers(tokens, BOT_FAQ.answers) : null;
+  const gap = !needsDuration && !answer ? findByTriggers(tokens, BOT_FAQ.gaps) : null;
+  let out: BotReply;
+  if (answer) out = { kind: "answer", answer };
+  else if (gap) out = { kind: "gap", gap };
+  else out = reply(q, { programs: await loadPrograms(), ...BOT_FAQ });
   if (out.kind === "gap" || out.kind === "none") {
     void logFaqEvent({
       kind: out.kind,

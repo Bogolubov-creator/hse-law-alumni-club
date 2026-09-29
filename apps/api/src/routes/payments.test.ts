@@ -46,6 +46,7 @@ function webhook(app: FastifyInstance, ip: string, paymentId = "pay-1", remoteAd
 beforeEach(() => {
   vi.clearAllMocks();
   yk.paymentsEnabled.mockReturnValue(true);
+  yk.createPayment.mockResolvedValue({ id: "pay-new", status: "pending", confirmation: { confirmation_url: "https://yookassa.test/pay/new" } } as any);
   yk.fetchPayment.mockResolvedValue({ id: "pay-1", status: "succeeded", amount: { value: "1000.00", currency: "RUB" }, metadata: { order_number: ORDER } } as any);
   resetDb({
     orders: [{ id: "order-1", number: ORDER, alumni_id: ALUMNI_ID, type: "podcast", status: "new", payment_status: null, total_estimate: 100000, contact_email: "ivan@example.com", contact_fio: "Иван" }],
@@ -170,6 +171,24 @@ describe("POST /orders/:number/pay – ссылка на оплату", () => {
     expect(r.json().payment_url).toContain("https://");
     // сумма берётся из заявки на сервере, а не из запроса клиента
     expect(yk.createPayment).toHaveBeenCalledWith(expect.objectContaining({ amountKop: 100000, orderNumber: ORDER }));
+  });
+
+  it("не отдаёт незащищённую ссылку нового платежа", async () => {
+    yk.createPayment.mockResolvedValue({ id: "pay-new", status: "pending", confirmation: { confirmation_url: "http://yookassa.test/pay/new" } } as any);
+    const app = await build();
+    const r = await app.inject({ method: "POST", url: `/orders/${ORDER}/pay`, headers: { authorization: `Bearer ${memberToken()}` } });
+    expect(r.statusCode).toBe(502);
+    expect(r.json().payment_url).toBeUndefined();
+    expect(db.orders![0]!.payment_id).toBe("pay-new");
+  });
+
+  it("не отдаёт незащищённую ссылку существующего платежа", async () => {
+    db.orders![0]!.payment_id = "pay-1";
+    yk.fetchPayment.mockResolvedValue({ id: "pay-1", status: "pending", confirmation: { confirmation_url: "http://yookassa.test/pay/old" } } as any);
+    const app = await build();
+    const r = await app.inject({ method: "POST", url: `/orders/${ORDER}/pay`, headers: { authorization: `Bearer ${memberToken()}` } });
+    expect(r.statusCode).toBe(502);
+    expect(yk.createPayment).not.toHaveBeenCalled();
   });
 
   it("уже оплаченную заявку повторно оплатить нельзя", async () => {

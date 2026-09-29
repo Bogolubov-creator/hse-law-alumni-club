@@ -1,0 +1,48 @@
+import { test, expect } from "@playwright/test";
+const base = (process.env.E2E_BASE_URL || "http://127.0.0.1:4297/club-pravo-hse-mirror").replace(/\/$/, "");
+test("сохранение, перезагрузка, фильтр, удаление и отмена", async ({ page }) => {
+  await page.goto(`${base}/changes/tg-9`);
+  await page.getByRole("button", { name: "Только необходимые" }).click();
+  const save = page.getByRole("button", { name: "Сохранить", exact: true });
+  await save.click();
+  await expect(page.getByRole("button", { name: "Сохранено", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.goto(`${base}/saved`);
+  await expect(page.getByRole("heading", { name: /№ 941/ })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: /№ 941/ })).toBeVisible();
+  await page.getByRole("combobox", { name: "Раздел", exact: true }).selectOption("podcast");
+  await expect(page.getByRole("heading", { name: "Ничего не найдено" })).toBeVisible();
+  await page.getByRole("combobox").selectOption("all");
+  await page.getByRole("button", { name: /^Удалить из сохранённого:/ }).click();
+  await expect(page.getByRole("heading", { name: "Сохраните первый материал" })).toBeVisible();
+  await page.getByRole("button", { name: "Отменить", exact: true }).click();
+  await page.locator("article").getByRole("link", { name: /№ 941/ }).click();
+  await expect(page.getByRole("button", { name: "Сохранено", exact: true })).toBeVisible();
+});
+test("отказ хранилища не отображается как сохранение", async ({ page }) => {
+  await page.goto(`${base}/changes/tg-9`);
+  await page.getByRole("button", { name: "Только необходимые" }).click();
+  await page.evaluate(() => { const original = Storage.prototype.setItem; Storage.prototype.setItem = function(key, value) { if (key === "club-reading-v1") throw new Error("quota"); return original.call(this, key, value); }; });
+  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("Не удалось сохранить");
+  await expect(page.getByRole("button", { name: "Сохранить", exact: true })).toHaveAttribute("aria-pressed", "false");
+});
+test("недавние материалы и ручная отметка прочтения", async ({ page }) => {
+  await page.goto(`${base}/changes/tg-9`);
+  await page.getByRole("button", { name: "Только необходимые" }).click();
+  await expect(page.getByRole("button", { name: "Отметить прочитанным", exact: true })).toBeVisible();
+  await page.getByRole("navigation", { name: "Содержание справки" }).getByRole("button", { name: "Что делать", exact: true }).click();
+  await expect(page.locator(".changes-brief h3").filter({ hasText: "Что делать" })).toBeFocused();
+  await page.getByRole("button", { name: "Отметить прочитанным", exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Прочитано", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.goto(`${base}/changes?q=казначейского&read=unread`);
+  await expect(page.locator(".changes-row a[href*='/tg-9']")).toHaveCount(0);
+  await page.goto(`${base}/lk`);
+  const recent = page.getByRole("region", { name: "Продолжить", exact: true });
+  await expect(recent.getByRole("link", { name: /№ 941/ })).toBeVisible();
+  await recent.getByRole("button", { name: "Очистить историю" }).click();
+  await expect(recent).toHaveCount(0);
+  await page.reload();
+  await expect(recent).toHaveCount(0);
+});

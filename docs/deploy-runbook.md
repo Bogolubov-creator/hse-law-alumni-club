@@ -1,17 +1,93 @@
 # Прод-runbook — Клуб выпускников факультета права Вышки
 
+## Проверенный порядок релиза, 14.09.2026
+
+Текущий результат проверок и границы готовности: [release-readiness.md](release-readiness.md).
+Для нового деплоя используйте этот порядок; ручной `up` ниже оставлен для диагностики.
+
+1. Сохраните рабочий env **вне git-каталога**, например `/etc/club/runtime.env`, с правами 600.
+   Пример значений находится в `.env.example`; плейсхолдеры нужно заменить.
+2. Обязательны `APP_ENV=production`, `SEED_DEMO=false`, разные случайные `AUTH_SECRET` и
+   `ADMIN_AUTH_SECRET`, настоящие SMTP и отправитель, рабочий канал уведомлений офиса.
+   При `OFFICE_NOTIFY_CHANNEL=email` задайте `OFFICE_EMAIL`; при `telegram` нужны оба `OFFICE_TG_*`.
+3. `CHECKOUT_DB_USER=club_api` и случайный hex-пароль `CHECKOUT_DB_PASSWORD` задают отдельную
+   SQL-роль API. `CHECKOUT_DATABASE_URL` можно оставить пустым: Compose соберёт внутренний URL.
+   Если URL задан вручную, он должен ссылаться на эту же роль и базу. Владелец БД и роль API различаются.
+4. `PUBLIC_URL=https://<сайт>`, `DIRECTUS_PUBLIC_URL=https://<studio>`, `WEB_DOMAIN`, `ADMIN_DOMAIN`
+   и `DIRECTUS_CORS_ORIGIN` должны соответствовать DNS сервера. API и PostgreSQL наружу не открывать.
+   API доверяет одному прокси из внутренней Docker-сети; публикация порта API на хосте запрещена.
+5. Для обновления существующего стенда задайте `BACKUP_ENCRYPTION_KEY` и внешнее место хранения копий.
+   Выполните из нужного checkout:
+
+```bash
+export ENV_FILE=/etc/club/runtime.env
+bash scripts/deploy.sh
+```
+
+Скрипт собирает образы, проверяет production-конфигурацию, сохраняет и проверяет копию БД,
+сохраняет файлы CMS, запускает bootstrap, миграции, API, web и Caddy, перезагружает конфигурацию
+прокси и ждёт `/ready`. Ошибка прерывает деплой. Автоматического отката данных нет.
+При первом запуске копия отсутствующего стенда не создаётся. Перед переносом существующего
+контента включите окно обслуживания: дамп БД и архив uploads должны относиться к одному состоянию.
+
+`bootstrap` создаёт схему и справочники, `migrate` применяет все SQL-файлы и индексы.
+API зависит от успешного окончания обоих шагов. Миграции добавочные и повторяемые;
+обнаруженные конфликты данных исправляют отдельно, без автоматического удаления строк.
+Роль API получает права только на прикладные таблицы, без таблиц пользователей/политик Directus.
+
+Readiness проверяет CMS сервисным токеном и наличие служебных таблиц SQL. `/health` проверяет
+только процесс. Письма, Telegram, платежи и push требуют отдельной проверки доставки:
+наличие ключей в дашборде не равно успешной интеграции.
+
+### Резервные копии и откат
+
+`backup-db.sh`, `backup-verify.sh` и `backup-uploads.sh` принимают `ENV_FILE` и `BACKUP_DIR`.
+Для иного имени Compose-проекта задайте также `PG_CONTAINER` / `DIRECTUS_CONTAINER`.
+Проверка SQL восстанавливает копию в новую уникальную временную базу с `ON_ERROR_STOP=1`.
+Файловый архив проверяется полным чтением tar. Ключ храните отдельно; копии выгружайте offsite.
+Проверка tar не заменяет пробного восстановления файлов в отдельный том и открытия медиа.
+
+При сбое не удаляйте тома (`down -v` запрещён на рабочем стенде). Сохраните журналы и SHA,
+вернитесь к предыдущему проверенному commit в отдельном checkout и пересоберите его образы.
+Добавленные таблицы не удаляйте для отката приложения. Восстановление БД/медиа выполняйте
+в отдельные тома с проверкой целостности, затем переключайте стек в окно обслуживания.
+Текущий релиз содержит исправления безопасности; откат к старому коду допустим только как
+временная аварийная мера с ограничением доступа.
+
+### Telegram и мобильное приложение
+
+При заданном токене production-API на старте настраивает команды и кнопку «Клуб» на `/tg`.
+Webhook нужно отдельно зарегистрировать на публичном HTTPS через `scripts/setup-telegram-webhook.ts`
+и проверить `getWebhookInfo`. Не включайте polling одновременно с webhook.
+Токен из переписки следует заменить перед публичным запуском; новый храните только во внешнем env.
+
+Привязка из профиля действует 10 минут, одноразовая и не переносит существующую связь.
+Старые бессрочные ссылки недействительны. После привязки вход Mini App использует проверенное
+сервером `initData`. Для смены связанного Telegram нужен подтверждённый запрос в поддержку.
+Реальный Telegram на iOS/Android, платежный магазин и push-устройства принимаются отдельно.
+
+### Воспроизводимая проверка
+
+```bash
+pnpm -r build
+pnpm -r test
+bash scripts/test-integration.sh
+LOCAL_QA_ENV=/путь/к/изолированному/runtime.env E2E_TRUSTED_PROXY_SIMULATION=true E2E_BASE_URL=http://127.0.0.1:5296 pnpm --filter @club/web exec playwright test
+```
+
+На Vite-стенде `E2E_TRUSTED_PROXY_SIMULATION=true` моделирует разных посетителей через
+доверенный локальный прокси: четыре браузера не расходуют один лимит обращений.
+Флаг разрешён только для localhost, боевые ограничения API сохраняются.
+
+Основной Playwright-набор исключает архивные `staged-*`. Их включают только явно через
+`E2E_INCLUDE_STAGED=true` после настройки прежнего стенда. Мутационные проверки поддержки и корзины
+нельзя направлять на production. `scripts/release-smoke.py` работает только с отдельным локальным
+стеком `alumni-release-qa`, SMTP Mailpit и базой `club_release`; адреса зафиксированы намеренно.
+
+
+
 Оперативная инструкция для оператора VPS: деплой, обновление, откат, восстановление,
 ротация секретов, мониторинг, инциденты. Все команды — от пользователя с доступом к `docker`.
-
-## 0. Где запускать
-
-На macOS для локальной проверки используется Docker Desktop. Публичному сайту нужен
-отдельный VPS с Ubuntu, доменом и DNS-записями для сайта и админки. Ubuntu на Mac
-устанавливать не требуется. На VPS установите Docker Engine и Compose по
-[официальной инструкции Docker](https://docs.docker.com/engine/install/ubuntu/),
-проверьте `docker compose version` и доступность портов 80/443. Docker предупреждает,
-что опубликованные порты контейнеров могут обходить правила `ufw`; сверяйте
-файрвол хостинга и фактические публикации через `docker compose ps`.
 
 ## Архитектура (кратко)
 
@@ -41,24 +117,15 @@ Cron-задачи (decay, dpo-sync, напоминания, ретенция П�
   `DIRECTUS_CORS_ORIGIN=https://admin.<домен>` (не `true`).
 - `SEED_DEMO=false` – одним флагом закрываются и демо-контент витрин, и тестовые аккаунты
   (`TEST_EDITOR_*`, `TEST_ALUMNI_*`); иначе editor со слабым паролем станет бэкдором.
-- `CHECKOUT_DATABASE_URL` – укажите действующий URL к PostgreSQL внутри Compose.
-  Для первого запуска используйте пользователя `POSTGRES_USER` и пароль
-  `POSTGRES_PASSWORD` из этого же `.env` (пароль в URL кодируется). Шаблон с
-  `replace_with_postgres_password` не является рабочим подключением.
-  Таблицы checkout, поддержки и почтовой очереди создаются
-  `scripts/apply-indexes.sh` после bootstrap.
+- **`VITE_LOCAL_REVIEW` не задавать** на сборке web (docker build-args его не передают).
+  Иначе на `/privacy` / `/confidential` / `/requisites` появится баннер «Проект юридических
+  документов». Локальный стенд: `VITE_LOCAL_REVIEW=true pnpm -C apps/web build` – см. handoff.
 - **`SMTP_*` обязателен**, а не опционален: без почтового канала не работают восстановление
   пароля (`/auth/forgot` честно отвечает 503) и подтверждение адреса при регистрации.
-- Выбранный `OFFICE_NOTIFY_CHANNEL` должен быть настроен: `email` требует
-  `OFFICE_EMAIL` и SMTP, `telegram` требует `OFFICE_TG_BOT_TOKEN` и
-  `OFFICE_TG_CHAT_ID`, `both` требует оба набора. API не стартует с пустым
-  выбранным каналом.
 - Завести сотрудникам офиса **личные** аккаунты Directus с ролью `editor` (см. §1.1), а не
   выдавать общий Administrator.
-- Опционально: вход через `TELEGRAM_*`, `YOOKASSA_*`, `VAPID_*` (пусто = пуши выключены),
+- Опционально: `TELEGRAM_*`, `OFFICE_TG_*`, `YOOKASSA_*`, `VAPID_*` (пусто = пуши выключены),
   `SENTRY_DSN`, `BACKUP_OFFSITE_REMOTE` (rclone-remote для offsite-бэкапа в РФ).
-- До публичного запуска подтвердить право на раздачу файлов фирменных шрифтов
-  с домена клуба – вопрос и контакт правообладателя записаны в `DESIGN.md`.
 
 ### Контент, которого нет в репозитории
 
@@ -118,7 +185,7 @@ Bootstrap создаёт две политики (Directus 11, идемпоте�
 иначе в аудите не видно, кто именно что сделал.
 
 > Обновляетесь со старой версии, где офис работал под Administrator? После
-> `docker compose up -d --build` **перезапустите `bootstrap`** — политики создадутся, роль
+> `docker compose --env-file "$ENV_FILE" up -d --build` **перезапустите `bootstrap`** — политики создадутся, роль
 > сервисного аккаунта понизится сама. Затем переведите сотрудников на личные `editor`-аккаунты.
 
 ## 1.2. Подтверждение почты при регистрации
@@ -136,24 +203,21 @@ Bootstrap создаёт две политики (Directus 11, идемпоте�
 ```bash
 git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club-pravo-hse
 cd club-pravo-hse
-cp .env.example .env      # затем заполнить (см. §1)
-docker compose up -d --build
-docker compose logs -f bootstrap   # дождаться «Bootstrap завершён», Ctrl+C
-./scripts/apply-indexes.sh          # SQL-миграции и индексы БД после bootstrap
+install -m 600 .env.example /etc/club/runtime.env      # затем заполнить (см. §1)
+docker compose --env-file "$ENV_FILE" up -d --build
+docker compose --env-file "$ENV_FILE" logs -f bootstrap   # дождаться «Bootstrap завершён», Ctrl+C
+./scripts/apply-indexes.sh          # индексы БД под масштаб
 ```
 
 Установить cron из `infra/cron.example` (`crontab -e`): бэкап 03:30, проверка бэкапа Пн 04:00,
-uptime каждые 5 мин. Проверить `docker compose ps`, затем
-`curl -fsS https://<домен>/api/ready` – ответ должен содержать
-`"status":"ok"` и `"checkout":{"ok":true}`. До применения миграций или при
-недоступной базе `/api/ready` отвечает 503.
+uptime каждые 5 мин. Проверить: `curl -fsS https://<домен>/api/health` → `{"status":"ok"}`.
 
 ## 3. Обновление / редеплой
 
 ```bash
 git pull
-docker compose up -d --build       # пересобирает изменённые образы
-./scripts/apply-indexes.sh          # идемпотентно; SQL-миграции и индексы
+docker compose --env-file "$ENV_FILE" up -d --build       # пересобирает изменённые образы
+./scripts/apply-indexes.sh          # идемпотентно; на случай новых индексов
 ```
 
 SIGTERM обрабатывается gracefully (cron останавливается, активные запросы дозавершаются,
@@ -161,33 +225,26 @@ SIGTERM обрабатывается gracefully (cron останавливает
 
 ## 3.1. E2E-проверка перед релизом (Playwright)
 
-Публичные проверки гоняются с компьютера оператора против целевого сайта; в CI
-живого стека нет. После деплоя выполнить безопасный набор:
+Набор гоняется против **живого** стека (локального или staging) — в CI его нет,
+там нет БД/API. Прогонять после деплоя перед тем, как объявить релиз:
 
 ```bash
-E2E_BASE_URL=https://<домен> pnpm --filter @club/web exec playwright test e2e/public.spec.ts --project=desktop --project=mobile
+pnpm --filter @club/web e2e
 ```
 
-На новой машине перед тестом: `pnpm --filter @club/web exec playwright install chromium webkit`.
-`public.spec.ts` подменяет каталог и новости для проверки интерфейса; живые
-`GET /api/programs` и `GET /api/news` проверьте отдельно на целевом сервере.
-Полный `pnpm --filter @club/web e2e` включает сценарии с записью заявок и
-зависимостями от локального staged-окружения; на публичном сайте его не запускать.
-На изолированном стенде отдельно запускайте `cart-v2.spec.ts` для десктопа и
-`mobile-cart.spec.ts` для телефона: они пишут тестовые корзины, но подменяют
-отправку заявки. Реальный checkout и миграцию проверяйте на отдельной тестовой БД.
+Другой хост: `E2E_BASE_URL=https://<домен> pnpm --filter @club/web e2e`.
+Первый запуск на новой машине: `npx playwright install chromium`.
+Покрыто (24 проверки, десктоп + iPhone): публичные витрины, юр-страницы, robots/sitemap,
+`noindex` приватных разделов и 404, мобильная оболочка (табы, карточка программы, мерч
+с размерами, плеер, пустая корзина) и то, что десктоп **не** получает мобильную оболочку.
+Набор **read-only**: заявки не отправляются, данные стенда не меняются.
 
 ## 4. Откат
 
-- **Код:** `git revert <sha>` (или `git checkout <прежний-tag>`), затем `docker compose up -d --build`.
-- **Быстрый откат сервиса:** держать предыдущий образ; `docker compose up -d` на нём.
+- **Код:** `git revert <sha>` (или `git checkout <прежний-tag>`), затем `docker compose --env-file "$ENV_FILE" up -d --build`.
+- **Быстрый откат сервиса:** держать предыдущий образ; `docker compose --env-file "$ENV_FILE" up -d` на нём.
 - **Данные:** если проблема повредила БД — восстановить из бэкапа (§5). Схема Directus и сиды
   идемпотентны — повторный `bootstrap` безопасен.
-- **Checkout и резерв:** после первых заявок нельзя просто откатить код или удалить
-  `club_checkout_commits`: прежний код не знает о зарезервированном мерче.
-  Остановите оформление, сохраните снимок `orders`, `products` и этой таблицы,
-  сверяйте резервы и предпочтите исправляющий релиз. Подробности –
-  [data-and-rollback.md](staged-refinement/data-and-rollback.md).
 
 ## 5. Восстановление из бэкапа
 
@@ -197,7 +254,7 @@ E2E_BASE_URL=https://<домен> pnpm --filter @club/web exec playwright test e
 ```bash
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY \
   -in backups/club-YYYY-MM-DD-HHMM.sql.gz.enc | gunzip \
-  | docker compose exec -T postgres psql -U club -d club
+  | docker compose --env-file "$ENV_FILE" exec -T postgres psql -U club -d club
 ```
 
 Ключ `BACKUP_ENCRYPTION_KEY` хранить **отдельно** от бэкапов. Offsite-копия — при заданном
@@ -205,7 +262,7 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY
 
 ## 6. Ротация секретов
 
-- **`AUTH_SECRET` / `ADMIN_AUTH_SECRET`:** заменить в `.env`, `docker compose up -d api`.
+- **`AUTH_SECRET` / `ADMIN_AUTH_SECRET`:** заменить в `.env`, `docker compose --env-file "$ENV_FILE" up -d api`.
   Все текущие сессии ЛК/админки станут недействительны (потребуется повторный вход) — это ожидаемо.
 - **`DIRECTUS_SERVICE_TOKEN`:** пересоздать токен сервис-аккаунта в Directus Studio, обновить `.env`,
   перезапустить `api` и `bootstrap`.
@@ -231,11 +288,11 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY
   React Router 8, который требует React 19, а сайт на React 18. К нам она не относится:
   RSC-режим и серверные экшены не используются — это обычный SPA на `BrowserRouter`.
   **Снять исключение** при переезде на React 19 + React Router 8. Учтите: `pnpm audit`
-  поведение вывода отчёта может меняться между версиями pnpm; проверяйте код возврата.
+  всё равно печатает эту запись в отчёте, но код возврата с `--audit-level high` уже нулевой.
 
 ## 7. Мониторинг
 
-- **Healthchecks:** у всех сервисов в compose (`docker compose ps` показывает healthy/unhealthy).
+- **Healthchecks:** у всех сервисов в compose (`docker compose --env-file "$ENV_FILE" ps` показывает healthy/unhealthy).
   `/api/health` — liveness, `/api/ready` — связь с Directus.
 - **Uptime:** `scripts/uptime-check.sh` (host-cron) шлёт алерт в офисный TG при падении/восстановлении.
 - **Ошибки:** Sentry при заданном `SENTRY_DSN` (ПДн вычищаются в `beforeSend`).
@@ -245,9 +302,9 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY
 
 ## 8. Инциденты
 
-- **API не стартует после деплоя:** `docker compose logs api` — при `APP_ENV=production` в начале
+- **API не стартует после деплоя:** `docker compose --env-file "$ENV_FILE" logs api` — при `APP_ENV=production` в начале
   печатаются причины fail-fast (`[prod-config] …`). Исправить `.env`, перезапустить.
-- **Directus/БД недоступны:** `/api/ready` → 503; проверить `docker compose ps`, логи postgres/directus.
+- **Directus/БД недоступны:** `/api/ready` → 503; проверить `docker compose --env-file "$ENV_FILE" ps`, логи postgres/directus.
 - **Компрометация:** сменить `AUTH_SECRET` (отзыв всех сессий) и `DIRECTUS_SERVICE_TOKEN`,
   проверить `GET /api/admin/audit`, при необходимости восстановить БД из чистого бэкапа.
 - **Наплыв/DoS:** per-IP rate-limit + per-route лимиты активны; при необходимости ужесточить

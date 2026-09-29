@@ -16,42 +16,42 @@
   font-style: normal;
   font-weight: 200;
   font-display: swap;
-  src: url('/fonts/HSESans-Thin.woff2') format('woff2');
+  src: url('HSESans-Thin.woff2') format('woff2');
 }
 @font-face {
   font-family: 'HSE Sans';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/HSESans-Regular.woff2') format('woff2');
+  src: url('HSESans-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'HSE Sans';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/HSESans-SemiBold.woff2') format('woff2');
+  src: url('HSESans-SemiBold.woff2') format('woff2');
 }
 @font-face {
   font-family: 'HSE Sans';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/HSESans-Bold.woff2') format('woff2');
+  src: url('HSESans-Bold.woff2') format('woff2');
 }
 @font-face {
   font-family: 'HSE Sans';
   font-style: normal;
   font-weight: 900;
   font-display: swap;
-  src: url('/fonts/HSESans-Black.woff2') format('woff2');
+  src: url('HSESans-Black.woff2') format('woff2');
 }
 @font-face {
   font-family: 'HSE Sans';
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/HSESans-Italic.woff2') format('woff2');
+  src: url('HSESans-Italic.woff2') format('woff2');
 }
 
 /* ── HSE Slab: акцентные заголовки ── */
@@ -60,19 +60,19 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/HSESlab-Regular.woff2') format('woff2');
+  src: url('HSESlab-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'HSE Slab';
   font-style: normal;
   font-weight: 900;
   font-display: swap;
-  src: url('/fonts/HSESlab-Black.woff2') format('woff2');
+  src: url('HSESlab-Black.woff2') format('woff2');
 }
 @font-face {
   font-family: 'HSE Slab';
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/HSESlab-Italic.woff2') format('woff2');
+  src: url('HSESlab-Italic.woff2') format('woff2');
 }

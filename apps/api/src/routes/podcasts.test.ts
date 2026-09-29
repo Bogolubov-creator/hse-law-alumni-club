@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
@@ -22,6 +22,11 @@ const { podcastsRoutes } = await import("./podcasts.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
 const { env } = await import("../env.js");
 const notify = await import("../lib/notify.js");
+const { directus } = await import("../lib/directus.js");
+const { request: fakeRequest } = await import("../test/fake-directus.js");
+import type { Descriptor } from "../test/fake-sdk.js";
+
+afterEach(() => vi.restoreAllMocks());
 
 const ALUMNI = "alumni-1";
 const token = () => jwt.sign({ alumni_id: ALUMNI, sub: "user-1", ver: 0 }, env.AUTH_SECRET, { expiresIn: "7d" });
@@ -46,6 +51,49 @@ beforeEach(() => {
 });
 
 describe("POST /podcasts/subscribe – заявка не задваивается", () => {
+  it("потеря ответа после записи не создаёт второй заказ", async () => {
+    let writes = 0;
+    vi.spyOn(directus, "request").mockImplementation(async (command: any) => {
+      const desc = command as Descriptor;
+      const result = await fakeRequest(desc);
+      if (desc.kind === "createItem" && desc.collection === "orders") {
+        writes++;
+        throw new Error("connection reset after commit");
+      }
+      return result;
+    });
+    const app = await build();
+    const result = await subscribe(app);
+    expect(result.statusCode).toBe(500);
+    expect(writes).toBe(1);
+    expect(db.orders).toHaveLength(1);
+    expect(notify.notifyOffice).not.toHaveBeenCalled();
+    const retry = await subscribe(app);
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json().already).toBe(true);
+    expect(db.orders).toHaveLength(1);
+    await app.close();
+  });
+
+  it("коллизия номера повторяет запись со следующим номером", async () => {
+    const numbers: string[] = [];
+    vi.spyOn(directus, "request").mockImplementation(async (command: any) => {
+      const desc = command as Descriptor;
+      if (desc.kind === "createItem" && desc.collection === "orders") {
+        numbers.push(desc.data.number);
+        if (numbers.length === 1) throw { errors: [{ extensions: { code: "RECORD_NOT_UNIQUE" } }] };
+      }
+      return fakeRequest(desc);
+    });
+    const app = await build();
+    expect((await subscribe(app)).statusCode).toBe(200);
+    expect(numbers).toHaveLength(2);
+    expect(numbers[0]).not.toBe(numbers[1]);
+    expect(db.orders).toHaveLength(1);
+    expect(notify.notifyOffice).toHaveBeenCalledTimes(1);
+    await app.close();
+  });
+
   it("первый вызов создаёт заявку и зовёт офис", async () => {
     const app = await build();
     const r = await subscribe(app);

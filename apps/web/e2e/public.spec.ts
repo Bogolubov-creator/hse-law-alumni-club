@@ -1,5 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { preparePage } from "./harness.js";
+import { preparePage, mockPublicApi } from "./harness.js";
+
+test.beforeEach(async ({ page }) => { await mockPublicApi(page); });
 
 /**
  * Публичные витрины (десктоп + мобила). Только чтение: ничего не отправляем.
@@ -80,21 +82,22 @@ test("скидка выпускника не раскрывается гостю
   await expect(page.getByText(/выпускнику|цена выпускника/)).toHaveCount(0);
 });
 
-test("герой ведёт гостя во вступление, а не во вход", async ({ page, isMobile }) => {
-  test.skip(!!isMobile, "на телефоне главная – native app-shell");
+test("герой ведёт гостя во вступление", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  const hero = page.locator("#top");
-  await expect(hero.getByRole("link", { name: "Вступить в клуб" })).toBeVisible();
-  await expect(hero.getByRole("link", { name: /Уже в клубе – войти/ })).toBeVisible();
+  const hero = page.getByRole("region", { name: "Клуб выпускников факультета права", exact: true });
+  const join = hero.getByRole("link", { name: "Вступить в клуб", exact: true });
+  await expect(join).toHaveAttribute("href", "/join");
+  await expect(hero.getByRole("link", { name: "Программы ДПО", exact: true })).toHaveAttribute("href", "/dpo");
+  await join.click();
+  await expect(page).toHaveURL(/\/join$/);
 });
 
-test("якорь #kak ведёт на объяснение вступления, а не на «Три причины»", async ({ page, isMobile }) => {
-  test.skip(!!isMobile, "на телефоне главная – native app-shell");
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+test("якорь #kak открывает шаги вступления", async ({ page }) => {
+  await page.goto("/#kak", { waitUntil: "domcontentloaded" });
   const kak = page.locator("#kak");
-  await expect(kak.getByRole("heading", { name: /Три шага и честные сроки/ })).toBeVisible();
-  await expect(kak.getByText(/обычно 1–3 рабочих дня/)).toBeVisible();
-  await expect(kak.getByText(/Оплаты на сайте нет/)).toBeVisible();
+  await expect(kak.getByRole("heading", { name: /Три шага, и вы в клубе/ })).toBeVisible();
+  await expect(kak.getByText(/Офис сверяет выпуск с реестром факультета/i)).toBeVisible();
+  await expect(kak.getByText(/честные сроки|1–3 рабочих дня/)).toHaveCount(0);
 });
 
 test("новости: список открывается и ведёт на публикацию", async ({ page }) => {

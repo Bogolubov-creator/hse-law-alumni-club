@@ -1,3 +1,4 @@
+import { seedClientStorage } from "./harness.js";
 import { test, expect, type Page } from "@playwright/test";
 
 /**
@@ -59,6 +60,7 @@ async function mockProfile(page: Page, over: Partial<Record<"me" | "ledger", unk
 }
 
 test.describe("Профиль v2", () => {
+  test.beforeEach(async ({ page }) => seedClientStorage(page));
   test("гостя уводит на вход, а не показывает пустую форму", async ({ page }) => {
     await page.goto("/lk/profile");
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
@@ -72,7 +74,7 @@ test.describe("Профиль v2", () => {
     // Удостоверение
     await expect(page.getByText("Кондратьев Сергей Андреевич")).toBeVisible();
     await expect(page.getByText("подтверждён")).toBeVisible();
-    await expect(page.getByRole("button", { name: "загрузить фото" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "загрузить фото", exact: true })).toBeVisible();
 
     // Форма приходит заполненной с сервера, а не пустой
     await expect(page.getByLabel("фио")).toHaveValue("Кондратьев Сергей Андреевич");
@@ -89,9 +91,9 @@ test.describe("Профиль v2", () => {
     await expect(page.getByText("Списание за неактивность")).toBeVisible();
     await expect(page.getByText("-50")).toBeVisible();
 
-    // Правила достижений: описание видно, прогресс посчитан
-    await expect(page.getByText("Оформлена первая заявка в клубе")).toBeVisible();
-    await expect(page.getByText("2 / 5")).toBeVisible();
+    // В профиле счётчик и прямой переход; полный прогресс проверяется в lk-v2.
+    await expect(page.getByText("открыто 1 из 2", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Открыть достижения →" })).toHaveAttribute("href", "/lk?section=achievements");
   });
 
   test("сохранение отправляет введённые данные на сервер", async ({ page }) => {
@@ -160,4 +162,18 @@ test.describe("Профиль v2", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });
+});
+
+test("Telegram: одноразовая ссылка появляется только по явному действию", async ({ page }) => {
+  await seedClientStorage(page);
+  await mockProfile(page, { me: { ...ME, alumni: { ...ME.alumni, telegram_available: true, telegram_linked: false } } });
+  let calls = 0;
+  await page.route("**/api/me/tg-link", r => { calls++; return r.fulfill({ json: { linked: false, url: "https://t.me/pravohse_alumni_bot?start=l" + "x".repeat(32) } }); });
+  await page.goto("/lk/profile");
+  await expect(page.getByRole("button", { name: "Связать с Telegram" })).toBeVisible();
+  expect(calls).toBe(0);
+  await page.getByRole("button", { name: "Связать с Telegram" }).click();
+  await expect(page.getByRole("link", { name: "Открыть бота" })).toHaveAttribute("href", /start=l/);
+  await expect(page.getByText(/Ссылка действует 10 минут/)).toBeVisible();
+  expect(calls).toBe(1);
 });

@@ -2,10 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { PODCAST_SUB_PRICE_KOP, orderNumber, rutubeEmbed } from "@club/shared";
+import { PODCAST_SUB_PRICE_KOP, orderNumber, rutubeEmbed, securePaymentUrl } from "@club/shared";
 import { env } from "../env.js";
 import { directus } from "../lib/directus.js";
-import { lastOrderSeq } from "../lib/order-number.js";
+import { isUniqueViolation, lastOrderSeq } from "../lib/order-number.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { notifyOffice } from "../lib/notify.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
@@ -124,7 +124,7 @@ function verifyAudioSig(id: string, holder: string, exp: number, sig: string): b
 
 /**
  * Подкасты клуба. Список публичен (обложка/описание), но audio_url отдаётся
- * ТОЛЬКО активным подписчикам (подписка 3 999 ₽/год, alumni.podcast_sub_until).
+ * ТОЛЬКО активным подписчикам (подписка 4 999 ₽/год, alumni.podcast_sub_until).
  * Оформление подписки = заявка type=podcast (+онлайн-оплата ЮKassa при ключах);
  * подписку активирует оплата (webhook) или офис вручную из админ-панели.
  */
@@ -216,7 +216,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
       let payment_url: string | undefined;
       if (paymentsEnabled() && pending[0].payment_id) {
         const existing = await fetchPayment(pending[0].payment_id).catch(() => null);
-        if (existing?.status === "pending") payment_url = existing.confirmation?.confirmation_url;
+        if (existing?.status === "pending") payment_url = securePaymentUrl(existing.confirmation?.confirmation_url);
       }
       return { number: pending[0].number, payment_url, already: true };
     }
@@ -239,7 +239,8 @@ export async function podcastsRoutes(app: FastifyInstance) {
         }));
         created = true;
       } catch (e) {
-        if (attempt === 5) { req.log.error({ err: e }, "podcast sub order failed"); return reply.code(500).send({ error: "Не удалось оформить подписку, попробуйте ещё раз" }); }
+        // При потере ответа запись могла сохраниться: новый номер создаст дубль.
+        if (!isUniqueViolation(e) || attempt === 5) { req.log.error({ err: e }, "podcast sub order failed"); return reply.code(500).send({ error: "Не удалось оформить подписку, попробуйте ещё раз" }); }
       }
     }
 
@@ -257,7 +258,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
           orderNumber: number,
           customerEmail: contacts.email,
         });
-        payment_url = payment.confirmation?.confirmation_url;
+        payment_url = securePaymentUrl(payment.confirmation?.confirmation_url);
         const rows = (await di.request(readItems("orders", { filter: { number: { _eq: number } }, limit: 1, fields: ["id"] }))) as any[];
         if (rows[0]) await di.request((updateItem as any)("orders", rows[0].id, { payment_id: payment.id, payment_status: payment.status }));
       } catch (e) {

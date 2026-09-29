@@ -1,6 +1,8 @@
+import { requestJson } from "./http.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cartSummarySchema, programsSchema, programFullSchema, productsSchema, meSchema, orderResultSchema } from "@club/shared";
-import { apiGet, retryUnlessClientError, type CartSummary, type Program, type ProgramFull, type Product, type Me } from "./api.js";
+import { cartSummarySchema, programsSchema, programFullSchema, productsSchema, orderResultSchema } from "@club/shared";
+import { apiGet, retryUnlessClientError, type CartSummary, type Program, type ProgramFull, type Product } from "./api.js";
+import { useMe } from "./queries.js";
 
 const CART_KEY = "club_cart";
 const TOKEN_KEY = "club_token";
@@ -12,13 +14,11 @@ export function cartSession(): string {
 }
 
 async function cartFetch<T>(method: string, body?: unknown, schema?: { parse: (d: unknown) => T }): Promise<T> {
-  const res = await fetch("/api/cart", {
+  const data = await requestJson<T>("/cart", {
     method,
     headers: { accept: "application/json", "content-type": "application/json", "x-cart-session": cartSession() },
     body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any)?.error || `API ${res.status}`);
+  }, { errorMessage: (status, data) => data?.error || `API ${status}` });
   return schema ? schema.parse(data) : (data as T);
 }
 
@@ -49,7 +49,7 @@ export function useProducts() {
 /** Скидка выпускника (если вошёл и верифицирован) – для справочного бейджа на витринах. */
 export function useMemberDiscount(): number {
   const token = localStorage.getItem(TOKEN_KEY);
-  const q = useQuery({ queryKey: ["me-discount", token], queryFn: () => apiGet<Me>("/me", token!, meSchema), enabled: !!token, retry: false });
+  const q = useMe(token);
   return q.data?.level.discount ?? 0;
 }
 
