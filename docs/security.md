@@ -44,7 +44,7 @@ Docker может читать окружение и тома. Отдельны�
 в новой архитектуре нет. Имена ролей `admin`, `Administrator`, `editor`, `alumni`
 сопоставляются явно; статус verified не предоставляет прав сотрудника.
 
-В [auth.ts](../apps/api/src/lib/auth.ts) `resolveAdmin` проверяет HS256, назначение
+В [auth.ts](../backend/src/lib/auth.ts) `resolveAdmin` проверяет HS256, назначение
 сессии и отзыв `jti`, затем читает текущие status, роль, provider/TFA и поколение
 служебной сессии из PostgreSQL. Блокировка, удаление и понижение роли действуют на
 следующий запрос; ошибка хранилища закрывает доступ. `requireFullAdmin` отдельно
@@ -71,7 +71,7 @@ Admin logout сохраняет отзыв `jti` в БД и восстанавл
 
 | Слой | Разрешение и ограничение |
 |---|---|
-| Общий [data.ts](../apps/api/src/lib/data.ts) | Таблицы/столбцы из allowlist, значения параметризованы; нет password/token/TFA, CMS metadata, произвольного SQL или изменения системных ролей |
+| Общий [data.ts](../backend/src/lib/data.ts) | Таблицы/столбцы из allowlist, значения параметризованы; нет password/token/TFA, CMS metadata, произвольного SQL или изменения системных ролей |
 | Специализированный auth | Узкие запросы хеша, provider, TFA, текущей роли; пароль не входит в возвращаемую публичную модель |
 | SQL-роль `club_api` | CRUD бизнес-таблиц/файлов; чтение ролей; перечисленные поля пользователей; UPDATE email/password/name/status, без UPDATE role/token |
 | Владелец БД | Миграции, bootstrap и операторское управление сотрудниками; его credentials не передаются API |
@@ -126,14 +126,14 @@ Helmet. Эти политики уменьшают риск, но не заме�
 контента и ссылок.
 
 Персональные, административные и платёжные ответы получают `Cache-Control: no-store`.
-[Service worker](../apps/web/public/sw.js) не кэширует API и HTML кабинета;
+[Service worker](../frontend/public/sw.js) не кэширует API и HTML кабинета;
 кэш статических файлов ограничен scope. HTTPS и физическое устройство проверяются
 отдельно от браузерной эмуляции.
 
 ## Транспорт и секреты
 
 Рабочий API требует `APP_ENV=production` и `SEED_DEMO=false`; небезопасные значения
-проверяет [env.ts](../apps/api/src/env.ts). Публичный HTTPS завершает Caddy.
+проверяет [env.ts](../backend/src/env.ts). Публичный HTTPS завершает Caddy.
 Внутри Docker bridge Caddy → API использует HTTP, подключение к PostgreSQL
 остаётся внутренним. Это доверие к одному host и его сети, а не сквозное TLS
 между каждым контейнером.
@@ -153,7 +153,7 @@ Runtime env хранится вне checkout с правами `0600`, ката�
 ## Загрузки, внешние URL и провайдеры
 
 Аватар ограничен одним файлом JPEG/PNG/WebP до 3 MiB. MIME, сигнатура и настоящее
-декодирование проверяются до SQL-записи. [avatar-thumbnail.ts](../apps/api/src/lib/avatar-thumbnail.ts)
+декодирование проверяются до SQL-записи. [avatar-thumbnail.ts](../backend/src/lib/avatar-thumbnail.ts)
 использует sharp 0.35.5: ответ PNG 256×256 cover, поворот по EXIF, удаление EXIF/ICC/XMP.
 Исходный файл не переписывается. Для чтения прежнего аватара предел оригинала –
 10 MiB; декодер ограничен 16 MP и тремя секундами. В процессе допускаются два
@@ -224,8 +224,8 @@ lockfile, базы advisory и исключений в `package.json`; он не
 всего runtime-образа или исходного кода.
 
 Прежнее исключение `GHSA-qwww-vcr4-c8h2` удалено из `pnpm.auditConfig.ignoreGhsas`.
-Advisory относится к нестабильным RSC API React Router. Здесь [main.tsx](../apps/web/src/main.tsx)
-использует `ReactDOM.createRoot` и `BrowserRouter`, а [Vite config](../apps/web/vite.config.ts)
+Advisory относится к нестабильным RSC API React Router. Здесь [main.tsx](../frontend/src/main.tsx)
+использует `ReactDOM.createRoot` и `BrowserRouter`, а [Vite config](../frontend/vite.config.ts)
 собирает SPA; серверных RSC actions нет. Кроме того, текущий lockfile содержит
 React Router 7.18.4, а [advisory разработчика](https://github.com/remix-run/react-router/security/advisories/GHSA-qwww-vcr4-c8h2)
 называет исправленной 7.18.2. Контрольный audit должен выполняться без этого
@@ -233,11 +233,11 @@ React Router 7.18.4, а [advisory разработчика](https://github.com/r
 
 Gitleaks проверяет и текущие файлы, и историю разными запусками. При разборе
 330 коммитов найдено 6 совпадений: три фиксированных синтетических значения
-`apps/api/src/env.test.ts`, каждое в двух коммитах. Это классификация конкретных
+`backend/src/env.test.ts`, каждое в двух коммитах. Это классификация конкретных
 совпадений, а не доказательство отсутствия иных секретов.
 
 [.gitleaks.toml](../.gitleaks.toml) использует `condition = "AND"`, точный путь
-`apps/api/src/env\.test\.ts$`, `regexTarget = "secret"` и три полных значения с
+`backend/src/env\.test\.ts$`, `regexTarget = "secret"` и три полных значения с
 якорями `^…$`. Исключение не скрывает весь файл, произвольные тестовые ключи или
 другие каталоги. Новые совпадения разбираются отдельно; рабочий секрет необходимо
 отозвать, а не добавлять в allowlist.

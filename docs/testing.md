@@ -7,11 +7,11 @@
 
 ## Окружение
 
-Команды выполняются из корня репозитория. Используются Node.js 24, pnpm 9.12.0 и
-зависимости из `pnpm-lock.yaml`: Vitest 5.0.2, Vite 7.3.6 и Playwright 1.63.0.
+Команды выполняются из корня репозитория. Используются Node.js 24, pnpm 12.8.1 и
+зависимости из `pnpm-lock.yaml`: Vitest 5.0.2, Vite 8.3.1 и Playwright 1.63.0.
 Интеграционный сценарий запускает PostgreSQL 16.15 в одноразовом контейнере.
 Точные версии и digest находятся в [Compose](../docker-compose.yml),
-[postgres.Dockerfile](../infra/postgres.Dockerfile) и [edge.Dockerfile](../infra/edge.Dockerfile).
+[postgres.Dockerfile](../deploy/postgres.Dockerfile) и [edge.Dockerfile](../deploy/edge.Dockerfile).
 
 Для тестов нужны синтетические аккаунты. Рабочий `runtime.env`, база участников,
 платёжные ключи и внешние каналы уведомлений в тестовый процесс не передаются.
@@ -23,7 +23,7 @@
 | Набор | Настоящие компоненты | Подмены и ограничения | Точка входа |
 |---|---|---|---|
 | Общие правила | Денежные расчёты, скидки, номера, URL, правила баллов | Без HTTP и БД | `packages/shared/src/*.test.ts` |
-| API unit и HTTP | Обработчики Fastify, схемы Zod, guards, ответы через `inject` | Многие файлы подменяют слой данных, провайдеров и auth persistence; ядро Argon2 может оставаться настоящим | `apps/api/src/**/*.test.ts` |
+| API unit и HTTP | Обработчики Fastify, схемы Zod, guards, ответы через `inject` | Многие файлы подменяют слой данных, провайдеров и auth persistence; ядро Argon2 может оставаться настоящим | `backend/src/**/*.test.ts` |
 | PostgreSQL integration | SQL-миграции, транзакции, блокировки, ограничения и откат | Чистая схема из настоящих SQL-миграций; внешние провайдеры выключены | `scripts/test-integration.sh` |
 | Bootstrap SQL | Чистая и legacy-схема, Argon2, транзакции, advisory lock | Только выделенный localhost PostgreSQL с правом создавать временные БД | `native-bootstrap.test.ts` |
 | UI E2E | Браузер, DOM, маршруты, размеры экрана и состояния интерфейса | Многие сценарии используют `page.route` с фикстурами; успешный экран не доказывает запись в БД | Обычный `playwright.config.ts` |
@@ -62,8 +62,8 @@ API-тесты могут использовать production-функцию р�
 | SQL-адаптер | `data.integration.test.ts`: allowlist, injection, secret fields, права записи, JSON/даты, поиск, агрегации, M2A, rollback пакета | Реальные миграции и pg; команды адаптера не являются публичным HTTP-интерфейсом |
 | Медиахранилище | `media-store.test.ts`, `avatar-thumbnail.test.ts`, media/avatars routes: формат/размер, путь, MIME, Range, ссылки, 256×256, EXIF и пределы декодера | `live-media.ts`: загрузка/просмотр через офис, публичность только после публикации, запрет audio и удаления используемого файла; legacy UUID/bytes проверяются на отдельной копии |
 
-Ссылки на наборы: [API](../apps/api/src), [SQL-сценарии оплаты](../apps/api/src/lib/payment-store.integration.test.ts),
-[live-сценарий](../apps/web/e2e/live-stack.spec.ts), [браузерные сценарии](../apps/web/e2e).
+Ссылки на наборы: [API](../backend/src), [SQL-сценарии оплаты](../backend/src/lib/payment-store.integration.test.ts),
+[live-сценарий](../frontend/e2e/live-stack.spec.ts), [браузерные сценарии](../frontend/e2e).
 Сохранение ручных изменений и восстановление после частичного SQL-сбоя – разные
 случаи. Bootstrap-набор внедряет ошибку при создании связи страницы и проверяет
 откат всех ранних записей. Native auth-набор аналогично проверяет сбой после
@@ -110,7 +110,7 @@ bash scripts/test-integration.sh
 ```
 
 Скрипт создаёт контейнер с уникальным именем, временной БД `alumni_staged` на tmpfs
-и случайным loopback-портом, применяет все файлы `apps/api/migrations/*.sql`
+и случайным loopback-портом, применяет все файлы `backend/migrations/*.sql`
 в порядке имён, начиная с нативной основы. Отдельная упрощённая схема не применяется.
 Затем запускает data adapter, native auth, checkout, payment-store, поддержку,
 Telegram linking и социальные новости. `trap` удаляет только этот контейнер. Имя БД `alumni_staged` в этом
@@ -150,7 +150,7 @@ bash scripts/test-live.sh
 Оба live-проекта используют Chromium; mobile – эмуляция iPhone 13, а не физическое
 устройство и не Safari. Service worker здесь выключен. Выходной код становится
 успешным только после всех фаз и удаления созданных ресурсов. Скриншоты находятся
-в `apps/web/test-results/live/`; токены и временные состояния не коммитятся.
+в `frontend/test-results/live/`; токены и временные состояния не коммитятся.
 
 Для локальных UI-наборов уже запущенного тестового сайта:
 
@@ -173,7 +173,7 @@ mobile использует Chromium. Эти команды не поднима�
 После обычной сборки web выполните:
 
 ```bash
-node scripts/check-web-build.mjs apps/web/dist
+node scripts/check-web-build.mjs frontend/dist
 ```
 
 Проверка отклоняет исходники, sourcemap, тестовые и env-файлы, артефакты зеркала,

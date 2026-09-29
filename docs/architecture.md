@@ -8,17 +8,17 @@
 
 | Каталог | Ответственность | Чего здесь быть не должно |
 |---|---|---|
-| `apps/web/src/pages`, `admin`, `components` | Отображение, формы, навигация, доступные действия | Серверных секретов и окончательного решения о цене/правах |
-| `apps/web/src/lib` | HTTP-клиент, состояние интерфейса, преобразование публичных данных | Прямого доступа к SQL, хешей и серверных ключей |
-| `apps/api/src/routes` | HTTP-контракт, схема запроса, аутентификация и ответ | Независимых копий правил расчёта |
-| `apps/api/src/lib` | Транзакции, интеграции, права, фоновые задачи | Неявного доверия цене и роли из браузера |
+| `frontend/src/pages`, `admin`, `components` | Отображение, формы, навигация, доступные действия | Серверных секретов и окончательного решения о цене/правах |
+| `frontend/src/lib` | HTTP-клиент, состояние интерфейса, преобразование публичных данных | Прямого доступа к SQL, хешей и серверных ключей |
+| `backend/src/routes` | HTTP-контракт, схема запроса, аутентификация и ответ | Независимых копий правил расчёта |
+| `backend/src/lib` | Транзакции, интеграции, права, фоновые задачи | Неявного доверия цене и роли из браузера |
 | `packages/shared/src` | Модели, Zod-схемы, расчёты, справочники | Запросов с серверными ключами из общего браузерного кода |
 | `packages/server-auth` | Создание и проверка Argon2-хешей только на сервере | Импорта из клиентского приложения |
 | `scripts/src` | Нативный bootstrap, управление сотрудниками и импорты | Сброса контента или паролей пользователя при повторном запуске |
-| `apps/api/migrations`, `infra/indexes.sql` | SQL-структура, ограничения и индексы | Автоматического удаления рабочих данных ради запуска |
-| `scripts/*.sh`, `infra/systemd` | Установка, обновление, копии, восстановление, мониторинг | Второго несогласованного способа обслуживания |
+| `backend/migrations`, `deploy/indexes.sql` | SQL-структура, ограничения и индексы | Автоматического удаления рабочих данных ради запуска |
+| `scripts/*.sh`, `deploy/systemd` | Установка, обновление, копии, восстановление, мониторинг | Второго несогласованного способа обслуживания |
 
-Маршруты интерфейса выбираются в [App.tsx](../apps/web/src/App.tsx).
+Маршруты интерфейса выбираются в [App.tsx](../frontend/src/App.tsx).
 Основные страницы используют компоненты `V2`; Telegram/PWA включают мобильную
 оболочку. Общая логика API и расчётов для них одна. Рабочие инструкции собраны в
 [навигации документации](README.md); историю прототипов сохраняет Git.
@@ -142,9 +142,9 @@ flowchart TB
 
 | Домен | Хранилище и владелец записи | Инвариант |
 |---|---|---|
-| Контент, каталог, страницы | Бизнес-таблицы; внутренний [data.ts](../apps/api/src/lib/data.ts) | Разрешённые таблицы/поля, параметры SQL, серверный фильтр публикации |
+| Контент, каталог, страницы | Бизнес-таблицы; внутренний [data.ts](../backend/src/lib/data.ts) | Разрешённые таблицы/поля, параметры SQL, серверный фильтр публикации |
 | M2A | `pages`, `pages_blocks`, `block_hero`, `block_cta` | Раскрытие только известных типов блоков, порядок sort; не универсальный CMS query engine |
-| Пользователи | `directus_users`, `directus_roles`; [native-auth.ts](../apps/api/src/lib/native-auth.ts) | Прежние UUID и PHC-хеши; актуальные status/роль; нет выдачи секретных полей |
+| Пользователи | `directus_users`, `directus_roles`; [native-auth.ts](../backend/src/lib/native-auth.ts) | Прежние UUID и PHC-хеши; актуальные status/роль; нет выдачи секретных полей |
 | Пароли | Серверный пакет `@club/server-auth` | Argon2 создаёт новый хеш и проверяет параметры legacy PHC; браузер пакет не импортирует |
 | Настройки | `club_settings` | `site` – публичный whitelist; `legacy_directus:<id>` – полный приватный архив. Runtime SQL-роль не читает всю таблицу |
 | Файлы | `directus_files` + `directus_uploads`, путь API `/data/uploads` | Сохранение UUID и bytes, валидация загрузки, отсутствие общей открытой директории |
@@ -209,7 +209,7 @@ origins, но не заменяет авторизацию. `POINTS_SERVICE_TOKE
 
 ## Фоновые задачи
 
-Источник расписаний API – [jobs.ts](../apps/api/src/lib/jobs.ts). Все указанные
+Источник расписаний API – [jobs.ts](../backend/src/lib/jobs.ts). Все указанные
 часы относятся к `Europe/Moscow`. `JOBS_ENABLED=false` останавливает этот набор,
 включая запуск polling и регистрацию команд бота при старте. При включённом наборе
 каждая задача пропускает новый тик, если её предыдущий запуск ещё выполняется.
@@ -258,18 +258,19 @@ origins, но не заменяет авторизацию. `POINTS_SERVICE_TOKE
 
 ## Версии и совместимость
 
-Сверка выполнена 29.09.2026 по manifest, `pnpm-lock.yaml`, Dockerfile и официальным
-источникам. Это исследование требований, а не новый прогон приложения.
+Сверка выполнена 30.09.2026 по manifest, `pnpm-lock.yaml`, npm registry, Dockerfile
+и официальным источникам. Результаты прогонов – в [журнале состояния](project-state.md).
 
 | Связка | Вывод |
 |---|---|
-| Node.js 24.21.0 + pnpm 9.12.0 | Node 24 – LTS; pnpm 9 совместим с Node 24. Node 26 на дату проверки ещё Current, поэтому номер выше сам по себе не причина менять сервер. [Node](https://nodejs.org/en/about/previous-releases), [pnpm](https://pnpm.io/installation) |
-| TypeScript 5.9.3 | Версия lockfile, хотя manifest начинается с `^5.6.3`. Новые major TypeScript требуют проверки настроек и типов, не меняют runtime автоматически. [Документация](https://www.typescriptlang.org/docs/) |
-| React 18.3.1 + Router 7.18.4 + Query 5.104.0 | Требование React 18+ выполнено. Router 8 требует React 19.2.7+ и отдельной миграции. [Router 7](https://reactrouter.com/7.18.4/upgrading/v6), [Router 8](https://reactrouter.com/upgrading/v7), [Query](https://tanstack.com/query/latest/docs/framework/react/installation) |
-| Vite 7.3.6 + plugin-react 5.2.0 + Vitest 5.0.2 | Vite 7.3 получает важные и защитные исправления, сохраняет Rollup; требования Vitest 5 (Vite 6.4+, Node 22.12+) выполнены. Базовый Vite 5 был вне поддержки. [Vite releases](https://vite.dev/releases), [Vitest](https://vitest.dev/guide/) |
-| Tailwind CSS 3.4.19 | Переход на 4 меняет CSS-конфигурацию и браузерный минимум. Требуется визуальная проверка и решение о поддержке старых браузеров. [Upgrade guide](https://tailwindcss.com/docs/upgrade-guide) |
+| Node.js 24.21.0 + pnpm 12.8.1 | Node 24.21.0 – актуальный patch линии LTS, выбранной для сервера. Node 26 остаётся Current. pnpm 12.8.1 закреплён в packageManager и CI; Docker обновляет Corepack до 0.36.0. [Node](https://nodejs.org/en/about/previous-releases), [pnpm](https://pnpm.io/installation) |
+| TypeScript 7.0.2 + compatibility API 6.0.3 | Компилятор `tsc` работает на 7.0.2. Корневой alias `typescript` указывает на официальный `@typescript/typescript6` 6.0.2 для ESLint; он предоставляет API 6.0.3 и отдельный `tsc6`. Такой режим рекомендован [Microsoft](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). |
+| React 19.3.0 + Router 7.18.4 + Query 5.104.0 | Актуальные стабильные версии registry; peer requirements совместимы. `useRef` задаёт начальное значение, тесты используют DOM events вместо удалённого Simulate. [React upgrade](https://react.dev/blog/2024/04/25/react-19-upgrade-guide), [Query](https://tanstack.com/query/latest/docs/framework/react/installation) |
+| Vite 8.3.1 + plugin-react 6.1.1 + Vitest 5.0.2 | Vite использует Rolldown; старый object manualChunks удалён. Peer requirements Vitest допускают Vite 8 и Node 24. [Vite migration](https://vite.dev/guide/migration), [Vitest](https://vitest.dev/guide/) |
+| Tailwind CSS 4.3.3 | Конфигурация перенесена в CSS theme, сборка подключена через `@tailwindcss/vite`. Сохранены палитра, шрифты и прежние параметры форм. Минимум: Safari 16.4, Chrome 111, Firefox 128. [Upgrade guide](https://tailwindcss.com/docs/upgrade-guide) |
 | Fastify 5.12.5 + Node 24 | Линия 5 поддерживается; политика тестирования включает поддерживаемые LTS Node. Проверять плагины и точную patch-версию при обновлении. [LTS policy](https://fastify.dev/docs/latest/Reference/LTS/) |
-| Zod 3.25.76 | Переход на 4 содержит breaking changes в схемах и типах, поэтому не выполняется как косметическая правка. [Zod 4](https://zod.dev/v4) |
+| Zod 4.6.5 | Сохранены прежние форматы идентификаторов, согласия и email. PATCH использует канонические валидаторы без defaults отсутствующих полей. [Zod migration](https://zod.dev/v4/changelog) |
+| node-cron 4.6.0 / Sentry 11.1.0 | Callback возвращает Promise задачи, destroy ожидается при остановке. Sentry исключает тела, cookies, заголовки и параметры URL; сообщения маскируются. [cron migration](https://www.nodecron.com/migrating-from-v3.html), [Sentry migration](https://github.com/getsentry/sentry-javascript/blob/11.1.0/MIGRATION.md) |
 | pg 8.23.0 + Argon2 0.45.1 | SQL-адаптер и серверные хеши заменяют Directus SDK/runtime. Совместимость legacy-данных и хешей проверяется реальными PostgreSQL-наборами; основание выбора – [ADR](cms-options.md). |
 | PostgreSQL 16.15 | Линия 16 поддерживается до 09.11.2028. Патч 16.15 содержит исправления безопасности, включая инструменты dump/restore; версия обновлена с 16.14 без смены major. [Versioning](https://www.postgresql.org/support/versioning/), [16.15](https://www.postgresql.org/docs/16/release-16-15.html) |
 | Playwright 1.63 | Node 24 и Ubuntu 24.04 amd64/arm64 входят в системные требования. Браузерные бинарники и системные библиотеки устанавливаются отдельно. [Requirements](https://playwright.dev/docs/intro#system-requirements) |
@@ -277,12 +278,38 @@ origins, но не заменяет авторизацию. `POINTS_SERVICE_TOKE
 | GitHub Actions checkout 7.0.1 / setup-node 7.0.0 / pnpm action 6.1.0 | Runtime действий использует Node 24; self-hosted runner должен соответствовать минимуму действия. CI Клуба использует hosted `ubuntu-24.04`. [checkout](https://github.com/actions/checkout/tree/v7.0.1), [setup-node](https://github.com/actions/setup-node/tree/v7.0.0), [pnpm action](https://github.com/pnpm/action-setup/tree/v6.1.0) |
 
 Caddy 2.11.4 пересобирается из закреплённых исходников Go 1.27.1 с обновлёнными
-модулями в [infra/caddy](../infra/caddy). PostgreSQL сохраняет официальный 16.15;
-его `gosu` 1.19 пересобирается тем же Go в [postgres.Dockerfile](../infra/postgres.Dockerfile).
+модулями в [deploy/caddy](../deploy/caddy). PostgreSQL сохраняет официальный 16.15;
+его `gosu` 1.19 пересобирается тем же Go в [postgres.Dockerfile](../deploy/postgres.Dockerfile).
 Успешный build и скан относятся к конкретным digest, а не ко всем образам с этим тегом.
 
-Типы Node выровнены на `@types/node` 24.19.0 во всех пакетах вместо исходного
-смешения 22.20.0 и 26.6.3. Результаты сборки, тестов и репетиции каждой правки
+Два ограничения Go-обновления: `github.com/KimMachineGun/automemlimit` закреплён
+на последнем совместимом `v0.7.5`. Стабильный `v1.0.0` удалил
+`SetGoMemLimitWithOpts`, который вызывает текущий Caddy 2.11.4; сборка с ним
+воспроизводимо завершилась ошибкой. Пересмотр пина требуется при выпуске Caddy
+с поддержкой нового API. `github.com/google/cel-go` закреплён на `v0.28.1`:
+начиная с `v0.29.0`, `NewCall` требует другой интерфейс. Адаптация уже есть
+в [исходниках Caddy](https://github.com/caddyserver/caddy/commit/b2693fb), но не в
+стабильном выпуске 2.11.4. Сборка остальных обновлённых модулей с этими двумя
+пинами проходит. Это исключения из выбора последних версий.
+
+CEL 0.28.1 входит в диапазон Low advisory
+[GO-2026-6094](https://pkg.go.dev/vuln/GO-2026-6094), исправленного в 0.30.0.
+Затронутые `ext.NativeTypes`/`ParseStructTag` не используются конфигурацией проекта
+и отсутствуют в проверенном бинарнике Caddy. Это ограничивает применимость
+находки; сам пакет остаётся помечен advisory. Проверка достижимых функций и
+образов фиксируется отдельно в журнале состояния.
+
+Прямые npm-зависимости закреплены на стабильных версиях. Проверка
+`pnpm outdated -r` сверяет их с registry; обновление подтверждают строгая установка,
+тесты и сборка. Для точных версий Argon2/esbuild разрешены необходимые build scripts.
+Общий срок выдержки свежих npm-выпусков сохранён; три точечных исключения из уже
+проверенного lockfile перечислены в [pnpm-workspace.yaml](../pnpm-workspace.yaml).
+Dependabot настроен, но обработка нового pnpm 12 lockfile им ещё не подтверждена:
+обновления вручную проверяются той же командой и проходят CI.
+
+Типы Node выровнены на актуальные `@types/node` 26.6.3 во всех пакетах. Runtime
+остаётся Node 24 LTS; новые API Node 26 в приложение не добавлялись.
+Результаты сборки, тестов и репетиции каждой правки
 фиксируются в журнале состояния. Устаревшая версия не доказывает конкретную
 эксплуатируемость; вывод об уязвимости требует версии, пути выполнения и условий.
 

@@ -333,7 +333,7 @@ Systemd-unit рассчитаны на `/opt/club` и `/etc/club/runtime.env`. �
 
 ```bash
 cd /opt/club
-sudo install -m 0644 infra/systemd/club-* /etc/systemd/system/
+sudo install -m 0644 deploy/systemd/club-* /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now club-backup.timer club-monitor.timer
 sudo systemctl list-timers club-backup.timer club-monitor.timer

@@ -20,7 +20,7 @@ GitHub может задерживать плановые задания. Имп
 Команда из корня монорепозитория:
 
 ```bash
-pnpm --filter @club/scripts exec tsx ../apps/web/scripts/sync-changes.ts --output ../apps/web/public/data/changes.json --previous-published
+pnpm --filter @club/scripts exec tsx ../frontend/scripts/sync-changes.ts --output ../frontend/public/data/changes.json --previous-published
 pnpm --filter @club/web build:mirror
 ```
 

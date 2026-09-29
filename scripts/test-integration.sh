@@ -24,7 +24,7 @@ if [[ "$READY" != true ]]; then
   exit 1
 fi
 PORT="$(docker port "$CONTAINER" 5432/tcp | cut -d: -f2)"
-for sql in "$REPO_DIR"/apps/api/migrations/*.sql; do
+for sql in "$REPO_DIR"/backend/migrations/*.sql; do
   docker exec -i "$CONTAINER" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U club -d alumni_staged < "$sql" >/dev/null
 done
 cd "$REPO_DIR"

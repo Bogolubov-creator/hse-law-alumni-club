@@ -1,8 +1,8 @@
 # Конфигурация и секреты
 
 Источники настроек: [.env.example](../.env.example),
-[env.ts](../apps/api/src/env.ts), [Compose](../docker-compose.yml),
-[Dockerfile web/Caddy](../infra/edge.Dockerfile), [Vite](../apps/web/vite.config.ts) и
+[env.ts](../backend/src/env.ts), [Compose](../docker-compose.yml),
+[Dockerfile web/Caddy](../deploy/edge.Dockerfile), [Vite](../frontend/vite.config.ts) и
 операционные скрипты. Рабочее состояние конкретного контура – в
 [project-state.md](project-state.md), процедуры – в [deploy-runbook.md](deploy-runbook.md).
 

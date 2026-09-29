@@ -1,17 +1,22 @@
 # Контекст сборки – корень монорепо. Одноразовый прогон bootstrap'а.
 FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
-RUN corepack enable
+RUN npm install --global corepack@0.36.0 && corepack enable
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml* ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/server-auth/package.json packages/server-auth/
 COPY scripts/package.json scripts/
-RUN pnpm install --frozen-lockfile
+COPY backend/package.json backend/
+COPY frontend/package.json frontend/
+RUN pnpm --filter @club/scripts... --filter club-pravo-hse install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY packages/server-auth packages/server-auth
 COPY scripts scripts
 RUN pnpm --filter @club/shared build && pnpm --filter @club/server-auth build && pnpm --filter @club/scripts build
 RUN pnpm --filter @club/scripts deploy --prod /app
+RUN rm /app/pnpm-lock.yaml /app/pnpm-workspace.yaml \
+    /app/node_modules/.modules.yaml /app/node_modules/.pnpm-workspace-state-v1.json \
+    /app/node_modules/.pnpm/lock.yaml
 
 FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
 ARG VCS_REF

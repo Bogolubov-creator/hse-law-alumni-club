@@ -1,7 +1,7 @@
 # Аудио статического зеркала
 
 Семь выпусков «Правовая грамотность» подключены к существующему EpisodePlayer
-через `audio_url` в `apps/web/src/lib/mirror.ts`.
+через `audio_url` в `frontend/src/lib/mirror.ts`.
 
 В `mirror.ts` заданы публичные адреса файлов GitHub Release `podcast-audio-v1`:
 https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/tag/podcast-audio-v1

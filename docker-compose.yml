@@ -14,7 +14,7 @@ services:
     # digest: docker manifest inspect postgres:16-alpine
     build:
       context: .
-      dockerfile: infra/postgres.Dockerfile
+      dockerfile: deploy/postgres.Dockerfile
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -60,7 +60,7 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: infra/postgres.Dockerfile
+      dockerfile: deploy/postgres.Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,8 +72,8 @@ services:
       CHECKOUT_DB_USER: ${CHECKOUT_DB_USER:-club_api}
       CHECKOUT_DB_PASSWORD: ${CHECKOUT_DB_PASSWORD:-}
     volumes:
-      - ./apps/api/migrations:/migrations:ro
-      - ./infra/indexes.sql:/indexes.sql:ro
+      - ./backend/migrations:/migrations:ro
+      - ./deploy/indexes.sql:/indexes.sql:ro
       - ./scripts/migrate.sh:/migrate.sh:ro
       - ./scripts/runtime-role.sql:/runtime-role.sql:ro
     entrypoint: ["sh", "/migrate.sh"]
@@ -84,7 +84,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -158,7 +158,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: infra/edge.Dockerfile
+      dockerfile: deploy/edge.Dockerfile
       target: web
       args:
         # Build-time конфиг SPA (Vite инлайнит в бандл – рантаймом не задать).
@@ -182,7 +182,7 @@ services:
   caddy:
     build:
       context: .
-      dockerfile: infra/edge.Dockerfile
+      dockerfile: deploy/edge.Dockerfile
       target: caddy
     restart: unless-stopped
     security_opt:
@@ -200,7 +200,7 @@ services:
       - "443:443"
       - "127.0.0.1:8081:8081"   # локальная админка через Caddy; на VPS не публичен
     volumes:
-      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:

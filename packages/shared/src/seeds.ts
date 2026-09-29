@@ -79,7 +79,7 @@ export interface ProductSeed {
   price: number; // копейки
   stock: number;
   variants_json: { sku: string; size?: string; color?: string; stock: number }[];
-  /** Пути/URL фото в apps/web/public – то, чего не хватало V3 vs живой стенд/V1. */
+  /** Пути/URL фото в frontend/public – то, чего не хватало V3 vs живой стенд/V1. */
   images?: string[] | null;
 }
 

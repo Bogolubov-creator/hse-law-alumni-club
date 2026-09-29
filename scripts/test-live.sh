@@ -24,7 +24,7 @@ JS
 umask 077
 LIVE_TEMP="$(mktemp -d /tmp/club-live.XXXXXX)"
 LIVE_OWNED=false
-compose() { docker compose -p "$PROJECT" --env-file "$LIVE_TEMP/runtime.env" -f docker-compose.yml -f infra/compose.e2e.yml "$@"; }
+compose() { docker compose -p "$PROJECT" --env-file "$LIVE_TEMP/runtime.env" -f docker-compose.yml -f deploy/compose.e2e.yml "$@"; }
 cleanup() {
   result=$?
   trap - EXIT
@@ -77,7 +77,7 @@ compose run --rm --no-deps api node --input-type=module < scripts/test-runtime-p
 E2E_LIVE_PHASE=write pnpm --filter @club/web exec playwright test -c playwright.live.config.ts
 # Полная копия проверяет утилиты uploads и возврат API на Docker runner.
 BACKUP_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
-  ENV_FILE="$LIVE_TEMP/runtime.env" DEPLOY_COMPOSE_OVERRIDE="$REPO_DIR/infra/compose.e2e.yml" \
+  ENV_FILE="$LIVE_TEMP/runtime.env" DEPLOY_COMPOSE_OVERRIDE="$REPO_DIR/deploy/compose.e2e.yml" \
   COMPOSE_PROJECT_NAME="$PROJECT" STATE_DIR="$LIVE_TEMP/operations" BACKUP_DIR="$LIVE_TEMP/backups" \
   bash scripts/backup.sh
 wait_ready

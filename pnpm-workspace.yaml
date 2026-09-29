@@ -1,4 +1,16 @@
 packages:
-  - "apps/*"
+  - "backend"
+  - "frontend"
   - "packages/*"
   - "scripts"
+injectWorkspacePackages: true
+syncInjectedDepsAfterScripts:
+  - build
+# Точные версии из проверенного lockfile; общий срок выдержки новых выпусков сохранён.
+minimumReleaseAgeExclude:
+  - "@types/ws@8.18.2"
+  - "electron-to-chromium@1.5.440"
+  - "std-env@4.3.0"
+allowBuilds:
+  "argon2@0.45.1": true
+  "esbuild@0.28.2": true

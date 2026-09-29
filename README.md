@@ -2,7 +2,7 @@
 
 **Сообщество выпускников · Мероприятия · Личный кабинет**
 
-[![TypeScript 5.9](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/) [![Node.js 24 LTS](https://img.shields.io/badge/Node.js-24_LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/docs/latest-v24.x/api/) [![React 18](https://img.shields.io/badge/React-18-149ECA?logo=react&logoColor=white)](https://18.react.dev/) [![Vite 7.3](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite&logoColor=white)](https://v7.vite.dev/) [![Fastify 5](https://img.shields.io/badge/Fastify-5-000000?logo=fastify&logoColor=white)](https://fastify.dev/docs/latest/) [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/16/) [![Caddy 2](https://img.shields.io/badge/Caddy-2-1F88C0?logo=caddy&logoColor=white)](https://caddyserver.com/docs/) [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/) [![Ubuntu 24.04 LTS](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://documentation.ubuntu.com/server/)
+[![TypeScript 7](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/) [![Node.js 24 LTS](https://img.shields.io/badge/Node.js-24_LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/docs/latest-v24.x/api/) [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/) [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/) [![Fastify 5](https://img.shields.io/badge/Fastify-5-000000?logo=fastify&logoColor=white)](https://fastify.dev/docs/latest/) [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/16/) [![Caddy 2](https://img.shields.io/badge/Caddy-2-1F88C0?logo=caddy&logoColor=white)](https://caddyserver.com/docs/) [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/) [![Ubuntu 24.04 LTS](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://documentation.ubuntu.com/server/)
 
 Сайт объединяет новости и мероприятия Клуба, каталог ДПО и мерча, личный кабинет
 выпускника и панель учебного офиса. Заявки сохраняются на сервере; онлайн-оплата
@@ -17,21 +17,22 @@
 
 ## Быстрый старт
 
-На компьютере разработчика нужны Git, Node.js 24 и pnpm 9.12.0. Команды ниже
+На компьютере разработчика нужны Git, Node.js 24 и pnpm 12.8.1. Команды ниже
 выполняются обычным пользователем в новом каталоге; они устанавливают зависимости,
 собирают код и запускают модульные тесты. Почта, платежи и бот не запускаются.
 
 ```bash
 git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club
 cd club
-git checkout --detach a5344689794eae9e3e4d181dd0b5f6b8f2f2c7f4
+git checkout --detach origin/codex/dependency-refresh-2026-09-30
 pnpm install --frozen-lockfile
 pnpm -r build
 pnpm -r test
 ```
 
 До объединения PR `main` содержит прежний стек: команда checkout выбирает
-проверяемый нативный код. Актуальные PR и доказательства – в журнале состояния.
+ветку с текущей структурой и обновлёнными зависимостями. Проверенные ревизии,
+актуальные PR и доказательства – в журнале состояния.
 Ожидаемый результат – код завершения `0` у каждой команды. Тесты, требующие
 PostgreSQL, запускаются отдельно. Для работающего сайта продолжите по
 [локальному запуску](#локальный-запуск), для серверной репетиции – по
@@ -105,7 +106,7 @@ PostgreSQL, запускаются отдельно. Для работающег
 | Поддержка и сведения | `/support`, `/support/consent`, `/privacy`, `/confidential`, `/requisites` | Поддержка при включении и сведения об операторе |
 | Мобильный вход | `/tg`, главная в Mini App/PWA | Мобильная оболочка тех же серверных функций |
 
-Источник маршрутов – [App.tsx](apps/web/src/App.tsx). Префиксы `/v2` и `/legacy`
+Источник маршрутов – [App.tsx](frontend/src/App.tsx). Префиксы `/v2` и `/legacy`
 обрабатываются переходами к каноническим адресам. Проверки сценариев перечислены в
 [журнале состояния](docs/project-state.md).
 
@@ -116,11 +117,11 @@ PostgreSQL, запускаются отдельно. Для работающег
 
 | Компонент | Версия | Назначение |
 |---|---|---|
-| TypeScript | 5.9.3 | Типы API, интерфейса, общих функций и bootstrap |
-| Node.js / pnpm | 24.21.0 в Docker и CI / 9.12.0 | Выполнение API, сборка и воспроизводимая установка |
-| React / Router / TanStack Query | 18.3.1 / 7.18.4 / 5.104.0 | Интерфейс, маршруты и состояние серверных запросов |
-| Vite / Tailwind CSS | 7.3.6 / 3.4.19 | Сборка статических файлов и стили |
-| Fastify / Zod | 5.12.5 / 3.25.76 | HTTP API и валидация |
+| TypeScript | 7.0.2; compiler API 6.0.3 для ESLint | Типы API, интерфейса, общих функций и bootstrap |
+| Node.js / pnpm | 24.21.0 в Docker и CI / 12.8.1 | Выполнение API, сборка и воспроизводимая установка |
+| React / Router / TanStack Query | 19.3.0 / 7.18.4 / 5.104.0 | Интерфейс, маршруты и состояние серверных запросов |
+| Vite / Tailwind CSS | 8.3.1 / 4.3.3 | Сборка статических файлов и стили |
+| Fastify / Zod | 5.12.5 / 4.6.5 | HTTP API и валидация |
 | pg / Argon2 | 8.23.0 / 0.45.1 | Параметризованные SQL-запросы и проверка хешей паролей |
 | sharp | 0.35.5 | Декодирование и безопасная выдача аватара 256×256 |
 | PostgreSQL | 16.15 | Постоянные данные и транзакции |
@@ -130,8 +131,10 @@ PostgreSQL, запускаются отдельно. Для работающег
 | GitHub Actions | [ci.yml](.github/workflows/ci.yml) | Автоматические проверки коммитов и PR |
 
 Сроки поддержки и совместимость – в [архитектуре](docs/architecture.md#версии-и-совместимость).
-Сборка использует поддерживаемую линию Vite 7.3 с Rollup. Обновления major-версий
-React, Router и Tailwind рассматриваются отдельно. Отказ от Directus согласован
+Сборка использует Vite 8 с Rolldown. React 19, Tailwind 4 и Zod 4 обновляются
+с проверкой прежних форм, PATCH-контрактов и стилей. Для ESLint подключён
+официальный compatibility API TypeScript 6; сборка выполняется компилятором 7.
+Ограничение версии одного Go-модуля описано в архитектуре. Отказ от Directus согласован
 в [ADR выбора CMS](docs/cms-options.md); приложение обслуживает данные через SQL.
 
 ## Как всё работает
@@ -154,20 +157,19 @@ PostgreSQL остаётся контейнером. Внутри Docker серв
 ## Структура репозитория
 
 ```text
-apps/
-  api/
-    src/routes/       HTTP-маршруты и права доступа
-    src/lib/          транзакции, интеграции, фоновые задачи
-    migrations/       SQL-миграции приложения
-  web/
-    src/pages/        публичные страницы и кабинет
-    src/admin/        панель офиса
-    src/components/   общие компоненты
-    e2e/              сценарии Playwright
+backend/
+  src/routes/         HTTP-маршруты и права доступа
+  src/lib/            транзакции, интеграции, фоновые задачи
+  migrations/         SQL-миграции приложения
+frontend/
+  src/pages/          публичные страницы и кабинет
+  src/admin/          панель офиса
+  src/components/     общие компоненты
+  e2e/                сценарии Playwright
 packages/shared/src/  модели, схемы, расчёты, справочники
 packages/server-auth/ серверная проверка и создание хешей паролей
 scripts/              bootstrap, выпуск, копии, восстановление, проверки
-infra/                Caddy, индексы и systemd
+deploy/               Caddy, индексы и systemd
 .github/workflows/    CI
 docs/                 архитектура, эксплуатация, проверки и источники
 ```
@@ -180,7 +182,7 @@ docs/                 архитектура, эксплуатация, пров
 
 | Контур | Известная конфигурация | Основание |
 |---|---|---|
-| Разработка | Node.js 24, pnpm 9.12.0, Docker для интеграционных проверок | Версии проекта |
+| Разработка | Node.js 24, pnpm 12.8.1, Docker для интеграционных проверок | Версии проекта |
 | Локальная Ubuntu-репетиция | Ubuntu 24.04 ARM64, 4 vCPU, 6 GiB RAM, диск 20 GiB | Исходный стенд; не оценка предельной нагрузки |
 | Рабочий сервер | Подбирается по объёму данных и нагрузке | [Расчёт ёмкости](docs/capacity.md) |
 
@@ -313,8 +315,8 @@ Compose добавляет к именам томов имя проекта. П�
 Затем выполняются миграции, bootstrap, запуск и проверка через Caddy. Ненулевой код
 завершения требует диагностики.
 
-SQL лежит в [apps/api/migrations](apps/api/migrations), индексы – в
-[infra/indexes.sql](infra/indexes.sql). Совместимость миграций со старым кодом
+SQL лежит в [backend/migrations](backend/migrations), индексы – в
+[deploy/indexes.sql](deploy/indexes.sql). Совместимость миграций со старым кодом
 оценивается в PR. Полный порядок – в [runbook](docs/deploy-runbook.md).
 
 ## Резервное копирование
@@ -371,7 +373,7 @@ API и PostgreSQL не имеют опубликованных портов. Cad
 ## Разработка и тестирование
 
 Команды выполняются обычным пользователем из корня клона после установки Node.js 24
-и pnpm 9.12.0. Docker Engine нужен для последней команды. Ожидаемый результат у
+и pnpm 12.8.1. Docker Engine нужен для последней команды. Ожидаемый результат у
 каждой команды – код `0`; сценарий PostgreSQL создаёт отдельную тестовую БД.
 
 ```bash
@@ -380,7 +382,7 @@ pnpm lint
 pnpm -r build
 pnpm -r test
 pnpm audit --prod --audit-level high
-node scripts/check-web-build.mjs apps/web/dist
+node scripts/check-web-build.mjs frontend/dist
 docker compose --env-file .env.example config --quiet
 bash scripts/test-integration.sh
 ```

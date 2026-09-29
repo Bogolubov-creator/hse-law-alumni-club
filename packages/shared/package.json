@@ -20,13 +20,17 @@
     "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run"
   },
-  "files": ["dist/**/*.js", "dist/**/*.d.ts", "!dist/**/*.test.*"],
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/**/*.test.*"
+  ],
   "dependencies": {
-    "zod": "^3.23.8"
+    "zod": "4.6.5"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
-    "vitest": "^5.0.2",
-    "@types/node": "^24.19.0"
+    "typescript": "7.0.2",
+    "vitest": "5.0.2",
+    "@types/node": "26.6.3"
   }
 }

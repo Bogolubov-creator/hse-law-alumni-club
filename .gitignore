@@ -7,7 +7,7 @@ dist/
 *.log
 .DS_Store
 .pnpm-store/
-apps/web/dist/
+frontend/dist/
 caddy_data/
 caddy_config/
 # Локальные экспортные файлы и кэши дизайн-инструментов.

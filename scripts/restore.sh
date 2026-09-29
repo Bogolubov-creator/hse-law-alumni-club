@@ -73,7 +73,7 @@ if [[ "$RESTORE_MODE" = exact ]]; then
   [[ "$(cat "$work/commit.txt")" = "$target_revision" ]] || { echo 'RESTORE_CODE_DIR не совпадает с версией приложения в snapshot commit.txt' >&2; exit 1; }
 else
   [[ "${LEGACY_APP_REVISION:-}" =~ ^[a-f0-9]{40}$ && "$(cat "$work/commit.txt")" = "$LEGACY_APP_REVISION" ]] || { echo 'Укажите проверенный LEGACY_APP_REVISION снимка старого приложения' >&2; exit 1; }
-  [[ -f "$RESTORE_CODE_DIR/apps/api/migrations/001_native_base.sql" ]] || { echo 'Для переноса нужен checkout нативной архитектуры' >&2; exit 1; }
+  [[ -f "$RESTORE_CODE_DIR/backend/migrations/001_native_base.sql" || -f "$RESTORE_CODE_DIR/apps/api/migrations/001_native_base.sql" ]] || { echo 'Для переноса нужен checkout нативной архитектуры' >&2; exit 1; }
 fi
 [[ ! -s "$work/worktree-status.txt" && -z "$(git -C "$RESTORE_CODE_DIR" status --porcelain)" ]] || { echo 'Снимок и восстановление должны использовать чистый checkout' >&2; exit 1; }
 "${compose[@]}" build --build-arg "VCS_REF=$target_revision" postgres api web caddy

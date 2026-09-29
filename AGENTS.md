@@ -6,7 +6,7 @@
 
 ## Устройство проекта
 
-- `apps/web` – React и Vite; `apps/api` – Fastify; `packages/shared` – общие
+- `frontend` – React и Vite; `backend` – Fastify; `packages/shared` – общие
   модели и расчёты; `packages/server-auth` – серверные Argon2-хеши; `scripts` –
   миграции, bootstrap, управление сотрудниками и резервные копии.
 - Продакшен собирается через Docker Compose с PostgreSQL, Fastify и Caddy.
@@ -63,7 +63,7 @@ pnpm install --frozen-lockfile
 pnpm -r build
 pnpm -r test
 pnpm audit --prod --audit-level high
-node scripts/check-web-build.mjs apps/web/dist
+node scripts/check-web-build.mjs frontend/dist
 docker compose --env-file .env.example config --quiet
 bash scripts/test-integration.sh
 ```

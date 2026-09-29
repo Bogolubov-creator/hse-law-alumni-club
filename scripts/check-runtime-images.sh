@@ -29,6 +29,9 @@ if (process.argv[2] === 'api') {
   }
 }
 const store = '/app/node_modules/.pnpm';
+for (const metadata of ['/app/node_modules/.modules.yaml', '/app/node_modules/.pnpm-workspace-state-v1.json', `${store}/lock.yaml`]) {
+  if (existsSync(metadata)) throw new Error(`Метаданные установки в runtime: ${metadata}`);
+}
 if (existsSync(store)) {
   for (const name of readdirSync(store)) {
     if (/^(?:vitest@|@vitest\+|typescript@|tsx@|eslint@|@eslint\+|@playwright\+|@directus\+sdk@)/.test(name)) throw new Error(`Dev/CMS dependency: ${name}`);

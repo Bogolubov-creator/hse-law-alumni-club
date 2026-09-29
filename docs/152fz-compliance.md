@@ -10,13 +10,13 @@
 
 | Механизм | Поведение и граница | Код |
 |---|---|---|
-| Согласие при регистрации | Сервер требует `consent_pdn=true`, сохраняет время и `consent_version` | [auth.ts](../apps/api/src/routes/auth.ts) |
-| Публикуемые сведения | Страницы `/privacy`, `/confidential`, `/requisites`; содержание и реквизиты утверждает владелец | [legal.tsx](../apps/web/src/pages/legal.tsx), [operator.ts](../packages/shared/src/operator.ts) |
-| Выгрузка участника | `GET /api/me/export` отдаёт выбранные поля своего профиля, заявки, журнал баллов, связи и push-подписки. Это не выгрузка всей БД | [me.ts](../apps/api/src/routes/me.ts) |
-| Выход из клуба | `POST /api/me/delete` требует подтверждение `УДАЛИТЬ`. Обезличиваются профиль и контакты заявок, удаляются связи и аккаунт входа, меняется поколение сессии. Учётные строки остаются; архивные копии этой операцией не переписываются | [me.ts](../apps/api/src/routes/me.ts), [anonymize.ts](../apps/api/src/lib/anonymize.ts) |
+| Согласие при регистрации | Сервер требует `consent_pdn=true`, сохраняет время и `consent_version` | [auth.ts](../backend/src/routes/auth.ts) |
+| Публикуемые сведения | Страницы `/privacy`, `/confidential`, `/requisites`; содержание и реквизиты утверждает владелец | [legal.tsx](../frontend/src/pages/legal.tsx), [operator.ts](../packages/shared/src/operator.ts) |
+| Выгрузка участника | `GET /api/me/export` отдаёт выбранные поля своего профиля, заявки, журнал баллов, связи и push-подписки. Это не выгрузка всей БД | [me.ts](../backend/src/routes/me.ts) |
+| Выход из клуба | `POST /api/me/delete` требует подтверждение `УДАЛИТЬ`. Обезличиваются профиль и контакты заявок, удаляются связи и аккаунт входа, меняется поколение сессии. Учётные строки остаются; архивные копии этой операцией не переписываются | [me.ts](../backend/src/routes/me.ts), [anonymize.ts](../backend/src/lib/anonymize.ts) |
 | Работа офиса | Выпускник работает со своими данными; редактор и администратор имеют разные серверные полномочия. Переписка поддержки доступна администратору | [Границы доступа](security.md) |
-| Сроки хранения | `ORDER_RETENTION_DAYS` управляет обезличиванием контактов старых заявок, `AUDIT_RETENTION_DAYS` – удалением старого аудита. Плановый запуск зависит от `JOBS_ENABLED`; поддержку обслуживает отдельная логика retention | [retention.ts](../apps/api/src/lib/retention.ts), [jobs.ts](../apps/api/src/lib/jobs.ts), [конфигурация](configuration.md#расписание-и-сроки-хранения) |
-| Cookie и аналитика | Есть выбор необходимых cookie и всех cookie; поведение необязательной аналитики зависит от сохранённого выбора | [CookieBanner.tsx](../apps/web/src/components/CookieBanner.tsx), [cookie-consent.ts](../apps/web/src/lib/cookie-consent.ts) |
+| Сроки хранения | `ORDER_RETENTION_DAYS` управляет обезличиванием контактов старых заявок, `AUDIT_RETENTION_DAYS` – удалением старого аудита. Плановый запуск зависит от `JOBS_ENABLED`; поддержку обслуживает отдельная логика retention | [retention.ts](../backend/src/lib/retention.ts), [jobs.ts](../backend/src/lib/jobs.ts), [конфигурация](configuration.md#расписание-и-сроки-хранения) |
+| Cookie и аналитика | Есть выбор необходимых cookie и всех cookie; поведение необязательной аналитики зависит от сохранённого выбора | [CookieBanner.tsx](../frontend/src/components/CookieBanner.tsx), [cookie-consent.ts](../frontend/src/lib/cookie-consent.ts) |
 | Сеть и сессии | В штатном Compose API и PostgreSQL доступны внутри Docker-сети. На хост публикуется Caddy. Сервер проверяет роли и токены; HTTPS/CSP и ограничения запросов описаны отдельно | [Схема](architecture.md), [безопасность](security.md) |
 | Резервные копии | Полный согласованный снимок БД и uploads шифруется; ключ хранится отдельно. Offsite включается конфигурацией и требует проверки назначения и восстановления | [backup.sh](../scripts/backup.sh), [restore.sh](../scripts/restore.sh), [runbook](deploy-runbook.md#согласованная-резервная-копия) |
 

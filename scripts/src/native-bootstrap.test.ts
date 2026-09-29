@@ -56,7 +56,7 @@ async function database(t: TestContext): Promise<{ pool: pg.Pool; client: PoolCl
     await owner.query(`DROP DATABASE "${name}"`);
     await owner.end();
   });
-  const schema = await readFile(new URL("../../apps/api/migrations/001_native_base.sql", import.meta.url), "utf8");
+  const schema = await readFile(new URL("../../backend/migrations/001_native_base.sql", import.meta.url), "utf8");
   return { pool, client, schema };
 }
 
@@ -179,7 +179,7 @@ test("дубли legacy user_id блокируют миграцию без уд�
 test("legacy аватары получают постоянную метку без потери metadata и повторных изменений", integration, async t => {
   const { client, schema } = await database(t);
   await client.query(schema);
-  const migration = await readFile(new URL("../../apps/api/migrations/20260929-native-avatar-files.sql", import.meta.url), "utf8");
+  const migration = await readFile(new URL("../../backend/migrations/20260929-native-avatar-files.sql", import.meta.url), "utf8");
   const ids = [1, 2, 3, 4].map(n => `aa000000-0000-0000-0000-00000000000${n}`);
   const metadata = [null, "null", JSON.stringify({ caption: "Сохранить", nested: { value: 7 }, club_upload_kind: "office" }), JSON.stringify({ club_upload_kind: "office" })];
   for (let i = 0; i < ids.length; i++) {
@@ -208,7 +208,7 @@ test("legacy аватары получают постоянную метку б�
 test("необъектные legacy metadata останавливают avatar migration атомарно", integration, async t => {
   const { client, schema } = await database(t);
   await client.query(schema);
-  const migration = await readFile(new URL("../../apps/api/migrations/20260929-native-avatar-files.sql", import.meta.url), "utf8");
+  const migration = await readFile(new URL("../../backend/migrations/20260929-native-avatar-files.sql", import.meta.url), "utf8");
   for (const [suffix, value] of [[1, null], [2, '["preserved"]'], [3, '"preserved"']] as const) {
     const id = `bb000000-0000-0000-0000-00000000000${suffix}`;
     await client.query("INSERT INTO directus_files(id,storage,filename_download,metadata) VALUES($1,'local','synthetic.png',$2::json)", [id, value]);

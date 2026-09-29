@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Клуб выпускников факультета права НИУ ВШЭ – React, Fastify и PostgreSQL",
-  "packageManager": "pnpm@9.12.0",
+  "packageManager": "pnpm@12.8.1",
   "engines": {
     "node": ">=24 <25"
   },
@@ -15,19 +15,13 @@
     "up": "docker compose up -d --build",
     "down": "docker compose down",
     "logs": "docker compose logs -f",
-    "lint": "eslint apps/api/src apps/web/src packages scripts/src"
+    "lint": "eslint backend/src frontend/src packages scripts/src"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.11.0",
-    "typescript": "^5.6.3",
-    "typescript-eslint": "8.71.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "fast-uri": "^3.1.7",
-      "find-my-way": "^9.7.0",
-      "uuid": "^11.1.1"
-    }
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-eslint": "8.71.0",
+    "@typescript/native": "npm:typescript@7.0.2"
   }
 }

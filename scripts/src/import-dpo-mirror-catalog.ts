@@ -2,11 +2,11 @@
  * Импорт полного каталога ДПО из зеркала itspecR/dpo-pravo-hse.
  *
  * Тянет `.catalog-data.json` + `content/programs-index.json`, скачивает:
- *  – обложки программ → `apps/web/public/assets/programs/` (+ thumbs)
- *  – фото преподавателей из `teacherPhotos` → `apps/web/public/assets/teachers/`
+ *  – обложки программ → `frontend/public/assets/programs/` (+ thumbs)
+ *  – фото преподавателей из `teacherPhotos` → `frontend/public/assets/teachers/`
  * и генерирует:
  *  – `packages/shared/src/dpo-mirror-catalog.generated.ts`
- *  – `apps/web/public/content/bot-catalog.json`
+ *  – `frontend/public/content/bot-catalog.json`
  *
  * Идемпотентен: повторный запуск перезаписывает артефакты.
  * Запуск: `pnpm --filter @club/scripts import-dpo`
@@ -28,10 +28,10 @@ const DOC_PP = "Диплом о профессиональной перепод�
 const TEACHER_ABOUT_MAX = 480;
 
 const OUT_TS = path.join(ROOT, "packages/shared/src/dpo-mirror-catalog.generated.ts");
-const OUT_BOT = path.join(ROOT, "apps/web/public/content/bot-catalog.json");
-const OUT_IMG = path.join(ROOT, "apps/web/public/assets/programs");
+const OUT_BOT = path.join(ROOT, "frontend/public/content/bot-catalog.json");
+const OUT_IMG = path.join(ROOT, "frontend/public/assets/programs");
 const OUT_THUMB = path.join(OUT_IMG, "thumbs");
-const OUT_TEACHERS = path.join(ROOT, "apps/web/public/assets/teachers");
+const OUT_TEACHERS = path.join(ROOT, "frontend/public/assets/teachers");
 
 type CatalogModule = { title?: string; hours?: number | null; topics?: string[] };
 type CatalogTeacher = { name?: string; about?: string | null };
