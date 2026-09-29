@@ -55,7 +55,7 @@ set -a
 source "$LIVE_TEMP/runtime.env"
 set +a
 compose config --quiet
-compose build
+compose build --build-arg "VCS_REF=$(git rev-parse HEAD)"
 LIVE_OWNED=true
 compose up -d --wait --no-deps postgres mailpit
 compose run --rm --no-deps migrate
@@ -74,6 +74,12 @@ wait_ready() {
 wait_ready
 compose run --rm --no-deps api node --input-type=module < scripts/test-runtime-permissions.mjs
 E2E_LIVE_PHASE=write pnpm --filter @club/web exec playwright test -c playwright.live.config.ts
+# Полная копия проверяет утилиты uploads и возврат API на Docker runner.
+BACKUP_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
+  ENV_FILE="$LIVE_TEMP/runtime.env" DEPLOY_COMPOSE_OVERRIDE="$REPO_DIR/infra/compose.e2e.yml" \
+  COMPOSE_PROJECT_NAME="$PROJECT" STATE_DIR="$LIVE_TEMP/operations" BACKUP_DIR="$LIVE_TEMP/backups" \
+  bash scripts/backup.sh
+wait_ready
 # Настройки оператора и намеренно пустые блоки/фото не должны заполняться повторно.
 compose exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
 UPDATE club_settings SET value='{"project_name":"Оператор сохранил настройки"}' WHERE key='site';

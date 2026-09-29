@@ -27,7 +27,7 @@ backup_snapshot() (
     [[ "$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$web_id")" = "$application_revision" ]] || { echo 'Версии API и web различаются; сначала разберите незавершённый выпуск' >&2; exit 1; }
   fi
   git cat-file -e "$application_revision^{commit}"
-  image="$(docker inspect -f '{{.Image}}' "$pg")"
+  image="$(ops_helper_image "$pg")"
   stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
   work="$(mktemp -d "$BACKUP_DIR/.work-$stamp-XXXXXX")"
   partial="$BACKUP_DIR/.snapshot-$stamp.partial"

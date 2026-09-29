@@ -42,6 +42,14 @@ ops_lock() {
   flock -n 9 || { echo 'Другая операция обслуживания уже выполняется' >&2; return 1; }
 }
 
+ops_helper_image() {
+  local reference
+  # Docker с containerd хранит в container.Image digest конфигурации, который
+  # нельзя передать docker run. Закрепляем доступный образ утилит по его OCI ID.
+  reference="$(docker inspect -f '{{.Config.Image}}' "$1")"
+  docker image inspect -f '{{.Id}}' "$reference"
+}
+
 ops_assert_native_project() {
   local project
   project="$("${compose[@]}" config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])')"

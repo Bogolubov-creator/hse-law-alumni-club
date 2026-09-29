@@ -82,7 +82,7 @@ pg="$("${compose[@]}" ps -q postgres)"
 "${compose[@]}" exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --exit-on-error --no-owner --no-acl' < "$work/database.dump"
 "${compose[@]}" create --no-deps api
 files="$("${compose[@]}" ps -aq api)"
-image="$(docker inspect -f '{{.Image}}' "$pg")"
+image="$(ops_helper_image "$pg")"
 docker run --rm -i --network none --volumes-from "$files" --entrypoint sh "$image" -c 'tar -C /data/uploads -xzf - && chown -R 1000:1000 /data/uploads' < "$work/uploads.tar.gz"
 "${compose[@]}" exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' > "$work/restored-counts.json" <<'SQL'
 SELECT json_build_object('alumni',(SELECT count(*) FROM alumni),'orders',(SELECT count(*) FROM orders),'points_ledger',(SELECT count(*) FROM points_ledger),'directus_files',(SELECT count(*) FROM directus_files));
