@@ -24,7 +24,7 @@
 ```bash
 git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club
 cd club
-git checkout --detach 110008dbfc9ad13117491d65c793d80ed49c6cb2
+git checkout --detach a5344689794eae9e3e4d181dd0b5f6b8f2f2c7f4
 pnpm install --frozen-lockfile
 pnpm -r build
 pnpm -r test
