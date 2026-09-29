@@ -22,6 +22,8 @@ RUN pnpm --filter @club/shared build && pnpm --filter @club/web build
 
 # Статика отдаётся отдельным Caddy внутри контейнера; внешний Caddy проксирует на него.
 FROM caddy:2.11.4-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b AS runtime
+ARG VCS_REF
+LABEL org.opencontainers.image.revision=$VCS_REF
 COPY --from=build /repo/apps/web/dist /srv
 COPY apps/web/Caddyfile.static /etc/caddy/Caddyfile
 EXPOSE 80

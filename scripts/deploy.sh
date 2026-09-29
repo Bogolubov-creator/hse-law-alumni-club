@@ -1,40 +1,49 @@
 #!/usr/bin/env bash
-# Последовательный деплой с внешним env. Без автоматического отката данных.
+# Установка и обновление одним путём; откат данных выполняется отдельно.
 set -euo pipefail
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-: "${ENV_FILE:?Укажите абсолютный путь к рабочему env вне репозитория}"
-[[ "$ENV_FILE" = /* && -f "$ENV_FILE" ]] || { echo "ENV_FILE должен быть существующим абсолютным путём" >&2; exit 1; }
-case "$ENV_FILE" in "$REPO_DIR"/*) echo "Храните секреты вне репозитория" >&2; exit 1;; esac
-cd "$REPO_DIR"
-compose=(docker compose --env-file "$ENV_FILE" -f "$REPO_DIR/docker-compose.yml")
-# Внешний override нужен, в частности, для репетиции с отдельными портами и томами.
-if [[ -n "${DEPLOY_COMPOSE_OVERRIDE:-}" ]]; then compose+=(-f "$DEPLOY_COMPOSE_OVERRIDE"); fi
-# Собираем и проверяем конфигурацию до изменения работающих контейнеров.
-"${compose[@]}" build
+source "$(dirname "${BASH_SOURCE[0]}")/backup.sh"
+ops_init
+ops_lock
+bash "$REPO_DIR/scripts/preflight.sh"
+started="$(date +%s)"
+revision="$(git rev-parse HEAD)"
+record() {
+  python3 - "$STATE_DIR" "$revision" "$started" "$1" <<'PY'
+import json, os, pathlib, sys, time
+state, commit, started, status = sys.argv[1:]
+record = {"commit": commit, "started_at": int(started), "finished_at": int(time.time()), "status": status}
+path = pathlib.Path(state)/'last-deploy-attempt.json.partial'
+path.write_text(json.dumps(record)+'\n')
+os.replace(path, pathlib.Path(state)/'last-deploy-attempt.json')
+if status == 'ok':
+    path.write_text(json.dumps(record)+'\n')
+    os.replace(path, pathlib.Path(state)/'last-deploy.json')
+PY
+}
+trap 'result=$?; if [[ "$result" != 0 ]]; then record failed; echo "Обновление прервано. Не удаляйте тома: проверьте runbook и compose ps." >&2; fi' EXIT
+# Старые образы остаются по ID; автоматическая очистка Docker здесь запрещена.
+"${compose[@]}" images --format json > "$STATE_DIR/pre-deploy-images.json"
+"${compose[@]}" build --build-arg "VCS_REF=$revision"
 "${compose[@]}" run --rm --no-deps api node --input-type=module -e '
   const { env, assertProdConfig } = await import("./dist/env.js");
   const errors = assertProdConfig();
   if (env.APP_ENV !== "production") errors.push("Деплой требует APP_ENV=production");
   if (errors.length) { console.error(errors.join("\n")); process.exit(1); }
 '
-PG="$("${compose[@]}" ps -q postgres)"
-if [[ -n "$PG" ]]; then
-  ENV_FILE="$ENV_FILE" PG_CONTAINER="$PG" bash scripts/backup-db.sh
-  ENV_FILE="$ENV_FILE" PG_CONTAINER="$PG" bash scripts/backup-verify.sh
-  DIRECTUS="$("${compose[@]}" ps -q directus)"
-  [[ -n "$DIRECTUS" ]] || { echo "CMS не запущена: резервная копия файлов невозможна" >&2; exit 1; }
-  ENV_FILE="$ENV_FILE" DIRECTUS_CONTAINER="$DIRECTUS" bash scripts/backup-uploads.sh
-fi
-"${compose[@]}" up -d postgres directus
-"${compose[@]}" up -d --force-recreate bootstrap migrate
-"${compose[@]}" up -d api web caddy
+if [[ -n "$("${compose[@]}" ps -q postgres)" ]]; then backup_snapshot keep-stopped; fi
+# Локальный почтовый приёмник определён только в QA override.
+if "${compose[@]}" config --services | grep -qx mailpit; then "${compose[@]}" up -d --wait --no-deps mailpit; fi
+"${compose[@]}" up -d --wait postgres directus
+"${compose[@]}" up -d --force-recreate bootstrap permissions migrate
+"${compose[@]}" up -d --wait api web caddy
 "${compose[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile
-for attempt in $(seq 1 60); do
-  if "${compose[@]}" exec -T api node -e 'fetch("http://127.0.0.1:3000/ready").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'; then
-    echo "API готов. Проверьте публичный HTTPS и пользовательский smoke по deploy-runbook.md."
-    exit 0
-  fi
-  sleep 2
-done
-echo "Readiness не прошёл. Проверьте состояние контейнеров и журнал; публичный релиз не подтверждён." >&2
-exit 1
+# На первом локальном TLS-запуске CA создаётся Caddy. Экспорт разрешён только для localhost.
+if [[ -n "${HTTPS_CA_FILE:-}" && ! -f "$HTTPS_CA_FILE" ]]; then
+  case "$(ops_value PUBLIC_URL)" in https://localhost:*|https://localhost)
+    "${compose[@]}" cp caddy:/data/caddy/pki/authorities/local/root.crt "$HTTPS_CA_FILE";;
+    *) echo 'HTTPS_CA_FILE отсутствует; нельзя подтвердить доверие сертификату' >&2; exit 1;;
+  esac
+fi
+ops_http_check
+record ok
+echo "Обновление $revision проверено через Caddy: сайт и /api/ready. Пользовательские сценарии проверяются отдельно."
