@@ -72,8 +72,11 @@ export function assertProdConfig(): string[] {
   if (env.APP_ENV !== "production") return [];
   const errs: string[] = [];
   if (!env.CHECKOUT_DATABASE_URL) errs.push("CHECKOUT_DATABASE_URL обязателен для транзакционного оформления");
+  if (env.CHECKOUT_DATABASE_URL.includes("replace_with"))
+    errs.push("CHECKOUT_DATABASE_URL содержит пароль из шаблона .env.example");
   const looksPlaceholder = (v: string) => /replace_with|сгенерируйте|changeme|your[_-]?secret|example/i.test(v);
   if (looksPlaceholder(env.AUTH_SECRET)) errs.push("AUTH_SECRET выглядит как плейсхолдер – сгенерируйте настоящий (openssl rand -hex 32)");
+  if (looksPlaceholder(env.ADMIN_AUTH_SECRET)) errs.push("ADMIN_AUTH_SECRET выглядит как плейсхолдер");
   if (looksPlaceholder(env.DIRECTUS_SERVICE_TOKEN)) errs.push("DIRECTUS_SERVICE_TOKEN выглядит как плейсхолдер");
   if (!env.ADMIN_AUTH_SECRET) errs.push("ADMIN_AUTH_SECRET пуст – задайте отдельный секрет админ-сессий (defense-in-depth)");
   if (!env.PUBLIC_URL.startsWith("https://")) errs.push("PUBLIC_URL должен быть https://<домен> на проде (return_url оплаты, sitemap, canonical)");
@@ -85,6 +88,10 @@ export function assertProdConfig(): string[] {
     errs.push("SMTP_HOST пуст – без почты не работают восстановление пароля и подтверждение адреса при регистрации");
   if (env.SMTP_HOST && !env.SMTP_FROM && !env.SMTP_USER)
     errs.push("SMTP настроен, но не задан отправитель (SMTP_FROM или SMTP_USER)");
+  if (env.OFFICE_NOTIFY_CHANNEL !== "telegram" && !env.OFFICE_EMAIL)
+    errs.push("OFFICE_EMAIL обязателен для уведомления офиса по email");
+  if (env.OFFICE_NOTIFY_CHANNEL !== "email" && (!env.OFFICE_TG_BOT_TOKEN || !env.OFFICE_TG_CHAT_ID))
+    errs.push("OFFICE_TG_BOT_TOKEN и OFFICE_TG_CHAT_ID обязательны для уведомления офиса в Telegram");
   // Демо-контент в проде: витрины и лента забиты тестовыми позициями.
   if (env.SEED_DEMO === "true")
     errs.push("SEED_DEMO=true на проде – демо-новости, события и товары попадут на витрины и в sitemap");

@@ -1,5 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { isYookassaIp, loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess } from "./security.js";
+import Fastify from "fastify";
+import { isYookassaIp, loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess, trustDockerProxy } from "./security.js";
+
+describe("один доверенный прокси Caddy", () => {
+  it("игнорирует поддельные заголовки при прямом подключении и лишние хопы", async () => {
+    const app = Fastify({ trustProxy: trustDockerProxy });
+    app.get("/ip", req => ({ ip: req.ip, protocol: req.protocol }));
+
+    const direct = await app.inject({ url: "/ip", remoteAddress: "127.0.0.1", headers: {
+      "x-forwarded-for": "198.51.100.7", "x-forwarded-proto": "https",
+    } });
+    expect(direct.json()).toEqual({ ip: "127.0.0.1", protocol: "http" });
+
+    const throughCaddy = await app.inject({ url: "/ip", remoteAddress: "172.20.0.5", headers: {
+      "x-forwarded-for": "198.51.100.7, 10.1.1.2", "x-forwarded-proto": "https",
+    } });
+    expect(throughCaddy.json()).toEqual({ ip: "10.1.1.2", protocol: "https" });
+    await app.close();
+  });
+});
 
 describe("isYookassaIp – подсети вебхука ЮKassa", () => {
   it("адрес внутри /27 (185.71.76.0/27 покрывает .0–.31)", () => {

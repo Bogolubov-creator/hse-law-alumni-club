@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * Корзина v2 (/v2/cart).
+ * Десктопная корзина v2 (/cart). Мобильную оболочку проверяет mobile-cart.spec.ts.
  *
  * Наполнение корзины идёт через ЖИВОЙ API – это проверяет реальную связку
  * витрина → корзина → суммы. Подменяется только POST /api/orders: заявка
@@ -49,6 +49,7 @@ const ORDER = {
 };
 
 test.describe("Корзина v2", () => {
+  test.skip(({ isMobile }) => isMobile, "Мобильная оболочка проверяется в mobile-cart.spec.ts");
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("пустая корзина ведёт в витрины v2, а не в старые", async ({ page }) => {
@@ -160,13 +161,4 @@ test.describe("Корзина v2", () => {
     await expect(page.getByText("подытог")).toBeVisible();
   });
 
-  test("на телефоне корзина складывается без горизонтальной прокрутки", async ({ page }) => {
-    await addProgram(page);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/cart");
-
-    await expect(page.getByLabel("фио")).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(1);
-  });
 });

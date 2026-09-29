@@ -28,6 +28,15 @@ import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, PRODUCTS_SEED, NEWS_S
 
 type Schema = Record<string, any>;
 
+const SEED_DEMO = process.env.SEED_DEMO === "true";
+if (process.env.APP_ENV === "production" && SEED_DEMO) {
+  throw new Error("SEED_DEMO=true запрещён при APP_ENV=production: bootstrap остановлен до записи данных");
+}
+if (process.env.APP_ENV === "production" &&
+    /replace_with|сгенерируйте|changeme/i.test(`${process.env.ADMIN_PASSWORD ?? ""} ${process.env.DIRECTUS_SERVICE_TOKEN ?? ""}`)) {
+  throw new Error("ADMIN_PASSWORD или DIRECTUS_SERVICE_TOKEN содержит шаблонное значение: bootstrap остановлен до записи данных");
+}
+
 const URL = req("DIRECTUS_URL");
 const ADMIN_EMAIL = req("ADMIN_EMAIL");
 const ADMIN_PASSWORD = req("ADMIN_PASSWORD");
@@ -589,7 +598,6 @@ log("  сервисный токен установлен (пароль серв
 // Демо-аккаунты (офис + тестовый выпускник) – ТОЛЬКО при SEED_DEMO=true.
 // В проде НЕ создаём: иначе editor со слабым паролем из .env.example = бэкдор.
 // Офис в проде входит в админку под аккаунтом Directus Administrator.
-const SEED_DEMO = process.env.SEED_DEMO === "true";
 const editorRole = roles.find((x: any) => x.name === "editor");
 const alumniRole = roles.find((x: any) => x.name === "alumni");
 let testAlumniUser: { id: string; created: boolean } | null = null;

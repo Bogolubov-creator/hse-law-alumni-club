@@ -582,7 +582,7 @@ function MobileProgram() {
 }
 
 function CartField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "#fff", padding: "0 15px", fontFamily: "'HSE Sans', system-ui, sans-serif", fontSize: 15, color: INK, outline: "none" }} />;
+  return <input type={type} aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} placeholder={label} style={{ height: 48, borderRadius: 13, border: "1px solid #E4DCCC", background: "#fff", padding: "0 15px", fontFamily: "'HSE Sans', system-ui, sans-serif", fontSize: 15, color: INK, outline: "none" }} />;
 }
 
 function MobileCart() {
@@ -596,6 +596,7 @@ function MobileCart() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<OrderResult | null>(null);
   const items = cart.data?.items ?? [];
+  const hasShippable = items.some((item) => item.type === "merch");
   const subtotal = cart.data?.subtotal ?? 0;
   const dpoSub = items.filter((i) => i.type === "dpo").reduce((s, i) => s + i.price * i.qty, 0);
   const discAmt = Math.round((dpoSub * discount) / 100);
@@ -604,7 +605,7 @@ function MobileCart() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault(); setBusy(true);
-    submitOrder({ contact_fio: form.fio, contact_phone: form.phone, contact_email: form.email, fulfillment: form.fulfillment, address: form.address || null, comment: null, consent_pdn: form.consent, website: form.website })
+    submitOrder({ contact_fio: form.fio, contact_phone: form.phone, contact_email: form.email, fulfillment: hasShippable ? form.fulfillment : "pickup", address: hasShippable && form.fulfillment === "delivery" ? form.address || null : null, comment: null, consent_pdn: form.consent, website: form.website })
       .then((res) => { setResult(res); cart.refetch(); })
       .catch((err) => toast((err as Error).message, "err"))
       .finally(() => setBusy(false));
@@ -614,9 +615,12 @@ function MobileCart() {
     return (
       <div style={{ height: "100dvh", background: "#FBF3E8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 34px", textAlign: "center", color: INK, fontFamily: "'HSE Sans', system-ui, sans-serif" }}>
         <div style={{ width: 96, height: 96, borderRadius: 99, background: "linear-gradient(140deg,#2C6E80,#15375E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 46px -20px rgba(21,55,94,.8)" }}><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#FBF3E8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg></div>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 24, marginTop: 26 }}>Заявка отправлена</div>
+        <h1 style={{ ...disp, fontWeight: 800, fontSize: 24, margin: "26px 0 0" }}>Заявка отправлена</h1>
         <div style={{ ...mono, fontSize: 12, letterSpacing: ".06em", color: "#C24009", marginTop: 12, background: "#F2E3CF", padding: "8px 14px", borderRadius: 10 }}>{result.number}</div>
-        <div style={{ fontSize: 14, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
+        <div style={{ fontSize: 14, color: "#5C6470", lineHeight: 1.55, marginTop: 18, maxWidth: 280 }}>Заявка сохранена. Менеджер учебного офиса свяжется с вами в течение рабочего дня.{result.payment_url ? " Оплатить можно онлайн – кнопка ниже." : ""}</div>
+        {!result.notified.ok && <p role="alert" style={{ fontSize: 13, color: "#B5331B", lineHeight: 1.5, marginTop: 14 }}>
+          Автоматическое уведомление офиса не прошло. Продублируйте номер заявки в Telegram <a href="https://t.me/pravohse" target="_blank" rel="noopener noreferrer" style={{ color: "#C24009" }}>@pravohse</a>.
+        </p>}
         {result.payment_url && <a href={result.payment_url} style={{ ...primaryBtn, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", padding: "0 26px", background: "#1F8A5B", boxShadow: "none" }}>Оплатить онлайн</a>}
         <button onClick={() => nav("/")} style={{ ...secondaryBtn, marginTop: 22, flex: "none", padding: "13px 34px", color: INK, borderColor: "rgba(20,24,31,.25)" }}>На главную</button>
       </div>
@@ -635,7 +639,7 @@ function MobileCart() {
         {!cart.isLoading && !cart.isError && items.length === 0 && (
           <div style={{ padding: "70px 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <div style={{ width: 78, height: 78, borderRadius: 99, background: "#F2E3CF", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C49A45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg></div>
-            <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginTop: 18 }}>Заявка пуста</div>
+            <h2 style={{ ...disp, fontWeight: 700, fontSize: 17, margin: "18px 0 0" }}>Заявка пуста</h2>
             <div style={{ fontSize: 13.5, color: "#5C6470", marginTop: 6, lineHeight: 1.5 }}>Добавьте программу ДПО или мерч – и оформите заявку в пару касаний.</div>
             <button onClick={() => nav("/dpo")} style={{ ...primaryBtn, flex: "none", marginTop: 22, height: 48, padding: "0 26px" }}>К программам</button>
           </div>
@@ -675,12 +679,12 @@ function MobileCart() {
               <CartField label="ФИО" value={form.fio} onChange={(v) => set("fio", v)} />
               <CartField label="Телефон" value={form.phone} onChange={(v) => set("phone", v)} />
               <CartField label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} />
-              <div style={{ display: "flex", gap: 9 }}>
+              {hasShippable && <div style={{ display: "flex", gap: 9 }}>
                 {(["pickup", "delivery"] as const).map((f) => (
                   <button type="button" key={f} onClick={() => set("fulfillment", f)} style={{ flex: 1, height: 46, borderRadius: 13, cursor: "pointer", fontFamily: "'HSE Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, border: "1.5px solid " + (form.fulfillment === f ? "#EC5A13" : "#E4DCCC"), background: "#fff", color: INK }}>{f === "pickup" ? "Самовывоз" : "Доставка"}</button>
                 ))}
-              </div>
-              {form.fulfillment === "delivery" && <CartField label="Адрес доставки" value={form.address} onChange={(v) => set("address", v)} />}
+              </div>}
+              {hasShippable && form.fulfillment === "delivery" && <CartField label="Адрес доставки" value={form.address} onChange={(v) => set("address", v)} />}
               <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 12.5, color: "#3a3f49", lineHeight: 1.45, marginTop: 2, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)} required style={{ width: 20, height: 20, margin: 0, flexShrink: 0, accentColor: "#EC5A13" }} />
                 <span>Согласен на обработку персональных данных согласно <Link to="/privacy" target="_blank" style={{ color: "#C24009" }}>политике</Link> (152-ФЗ).</span>

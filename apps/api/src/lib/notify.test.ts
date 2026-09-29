@@ -15,6 +15,7 @@ describe("notify mail outbox", () => {
 
   afterEach(() => {
     process.env = { ...prev };
+    vi.doUnmock("nodemailer");
     vi.restoreAllMocks();
   });
 
@@ -31,5 +32,20 @@ describe("notify mail outbox", () => {
     process.env.CHECKOUT_DATABASE_URL = "";
     const { drainMailOutbox } = await import("./notify.js");
     await expect(drainMailOutbox()).resolves.toEqual({ sent: 0, failed: 0, skipped: 0 });
+  });
+
+  it("уведомление о вступлении идёт на выбранную почту офиса", async () => {
+    const sendMail = vi.fn().mockResolvedValue({ messageId: "qa" });
+    vi.doMock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail }) } }));
+    process.env.OFFICE_NOTIFY_CHANNEL = "email";
+    process.env.OFFICE_EMAIL = "office@example.com";
+    process.env.SMTP_HOST = "smtp.example.com";
+    process.env.SMTP_FROM = "club@example.com";
+    const { notifyOfficeText } = await import("./notify.js");
+
+    await notifyOfficeText("Новая заявка на вступление");
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
+      to: "office@example.com", subject: "Событие клуба выпускников", text: "Новая заявка на вступление",
+    }));
   });
 });

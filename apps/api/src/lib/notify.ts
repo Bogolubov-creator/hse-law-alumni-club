@@ -130,18 +130,24 @@ export async function drainMailOutbox(limit = 20): Promise<{ sent: number; faile
   return { sent, failed, skipped };
 }
 
-/** Произвольное текстовое уведомление офису (Telegram при токене, иначе лог). */
+/** Текстовое уведомление офису через выбранный канал; в лог не пишем текст. */
 export async function notifyOfficeText(text: string): Promise<void> {
-  if (env.OFFICE_TG_BOT_TOKEN && env.OFFICE_TG_CHAT_ID) {
+  let delivered = false;
+  if ((env.OFFICE_NOTIFY_CHANNEL === "email" || env.OFFICE_NOTIFY_CHANNEL === "both") && env.OFFICE_EMAIL) {
+    const email = await enqueueMail({ to: env.OFFICE_EMAIL, subject: "Событие клуба выпускников", body: text, kind: "office_event" });
+    delivered = email.sent;
+  }
+  if (env.OFFICE_NOTIFY_CHANNEL !== "email" && env.OFFICE_TG_BOT_TOKEN && env.OFFICE_TG_CHAT_ID) {
     try {
-      await fetch(`https://api.telegram.org/bot${env.OFFICE_TG_BOT_TOKEN}/sendMessage`, {
-        method: "POST", headers: { "content-type": "application/json" },
+      const response = await fetch(`https://api.telegram.org/bot${env.OFFICE_TG_BOT_TOKEN}/sendMessage`, {
+        method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(10000),
         body: JSON.stringify({ chat_id: env.OFFICE_TG_CHAT_ID, text }),
       });
-      return;
+      const telegram = await response.json() as { ok?: boolean };
+      delivered = delivered || (response.ok && telegram.ok === true);
     } catch { /* лог ниже */ }
   }
-  console.warn(`[notify:log] ${text}`);
+  if (!delivered) console.warn("[notify:blocked] уведомление офиса не доставлено; проверьте канал и очередь");
 }
 
 export interface OrderNotice {

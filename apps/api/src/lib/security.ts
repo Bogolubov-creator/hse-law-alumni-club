@@ -1,3 +1,17 @@
+import { BlockList } from "node:net";
+
+const dockerProxyNetworks = new BlockList();
+dockerProxyNetworks.addSubnet("10.0.0.0", 8);
+dockerProxyNetworks.addSubnet("172.16.0.0", 12);
+dockerProxyNetworks.addSubnet("192.168.0.0", 16);
+
+/** Доверяем одному Docker-прокси, проверяя адрес соединения и номер хопа. */
+export function trustDockerProxy(address: string, hop: number): boolean {
+  if (hop !== 0) return false;
+  const ipv4Address = address.startsWith("::ffff:") ? address.slice(7) : address;
+  return dockerProxyNetworks.check(ipv4Address, "ipv4");
+}
+
 /**
  * Анти-брутфорс входа (в дополнение к per-IP rate-limit @fastify/rate-limit).
  * Два независимых счётчика неудач:

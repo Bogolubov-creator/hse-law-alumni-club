@@ -32,17 +32,18 @@ import { drainMailOutbox } from "./lib/notify.js";
 import { initSentry } from "./lib/sentry.js";
 import { registerErrorHandler } from "./lib/errors.js";
 import { syncDpoCatalog } from "./lib/hse-sync.js";
+import { trustDockerProxy } from "./lib/security.js";
+import { checkoutPool } from "./lib/checkout-store.js";
 
-// trustProxy: 1 – доверяем ТОЛЬКО одному прокси-хопу (Caddy). true доверял бы всей
-// цепочке X-Forwarded-For, и клиент мог бы подделать req.ip (обход rate-limit,
-// IP-allowlist вебхука ЮKassa, отравление IP в аудите). Число хопов = 1 (Caddy → api).
+// API не публикует порт на хосте (docker-compose.yml). Доверяем адресу
+// Docker-прокси и только одному хопу; клиент попадает в API через Caddy.
 const app = Fastify({
   logger: {
     // Подписанные ссылки и токены подтверждения не попадают в журнал URL.
     serializers: { req: safeRequestLog },
     redact: ["req.headers.authorization", "req.headers.cookie", "res.headers.set-cookie", "password", "token"],
   },
-  trustProxy: 1, bodyLimit: 256 * 1024,
+  trustProxy: trustDockerProxy, bodyLimit: 256 * 1024,
 });
 
 // Валидационные ошибки zod → 400 (не 500).
@@ -182,7 +183,7 @@ app.get("/health", async () => ({
   ts: new Date().toISOString(),
 }));
 
-// Готовность – проверяет связь с Directus сервисным токеном (критерий приёмки Фазы 0).
+// Готовность – проверяет Directus и, когда подключён, транзакционный checkout.
 // Эндпоинт публичный (Caddy проксирует /api/*), поэтому наружу отдаём только факт
 // готовности: e-mail сервисного аккаунта и детали сидов – подсказка для атакующего.
 // Полный ответ checkDirectus() остаётся в логе оператора.
@@ -191,6 +192,18 @@ app.get("/ready", async (_req, reply) => {
   if (!directus.ok) {
     app.log.error({ directus }, "readiness: Directus недоступен");
     return reply.code(503).send({ status: "degraded", directus: { ok: false } });
+  }
+  if (env.CHECKOUT_DATABASE_URL) {
+    try {
+      await checkoutPool().query(`SELECT 1 FROM club_checkout_commits
+        CROSS JOIN club_support_tickets
+        CROSS JOIN club_mail_outbox
+        CROSS JOIN club_faq_events LIMIT 0`);
+    } catch (error) {
+      app.log.error({ code: (error as { code?: string }).code }, "readiness: база приложения недоступна или миграции не применены");
+      return reply.code(503).send({ status: "degraded", directus: { ok: true }, checkout: { ok: false } });
+    }
+    return { status: "ok", directus: { ok: true }, checkout: { ok: true } };
   }
   return { status: "ok", directus: { ok: true } };
 });
