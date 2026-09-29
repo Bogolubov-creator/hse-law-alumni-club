@@ -13,7 +13,12 @@ RUN pnpm --filter @club/shared build && pnpm --filter @club/api build
 RUN pnpm --filter @club/api deploy --prod /app
 
 FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS runtime
+ARG VCS_REF
+LABEL org.opencontainers.image.revision=$VCS_REF
 ENV NODE_ENV=production
+# В рабочем образе запускается только Node; менеджеры пакетов нужны на этапе сборки.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 WORKDIR /app
 COPY --from=build /app .
 # Не root: процесс работает под встроенным непривилегированным пользователем node.
