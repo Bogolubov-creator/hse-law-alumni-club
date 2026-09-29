@@ -80,7 +80,7 @@ fi
 "${compose[@]}" up -d --wait --no-deps postgres
 pg="$("${compose[@]}" ps -q postgres)"
 "${compose[@]}" exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --exit-on-error --no-owner --no-acl' < "$work/database.dump"
-"${compose[@]}" create --no-deps api
+"${compose[@]}" up --no-start --no-deps api
 files="$("${compose[@]}" ps -aq api)"
 image="$(ops_helper_image "$pg")"
 docker run --rm -i --network none --volumes-from "$files" --entrypoint sh "$image" -c 'tar -C /data/uploads -xzf - && chown -R 1000:1000 /data/uploads' < "$work/uploads.tar.gz"

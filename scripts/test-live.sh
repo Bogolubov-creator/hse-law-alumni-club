@@ -62,6 +62,7 @@ compose run --rm --no-deps migrate
 compose run --rm --no-deps bootstrap
 STAFF_ACTION=create STAFF_ROLE=editor STAFF_EMAIL="$TEST_EDITOR_EMAIL" STAFF_PASSWORD="$TEST_EDITOR_PASSWORD" \
   compose run --rm --no-deps -e STAFF_ACTION -e STAFF_ROLE -e STAFF_EMAIL -e STAFF_PASSWORD bootstrap node dist/manage-staff.js
+compose up --no-start --no-deps api
 compose up -d --wait --wait-timeout 300 --no-deps api web caddy
 wait_ready() {
   for attempt in $(seq 1 60); do
