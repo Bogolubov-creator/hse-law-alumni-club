@@ -32,10 +32,17 @@ backup_snapshot() (
   partial="$BACKUP_DIR/.snapshot-$stamp.partial"
   output="$BACKUP_DIR/snapshot-$stamp"
   mkdir "$partial"
+  resume_stopped() {
+    local service
+    # Возвращаем те же контейнеры: Compose start может повторно запустить bootstrap.
+    for service in "${stopped[@]}"; do
+      docker start "$("${compose[@]}" ps -aq "$service")" >/dev/null || return 1
+    done
+  }
   cleanup() {
     local result=$?
     if ((${#stopped[@]})); then
-      if ! "${compose[@]}" start "${stopped[@]}"; then
+      if ! resume_stopped; then
         echo 'Не удалось вернуть сервисы после копирования; проверьте compose ps' >&2
         result=1
       fi
@@ -61,7 +68,7 @@ backup_snapshot() (
 SELECT json_build_object('alumni',(SELECT count(*) FROM alumni),'orders',(SELECT count(*) FROM orders),'points_ledger',(SELECT count(*) FROM points_ledger),'directus_files',(SELECT count(*) FROM directus_files));
 SQL
   if [[ "${1:-}" != keep-stopped ]] && ((${#stopped[@]})); then
-    "${compose[@]}" start "${stopped[@]}"
+    resume_stopped
     stopped=()
   fi
   printf '%s\n' "$application_revision" > "$work/commit.txt"
