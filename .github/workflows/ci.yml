@@ -2,7 +2,7 @@ name: CI
 
 # Проверка на каждый push в main и на каждый PR: воспроизводимая установка
 # (frozen-lockfile ловит дрейф pnpm-lock.yaml), сборка всех пакетов (= typecheck
-# shared/api + tsc/vite web) и прогон vitest (shared + api).
+# shared/api + tsc/vite web), прогон vitest и проверка Compose-конфигурации.
 on:
   push:
     branches: [main]
@@ -27,6 +27,30 @@ jobs:
 
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
+
+      - name: Validate deployment configuration
+        run: |
+          for script in scripts/*.sh; do bash -n "$script"; done
+          docker compose --env-file .env.example config --quiet
+          docker compose --env-file .env.example config --format json | node -e '
+            let input = "";
+            process.stdin.on("data", chunk => input += chunk).on("end", () => {
+              const { services } = JSON.parse(input);
+              if (services.api.ports?.length) {
+                console.error("API must not publish a host port");
+                process.exitCode = 1;
+              }
+              if (services.api.environment.SEED_DEMO !== "false" ||
+                  services.bootstrap.environment.SEED_DEMO !== "false") {
+                console.error("SEED_DEMO must reach API and bootstrap as false in the example configuration");
+                process.exitCode = 1;
+              }
+              if (services.api.environment.APP_ENV !== services.bootstrap.environment.APP_ENV) {
+                console.error("API and bootstrap must use the same APP_ENV");
+                process.exitCode = 1;
+              }
+            });
+          '
 
       - name: Build (typecheck + bundle всех пакетов)
         run: pnpm -r build

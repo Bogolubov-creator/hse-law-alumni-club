@@ -8,6 +8,7 @@ import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js
 import { extendPodcastSub } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { isYookassaIp } from "../lib/security.js";
+import { env } from "../env.js";
 import { sendEmail } from "../lib/notify.js";
 import { withLock } from "../lib/mutex.js";
 
@@ -70,9 +71,10 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (!paymentsEnabled()) return reply.code(503).send({ ok: false });
     // Слой 1: уведомления принимаем только с официальных подсетей ЮKassa
     // (слой 2 ниже – верификация статуса прямым запросом к API).
-    // Локальная разработка (Docker-сеть/localhost) не блокируется.
+    // Локальную разработку допускаем без подсети ЮKassa; в production её нет.
     const ip = req.ip.replace(/^::ffff:/, "");
-    const isLocal = ip === "127.0.0.1" || ip === "::1" || /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip);
+    const isLocal = env.APP_ENV !== "production" &&
+      (ip === "127.0.0.1" || ip === "::1" || /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip));
     if (!isLocal && !isYookassaIp(ip)) {
       audit("payment.webhook.badip", { actor: `ip:${ip}`, req });
       return reply.code(403).send({ ok: false });

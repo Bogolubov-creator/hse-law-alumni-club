@@ -17,6 +17,7 @@ vi.mock("../lib/yookassa.js", () => yk);
 const { db, resetDb } = await import("../test/fake-directus.js");
 const { paymentsRoutes } = await import("./payments.js");
 const { registerErrorHandler } = await import("../lib/errors.js");
+const { trustDockerProxy } = await import("../lib/security.js");
 const { env } = await import("../env.js");
 
 const YOOKASSA_IP = "185.71.76.1";  // из официальных подсетей
@@ -25,17 +26,18 @@ const ORDER = "ALU-2026-000001";
 const ALUMNI_ID = "alumni-1";
 
 async function build(): Promise<FastifyInstance> {
-  // trustProxy: 1 – как в проде: req.ip берётся из X-Forwarded-For, поставленного Caddy.
-  const app = Fastify({ trustProxy: 1 });
+  // Тот же прокси, что в API: заголовок принимается от Caddy в Docker-сети.
+  const app = Fastify({ trustProxy: trustDockerProxy });
   registerErrorHandler(app);
   await app.register(paymentsRoutes);
   return app;
 }
 
 /** Уведомление ЮKassa: тело + адрес отправителя. */
-function webhook(app: FastifyInstance, ip: string, paymentId = "pay-1") {
+function webhook(app: FastifyInstance, ip: string, paymentId = "pay-1", remoteAddress = "172.20.0.5") {
   return app.inject({
     method: "POST", url: "/payments/yookassa/webhook",
+    remoteAddress,
     headers: { "x-forwarded-for": ip },
     payload: { event: "payment.succeeded", object: { id: paymentId } },
   });
@@ -53,6 +55,20 @@ beforeEach(() => {
 });
 
 describe("вебхук ЮKassa: кто может его вызвать", () => {
+  it("прямой запрос с поддельным адресом ЮKassa отклоняется", async () => {
+    const previousEnvironment = env.APP_ENV;
+    env.APP_ENV = "production";
+    try {
+      const app = await build();
+      const response = await webhook(app, YOOKASSA_IP, "pay-1", "127.0.0.1");
+      expect(response.statusCode).toBe(403);
+      expect(db.orders![0]!.payment_status).toBeNull();
+      await app.close();
+    } finally {
+      env.APP_ENV = previousEnvironment;
+    }
+  });
+
   it("уведомление с постороннего адреса отклоняется и не меняет заявку", async () => {
     const app = await build();
     const r = await webhook(app, RANDOM_IP);

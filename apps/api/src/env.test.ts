@@ -18,6 +18,8 @@ const SAFE = {
   PUBLIC_URL: "https://club.example.ru",
   SMTP_HOST: "smtp.example.ru",
   SMTP_FROM: "club@example.ru",
+  OFFICE_NOTIFY_CHANNEL: "email",
+  OFFICE_EMAIL: "office@example.ru",
   SEED_DEMO: "false",
   TELEGRAM_BOT_TOKEN: "",
   TELEGRAM_WEBHOOK_SECRET: "",
@@ -61,6 +63,11 @@ describe("assertProdConfig – каждая небезопасная настр�
     expect(errs.some((e) => /ADMIN_AUTH_SECRET/.test(e))).toBe(true);
   });
 
+  it("шаблонный ADMIN_AUTH_SECRET не запускает публичный API", async () => {
+    const errs = await errorsFor({ ADMIN_AUTH_SECRET: "replace_with_admin_secret" });
+    expect(errs.some((e) => /ADMIN_AUTH_SECRET/.test(e))).toBe(true);
+  });
+
   it("PUBLIC_URL без https – оплата, sitemap и canonical уехали бы по http", async () => {
     const errs = await errorsFor({ PUBLIC_URL: "http://club.example.ru" });
     expect(errs.some((e) => /PUBLIC_URL/.test(e))).toBe(true);
@@ -91,6 +98,12 @@ describe("assertProdConfig – каждая небезопасная настр�
     expect(errs.some((e) => /отправитель/i.test(e))).toBe(false);
   });
 
+  it("выбранный канал уведомлений офиса должен быть настроен", async () => {
+    expect((await errorsFor({ OFFICE_NOTIFY_CHANNEL: "email", OFFICE_EMAIL: "" })).some((e) => /OFFICE_EMAIL/.test(e))).toBe(true);
+    expect((await errorsFor({ OFFICE_NOTIFY_CHANNEL: "telegram", OFFICE_TG_BOT_TOKEN: "", OFFICE_TG_CHAT_ID: "" })).some((e) => /OFFICE_TG/.test(e))).toBe(true);
+    expect((await errorsFor({ OFFICE_NOTIFY_CHANNEL: "both", OFFICE_TG_BOT_TOKEN: "", OFFICE_TG_CHAT_ID: "" })).some((e) => /OFFICE_TG/.test(e))).toBe(true);
+  });
+
   it("SEED_DEMO=true – демо-контент и тестовые аккаунты на боевом стенде", async () => {
     const errs = await errorsFor({ SEED_DEMO: "true" });
     expect(errs.some((e) => /SEED_DEMO/.test(e))).toBe(true);
@@ -109,4 +122,6 @@ describe("assertProdConfig – каждая небезопасная настр�
 
 it("production требует транзакционное хранилище заявок", async () => {
   expect(await errorsFor({ CHECKOUT_DATABASE_URL: "" })).toContain("CHECKOUT_DATABASE_URL обязателен для транзакционного оформления");
+  expect(await errorsFor({ CHECKOUT_DATABASE_URL: "postgresql://club:replace_with_postgres_password@postgres:5432/club" }))
+    .toContain("CHECKOUT_DATABASE_URL содержит пароль из шаблона .env.example");
 });

@@ -1,0 +1,23 @@
+# Локальные данные и секреты не передаются демону Docker как контекст сборки.
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/.pnpm-store
+backups
+logs
+test-results
+playwright-report
+**/backups
+**/logs
+**/test-results
+**/playwright-report
+*.log
+**/*.sqlite*
+**/*.db
+**/*.dump
+**/*.pem
+**/*.key

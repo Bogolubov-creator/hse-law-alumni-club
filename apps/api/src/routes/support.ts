@@ -79,8 +79,8 @@ export async function supportRoutes(app: FastifyInstance) {
     return { ok: true };
   });
   app.get("/admin/support", async (req, reply) => {
-    // Тикеты – ПДн, но офис (editor) ведёт переписку; полный admin – для анонимизации/денег.
-    const ctx = requireAdmin(req, reply); if (!ctx) return reply;
+    // В переписке могут быть ПДн; доступ даёт только роль admin.
+    const ctx = requireFullAdmin(req, reply); if (!ctx) return reply;
     const { page } = z.object({ page: z.coerce.number().int().min(1).default(1) }).parse(req.query);
     const { rows } = await checkoutPool().query("SELECT id,topic,messages,status,created_at,expires_at FROM club_support_tickets WHERE expires_at>now() ORDER BY updated_at DESC LIMIT 30 OFFSET $1", [(page-1)*30]);
     audit("support.read", { actor: `admin:${ctx.userId}` });
@@ -120,7 +120,7 @@ export async function supportRoutes(app: FastifyInstance) {
     };
   });
   app.patch("/admin/support/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply); if (!ctx) return reply;
+    const ctx = requireFullAdmin(req, reply); if (!ctx) return reply;
     const { id } = idSchema.parse(req.params);
     const data = z.object({ message: message.optional(), status: z.enum(["answered", "closed"]) }).strict().refine(v=>v.status==="closed"||!!v.message).parse(req.body);
     const addition = data.message ? [{ author: "support", text: data.message, at: new Date().toISOString() }] : [];
