@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { commitCheckout, findCheckout, checkoutKey, digest, saveReceipt } from "../lib/checkout-store.js";
 import type { FastifyInstance } from "fastify";
-import { readItems, updateItem } from "@directus/sdk";
+import { readItems } from "@directus/sdk";
+import { recordCreatedPayment } from "../lib/payment-store.js";
 import { z } from "zod";
 import { effectiveDiscount, computeOrderTotals, repriceItems, securePaymentUrl } from "@club/shared";
 import { directus } from "../lib/directus.js";
@@ -157,8 +158,7 @@ export async function ordersRoutes(app: FastifyInstance) {
           customerEmail: body.contact_email,
         });
         payment_url = securePaymentUrl(payment.confirmation?.confirmation_url);
-        const created_order = (await di.request(readItems("orders", { filter: { number: { _eq: number } }, limit: 1, fields: ["id"] }))) as any[];
-        if (created_order[0]) await di.request((updateItem as any)("orders", created_order[0].id, { payment_id: payment.id, payment_status: payment.status }));
+        await recordCreatedPayment(number, payment);
       } catch (e) {
         req.log.error({ err: e, number }, "yookassa create on order failed");
       }

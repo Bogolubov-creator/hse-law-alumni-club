@@ -1,3 +1,4 @@
+import { setTimeout as delay } from "node:timers/promises";
 import { env } from "../env.js";
 import { handleTelegramUpdate, type TgUpdate } from "./telegram-bot.js";
 
@@ -7,19 +8,21 @@ import { handleTelegramUpdate, type TgUpdate } from "./telegram-bot.js";
  * webhook (scripts/setup-telegram-webhook.ts), одновременно они не работают –
  * при настроенном webhook polling не запускается и не меняет его.
  */
-export function startTelegramPolling(): void {
+export function startTelegramPolling(): () => Promise<void> {
   const token = env.TELEGRAM_BOT_TOKEN;
-  if (!token || env.TELEGRAM_POLLING !== "true") return;
+  if (!token || env.TELEGRAM_POLLING !== "true") return async () => {};
+  const controller = new AbortController();
 
   const api = (method: string, body?: unknown) =>
     fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      signal: controller.signal,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
     });
 
   let offset = 0;
-  void (async () => {
+  const work = (async () => {
     // Локальный запуск не должен отключать уже работающий сервер.
     try {
       const response = await api("getWebhookInfo");
@@ -33,19 +36,22 @@ export function startTelegramPolling(): void {
       return;
     }
     console.log("[telegram-bot] long-polling запущен");
-    for (;;) {
+    while (!controller.signal.aborted) {
       try {
         const r = await api("getUpdates", { offset, timeout: 25, allowed_updates: ["message", "message_reaction"] });
-        if (!r.ok) { await new Promise((s) => setTimeout(s, 5000)); continue; }
+        if (!r.ok) { await delay(5000, undefined, { signal: controller.signal }).catch(() => {}); continue; }
         const data = (await r.json()) as { ok: boolean; result?: TgUpdate[] };
         for (const u of data.result ?? []) {
+          if (controller.signal.aborted) break;
           await handleTelegramUpdate(u, token);
           offset = u.update_id + 1;
         }
-      } catch (e) {
-        console.error("[telegram-bot] polling error:", (e as Error).message);
-        await new Promise((s) => setTimeout(s, 5000));
+      } catch {
+        if (controller.signal.aborted) break;
+        console.error("[telegram-bot] polling request failed");
+        await delay(5000, undefined, { signal: controller.signal }).catch(() => {});
       }
     }
   })();
+  return async () => { controller.abort(); await work; };
 }

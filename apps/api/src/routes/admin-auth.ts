@@ -35,7 +35,7 @@ export async function adminAuthRoutes(app: FastifyInstance) {
   // Выход из панели: гасим конкретную сессию по jti. Без этого админ-токен жил
   // до истечения 12 ч, и «выход» был чисто клиентским – токен оставался годным.
   app.post("/auth/admin-logout", async (req, reply) => {
-    const ctx = resolveAdmin(req);
+    const ctx = await resolveAdmin(req);
     if (!ctx) return reply.code(401).send({ error: "Требуется вход администратора" });
     if (ctx.jti) await revokeAdmin(ctx.jti);
     audit("admin.logout", { actor: `admin:${ctx.userId}`, req });

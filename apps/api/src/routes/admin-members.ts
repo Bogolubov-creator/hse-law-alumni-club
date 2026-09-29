@@ -18,7 +18,7 @@ export async function adminMembersRoutes(app: FastifyInstance) {
 
 
   app.get("/admin/members", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const qp = z.object({
       q: z.string().max(100).optional(),
       status: z.enum(["pending", "verified", "rejected"]).optional(),
@@ -88,7 +88,7 @@ export async function adminMembersRoutes(app: FastifyInstance) {
   // Продление подписки на подкасты решением офиса (например, оплата по счёту).
   app.post("/admin/members/:id/podcast-sub", async (req, reply) => {
     // Выдача платной подписки – операция с деньгами, только админ.
-    const ctx = requireFullAdmin(req, reply);
+    const ctx = await requireFullAdmin(req, reply);
     if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const until = await extendPodcastSub(id, 12);
@@ -99,7 +99,7 @@ export async function adminMembersRoutes(app: FastifyInstance) {
 
   app.patch("/admin/members/:id", async (req, reply) => {
     // Верификация и персональная скидка – только админ.
-    const ctx = requireFullAdmin(req, reply);
+    const ctx = await requireFullAdmin(req, reply);
     if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
@@ -140,7 +140,7 @@ export async function adminMembersRoutes(app: FastifyInstance) {
   // Ручное начисление баллов офисом.
   app.post("/admin/members/:id/points", async (req, reply) => {
     // Баллы конвертируются в скидку – только админ.
-    const ctx = requireFullAdmin(req, reply);
+    const ctx = await requireFullAdmin(req, reply);
     if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = z.object({
@@ -159,7 +159,7 @@ export async function adminMembersRoutes(app: FastifyInstance) {
   // Обезличивает профиль и заявки, удаляет аккаунт входа. Необратимо.
   app.post("/admin/members/:id/anonymize", async (req, reply) => {
     // Необратимое стирание ПДн – только админ.
-    const ctx = requireFullAdmin(req, reply);
+    const ctx = await requireFullAdmin(req, reply);
     if (!ctx) return reply;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const ok = await anonymizeAlumni(id);

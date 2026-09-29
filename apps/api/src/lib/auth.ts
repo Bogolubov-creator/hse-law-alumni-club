@@ -2,7 +2,7 @@ import { loadAdminRevocations, saveAdminRevocation } from "./auth-state.js";
 import { randomUUID } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
-import { readItems, readUsers } from "@directus/sdk";
+import { readItems, readRoles, readUsers } from "@directus/sdk";
 import { env } from "../env.js";
 import { directus } from "./directus.js";
 
@@ -60,6 +60,15 @@ export async function findUserWithRole(email: string): Promise<{ id: string; rol
   return { id: rows[0].id, role: (rows[0].role?.name as string) ?? "" };
 }
 
+/** Публичные операции с аккаунтом доступны только действующей роли alumni. */
+export async function findAlumniAuthUser(identity: { id: string } | { email: string }): Promise<{ id: string; status: string } | null> {
+  const roles = await di.request(readRoles({ filter: { name: { _eq: "alumni" } }, fields: ["id"], limit: 2 }));
+  if (roles.length !== 1) return null;
+  const filter = "id" in identity ? { id: { _eq: identity.id } } : { email: { _eq: identity.email } };
+  const users = await di.request(readUsers({ filter: { ...filter, role: { _eq: roles[0]!.id } }, fields: ["id", "status"], limit: 1 }));
+  return users[0] as { id: string; status: string } | undefined ?? null;
+}
+
 // ── Админ-сессия (роли editor/admin) ──────────────────────────
 export interface AdminCtx { userId: string; role: string; jti?: string }
 
@@ -84,14 +93,21 @@ export async function revokeAdmin(jti: string): Promise<void> {
   await saveAdminRevocation(jti, expires);
   revokedAdminJti.set(jti, expires);
 }
-export function resolveAdmin(req: FastifyRequest): AdminCtx | null {
+export async function resolveAdmin(req: FastifyRequest): Promise<AdminCtx | null> {
   const token = bearer(req);
   if (!token || token === env.DIRECTUS_SERVICE_TOKEN) return null;
   try {
     const p = jwt.verify(token, adminSecret(), { algorithms: ["HS256"] }) as { scope?: string; sub?: string; role?: string; jti?: string };
     if (p?.scope !== "admin" || !p?.sub) return null;
     if (p.jti && revokedAdminJti.has(p.jti)) return null; // сессия погашена выходом
-    return { userId: p.sub, role: p.role ?? "", jti: p.jti };
+    // JWT подтверждает вход, но действующие права и блокировка хранятся в CMS.
+    const users = await di.request((readUsers as any)({
+      filter: { id: { _eq: p.sub } }, fields: ["id", "status", "role.name"], limit: 1,
+    })) as { id: string; status: string; role?: { name?: string } | null }[];
+    const user = users[0];
+    const role = user?.role?.name ?? "";
+    if (user?.status !== "active" || !["editor", "admin", "Administrator"].includes(role)) return null;
+    return { userId: user.id, role, jti: p.jti };
   } catch {
     return null;
   }
@@ -154,8 +170,8 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
 }
 
 /** Гард админ-маршрута: 401 если нет валидного admin-JWT, иначе контекст. */
-export function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
-  const ctx = resolveAdmin(req);
+export async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
+  const ctx = await resolveAdmin(req);
   if (!ctx) { reply.code(401).send({ error: "Требуется вход администратора" }); return null; }
   return ctx;
 }
@@ -164,8 +180,8 @@ export function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
  * Гард операций с ПДн и деньгами: мало быть в панели – нужна роль admin.
  * Редактор (editor) получает 403, а не тихий доступ.
  */
-export function requireFullAdmin(req: FastifyRequest, reply: FastifyReply) {
-  const ctx = requireAdmin(req, reply);
+export async function requireFullAdmin(req: FastifyRequest, reply: FastifyReply) {
+  const ctx = await requireAdmin(req, reply);
   if (!ctx) return null;
   if (!isFullAdmin(ctx)) {
     reply.code(403).send({ error: "Операция доступна только администратору клуба" });

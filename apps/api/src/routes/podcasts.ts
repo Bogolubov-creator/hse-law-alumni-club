@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
-import { readItems, createItem, updateItem } from "@directus/sdk";
+import { recordCreatedPayment, extendPodcastSubscription } from "../lib/payment-store.js";
+import { readItems, createItem } from "@directus/sdk";
 import { z } from "zod";
 import { PODCAST_SUB_PRICE_KOP, orderNumber, rutubeEmbed, securePaymentUrl } from "@club/shared";
 import { env } from "../env.js";
@@ -259,8 +260,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
           customerEmail: contacts.email,
         });
         payment_url = securePaymentUrl(payment.confirmation?.confirmation_url);
-        const rows = (await di.request(readItems("orders", { filter: { number: { _eq: number } }, limit: 1, fields: ["id"] }))) as any[];
-        if (rows[0]) await di.request((updateItem as any)("orders", rows[0].id, { payment_id: payment.id, payment_status: payment.status }));
+        await recordCreatedPayment(number, payment);
       } catch (e) {
         req.log.error({ err: e, number }, "yookassa podcast sub failed");
       }
@@ -273,13 +273,5 @@ export async function podcastsRoutes(app: FastifyInstance) {
 
 /** Продлить подписку выпускнику на N месяцев (оплата или решение офиса). */
 export async function extendPodcastSub(alumniId: string, months = 12): Promise<string> {
-  const rows = (await di.request(readItems("alumni", { filter: { id: { _eq: alumniId } }, limit: 1, fields: ["podcast_sub_until"] }))) as any[];
-  const current = rows[0]?.podcast_sub_until ? new Date(rows[0].podcast_sub_until) : null;
-  const base = current && current.getTime() > Date.now() ? current : new Date();
-  base.setMonth(base.getMonth() + months);
-  const until = base.toISOString();
-  // Флаг напоминания сбрасываем при каждом продлении: иначе выпускник получил
-  // бы предупреждение об окончании один раз в жизни, а на следующий год – нет.
-  await di.request((updateItem as any)("alumni", alumniId, { podcast_sub_until: until, podcast_reminder_sent: false }));
-  return until;
+  return extendPodcastSubscription(alumniId, months);
 }

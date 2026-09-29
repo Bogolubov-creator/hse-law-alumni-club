@@ -21,6 +21,8 @@ const schema = z.object({
   // Отдельный секрет для админ-сессий (defense-in-depth). Пусто = используется AUTH_SECRET.
   ADMIN_AUTH_SECRET: z.string().default(""),
   NEWS_SYNC_ENABLED: z.string().default("false"),
+  JOBS_ENABLED: z.enum(["true", "false"]).default("true"),
+  DPO_SYNC_ENABLED: z.enum(["true", "false"]).default("true"),
   TELEGRAM_REACTIONS_CHAT_ID: z.string().regex(/^(-[0-9]+)?$/).default(""),
   TELEGRAM_BOT_TOKEN: z.string().default(""), // пусто = mini-app + webhook-бот BLOCKED
   // Секрет webhook (setWebhook secret_token). Пусто = endpoint отключён.

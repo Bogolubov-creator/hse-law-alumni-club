@@ -24,6 +24,8 @@ const SAFE = {
   TELEGRAM_BOT_TOKEN: "",
   TELEGRAM_WEBHOOK_SECRET: "",
   TELEGRAM_POLLING: "",
+  JOBS_ENABLED: "true",
+  DPO_SYNC_ENABLED: "true",
 };
 
 async function errorsFor(overrides: Record<string, string>): Promise<string[]> {
@@ -37,6 +39,15 @@ beforeEach(() => vi.unstubAllEnvs());
 afterEach(() => vi.unstubAllEnvs());
 
 describe("assertProdConfig – корректная прод-конфигурация", () => {
+  it("QA выключатели не ослабляют production проверки", async () => {
+    expect(await errorsFor({ JOBS_ENABLED: "false", DPO_SYNC_ENABLED: "false" })).toEqual([]);
+    expect((await errorsFor({ JOBS_ENABLED: "false", AUTH_SECRET: "replace_with_auth_secret_placeholder" })).some(error => error.includes("AUTH_SECRET"))).toBe(true);
+  });
+
+  it("ошибка в выключателе фоновых задач не включает задачи молча", async () => {
+    await expect(errorsFor({ JOBS_ENABLED: "flase" })).rejects.toThrow();
+    await expect(errorsFor({ DPO_SYNC_ENABLED: "flase" })).rejects.toThrow();
+  });
   it("полный набор переменных проходит без замечаний", async () => {
     expect(await errorsFor({})).toEqual([]);
   });

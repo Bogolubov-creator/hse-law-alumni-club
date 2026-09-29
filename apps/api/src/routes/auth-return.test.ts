@@ -7,13 +7,18 @@ vi.mock("../lib/notify.js", () => ({ mailEnabled: () => true, sendEmail: mail.se
 const { resetDb } = await import("../test/fake-directus.js");
 const { authRoutes } = await import("./auth.js");
 it.each([undefined, "/podcasts#podcast-subscription", "https://example.com", "//example.com"])("письмо восстановления: путь %s", async next => {
-  resetDb({ directus_users: [{ id: "user-test", email: "graduate@example.com" }], alumni: [{ user_id: "user-test", token_version: 0 }] });
+  resetDb({
+    directus_roles: [{ id: "role-alumni", name: "alumni" }],
+    directus_users: [{ id: "user-test", email: "graduate@example.com", role: "role-alumni", status: "active" }],
+    alumni: [{ user_id: "user-test", token_version: 0 }],
+  });
   mail.send.mockClear();
   const app = Fastify();
   await app.register(authRoutes);
   try {
     const response = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "graduate@example.com", ...(next ? { next } : {}) } });
     expect(response.statusCode).toBe(200);
+    expect(mail.send).toHaveBeenCalledTimes(1);
     const body = mail.send.mock.calls[0]![2] as string;
     const link = new URL(body.split("\n").find(line => line.includes("/reset?token="))!);
     expect(link.searchParams.get("next")).toBe(next === "/podcasts#podcast-subscription" ? next : null);

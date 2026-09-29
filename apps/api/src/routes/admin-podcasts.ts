@@ -16,7 +16,7 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
    * подпискам, с сортировкой по дате окончания и статистикой прослушиваний.
    */
   app.get("/admin/podcast-subs", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const now = new Date().toISOString();
     const soon = new Date(Date.now() + 30 * 86400000).toISOString();
 
@@ -92,7 +92,7 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
 
 
   app.get("/admin/podcasts", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("podcasts", { sort: ["sort"], limit: -1, fields: ["id", "title", "description", "cover", "audio_url", "video_url", "duration", "is_free", "sort", "status"] }));
   });
 
@@ -112,7 +112,7 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
 
 
   app.post("/admin/podcasts", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const b = podcastBody.parse(req.body);
     if (await rejectAvatarAsAudio(b.audio_url, reply)) return;
@@ -129,7 +129,7 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
 
 
   app.patch("/admin/podcasts/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = podcastBody.partial().parse(req.body);
@@ -142,7 +142,7 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
 
 
   app.delete("/admin/podcasts/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("podcasts", id));

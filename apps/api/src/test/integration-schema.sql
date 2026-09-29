@@ -7,7 +7,8 @@ DO $$ BEGIN
 END $$;
 CREATE TABLE alumni (
   id uuid PRIMARY KEY, verification_status varchar(255), points_cached integer,
-  personal_discount integer, fio text, telegram_id varchar(255)
+  personal_discount integer, fio text, telegram_id varchar(255),
+  podcast_sub_until timestamptz, podcast_reminder_sent boolean
 );
 CREATE TABLE products (
   id uuid PRIMARY KEY, slug varchar(255) UNIQUE, title varchar(255), price integer,
@@ -25,7 +26,8 @@ CREATE TABLE orders (
   type varchar(255), items_json json, subtotal integer, member_discount integer,
   total_estimate integer, contact_fio varchar(255), contact_phone varchar(255),
   contact_email varchar(255), fulfillment varchar(255), address text, comment text,
-  consent_pdn boolean, status varchar(255), payment_status varchar(255), created_at timestamptz
+  consent_pdn boolean, status varchar(255), payment_status varchar(255), created_at timestamptz,
+  payment_id varchar(255), paid_at timestamptz
 );
 
 CREATE TABLE news (

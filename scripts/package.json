@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "tsx --test src/*.test.ts",
     "bootstrap": "tsx src/directus-bootstrap.ts",
+    "migrate-service-permissions": "tsx src/migrate-service-permissions.ts",
     "import-dpo": "tsx src/import-dpo-mirror-catalog.ts",
     "refresh-dpo-enrollment": "tsx src/refresh-dpo-enrollment-from-hse.ts",
     "load-pravovaya-gramotnost": "tsx src/load-pravovaya-gramotnost.ts"

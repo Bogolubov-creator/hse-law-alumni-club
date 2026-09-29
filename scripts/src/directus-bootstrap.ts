@@ -5,7 +5,6 @@
  *
  * Запуск: pnpm --filter @club/scripts bootstrap   (env: DIRECTUS_URL, ADMIN_EMAIL, ADMIN_PASSWORD, ...)
  */
-import { randomBytes } from "node:crypto";
 import {
   createDirectus,
   rest,
@@ -24,9 +23,11 @@ import {
   updateUser,
   readItems,
   createItems,
-  updateItem,
+  deleteItem,
 } from "@directus/sdk";
 import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, PRODUCTS_SEED, NEWS_SEED } from "@club/shared";
+import { ensureServiceCredentials } from "./bootstrap-service.js";
+import { ensureInitialPolicy } from "./bootstrap-policy.js";
 
 type Schema = Record<string, any>;
 
@@ -453,17 +454,13 @@ if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "
   log("  ~ pages_blocks.item → any (m2a)");
 }
 
-// Сид страницы home (если ещё нет блоков)
+// Начальные блоки создаются только вместе с новой страницей. Пустая существующая страница – выбор редактора.
 {
   const pages = (await client.request((readItems as any)("pages", { filter: { slug: { _eq: "home" } }, limit: 1 }))) as any[];
-  let homeId = pages[0]?.id;
-  if (!homeId) {
+  if (!pages[0]) {
     const created = (await client.request((createItems as any)("pages", [{ slug: "home", title: "Главная", status: "published" }]))) as any;
-    homeId = Array.isArray(created) ? created[0].id : created.id;
+    const homeId = Array.isArray(created) ? created[0].id : created.id;
     log("  + страница home");
-  }
-  const links = (await client.request((readItems as any)("pages_blocks", { filter: { pages_id: { _eq: homeId } }, limit: 1 }))) as any[];
-  if (!links.length) {
     const hero = (await client.request((createItems as any)("block_hero", [{
       badge: "Клуб выпускников факультета права",
       title_pre: "Клуб выпускников",
@@ -490,11 +487,13 @@ if (!relations.some((r: any) => r.collection === "pages_blocks" && r.field === "
 // ──────────────────────────── 3. роли ────────────────────────────
 log("== Роли ==");
 const roles = await client.request(readRoles());
+const createdRoles = new Set<string>();
 async function ensureRole(name: string, icon: string) {
   let r = roles.find((x: any) => x.name === name);
   if (!r) {
     r = await client.request(createRole({ name, icon } as any));
     roles.push(r);
+    createdRoles.add(r.id);
     log(`+ роль ${name}`);
   }
   return r;
@@ -502,8 +501,6 @@ async function ensureRole(name: string, icon: string) {
 const editorRoleRec = await ensureRole("editor", "edit_note");
 await ensureRole("alumni", "school");
 const serviceRoleRec = await ensureRole("service", "smart_toy");
-// Administrator существует из ENV-бутстрапа Directus – используем для сервисного токена.
-const adminRole = roles.find((x: any) => x.name === "Administrator");
 
 // ─────────────────── 3.1 политики доступа (least privilege) ───────────────────
 // Directus 11: права живут в политиках, политики цепляются к ролям через directus_access.
@@ -529,15 +526,34 @@ async function api(path: string, init?: RequestInit): Promise<any> {
   return res.status === 204 ? null : await res.json();
 }
 
-async function ensurePolicy(name: string, opts: { appAccess: boolean; description: string }): Promise<string> {
-  const found = (await api(`/policies?filter[name][_eq]=${encodeURIComponent(name)}&fields=id&limit=1`)).data;
-  if (found?.[0]) return found[0].id as string;
-  const created = await api("/policies", {
-    method: "POST",
-    body: JSON.stringify({ name, icon: "policy", description: opts.description, app_access: opts.appAccess, admin_access: false, enforce_tfa: false }),
+// Маркеры доступны только администратору и не входят в сервисную политику.
+await ensureCollection("club_bootstrap_state");
+await ensureField("club_bootstrap_state", "key", str(true));
+await ensureField("club_bootstrap_state", "completed_at", ts("date-created"));
+
+async function ensurePolicy(name: string, opts: { appAccess: boolean; description: string }, initialize: (id: string) => Promise<void>) {
+  const key = `policy-initializing:${name}`;
+  return ensureInitialPolicy({
+    findPolicy: async () => (await api(`/policies?filter[name][_eq]=${encodeURIComponent(name)}&fields=id&limit=1`)).data?.[0],
+    findPending: async () => {
+      const rows = await client.request((readItems as any)("club_bootstrap_state", { filter: { key: { _eq: key } }, fields: ["id"], limit: 1 })) as { id: string }[];
+      return rows[0]?.id;
+    },
+    startPending: async () => {
+      const rows = await client.request((createItems as any)("club_bootstrap_state", [{ key }])) as { id: string }[];
+      return rows[0]!.id;
+    },
+    createPolicy: async () => {
+      const created = await api("/policies", {
+        method: "POST",
+        body: JSON.stringify({ name, icon: "policy", description: opts.description, app_access: opts.appAccess, admin_access: false, enforce_tfa: false }),
+      });
+      log(`+ политика ${name}`);
+      return { id: created.data.id as string };
+    },
+    initializePolicy: initialize,
+    finishPending: async id => { await client.request((deleteItem as any)("club_bootstrap_state", id)); },
   });
-  log(`+ политика ${name}`);
-  return created.data.id as string;
 }
 
 /** Идемпотентно выдать политике права на коллекцию. Повторный прогон ничего не дублирует. */
@@ -565,18 +581,22 @@ async function ensureAccess(roleId: string, policyId: string) {
 const editorPolicy = await ensurePolicy("Офис (контент)", {
   appAccess: true, // вход в Studio
   description: "Редактирование контента сайта. Персональные данные выпускников и заявки недоступны – они ведутся в админ-панели сайта, где действия пишутся в аудит.",
+}, async id => {
+  await ensurePermissions(id, CONTENT_COLLECTIONS, CRUD);
+  await ensurePermissions(id, ["directus_files"], CRUD);
+  await ensureAccess(editorRoleRec.id, id);
 });
-await ensurePermissions(editorPolicy, CONTENT_COLLECTIONS, CRUD);
-await ensurePermissions(editorPolicy, ["directus_files"], CRUD); // обложки новостей/программ
-if (editorRoleRec?.id) await ensureAccess(editorRoleRec.id, editorPolicy);
+if (createdRoles.has(editorRoleRec.id)) await ensureAccess(editorRoleRec.id, editorPolicy.id);
 
 const servicePolicy = await ensurePolicy("Сервис (apps/api)", {
   appAccess: false, // машине Studio не нужна
   description: "Права бэкенда apps/api: данные приложения и файлы. Схему, настройки и расширения Directus менять нельзя – утечка токена не даёт захватить инсталляцию.",
+}, async id => {
+  await ensurePermissions(id, [...COLLECTIONS, "pages_blocks", "block_hero", "block_cta"], CRUD);
+  await ensurePermissions(id, SERVICE_SYSTEM, CRUD);
+  await ensureAccess(serviceRoleRec.id, id);
 });
-await ensurePermissions(servicePolicy, [...COLLECTIONS, "pages_blocks", "block_hero", "block_cta"], CRUD);
-await ensurePermissions(servicePolicy, SERVICE_SYSTEM, CRUD);
-if (serviceRoleRec?.id) await ensureAccess(serviceRoleRec.id, servicePolicy);
+if (createdRoles.has(serviceRoleRec.id)) await ensureAccess(serviceRoleRec.id, servicePolicy.id);
 log("  политики: офис – только контент, сервис – только данные приложения");
 
 // ──────────────────────────── 4. пользователи ────────────────────────────
@@ -589,25 +609,44 @@ async function ensureUser(email: string, fields: Record<string, any>) {
   return { id: u.id, created: true };
 }
 
-// Сервисный пользователь со статическим токеном для apps/api (пока под Administrator;
-// тонкие политики роли service – в Фазе 4).
-// Пароль – случайный и НИКОМУ не известен (раньше сюда клали сам SERVICE_TOKEN, и утечка
-// токена автоматически давала вход в публичную Studio под полным админом). Машине пароль
-// не нужен: apps/api ходит статическим токеном. Перегенерируется при каждом прогоне –
-// это не мешает идемпотентности, живых сессий у сервисного аккаунта нет.
-// Роль – service с урезанной политикой (см. 3.1), а не Administrator: токен даёт доступ
-// к данным приложения, но не к схеме, настройкам и расширениям Directus.
-const svcRoleId = serviceRoleRec?.id ?? adminRole?.id ?? null;
-const svcPassword = randomBytes(32).toString("hex");
-const svc = await ensureUser("service@club.example.com", {
-  first_name: "Service",
-  last_name: "API",
-  password: svcPassword,
-  role: svcRoleId,
-  token: SERVICE_TOKEN,
-});
-await client.request(updateUser(svc.id, { token: SERVICE_TOKEN, role: svcRoleId ?? undefined, password: svcPassword } as any));
-log("  сервисный токен установлен (пароль сервисного аккаунта – случайный, вход паролем не предполагается)");
+const serviceEmail = "service@club.example.com";
+if (!serviceRoleRec?.id) throw new Error("Роль service не создана");
+const passwordMigrationKey = (id: string) => `service-password-independent:${id}`;
+const serviceResult = await ensureServiceCredentials({
+  find: async () => {
+    const users = await client.request(readUsers({ filter: { email: { _eq: serviceEmail } }, fields: ["id", "role", "token", "status"], limit: 1 }));
+    return users[0] as { id: string; role: string | null; token: string | null; status: string } | undefined;
+  },
+  create: async credentials => {
+    const user = await client.request(createUser({ email: serviceEmail, first_name: "Service", last_name: "API", status: "active", ...credentials }));
+    return { id: user.id as string };
+  },
+  updatePassword: async (id, password) => { await client.request(updateUser(id, { password })); },
+  passwordChecked: async id => {
+    const rows = await client.request((readItems as any)("club_bootstrap_state", { filter: { key: { _eq: passwordMigrationKey(id) } }, limit: 1, fields: ["id"] })) as { id: string }[];
+    return rows.length > 0;
+  },
+  markPasswordChecked: async id => { await client.request((createItems as any)("club_bootstrap_state", [{ key: passwordMigrationKey(id) }])); },
+  legacyPasswordWorks: async () => {
+    const response = await fetch(`${URL}/auth/login`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: serviceEmail, password: SERVICE_TOKEN }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (response.status === 401) return false;
+    if (!response.ok) throw new Error("Не удалось проверить безопасность пароля сервисного аккаунта");
+    const session = await response.json() as { data?: { refresh_token?: string } };
+    if (session.data?.refresh_token) {
+      const logout = await fetch(`${URL}/auth/logout`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ refresh_token: session.data.refresh_token }), signal: AbortSignal.timeout(10_000),
+      });
+      if (!logout.ok) throw new Error("Не удалось завершить проверочную сессию сервисного аккаунта");
+    }
+    return true;
+  },
+}, serviceRoleRec.id, SERVICE_TOKEN);
+log(`  сервисный аккаунт: ${serviceResult}`);
 
 // Демо-аккаунты (офис + тестовый выпускник) – ТОЛЬКО при SEED_DEMO=true.
 // В проде НЕ создаём: иначе editor со слабым паролем из .env.example = бэкдор.
@@ -656,26 +695,6 @@ await ensureSeed("podcasts", "title", [
   { title: "M&A изнутри: как проходят большие сделки", description: "Партнёр корпоративной практики о кухне сделок слияний и поглощений.", cover: "/assets/themis.jpeg", audio_url: "https://download.samplelib.com/mp3/sample-12s.mp3", duration: "51 мин", sort: 2, status: "draft" },
 ]);
 await ensureSeed("products", "slug", PRODUCTS_SEED.map((p) => ({ ...p, status: "published" })));
-// Дозаполнение images у уже созданных товаров: ensureSeed не обновляет строки,
-// а на живом стенде худи когда-то привязали вручную (a66558f) – в сидах путей не было.
-{
-  const want = new Map(
-    PRODUCTS_SEED.filter((p) => p.images?.length).map((p) => [p.slug, p.images as string[]]),
-  );
-  const rows = (await client.request(
-    (readItems as any)("products", { fields: ["id", "slug", "images"], limit: -1 }),
-  )) as { id: string; slug: string; images: unknown }[];
-  let patched = 0;
-  for (const row of rows) {
-    const imgs = want.get(row.slug);
-    if (!imgs) continue;
-    const cur = Array.isArray(row.images) ? row.images : [];
-    if (cur.length) continue;
-    await client.request((updateItem as any)("products", row.id, { images: imgs }));
-    patched += 1;
-  }
-  if (patched) log(`  products images backfill: ${patched}`);
-}
 
 // Профиль для тестового выпускника (если ещё нет)
 const alumniRows = (await client.request(

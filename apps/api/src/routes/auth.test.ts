@@ -268,6 +268,45 @@ describe("POST /auth/confirm", () => {
 });
 
 describe("POST /auth/forgot и /auth/reset", () => {
+  it.each(["Administrator", "admin", "editor", "service"])("публичное восстановление не отправляет письмо и не меняет пароль роли %s", async role => {
+    const previousHost = env.SMTP_HOST;
+    env.SMTP_HOST = "smtp.example.com";
+    db.directus_roles!.push({ id: `role-${role}`, name: role });
+    // Связанный профиль намеренно оставлен: решает текущая роль пользователя.
+    db.directus_users![0]!.role = `role-${role}`;
+    try {
+      const app = await build();
+      const known = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "ivan@example.com" } });
+      const unknown = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "missing@example.com" } });
+      expect(known.statusCode).toBe(200);
+      expect(known.body).toBe(unknown.body);
+      expect(sendMailMock).not.toHaveBeenCalled();
+      const token = jwt.sign({ sub: USER_ID, purpose: "reset", jti: `former-alumni-${role}`, ver: 0 }, env.AUTH_SECRET, { expiresIn: "30m" });
+      const reset = await app.inject({ method: "POST", url: "/auth/reset", payload: { token, password: "newstrongpass" } });
+      expect(reset.statusCode).toBe(400);
+      expect(db.directus_users![0]!.password).toBeUndefined();
+      expect(db.alumni![0]!.token_version).toBe(0);
+      await app.close();
+    } finally { env.SMTP_HOST = previousHost; }
+  });
+
+  it("письмо выпускнику позволяет сменить пароль", async () => {
+    const previousHost = env.SMTP_HOST;
+    env.SMTP_HOST = "smtp.example.com";
+    try {
+      const app = await build();
+      const response = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "ivan@example.com" } });
+      expect(response.statusCode).toBe(200);
+      expect(sendMailMock).toHaveBeenCalledTimes(1);
+      const text = sendMailMock.mock.calls[0]![0].text as string;
+      const url = new URL(text.match(/https?:\/\/\S+\/reset\?token=\S+/)![0]);
+      const reset = await app.inject({ method: "POST", url: "/auth/reset", payload: { token: url.searchParams.get("token"), password: "newstrongpass" } });
+      expect(reset.statusCode).toBe(200);
+      expect(db.directus_users![0]!.password).toBe("newstrongpass");
+      await app.close();
+    } finally { env.SMTP_HOST = previousHost; }
+  });
+
   it("forgot отвечает одинаково для существующей и несуществующей почты", async () => {
     const app = await build();
     const known = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "ivan@example.com" } });

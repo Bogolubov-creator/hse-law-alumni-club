@@ -1,13 +1,12 @@
-import { refreshNewsSource } from "./lib/news-sources.js";
+import { startBackgroundJobs } from "./lib/jobs.js";
 import { restoreAdminRevocations } from "./lib/auth.js";
 import { buildSystemHealth } from "./lib/system-health.js";
-import { supportRoutes, purgeSupport } from "./routes/support.js";
+import { supportRoutes } from "./routes/support.js";
 import { safeRequestLog } from "./lib/request-log.js";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
-import cron from "node-cron";
 import { env, assertProdConfig } from "./env.js";
 import { contentRoutes } from "./routes/content.js";
 import { pointsRoutes } from "./routes/points.js";
@@ -24,17 +23,8 @@ import { eventsRoutes } from "./routes/events.js";
 import { pushRoutes } from "./routes/push.js";
 import { telegramRoutes } from "./routes/telegram.js";
 import { pageviewRoutes } from "./routes/pageviews.js";
-import { registerBotCommands } from "./lib/telegram-bot.js";
-import { startTelegramPolling } from "./lib/telegram-polling.js";
-import { runDecay } from "./lib/engine.js";
-import { runPodcastSubReminders } from "./lib/podcast-reminders.js";
-import { runEventReminders } from "./lib/event-reminders.js";
-import { runRetention } from "./lib/retention.js";
-import { expireStaleReservations } from "./lib/checkout-store.js";
-import { drainMailOutbox } from "./lib/notify.js";
 import { initSentry } from "./lib/sentry.js";
 import { registerErrorHandler } from "./lib/errors.js";
-import { syncDpoCatalog } from "./lib/hse-sync.js";
 import { trustDockerProxy } from "./lib/security.js";
 
 // API не публикует порт на хосте (docker-compose.yml). Доверяем адресу
@@ -107,8 +97,6 @@ await app.register(cors, {
 });
 await app.register(contentRoutes);
 await app.register(supportRoutes);
-// После простоя удаляем обращения с истёкшим сроком; тексты ошибок БД не журналируем.
-await purgeSupport().catch(() => app.log.error("support startup retention failed"));
 await app.register(pointsRoutes);
 await app.register(authRoutes);
 await app.register(meRoutes);
@@ -124,68 +112,7 @@ await app.register(pushRoutes);
 await app.register(telegramRoutes);
 await app.register(pageviewRoutes);
 
-// Фоновые cron-задачи. Держим ссылки, чтобы остановить их при плавной остановке.
-// ВНИМАНИЕ: cron выполняется внутри процесса API – деплой одноинстансный. На
-// нескольких инстансах задачи задвоятся (нужен distributed-lock) – см. deploy-runbook.
-const cronTasks: ReturnType<typeof cron.schedule>[] = [];
-
-// Cron-decay: 03:00 первого числа каждого месяца. Идемпотентно по месяцу.
-cronTasks.push(cron.schedule("0 3 1 * *", () => {
-  runDecay().catch((e) => app.log.error(e, "decay failed"));
-}, { timezone: "Europe/Moscow" }));
-
-// Ночная автосинхронизация каталога ДПО с hse.ru (05:00). Сбой не критичен –
-// каталог остаётся прежним, следующая попытка через сутки (или вручную из админки).
-cronTasks.push(cron.schedule("0 5 * * *", () => {
-  syncDpoCatalog()
-    .then((r) => app.log.info(r, "dpo sync ok"))
-    .catch((e) => app.log.error(e, "dpo sync failed"));
-}, { timezone: "Europe/Moscow" }));
-
-// Напоминание записавшимся за сутки до события (10:00 МСК; идемпотентно).
-cronTasks.push(cron.schedule("0 10 * * *", () => {
-  runEventReminders()
-    .then((r) => { if (r.events) app.log.info(r, "event reminders sent"); })
-    .catch((e) => app.log.error(e, "event reminders failed"));
-}, { timezone: "Europe/Moscow" }));
-
-// Подписка на подкасты заканчивается через 10 дней (11:00). Идемпотентно:
-// флаг снимается при продлении, поэтому напоминание уходит раз за период.
-cronTasks.push(cron.schedule("0 11 * * *", () => {
-  runPodcastSubReminders()
-    .then((r) => { if (r.due) app.log.info(r, "podcast sub reminders sent"); })
-    .catch((e) => app.log.error(e, "podcast sub reminders failed"));
-}, { timezone: "Europe/Moscow" }));
-
-// Ретенция ПДн (04:00): обезличить старые заявки, подчистить аудит (152-ФЗ).
-cronTasks.push(cron.schedule("0 4 * * *", () => {
-  purgeSupport().catch(() => app.log.error("support retention failed"));
-  runRetention()
-    .then((r) => { if (r.orders || r.audit) app.log.info(r, "retention applied"); })
-    .catch((e) => app.log.error(e, "retention failed"));
-}, { timezone: "Europe/Moscow" }));
-
-// Истечение резерва мерча (каждые 15 мин): new без платежа старше RESERVE_TTL_HOURS.
-cronTasks.push(cron.schedule("*/15 * * * *", () => {
-  expireStaleReservations()
-    .then((n) => { if (n) app.log.info({ expired: n }, "merch reserves expired"); })
-    .catch((e) => app.log.error(e, "reserve expiry failed"));
-}, { timezone: "Europe/Moscow" }));
-
-// Повтор писем из outbox (каждые 5 мин).
-cronTasks.push(cron.schedule("*/5 * * * *", () => {
-  drainMailOutbox()
-    .then((r) => { if (r.sent || r.failed) app.log.info(r, "mail outbox drained"); })
-    .catch((e) => app.log.error(e, "mail outbox failed"));
-}, { timezone: "Europe/Moscow" }));
-
-// Очередь источников пополняется каждый час; публикацией управляет редактор.
-cronTasks.push(cron.schedule("17 * * * *", () => {
-  if (env.NEWS_SYNC_ENABLED !== "true") return;
-  void (async () => { for (const source of ["alumni", "career", "telegram"] as const) {
-    try { await refreshNewsSource(source); } catch { app.log.warn({source}, "news source refresh failed"); }
-  } })();
-}, { timezone: "Europe/Moscow" }));
+let backgroundJobs: Awaited<ReturnType<typeof startBackgroundJobs>> | undefined;
 
 // Базовый health – для healthcheck'а docker и Caddy.
 app.get("/health", async () => ({
@@ -209,23 +136,23 @@ async function gracefulShutdown(signal: string) {
   if (shuttingDown) return;
   shuttingDown = true;
   app.log.info(`${signal} получен – плавная остановка`);
-  for (const t of cronTasks) { try { t.stop(); } catch { /* уже остановлена */ } }
+  const jobsStopped = backgroundJobs?.stop();
   try {
     await app.close(); // дождаться завершения активных запросов и закрыть сервер
   } catch (e) {
     app.log.error(e, "ошибка при app.close()");
   }
-  process.exit(0);
+  const completed = await jobsStopped;
+  process.exit(completed === false ? 1 : 0);
 }
 process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => void gracefulShutdown("SIGINT"));
 
 try {
   await restoreAdminRevocations();
+  backgroundJobs = await startBackgroundJobs(app.log);
   await app.listen({ host: env.API_HOST, port: env.API_PORT });
   app.log.info(`club-api слушает :${env.API_PORT}`);
-  if (env.TELEGRAM_BOT_TOKEN) void registerBotCommands(env.TELEGRAM_BOT_TOKEN);
-  startTelegramPolling();
 } catch (err) {
   app.log.error(err);
   process.exit(1);

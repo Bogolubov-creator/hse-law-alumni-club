@@ -7,6 +7,11 @@ import { supportRoutes, supportConfig, purgeSupport } from "./support.js";
 import { signAdmin } from "../lib/auth.js";
 import { env } from "../env.js";
 vi.mock("../lib/audit.js",()=>({audit:vi.fn()}));
+// Этот набор проверяет SQL поддержки. Текущая роль CMS задаётся отдельно от JWT;
+// цепочка с работающим Directus проверяется в тесте полного локального стека.
+vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
+vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
+const { resetDb } = await import("../test/fake-directus.js");
 const enabled=process.env.RUN_SUPPORT_INTEGRATION==="true";
 if(enabled&&new URL(process.env.CHECKOUT_DATABASE_URL!).pathname!=="/alumni_staged")throw new Error("Only alumni_staged is allowed");
 const pool=enabled?checkoutPool():null;const ids:string[]=[];
@@ -23,10 +28,15 @@ describe.skipIf(!enabled)("Поддержка: реальная БД, досту
   try {
    expect((await a.inject({ url: "/admin/support" })).statusCode).toBe(401);
    expect((await a.inject({ method: "PATCH", url: "/admin/support/" + b.id, payload: { status: "closed" } })).statusCode).toBe(401);
-   const editorHeaders = { authorization: "Bearer " + signAdmin(randomUUID(), "editor") };
+   const editorId = randomUUID(), adminId = randomUUID();
+   resetDb({ directus_users: [
+    { id: editorId, status: "active", role: { name: "editor" } },
+    { id: adminId, status: "active", role: { name: "admin" } },
+   ] });
+   const editorHeaders = { authorization: "Bearer " + signAdmin(editorId, "editor") };
    expect((await a.inject({ url: "/admin/support", headers: editorHeaders })).statusCode).toBe(403);
    expect((await a.inject({ method: "PATCH", url: "/admin/support/" + b.id, headers: editorHeaders, payload: { message: "Ответ редактора", status: "answered" } })).statusCode).toBe(403);
-   const adminHeaders = { authorization: "Bearer " + signAdmin(randomUUID(), "admin") };
+   const adminHeaders = { authorization: "Bearer " + signAdmin(adminId, "admin") };
    expect((await a.inject({ url: "/admin/support", headers: adminHeaders })).statusCode).toBe(200);
    expect((await a.inject({ method: "PATCH", url: "/admin/support/" + b.id, headers: adminHeaders, payload: { message: "Ответ администратора", status: "answered" } })).statusCode).toBe(200);
    const r = await a.inject({ url: "/support/" + b.id, headers: { "x-support-key": b.key } });

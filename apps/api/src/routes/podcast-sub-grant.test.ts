@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
+vi.mock("../lib/payment-store.js", async () => await import("../test/fake-payment-store.js"));
 vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
 vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
 

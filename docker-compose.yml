@@ -12,7 +12,7 @@ services:
     # Пин по digest (не только по тегу): major-тег молча тянет любой новый минор.
     # Обновление — осознанным PR (Dependabot умеет обновлять digest). Проверить/обновить
     # digest: docker manifest inspect postgres:16-alpine
-    image: postgres:16.14-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -76,7 +76,7 @@ services:
     depends_on:
       directus:
         condition: service_healthy
-    environment:
+    environment: &bootstrap-environment
       APP_ENV: ${APP_ENV:-development}
       SEED_DEMO: ${SEED_DEMO:-false}
       DIRECTUS_URL: http://directus:8055
@@ -91,10 +91,27 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  migrate:
-    image: postgres:16.14-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+  permissions:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
     depends_on:
       bootstrap:
+        condition: service_completed_successfully
+    environment:
+      <<: *bootstrap-environment
+      SERVICE_PERMISSIONS_BACKUP_FILE: /ops-state/service-permissions-v1.json
+    volumes:
+      - service_permission_backups:/ops-state
+    command: ["pnpm", "--filter", "@club/scripts", "migrate-service-permissions"]
+    restart: "no"
+    security_opt: ["no-new-privileges:true"]
+    logging: *default-logging
+
+  migrate:
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    depends_on:
+      permissions:
         condition: service_completed_successfully
     environment:
       PGHOST: postgres
@@ -107,6 +124,7 @@ services:
       - ./apps/api/migrations:/migrations:ro
       - ./infra/indexes.sql:/indexes.sql:ro
       - ./scripts/migrate.sh:/migrate.sh:ro
+      - ./scripts/runtime-role.sql:/runtime-role.sql:ro
     entrypoint: ["sh", "/migrate.sh"]
     restart: "no"
     security_opt: ["no-new-privileges:true"]
@@ -132,6 +150,8 @@ services:
       SUPPORT_OPERATOR_CONTACT: "${SUPPORT_OPERATOR_CONTACT:-Письменное обращение по юридическому адресу оператора}"
       SUPPORT_ENABLED: ${SUPPORT_ENABLED:-false}
       SUPPORT_RETENTION_DAYS: ${SUPPORT_RETENTION_DAYS:-30}
+      JOBS_ENABLED: ${JOBS_ENABLED:-true}
+      DPO_SYNC_ENABLED: ${DPO_SYNC_ENABLED:-true}
       NEWS_SYNC_ENABLED: ${NEWS_SYNC_ENABLED:-false}
       TELEGRAM_REACTIONS_CHAT_ID: ${TELEGRAM_REACTIONS_CHAT_ID:-}
       OFFICE_EMAIL: ${OFFICE_EMAIL:-}
@@ -240,3 +260,4 @@ volumes:
   directus_uploads:
   caddy_data:
   caddy_config:
+  service_permission_backups:

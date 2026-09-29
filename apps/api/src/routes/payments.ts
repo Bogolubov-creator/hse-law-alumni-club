@@ -1,18 +1,13 @@
 import type { FastifyInstance } from "fastify";
-import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
 import { formatRub, securePaymentUrl } from "@club/shared";
-import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
-import { extendPodcastSub } from "./podcasts.js";
 import { audit } from "../lib/audit.js";
 import { isYookassaIp } from "../lib/security.js";
 import { env } from "../env.js";
 import { sendEmail } from "../lib/notify.js";
-import { withLock } from "../lib/mutex.js";
-
-const di = directus;
+import { applyVerifiedPayment, prepareOrderPayment, recordCreatedPayment } from "../lib/payment-store.js";
 
 
 
@@ -29,30 +24,25 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (!paymentsEnabled()) return reply.code(503).send({ error: "Оплата на сайте пока не подключена" });
     const { number } = z.object({ number: z.string().min(1) }).parse(req.params);
 
-    const rows = (await di.request(readItems("orders", {
-      filter: { number: { _eq: number } }, limit: 1,
-      fields: ["id", "number", "alumni_id", "total_estimate", "status", "payment_id", "payment_status", "contact_email"],
-    }))) as any[];
-    const order = rows[0];
-    if (!order) return reply.code(404).send({ error: "Заявка не найдена" });
-
     // Платить может владелец: авторизованный выпускник по alumni_id
     // или гость с той же корзинной сессией нам недоступен постфактум – поэтому
     // гостевые оплаты создаются только сразу при оформлении (см. orders.ts).
     const alumni = await resolveAlumni(req);
-    if (!order.alumni_id || !alumni || alumni.id !== order.alumni_id)
-      return reply.code(403).send({ error: "Оплата доступна владельцу заявки" });
-    if (order.status === "canceled") return reply.code(400).send({ error: "Заявка отменена" });
-    if (order.payment_status === "succeeded") return reply.code(400).send({ error: "Заявка уже оплачена" });
+    if (!alumni) return reply.code(403).send({ error: "Оплата доступна владельцу заявки" });
+    const order = await prepareOrderPayment(number, alumni.id);
 
     // Уже есть незавершённый платёж – вернуть его ссылку, не плодить дубли.
     if (order.payment_id) {
-      const existing = await fetchPayment(order.payment_id).catch(() => null);
-      if (existing?.status === "pending" && existing.confirmation?.confirmation_url) {
+      const existing = await fetchPayment(order.payment_id);
+      await recordCreatedPayment(number, existing);
+      if (existing.status === "pending" && existing.confirmation?.confirmation_url) {
         const url = securePaymentUrl(existing.confirmation.confirmation_url);
         if (!url) return reply.code(502).send({ error: "ЮKassa не вернула защищённую ссылку на оплату" });
         return { payment_url: url };
       }
+      return reply.code(409).send({ error: existing.status === "canceled"
+        ? "Предыдущий платёж отменён. Обратитесь в учебный офис для новой заявки."
+        : "Платёж уже обрабатывается. Проверьте статус заявки позже." });
     }
 
     const payment = await createPayment({
@@ -61,7 +51,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
       orderNumber: order.number,
       customerEmail: order.contact_email || undefined,
     });
-    await di.request((updateItem as any)("orders", order.id, { payment_id: payment.id, payment_status: payment.status }));
+    await recordCreatedPayment(number, payment);
     const url = securePaymentUrl(payment.confirmation?.confirmation_url);
     if (!url) return reply.code(502).send({ error: "ЮKassa не вернула защищённую ссылку на оплату" });
     return { payment_url: url };
@@ -98,42 +88,12 @@ export async function paymentsRoutes(app: FastifyInstance) {
     const orderNumber = verified.metadata?.order_number;
     if (!orderNumber) return { ok: true }; // не наш платёж – молча подтверждаем приём
 
-    // Сериализуем обработку по номеру заявки (мьютекс): конкурентные дубли доставки
-    // вебхука ЮKassa не пройдут проверку payment_status одновременно и не продлят
-    // подписку дважды. Второй вызов увидит уже выставленный succeeded и выйдет.
-    return withLock(`order:${orderNumber}`, async () => {
-    const rows = (await di.request(readItems("orders", {
-      filter: { number: { _eq: orderNumber } }, limit: 1, fields: ["id", "status", "payment_status", "type", "alumni_id", "contact_email", "contact_fio", "total_estimate"],
-    }))) as any[];
-    const order = rows[0];
+    const { outcome, order } = await applyVerifiedPayment(verified);
     if (!order) return { ok: true };
-
-    // Сверка суммы: подтверждаем заявку, только если пришло ровно столько, сколько
-    // она стоит. Расхождение (правка заявки между созданием платежа и вебхуком,
-    // подменённая метадата) – не подтверждаем автоматически, зовём офис разбираться.
-    const paidKop = Math.round(Number(verified.amount?.value ?? 0) * 100);
-    const amountMatches = paidKop === Number(order.total_estimate ?? 0);
-    if (verified.status === "succeeded" && !amountMatches) {
-      audit("payment.amount_mismatch", {
-        actor: "yookassa", subject: `order:${orderNumber}`,
-        detail: { payment_id: verified.id, paid_kop: paidKop, expected_kop: order.total_estimate }, req,
-      });
-      req.log.error({ orderNumber, paidKop, expected: order.total_estimate }, "yookassa amount mismatch");
-      await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "review" }));
-      return { ok: true };
-    }
-
-    if (verified.status === "succeeded" && order.payment_status !== "succeeded") {
-      // Подписку продлеваем ДО отметки succeeded: если пометить оплату раньше и
-      // продление упадёт, ретрай вебхука отсечётся по payment_status – подписка не
-      // выдана при списанных деньгах. Сбой продления здесь → 500 → ЮKassa повторит.
-      if (order.type === "podcast" && order.alumni_id) {
-        await extendPodcastSub(order.alumni_id, 12);
-      }
-      await di.request((updateItem as any)("orders", order.id, {
-        payment_id: verified.id, payment_status: "succeeded", paid_at: new Date().toISOString(),
-        status: order.status === "new" ? "confirmed" : order.status, // оплаченная заявка минует ручное подтверждение
-      }));
+    if (outcome === "review") {
+      audit("payment.review", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id }, req });
+      req.log.error({ orderNumber }, "payment requires reconciliation");
+    } else if (outcome === "succeeded") {
       audit("payment.succeeded", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id, amount: verified.amount }, req });
       // Письмо об успешной оплате (fire-and-forget).
       if (order.contact_email && order.contact_email !== "-") {
@@ -147,11 +107,9 @@ export async function paymentsRoutes(app: FastifyInstance) {
         ).catch((e) => req.log.error({ err: e, orderNumber }, "payment email failed"));
       }
       req.log.info({ orderNumber }, "yookassa payment succeeded");
-    } else if (verified.status === "canceled") {
-      await di.request((updateItem as any)("orders", order.id, { payment_id: verified.id, payment_status: "canceled" }));
+    } else if (outcome === "canceled") {
       audit("payment.canceled", { actor: "yookassa", subject: `order:${orderNumber}`, detail: { payment_id: verified.id }, req });
     }
     return { ok: true };
-    });
   });
 }

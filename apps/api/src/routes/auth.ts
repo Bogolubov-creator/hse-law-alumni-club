@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { readItems, createItem, createUser, updateUser, updateItem, readRoles, readUsers } from "@directus/sdk";
 import { z } from "zod";
 import { sanitizeInterests } from "@club/shared";
-import { directusCredsValid, findUserByEmail, findAlumniByUser, signSession } from "../lib/auth.js";
+import { directusCredsValid, findUserByEmail, findAlumniByUser, findAlumniAuthUser, signSession } from "../lib/auth.js";
 import { directus } from "../lib/directus.js";
 import { env } from "../env.js";
 import { validateInitData } from "../lib/telegram.js";
@@ -201,12 +201,8 @@ export async function authRoutes(app: FastifyInstance) {
         if (recent.rowCount) return response;
       }
 
-      const users = (await directus.request((readUsers as any)({
-        filter: { email: { _eq: email }, status: { _eq: "unverified" } },
-        limit: 1, fields: ["id"],
-      }))) as { id: string }[];
-      const user = users[0];
-      if (!user) return response;
+      const user = await findAlumniAuthUser({ email });
+      if (user?.status !== "unverified") return response;
       const alumni = (await directus.request((readItems as any)("alumni", {
         filter: { user_id: { _eq: user.id } }, limit: 1, fields: ["id"],
       }))) as { id: string }[];
@@ -231,11 +227,11 @@ export async function authRoutes(app: FastifyInstance) {
     }
     if (payload.purpose !== "email-confirm" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
 
-    const users = (await directus.request((readUsers as any)({ filter: { id: { _eq: payload.sub } }, limit: 1, fields: ["id", "status"] }))) as any[];
-    if (!users[0]) return reply.code(400).send({ error: "Аккаунт не найден" });
-    if (users[0].status === "active") return { ok: true, already: true };
+    const user = await findAlumniAuthUser({ id: payload.sub });
+    if (!user) return reply.code(400).send({ error: "Ссылка недействительна" });
+    if (user.status === "active") return { ok: true, already: true };
 
-    if (users[0].status !== "unverified") return reply.code(400).send({ error: "Подтверждение недоступно для этого аккаунта" });
+    if (user.status !== "unverified") return reply.code(400).send({ error: "Подтверждение недоступно для этого аккаунта" });
     await directus.request((updateUser as any)(payload.sub, { status: "active" }));
     audit("email.confirm", { actor: `user:${payload.sub}`, req });
     // Теперь адрес доказан – зовём офис проверять выпуск.
@@ -254,11 +250,12 @@ export async function authRoutes(app: FastifyInstance) {
       req.log.error("password.forgot: SMTP не настроен – восстановление пароля недоступно");
       return reply.code(503).send({ error: "Восстановление пароля временно недоступно: почтовый канал не настроен. Напишите в учебный офис." });
     }
-    const user = await findUserByEmail(email.toLowerCase().trim());
+    const user = await findAlumniAuthUser({ email: email.toLowerCase().trim() });
     if (user) {
       // Токен одноразовый: jti гасится после применения, а ver привязывает ссылку
       // к текущему поколению сессий выпускника (после сброса версия растёт).
       const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: user.id } }, limit: 1, fields: ["token_version"] }))) as any[];
+      if (!linked[0]) return { ok: true };
       const token = jwt.sign(
         { sub: user.id, purpose: "reset", jti: randomBytes(16).toString("hex"), ver: linked[0]?.token_version ?? null },
         env.AUTH_SECRET,
@@ -287,12 +284,15 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "Ссылка недействительна или истекла – запросите новую" });
     }
     if (payload.purpose !== "reset" || !payload.sub) return reply.code(400).send({ error: "Ссылка недействительна" });
+    // Роль проверяется повторно: старой ссылкой нельзя сбросить пароль после перевода в офис.
+    if (!await findAlumniAuthUser({ id: payload.sub })) return reply.code(400).send({ error: "Ссылка недействительна" });
     // Одноразовость, слой 1: jti в списке использованных (переживает повтор в пределах процесса).
     if (payload.jti && resetTokenUsed(payload.jti)) {
       audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
       return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     }
     const linked = (await directus.request((readItems as any)("alumni", { filter: { user_id: { _eq: payload.sub } }, limit: 1, fields: ["id", "token_version"] }))) as any[];
+    if (!linked[0]) return reply.code(400).send({ error: "Ссылка недействительна" });
     // Одноразовость, слой 2 (переживает рестарт): ссылка выпущена под конкретное
     // поколение сессий. Первый успешный сброс поднимает token_version – второй
     // переход по той же ссылке видит расхождение и не срабатывает.

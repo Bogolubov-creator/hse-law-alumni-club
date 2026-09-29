@@ -18,14 +18,15 @@ export interface AddPointsInput {
 
 /**
  * Начисление баллов: запись в ledger (источник правды) + пересчёт кэша + достижения.
- * При заданном ключе идемпотентности операция сериализуется мьютексом: проверка
- * дубля и вставка – это read-then-write, и без лока двойной клик («Был на событии»,
- * повторная верификация приглашённого) успевал пройти проверку дважды и начислял
- * баллы два раза.
+ * Запись ledger и пересчёт кэша сериализуются по участнику: разные начисления
+ * не должны записать старую сумму поверх новой. Отдельный ключ идемпотентности
+ * защищает повтор операции, включая ошибочное применение ключа к другому участнику.
  */
 export async function addPoints(alumniId: string, input: AddPointsInput) {
-  if (!input.idempotencyKey) return addPointsUnlocked(alumniId, input);
-  return withLock(`points:${input.idempotencyKey}`, () => addPointsUnlocked(alumniId, input));
+  return withLock(`points-alumni:${alumniId}`, () => {
+    if (!input.idempotencyKey) return addPointsUnlocked(alumniId, input);
+    return withLock(`points:${input.idempotencyKey}`, () => addPointsUnlocked(alumniId, input));
+  });
 }
 
 async function addPointsUnlocked(alumniId: string, input: AddPointsInput) {
@@ -37,7 +38,7 @@ async function addPointsUnlocked(alumniId: string, input: AddPointsInput) {
     const dup = (await di.request(
       readItems("points_ledger", { filter: { idempotency_key: { _eq: input.idempotencyKey } }, limit: 1, fields: ["id"] }),
     )) as any[];
-    if (dup.length) return recompute(alumniId);
+    if (dup.length) return recomputeUnlocked(alumniId);
   }
 
   await di.request((createItem as any)("points_ledger", {
@@ -49,7 +50,7 @@ async function addPointsUnlocked(alumniId: string, input: AddPointsInput) {
   if (input.reason !== "decay") {
     await di.request((updateItem as any)("alumni", alumniId, { last_activity_at: new Date().toISOString() }));
   }
-  const res = await recompute(alumniId);
+  const res = await recomputeUnlocked(alumniId);
   // Достижения – не критичны: их сбой не должен валить уже зачисленные баллы.
   try {
     await grantAchievements(alumniId);
@@ -61,6 +62,10 @@ async function addPointsUnlocked(alumniId: string, input: AddPointsInput) {
 
 /** Пересчёт points_cached/level_cached из ledger (агрегат). */
 export async function recompute(alumniId: string) {
+  return withLock(`points-alumni:${alumniId}`, () => recomputeUnlocked(alumniId));
+}
+
+async function recomputeUnlocked(alumniId: string) {
   const rows = (await di.request(
     readItems("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["delta"] }),
   )) as { delta: number }[];

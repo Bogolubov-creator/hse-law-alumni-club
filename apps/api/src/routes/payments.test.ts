@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 
 vi.mock("../lib/checkout-store.js", async () => await import("../test/fake-checkout.js"));
+vi.mock("../lib/payment-store.js", async () => await import("../test/fake-payment-store.js"));
 vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
 vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
 
@@ -10,7 +11,7 @@ vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.j
 const yk = vi.hoisted(() => ({
   paymentsEnabled: vi.fn(() => true),
   createPayment: vi.fn(async () => ({ id: "pay-new", status: "pending", confirmation: { confirmation_url: "https://yookassa.test/pay/new" } })),
-  fetchPayment: vi.fn(async () => ({ id: "pay-1", status: "succeeded", amount: { value: "1000.00", currency: "RUB" }, metadata: { order_number: "ALU-2026-000001" } })),
+  fetchPayment: vi.fn(async () => ({ id: "pay-1", status: "succeeded", paid: true, amount: { value: "1000.00", currency: "RUB" }, metadata: { order_number: "ALU-2026-000001" } })),
 }));
 vi.mock("../lib/yookassa.js", () => yk);
 
@@ -47,7 +48,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   yk.paymentsEnabled.mockReturnValue(true);
   yk.createPayment.mockResolvedValue({ id: "pay-new", status: "pending", confirmation: { confirmation_url: "https://yookassa.test/pay/new" } } as any);
-  yk.fetchPayment.mockResolvedValue({ id: "pay-1", status: "succeeded", amount: { value: "1000.00", currency: "RUB" }, metadata: { order_number: ORDER } } as any);
+  yk.fetchPayment.mockResolvedValue({ id: "pay-1", status: "succeeded", paid: true, amount: { value: "1000.00", currency: "RUB" }, metadata: { order_number: ORDER } } as any);
   resetDb({
     orders: [{ id: "order-1", number: ORDER, alumni_id: ALUMNI_ID, type: "podcast", status: "new", payment_status: null, total_estimate: 100000, contact_email: "ivan@example.com", contact_fio: "Иван" }],
     alumni: [{ id: ALUMNI_ID, user_id: "user-1", verification_status: "verified", token_version: 0, podcast_sub_until: null, points_cached: 0, personal_discount: 0 }],
@@ -199,6 +200,18 @@ describe("POST /orders/:number/pay – ссылка на оплату", () => {
     expect(yk.createPayment).not.toHaveBeenCalled();
   });
 
+  it.each(["canceled", "waiting_for_capture"])("ошибка проверки провайдера сохраняет статус %s", async paymentStatus => {
+    Object.assign(db.orders![0]!, { payment_id: "pay-1", payment_status: paymentStatus });
+    yk.fetchPayment.mockRejectedValue(new Error("Provider unavailable"));
+    const app = await build();
+    const response = await app.inject({ method: "POST", url: `/orders/${ORDER}/pay`, headers: { authorization: `Bearer ${memberToken()}` } });
+    expect(response.statusCode).toBeGreaterThanOrEqual(500);
+    expect(db.orders![0]!.payment_status).toBe(paymentStatus);
+    expect(db.orders![0]!.payment_id).toBe("pay-1");
+    expect(yk.createPayment).not.toHaveBeenCalled();
+    await app.close();
+  });
+
   it("отменённую заявку оплатить нельзя", async () => {
     db.orders![0]!.status = "canceled";
     const app = await build();
@@ -206,9 +219,26 @@ describe("POST /orders/:number/pay – ссылка на оплату", () => {
     expect(r.statusCode).toBe(400);
   });
 
-  it("несуществующая заявка → 404", async () => {
+  it("несуществующая заявка владельца → 404", async () => {
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/orders/ALU-2026-999999/pay", headers: { authorization: `Bearer ${memberToken()}` } });
     expect(r.statusCode).toBe(404);
+  });
+
+  it("expired не создаёт платёж", async () => {
+    db.orders![0]!.status = "expired";
+    const app = await build();
+    const result = await app.inject({ method: "POST", url: `/orders/${ORDER}/pay`, headers: { authorization: `Bearer ${memberToken()}` } });
+    expect(result.statusCode).toBe(400);
+    expect(yk.createPayment).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it("сбой провайдера сохраняет pending до ручной сверки", async () => {
+    yk.createPayment.mockRejectedValueOnce(new Error("provider unavailable"));
+    const app = await build();
+    await app.inject({ method: "POST", url: `/orders/${ORDER}/pay`, headers: { authorization: `Bearer ${memberToken()}` } });
+    expect(db.orders![0]!.payment_status).toBe("pending");
+    await app.close();
   });
 });

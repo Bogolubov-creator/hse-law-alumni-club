@@ -21,13 +21,13 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.get("/admin/news", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("news", { sort: ["-published_at"], limit: -1, fields: ["id", "slug", "title", "excerpt", "body", "published_at", "status", "source_url"] }));
   });
 
 
   app.post("/admin/news", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const b = newsBody.parse(req.body);
     const slug = slugify(b.title);
@@ -43,7 +43,7 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.patch("/admin/news/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = newsBody.partial().parse(req.body);
@@ -54,7 +54,7 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.delete("/admin/news/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("news", id));
@@ -75,13 +75,13 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.get("/admin/timeline", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     return di.request(readItems("timeline_items", { sort: ["sort"], limit: -1, fields: ["id", "year", "title", "text", "metric", "sort", "status"] }));
   });
 
 
   app.post("/admin/timeline", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const b = timelineBody.parse(req.body);
     const all = (await di.request(readItems("timeline_items", { fields: ["sort"], limit: -1 }))) as any[];
@@ -95,7 +95,7 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.patch("/admin/timeline/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = timelineBody.partial().parse(req.body);
@@ -106,7 +106,7 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.delete("/admin/timeline/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     await di.request((deleteItem as any)("timeline_items", id));
@@ -126,7 +126,7 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.get("/admin/pages/:slug", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const page = await pageBlocks(slug);
     if (!page) return reply.code(404).send({ error: "Страница не найдена" });
@@ -149,7 +149,7 @@ export async function adminContentRoutes(app: FastifyInstance) {
 
 
   app.patch("/admin/pages/:slug", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.params);
     const body = z.object({ hero: heroBody.optional(), cta: ctaBody.optional() }).parse(req.body);

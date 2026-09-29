@@ -11,7 +11,7 @@ docker run --rm -d --name "$CONTAINER" \
   --tmpfs /var/lib/postgresql/data \
   -e POSTGRES_DB=alumni_staged -e POSTGRES_USER=club \
   -e POSTGRES_PASSWORD=integration-test-only \
-  -p 127.0.0.1::5432 postgres:16-alpine >/dev/null
+  -p 127.0.0.1::5432 postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea >/dev/null
 # Временный сервер initdb принимает Unix socket, затем останавливается.
 # TCP становится доступен только у окончательно запущенного PostgreSQL.
 READY=false
@@ -31,4 +31,4 @@ done
 cd "$REPO_DIR"
 CHECKOUT_DATABASE_URL="postgres://club:integration-test-only@127.0.0.1:$PORT/alumni_staged" \
 RUN_CHECKOUT_INTEGRATION=true RUN_SUPPORT_INTEGRATION=true RUN_TELEGRAM_INTEGRATION=true \
-  pnpm --filter @club/api exec vitest run src/lib/checkout.integration.test.ts src/routes/support.integration.test.ts src/lib/tg-link.integration.test.ts src/lib/news-social.integration.test.ts
+  pnpm --filter @club/api exec vitest run src/lib/checkout.integration.test.ts src/lib/payment-store.integration.test.ts src/routes/support.integration.test.ts src/lib/tg-link.integration.test.ts src/lib/news-social.integration.test.ts

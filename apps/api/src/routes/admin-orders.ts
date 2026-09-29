@@ -17,7 +17,7 @@ export async function adminOrdersRoutes(app: FastifyInstance) {
   // Заявки: страница + total. Раньше отдавались только последние 100 без
   // пагинации – сто первая заявка исчезала из панели навсегда.
   app.get("/admin/orders", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
+    if (!await requireAdmin(req, reply)) return;
     const qp = z.object({
       q: z.string().max(100).optional(),
       status: z.enum(["new", "in_progress", "confirmed", "done", "canceled", "expired"]).optional(),
@@ -44,7 +44,7 @@ export async function adminOrdersRoutes(app: FastifyInstance) {
 
 
   app.patch("/admin/orders/:id", async (req, reply) => {
-    const ctx = requireAdmin(req, reply);
+    const ctx = await requireAdmin(req, reply);
     if (!ctx) return;
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const { status } = z.object({ status: z.enum(["new", "in_progress", "confirmed", "done", "canceled", "expired"]) }).parse(req.body);
@@ -70,7 +70,7 @@ export async function adminOrdersRoutes(app: FastifyInstance) {
   // ── Выгрузка заявок в CSV (Excel-совместимо: BOM + точка с запятой) ──
   app.get("/admin/orders/export.csv", async (req, reply) => {
     // Выгрузка содержит ПДн всех заявителей – только админ.
-    const ctx = requireFullAdmin(req, reply);
+    const ctx = await requireFullAdmin(req, reply);
     if (!ctx) return reply;
     const orders = (await di.request((readItems as any)("orders", {
       sort: ["-created_at"], limit: -1,

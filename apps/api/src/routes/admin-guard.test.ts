@@ -128,6 +128,46 @@ describe("гарды админских маршрутов", () => {
     const r = await app.inject({ method: "GET", url: "/admin/orders", headers: { authorization: `Bearer ${token}` } });
     expect(r.statusCode).toBe(200);
   });
+
+  it.each(["suspended", "archived", "unverified"])("выданная сессия перестаёт работать при status=%s", async status => {
+    const token = jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    db.directus_users!.find(user => user.id === ADMIN_ID)!.status = status;
+    const app = await build();
+    expect((await app.inject({ url: "/admin/orders", headers: { authorization: `Bearer ${token}` } })).statusCode).toBe(401);
+    await app.close();
+  });
+
+  it("понижение admin до editor сразу закрывает финансовую операцию", async () => {
+    const token = jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    db.directus_users!.find(user => user.id === ADMIN_ID)!.role = { name: "editor" };
+    const app = await build();
+    const headers = { authorization: `Bearer ${token}` };
+    expect((await app.inject({ url: "/admin/orders", headers })).statusCode).toBe(200);
+    expect((await app.inject({ method: "PATCH", url: `/admin/members/${ALUMNI_ID}`, headers, payload: { personal_discount: 10 } })).statusCode).toBe(403);
+    expect(db.alumni![0]!.personal_discount).toBe(0);
+    await app.close();
+  });
+
+  it("удалённый пользователь или роль alumni не сохраняют старые права", async () => {
+    const token = jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    const app = await build();
+    const headers = { authorization: `Bearer ${token}` };
+    db.directus_users!.find(user => user.id === ADMIN_ID)!.role = { name: "alumni" };
+    expect((await app.inject({ url: "/admin/orders", headers })).statusCode).toBe(401);
+    db.directus_users = db.directus_users!.filter(user => user.id !== ADMIN_ID);
+    expect((await app.inject({ url: "/admin/orders", headers })).statusCode).toBe(401);
+    await app.close();
+  });
+
+  it("при сбое CMS старый JWT не открывает админку", async () => {
+    const { directusModuleMock } = await import("../test/fake-directus.js");
+    const spy = vi.spyOn(directusModuleMock.directus, "request").mockRejectedValueOnce(new Error("CMS unavailable"));
+    const token = jwt.sign({ sub: ADMIN_ID, role: "admin", scope: "admin" }, adminSecret(), { expiresIn: "12h" });
+    const app = await build();
+    try {
+      expect((await app.inject({ url: "/admin/orders", headers: { authorization: `Bearer ${token}` } })).statusCode).toBe(401);
+    } finally { spy.mockRestore(); await app.close(); }
+  });
 });
 
 describe("PATCH /admin/members/:id – изменение данных выпускника", () => {
