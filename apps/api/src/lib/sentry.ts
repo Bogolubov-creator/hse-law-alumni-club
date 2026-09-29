@@ -14,7 +14,7 @@ let client: typeof import("@sentry/node") | null = null;
 function scrubPii(s: string): string {
   return s
     .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email]")
-    .replace(/\+?\d[\d ()\-]{7,}\d/g, "[phone]");
+    .replace(/\+?\d[\d ()-]{7,}\d/g, "[phone]");
 }
 
 export async function initSentry(): Promise<void> {

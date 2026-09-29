@@ -130,7 +130,7 @@ function PushBroadcast({ subs }: { subs: number }) {
     onSuccess: (r) => { setSent(`Отправлено на ${r.subscribers} устройств ✓`); setF({ title: "", body: "", url: "/events" }); },
     onError: (e) => setSent((e as Error).message),
   });
-  const valid = f.title.trim().length >= 3 && f.body.trim().length >= 3 && /^\/[a-z0-9\-\/]*$/i.test(f.url);
+  const valid = f.title.trim().length >= 3 && f.body.trim().length >= 3 && /^\/[a-z0-9/-]*$/i.test(f.url);
   const blocked = !valid || send.isPending || subs === 0;
   return (
     <Panel>

@@ -14,10 +14,14 @@
     "bootstrap": "pnpm --filter @club/scripts bootstrap",
     "up": "docker compose up -d --build",
     "down": "docker compose down",
-    "logs": "docker compose logs -f"
+    "logs": "docker compose logs -f",
+    "lint": "eslint apps/api/src apps/web/src packages/shared/src scripts/src"
   },
   "devDependencies": {
-    "typescript": "^5.6.3"
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "8.71.0"
   },
   "pnpm": {
     "overrides": {
@@ -26,7 +30,9 @@
       "uuid": "^11.1.1"
     },
     "auditConfig": {
-      "ignoreGhsas": ["GHSA-qwww-vcr4-c8h2"]
+      "ignoreGhsas": [
+        "GHSA-qwww-vcr4-c8h2"
+      ]
     }
   }
 }

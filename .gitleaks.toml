@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Три фиксированных синтетических значения теста prod-config; не рабочие ключи"
+condition = "AND"
+paths = ['''apps/api/src/env\.test\.ts$''']
+regexTarget = "secret"
+regexes = [
+  '''^8f2c1a9d7e5b3c04f6a8d2e1b9c7a5f3$''',
+  '''^0123456789abcdef0123456789abcdef01234567$''',
+  '''^fedcba9876543210fedcba9876543210fedcba98$''',
+]

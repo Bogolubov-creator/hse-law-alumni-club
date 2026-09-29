@@ -55,7 +55,7 @@ export async function adminOverviewRoutes(app: FastifyInstance) {
     const b = z.object({
       title: z.string().min(3).max(80),
       body: z.string().min(3).max(200),
-      url: z.string().max(200).regex(/^\/[a-z0-9\-\/]*$/i, "Относительный путь, например /events").default("/"),
+      url: z.string().max(200).regex(/^\/[a-z0-9/-]*$/i, "Относительный путь, например /events").default("/"),
     }).parse(req.body);
     const subs = (await di.request((readItems as any)("push_subs", { fields: ["id"], limit: -1 }))) as any[];
     pushToAll({ title: b.title, body: b.body, url: b.url });

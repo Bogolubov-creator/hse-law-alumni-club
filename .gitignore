@@ -25,3 +25,7 @@ docs/Отчёт по дизайну*
 .superdesign/comps/vestnik-*.html
 
 .tmp
+
+# Локальные кэши проверок
+**/__pycache__/
+**/.vitest/
