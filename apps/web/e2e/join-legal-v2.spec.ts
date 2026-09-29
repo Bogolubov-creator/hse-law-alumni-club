@@ -79,6 +79,26 @@ test.describe("Вступление в клуб v2", () => {
     await expect(page.getByRole("link", { name: "Войти в кабинет" })).toHaveCount(0);
   });
 
+  test("после недоставки письма можно повторить запрос без новой анкеты", async ({ page }) => {
+    let resentTo: string | null = null;
+    await page.route("**/api/auth/register", (r) => r.fulfill({
+      status: 200, contentType: "application/json", body: JSON.stringify({ confirm_required: true, confirmation_queued: false }),
+    }));
+    await page.route("**/api/auth/resend-confirmation", (r) => {
+      resentTo = r.request().postDataJSON().email;
+      return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    });
+    await page.goto("/join");
+    await fillForm(page);
+    await page.getByRole("button", { name: "Подать заявку на вступление" }).click();
+
+    await expect(page.getByText(/письмо пока не удалось отправить/)).toBeVisible();
+    await expect(page.getByLabel("Почта для повторной ссылки")).toHaveValue("belov@example.com");
+    await page.getByRole("button", { name: "Отправить ссылку ещё раз" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Если заявка с этой почтой ожидает подтверждения" })).toBeVisible();
+    expect(resentTo).toBe("belov@example.com");
+  });
+
   test("ошибка сервера показывается, анкета не теряется", async ({ page }) => {
     await page.route("**/api/auth/register", (r) => r.fulfill({
       status: 409, contentType: "application/json", body: JSON.stringify({ error: "Такая почта уже зарегистрирована" }),
@@ -158,6 +178,16 @@ test.describe("Подтверждение почты v2", () => {
     await page.goto("/confirm?token=abc");
     await expect(page.getByRole("heading", { name: "Почта подтверждена" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Войти в кабинет" })).toHaveAttribute("href", "/lk");
+  });
+
+  test("по истёкшей ссылке можно запросить новую", async ({ page }) => {
+    await page.route("**/api/auth/confirm", (r) => r.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ error: "Ссылка истекла" }) }));
+    await page.route("**/api/auth/resend-confirmation", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) }));
+    await page.goto("/confirm?token=expired");
+    await expect(page.getByRole("heading", { name: "Не удалось подтвердить" })).toBeVisible();
+    await page.getByLabel("Почта для повторной ссылки").fill("belov@example.com");
+    await page.getByRole("button", { name: "Отправить ссылку ещё раз" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Если заявка с этой почтой ожидает подтверждения" })).toBeVisible();
   });
 });
 

@@ -6,7 +6,8 @@ import jwt from "jsonwebtoken";
 vi.mock("@directus/sdk", async () => await import("../test/fake-sdk.js"));
 vi.mock("../lib/directus.js", async () => (await import("../test/fake-directus.js")).directusModuleMock);
 // Проверяем маршрут и письмо, не DNS/SMTP внешнего сервера.
-vi.mock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail: vi.fn(async () => ({ messageId: "test" })) }) } }));
+const { sendMailMock } = vi.hoisted(() => ({ sendMailMock: vi.fn() }));
+vi.mock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail: sendMailMock }) } }));
 
 const { db, resetDb } = await import("../test/fake-directus.js");
 const { authRoutes } = await import("./auth.js");
@@ -37,6 +38,7 @@ async function build(): Promise<FastifyInstance> {
 
 beforeEach(() => {
   vi.unstubAllEnvs();
+  sendMailMock.mockReset().mockResolvedValue({ messageId: "test" });
   resetDb({
     directus_roles: [{ id: ALUMNI_ROLE, name: "alumni" }],
     directus_users: [{ id: USER_ID, email: "ivan@example.com", status: "active", first_name: "Иван", last_name: "Петров", role: ALUMNI_ROLE }],
@@ -149,8 +151,64 @@ describe("POST /auth/register", () => {
     try {
       const app = await build();
       const r = await app.inject({ method: "POST", url: "/auth/register", payload: form });
-      expect(r.json()).toMatchObject({ confirm_required: true });
+      expect(r.json()).toMatchObject({ confirm_required: true, confirmation_queued: true });
       expect(db.directus_users!.find((u) => u.email === "maria@example.com")?.status).toBe("unverified");
+    } finally {
+      (env as { SMTP_HOST: string }).SMTP_HOST = original;
+    }
+  });
+
+  it("сбой SMTP сохраняет заявку и сообщает, что письмо не поставлено в очередь", async () => {
+    const original = env.SMTP_HOST;
+    (env as { SMTP_HOST: string }).SMTP_HOST = "smtp.example.com";
+    sendMailMock.mockRejectedValue(new Error("SMTP unavailable"));
+    try {
+      const app = await build();
+      const r = await app.inject({ method: "POST", url: "/auth/register", payload: form });
+      expect(r.statusCode).toBe(200);
+      expect(r.json()).toMatchObject({ confirm_required: true, confirmation_queued: false });
+      expect(db.directus_users!.find((u) => u.email === "maria@example.com")?.status).toBe("unverified");
+    } finally {
+      (env as { SMTP_HOST: string }).SMTP_HOST = original;
+    }
+  });
+});
+
+describe("POST /auth/resend-confirmation", () => {
+  it("отправляет новую ссылку только ожидающей заявке и не раскрывает наличие аккаунта", async () => {
+    const original = env.SMTP_HOST;
+    (env as { SMTP_HOST: string }).SMTP_HOST = "smtp.example.com";
+    db.directus_users!.push({ id: "pending-1", email: "pending@example.com", status: "unverified", role: ALUMNI_ROLE });
+    db.alumni!.push({ id: "alumni-pending", user_id: "pending-1", fio: "Ожидающий" });
+    try {
+      const app = await build();
+      const pending = await app.inject({ method: "POST", url: "/auth/resend-confirmation", payload: { email: "Pending@Example.com" } });
+      const active = await app.inject({ method: "POST", url: "/auth/resend-confirmation", payload: { email: "ivan@example.com" } });
+      const missing = await app.inject({ method: "POST", url: "/auth/resend-confirmation", payload: { email: "missing@example.com" } });
+      expect(pending.statusCode).toBe(200);
+      expect(active.body).toBe(pending.body);
+      expect(missing.body).toBe(pending.body);
+      expect(sendMailMock).toHaveBeenCalledTimes(1);
+      expect(sendMailMock).toHaveBeenCalledWith(expect.objectContaining({ to: "pending@example.com" }));
+    } finally {
+      (env as { SMTP_HOST: string }).SMTP_HOST = original;
+    }
+  });
+
+  it("два одновременных запроса не отправляют два письма", async () => {
+    const original = env.SMTP_HOST;
+    (env as { SMTP_HOST: string }).SMTP_HOST = "smtp.example.com";
+    db.directus_users!.push({ id: "pending-race", email: "race@example.com", status: "unverified", role: ALUMNI_ROLE });
+    db.alumni!.push({ id: "alumni-race", user_id: "pending-race" });
+    try {
+      const app = await build();
+      const payload = { email: "race@example.com" };
+      const responses = await Promise.all([
+        app.inject({ method: "POST", url: "/auth/resend-confirmation", payload }),
+        app.inject({ method: "POST", url: "/auth/resend-confirmation", payload }),
+      ]);
+      expect(responses.every((response) => response.statusCode === 200)).toBe(true);
+      expect(sendMailMock).toHaveBeenCalledTimes(1);
     } finally {
       (env as { SMTP_HOST: string }).SMTP_HOST = original;
     }

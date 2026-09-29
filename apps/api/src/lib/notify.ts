@@ -3,6 +3,8 @@ import { formatRub } from "@club/shared";
 import { env } from "../env.js";
 import { checkoutPool } from "./checkout-store.js";
 
+export const EMAIL_CONFIRMATION_KIND = "email_confirmation";
+
 // SMTP-транспорт создаётся при первой отправке и переиспользуется. Лениво, а не
 // на импорте: источник правды – env.SMTP_HOST в момент запроса, иначе модуль,
 // загруженный раньше конфигурации, навсегда остался бы «без почты».
@@ -56,33 +58,45 @@ export async function enqueueMail(input: {
     const sent = await sendEmail(input.to, input.subject, input.body);
     return { id: null, sent, blocked: !mailEnabled() };
   }
+  let id: number;
   try {
     const { rows } = await checkoutPool().query<{ id: number }>(
       `INSERT INTO club_mail_outbox(kind, to_addr, subject, body)
        VALUES($1,$2,$3,$4) RETURNING id`,
       [input.kind ?? "office", input.to, input.subject, input.body],
     );
-    const id = rows[0]!.id;
-    const sent = await sendEmail(input.to, input.subject, input.body);
-    if (sent) {
-      await checkoutPool().query(
-        `UPDATE club_mail_outbox SET status='sent', attempts=1, sent_at=now() WHERE id=$1`,
-        [id],
-      );
-      return { id, sent: true, blocked: false };
-    }
-    await checkoutPool().query(
-      `UPDATE club_mail_outbox
-       SET attempts=1, next_attempt_at=now() + interval '5 minutes',
-           last_error=$2, status=CASE WHEN 1 >= $3 THEN 'failed' ELSE 'pending' END
-       WHERE id=$1`,
-      [id, mailEnabled() ? "smtp_fail" : "smtp_missing", env.MAIL_OUTBOX_MAX_ATTEMPTS],
-    );
-    return { id, sent: false, blocked: !mailEnabled() };
+    id = rows[0]!.id;
   } catch {
     const sent = await sendEmail(input.to, input.subject, input.body);
     return { id: null, sent, blocked: !mailEnabled() };
   }
+
+  const sent = await sendEmail(input.to, input.subject, input.body);
+  try {
+    if (sent) {
+      await checkoutPool().query(
+        `UPDATE club_mail_outbox
+         SET status='sent', attempts=1, sent_at=now(),
+             body=CASE WHEN kind=$2 THEN '' ELSE body END
+         WHERE id=$1`,
+        [id, EMAIL_CONFIRMATION_KIND],
+      );
+    } else {
+      await checkoutPool().query(
+        `UPDATE club_mail_outbox
+         SET attempts=1, next_attempt_at=now() + interval '5 minutes',
+             last_error=$2, status=CASE WHEN 1 >= $3 THEN 'failed' ELSE 'pending' END,
+             body=CASE WHEN 1 >= $3 AND kind=$4 THEN '' ELSE body END
+         WHERE id=$1`,
+        [id, mailEnabled() ? "smtp_fail" : "smtp_missing", env.MAIL_OUTBOX_MAX_ATTEMPTS, EMAIL_CONFIRMATION_KIND],
+      );
+    }
+  } catch {
+    // Попытка SMTP уже сделана. Повтор здесь создал бы немедленный дубль;
+    // если статус не сохранился, очередной проход может отправить письмо снова.
+    console.error("[mail] не удалось записать статус доставки в очередь");
+  }
+  return { id, sent, blocked: !mailEnabled() };
 }
 
 /** Слив due-писем из outbox. Возвращает { sent, failed, pending }. */
@@ -103,14 +117,20 @@ export async function drainMailOutbox(limit = 20): Promise<{ sent: number; faile
       const attempts = row.attempts + 1;
       if (ok) {
         await checkoutPool().query(
-          `UPDATE club_mail_outbox SET status='sent', attempts=$2, sent_at=now(), last_error=NULL WHERE id=$1`,
-          [row.id, attempts],
+          `UPDATE club_mail_outbox
+           SET status='sent', attempts=$2, sent_at=now(), last_error=NULL,
+               body=CASE WHEN kind=$3 THEN '' ELSE body END
+           WHERE id=$1`,
+          [row.id, attempts, EMAIL_CONFIRMATION_KIND],
         );
         sent += 1;
       } else if (attempts >= env.MAIL_OUTBOX_MAX_ATTEMPTS) {
         await checkoutPool().query(
-          `UPDATE club_mail_outbox SET status='failed', attempts=$2, last_error='max_attempts' WHERE id=$1`,
-          [row.id, attempts],
+          `UPDATE club_mail_outbox
+           SET status='failed', attempts=$2, last_error='max_attempts',
+               body=CASE WHEN kind=$3 THEN '' ELSE body END
+           WHERE id=$1`,
+          [row.id, attempts, EMAIL_CONFIRMATION_KIND],
         );
         failed += 1;
       } else {
