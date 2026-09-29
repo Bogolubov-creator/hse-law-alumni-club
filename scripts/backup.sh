@@ -34,10 +34,17 @@ backup_snapshot() (
   output="$BACKUP_DIR/snapshot-$stamp"
   mkdir "$partial"
   resume_stopped() {
-    local service
+    local service container health attempt
     # Возвращаем те же контейнеры: Compose start может повторно запустить bootstrap.
     for service in "${stopped[@]}"; do
-      docker start "$("${compose[@]}" ps -aq "$service")" >/dev/null || return 1
+      container="$("${compose[@]}" ps -aq "$service")"
+      docker start "$container" >/dev/null || return 1
+      for attempt in $(seq 1 60); do
+        health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container")" || return 1
+        [[ "$health" = healthy || "$health" = running ]] && break
+        sleep 1
+      done
+      [[ "$health" = healthy || "$health" = running ]] || return 1
     done
   }
   cleanup() {
