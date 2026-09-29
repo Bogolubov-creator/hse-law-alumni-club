@@ -94,7 +94,8 @@ export async function request(desc: Descriptor): Promise<any> {
       const rows = table(desc.collection!).filter((r) => matchFilter(r, desc.query?.filter));
       const sorted = applySort(rows, desc.query?.sort);
       const limit = desc.query?.limit;
-      const limited = typeof limit === "number" && limit >= 0 ? sorted.slice(0, limit) : sorted;
+      const offset = desc.query?.offset ?? 0;
+      const limited = typeof limit === "number" && limit >= 0 ? sorted.slice(offset, offset + limit) : sorted.slice(offset);
       return limited.map((r) => project(r, desc.query?.fields));
     }
     case "readItem": {

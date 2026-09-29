@@ -9,9 +9,9 @@ import {
 
 /**
  * Баннер cookies по 152-ФЗ (ст. 9): информирование + свободный выбор.
- * Кнопки «Только необходимые» и «Принять все» равнозначны на первом экране.
- * Сайт сейчас не грузит аналитику/рекламу до согласия; «Принять все» резервирует
- * право на необязательные cookies, если они появятся позже.
+ * Визуально – плашка как у сайта ДПО (светлая surface, пилюли, мягкая тень);
+ * кнопки «Только необходимые» / «Принять все» равнозначны по размеру и доступны
+ * сразу. Аналитика не грузится до «Принять все».
  */
 export default function CookieBanner() {
   const [visible, setVisible] = useState(() => !hasCookieChoice());
@@ -56,24 +56,33 @@ export default function CookieBanner() {
       ref={ref}
       role="dialog"
       aria-modal="false"
-      aria-label="Использование cookies"
+      aria-label="Согласие на использование cookies"
       className="club-cookie-banner"
     >
       <p className="club-cookie-banner__text">
-        Сайт использует необходимые файлы cookies и локальное хранилище браузера: корзина,
-        сессия входа, выбранные настройки и ваш выбор по cookies. Рекламных и аналитических
-        счётчиков сейчас нет. Подробнее – в{" "}
+        Мы используем необходимые cookies и локальное хранилище браузера: корзина,
+        сессия входа и ваш выбор по cookies. При «Принять все» учитываются
+        обезличенные просмотры страниц (путь и день, без рекламных сетей).
+        Подробнее – в{" "}
         <Link to="/privacy#cookies" className="foc club-cookie-banner__link">
-          политике обработки персональных данных
+          Политике обработки персональных данных
         </Link>
-        . Выбор можно изменить в любой момент ссылкой «Cookies» в подвале.
+        . Выбор можно изменить ссылкой «Cookies» в подвале.
       </p>
       <div className="club-cookie-banner__actions">
-        <button type="button" className="foc club-cookie-banner__btn club-cookie-banner__btn--secondary" onClick={() => choose("essential")}>
-          Только необходимые
-        </button>
-        <button type="button" className="foc club-cookie-banner__btn club-cookie-banner__btn--primary" onClick={() => choose("all")}>
+        <button
+          type="button"
+          className="foc club-cookie-banner__btn club-cookie-banner__btn--primary"
+          onClick={() => choose("all")}
+        >
           Принять все
+        </button>
+        <button
+          type="button"
+          className="foc club-cookie-banner__btn club-cookie-banner__btn--secondary"
+          onClick={() => choose("essential")}
+        >
+          Только необходимые
         </button>
       </div>
     </div>

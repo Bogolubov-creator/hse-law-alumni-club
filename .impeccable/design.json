@@ -1,123 +1,184 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-08T13:32:45.446Z",
-  "title": "Клуб выпускников факультета права Вышки – V2, 08.09.2026",
+  "generatedAt": "2026-09-12T23:30:00+03:00",
+  "title": "Design System: Клуб выпускников факультета права Вышки – мир «Фасад и зал» (12.09.2026)",
+  "source": "DESIGN.md, раздел «Мир «Фасад и зал» – действующая система (2026-09-12, ночь)»; токены – apps/web/src/styles/tokens.css",
   "extensions": {
+    "colorMeta": {
+      "ohra": { "role": "primary", "displayName": "Охра клуба", "canonical": "#ec5a13", "tonalRamp": ["oklch(25% 0.09 45)", "oklch(35% 0.13 45)", "oklch(45% 0.17 45)", "oklch(55% 0.19 45)", "oklch(64% 0.19 45)", "oklch(74% 0.14 45)", "oklch(85% 0.08 45)", "oklch(95% 0.03 45)"] },
+      "ohra-deep": { "role": "primary", "displayName": "Охра-текст на светлом", "canonical": "#c24009" },
+      "ohra-light": { "role": "primary", "displayName": "Охра-текст на графите", "canonical": "#ff7a3d" },
+      "hse-blue": { "role": "secondary", "displayName": "Синий Вышки", "canonical": "#11296b", "tonalRamp": ["oklch(18% 0.08 270)", "oklch(27% 0.11 270)", "oklch(36% 0.13 270)", "oklch(46% 0.13 270)", "oklch(56% 0.12 270)", "oklch(68% 0.10 270)", "oklch(82% 0.06 270)", "oklch(95% 0.02 270)"] },
+      "blue-bright": { "role": "secondary", "displayName": "Ссылка на светлом", "canonical": "#2e6fae" },
+      "blue-light": { "role": "secondary", "displayName": "Ссылка на графите", "canonical": "#6f9bd8" },
+      "ink": { "role": "neutral", "displayName": "Графит", "canonical": "#14181f", "tonalRamp": ["oklch(15% 0.01 260)", "oklch(22% 0.01 260)", "oklch(32% 0.01 260)", "oklch(45% 0.01 260)", "oklch(58% 0.01 260)", "oklch(72% 0.008 260)", "oklch(86% 0.005 260)", "oklch(96% 0.003 260)"] },
+      "ink-soft": { "role": "neutral", "displayName": "Графит вторичный", "canonical": "#272c38" },
+      "ink-mute": { "role": "neutral", "displayName": "Графит третичный", "canonical": "#5c6470" },
+      "ink-raised": { "role": "neutral", "displayName": "Графит приподнятый", "canonical": "#1b202a" },
+      "ink-sunken": { "role": "neutral", "displayName": "Графит утопленный", "canonical": "#10141b" },
+      "paper": { "role": "neutral", "displayName": "Бумага", "canonical": "#ffffff" },
+      "paper-2": { "role": "neutral", "displayName": "Бумага вторичная", "canonical": "#f3f5f7" },
+      "paper-soft": { "role": "neutral", "displayName": "Бумага-текст вторичный на графите", "canonical": "#c9cdd6" },
+      "paper-mute": { "role": "neutral", "displayName": "Бумага-текст третичный на графите", "canonical": "#8e95a3" },
+      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "#e5e7eb" },
+      "line-control": { "role": "neutral", "displayName": "Контур элемента управления", "canonical": "#7c828c" },
+      "brass": { "role": "tertiary", "displayName": "Латунь", "canonical": "#c49a45" },
+      "brass-deep": { "role": "tertiary", "displayName": "Латунь-текст", "canonical": "#856419" },
+      "green": { "role": "tertiary", "displayName": "Зелёный подтверждения", "canonical": "#1f8a5b" },
+      "green-deep": { "role": "tertiary", "displayName": "Зелёный-текст", "canonical": "#0f6b43" },
+      "karmin": { "role": "tertiary", "displayName": "Кармин", "canonical": "#b5331b" },
+      "karmin-light": { "role": "tertiary", "displayName": "Кармин-текст на графите", "canonical": "#ff8a70" }
+    },
+    "semanticLayer": {
+      "note": "Компоненты обращаются к --c-*; область .club-dark подменяет их значения. Один компонент читается на обоих фонах без правок.",
+      "light": { "--c-bg": "paper", "--c-bg-sunken": "paper-2", "--c-bg-inverse": "ink", "--c-text": "ink", "--c-text-2": "ink-soft", "--c-text-3": "ink-mute", "--c-text-inverse": "paper", "--c-accent": "ohra", "--c-accent-text": "ohra-deep", "--c-on-accent": "ink", "--c-link": "blue-bright", "--c-line": "line", "--c-line-control": "line-control" },
+      "club-dark": { "--c-bg": "ink", "--c-bg-raised": "ink-raised", "--c-bg-sunken": "ink-sunken", "--c-bg-inverse": "paper", "--c-text": "paper", "--c-text-2": "paper-soft", "--c-text-3": "paper-mute", "--c-text-inverse": "ink", "--c-accent-text": "ohra-light", "--c-link": "blue-light", "--c-line": "rgb(255 255 255 / 0.14)", "--c-line-control": "rgb(255 255 255 / 0.46)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "h1 главной, до 14ch, последнее слово в <em> курсивом (HSE Slab Italic)." },
+      "headline": { "displayName": "Headline", "purpose": "h2 полос главной, с одним курсивным словом." },
+      "page-title": { "displayName": "Page title", "purpose": "h1 мачты витрин с фото (до 18ch); без фото – clamp(32px, 3.6vw, 48px)." },
+      "date-plate": { "displayName": "Date plate", "purpose": "Число даты как предмет: 56px в афише, 40px номера шагов, 28px даты новостей." },
+      "title": { "displayName": "Title", "purpose": "Названия программ, событий, новостей: HSE Sans 600, 18–22px; hover – подчёркивание 1px." },
+      "lead": { "displayName": "Lead", "purpose": "Подпись под титулом, ink-soft, до 40–52ch." },
+      "body": { "displayName": "Body", "purpose": "Весь текст, абзацы до 44–52ch." },
+      "caption": { "displayName": "Caption", "purpose": "Мета 14px ink-mute: направление, формат, дата, реквизиты; служебное не меньше 12px." },
+      "label": { "displayName": "Label (caps)", "purpose": "Навигация, кнопки, заголовки колонок подвала, подпись поиска. Не над содержательными заголовками." }
+    },
+    "shadows": [],
+    "elevation": "Плоская система: теней нет; глубина – смена фона (paper → ink → paper-2), hairline 1px и жирный разделитель 1px цветом текста. Диалог и cookie-баннер приподняты только z-index (300/500).",
     "motion": [
-      {
-        "name": "dur-fast",
-        "value": "140ms",
-        "purpose": "Быстрые переходы состояния."
-      },
-      {
-        "name": "dur-base",
-        "value": "200ms",
-        "purpose": "Переходы карточек."
-      },
-      {
-        "name": "ease-out",
-        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "Кривая перехода из текущих токенов."
-      }
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Единственная кривая; используется в переходах цвета режима каталога." },
+      { "name": "dur-fast", "value": "140ms", "purpose": "Нажатие: scale(.97) у .club-btn." },
+      { "name": "dur-base", "value": "200ms", "purpose": "Переход цвета/фона на hover." },
+      { "name": "button-color", "value": "280ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Переход цвета .club-btn на hover." },
+      { "name": "menu-open", "value": "220ms cubic-bezier(.16, 1, .3, 1)", "purpose": "Раскрытие мобильного меню (только при no-preference)." },
+      { "name": "policy", "value": "hover/focus only", "purpose": "Решение заказчика 12.09: на публичном контуре нет входов, зерна, маркизы и scroll-scrub." }
     ],
     "breakpoints": [
-      {
-        "name": "public-navigation",
-        "value": "1100px"
-      },
-      {
-        "name": "merch-two-columns",
-        "value": "1000px"
-      },
-      {
-        "name": "merch-one-column",
-        "value": "700px"
-      },
-      {
-        "name": "bottom-tabs-menu-links",
-        "value": "768px"
-      },
-      {
-        "name": "community-single-column",
-        "value": "700px"
-      }
-    ]
+      { "name": "nav-to-burger", "value": "1100px", "purpose": "Капс-навигация уходит в бургер; 4 колонки ДПО → 2; новости в одну колонку." },
+      { "name": "strips-stack", "value": "900px", "purpose": "Развороты складываются в колонку; фото 3:2 над панелью; мачта витрины – фото 180–220px сверху." },
+      { "name": "footer-two-columns", "value": "860px", "purpose": "Подвал в две колонки." },
+      { "name": "phone", "value": "560px", "purpose": "Поля 16px, плитки в одну колонку, кнопки героя во всю ширину." },
+      { "name": "phone-narrow", "value": "480px", "purpose": "Шапка и подвал: поля 16px, подвал в одну колонку." }
+    ],
+    "photos": {
+      "source": "pravo.hse.ru (новости и pravo.hse.ru/businessandlaw/alumni)",
+      "files": ["themis-facade", "hall-audience", "alumni-field", "hall-first-day", "diploma", "students-talk", "alumni-meeting", "alumni-voice"],
+      "formats": ["avif", "webp", "jpg"],
+      "note": "themis-facade – композит с синей тонировкой из проекта ДПО; сохранён сознательно до появления собственного кадра."
+    }
   },
   "components": [
     {
-      "name": "Основное действие",
+      "name": "Главное действие",
       "kind": "button",
-      "html": "<button class=\"ds-primary\">Продолжить</button>",
-      "css": ".ds-primary{font-family:var(--f-data);font-size:var(--t-caption);letter-spacing:var(--tr-data);text-transform:none;padding:9px 15px;border-radius:var(--r-sm);cursor:pointer;border:none;background:var(--c-accent);color:var(--c-on-accent)}.ds-primary:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}.ds-primary:disabled{opacity:.45;cursor:not-allowed}",
-      "description": "Общий примитив action; отдельного hover в источнике нет."
+      "refersTo": "button-primary",
+      "description": "Капс 13px на прямоугольнике 4px, заливка контрастом: графит на белом, белый внутри .club-dark. Охры нет.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Вступить в клуб <span aria-hidden=\"true\">→</span></a>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:13px 20px;border-radius:var(--r-sm,4px);border:1px solid var(--c-bg-inverse,#14181f);background:var(--c-bg-inverse,#14181f);color:var(--c-text-inverse,#fff);font-family:var(--f-body,'HSE Sans',system-ui,sans-serif);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:opacity .2s cubic-bezier(.23,1,.32,1)}.ds-btn-primary:hover{opacity:.86}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px}"
     },
     {
-      "name": "Вторичное действие",
+      "name": "Второе действие (обводка)",
       "kind": "button",
-      "html": "<button class=\"ds-ghost\">Подробнее</button>",
-      "css": ".ds-ghost{font-family:var(--f-data);font-size:var(--t-caption);letter-spacing:var(--tr-data);text-transform:none;padding:9px 15px;border-radius:var(--r-sm);cursor:pointer;background:transparent;color:var(--c-text-2);border:1px solid var(--c-line-control)}.ds-ghost:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}.ds-ghost:disabled{opacity:.45;cursor:not-allowed}",
-      "description": "Общий примитив actionGhost; отдельного hover в источнике нет."
+      "refersTo": "button-ghost",
+      "description": "Та же форма, прозрачный фон, обводка 1px цветом текста; hover – подмес 8 % цвета текста.",
+      "html": "<a class=\"ds-btn-ghost\" href=\"#\">Программы ДПО</a>",
+      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:13px 20px;border-radius:var(--r-sm,4px);border:1px solid var(--c-text,#14181f);background:transparent;color:var(--c-text,#14181f);font-family:var(--f-body,'HSE Sans',system-ui,sans-serif);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background .2s cubic-bezier(.23,1,.32,1)}.ds-btn-ghost:hover{background:color-mix(in srgb,var(--c-text,#14181f) 8%,transparent)}.ds-btn-ghost:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px}"
     },
     {
-      "name": "Поле формы",
+      "name": "Иконка-кнопка шапки",
+      "kind": "button",
+      "refersTo": "icon-button",
+      "description": "40×40, SVG 18px stroke 1.8, без фона; в шапке рамка прозрачная. Счётчик корзины – единственная охряная пилюля.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Корзина, 2\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M6 8h12l-1 12H7L6 8z\"/><path d=\"M9 8V6a3 3 0 0 1 6 0v2\"/></svg><span class=\"ds-icon-btn__count\" aria-hidden=\"true\">2</span></button>",
+      "css": ".ds-icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border:1px solid transparent;border-radius:var(--r-sm,4px);background:transparent;color:var(--c-text-2,#272c38);cursor:pointer;line-height:0}.ds-icon-btn:hover{color:var(--c-text,#14181f)}.ds-icon-btn:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px}.ds-icon-btn__count{position:absolute;top:2px;right:0;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--c-accent,#ec5a13);color:var(--c-on-accent,#14181f);font-family:var(--f-data,'HSE Sans',system-ui,sans-serif);font-size:10px;font-weight:700;line-height:16px;text-align:center}"
+    },
+    {
+      "name": "Поле ввода",
       "kind": "input",
-      "html": "<label class=\"ds-label\">Имя<input class=\"ds-field\" placeholder=\"Ваше имя\"></label>",
-      "css": ".ds-label{font-family:var(--f-body);color:var(--c-text)}.ds-field{display:block;width:100%;margin-top:7px;padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--c-line-control);background:var(--c-bg);color:var(--c-text);font-size:15px;font-family:inherit}.ds-field:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
-      "description": "Обычный field с подключённым видимым фокусом foc."
+      "refersTo": "field",
+      "description": "Белый фон, контур 1px line-control (3:1), угол 4px, 12px 14px, 15px; фокус – охряное кольцо 3px.",
+      "html": "<label class=\"ds-label\">Год выпуска<input class=\"ds-field\" placeholder=\"2006\"></label>",
+      "css": ".ds-label{display:block;font-family:var(--f-body,'HSE Sans',system-ui,sans-serif);font-size:14px;color:var(--c-text-2,#272c38)}.ds-field{display:block;width:100%;margin-top:7px;padding:12px 14px;border-radius:var(--r-sm,4px);border:1px solid var(--c-line-control,#7c828c);background:var(--c-bg,#fff);color:var(--c-text,#14181f);font-size:15px;font-family:inherit}.ds-field:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px}"
     },
     {
-      "name": "Публичная ссылка навигации",
+      "name": "Капс-навигация шапки",
       "kind": "nav",
-      "html": "<nav aria-label=\"Разделы\"><a class=\"ds-nav\" href=\"#events\">События</a></nav>",
-      "css": ".ds-nav{text-decoration:none;color:var(--c-text-2);font-family:var(--f-body);font-size:14px;font-weight:500;padding:8px 12px;border-radius:var(--r-sm)}.ds-nav:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
-      "description": "Вид ссылки из Shell; меню прокручивается в пределах высоты экрана с учётом нижних вкладок и cookies. ДПО, мерч, корзина и кабинет включены в меню при 769–1100px, а до 768px доступны в нижних вкладках. Раскрытие требует логики приложения."
+      "refersTo": "nav-link",
+      "description": "Пять капс-ссылок 13px/0.08em, ink-soft; hover – ink; текущая – подчёркивание 1px со смещением 6px.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Разделы\"><a href=\"#\">ДПО</a><a href=\"#\" aria-current=\"page\">События</a><a href=\"#\">Новости</a><a href=\"#\">Подкасты</a><a href=\"#\">Мерч</a></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;gap:4px;height:64px;border-bottom:1px solid var(--c-line,#e5e7eb);background:var(--c-bg,#fff)}.ds-nav a{font-family:var(--f-body,'HSE Sans',system-ui,sans-serif);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--c-text-2,#272c38);text-decoration:none;padding:10px 12px;border-radius:var(--r-sm,4px);white-space:nowrap}.ds-nav a:hover,.ds-nav a[aria-current=page]{color:var(--c-text,#14181f)}.ds-nav a[aria-current=page]{text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:1px}.ds-nav a:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px}"
     },
     {
-      "name": "Категория мерча",
-      "kind": "chip",
-      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Одежда</button>",
-      "css": ".ds-chip{font-family:var(--f-data);font-size:var(--t-caption);letter-spacing:var(--tr-data);text-transform:none;padding:9px 15px;border-radius:var(--r-sm);cursor:pointer;padding:7px 12px;border-radius:999px;border:1px solid var(--c-line);background:transparent;color:var(--c-text-2)}.ds-chip[aria-pressed=\"true\"]{border-color:var(--c-accent);background:var(--c-accent);color:var(--c-on-accent)}.ds-chip:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
-      "description": "Фактический выбранный фильтр; переключение не имитируется без логики."
+      "name": "Плитка программы",
+      "kind": "card",
+      "refersTo": "dpo-cover",
+      "description": "Предмет на белом: обложка 16:9 угол 8px (только с логотипом факультета), название Sans 600, мета 14px, цена табличными цифрами. Без рамки и тени.",
+      "html": "<article class=\"ds-tile\"><a class=\"ds-tile__cover\" href=\"#\" aria-hidden=\"true\" tabindex=\"-1\"></a><a class=\"ds-tile__link\" href=\"#\"><h2>Корпоративное право: практикум</h2></a><div class=\"ds-tile__meta\">Корпоративное право · Очно-заочно · 72 часа</div><div class=\"ds-tile__price\">48 000 ₽</div></article>",
+      "css": ".ds-tile{display:grid;gap:8px;align-content:start;max-width:360px;font-family:var(--f-body,'HSE Sans',system-ui,sans-serif);color:var(--c-text,#14181f)}.ds-tile__cover{display:block;aspect-ratio:16/9;border-radius:var(--r-lg,8px);background:var(--c-bg-sunken,#f3f5f7)}.ds-tile__link{color:inherit;text-decoration:none;margin-top:6px}.ds-tile h2{margin:0;font-size:20px;font-weight:600;line-height:1.28}.ds-tile__link:hover h2{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}.ds-tile__link:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px;border-radius:var(--r-sm,4px)}.ds-tile__meta{font-size:14px;color:var(--c-text-3,#5c6470)}.ds-tile__price{font-variant-numeric:tabular-nums;font-size:18px;font-weight:500}"
     },
     {
-      "name": "Вид каталога",
-      "kind": "button",
-      "html": "<div class=\"ds-view\" role=\"group\" aria-label=\"Вид каталога\"><button aria-pressed=\"true\">Сетка</button><button aria-pressed=\"false\">Список</button></div>",
-      "css": ".ds-view{display:flex;gap:12px}.ds-view button{font-family:var(--f-body);border:1px solid var(--c-line-control);border-radius:var(--r-sm);padding:10px 18px;min-height:44px;color:var(--c-text);background:transparent}.ds-view button[aria-pressed=\"true\"]{background:var(--c-bg-inverse);color:var(--c-text-inverse);border-color:var(--c-bg-inverse)}.ds-view button:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px;border-radius:var(--r-sm)}",
-      "description": "Два состояния переключателя из index.css; показаны одновременно."
+      "name": "Текстовая плитка программы",
+      "kind": "card",
+      "description": "Программа без факультетской обложки: hairline 1px цветом текста сверху, название 22px. Стоковые обложки не показываются.",
+      "html": "<article class=\"ds-tile-text\"><a class=\"ds-tile-text__link\" href=\"#\"><h2>Договорная работа в компании</h2></a><div class=\"ds-tile-text__meta\">Гражданское право · Онлайн · с 3 октября</div><div class=\"ds-tile-text__price\">36 000 ₽</div></article>",
+      "css": ".ds-tile-text{display:grid;gap:8px;align-content:start;max-width:360px;padding-top:14px;border-top:1px solid var(--c-text,#14181f);font-family:var(--f-body,'HSE Sans',system-ui,sans-serif);color:var(--c-text,#14181f)}.ds-tile-text__link{color:inherit;text-decoration:none}.ds-tile-text h2{margin:0;font-size:22px;font-weight:600;line-height:1.28}.ds-tile-text__link:hover h2{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}.ds-tile-text__link:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px;border-radius:var(--r-sm,4px)}.ds-tile-text__meta{font-size:14px;color:var(--c-text-3,#5c6470)}.ds-tile-text__price{font-variant-numeric:tabular-nums;font-size:18px;font-weight:500}"
+    },
+    {
+      "name": "Разворот «панель + фото» (сигнатура)",
+      "kind": "custom",
+      "description": "Графитовая панель .club-dark с титулом Slab 400 и одним курсивным словом, рядом фото во весь край на подложке paper-2. На ≤900px складывается: фото 3:2 над панелью.",
+      "html": "<section class=\"ds-strip\"><div class=\"ds-strip__photo\" role=\"img\" aria-label=\"Фемида у фасада Вышки\"></div><div class=\"ds-strip__panel\"><h1>Встречи, знания и связи после <em>выпуска</em></h1><p>Клуб выпускников факультета права Вышки: встречи, программы ДПО с ценой выпускника и кабинет участника.</p><div class=\"ds-strip__actions\"><a class=\"ds-strip__btn\" href=\"#\">Вступить в клуб <span aria-hidden=\"true\">→</span></a><a class=\"ds-strip__btn ds-strip__btn--ghost\" href=\"#\">Программы ДПО</a></div></div></section>",
+      "css": ".ds-strip{display:grid;grid-template-columns:3fr 2fr;min-height:420px;font-family:var(--f-body,'HSE Sans',system-ui,sans-serif)}.ds-strip__photo{background:var(--c-bg-sunken,#f3f5f7) center/cover no-repeat}.ds-strip__panel{display:flex;flex-direction:column;justify-content:center;padding:clamp(48px,7vw,112px) clamp(28px,5vw,80px);background:#14181f;color:#fff}.ds-strip h1{margin:0;max-width:14ch;font-family:var(--f-display,'HSE Slab',Georgia,serif);font-weight:400;font-size:clamp(44px,5vw,76px);line-height:1.02;letter-spacing:-.01em;text-wrap:balance}.ds-strip h1 em{font-style:italic;font-weight:400}.ds-strip p{margin:28px 0 0;max-width:40ch;font-size:clamp(17px,1.6vw,20px);line-height:1.5;color:#c9cdd6}.ds-strip__actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:36px}.ds-strip__btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 26px;border-radius:4px;border:1px solid #fff;background:#fff;color:#14181f;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;white-space:nowrap}.ds-strip__btn:hover{opacity:.86}.ds-strip__btn--ghost{background:transparent;color:#fff}.ds-strip__btn--ghost:hover{opacity:1;background:color-mix(in srgb,#fff 8%,transparent)}.ds-strip__btn:focus-visible{outline:3px solid var(--c-accent,#ec5a13);outline-offset:2px}@media (max-width:900px){.ds-strip{grid-template-columns:1fr;min-height:0}.ds-strip__photo{aspect-ratio:3/2}.ds-strip__panel{padding:48px 24px}}"
     }
   ],
   "narrative": {
-    "northStar": "Университетский клуб: встречи, обучение, сообщество",
-    "overview": "Визуальная версия переработана после замечания пользователя. Белая основа, HSE Slab 400 в титуле, HSE Sans и табличные цифры в интерфейсе. Без капслока и стилизации всех разделов под реестр. Текущий контракт: docs/staged-refinement/visual-refinement.md. Независимое ревью предыдущей версии не относится к новой композиции.",
+    "northStar": "Фасад и зал",
+    "overview": "Клуб доказывает себя фотографией факультета, а не обещаниями. Каждая полоса публичного контура строится на снимке с pravo.hse.ru во весь край: Фемида у фасада, аудитория, зал первого сентября, диплом, встреча клуба, портрет выпускницы. Холст белый, панели графитовые; между ними нет ни теней, ни рамок, ни плашек – только hairline и смена фона. Титул набирается плитой HSE Slab 400 с одним курсивным словом, всё остальное – HSE Sans 16/1.5. Кнопки – капс 13px с разрядкой на прямоугольнике 4px, залитые контрастом (графит на белом, белый на графите). Охра, фирменный акцент клуба, живёт только у знака весов, в кольце фокуса, в счётчике корзины и у одной статусной вещи на экран; она не красит действия, цены и заголовки.\n\nПлотность средняя, ритм крупный: полосы высотой от 380 до 860px, панельные отступы до 112px, контейнер 1280. Движения на публичном контуре нет – только hover (подчёркивание 1px со смещением 5–6px, лёгкое затемнение кнопки) и focus. Одна светлая тема; тёмные полосы – область .club-dark, которая подменяет семантические токены, а не отдельные цвета.\n\nРеференс – Peak Design (refero 6f3fb64d); от него взяты 50/50-развороты, капс-навигация и чёрные полосы. Отвергнуто заказчиком 12.09: главная-реестр со списками и моно-колонкой, eyebrow над заголовками, зерно, маркиза и scroll-scrub, охра на кнопках.",
     "keyCharacteristics": [
-      "Фирменный титул, спокойный интерфейсный текст и табличные данные имеют разные роли.",
-      "Афиша, публикации, история и каталоги не обязаны повторять одну композицию.",
-      "Отсутствующее изображение товара заменяется полезными сведениями."
+      "Фото во весь край на каждой полосе; подложка paper-2 до загрузки, object-fit: cover.",
+      "Белый холст и графитовые панели через .club-dark; ни теней, ни рамок-карточек.",
+      "HSE Slab 400 + одно слово HSE Slab Italic; HSE Sans 600 для названий, 400 для текста.",
+      "Капс-кнопки 13px/0.08em на прямоугольнике 4px, залитые контрастом или обводкой 1px.",
+      "Охра – знак, фокус, счётчик и одна вещь на экран.",
+      "Только hover и focus; вход и прокрутка не анимируются."
     ],
     "rules": [
-      {
-        "name": "Разделение акцента",
-        "body": "Заливка действия и цвет небольшого текста берутся из разных семантических токенов.",
-        "section": "colors"
-      },
-      {
-        "name": "Содержание определяет иерархию",
-        "body": "Масштаб титула главной не становится размером заголовка кабинета или каталога.",
-        "section": "typography"
-      }
+      { "name": "Правило одной охры", "body": "На экране охра встречается у знака весов, в кольце фокуса и не более чем у одной статусной вещи (скидка выпускника, счётчик корзины). Кнопки, цены, заголовки и обложки охрой не красятся; главное действие – контраст фона.", "section": "colors" },
+      { "name": "Правило области, а не темы", "body": "Тёмных цветов в компонентах нет: тёмная полоса получает класс .club-dark, и текст, линии, ссылки и кнопки внутри перечитывают те же токены. Новая тёмная поверхность – это класс на контейнере, а не новые hex.", "section": "colors" },
+      { "name": "Правило текста и заливки", "body": "Статусный цвет как текст берётся из -text-токена (--c-ok-text, --c-danger-text, --c-status-text, --c-accent-text), как заливка – из базового. Тон, проходящий AA как заливка, как текст его проваливает.", "section": "colors" },
+      { "name": "Правило одного курсива", "body": "В титуле курсивом набирается ровно одно слово (последнее), и это единственная роль HSE Slab Italic. Курсив в тексте и подписях не используется.", "section": "typography" },
+      { "name": "Правило «шапка уже держит бренд»", "body": "H1 главной – обещание («Встречи, знания и связи после выпуска»), а не название клуба: имя уже стоит в шапке и подвале.", "section": "typography" },
+      { "name": "Правило капса", "body": "Капс 13px с разрядкой – только для действий, навигации и заголовков служебных колонок. Над содержательным заголовком капс-строки (eyebrow, kicker) нет.", "section": "typography" },
+      { "name": "Правило плоского холста", "body": "Ни box-shadow, ни рамок-карточек, ни плашек-подложек под текст. Если нужна граница – hairline; если нужен вес – смена фона панели.", "section": "elevation" }
     ],
     "dos": [
-      "**Do** Использовать семантические цвета и общие примитивы кнопок и полей.",
-      "**Do** Различать пороги шапки, героя, каталога и карточки кабинета по их назначению.",
-      "**Do** Сохранять названия, цены и действия при отсутствии фотографии товара.",
-      "**Do** Отмечать синтетические данные локального стенда и границы визуальной проверки."
+      "**Do** строить каждую полосу публичного контура на фотографии факультета во весь край (источник – pravo.hse.ru); фото 3:2 над панелью на телефоне.",
+      "**Do** делать тёмную полосу классом .club-dark на контейнере и брать цвета только из семантических токенов --c-*.",
+      "**Do** набирать титул HSE Slab 400 с одним последним словом в <em>, названия – HSE Sans 600, текст – 16/1.5.",
+      "**Do** оставлять охру знаку весов (32/40px), кольцу фокуса 3px и одной статусной вещи на экран.",
+      "**Do** использовать капс 13px/0.08em на прямоугольнике 4px для всех действий; главное – заливка контрастом, второе – обводка 1px цветом текста.",
+      "**Do** показывать в превью программ только обложки с логотипом факультета (allowlist FACULTY_COVERS), остальным давать текстовую плитку с hairline сверху.",
+      "**Do** прижимать текст полос к сетке контейнера 1280 формулой max(clamp(28px,5vw,80px), calc((100vw - 1280px)/2 + 28px)).",
+      "**Do** ограничивать движение hover и focus: подчёркивание 1px, opacity .86, переход цвета до 280 мс, scale(.97) на нажатии."
     ],
     "donts": [
-      "**Don't** Переносить локальные размеры героя и композицию афиши на все поверхности.",
-      "**Don't** Заменять отсутствующую фотографию вымышленным товаром.",
-      "**Don't** Считать унаследованные декоративные eyebrow, текстовые стрелки и glyph icons правилом для новых компонентов: это незакреплённый остаток реализации.",
-      "**Don't** Скрывать содержимое героя до окончания анимации: текущий вариант сохраняет видимость с первого кадра."
+      "**Don't** ставить eyebrow, kicker или капс-строку над содержательным заголовком.",
+      "**Don't** красить охрой кнопки, цены, заголовки, обложки и числа.",
+      "**Don't** добавлять тени, рамки-карточки, плашки под текст и стеклянные панели.",
+      "**Don't** анимировать вход, прокрутку и фон на публичном контуре: без зерна, маркизы, scroll-scrub и perpetual-motion (решение заказчика 12.09).",
+      "**Don't** заводить вторую тему или тёмные hex в компонентах – только область .club-dark.",
+      "**Don't** возвращать главную-реестр: списки с моно-колонкой и одинаковые карточки отвергнуты 12.09.",
+      "**Don't** показывать стоковые обложки hse.ru без символики факультета.",
+      "**Don't** использовать HSE Slab 900 и синтезированные начертания; у плиты только 400 и Italic 400.",
+      "**Don't** превращать поиск в поле по центру шапки: на 1440px строка из пяти капс-пунктов, трёх иконок и действия его не вмещает – поиск остаётся иконкой и диалогом."
+    ],
+    "notCanonized": [
+      "dpo-vitrine.css: вход мачты club-dpo-rise (420 мс) и пульс полос загрузки – расходятся с решением «без движения»; подлежат снятию.",
+      ".club-dpo-eyebrow и упоминание eyebrow в комментарии к caps – мёртвые остатки, не правило.",
+      "Три размера одной кнопки (44px/13px 18–20px и 52px/0 26px) – записаны как есть, свести к двум.",
+      "Синяя тонировка кадра Фемиды – временная, до собственной фотографии."
     ]
   }
 }

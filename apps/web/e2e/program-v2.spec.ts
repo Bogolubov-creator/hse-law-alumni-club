@@ -40,10 +40,10 @@ async function mockProgram(page: Page, over: Record<string, unknown> = {}) {
 test.describe("Программа v2", () => {
   test("реальная программа каталога открывается из витрины", async ({ page }) => {
     await page.goto("/dpo");
-    const row = page.locator("article.v2-prog")
+    const row = page.locator("article.club-dpo-tile")
       .filter({ has: page.getByRole("button", { name: "В корзину" }) }).first();
     const title = (await row.locator("h2").innerText()).trim();
-    await row.getByRole("link", { name: "Подробнее" }).click();
+    await row.locator(".club-dpo-tile__link").click();
 
     await expect(page).toHaveURL(/\/dpo\/[a-z0-9-]+$/);
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
@@ -54,7 +54,7 @@ test.describe("Программа v2", () => {
     await mockProgram(page);
     await page.goto("/dpo/test-program");
 
-    await expect(page.getByText("3 модуля · 48 ак. ч.")).toBeVisible();
+    await expect(page.getByText("3 раздела · 48 ак. ч.")).toBeVisible();
 
     // Первый модуль открыт по умолчанию – содержание видно сразу
     await expect(page.getByText("Простая письменная форма")).toBeVisible();
@@ -105,10 +105,10 @@ test.describe("Программа v2", () => {
       Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
     });
     await page.goto("/dpo");
-    const row = page.locator("article.v2-prog")
+    const row = page.locator("article.club-dpo-tile")
       .filter({ has: page.getByRole("button", { name: "В корзину" }) }).first();
     const title = (await row.locator("h2").innerText()).trim();
-    await row.getByRole("link", { name: "Подробнее" }).click();
+    await row.locator(".club-dpo-tile__link").click();
 
     await Promise.all([
       page.waitForResponse((r) => r.url().includes("/api/cart") && r.request().method() !== "GET" && r.ok()),
@@ -151,7 +151,7 @@ test.describe("Программа v2", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/dpo\/test-program$/);
   });
 
-  // <768px отдаёт MobileApp; адаптив ProgramV2 (aside order:-1) – на 768..900.
+  // Адаптив ProgramV2 (aside order:-1) – на 768..900; ниже – та же вёрстка в одну колонку.
   test("на планшете бланк с ценой уходит над описанием, прокрутки вбок нет", async ({ page }) => {
     await mockProgram(page);
     await page.setViewportSize({ width: 820, height: 900 });
@@ -174,7 +174,7 @@ test('сбой API программы отличим от 404 и повтор в
   let available=false;
   await page.route('**/api/programs/test-program',r=>r.fulfill({status:available?200:503,contentType:'application/json',body:JSON.stringify(available?BASE:{error:'temporarily unavailable'})}));
   await page.goto('/dpo/test-program');
-  await expect(page.getByRole('heading',{name:'Не удалось загрузить программу'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Не удалось загрузить программу'})).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole('heading',{name:'Программа не найдена'})).not.toBeVisible();
   await page.screenshot({path:'/Users/macbook/alumni-staged-evidence/screenshots/program-api-error.png',fullPage:true});
   available=true;await page.getByRole('button',{name:'Повторить загрузку'}).click();

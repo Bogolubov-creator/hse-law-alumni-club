@@ -4,6 +4,7 @@
 .env.*
 **/.env
 **/.env.*
+!**/.env.example
 **/node_modules
 **/dist
 **/.pnpm-store
@@ -11,6 +12,9 @@ backups
 logs
 test-results
 playwright-report
+docs/report-assets
+.tmp
+**/.tmp
 **/backups
 **/logs
 **/test-results

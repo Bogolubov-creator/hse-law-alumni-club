@@ -6,7 +6,7 @@ test("на главной Фемида, угловая ворона открыв
     localStorage.setItem("club_pwa_dismiss", "1");
   });
   await page.goto("/");
-  await expect(page.locator(".community-themis, .vestnik-themis")).toBeVisible();
+  await expect(page.locator(".home-hero__photo img")).toBeVisible();
   await expect(page.locator(".crow-support-portrait")).toHaveCount(0);
   await expect(page.locator(".crow-mascot.club-crow-corner")).toBeVisible({ timeout: 15000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

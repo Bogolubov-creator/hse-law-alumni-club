@@ -1,7 +1,7 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { readItems, updateItem } from "@directus/sdk";
 import { z } from "zod";
-import { formatRub } from "@club/shared";
+import { formatRub, securePaymentUrl } from "@club/shared";
 import { directus } from "../lib/directus.js";
 import { resolveAlumni } from "../lib/auth.js";
 import { paymentsEnabled, createPayment, fetchPayment } from "../lib/yookassa.js";
@@ -49,7 +49,9 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (order.payment_id) {
       const existing = await fetchPayment(order.payment_id).catch(() => null);
       if (existing?.status === "pending" && existing.confirmation?.confirmation_url) {
-        return { payment_url: existing.confirmation.confirmation_url };
+        const url = securePaymentUrl(existing.confirmation.confirmation_url);
+        if (!url) return reply.code(502).send({ error: "ЮKassa не вернула защищённую ссылку на оплату" });
+        return { payment_url: url };
       }
     }
 
@@ -60,8 +62,8 @@ export async function paymentsRoutes(app: FastifyInstance) {
       customerEmail: order.contact_email || undefined,
     });
     await di.request((updateItem as any)("orders", order.id, { payment_id: payment.id, payment_status: payment.status }));
-    const url = payment.confirmation?.confirmation_url;
-    if (!url) return reply.code(502).send({ error: "ЮKassa не вернула ссылку на оплату" });
+    const url = securePaymentUrl(payment.confirmation?.confirmation_url);
+    if (!url) return reply.code(502).send({ error: "ЮKassa не вернула защищённую ссылку на оплату" });
     return { payment_url: url };
   });
 

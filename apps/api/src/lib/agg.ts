@@ -15,7 +15,7 @@ export async function count(collection: string, filter?: object): Promise<number
 /** Группировка со счётчиком: [{ ...ключи, count }]. count приведён к числу. */
 export async function groupCount(collection: string, groupBy: string[], filter?: object): Promise<Array<Record<string, unknown> & { count: number }>> {
   const r = (await directus.request(
-    (aggregate as any)(collection, { aggregate: { count: "*" }, groupBy, ...(filter ? { query: { filter } } : {}) }),
+    (aggregate as any)(collection, { aggregate: { count: "*" }, groupBy, query: { limit: -1, ...(filter ? { filter } : {}) } }),
   )) as Array<Record<string, unknown>>;
   return r.map((g) => ({ ...g, count: Number((g as any).count ?? 0) }));
 }

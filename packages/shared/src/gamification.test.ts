@@ -89,14 +89,14 @@ describe("evaluateAchievements (Design + ступени движка/Kimi)", () 
 });
 
 describe("achievementProgress", () => {
-  it("считает current/target/earned и подставляет demo для нетрекаемых метрик", () => {
+  it("считает current/target/earned без вымышленных значений для нетрекаемых метрик", () => {
     const p = achievementProgress({ events_attended: 1, programs_completed: 1, referrals_count: 0, verified: 1, status_level: 1 });
     const by = (k: string) => p.find((x) => x.key === k)!;
     expect(by("first_step").earned).toBe(true); // events 1 >= 1
     expect(by("student_again").earned).toBe(true);
     expect(by("regular")).toMatchObject({ current: 1, target: 5, earned: false, star: true });
     expect(by("office_seal").earned).toBe(true); // verified
-    expect(by("on_wave")).toMatchObject({ current: 38, target: 50, earned: false }); // demo
+    expect(by("on_wave")).toMatchObject({ current: 0, target: 10, earned: false }); // Нет подтверждённых реакций.
     expect(by("legend")).toMatchObject({ current: 1, target: 4, earned: false });
     expect(p).toHaveLength(16);
   });

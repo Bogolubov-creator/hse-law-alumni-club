@@ -1,0 +1,7 @@
+/* Оформление – без движения; сумма и форма используют общие материалы. */
+.club-checkout-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.club-checkout-fields button { min-height: 44px; }
+.club-checkout-fields [role="alert"] { padding: 16px; background: var(--c-bg-sunken); border: 1px solid var(--c-line); border-radius: var(--r-sm); line-height: 1.5; }
+.club-cart-totals { margin-top: 24px; padding: 20px; background: var(--c-bg-raised); border: 1px solid var(--c-line); border-radius: var(--r-lg); box-shadow: var(--shadow-ambient); }
+.club-cart-totals > div > :last-child { white-space: nowrap; }
+.v2-cart-row > :nth-child(2) { overflow-wrap: anywhere; }

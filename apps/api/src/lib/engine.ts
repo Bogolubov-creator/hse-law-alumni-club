@@ -70,27 +70,29 @@ export async function recompute(alumniId: string) {
   return { points, level: level.key };
 }
 
-async function counts(alumniId: string) {
-  const rows = (await di.request(
-    readItems("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["reason"] }),
-  )) as { reason: string }[];
-  const by = (r: string) => rows.filter((x) => x.reason === r).length;
+/** Статистика по уже прочитанным данным; история достижений не ограничена периодом графика. */
+export function statsFromLedger(alumni: { points_cached?: number | null; verification_status?: string | null } | undefined, ledger: { reason: string }[]) {
+  const counts = new Map<string, number>();
+  for (const row of ledger) counts.set(row.reason, (counts.get(row.reason) ?? 0) + 1);
+  const points = alumni?.points_cached ?? 0;
   return {
-    programs_completed: by("program"), events_attended: by("event"),
-    mentorship_count: by("mentorship"), referrals_count: by("referral"),
-    orders_count: by("order"),
+    programs_completed: counts.get("program") ?? 0, events_attended: counts.get("event") ?? 0,
+    mentorship_count: counts.get("mentorship") ?? 0, referrals_count: counts.get("referral") ?? 0,
+    orders_count: counts.get("order") ?? 0,
+    points, verified: alumni?.verification_status === "verified" ? 1 : 0,
+    status_level: LEVELS.findIndex((l) => l.key === computeLevel(points).key) + 1,
   };
 }
 
 /** Полная статистика выпускника (для прогресса достижений). */
 export async function alumniStats(alumniId: string) {
-  const c = await counts(alumniId);
+  const ledger = (await di.request(
+    readItems("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["reason"] }),
+  )) as { reason: string }[];
   const rows = (await di.request(readItems("alumni", {
     filter: { id: { _eq: alumniId } }, limit: 1, fields: ["points_cached", "verification_status"],
   }))) as { points_cached: number; verification_status: string }[];
-  const points = rows[0]?.points_cached ?? 0;
-  const status_level = LEVELS.findIndex((l) => l.key === computeLevel(points).key) + 1;
-  return { ...c, points, verified: rows[0]?.verification_status === "verified" ? 1 : 0, status_level };
+  return statsFromLedger(rows[0], ledger);
 }
 
 /** Выдать заслуженные достижения, которых ещё нет. */

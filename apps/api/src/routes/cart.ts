@@ -1,3 +1,4 @@
+import { lookup, type CatalogInfo } from "../lib/catalog-lookup.js";
 import { withCartLock } from "../lib/checkout-store.js";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { readItems, createItem, updateItem } from "@directus/sdk";
@@ -24,26 +25,12 @@ async function saveCart(token: string, items: StoredCartItem[]) {
   else await di.request((createItem as any)("carts", { session_token: token, items_json: items, updated_at: new Date().toISOString() }));
 }
 
-export interface CatalogInfo {
-  title: string;
-  price: number;
-  enrollment?: string | null;
-  source_url?: string | null;
-  stock?: number | null;
-  variants?: { sku: string; stock: number }[] | null;
-}
-
-export async function lookup(type: "dpo" | "merch", slug: string): Promise<CatalogInfo | null> {
-  const collection = type === "dpo" ? "programs" : "products";
-  const fields = type === "dpo" ? ["title", "price", "enrollment", "source_url"] : ["title", "price", "stock", "variants_json"];
-  const rows = (await di.request((readItems as any)(collection, { filter: { slug: { _eq: slug }, status: { _eq: "published" } }, limit: 1, fields }))) as any[];
-  if (!rows[0]) return null;
-  return {
-    title: rows[0].title, price: rows[0].price ?? 0,
-    enrollment: rows[0].enrollment ?? null, source_url: rows[0].source_url ?? null,
-    stock: typeof rows[0].stock === "number" ? rows[0].stock : null,
-    variants: Array.isArray(rows[0].variants_json) ? rows[0].variants_json : null,
-  };
+/** Неизвестный остаток не блокирует заявку; наличие повторно проверяется при оформлении. */
+function exceedsStock(info: CatalogInfo, sku: string | null | undefined, qty: number): boolean {
+  const available = info.variants?.length
+    ? info.variants.find((variant) => variant.sku === sku)?.stock
+    : info.stock;
+  return typeof available === "number" && qty > available;
 }
 
 export async function cartRoutes(app: FastifyInstance) {
@@ -92,6 +79,9 @@ export async function cartRoutes(app: FastifyInstance) {
       type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null,
       qty: body.qty, price: info.price, title: info.title,
     });
+    const added = items.find((item) => item.ref_id === body.ref_id && (item.variant_sku ?? null) === (body.variant_sku ?? null));
+    if (body.type === "merch" && added && exceedsStock(info, body.variant_sku, added.qty))
+      return reply.code(409).send({ error: "Недостаточно товара в наличии." });
     await saveCart(token, items);
     return summarizeCart(items);
     });
@@ -103,6 +93,16 @@ export async function cartRoutes(app: FastifyInstance) {
     const body = z.object({ ref_id: z.string(), variant_sku: z.string().nullish(), qty: z.number().int().min(0).max(99) }).parse(req.body);
     return withCartLock(token, async () => {
     const cart = await loadCart(token);
+    const line = cart?.items.find((item) => item.ref_id === body.ref_id && (item.variant_sku ?? null) === (body.variant_sku ?? null));
+    // Уменьшение и удаление доступны даже после снятия товара с продажи.
+    if (line?.type === "merch" && body.qty > line.qty) {
+      const info = await lookup("merch", body.ref_id);
+      if (!info) return reply.code(404).send({ error: "Позиция не найдена" });
+      if (info.variants?.length && !info.variants.some((variant) => variant.sku === body.variant_sku))
+        return reply.code(400).send({ error: "Такого варианта товара нет" });
+      if (exceedsStock(info, body.variant_sku, body.qty))
+        return reply.code(409).send({ error: "Недостаточно товара в наличии." });
+    }
     const items = setLineQty(cart?.items ?? [], body.ref_id, body.variant_sku ?? null, body.qty);
     await saveCart(token, items);
     return summarizeCart(items);

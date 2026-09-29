@@ -17,7 +17,12 @@
 {$WEB_DOMAIN} {
 	encode gzip
 	# Тело запроса к API ограничено (доп. к bodyLimit самого API).
-	request_body {
+	@avatar_upload path /api/me/avatar
+	request_body @avatar_upload {
+		max_size 4MB
+	}
+	@regular_request not path /api/me/avatar
+	request_body @regular_request {
 		max_size 512kb
 	}
 	# Ловушка для ботов-сканеров: типовые «дыры» чужих CMS сразу 404,
@@ -43,12 +48,13 @@
 			Strict-Transport-Security "max-age=15552000; includeSubDomains"
 			X-Content-Type-Options "nosniff"
 			Referrer-Policy "strict-origin-when-cross-origin"
-			# Полный CSP: скрипты только свои; стили — свои + инлайновые (React style=)
-			# + Google Fonts; картинки/медиа https (обложки событий и подкастов —
-			# внешние URL из админки); объекты и чужие base/form запрещены.
-			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; media-src 'self' https:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-src https://rutube.ru; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
-			# Ненужные сайту браузерные API выключены явно; версию сервера не светим
-			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+			# X-Frame-Options намеренно нет: Mini App Telegram встраивает сайт;
+			# фреймы режет CSP frame-ancestors (см. apps/web/Caddyfile.static).
+			# CSP: Vite 'self'; React style=; обложки https; RuTube frame;
+			# connect same-origin (/api: pageviews, auth). ЮKassa – top-level
+			# redirect, не iframe. Дублирует static-контейнер – одинаковые CSP OK.
+			Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; media-src 'self' https: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-src https://rutube.ru https://www.rutube.ru; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
+			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 			-Server
 		}
 		reverse_proxy web:80
@@ -63,7 +69,7 @@
 		Strict-Transport-Security "max-age=15552000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		-Server
 	}
 	reverse_proxy directus:8055

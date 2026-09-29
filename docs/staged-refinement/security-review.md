@@ -20,3 +20,13 @@
 | ДПО sync | Четыре регрессионных теста, повторный синк, сохранение ручного содержания/цен | На production не выполнялся |
 
 Проверка миграции: CREATE TABLE IF NOT EXISTS выполнен повторно на alumni_staged, без удаления/изменения существующих пользовательских таблиц. План отката и складские условия в data-and-rollback.md. Не следует откатывать только API на старую схему резервирования, пока открытые резервы не сверены.
+
+## Phase 2 security (v3 backlog polish)
+
+| Тема | Статус | Примечание |
+| --- | --- | --- |
+| CSP / security headers | Сделано | `apps/web/Caddyfile.static` + edge `infra/Caddyfile`: nosniff, Referrer-Policy, Permissions-Policy (+ usb), CSP с RuTube/`blob:` media, `connect-src 'self'` (pageviews/auth). `X-Frame-Options` не ставим – Mini App Telegram; фреймы режет `frame-ancestors`. |
+| Rate limit auth/support | Уже было + тест | Точечные лимиты на `/auth/*` и `/support*`; unit на login/forgot 429; support – integration. |
+| Cookie → pageviews | Подтверждено + тест | `PageViewBeacon` шлёт только при `allowsOptionalCookies() === true` (`all`). |
+| TTL outbox / orders | Уже в cron | `expireStaleReservations` каждые 15 мин; `drainMailOutbox` каждые 5 мин (`server.ts`). Миграция `20260910-ops-ttl-outbox-faq.sql` – таблицы FAQ/outbox. |
+| Admin session token | Известный gap | JWT админки в `localStorage` (`club_admin_token`), не httpOnly cookie. XSS на `/admin` мог бы украсть сессию (12 ч). Смягчение уже есть: отдельный `ADMIN_AUTH_SECRET`, logout с серверным revoke, `scope: admin`. Переход на httpOnly cookie – отдельный объём (CSRF/`credentials`). |

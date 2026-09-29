@@ -1,3 +1,4 @@
+import { consumeReset } from "../lib/auth-state.js";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
@@ -19,10 +20,12 @@ export async function authRoutes(app: FastifyInstance) {
   // Вход через Telegram Mini App (initData). BLOCKED без TELEGRAM_BOT_TOKEN.
   app.post("/auth/telegram", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram mini-app не настроен (нет TELEGRAM_BOT_TOKEN)" });
-    const { initData } = z.object({ initData: z.string().min(1) }).parse(req.body);
+    const { initData } = z.object({ initData: z.string().min(1).max(16384) }).parse(req.body);
     const v = validateInitData(initData, env.TELEGRAM_BOT_TOKEN, { maxAgeSec: 86400 });
     if (!v.ok) return reply.code(401).send({ error: "Невалидная подпись Telegram" });
-    const tgId = String((v.user as any)?.id ?? "");
+    const userId = (v.user as { id?: unknown } | null)?.id;
+    if (typeof userId !== "number" || !Number.isSafeInteger(userId) || userId <= 0) return reply.code(401).send({ error: "Нет корректного пользователя Telegram" });
+    const tgId = String(userId);
     const rows = (await directus.request(readItems("alumni", {
       filter: { telegram_id: { _eq: tgId } }, limit: 1,
       // token_version обязателен: resolveAlumni сверяет его с версией в токене.
@@ -172,6 +175,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!users[0]) return reply.code(400).send({ error: "Аккаунт не найден" });
     if (users[0].status === "active") return { ok: true, already: true };
 
+    if (users[0].status !== "unverified") return reply.code(400).send({ error: "Подтверждение недоступно для этого аккаунта" });
     await directus.request((updateUser as any)(payload.sub, { status: "active" }));
     audit("email.confirm", { actor: `user:${payload.sub}`, req });
     // Теперь адрес доказан – зовём офис проверять выпуск.
@@ -182,7 +186,7 @@ export async function authRoutes(app: FastifyInstance) {
   // ── Восстановление пароля ───────────────────────────────────────
   // Ответ всегда одинаковый (не раскрываем существование аккаунта).
   app.post("/auth/forgot", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const { email, next } = z.object({ email: z.string().email(), next: z.string().max(200).optional() }).parse(req.body);
     // Без SMTP письмо физически не уйдёт. Раньше роут всё равно отвечал ok –
     // человек ждал ссылку, которой нет. Отвечаем честно и одинаково для всех
     // адресов (проверка про канал, а не про аккаунт – существование не раскрывается).
@@ -200,7 +204,10 @@ export async function authRoutes(app: FastifyInstance) {
         env.AUTH_SECRET,
         { expiresIn: "30m" },
       );
-      const url = `${env.PUBLIC_URL}/reset?token=${encodeURIComponent(token)}`;
+      // Разрешён только известный путь: произвольные адреса в письмо не попадают.
+      const continuation = next === "/podcasts#podcast-subscription"
+        ? `&next=${encodeURIComponent(next)}` : "";
+      const url = `${env.PUBLIC_URL}/reset?token=${encodeURIComponent(token)}${continuation}`;
       audit("password.forgot", { actor: `email:${email}`, req });
       await sendEmail(
         email,
@@ -233,6 +240,7 @@ export async function authRoutes(app: FastifyInstance) {
       audit("password.reset.replay", { actor: `user:${payload.sub}`, req });
       return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     }
+    if (!payload.jti || !(await consumeReset(payload.jti))) return reply.code(400).send({ error: "Ссылка уже использована – запросите новую" });
     await directus.request((updateUser as any)(payload.sub, { password }));
     // Ревокация всех выданных JWT этого выпускника: старые сессии гаснут.
     if (linked[0]) await directus.request((updateItem as any)("alumni", linked[0].id, { token_version: (linked[0].token_version ?? 0) + 1 }));

@@ -27,8 +27,21 @@ beforeEach(() => {
       { id: "a2", fio: "Б", joined_at: iso(40), verified_at: null, verification_status: "pending", referred_by: null, points_cached: 0 },
     ],
     orders: [
-      { id: "o1", type: "dpo", status: "new", payment_status: null, total_estimate: 500000, created_at: iso(1) },
-      { id: "o2", type: "merch", status: "done", payment_status: "succeeded", total_estimate: 350000, created_at: iso(5) },
+      {
+        id: "o1", type: "dpo", status: "new", payment_status: null, total_estimate: 500000, created_at: iso(1),
+        items_json: [{ type: "dpo", ref_id: "ip", title: "Право ИС", qty: 1 }],
+      },
+      {
+        id: "o2", type: "merch", status: "done", payment_status: "succeeded", total_estimate: 350000, created_at: iso(5),
+        items_json: [{ type: "merch", ref_id: "robe", title: "Мантия", qty: 1 }],
+      },
+      {
+        id: "o3", type: "dpo", status: "new", payment_status: null, total_estimate: 800000, created_at: iso(2),
+        items_json: [
+          { type: "dpo", ref_id: "ip", title: "Право ИС", qty: 1 },
+          { type: "dpo", ref_id: "tax", title: "Налоги", qty: 1 },
+        ],
+      },
     ],
     event_rsvps: [
       { id: "r1", event_id: "e1", alumni_id: "a1", attended: true, created_at: iso(2) },
@@ -72,8 +85,9 @@ describe("GET /admin/analytics", () => {
     const j = r.json();
     expect(j.range).toBe("30d");
     expect(j.pulse.joins).toBe(1); // a1 within 30d, a2 is 40d ago
-    expect(j.pulse.orders_created).toBe(2);
-    expect(j.orders.by_type.some((x: { key: string; count: number }) => x.key === "dpo" && x.count === 1)).toBe(true);
+    expect(j.pulse.orders_created).toBe(3);
+    expect(j.orders.by_type.some((x: { key: string; count: number }) => x.key === "dpo" && x.count === 2)).toBe(true);
+    expect(j.orders.programs_top[0]).toMatchObject({ ref_id: "ip", qty: 2, orders: 2 });
     expect(j.engagement.events_top[0]?.rsvps).toBe(2);
     expect(j.community.achievements_top[0]?.key).toBe("first_step");
     expect(j.pulse.login_ok).toBe(1);
@@ -88,5 +102,30 @@ describe("GET /admin/analytics", () => {
     expect(r.headers["content-type"]).toMatch(/text\/csv/);
     expect(r.body.charCodeAt(0)).toBe(0xfeff);
     expect(r.body).toContain("pulse");
+  });
+});
+
+describe("GET /admin/overview", () => {
+  it("сохраняет авторизацию обзора", async () => {
+    const app = Fastify();
+    await app.register(adminRoutes);
+    try {
+      expect((await app.inject({ url: "/admin/overview" })).statusCode).toBe(401);
+    } finally { await app.close(); }
+  });
+
+  it("возвращает прежний контракт редактору через общий сервис статистики", async () => {
+    const app = Fastify();
+    registerErrorHandler(app);
+    await app.register(adminRoutes);
+    try {
+      const result = await app.inject({ url: "/admin/overview", headers: { authorization: `Bearer ${token()}` } });
+      expect(result.statusCode).toBe(200);
+      expect(result.json()).toMatchObject({
+        orders_count: 3, new_orders: 2, orders_paid: 1,
+        alumni_count: 2, alumni_verified: 1, pending_verifications: 1, points_total: 100,
+        next_event: { id: "e1", rsvps: 2 },
+      });
+    } finally { await app.close(); }
   });
 });

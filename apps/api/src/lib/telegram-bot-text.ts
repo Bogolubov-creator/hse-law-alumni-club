@@ -1,7 +1,7 @@
 import { levelInfo } from "@club/shared";
 
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+export function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function fmtEventDate(iso: string): string {
@@ -83,6 +83,9 @@ export function formatStartReply(arg: string, linked: boolean, publicUrl: string
     "Команды бота:",
     "/points – баллы и уровень",
     "/calendar – ближайшие события",
+    "/cabinet – личный кабинет",
+    "/dpo – программы обучения",
+    "/support – обратиться в поддержку",
     "/help – подсказка",
     "",
     "Можно просто написать вопрос про клуб или ДПО – отвечу по сайту.",
@@ -109,6 +112,9 @@ export function formatHelpReply(publicUrl: string): string {
     "/start – приветствие и ссылки",
     "/points – баллы, уровень, скидка",
     "/calendar – афиша ближайших событий",
+    "/cabinet – личный кабинет",
+    "/dpo – программы обучения",
+    "/support – обратиться в поддержку",
     "/help – эта подсказка",
     "",
     "Или напишите вопрос текстом – отвечу по сайту клуба и программам ДПО",
@@ -125,4 +131,29 @@ export function formatUnlinkedPointsReply(publicUrl: string): string {
     "",
     `Зайдите в <a href="${esc(publicUrl)}/lk">личный кабинет</a> на сайте и нажмите «Привязать Telegram» – после этого /points покажет ваши баллы, уровень и скидку.`,
   ].join("\n");
+}
+
+/** Меню Telegram и быстрые переходы используют один список команд. */
+export const BOT_COMMANDS = [
+  { command: "start", description: "Приветствие и ссылки клуба" },
+  { command: "points", description: "Мои баллы и уровень" },
+  { command: "calendar", description: "Ближайшие события" },
+  { command: "cabinet", description: "Открыть личный кабинет" },
+  { command: "dpo", description: "Программы обучения" },
+  { command: "support", description: "Обратиться в поддержку" },
+  { command: "help", description: "Список команд" },
+];
+
+export function formatLinkedReply(name: string): string {
+  return `✅ Telegram привязан к аккаунту <b>${esc(name)}</b>.\n\nТеперь /points покажет ваши баллы, а /calendar отметит события, куда вы записаны.`;
+}
+
+export function formatNavigationReply(command: string, publicUrl: string): string | null {
+  const routes: Record<string, [string, string]> = {
+    "/cabinet": ["/lk", "Личный кабинет"],
+    "/dpo": ["/dpo", "Программы ДПО"],
+    "/support": ["/support", "Обратиться в поддержку"],
+  };
+  const target = routes[command];
+  return target ? `<a href="${esc(publicUrl.replace(/\/$/, "") + target[0])}">${target[1]}</a>` : null;
 }

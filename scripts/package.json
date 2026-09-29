@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "bootstrap": "tsx src/directus-bootstrap.ts",
+    "import-dpo": "tsx src/import-dpo-mirror-catalog.ts",
+    "refresh-dpo-enrollment": "tsx src/refresh-dpo-enrollment-from-hse.ts",
     "load-pravovaya-gramotnost": "tsx src/load-pravovaya-gramotnost.ts"
   },
   "dependencies": {
@@ -13,7 +16,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.15",
     "typescript": "^5.6.3"
   }
 }
