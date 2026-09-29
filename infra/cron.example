@@ -1,17 +1,15 @@
-# Крон-задания для VPS клуба (установить: crontab -e у пользователя с docker).
-# Пути замените на реальный каталог репозитория на сервере.
+# Крон-задания для VPS клуба (установить через sudo crontab -e).
+# Замените /opt/club на реальный каталог репозитория и club.example.ru на домен.
+# Деплой и cron работают от root: один BACKUP_DIR и один rclone config.
 #
-# Ночной шифрованный бэкап БД (03:30) — держит 14 дней, см. scripts/backup-db.sh.
-# Если в .env задан BACKUP_OFFSITE_REMOTE, скрипт сам скопирует дамп offsite (rclone).
-30 3 * * * /opt/club/scripts/backup-db.sh >> /var/log/club-backup.log 2>&1
+# Ночной шифрованный бэкап БД (03:30) – держит 14 дней.
+# При BACKUP_OFFSITE_REMOTE скрипт копирует шифрованный дамп во внешнее хранилище.
+30 3 * * * ENV_FILE=/etc/club/runtime.env /opt/club/scripts/backup-db.sh >> /var/log/club-backup.log 2>&1
+# Файлы Directus тоже нужны для восстановления сайта.
+45 3 * * * ENV_FILE=/etc/club/runtime.env /opt/club/scripts/backup-uploads.sh >> /var/log/club-backup-uploads.log 2>&1
 #
-# Еженедельная проверка восстановимости бэкапа (пн 04:00) — разворачивает
-# последний бэкап во временную базу и сверяет таблицы; провал → алерт в TG-чат.
-0 4 * * 1 /opt/club/scripts/backup-verify.sh >> /var/log/club-backup-verify.log 2>&1
+# Еженедельная проверка БД (пн 04:00) – восстановление во временную базу.
+0 4 * * 1 ENV_FILE=/etc/club/runtime.env /opt/club/scripts/backup-verify.sh >> /var/log/club-backup-verify.log 2>&1
 #
-# Uptime-пинг каждые 5 минут: падение/восстановление — сообщение в офисный чат.
-*/5 * * * * /opt/club/scripts/uptime-check.sh >> /var/log/club-uptime.log 2>&1
-#
-# Offsite-копия делается внутри backup-db.sh при заданном BACKUP_OFFSITE_REMOTE.
-# Альтернатива (пакетно, если не хотите per-run): отдельным заданием через rclone:
-# 0 5 * * * rclone copy /opt/club/backups <remote>:club-backups --max-age 48h >> /var/log/club-offsite.log 2>&1
+# Uptime-пинг каждые 5 минут: падение/восстановление – сообщение в офисный чат.
+*/5 * * * * ENV_FILE=/etc/club/runtime.env UPTIME_URL=https://club.example.ru/api/health /opt/club/scripts/uptime-check.sh >> /var/log/club-uptime.log 2>&1

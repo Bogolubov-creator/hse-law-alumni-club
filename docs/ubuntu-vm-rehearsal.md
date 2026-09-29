@@ -32,15 +32,27 @@ limactl start --yes --name=club-ubuntu-qa --vm-type=vz \
 limactl shell club-ubuntu-qa
 ```
 
-В Ubuntu установите Docker Engine и Compose plugin по
+В Ubuntu 24.04 установите системные утилиты для клонирования, проверки HTTPS,
+шифрования и резервных копий:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends \
+  git curl ca-certificates openssl tar gzip cron rclone
+```
+
+Docker Engine, Buildx и Compose plugin установите по
 [официальной инструкции Docker](https://docs.docker.com/engine/install/ubuntu/).
 Нужен отдельный Docker daemon внутри VM; Docker Desktop на Mac его не заменяет.
-Проверка после установки:
+Node.js и pnpm на хосте для Compose-деплоя не нужны: проект устанавливает зависимости
+по `pnpm-lock.yaml` при сборке Docker-образов. Проверка после установки:
 
 ```bash
 sudo docker version
 sudo docker compose version
+sudo docker buildx version
 sudo systemctl is-active docker
+rclone version
 ```
 
 Клонируйте исходный репозиторий в VM:

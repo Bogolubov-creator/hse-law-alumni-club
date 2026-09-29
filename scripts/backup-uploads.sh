@@ -5,6 +5,7 @@ umask 077
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ENV_FILE:-$REPO_DIR/.env}"
 BACKUP_DIR="${BACKUP_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/club/backups}"
+KEEP_DAYS="${BACKUP_KEEP_DAYS:-14}"
 DIRECTUS_CONTAINER="${DIRECTUS_CONTAINER:-club-pravo-hse-directus-1}"
 if [[ -z "${BACKUP_ENCRYPTION_KEY:-}" ]]; then
   BACKUP_ENCRYPTION_KEY="$(sed -n 's/^BACKUP_ENCRYPTION_KEY=//p' "$ENV_FILE")"
@@ -21,8 +22,10 @@ docker exec "$DIRECTUS_CONTAINER" tar -C /directus/uploads -czf - . \
 # Проверяем читаемость полного архива до объявления копии готовой.
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY -in "$PARTIAL" | tar -tzf - >/dev/null
 mv "$PARTIAL" "$OUT"
+chmod 600 "$OUT"
 if [[ -n "${BACKUP_OFFSITE_REMOTE:-}" ]]; then
   command -v rclone >/dev/null || { echo "Не установлен rclone для offsite-копии" >&2; exit 1; }
   rclone copy "$OUT" "$BACKUP_OFFSITE_REMOTE"
 fi
+find "$BACKUP_DIR" -type f -name 'uploads-*.tar.gz.enc' -mtime +"$KEEP_DAYS" -delete
 echo "OK: $OUT"

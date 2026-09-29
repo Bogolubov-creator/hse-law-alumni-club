@@ -1,10 +1,30 @@
 # Прод-runbook — Клуб выпускников факультета права Вышки
 
-## Проверенный порядок релиза, 14.09.2026
+## Порядок выпуска, обновлён 29.09.2026
 
-Текущий результат проверок и границы готовности: [release-readiness.md](release-readiness.md).
-Для нового деплоя используйте этот порядок; ручной `up` ниже оставлен для диагностики.
+Исторический результат проверок: [release-readiness.md](release-readiness.md).
+Для нового деплоя и обновления используйте `scripts/deploy.sh`.
 Для репетиции на Mac с отдельной Ubuntu VM: [ubuntu-vm-rehearsal.md](ubuntu-vm-rehearsal.md).
+
+### Зависимости на Ubuntu 24.04
+
+```bash
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends \
+  git curl ca-certificates openssl tar gzip cron rclone
+```
+
+Docker Engine, Buildx и Compose plugin установите по
+[официальной инструкции Docker](https://docs.docker.com/engine/install/ubuntu/).
+Проверьте `sudo docker version`, `sudo docker buildx version`,
+`sudo docker compose version` и `sudo systemctl is-active docker`.
+Node.js и pnpm на VPS для Compose-деплоя не нужны: зависимости приложения
+устанавливаются внутри образов по `pnpm-lock.yaml`.
+
+Операционные команды ниже запускаются через `sudo`. Рабочий env имеет права
+`0600` и лежит вне git; бэкапы по умолчанию сохраняются в
+`/root/.local/state/club/backups`. Если настроен `BACKUP_OFFSITE_REMOTE`,
+конфигурация rclone должна быть доступна root.
 
 1. Сохраните рабочий env **вне git-каталога**, например `/etc/club/runtime.env`, с правами 600.
    Пример значений находится в `.env.example`; плейсхолдеры нужно заменить.
@@ -17,12 +37,11 @@
 4. `PUBLIC_URL=https://<сайт>`, `DIRECTUS_PUBLIC_URL=https://<studio>`, `WEB_DOMAIN`, `ADMIN_DOMAIN`
    и `DIRECTUS_CORS_ORIGIN` должны соответствовать DNS сервера. API и PostgreSQL наружу не открывать.
    API доверяет одному прокси из внутренней Docker-сети; публикация порта API на хосте запрещена.
-5. Для обновления существующего стенда задайте `BACKUP_ENCRYPTION_KEY` и внешнее место хранения копий.
+5. До первого запуска задайте `BACKUP_ENCRYPTION_KEY` и внешнее место хранения копий.
    Выполните из нужного checkout:
 
 ```bash
-export ENV_FILE=/etc/club/runtime.env
-bash scripts/deploy.sh
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
 ```
 
 Скрипт собирает образы, проверяет production-конфигурацию, сохраняет и проверяет копию БД,
@@ -95,7 +114,7 @@ LOCAL_QA_ENV=/путь/к/изолированному/runtime.env E2E_TRUSTED_P
 
 
 Оперативная инструкция для оператора VPS: деплой, обновление, откат, восстановление,
-ротация секретов, мониторинг, инциденты. Все команды — от пользователя с доступом к `docker`.
+ротация секретов, мониторинг, инциденты. Секреты и операции с Docker доступны через `sudo`.
 
 ## Архитектура (кратко)
 
@@ -192,9 +211,10 @@ Bootstrap создаёт две политики (Directus 11, идемпоте�
 включить 2FA. Общий аккаунт Administrator для повседневной работы использовать не нужно —
 иначе в аудите не видно, кто именно что сделал.
 
-> Обновляетесь со старой версии, где офис работал под Administrator? После
-> `docker compose --env-file "$ENV_FILE" up -d --build` **перезапустите `bootstrap`** — политики создадутся, роль
-> сервисного аккаунта понизится сама. Затем переведите сотрудников на личные `editor`-аккаунты.
+> Обновляетесь со старой версии, где офис работал под Administrator? Запустите
+> `scripts/deploy.sh` по §3: он повторно выполнит `bootstrap`, создаст политики и
+> понизит роль сервисного аккаунта. Затем переведите сотрудников на личные
+> `editor`-аккаунты.
 
 ## 1.2. Подтверждение почты при регистрации
 
@@ -211,72 +231,81 @@ Bootstrap создаёт две политики (Directus 11, идемпоте�
 ```bash
 git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club-pravo-hse
 cd club-pravo-hse
-install -m 600 .env.example /etc/club/runtime.env      # затем заполнить (см. §1)
-docker compose --env-file "$ENV_FILE" up -d --build
-docker compose --env-file "$ENV_FILE" logs -f bootstrap   # дождаться «Bootstrap завершён», Ctrl+C
-./scripts/apply-indexes.sh          # индексы БД под масштаб
+sudo install -d -m 700 /etc/club
+sudo install -m 600 .env.example /etc/club/runtime.env
+sudoedit /etc/club/runtime.env       # заменить плейсхолдеры по §1
+sudo docker compose --env-file /etc/club/runtime.env config --quiet
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
+curl -fsS https://club.example.ru/api/ready  # замените домен на свой
 ```
 
-Установить cron из `infra/cron.example` (`crontab -e`): бэкап 03:30, проверка бэкапа Пн 04:00,
-uptime каждые 5 мин. Проверить: `curl -fsS https://<домен>/api/health` → `{"status":"ok"}`.
+В `infra/cron.example` замените путь к checkout и домен, затем установите задания
+через `sudo crontab -e`. Они используют тот же внешний env и того же пользователя,
+что и `deploy.sh`: копия БД в 03:30, файлы CMS в 03:45, проверка БД по понедельникам
+в 04:00, uptime каждые пять минут. Проверьте `sudo crontab -l` и журналы после первого
+запуска. Внешнее хранилище и срок хранения его копий настройте отдельно.
 
 ## 3. Обновление / редеплой
 
 ```bash
-git pull
-docker compose --env-file "$ENV_FILE" up -d --build       # пересобирает изменённые образы
-./scripts/apply-indexes.sh          # идемпотентно; на случай новых индексов
+git pull --ff-only
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
+curl -fsS https://club.example.ru/api/ready  # замените домен на свой
 ```
 
 SIGTERM обрабатывается gracefully (cron останавливается, активные запросы дозавершаются,
-`stop_grace_period: 30s`). Если менялись домены/`PUBLIC_URL` — web пересоберётся сам (build-args).
+`stop_grace_period: 30s`). Если менялись домены/`PUBLIC_URL`, `deploy.sh` пересоберёт web
+с новыми build-args. После обновления проверьте HTTPS, пользовательский сценарий и журналы.
 
 ## 3.1. E2E-проверка перед релизом (Playwright)
 
-Набор гоняется против **живого** стека (локального или staging) — в CI его нет,
-там нет БД/API. Прогонять после деплоя перед тем, как объявить релиз:
+Полный набор гоняется против **изолированного** живого стенда (локального или staging).
+Часть сценариев создаёт и меняет записи; на публичный production полный набор не направляйте.
+В CI его нет, там нет БД/API:
 
 ```bash
 pnpm --filter @club/web e2e
 ```
 
-Другой хост: `E2E_BASE_URL=https://<домен> pnpm --filter @club/web e2e`.
-Первый запуск на новой машине: `npx playwright install chromium`.
-Покрыто (24 проверки, десктоп + iPhone): публичные витрины, юр-страницы, robots/sitemap,
-`noindex` приватных разделов и 404, мобильная оболочка (табы, карточка программы, мерч
-с размерами, плеер, пустая корзина) и то, что десктоп **не** получает мобильную оболочку.
-Набор **read-only**: заявки не отправляются, данные стенда не меняются.
+На публичном адресе запускайте только проверки чтения, например:
+`E2E_BASE_URL=https://<домен> pnpm --filter @club/web exec playwright test e2e/public.spec.ts`.
+Первый запуск на тестовом хосте с Node.js 24 и pnpm 9.12.0:
+`pnpm --filter @club/web exec playwright install chromium`.
 
 ## 4. Откат
 
-- **Код:** `git revert <sha>` (или `git checkout <прежний-tag>`), затем `docker compose --env-file "$ENV_FILE" up -d --build`.
-- **Быстрый откат сервиса:** держать предыдущий образ; `docker compose --env-file "$ENV_FILE" up -d` на нём.
-- **Данные:** если проблема повредила БД — восстановить из бэкапа (§5). Схема Directus и сиды
-  идемпотентны — повторный `bootstrap` безопасен.
+- **Код:** подготовить отдельный checkout предыдущего проверенного коммита, затем
+  выполнить `sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh` из него.
+  Перед изменением рабочей БД скрипт создаёт и проверяет новую копию.
+- **Данные:** если проблема повредила БД, восстанавливать её вместе с файлами CMS
+  по §5. Схема Directus и сиды идемпотентны, но новая миграция может быть
+  несовместима со старым кодом; сначала проверьте откат на копии.
 
-## 5. Восстановление из бэкапа
+## 5. Проверка и восстановление из бэкапа
 
-Бэкапы — AES-256 (`scripts/backup-db.sh`), восстановимость проверяется еженедельно
-(`scripts/backup-verify.sh`). Ручное восстановление:
+Бэкапы – AES-256 (`scripts/backup-db.sh` и `scripts/backup-uploads.sh`).
+Восстановимость SQL проверяется еженедельно в отдельной временной БД:
 
 ```bash
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY \
-  -in backups/club-YYYY-MM-DD-HHMM.sql.gz.enc | gunzip \
-  | docker compose --env-file "$ENV_FILE" exec -T postgres psql -U club -d club
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/backup-verify.sh
 ```
 
-Ключ `BACKUP_ENCRYPTION_KEY` хранить **отдельно** от бэкапов. Offsite-копия — при заданном
-`BACKUP_OFFSITE_REMOTE` делается автоматически в конце `backup-db.sh`.
+Прямой импорт в рабочую БД затрёт текущие данные. Для фактического отката
+восстанавливайте SQL и файлы CMS в отдельные тома, сверяйте состав и открытие медиа,
+затем переключайте стек в окно обслуживания. Этот шаг пока требует отдельной
+репетиции на целевом сервере. Ключ `BACKUP_ENCRYPTION_KEY` храните **отдельно** от копий.
+При `BACKUP_OFFSITE_REMOTE` оба скрипта копируют архивы во внешнее хранилище.
 
 ## 6. Ротация секретов
 
-- **`AUTH_SECRET` / `ADMIN_AUTH_SECRET`:** заменить в `.env`, `docker compose --env-file "$ENV_FILE" up -d api`.
+- **`AUTH_SECRET` / `ADMIN_AUTH_SECRET`:** заменить во внешнем `/etc/club/runtime.env`,
+  затем запустить `sudo docker compose --env-file /etc/club/runtime.env up -d --no-deps api`.
   Все текущие сессии ЛК/админки станут недействительны (потребуется повторный вход) — это ожидаемо.
-- **`DIRECTUS_SERVICE_TOKEN`:** пересоздать токен сервис-аккаунта в Directus Studio, обновить `.env`,
+- **`DIRECTUS_SERVICE_TOKEN`:** пересоздать токен сервис-аккаунта в Directus Studio, обновить внешний env,
   перезапустить `api` и `bootstrap`.
 - **Компрометация аккаунта выпускника:** сброс пароля бампает `token_version` — старые токены
   этого пользователя отзываются немедленно (`lib/auth.ts`). Массовый отзыв — сменой `AUTH_SECRET`.
-- **`POSTGRES_PASSWORD`:** сменить в Postgres и `.env` согласованно (иначе Directus не подключится).
+- **`POSTGRES_PASSWORD`:** сменить в Postgres и во внешнем env согласованно (иначе Directus не подключится).
 - **Пароль сервисного аккаунта** (`service@club.example.com`) задаётся bootstrap'ом случайным и
   нигде не хранится: машине он не нужен, `apps/api` ходит статическим токеном. Раньше сюда клали
   сам `DIRECTUS_SERVICE_TOKEN`, и его утечка давала вход в публичную Studio полным админом.
@@ -301,7 +330,7 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY
 ## 7. Мониторинг
 
 - **Healthchecks:** у всех сервисов в compose (`docker compose --env-file "$ENV_FILE" ps` показывает healthy/unhealthy).
-  `/api/health` — liveness, `/api/ready` — связь с Directus.
+  `/api/health` – liveness, `/api/ready` – связь с Directus и таблицы приложения.
 - **Uptime:** `scripts/uptime-check.sh` (host-cron) шлёт алерт в офисный TG при падении/восстановлении.
 - **Ошибки:** Sentry при заданном `SENTRY_DSN` (ПДн вычищаются в `beforeSend`).
 - **Логи:** json-file с ротацией (`max-size 10m`, `max-file 3`) — диск не забьётся.

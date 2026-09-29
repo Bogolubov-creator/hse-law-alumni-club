@@ -1,9 +1,3 @@
-> **Версия 3** – [состав версии и ограничения](VERSION.md).
-
-Подготовка серверного релиза: [готовность и результаты проверок](docs/release-readiness.md),
-[порядок деплоя и восстановления](docs/deploy-runbook.md).
-
-
 # Клуб выпускников факультета права Вышки
 
 Портал клуба выпускников: публичный сайт, личный кабинет с геймификацией, витрины ДПО и мерча,
@@ -11,6 +5,18 @@
 
 > **По умолчанию оплата выключена.** Без ключей ЮKassa корзина создаёт заявку для офиса.
 > **Канон:** охра `#EC5A13`, синий `#11296B`, графит `#14181F`, светлый фон `#FBF3E8`; шрифты HSE Sans + HSE Slab.
+
+[История версии 3](VERSION.md) · [Результаты прежней релизной проверки](docs/release-readiness.md) ·
+[Инструкция по деплою и откату](docs/deploy-runbook.md)
+
+## Состояние на 29.09.2026
+
+Исходники собираются и проходят тесты в CI. Клон `main` запущен в локальной Ubuntu VM
+с PostgreSQL, Directus, API, сайтом и Caddy; `/api/ready` и HTTPS на стенде проверены.
+Для публичного запуска ещё нужны VPS, домены, рабочий SMTP, внешнее хранилище копий
+и проверка интеграций на целевом сервере. Инструкция для локальной репетиции:
+[Ubuntu VM](docs/ubuntu-vm-rehearsal.md). Демо-страница и локальный стенд не подтверждают
+работу публичного сервиса.
 
 ## Архитектура
 ```
@@ -34,14 +40,19 @@ Directus доступен через Caddy на домене админки; п�
 
 ```bash
 cp .env.example .env
-# Сгенерировать секреты:  openssl rand -hex 32  (DIRECTUS_KEY, DIRECTUS_SECRET, AUTH_SECRET)
-#                          openssl rand -hex 24  (DIRECTUS_SERVICE_TOKEN)
-# Поменять POSTGRES_PASSWORD, ADMIN_PASSWORD и пароль в CHECKOUT_DATABASE_URL.
-# E-mail — с валидным доменом (Directus отклоняет .local).
-docker compose up -d --build
-docker compose logs -f bootstrap   # дождаться "Bootstrap завершён"
-./scripts/apply-indexes.sh          # SQL-миграции и индексы после bootstrap
+# Замените POSTGRES_PASSWORD, DIRECTUS_KEY, DIRECTUS_SECRET,
+# DIRECTUS_SERVICE_TOKEN, ADMIN_PASSWORD, AUTH_SECRET и CHECKOUT_DB_PASSWORD.
+# Для каждого секрета используйте отдельный результат openssl rand -hex 32.
+# ADMIN_EMAIL должен иметь валидный домен, а не .local.
+docker compose --env-file .env config --quiet
+docker compose --env-file .env up -d --build
+docker compose --env-file .env ps
+curl -fsS http://localhost/api/ready
 ```
+`bootstrap` и `migrate` запускаются самим Compose. SQL-миграции и индексы
+применяются автоматически до старта API. Для обновления существующего стенда
+с предварительным бэкапом используйте `scripts/deploy.sh` по runbook.
+
 > Если путь к репозиторию содержит не-ASCII символы, Docker BuildKit падает на сессионном ключе —
 > собирайте через ASCII-симлинк: `ln -s "<repo>" ~/club-pravo-hse` и запускайте docker оттуда
 > с `COMPOSE_BAKE=false`.
@@ -82,8 +93,16 @@ docker compose logs -f bootstrap   # дождаться "Bootstrap заверш�
 
 ## Тесты
 ```bash
-pnpm -r test    # тесты shared, web и api; точное число зависит от версии
+pnpm install --frozen-lockfile
+pnpm -r build
+pnpm -r test
+pnpm audit --prod --audit-level high
+docker compose --env-file .env.example config --quiet
+bash scripts/test-integration.sh  # отдельный одноразовый PostgreSQL
 ```
+
+- Интеграционные тесты с PostgreSQL пропускаются в обычном `pnpm -r test`;
+  последняя команда запускает их отдельно. Для неё нужен Docker Engine.
 - **shared** — уровни, скидка, decay, достижения, переоценка корзины.
 - **api, чистые библиотеки** — Telegram initData, идемпотентность платежа, анти-брутфорс, подсети ЮKassa.
 - **api, роуты** (`src/routes/*.test.ts`) — вход и регистрация с подтверждением почты, сброс пароля,
@@ -96,8 +115,8 @@ E2E (Playwright, против живого стека) — см. [docs/deploy-ru
 ## Деплой на VPS
 Инструкция по первому запуску, миграции, проверке и откату – в
 [runbook](docs/deploy-runbook.md). На сервере нужны реальные домены, SMTP и секреты;
-Caddy получает TLS. API доступен только внутри Compose, Directus открыт с хоста на
-`127.0.0.1:8055` и через домен админки.
+Caddy получает TLS. API доступен только внутри Compose. Directus доступен на
+`127.0.0.1:8055` для оператора сервера и через домен админки.
 
 ## Требует реальных секретов (BLOCKED)
 - `OFFICE_TG_BOT_TOKEN` + `OFFICE_TG_CHAT_ID` – если офис получает уведомления в Telegram;
