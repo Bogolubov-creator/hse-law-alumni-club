@@ -9,6 +9,7 @@
 - Исходная папка `feat/v2-cart-and-mark` на `d7c6eb1` сохранена. Перед работой
   скопированы 191 изменённый/неотслеживаемый файл, SHA-256 и binary diff.
   Закрытые доказательства находятся вне репозитория, в `alumni-operations-evidence`.
+  Итоговая повторная сверка всех 191 SHA-256, ветки и HEAD совпала с исходной.
 - Владелец согласовал перенос Directus в существующие Fastify/PostgreSQL и офис,
   обновление Vite/Vitest и разделение восстановления доступа выпускников и сотрудников.
 - Операционные исправления завершены в `110008dbfc9ad13117491d65c793d80ed49c6cb2`.
@@ -54,7 +55,7 @@ SQL-роль API не читает legacy-токены и приватные CMS
 | Настоящий Docker/browser live | Два размера записи, повторные migrate/bootstrap, snapshot, restart, два размера чтения |
 | SQL-права runtime | Запрет SELECT settings/token и UPDATE role; разрешённые auth/profile операции |
 | `pnpm audit --prod --audit-level high` | Известных находок в проверенном наборе нет |
-| Trivy runtime images | Пять ARM64-образов локально и пять AMD64 в CI: HIGH/CRITICAL 0 |
+| Trivy runtime images | Пять ARM64-образов Ubuntu на `110008d` и пять AMD64 в CI: HIGH/CRITICAL 0 |
 | Gitleaks | Находок в текущих файлах нет |
 
 Модульный прогон с пропущенными SQL-тестами не считается проверкой БД. Live
@@ -64,6 +65,13 @@ Service worker в live выключен; PWA-проверки отделены �
 Снимки desktop/mobile просмотрены. Отдельное ревью data/auth/media/backup/restore
 исправило гонку входа, раскрытие оригинала аватара и ошибки операционных команд.
 Это ограниченный аудит, не гарантия отсутствия всех уязвимостей.
+
+На Ubuntu-коде `110008d` выполнен дополнительный браузерный проход: гость,
+выпускник, admin и editor при 1440×1000 и 390×844. Проверены настоящий вход,
+кабинет/заявка, медиатека и пустой поиск; ошибок страницы/консоли и переполнения
+по ширине нет. В отдельном тестовом профиле выбраны необходимые cookies, service
+worker выключен. Для UI использован Chromium с допуском внутреннего сертификата;
+проверку TLS подтверждают отдельные запросы с проверенным CA.
 
 ## Ubuntu
 
@@ -121,10 +129,13 @@ journald и `last-monitor.json`. Offsite не настроен и не заяв�
 | [50](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/50) | Права и атомарные платежи | CI прошёл |
 | [51](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/51) | Операционные инструменты и legacy snapshot | CI прошёл для `17053fa`; используется вместе с последующим native PR |
 | [52](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/52) | Native auth/data/media/bootstrap и исправления Ubuntu | Все четыре CI-задания прошли для `110008d` |
+| [53](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/53) | Документация и измерения | 194 локальные ссылки, 25 разделов README, независимое ревью |
 
 Документы выпуска и измерения находятся в
 [ветке документации](https://github.com/Bogolubov-creator/hse-law-alumni-club/tree/codex/club-native-docs-2026-09-30)
 поверх PR 52. Тематические PR зависят друг от друга и рассматриваются по порядку.
+README этой ветки открыт в реальном GitHub renderer при 1440×1000 и 390×844:
+оглавление ведёт к разделу, шапка и бейджи отображаются, переполнения страницы нет.
 Тег и GitHub Release не создавались; это проверяемый кандидат в открытых PR.
 Изменение требует миграций из PR 52 и production-конфигурации из
 [configuration.md](configuration.md). Совместимость и откат описаны в
