@@ -16,6 +16,7 @@ describe("notify mail outbox", () => {
   afterEach(() => {
     process.env = { ...prev };
     vi.doUnmock("nodemailer");
+    vi.doUnmock("./checkout-store.js");
     vi.restoreAllMocks();
   });
 
@@ -47,5 +48,24 @@ describe("notify mail outbox", () => {
     expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
       to: "office@example.com", subject: "Событие клуба выпускников", text: "Новая заявка на вступление",
     }));
+  });
+
+  it("после успешной отправки и сбоя записи статуса не отправляет письмо второй раз", async () => {
+    const sendMail = vi.fn().mockResolvedValue({ messageId: "qa" });
+    const query = vi.fn()
+      .mockResolvedValueOnce({ rows: [{ id: 42 }] })
+      .mockRejectedValueOnce(new Error("database unavailable"));
+    vi.doMock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail }) } }));
+    vi.doMock("./checkout-store.js", () => ({ checkoutPool: () => ({ query }) }));
+    process.env.CHECKOUT_DATABASE_URL = "postgresql://club:test@localhost/club";
+    process.env.SMTP_HOST = "smtp.example.com";
+    process.env.SMTP_FROM = "club@example.com";
+    const { enqueueMail, EMAIL_CONFIRMATION_KIND } = await import("./notify.js");
+
+    const result = await enqueueMail({
+      to: "pending@example.com", subject: "Подтверждение", body: "Ссылка", kind: EMAIL_CONFIRMATION_KIND,
+    });
+    expect(result).toEqual({ id: 42, sent: true, blocked: false });
+    expect(sendMail).toHaveBeenCalledTimes(1);
   });
 });

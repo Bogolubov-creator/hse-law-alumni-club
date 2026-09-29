@@ -11,12 +11,30 @@ import { env } from "../env.js";
 import { validateInitData } from "../lib/telegram.js";
 import { audit } from "../lib/audit.js";
 import { loginLocked, registerLoginFail, registerLoginSuccess, ipLoginLocked, registerIpFail, registerIpSuccess, resetTokenUsed, markResetTokenUsed } from "../lib/security.js";
-import { sendEmail, notifyOfficeText, mailEnabled } from "../lib/notify.js";
+import { sendEmail, enqueueMail, notifyOfficeText, mailEnabled, EMAIL_CONFIRMATION_KIND } from "../lib/notify.js";
+import { checkoutPool } from "../lib/checkout-store.js";
 
 // Версия политики обработки ПДн (дата редакции) – фиксируется как доказательство согласия.
 const PDN_POLICY_VERSION = "2026-07-02";
+const CONFIRMATION_RESEND_COOLDOWN_MINUTES = 10;
+const CONFIRMATION_RESEND_CACHE_LIMIT = 10_000;
+
+async function queueConfirmationEmail(userId: string, email: string) {
+  const token = jwt.sign({ sub: userId, purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
+  return enqueueMail({
+    to: email,
+    kind: EMAIL_CONFIRMATION_KIND,
+    subject: "Подтвердите почту – Клуб выпускников факультета права",
+    body: `Здравствуйте!\n\nВы подали заявку на вступление в клуб выпускников факультета права Вышки.\n` +
+      `Подтвердите, что почта ваша – ссылка действует 24 часа:\n${env.PUBLIC_URL}/confirm?token=${encodeURIComponent(token)}\n\n` +
+      `После подтверждения заявку проверит учебный офис.\n\nЕсли заявку подавали не вы – просто проигнорируйте письмо, аккаунт останется неактивным.`,
+  });
+}
 
 export async function authRoutes(app: FastifyInstance) {
+  // API одноинстансный: этот короткий локальный барьер закрывает гонку двух
+  // одновременных запросов, а outbox ниже сохраняет ограничение после рестарта.
+  const confirmationResends = new Map<string, number>();
   // Вход через Telegram Mini App (initData). BLOCKED без TELEGRAM_BOT_TOKEN.
   app.post("/auth/telegram", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram mini-app не настроен (нет TELEGRAM_BOT_TOKEN)" });
@@ -140,23 +158,65 @@ export async function authRoutes(app: FastifyInstance) {
     audit("register", { actor: `email:${email}`, detail: { cohort: b.cohort, edu_program: b.edu_program, confirm_required: confirmRequired }, req });
 
     if (confirmRequired) {
-      const confirmToken = jwt.sign({ sub: user.id, purpose: "email-confirm" }, env.AUTH_SECRET, { expiresIn: "24h" });
-      await sendEmail(
-        email,
-        "Подтвердите почту – Клуб выпускников факультета права",
-        `Здравствуйте, ${b.fio}!\n\nВы подали заявку на вступление в клуб выпускников факультета права Вышки.\n` +
-          `Подтвердите, что почта ваша – ссылка действует 24 часа:\n${env.PUBLIC_URL}/confirm?token=${encodeURIComponent(confirmToken)}\n\n` +
-          `После подтверждения заявку проверит учебный офис.\n\nЕсли заявку подавали не вы – просто проигнорируйте письмо, аккаунт останется неактивным.`,
-      );
+      const confirmation = await queueConfirmationEmail(user.id, email);
       // Офис зовём только после подтверждения почты – иначе очередь верификации
       // забивается заявками с чужих и несуществующих адресов.
-      return { ok: true, pending: true, confirm_required: true };
+      return { ok: true, pending: true, confirm_required: true, confirmation_queued: confirmation.sent || confirmation.id !== null };
     }
 
     // 152-ФЗ: не шлём ПДн заявителя в Telegram (зарубежный сервис). Офис смотрит анкету
     // в очереди верификации админ-панели (РФ, под доступом).
     await notifyOfficeText("🎓 Новая заявка на вступление в клуб – подтвердите в админ-панели (очередь верификации).");
     return { ok: true, pending: true, confirm_required: false };
+  });
+
+  // Повторная ссылка нужна после недоставки или истечения суток. Ответ одинаков
+  // для несуществующего, активного и неподтверждённого адреса.
+  app.post("/auth/resend-confirmation", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const { email: rawEmail } = z.object({ email: z.string().email().max(200) }).parse(req.body);
+    if (!mailEnabled()) return reply.code(503).send({ error: "Почта временно недоступна – повторите позже" });
+    const email = rawEmail.toLowerCase().trim();
+    const response = { ok: true };
+    const now = Date.now();
+    if ((confirmationResends.get(email) ?? 0) > now) return response;
+    if (confirmationResends.size >= CONFIRMATION_RESEND_CACHE_LIMIT) {
+      for (const [address, until] of confirmationResends) if (until <= now) confirmationResends.delete(address);
+      if (confirmationResends.size >= CONFIRMATION_RESEND_CACHE_LIMIT) {
+        return reply.code(429).send({ error: "Слишком много запросов – попробуйте позже" });
+      }
+    }
+    confirmationResends.set(email, now + CONFIRMATION_RESEND_COOLDOWN_MINUTES * 60_000);
+
+    try {
+      // Проверяем недавнюю очередь до поиска аккаунта: ответ остаётся одинаковым
+      // для зарегистрированного и неизвестного адреса.
+      if (env.CHECKOUT_DATABASE_URL) {
+        const recent = await checkoutPool().query(
+          `SELECT id FROM club_mail_outbox
+           WHERE kind=$1 AND to_addr=$2
+             AND created_at > now() - ($3::int * interval '1 minute')
+           LIMIT 1`,
+          [EMAIL_CONFIRMATION_KIND, email, CONFIRMATION_RESEND_COOLDOWN_MINUTES],
+        );
+        if (recent.rowCount) return response;
+      }
+
+      const users = (await directus.request((readUsers as any)({
+        filter: { email: { _eq: email }, status: { _eq: "unverified" } },
+        limit: 1, fields: ["id"],
+      }))) as { id: string }[];
+      const user = users[0];
+      if (!user) return response;
+      const alumni = (await directus.request((readItems as any)("alumni", {
+        filter: { user_id: { _eq: user.id } }, limit: 1, fields: ["id"],
+      }))) as { id: string }[];
+      if (!alumni[0]) return response;
+      await queueConfirmationEmail(user.id, email);
+      return response;
+    } catch (error) {
+      confirmationResends.delete(email);
+      throw error;
+    }
   });
 
   // Подтверждение почты по ссылке из письма. Одноразовость обеспечивает сам статус:

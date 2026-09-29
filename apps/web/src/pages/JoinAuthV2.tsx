@@ -113,6 +113,38 @@ function Note({ children, tone = "info" }: { children: ReactNode; tone?: "info" 
   );
 }
 
+function ConfirmationResend({ initialEmail = "" }: { initialEmail?: string }) {
+  const [email, setEmail] = useState(initialEmail);
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await apiPost("/auth/resend-confirmation", { email });
+      setSent(true);
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} style={{ marginTop: 20 }}>
+      <Field name="Почта для повторной ссылки" type="email" value={email} onChange={setEmail} autoComplete="email" />
+      <button type="submit" disabled={busy} className="foc" style={{ ...ghost, width: "100%", marginTop: 10, cursor: busy ? "wait" : "pointer" }}>
+        {busy ? "Отправляем…" : "Отправить ссылку ещё раз"}
+      </button>
+      {sent && <p role="status" style={{ color: "var(--c-text-2)", fontSize: "var(--t-small)" }}>Если заявка с этой почтой ожидает подтверждения, письмо придёт на указанный адрес. Повторная отправка доступна через 10 минут.</p>}
+      {error && <p role="alert" style={{ color: "var(--c-danger-text)", fontSize: "var(--t-small)" }}>{error}</p>}
+    </form>
+  );
+}
+
 const EDU_LEVELS = ["бакалавриат", "магистратура", "специалитет", "аспирантура"] as const;
 
 /* ── Заявка на вступление ─────────────────────────────────────────── */
@@ -142,6 +174,7 @@ export function JoinV2() {
   // При настроенном SMTP аккаунт неактивен до перехода по ссылке из письма –
   // экран «готово» должен вести в почту, а не в кабинет.
   const [needConfirm, setNeedConfirm] = useState(false);
+  const [confirmationQueued, setConfirmationQueued] = useState(true);
   const set = (k: string, v: string | boolean) => setF((s) => ({ ...s, [k]: v }));
   const levelId = useId();
   const full = interests.length >= MAX_INTERESTS;
@@ -154,7 +187,7 @@ export function JoinV2() {
     setErr(null);
     setBusy(true);
     try {
-      const res = await apiPost<{ confirm_required?: boolean }>("/auth/register", {
+      const res = await apiPost<{ confirm_required?: boolean; confirmation_queued?: boolean }>("/auth/register", {
         fio: f.fio, email: f.email, password: f.password, cohort: f.cohort,
         edu_level: f.edu_level, edu_program: f.edu_program, interests,
         ref: ref || undefined,
@@ -162,6 +195,7 @@ export function JoinV2() {
         website: f.website, // honeypot
       });
       setNeedConfirm(!!res?.confirm_required);
+      setConfirmationQueued(res?.confirmation_queued !== false);
       setDone(true);
     } catch (e) {
       setErr((e as Error).message);
@@ -185,13 +219,16 @@ export function JoinV2() {
 
   if (done && needConfirm) {
     return (
-      <AuthShell title="Проверьте почту" sub={`Мы отправили письмо на ${f.email}. Ссылка действует сутки.`}>
+      <AuthShell title="Проверьте почту" sub={confirmationQueued
+        ? `Письмо для ${f.email} отправлено или ожидает повторной доставки. Ссылка действует сутки.`
+        : `Заявка для ${f.email} сохранена, но письмо пока не удалось отправить. Запросите ссылку ещё раз.`}>
         <ol style={{ margin: "18px 0 0", paddingLeft: 20, color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.65 }}>
           <li><strong>Сейчас:</strong> подтвердите почту по ссылке из письма.</li>
           <li><strong>Затем:</strong> учебный офис сверит выпуск (обычно 1–2 рабочих дня).</li>
           <li><strong>После верификации:</strong> откроются кабинет и цена выпускника на ДПО.</li>
         </ol>
-        <Note>Письма нет? Загляните в «Спам» – иногда оно попадает туда.</Note>
+        <Note>Письма нет? Проверьте «Спам». Если оно не пришло, запросите новую ссылку ниже.</Note>
+        <ConfirmationResend initialEmail={f.email} />
         <Link to="/" className="foc" style={{ ...ghost, marginTop: 20 }}>На главную</Link>
       </AuthShell>
     );
@@ -427,7 +464,8 @@ export function ConfirmEmailV2() {
     // Ссылка без токена – это неполный адрес, а не провал подтверждения.
     return (
       <AuthShell title={token ? "Не удалось подтвердить" : "Ссылка неполная"} sub={err ?? "Ссылка недействительна или истекла."}>
-        <Link to="/join" className="foc" style={{ ...primary, marginTop: 20 }}>Подать заявку заново</Link>
+        <ConfirmationResend />
+        <Link to="/join" className="foc" style={{ ...ghost, marginTop: 20 }}>К анкете вступления</Link>
       </AuthShell>
     );
   }
