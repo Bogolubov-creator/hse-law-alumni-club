@@ -12,6 +12,8 @@ COPY apps/web apps/web
 # поэтому их нельзя задать в рантайме – только как build-arg (см. docker-compose.yml).
 # VITE_SITE_URL – абсолютный домен для og/JSON-LD/canonical в index.html;
 # VITE_DIRECTUS_URL – база Studio/ассетов для офисной админ-панели.
+# VITE_LOCAL_REVIEW – только локальные стенды (баннер «проект» на legal).
+# Сюда намеренно НЕ пробрасываем: прод-образ не должен получать этот флаг.
 ARG VITE_SITE_URL=http://localhost
 ARG VITE_DIRECTUS_URL=http://localhost:8055
 ENV VITE_SITE_URL=$VITE_SITE_URL

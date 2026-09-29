@@ -402,13 +402,15 @@ CrowMascot.prototype.build = function () {
   var stage = document.createElement('div');
   stage.setAttribute('data-rig', 'crow');
   stage.style.cssText = 'position:absolute;left:0;bottom:-4%;width:100%;aspect-ratio:1400/1465';
-  stage.innerHTML = RIG_HTML;
-  host.appendChild(stage);
+  // Safari начинает загрузку src при разборе HTML, до присоединения к документу.
+  stage.innerHTML = RIG_HTML.replace(/ src=/g, " data-src=");
   stage.querySelectorAll('img').forEach(function (im) {
-    var s = im.getAttribute('src').replace(/^parts\//, '').split('?')[0];
+    var s = im.getAttribute('data-src').replace(/^parts\//, '').split('?')[0];
     im.setAttribute('src', o.assetPath + s);
+    im.removeAttribute('data-src');
     im.setAttribute('draggable', 'false');
   });
+  host.appendChild(stage);
   this.host = host;
   this.stage = stage;
   this.parts = {};

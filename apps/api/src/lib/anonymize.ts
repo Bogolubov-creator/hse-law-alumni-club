@@ -1,3 +1,5 @@
+import { checkoutPool } from "./checkout-store.js";
+import { env } from "../env.js";
 import { readItems, updateItem, deleteItem, deleteUser, updateUser, deleteFile } from "@directus/sdk";
 import { directus } from "./directus.js";
 
@@ -20,6 +22,10 @@ export async function anonymizeAlumni(alumniId: string): Promise<boolean> {
   const a = rows[0];
   if (!a) return false;
 
+  if (env.CHECKOUT_DATABASE_URL) {
+    await checkoutPool().query("DELETE FROM club_social_reactions WHERE alumni_id=$1", [alumniId]);
+    await checkoutPool().query("DELETE FROM club_social_membership WHERE alumni_id=$1", [alumniId]);
+  }
   // Файл аватара в Directus Files.
   if (a.avatar) await di.request((deleteFile as any)(a.avatar)).catch((e) => warn("avatar", e));
 

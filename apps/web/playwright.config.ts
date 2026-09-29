@@ -8,6 +8,8 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  // Архивные staged-сценарии привязаны к прежнему стенду и запускаются только явно.
+  testIgnore: process.env.E2E_INCLUDE_STAGED === "true" ? [] : ["**/staged-*.spec.ts"],
   timeout: 30_000,
   retries: 0, // нестабильность расследуется, автоматический повтор её не скрывает
   fullyParallel: true,

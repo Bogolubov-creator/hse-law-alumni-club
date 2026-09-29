@@ -78,6 +78,7 @@ describe("POST /cart – вариант товара сверяется с ка�
 describe("POST /cart – границы количества и числа позиций", () => {
   it("повторные добавления не превышают потолок количества", async () => {
     const app = await build();
+    db.products![0].variants_json = [{ sku: "robe-M", stock: 1000 }];
     for (let i = 0; i < 4; i++) await add(app, { type: "merch", ref_id: "robe", variant_sku: "robe-M", qty: 99 });
     const items = (await read(app)).json().items;
     expect(items).toHaveLength(1);
@@ -132,5 +133,38 @@ describe("POST /cart – прежние правила ДПО не сломан�
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/cart", payload: { type: "merch", ref_id: "pin", qty: 1 } });
     expect(r.statusCode).toBe(400);
+  });
+});
+
+
+describe("Корзина – остатки до оформления заявки", () => {
+  it("повторное добавление учитывает уже выбранное количество", async () => {
+    const app = await build();
+    await add(app, { type: "merch", ref_id: "robe", variant_sku: "robe-M", qty: 2 });
+    const response = await add(app, { type: "merch", ref_id: "robe", variant_sku: "robe-M", qty: 2 });
+    expect(response.statusCode).toBe(409);
+    expect((await read(app)).json().items[0].qty).toBe(2);
+    await app.close();
+  });
+
+  it("увеличение сверх остатка отклоняется, уменьшение и удаление доступны", async () => {
+    const app = await build();
+    await add(app, { type: "merch", ref_id: "robe", variant_sku: "robe-M", qty: 3 });
+    const patch = (qty: number) => app.inject({ method: "PATCH", url: "/cart", headers: { "x-cart-session": SESSION }, payload: { ref_id: "robe", variant_sku: "robe-M", qty } });
+    expect((await patch(4)).statusCode).toBe(409);
+    expect((await read(app)).json().items[0].qty).toBe(3);
+    db.products![0].status = "draft";
+    expect((await patch(2)).statusCode).toBe(200);
+    expect((await patch(0)).statusCode).toBe(200);
+    expect((await read(app)).json().items).toHaveLength(0);
+    await app.close();
+  });
+
+  it.each([0, null])("остаток товара без вариантов %s обрабатывается корректно", async (stock) => {
+    const app = await build();
+    db.products![1].stock = stock;
+    const response = await add(app, { type: "merch", ref_id: "pin", qty: 1 });
+    expect(response.statusCode).toBe(stock === 0 ? 409 : 200);
+    await app.close();
   });
 });

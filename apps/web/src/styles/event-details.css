@@ -1,0 +1,40 @@
+/* Страница события – белый материал, Slab и охристая дата по «Фасад и зал». */
+.club-event-detail { background: var(--c-bg-raised); color: var(--c-text); border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-ambient); }
+.club-event-detail__nav { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--c-line); }
+.club-event-detail__nav a { color: var(--c-link); text-underline-offset: 4px; }
+.club-event-detail__nav button { background: transparent; color: var(--c-text-2); border: 1px solid var(--c-line-control); border-radius: var(--r-sm); padding: 10px 14px; min-height: 44px; cursor: pointer; }
+.club-event-detail__header { padding: 28px 24px; }
+.club-event-detail__tags { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--c-text-2); font-size: 13px; }
+.club-event-detail__header h1, .club-event-detail__header h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.12; margin: 16px 0 0; overflow-wrap: anywhere; }
+.club-event-detail__cover { display: block; width: 100%; height: auto; margin-bottom: 24px; border-radius: var(--r-sm); }
+.club-event-detail__body { display: grid; gap: 28px; padding: 28px 24px; }
+.club-event-detail__story { min-width: 0; }
+.club-event-detail__story :is(h2, h3) { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+.club-event-detail__story p { color: var(--c-text-2); font-size: var(--t-body); line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; margin: 0; max-width: 62ch; }
+.club-event-detail__info { min-width: 0; }
+.club-event-detail__info dl { margin: 0; }
+.club-event-detail__info dl > div { padding: 16px 0; border-top: 1px solid var(--c-line); }
+.club-event-detail__info dt, .club-event-detail__calendar > span { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--c-text-3); }
+.club-event-detail__info dd { margin: 8px 0 0; font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
+.club-event-detail__info time { color: var(--c-accent-text); font-weight: 500; }
+.club-event-detail__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.club-event-detail__actions > a, .club-event-detail__actions > button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.club-event-detail__registration { background: var(--c-bg-inverse); color: var(--c-text-inverse); border-radius: var(--r-sm); padding: 10px 16px; text-decoration: none; }
+.club-event-detail__attendance { font-size: 13px; color: var(--c-text-3); margin: 12px 0 0; }
+.club-event-detail__calendar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border-top: 1px solid var(--c-line); margin-top: 20px; padding-top: 16px; }
+.club-event-detail__calendar > span { flex-basis: 100%; margin-bottom: 4px; }
+.club-event-detail__calendar a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--c-line-control); border-radius: var(--r-sm); color: var(--c-text-2); font-size: 13px; text-decoration: none; }
+.club-event-detail--page { margin: 36px auto 56px; }
+.club-event-detail--page .club-event-detail__header { padding: 40px; }
+.club-event-detail--page .club-event-detail__header h1 { font-size: clamp(32px, 4.5vw, 60px); max-width: 24ch; }
+.club-event-detail--page .club-event-detail__body { grid-template-columns: minmax(0, 1fr) minmax(280px, .7fr); gap: 40px; padding: 0 40px 40px; }
+.club-event-detail--page .club-event-detail__info { border-left: 1px solid var(--c-line); padding-left: 32px; }
+.club-event-state { margin: 40px auto; padding: 32px; background: var(--c-bg-raised); border: 1px solid var(--c-line); border-radius: var(--r-lg); }
+.club-event-state h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 5vw, 44px); }
+@media (max-width: 700px) {
+  .club-event-detail--page .club-event-detail__header, .club-event-detail--page .club-event-detail__body { padding: 24px 20px; }
+  .club-event-detail--page .club-event-detail__body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .club-event-detail--page .club-event-detail__info { border-left: 0; padding-left: 0; }
+  .club-event-detail__nav { padding: 16px 20px; }
+  .club-event-detail--page { margin-top: 24px; }
+}

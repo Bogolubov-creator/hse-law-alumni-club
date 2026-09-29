@@ -13,13 +13,17 @@ if (!token) {
   console.error("TELEGRAM_BOT_TOKEN не задан");
   process.exit(1);
 }
+if (!secret) {
+  console.error("TELEGRAM_WEBHOOK_SECRET обязателен");
+  process.exit(1);
+}
 if (!publicUrl.startsWith("https://")) {
   console.error("PUBLIC_URL должен быть https:// (для локали используйте туннель, напр. ngrok)");
   process.exit(1);
 }
 
 const webhookUrl = `${publicUrl}/api/telegram/webhook`;
-const body: Record<string, string> = { url: webhookUrl };
+const body = { url: webhookUrl, secret_token: secret, allowed_updates: ["message", "message_reaction"] };
 if (secret) body.secret_token = secret;
 
 const r = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {

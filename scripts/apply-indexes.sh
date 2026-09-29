@@ -6,12 +6,13 @@
 #   ./scripts/apply-indexes.sh
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ENV_FILE:-$REPO_DIR/.env}"
 PG="${PG_CONTAINER:-club-pravo-hse-postgres-1}"
-if [[ ! -f "$REPO_DIR/.env" ]] && { [[ -z "${POSTGRES_USER:-}" ]] || [[ -z "${POSTGRES_DB:-}" ]]; }; then
-  echo "Нужен .env или переменные POSTGRES_USER и POSTGRES_DB" >&2
+if [[ ! -f "$ENV_FILE" ]] && { [[ -z "${POSTGRES_USER:-}" ]] || [[ -z "${POSTGRES_DB:-}" ]]; }; then
+  echo "Нужен ENV_FILE или переменные POSTGRES_USER и POSTGRES_DB" >&2
   exit 2
 fi
-val() { sed -n "s/^$1=//p" "$REPO_DIR/.env" | head -n 1; }
+val() { [[ -f "$ENV_FILE" ]] && sed -n "s/^$1=//p" "$ENV_FILE" | head -n 1 || true; }
 PGUSER="${POSTGRES_USER:-$(val POSTGRES_USER)}"; PGUSER="${PGUSER:-club}"
 PGDB="${POSTGRES_DB:-$(val POSTGRES_DB)}"; PGDB="${PGDB:-club}"
 

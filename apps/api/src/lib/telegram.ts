@@ -10,8 +10,9 @@ export function validateInitData(
   opts?: { maxAgeSec?: number },
 ): { ok: boolean; user?: unknown } {
   const params = new URLSearchParams(initData);
+  if (new Set(params.keys()).size !== [...params.keys()].length) return { ok: false };
   const hash = params.get("hash");
-  if (!hash) return { ok: false };
+  if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) return { ok: false };
   params.delete("hash");
 
   const dataCheckString = [...params.entries()]
@@ -30,7 +31,7 @@ export function validateInitData(
   // Свежесть: отклоняем устаревший initData (защита от повторного использования).
   if (opts?.maxAgeSec) {
     const authDate = Number(params.get("auth_date"));
-    if (!authDate || Date.now() / 1000 - authDate > opts.maxAgeSec) return { ok: false };
+    if (!Number.isInteger(authDate) || authDate <= 0 || authDate > Date.now() / 1000 + 60 || Date.now() / 1000 - authDate > opts.maxAgeSec) return { ok: false };
   }
 
   let user: unknown;
