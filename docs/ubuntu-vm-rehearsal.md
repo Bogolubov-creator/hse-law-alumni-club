@@ -1,178 +1,323 @@
-# Репетиция выпуска в Ubuntu на Mac
+# Репетиция native-выпуска в Ubuntu на Mac
 
-Этот стенд проверяет запуск из `main` в отдельной Ubuntu VM с собственными Docker Engine,
-PostgreSQL, Directus, API, сайтом и Caddy. Он хранит только синтетические данные.
-Порядок настоящего выпуска и отката описан в [deploy-runbook.md](deploy-runbook.md).
+Инструкция проверяет выбранный SHA в отдельном локальном контуре Ubuntu 24.04:
+PostgreSQL, migrate, native bootstrap, Fastify, web, Caddy и Mailpit. Реальные
+участники, почтовые учётные данные и ключи внешних интеграций здесь не используются.
 
-## Устройство стенда
+Native live на локальном Docker прошёл запись desktop/mobile, повторный bootstrap
+и чтение после рестарта. Это не проверка Ubuntu. Результат VM-репетиции и точный SHA
+фиксируются в [project-state.md](project-state.md); инструкция не объявляет её завершённой.
+Общий порядок операций и перенос старой CMS – в [runbook](deploy-runbook.md).
 
-- Ubuntu 24.04 LTS ARM64 в Lima через macOS Virtualization Framework.
-- VM `club-ubuntu-qa`: 4 CPU, 6 ГБ RAM, виртуальный диск 20 ГБ. Домашняя папка Mac
-  не монтируется в VM.
-- Клон `main`: `~/club-pravo-hse` внутри VM.
-- Рабочий env: `/etc/club/qa-runtime.env`, права `0600`. Секреты генерируются
-  отдельно для стенда и не попадают в git.
-- Override Compose: `/etc/club/qa-compose.yml`. Сайт слушает только локальный
-  порт `8443`, Directus – `8444`, Mailpit – `8125`; порт API не публикуется.
-- `APP_ENV=production`, `SEED_DEMO=false`. Mailpit заменяет внешний SMTP;
-  ЮKassa, Telegram и push отключены.
+## Выбор существующей или новой VM
 
-На Mac должно быть достаточно свободного места для образа Ubuntu и первой сборки
-Docker. Проверяйте `df -h ~` до запуска и во время первой сборки: размер
-виртуального диска – ограничение сверху, а фактически занятое место растёт.
+На Mac проверьте имеющиеся VM и свободное место:
 
-## Создание VM
+```bash
+limactl list
+df -h ~
+```
 
-На Mac установите [Lima](https://lima-vm.io/docs/installation/) и создайте VM:
+Исходная VM `club-ubuntu-qa` содержит исторический синтетический Directus-стенд.
+Не удаляйте и не переименовывайте его тома ради native-запуска. В этой VM можно
+создать новый Compose-проект с другими портами либо использовать новую VM.
+Имена проектов, конфиги и снимки источника должны оставаться различимыми.
+
+Для новой VM нужен [Lima](https://lima-vm.io/docs/installation/). Если он уже
+установлен, повторная установка не нужна. Команда создания ниже применяется
+только к ещё не существующему имени `club-native-ubuntu`:
 
 ```bash
 brew install lima
-limactl start --yes --name=club-ubuntu-qa --vm-type=vz \
+limactl start --yes --name=club-native-ubuntu --vm-type=vz \
   --cpus=4 --memory=6 --disk=20 --mount-none template:ubuntu-24.04
-limactl shell club-ubuntu-qa
+limactl shell club-native-ubuntu
 ```
 
-В Ubuntu 24.04 установите системные утилиты для клонирования, проверки HTTPS,
-шифрования и резервных копий:
+Пример выделяет 4 vCPU, 6 GiB RAM и 20 GiB виртуального диска, без монтирования
+домашнего каталога Mac. Это параметры исходного размера репетиции, а не гарантия
+места для двух стеков, сборки и всех копий. До запуска сверьте [capacity.md](capacity.md),
+`df -h` внутри VM и на Mac; preflight требует ещё минимум 5 GiB свободного места.
+Существующую VM запускают по имени без повторного создания.
+
+У VM собственный Docker Engine. Docker Desktop на Mac его не заменяет. Все команды
+следующих разделов, кроме явно отмеченных, выполняются **в Ubuntu**.
+
+## Код и зависимости
+
+Не выбирайте автоматически движущуюся `main`. Замените `REVIEWED_COMMIT` точным
+проверенным native-SHA. Для нового `/opt/club`:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y --no-install-recommends \
-  git curl ca-certificates openssl tar gzip cron rclone
-```
-
-Docker Engine, Buildx и Compose plugin установите по
-[официальной инструкции Docker](https://docs.docker.com/engine/install/ubuntu/).
-Нужен отдельный Docker daemon внутри VM; Docker Desktop на Mac его не заменяет.
-Node.js и pnpm на хосте для Compose-деплоя не нужны: проект устанавливает зависимости
-по `pnpm-lock.yaml` при сборке Docker-образов. Проверка после установки:
-
-```bash
+sudo apt-get install -y --no-install-recommends git ca-certificates
+sudo git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git /opt/club
+sudo git -C /opt/club checkout --detach REVIEWED_COMMIT
+cd /opt/club
+sudo bash scripts/setup-ubuntu.sh
 sudo docker version
 sudo docker compose version
 sudo docker buildx version
 sudo systemctl is-active docker
-rclone version
 ```
 
-Клонируйте исходный репозиторий в VM:
+На существующей VM используйте отдельный чистый checkout нужного SHA, сохраняя
+исходный. Для переноса данных [legacy snapshot](deploy-runbook.md#перенос-установки-directus)
+снимается прежним закреплённым инструментом, а не этим native-deploy.
+Node/pnpm на host для Compose не нужны; для запуска тестов вне Docker устанавливаются
+версии из [testing.md](testing.md) отдельно.
+
+## Изолированная конфигурация
+
+Создайте внешний env, замените все нужные секреты независимыми случайными значениями,
+например отдельными результатами `openssl rand -hex 32`. Рабочие ключи не копируются.
+Если `/etc/club/runtime.env` уже относится к другому контуру, используйте новое имя,
+например `/etc/club/native-runtime.env`, и замените путь во всех командах ниже.
+Не перезаписывайте существующий env.
 
 ```bash
-git clone --depth 1 --branch main \
-  https://github.com/Bogolubov-creator/hse-law-alumni-club.git ~/club-pravo-hse
-git -C ~/club-pravo-hse rev-parse HEAD
+sudo install -d -m 0700 /etc/club
+sudo install -m 0600 /opt/club/.env.example /etc/club/runtime.env
+sudoedit /etc/club/runtime.env
 ```
 
-## Локальная конфигурация
+Нужны POSTGRES/CHECKOUT пароли, пароль
+начального администратора, два JWT-секрета и ключ резервной копии. `CHECKOUT_DATABASE_URL`
+оставьте пустым, чтобы Compose собрал локальный URL отдельной роли.
 
-Создайте `/etc/club/qa-runtime.env` из `.env.example` вне git-каталога с
-правами `0600`. Для каждого секрета используйте отдельный результат
-`openssl rand -hex 32`. Замените как минимум `POSTGRES_PASSWORD`, `DIRECTUS_KEY`,
-`DIRECTUS_SECRET`, `DIRECTUS_SERVICE_TOKEN`, `ADMIN_PASSWORD`, `AUTH_SECRET`,
-`ADMIN_AUTH_SECRET`, `CHECKOUT_DB_PASSWORD` и `BACKUP_ENCRYPTION_KEY`.
-Демо-пароли из шаблона тоже замените, даже если сиды выключены.
-
-Значения, отличающиеся от обычного production-сервера:
+Помимо секретов задайте следующие значения; это локальные назначения Mailpit:
 
 ```dotenv
 APP_ENV=production
 SEED_DEMO=false
+JOBS_ENABLED=false
+DPO_SYNC_ENABLED=false
+NEWS_SYNC_ENABLED=false
 ADMIN_EMAIL=qa-admin@example.com
-PUBLIC_URL=https://localhost:8443
-DIRECTUS_PUBLIC_URL=https://admin.localhost:8444
+PUBLIC_URL=https://localhost:9445
 WEB_DOMAIN=localhost
 ADMIN_DOMAIN=admin.localhost
-DIRECTUS_CORS_ORIGIN=https://admin.localhost:8444
 ACME_EMAIL=qa@example.com
 OFFICE_NOTIFY_CHANNEL=email
 OFFICE_EMAIL=qa-office@example.com
 SMTP_HOST=mailpit
 SMTP_PORT=1025
 SMTP_FROM=qa-noreply@example.com
+SMTP_USER=
+SMTP_PASS=
+POINTS_SERVICE_TOKEN=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_WEBHOOK_SECRET=
+TELEGRAM_POLLING=false
+OFFICE_TG_BOT_TOKEN=
+OFFICE_TG_CHAT_ID=
 YOOKASSA_SHOP_ID=
 YOOKASSA_SECRET_KEY=
-TELEGRAM_BOT_TOKEN=
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+SENTRY_DSN=
+SUPPORT_ENABLED=false
 BACKUP_OFFSITE_REMOTE=
 ```
 
-`CHECKOUT_DATABASE_URL` можно оставить пустым: Compose собирает адрес для
-отдельной SQL-роли. Настоящие почтовые, платёжные и Telegram-ключи в VM
-не копируйте.
-
-Сохраните следующий override в `/etc/club/qa-compose.yml`:
+Сохраните override в `/etc/club/qa-compose.yml`, root:root, `0600`:
 
 ```yaml
-name: club-ubuntu-qa
+name: club-native-ubuntu
 services:
-  directus:
-    ports: !override []
   caddy:
+    networks: [default, browser]
     ports: !override
-      - '127.0.0.1:8443:443'
-      - '127.0.0.1:8444:443'
+      - "127.0.0.1:9445:443"
+      - "127.0.0.1:9446:443"
   mailpit:
-    image: axllent/mailpit:latest
-    restart: unless-stopped
+    image: axllent/mailpit@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    networks: [default, browser]
     ports:
-      - '127.0.0.1:8125:8025'
+      - "127.0.0.1:9126:8025"
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }
+networks:
+  default:
+    internal: true
+  browser:
 ```
 
-Локальные имена `.localhost` дают Caddy внутренний сертификат. Он проверяется
-только с корневым сертификатом этого стенда; в доверенные сертификаты macOS
-его добавлять не требуется.
+API, PostgreSQL, migrate и bootstrap находятся только в internal-сети. Caddy и
+Mailpit дополнительно подключены к bridge для браузерного доступа; опубликованные
+порты слушают только loopback. `9446` – прежний admin-домен с redirect и legacy-assets,
+а не Studio. API/PG портов host не имеют. Docker build скачивает зависимости до
+запуска, изоляция runtime не отменяет сетевые обращения самой сборки.
 
-## Первый и повторный деплой
+Если 9445/9446/9126 заняты, выберите другие порты и согласованно измените PUBLIC_URL,
+override и команды. Для restore используйте новые, например 10443/10444/10125;
+тот же override без существующих volumes удовлетворяет требованиям restore guard.
+`-p club-restore-*` в restore переопределяет имя из YAML.
 
-Выполняйте из `~/club-pravo-hse` внутри VM:
+## Первый выпуск и HTTPS
+
+Из `/opt/club`:
 
 ```bash
-cd ~/club-pravo-hse
-sudo docker compose --env-file /etc/club/qa-runtime.env \
+sudo docker compose --env-file /etc/club/runtime.env \
   -f docker-compose.yml -f /etc/club/qa-compose.yml config --quiet
-sudo docker compose --env-file /etc/club/qa-runtime.env \
-  -f docker-compose.yml -f /etc/club/qa-compose.yml up -d mailpit
-sudo env ENV_FILE=/etc/club/qa-runtime.env \
-  DEPLOY_COMPOSE_OVERRIDE=/etc/club/qa-compose.yml bash scripts/deploy.sh
+sudo env ENV_FILE=/etc/club/runtime.env \
+  DEPLOY_COMPOSE_OVERRIDE=/etc/club/qa-compose.yml \
+  HTTPS_CA_FILE=/etc/club/local-ca.crt bash scripts/preflight.sh
+sudo env ENV_FILE=/etc/club/runtime.env \
+  DEPLOY_COMPOSE_OVERRIDE=/etc/club/qa-compose.yml \
+  HTTPS_CA_FILE=/etc/club/local-ca.crt bash scripts/deploy.sh
 ```
 
-Проверка локального HTTPS без отключения проверки сертификата:
+Deploy требует production-конфигурацию, но SMTP здесь заканчивается в Mailpit.
+На первом localhost HTTPS-запуске отсутствующий `HTTPS_CA_FILE` экспортируется из
+Caddy. Это публичный корень новой локальной CA, не закрытый ключ; глобальное
+доверие ОС команда не меняет. Если файл уже существует от другого проекта,
+не подменяйте ошибку TLS отключением проверки: получите корень нужного нового Caddy.
 
 ```bash
-sudo docker cp club-ubuntu-qa-caddy-1:/data/caddy/pki/authorities/local/root.crt \
-  /tmp/club-qa-root.crt
-sudo chmod 644 /tmp/club-qa-root.crt
-curl --cacert /tmp/club-qa-root.crt https://localhost:8443/api/ready
-curl -I --cacert /tmp/club-qa-root.crt https://localhost:8443/
-curl -I --resolve admin.localhost:8444:127.0.0.1 \
-  --cacert /tmp/club-qa-root.crt https://admin.localhost:8444/server/health
-sudo docker ps --format '{{.Names}} {{.Status}}'
+sudo curl --fail --cacert /etc/club/local-ca.crt https://localhost:9445/api/ready
+sudo curl --fail --cacert /etc/club/local-ca.crt -I https://localhost:9445/
+sudo curl --fail --cacert /etc/club/local-ca.crt \
+  --resolve admin.localhost:9446:127.0.0.1 -I https://admin.localhost:9446/
+sudo docker compose --env-file /etc/club/runtime.env \
+  -f docker-compose.yml -f /etc/club/qa-compose.yml ps -a
 ```
 
-Для проверки пути с Mac скопируйте **публичный** корневой сертификат из VM:
+Ожидаются readiness `status: ok`, HTML сайта, redirect admin-домена в `/admin`,
+healthy у четырёх постоянных сервисов. У одноразовых migrate/bootstrap успешное
+завершение отличается от состояния running. `curl -k` не подтверждает TLS.
+В этом override HTTP-порт не опубликован; публичный HTTP→HTTPS redirect проверяется
+отдельно в контуре, где доступен порт 80.
+
+Для обращения с Mac скопируйте только публичный CA. Сначала в Ubuntu:
 
 ```bash
-limactl copy club-ubuntu-qa:/tmp/club-qa-root.crt /tmp/club-qa-root.crt
-curl --cacert /tmp/club-qa-root.crt https://localhost:8443/api/ready
+sudo install -m 0644 /etc/club/local-ca.crt /tmp/club-native-qa-root.crt
 ```
 
-Проверяйте регистрацию только с синтетическим адресом `example.com`:
-письмо должно появиться в Mailpit на `http://localhost:8125`, аккаунт должен
-оставаться `unverified` до подтверждения. Повторная ссылка запрашивается через
-`/auth/resend-confirmation`; в течение десяти минут она не создаёт второе письмо.
-В отправленной записи `club_mail_outbox` тело письма очищено.
-Повторный вызов `scripts/deploy.sh`
-должен создать шифрованные копии БД и файлов CMS, восстановить SQL в отдельную
-временную БД и снова завершиться с `/ready`.
+Затем на Mac, подставив фактическое имя VM:
 
-Перед новой репетицией обновите клон через `git pull --ff-only` и повторите
-деплой. Для экономии памяти Mac остановите VM командой
-`limactl stop club-ubuntu-qa`; данные и образы сохраняются. Вернуть стенд:
-`limactl start club-ubuntu-qa`.
+```bash
+limactl copy club-native-ubuntu:/tmp/club-native-qa-root.crt /tmp/club-native-qa-root.crt
+curl --fail --cacert /tmp/club-native-qa-root.crt https://localhost:9445/api/ready
+```
 
-## Граница проверки
+Проверьте перенаправление loopback-порта Lima отдельно; успешный запрос внутри VM
+не доказывает доступ с Mac. Если порт занят на Mac, перенастройте проброс, не
+открывайте API или PostgreSQL наружу. Браузерные сценарии выполняйте в тестовом
+профиле; проверка TLS через доверенный CA остаётся отдельным обязательным шагом.
 
-VM работает на ARM64, а будущий VPS может быть AMD64. Внутренний сертификат
-Caddy не проверяет публичные DNS и ACME. Mailpit не доказывает доставку внешней
-почты; в стенде нет реальной оплаты, Telegram, push и offsite-копии. Перед
-публичным запуском эти проверки выполняются на целевом сервере по
-[основному runbook](deploy-runbook.md).
+После guest `reboot` в репетиции приложение отвечало внутри Ubuntu, но hostagent
+Lima сохранил закрытое gRPC-соединение: запрос с Mac получал connection reset.
+Перезапуск существующей VM восстановил loopback-проброс без удаления томов:
+
+```bash
+limactl stop club-native-ubuntu
+limactl start club-native-ubuntu
+curl --fail --cacert /tmp/club-native-qa-root.crt https://localhost:9445/api/ready
+```
+
+Это диагностика Lima на Mac. Не применяйте пересоздание VM или томов для исправления
+проброса; сначала проверьте тот же HTTPS внутри Ubuntu.
+
+## Пользовательские сценарии и повторный запуск
+
+В браузере на компьютере и ширине телефона пройдите:
+
+1. Регистрацию синтетического адреса, получение письма в Mailpit
+   `http://localhost:9126`, подтверждение и вход. До подтверждения аккаунт unverified.
+2. Сброс пароля через новое письмо, вход новым паролем, отказ старого JWT.
+3. Верификацию участника администратором, изменение профиля и повторное чтение.
+4. Создание контента, корзину и заявку, смену статуса в офисе.
+5. Вход editor, отказ чувствительных административных действий.
+6. Upload/preview медиа; draft-изображение закрыто, опубликованное доступно, audio
+   не открывается общим media-маршрутом, используемый файл не удаляется.
+7. Аватар 256×256 и сохранение исходного файла; чтение прежних UUID при legacy-переносе.
+
+Создание editor и reset сотрудника выполняйте [операторской командой](deploy-runbook.md#сотрудники-и-восстановление-доступа).
+SQL-права API можно проверить без вывода credentials:
+
+```bash
+sudo docker compose --env-file /etc/club/runtime.env \
+  -f docker-compose.yml -f /etc/club/qa-compose.yml \
+  run --rm --no-deps -T api node --input-type=module < scripts/test-runtime-permissions.mjs
+```
+
+Перед повторным deploy измените синтетические настройки/контент и сохраните
+контрольные значения. Повторите тот же `deploy.sh`: он создаёт согласованный snapshot
+и повторяет миграции/bootstrap, сохраняя пароли, UUID, роли и ручной контент.
+Deploy не выполняет restore автоматически. После рестарта постоянных сервисов
+повторите чтение профиля, заявки, контента и отзывов сессий:
+
+```bash
+sudo docker compose --env-file /etc/club/runtime.env \
+  -f docker-compose.yml -f /etc/club/qa-compose.yml restart postgres api web caddy mailpit
+```
+
+Сценарий `scripts/test-live.sh` создаёт собственный проект `club-ci-live` на HTTP
+8180 с Mailpit и сам удаляет его. Он не принимает URL этого HTTPS-стенда. При запуске
+внутри Ubuntu это дополнительная проверка собранных сервисов; она не заменяет
+сохранение/восстановление именно проверяемого QA-проекта.
+
+## Копия, restore и мониторинг
+
+Снимите полную копию и проверьте её отдельным exact-restore по [runbook](deploy-runbook.md#изолированное-восстановление).
+Для источника Directus используйте [migrate-legacy](deploy-runbook.md#перенос-установки-directus).
+Каждый restore получает новый `club-restore-*`, новые тома, отдельные env/порты/CA.
+Результат не переносится на source-проект автоматически.
+
+После restore Caddy создаёт новую CA. Скрипт restore её не экспортирует; пример
+для ранее выбранного `club-restore-drill` и порта 10443:
+
+```bash
+sudo docker compose -p club-restore-drill --env-file /etc/club/restore.env \
+  -f /opt/club-restore-code/docker-compose.yml -f /etc/club/restore-compose.yml \
+  cp caddy:/data/caddy/pki/authorities/local/root.crt /etc/club/restore-root.crt
+sudo curl --fail --cacert /etc/club/restore-root.crt https://localhost:10443/api/ready
+```
+
+Сравните количество и ключевые значения строк, пользовательские UUID/хеши без
+публикации самих хешей, суммы/статусы, checksum uploads и ссылки на файлы. Проверьте
+вход, роли, повторное чтение и медиа. Автоматическое сравнение четырёх counts в
+restore не заменяет эту сверку, особенно после legacy-миграций.
+
+Таймеры устанавливаются по [runbook](deploy-runbook.md#таймеры-и-мониторинг).
+В `/etc/club/operations.env` для этого контура задайте:
+
+```dotenv
+ENV_FILE=/etc/club/runtime.env
+DEPLOY_COMPOSE_OVERRIDE=/etc/club/qa-compose.yml
+HTTPS_CA_FILE=/etc/club/local-ca.crt
+MONITOR_CERT_MIN_DAYS=0.25
+```
+
+Если использовано другое имя env, поправьте его и здесь. Monitor ожидает успешную
+копию, четыре healthy-сервиса и HTTPS; без первой копии его отказ ожидаем.
+Внешнего оповещения и offsite в этой репетиции нет.
+
+## Завершение и границы результата
+
+Запишите в единый журнал SHA, команды, exit status, ресурсы VM, checksums, роль,
+движок браузера, размеры экрана и оставшиеся ограничения. Секреты, тела писем,
+рабочие выгрузки и токены в репозиторий не входят. Скриншот без проверки повторного
+чтения не доказывает сохранение. Для write/read-фаз live сохраняются разные каталоги.
+
+Чтобы освободить память Mac без удаления данных:
+
+```bash
+limactl stop club-native-ubuntu
+```
+
+При следующем продолжении работы:
+
+```bash
+limactl start club-native-ubuntu
+```
+Не удаляйте исходный legacy-проект и его копии до завершения проверки и окна отката.
+ARM64-репетиция не подтверждает AMD64, внутренняя CA не проверяет публичный ACME,
+Mailpit не подтверждает доставку внешней почты. Оплата, Telegram, push, offsite и
+публичный сервер проверяются отдельно после их согласованного подключения.
