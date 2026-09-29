@@ -6,16 +6,23 @@
 # при каждом прогоне. Запускать с ХОСТА (не из контейнера – упавший api сам
 # о себе не сообщит).
 #
-# Cron (каждые 5 минут):
-#   */5 * * * * /path/to/repo/scripts/uptime-check.sh >> /var/log/club-uptime.log 2>&1
+# Cron (каждые 5 минут): см. infra/cron.example.
 set -uo pipefail
+umask 077
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+EXPLICIT_ENV_FILE="${ENV_FILE:-}"
+ENV_FILE="${ENV_FILE:-$REPO_DIR/.env}"
+if [[ -n "$EXPLICIT_ENV_FILE" && ! -r "$ENV_FILE" ]]; then
+  echo "Не удалось прочитать ENV_FILE: $ENV_FILE" >&2
+  exit 1
+fi
 URL="${UPTIME_URL:-http://localhost/api/health}"
-STATE_FILE="${UPTIME_STATE:-/tmp/club-uptime.state}"
+STATE_FILE="${UPTIME_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/club/uptime.state}"
+mkdir -p "$(dirname "$STATE_FILE")" || { echo "Не удалось создать каталог состояния" >&2; exit 1; }
 
-# Токен и чат – из окружения или .env
-val() { grep "^$1=" "$REPO_DIR/.env" 2>/dev/null | cut -d= -f2-; }
+# Токен и чат – из окружения или внешнего env.
+val() { grep "^$1=" "$ENV_FILE" 2>/dev/null | cut -d= -f2-; }
 TG_TOKEN="${OFFICE_TG_BOT_TOKEN:-$(val OFFICE_TG_BOT_TOKEN)}"
 TG_CHAT="${OFFICE_TG_CHAT_ID:-$(val OFFICE_TG_CHAT_ID)}"
 
