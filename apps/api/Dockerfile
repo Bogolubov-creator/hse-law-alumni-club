@@ -13,6 +13,10 @@ COPY packages/server-auth packages/server-auth
 COPY apps/api apps/api
 RUN pnpm --filter @club/shared build && pnpm --filter @club/server-auth build && pnpm --filter @club/api build
 RUN pnpm --filter @club/api deploy --prod /app
+# Каталог зеркала и демонстрационные записи нужны явному импорту/bootstrap, не API.
+RUN rm /app/node_modules/@club/shared/dist/seeds.js /app/node_modules/@club/shared/dist/seeds.d.ts \
+    /app/node_modules/@club/shared/dist/dpo-mirror-catalog.generated.js \
+    /app/node_modules/@club/shared/dist/dpo-mirror-catalog.generated.d.ts
 
 FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS runtime
 ARG VCS_REF

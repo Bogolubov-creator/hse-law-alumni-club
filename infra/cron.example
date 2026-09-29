@@ -1,5 +1,0 @@
-# Планировщик обслуживания перенесён в infra/systemd/.
-# Не устанавливайте прежние раздельные backup-db/backup-uploads cron-задания.
-# club-backup.timer: 03:30 Europe/Moscow; Persistent=true – один запуск после пропуска.
-# club-monitor.timer: каждые пять минут. Инструкция: docs/deploy-runbook.md.
-# Задачи приложения остаются в одном API, apps/api/src/lib/jobs.ts.

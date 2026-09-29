@@ -83,9 +83,8 @@ export interface ProductSeed {
   images?: string[] | null;
 }
 
-// Сид мерча – из админ-дизайна. price в копейках.
-// Фото: hoodie – assets/merch-hoodie.jpg (a66558f); shopper – фасеточная Фемида
-// (assets/themis.jpeg = design-export). Мантия – отдельного кадра в репо нет.
+// Демонстрационный мерч для зеркала и явно включённого локального bootstrap.
+// Эти записи не подставляются в ответы рабочего API. price – в копейках.
 export const PRODUCTS_SEED: ProductSeed[] = [
   {
     slug: "hoodie-faculty", title: "Худи с логотипом факультета", category: "Одежда", price: 420_000, stock: 18,

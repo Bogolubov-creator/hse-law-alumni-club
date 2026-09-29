@@ -15,7 +15,8 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { mapHseFormat, slugifyRu, type ProgramSeed } from "@club/shared";
+import { mapHseFormat, slugifyRu } from "@club/shared";
+import type { ProgramSeed } from "@club/shared/seeds";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const REPO = process.env.DPO_MIRROR_REPO || "itspecR/dpo-pravo-hse";

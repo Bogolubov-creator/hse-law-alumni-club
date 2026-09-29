@@ -10,11 +10,12 @@ dist/
 apps/web/dist/
 caddy_data/
 caddy_config/
-# design-export/ — исходники Claude Design, источник правды по дизайну. В git.
-# Мимо git идёт только производное: офлайн-дамп админки (555 КБ инлайн-ассетов,
-# регенерируется из «Админка.dc.html») и превью-миниатюра.
-design-export/Админка (офлайн).html
-design-export/.thumbnail
+# Локальные экспортные файлы и кэши дизайн-инструментов.
+design-export/
+.superdesign/
+.impeccable/
+.claude/
+**/.impeccable/
 .env.backup*
 backups/
 test-results/
@@ -22,7 +23,6 @@ playwright-report/
 # Локальные отчёты/компы дизайна – не в релизный артефакт без явного запроса
 docs/report-assets/
 docs/Отчёт по дизайну*
-.superdesign/comps/vestnik-*.html
 
 .tmp
 

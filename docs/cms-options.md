@@ -4,7 +4,7 @@
 
 ## Основание
 
-Исходный канон проекта предусматривал self-hosted Directus, PostgreSQL и Fastify. Готовая CMS должна была обслуживать контент, пользователей и права: [принцип архитектуры](canon/orchestration-alumni-club.md#4-техническая-архитектура-рекомендация) и [исходная инструкция](canon/instruction-claude-code.md).
+Исходный канон проекта предусматривал self-hosted Directus, PostgreSQL и Fastify. Готовая CMS должна была обслуживать контент, пользователей и права. Эти документы сохранены в истории Git: [принцип архитектуры](https://github.com/Bogolubov-creator/hse-law-alumni-club/blob/f5f54a2fcc26d2084133718047874759d0bcfb1f/docs/canon/orchestration-alumni-club.md) и [исходная инструкция](https://github.com/Bogolubov-creator/hse-law-alumni-club/blob/f5f54a2fcc26d2084133718047874759d0bcfb1f/docs/canon/instruction-claude-code.md).
 
 Коммит `af311c7` от 29.07.2026 ввёл ограниченные политики офиса и сервисного аккаунта. Коммит `45a4430` от 13.09.2026 выделил собственные разделы React-админки. Поэтому изменение CMS должно сохранить интерфейс и разграничение доступа. В изученных документах и этих решениях не найдено обязательства оплачивать отдельную CMS-подписку.
 

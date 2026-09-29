@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg, { type PoolClient } from "pg";
 import { hashPassword } from "@club/server-auth";
-import { LEVELS, POINT_RULES, ACHIEVEMENTS, PROGRAMS_SEED, PRODUCTS_SEED, NEWS_SEED } from "@club/shared";
+import { LEVELS, POINT_RULES, ACHIEVEMENTS } from "@club/shared";
 
 type SqlClient = Pick<PoolClient, "query">;
 type SeedRow = Record<string, unknown>;
@@ -209,6 +209,7 @@ export async function nativeBootstrap(
         allowedRoles: ["alumni"], firstName: "Сергей", lastName: "Кондратьев",
       }, passwordHasher);
       result.createdUsers += Number(editor.created) + Number(alumni.created);
+      const { PROGRAMS_SEED, PRODUCTS_SEED, NEWS_SEED } = await import("@club/shared/seeds");
       result.createdRows += await seedMissing(client, "programs", "slug", PROGRAMS_SEED.map(row => ({ ...row, status: "published" })));
       result.createdRows += await seedMissing(client, "products", "slug", PRODUCTS_SEED.map(row => ({ ...row, status: "published" })));
       result.createdRows += await seedMissing(client, "news", "slug", NEWS_SEED.map(row => ({ ...row, status: "published" })));

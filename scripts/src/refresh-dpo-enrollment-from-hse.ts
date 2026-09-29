@@ -13,8 +13,8 @@ import {
   HSE_DPO_ACTUAL_URL,
   HSE_DPO_ALL_URL,
   slugifyRu,
-  type ProgramSeed,
 } from "@club/shared";
+import type { ProgramSeed } from "@club/shared/seeds";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const OUT_TS = path.join(ROOT, "packages/shared/src/dpo-mirror-catalog.generated.ts");

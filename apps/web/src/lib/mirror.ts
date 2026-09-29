@@ -7,15 +7,17 @@ import {
   ACHIEVEMENTS,
   addLine, setLineQty, summarizeCart, cartSummarySchema, cartItemSchema, cartLineLimitReached,
   type StoredCartItem,
+  PODCAST_SUB_PRICE_KOP,
+  levelInfo,
+} from "@club/shared";
+import {
   NEWS_SEED,
   PRODUCTS_SEED,
   PROGRAMS_SEED,
-  PODCAST_SUB_PRICE_KOP,
-  levelInfo,
   type ProgramSeed,
   type ProductSeed,
   type NewsSeed,
-} from "@club/shared";
+} from "@club/shared/seeds";
 import { isMirror } from "./public-url.js";
 
 const MIRROR_MUTATION = "На зеркале сохранение отключено – это демо-витрина.";

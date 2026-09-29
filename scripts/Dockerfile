@@ -16,6 +16,7 @@ RUN pnpm --filter @club/scripts deploy --prod /app
 FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
+ENV NODE_ENV=production
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 WORKDIR /app

@@ -68,6 +68,9 @@ jobs:
       - name: Build (typecheck + bundle всех пакетов)
         run: pnpm -r build
 
+      - name: Check native web artifact
+        run: node scripts/check-web-build.mjs apps/web/dist
+
       - name: Test (vitest)
         run: pnpm -r test
 
@@ -114,6 +117,8 @@ jobs:
         run: pnpm --filter @club/web exec playwright install --with-deps chromium
       - name: Build images and check real persistence in desktop and mobile browsers
         run: bash scripts/test-live.sh
+      - name: Check final runtime image contents
+        run: bash scripts/check-runtime-images.sh club-ci-live-api club-ci-live-bootstrap club-ci-live-web
       - name: Scan application images (HIGH and CRITICAL)
         run: |
           for service in api bootstrap web caddy postgres; do

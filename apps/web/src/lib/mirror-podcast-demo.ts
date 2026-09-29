@@ -15,6 +15,7 @@ export function setMirrorPodcastDemo(enabled: boolean): void {
   window.dispatchEvent(new Event(event));
 }
 function subscribe(callback: () => void) {
+  if (!isMirror) return () => {};
   window.addEventListener(event, callback);
   return () => window.removeEventListener(event, callback);
 }

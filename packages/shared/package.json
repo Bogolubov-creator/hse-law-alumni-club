@@ -9,13 +9,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./seeds": {
+      "types": "./dist/seeds.d.ts",
+      "import": "./dist/seeds.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run"
   },
+  "files": ["dist/**/*.js", "dist/**/*.d.ts", "!dist/**/*.test.*"],
   "dependencies": {
     "zod": "^3.23.8"
   },

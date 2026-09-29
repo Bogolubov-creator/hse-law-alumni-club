@@ -1,9 +1,9 @@
 # DESIGN.md · Клуб выпускников факультета права Вышки
 
 Действующие дизайн-решения v2. Этот файл – источник правды для скиллов и для кода.
-Подробное обоснование и отвергнутые варианты – в [DESIGN-PLAN.md](./DESIGN-PLAN.md).
+Подробное обоснование и отвергнутые варианты – в [DESIGN-PLAN.md](https://github.com/Bogolubov-creator/hse-law-alumni-club/blob/f5f54a2fcc26d2084133718047874759d0bcfb1f/DESIGN-PLAN.md).
 Справочник по токенам, примитивам и компонентам – в
-[docs/design-system.md](./docs/design-system.md).
+[docs/design-system.md](https://github.com/Bogolubov-creator/hse-law-alumni-club/blob/f5f54a2fcc26d2084133718047874759d0bcfb1f/docs/design-system.md).
 
 Действующая система – раздел «Мир «Фасад и зал»» в конце файла; всё между – история.
 
