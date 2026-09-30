@@ -1,6 +1,6 @@
-import { env } from "./env.js";
-import { registerBotCommands } from "./lib/telegram-bot.js";
-import { startTelegramPolling } from "./lib/telegram-polling.js";
+import { env } from "./config/env.js";
+import { registerBotCommands } from "./modules/telegram/telegram-bot.js";
+import { startTelegramPolling } from "./modules/telegram/telegram-polling.js";
 
 /** Отдельный процесс бота: без HTTP-сервера, cron и рассылок уведомлений. */
 if (!env.TELEGRAM_BOT_TOKEN || env.TELEGRAM_POLLING !== "true") {

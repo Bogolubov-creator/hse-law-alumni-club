@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
-    "test": "tsx --test src/*.test.ts",
+    "test": "tsx --test tests/unit/*.test.ts",
     "bootstrap": "tsx src/native-bootstrap.ts",
     "import-dpo": "tsx src/import-dpo-mirror-catalog.ts",
     "refresh-dpo-enrollment": "tsx src/refresh-dpo-enrollment-from-hse.ts",

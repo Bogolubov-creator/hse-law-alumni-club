@@ -35,7 +35,7 @@ services:
   bootstrap:
     build:
       context: .
-      dockerfile: scripts/Dockerfile
+      dockerfile: deploy/bootstrap.Dockerfile
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -73,9 +73,9 @@ services:
       CHECKOUT_DB_PASSWORD: ${CHECKOUT_DB_PASSWORD:-}
     volumes:
       - ./backend/migrations:/migrations:ro
-      - ./deploy/indexes.sql:/indexes.sql:ro
+      - ./backend/sql/indexes.sql:/indexes.sql:ro
       - ./scripts/migrate.sh:/migrate.sh:ro
-      - ./scripts/runtime-role.sql:/runtime-role.sql:ro
+      - ./backend/sql/runtime-role.sql:/runtime-role.sql:ro
     entrypoint: ["sh", "/migrate.sh"]
     restart: "no"
     security_opt: ["no-new-privileges:true"]
@@ -84,7 +84,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: deploy/api.Dockerfile
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true

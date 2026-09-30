@@ -7,7 +7,7 @@ const phase = process.env.E2E_LIVE_PHASE;
 if (phase !== 'write' && phase !== 'read') throw new Error('E2E_LIVE_PHASE должен быть write или read');
 
 export default defineConfig({
-  testDir: './e2e', testMatch: 'live-stack.spec.ts',
+  testDir: './tests/e2e', testMatch: 'live-stack.spec.ts',
   timeout: 120_000, globalTimeout: 360_000, retries: 0, workers: 1,
   fullyParallel: false, reporter: [['list']], outputDir: `test-results/live/${phase}`,
   use: {

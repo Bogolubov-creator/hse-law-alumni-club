@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { ORDER_STATUS_RU } from "@club/shared";
-import { rub } from "../lib/api.js";
+import { rub } from "../api/api.js";
 import {
   downloadAnalyticsCsv,
   useAnalytics,
   type AnalyticsRange,
-} from "../lib/admin.js";
+} from "../api/admin.js";
 import { mono, label, actionGhost, Panel, PanelTitle, Row, Stat } from "./ui.js";
 
 const RANGE_LABEL: Record<AnalyticsRange, string> = {

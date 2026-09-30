@@ -4,11 +4,11 @@ import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CLUB_OPERATOR, securePaymentUrl } from "@club/shared";
 import { useHead } from "../lib/title.js";
-import { rub, type CartLine, type OrderResult } from "../lib/api.js";
+import { rub, type CartLine, type OrderResult } from "../api/api.js";
 import { isMirror } from "../lib/public-url.js";
-import { useCart, useMemberDiscount, useCartMutations, submitOrder, token } from "../lib/cart.js";
-import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
-import { Mark } from "../v2/Mark.js";
+import { useCart, useMemberDiscount, useCartMutations, submitOrder, token } from "../stores/cart.js";
+import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../layouts/Shell.js";
+import { Mark } from "../layouts/Mark.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 
 /**

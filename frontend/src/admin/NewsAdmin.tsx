@@ -1,7 +1,7 @@
 import NewsSources from "./NewsSources.js";
 import { useState, type FormEvent } from "react";
 import Modal from "../components/Modal.js";
-import { useNewsMutations, useAdminNews, type AdminNews } from "../lib/admin.js";
+import { useNewsMutations, useAdminNews, type AdminNews } from "../api/admin.js";
 import { FormField, ConfirmDelete } from "./common.js";
 
 export function NewsAdmin() {

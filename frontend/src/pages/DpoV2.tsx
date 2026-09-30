@@ -1,16 +1,16 @@
 import { isMiniApp } from "../telegram/bridge.js";
-import { programStart } from "../lib/program-date.js";
+import { programStart } from "../features/catalog/program-date.js";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useHead } from "../lib/title.js";
 import { useToast } from "../components/Toast.js";
-import { rub, FORMAT_LABEL, type Program } from "../lib/api.js";
-import { usePrograms, useMemberDiscount, useCartMutations } from "../lib/cart.js";
-import ProgramCompare from "../components/ProgramCompare.js";
+import { rub, FORMAT_LABEL, type Program } from "../api/api.js";
+import { usePrograms, useMemberDiscount, useCartMutations } from "../stores/cart.js";
+import ProgramCompare from "../features/catalog/ProgramCompare.js";
 import { field } from "../styles/primitives.js";
 import { HeroPicture } from "../components/HeroPicture.js";
 import { mediaUrl } from "../lib/public-url.js";
-import { V2Shell } from "../v2/Shell.js";
+import { V2Shell } from "../layouts/Shell.js";
 import "../styles/dpo-vitrine.css";
 
 /** Русское склонение по числу: plural(31, ["программа", "программы", "программ"]). */

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Modal from "../components/Modal.js";
-import { previewMedia, useAdminMedia, useMediaMutations, type AdminMedia } from "../lib/admin-media.js";
+import { previewMedia, useAdminMedia, useMediaMutations, type AdminMedia } from "../api/admin-media.js";
 import { ConfirmDelete } from "./common.js";
 import { action, actionGhost, field, Panel, PanelTitle } from "./ui.js";
 

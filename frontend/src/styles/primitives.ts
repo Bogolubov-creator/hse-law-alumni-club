@@ -4,7 +4,7 @@ import { type CSSProperties } from "react";
  * Общие примитивы стиля: единственное определение на весь проект.
  *
  * До этого `mono`, `disp`, `label`, `action`, `actionGhost` и `field` жили
- * двумя копиями – в `v2/Shell.tsx` плюс `v2/cabinet.tsx` и отдельно в
+ * двумя копиями – в `layouts/Shell.tsx` плюс `layouts/cabinet.tsx` и отдельно в
  * `admin/ui.tsx`. Копии уже разошлись: кнопка 8px 14px против 9px 15px, поле
  * 12px 14px / 15px против 10px 13px / 14px. Ни одна из этих разниц не была
  * решением – просто правили в одном файле и забывали про второй.

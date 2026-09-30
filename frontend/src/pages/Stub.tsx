@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useHead } from "../lib/title.js";
-import { V2Shell, pageTitle } from "../v2/Shell.js";
+import { V2Shell, pageTitle } from "../layouts/Shell.js";
 import { action, actionGhost } from "../styles/primitives.js";
 
 /** Страница-заглушка для неизвестных адресов: в общей оболочке, честная копия, два выхода. */

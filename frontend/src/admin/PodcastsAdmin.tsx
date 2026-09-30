@@ -3,7 +3,7 @@ import { mediaUrl } from "../lib/public-url.js";
 import Modal from "../components/Modal.js";
 import { rutubeEmbed } from "@club/shared";
 import { mono, label } from "./ui.js";
-import { usePodcastMutations, useAdminPodcasts, type AdminPodcast } from "../lib/admin.js";
+import { usePodcastMutations, useAdminPodcasts, type AdminPodcast } from "../api/admin.js";
 import { FormField, ConfirmDelete } from "./common.js";
 
 export function PodcastsAdmin() {

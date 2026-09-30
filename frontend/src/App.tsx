@@ -1,21 +1,21 @@
 import { TelegramShell } from "./telegram/TelegramShell.js";
 import { isMiniApp, useTelegramApp } from "./telegram/bridge.js";
 import MiniHome from "./telegram/MiniHome.js";
-import { useIsPwaShell } from "./lib/use-pwa.js";
-import { MobileTabs } from "./v2/MobileTabs.js";
+import { useIsPwaShell } from "./hooks/use-pwa.js";
+import { MobileTabs } from "./layouts/MobileTabs.js";
 import { SiteNotice } from "./components/SiteNotice.js";
 import { RouteScroll } from "./components/RouteScroll.js";
-import { SupportDock } from "./components/SupportDock.js";
+import { SupportDock } from "./features/support/SupportDock.js";
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation, Link } from "react-router-dom";
 import Stub from "./pages/Stub.js";
-import CookieBanner from "./components/CookieBanner.js";
+import CookieBanner from "./features/privacy/CookieBanner.js";
 import { PageViewBeacon } from "./components/PageViewBeacon.js";
-import InstallPrompt from "./components/InstallPrompt.js";
-import { PwaShell } from "./components/PwaShell.js";
+import InstallPrompt from "./features/pwa/InstallPrompt.js";
+import { PwaShell } from "./features/pwa/PwaShell.js";
 import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
-import { clearToken } from "./lib/cart.js";
+import { clearToken } from "./stores/cart.js";
 
 // Канон: публичное лицо – бывший v2. /v2/* и /legacy/* – только редиректы на канон.
 // Телефон – та же адаптивная вёрстка (решение заказчика 12.09), отдельного «приложения» нет.

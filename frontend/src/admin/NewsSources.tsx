@@ -2,7 +2,7 @@ import snapshot from "./news-source-snapshot.json";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NEWS_SOURCES } from "@club/shared";
-import { req } from "../lib/admin.js";
+import { req } from "../api/admin.js";
 import { isMirror } from "../lib/public-url.js";
 import Modal from "../components/Modal.js";
 import { FormField } from "./common.js";

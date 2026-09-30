@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useHead } from "../lib/title.js";
-import { V2Shell, mono, disp } from "../v2/Shell.js";
+import { V2Shell, mono, disp } from "../layouts/Shell.js";
 
 /** Реквизиты оператора общие для политики и согласия поддержки. */
 import { CLUB_OPERATOR as OWNER } from "@club/shared";

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { allowsOptionalCookies } from "../lib/cookie-consent.js";
+import { allowsOptionalCookies } from "../features/privacy/cookie-consent.js";
 import { isMirror } from "../lib/public-url.js";
 
 /** Лёгкий page-view маяк: только при «Принять все», только path, без cookies на запросе. */

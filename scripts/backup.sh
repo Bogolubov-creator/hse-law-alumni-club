@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Один снимок БД и файлов: на время чтения остановлен API.
 set -euo pipefail
-source "$(dirname "${BASH_SOURCE[0]}")/ops-common.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 
 backup_snapshot() (
   ops_assert_native_project
@@ -88,7 +88,7 @@ PY
   printf '%s\n' "$application_revision" > "$work/commit.txt"
   git rev-parse HEAD > "$work/tool-commit.txt"
   git status --porcelain > "$work/worktree-status.txt"
-  git ls-tree -r "$application_revision" -- backend/migrations deploy/indexes.sql apps/api/migrations infra/indexes.sql > "$work/migrations.txt"
+  git ls-tree -r "$application_revision" -- backend/migrations backend/sql deploy/indexes.sql apps/api/migrations infra/indexes.sql > "$work/migrations.txt"
   docker inspect "$api_id" "$web_id" "$pg" "$files" | python3 -c 'import json,sys; print(json.dumps([{ "image":r["Image"],"service":r["Config"]["Labels"]["com.docker.compose.service"]} for r in json.load(sys.stdin)],indent=2))' > "$work/images.json"
   date -u +%FT%TZ > "$work/created-at.txt"
   (cd "$work" && sha256sum database.dump uploads.tar.gz counts.json commit.txt tool-commit.txt worktree-status.txt migrations.txt images.json created-at.txt > SHA256SUMS)

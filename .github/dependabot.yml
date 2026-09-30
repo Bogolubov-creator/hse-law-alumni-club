@@ -37,8 +37,6 @@ updates:
     directories:
       - "/"
       - "/deploy"
-      - "/backend"
-      - "/scripts"
     schedule:
       interval: weekly
       day: monday

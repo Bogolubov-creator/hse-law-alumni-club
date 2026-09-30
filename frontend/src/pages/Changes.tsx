@@ -1,11 +1,11 @@
-import { updateReading, useReading } from "../lib/reading-list.js";
-import SaveMaterial from "../components/SaveMaterial.js";
+import { updateReading, useReading } from "../features/reading/reading-list.js";
+import SaveMaterial from "../features/reading/SaveMaterial.js";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { V2Shell } from "../v2/Shell.js";
-import ChangesStatus from "../components/ChangesStatus.js";
-import { changeDate, loadChanges, selectChanges, type LawChange } from "../lib/changes.js";
+import { V2Shell } from "../layouts/Shell.js";
+import ChangesStatus from "../features/changes/ChangesStatus.js";
+import { changeDate, loadChanges, selectChanges, type LawChange } from "../features/changes/changes.js";
 import { useHead } from "../lib/title.js";
 import "../styles/changes.css";
 

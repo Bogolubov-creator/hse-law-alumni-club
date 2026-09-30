@@ -1,15 +1,15 @@
 import { isMirror } from "../lib/public-url.js";
-import { MirrorPodcastDemo } from "../components/MirrorPodcastDemo.js";
-import { PodcastSubscription } from "../components/PodcastSubscription.js";
-import { PodcastArtwork } from "../components/PodcastArtwork.js";
-import { Mark } from "../v2/Mark.js";
+import { MirrorPodcastDemo } from "../features/podcasts/MirrorPodcastDemo.js";
+import { PodcastSubscription } from "../features/podcasts/PodcastSubscription.js";
+import { PodcastArtwork } from "../features/podcasts/PodcastArtwork.js";
+import { Mark } from "../layouts/Mark.js";
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { type PodcastItem } from "../lib/api.js";
-import { token } from "../lib/cart.js";
-import { usePodcasts } from "../lib/queries.js";
+import { type PodcastItem } from "../api/api.js";
+import { token } from "../stores/cart.js";
+import { usePodcasts } from "../api/queries.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { V2Shell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
 import { action } from "../styles/primitives.js";
 
 /**

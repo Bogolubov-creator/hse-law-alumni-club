@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Восстановление только в новый изолированный Compose-проект и новые тома.
 set -euo pipefail
-source "$(dirname "${BASH_SOURCE[0]}")/ops-common.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 ops_init
 ops_lock
 : "${RESTORE_PROJECT:?Укажите новое имя club-restore-...}"
@@ -17,7 +17,7 @@ compose=(docker compose --env-file "$ENV_FILE" -f "$RESTORE_CODE_DIR/docker-comp
 [[ -z "$(docker ps -aq --filter "label=com.docker.compose.project=$RESTORE_PROJECT")" ]] || { echo 'Целевой проект уже существует; выберите новое имя' >&2; exit 1; }
 [[ -z "$(docker volume ls -q --filter "label=com.docker.compose.project=$RESTORE_PROJECT")" ]] || { echo 'У целевого проекта уже есть тома' >&2; exit 1; }
 compose+=(-p "$RESTORE_PROJECT")
-"${compose[@]}" config --format json | python3 "$OPS_REPO_DIR/scripts/restore-config.py"
+"${compose[@]}" config --format json | python3 "$OPS_REPO_DIR/scripts/lib/restore-config.py"
 export CHECKOUT_DB_USER="$(ops_value CHECKOUT_DB_USER club_api)"
 export CHECKOUT_DB_PASSWORD="$(ops_value CHECKOUT_DB_PASSWORD)"
 [[ -n "$CHECKOUT_DB_PASSWORD" && "$CHECKOUT_DB_USER" != "$(ops_value POSTGRES_USER)" ]] || { echo 'Нужны отдельный CHECKOUT_DB_USER и его пароль' >&2; exit 1; }
@@ -98,7 +98,11 @@ if [[ "$RESTORE_MODE" = migrate-legacy ]]; then
   "${compose[@]}" run --rm --no-deps bootstrap
 else
   # При точном восстановлении схема уже в дампе; bootstrap/миграции не запускаются.
-  docker exec -i -e CHECKOUT_DB_USER -e CHECKOUT_DB_PASSWORD "$pg" sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < "$RESTORE_CODE_DIR/scripts/runtime-role.sql"
+  runtime_role_sql="$RESTORE_CODE_DIR/backend/sql/runtime-role.sql"
+  # Старые snapshot закрепляют checkout с прежним расположением SQL-файла.
+  if [[ ! -f "$runtime_role_sql" ]]; then runtime_role_sql="$RESTORE_CODE_DIR/scripts/runtime-role.sql"; fi
+  [[ -f "$runtime_role_sql" ]] || { echo 'В закреплённом checkout нет SQL-прав runtime' >&2; exit 1; }
+  docker exec -i -e CHECKOUT_DB_USER -e CHECKOUT_DB_PASSWORD "$pg" sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < "$runtime_role_sql"
 fi
 "${compose[@]}" up -d --wait --no-deps mailpit
 "${compose[@]}" up -d --wait --no-deps api web caddy
