@@ -1,4 +1,4 @@
-# В контекст попадают только входные файлы сборки; операции и тесты работают с checkout.
+# В контекст попадают входы сборки; Go-тесты Caddy используются только в builder.
 **
 !package.json
 !pnpm-lock.yaml
@@ -45,6 +45,8 @@
 **/*.test.*
 **/__tests__/**
 **/tests/**
+!deploy/caddy/tests/
+!deploy/caddy/tests/**
 **/.env*
 **/*.pem
 **/*.key

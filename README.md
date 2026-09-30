@@ -145,8 +145,9 @@ PostgreSQL, запускаются отдельно. Для работающег
 Сборка использует Vite 8 с Rolldown. React 19, Tailwind 4 и Zod 4 обновляются
 с проверкой прежних форм, PATCH-контрактов и стилей. Для ESLint подключён
 официальный compatibility API TypeScript 6; сборка выполняется компилятором 7.
-Ограничение версии одного Go-модуля описано в архитектуре. Отказ от Directus согласован
-в [ADR выбора CMS](docs/decisions/cms-options.md); приложение обслуживает данные через SQL.
+Caddy собирается с актуальными CEL и automemlimit; официальные backport-правки
+и проверки описаны в [ADR сборки](docs/decisions/caddy-dependencies.md). Отказ от Directus
+согласован в [ADR выбора CMS](docs/decisions/cms-options.md); данные обслуживаются через SQL.
 
 ## Как всё работает
 

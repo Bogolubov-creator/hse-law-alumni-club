@@ -213,7 +213,7 @@ service worker выключен, внутренний сертификат до�
 Прямые npm-зависимости выровнены на последние стабильные версии registry на
 дату проверки. Для каждого пакета сверены список релизов и `latest`, а не только
 номер из прежнего README. `pnpm outdated -r --format json` вернул `{}`.
-Матрица версий и два ограничения Go-модулей Caddy находятся в
+Матрица версий и исправление зависимостей Caddy находятся в
 [архитектуре](../development/architecture.md#версии-и-совместимость). Runtime Node 24 остаётся
 на текущем patch LTS; PostgreSQL 16 – на текущем patch поддерживаемой линии.
 
@@ -225,7 +225,7 @@ service worker выключен, внутренний сертификат до�
 | Настоящий PostgreSQL | API 60 и bootstrap/staff 13 passed |
 | Live TypeScript | TypeScript 7, явные файлы через `--ignoreConfig --types node`: успешно |
 | npm audit | Production и полный набор, включая инструменты разработки: известных находок 0 |
-| Go modules | Hash verification и сборка Caddy успешны с двумя пинами совместимости |
+| Go modules | Module hash verification; CEL 0.32.0 и automemlimit 1.0.0; официальные backport-правки стабильного Caddy |
 | Операционные проверки | 9 Python и 5 Node passed; Compose и shell syntax успешны |
 | CSS после Tailwind 4 | Главная, вход выпускника, privacy и вход офиса: desktop/mobile, 331 элемент × 27 свойств, различий 0 |
 
@@ -261,12 +261,15 @@ admin и editor на 1440×1000 и 390×844. Восемь сценариев п�
 и перезапуска на desktop/mobile, состав образов и пять сканов HIGH/CRITICAL.
 Итоговый коммит документации проверяется тем же CI в PR 55 по полному SHA.
 
-Отдельный `govulncheck` фактического Caddy и эквивалентной сборки без strip вернул
-код 3. У CEL остаётся Low package finding; у openpgp – module finding без найденных
-affected package/symbol в сборке без strip. grpc 1.84.0 содержит официальный фикс:
-найдено расхождение диапазона Go DB с advisory и versioned source. Source scan
-прерван при ошибке хоста, пути вызова им не подтверждены. Скан Go не объявляется
-чистым; условия и два ограничения совместимости описаны в архитектуре.
+Оставшаяся находка GO-2026-6094 устранена заменой CEL на `cel.dev/cel-go 0.32.0`.
+Проверка JSON privacy не допускает чтения полей `json:"-"`, а обычные публичные
+поля и Caddy matchers сохраняют поведение. В бинарнике нет прежнего CEL; CLI
+использует automemlimit 1.0.0. Исходный module cache проверяется до backport.
+
+Go-анализ, localhost TLS и проверки HTTP-периметра добавлены в `live-stack` CI.
+Они выполняются на итоговых образах и исправленных vendor-исходниках. Прежний
+незавершённый source scan относится к сборке до этого обновления; основанием
+текущего результата служит CI точного коммита. [Порядок сборки и обновления](../decisions/caddy-dependencies.md).
 
 ## GitHub и выпуск
 

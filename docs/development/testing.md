@@ -28,6 +28,8 @@
 | Bootstrap SQL | Чистая и legacy-схема, Argon2, транзакции, advisory lock | Только выделенный localhost PostgreSQL с правом создавать временные БД | `native-bootstrap.test.ts` |
 | UI E2E | Браузер, DOM, маршруты, размеры экрана и состояния интерфейса | Многие сценарии используют `page.route` с фикстурами; успешный экран не доказывает запись в БД | Обычный `playwright.config.ts` |
 | Live stack | Собранные web/API, PostgreSQL, Caddy, нативный bootstrap и Mailpit | Платежи, Telegram, push, Sentry и фоновые синхронизации выключены; локальный HTTP | `scripts/tests/test-live.sh` |
+| Caddy Go | Исправленная сборка, CEL JSON privacy/matchers, govulncheck | Анализ достижимых вызовов vendor-исходников; внешний ACME отдельно | `edge.Dockerfile --target edge-check` |
+| Edge TLS/HTTP | Финальные web/Caddy, localhost CA, reload, заголовки и лимиты | HTTP-фикстура API; собственные временные контейнеры/сети | `scripts/tests/test-edge.py` |
 | Эксплуатация Ubuntu | Compose, внешняя конфигурация, TLS, копия и изолированное восстановление | Требует отдельного запуска на целевой VM; unit-тесты скриптов его не заменяют | [Runbook](../operations/deploy-runbook.md) |
 
 API-тесты могут использовать production-функцию расчёта переходов с хранилищем в

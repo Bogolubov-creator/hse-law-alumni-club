@@ -1,0 +1,2 @@
+# Unified diff сохраняет пробел перед контекстными строками и исходные Go-табы.
+deploy/caddy/compatibility.patch -whitespace
