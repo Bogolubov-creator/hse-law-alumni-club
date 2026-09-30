@@ -17,7 +17,7 @@ async function fillForm(page: Page) {
   await page.getByRole("checkbox").check();
 }
 
-test.describe("Вступление в клуб v2", () => {
+test.describe("Вступление в клуб", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("без согласия на обработку данных заявку не отправить", async ({ page }) => {
@@ -127,7 +127,7 @@ test.describe("Вступление в клуб v2", () => {
   });
 });
 
-test.describe("Восстановление пароля v2", () => {
+test.describe("Восстановление пароля", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("ответ не раскрывает, существует ли аккаунт", async ({ page }) => {
@@ -140,7 +140,7 @@ test.describe("Восстановление пароля v2", () => {
     await expect(page.getByText(/Если такой аккаунт существует/)).toBeVisible();
   });
 
-  test("ссылка без токена честно называет причину", async ({ page }) => {
+  test("ссылка без токена сообщает о неполном адресе", async ({ page }) => {
     await page.goto("/reset");
     await expect(page.getByRole("heading", { name: "Ссылка неполная" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Запросить новую" })).toHaveAttribute("href", "/forgot");
@@ -159,15 +159,15 @@ test.describe("Восстановление пароля v2", () => {
   });
 });
 
-test.describe("Подтверждение почты v2", () => {
+test.describe("Подтверждение почты", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
-  test("адрес без токена – это неполная ссылка, а не провал", async ({ page }) => {
+  test("подтверждение без токена предлагает запросить полную ссылку", async ({ page }) => {
     await page.goto("/confirm");
     await expect(page.getByRole("heading", { name: "Ссылка неполная" })).toBeVisible();
   });
 
-  test("подтверждённая почта ведёт в кабинет v2", async ({ page }) => {
+  test("подтверждённая почта ведёт в кабинет", async ({ page }) => {
     await page.route("**/api/auth/confirm", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
     await page.goto("/confirm?token=abc");
     await expect(page.getByRole("heading", { name: "Почта подтверждена" })).toBeVisible();
@@ -185,7 +185,7 @@ test.describe("Подтверждение почты v2", () => {
   });
 });
 
-test.describe("Юридические страницы v2", () => {
+test.describe("Юридические страницы", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   const pages = [
@@ -234,7 +234,7 @@ for (const url of ["/", "/dpo", "/merch", "/cart", "/news", "/events", "/podcast
   });
 }
 
-test("soft-cutover: /legacy/* уводит на канон", async ({ page }) => {
+test("/legacy/* перенаправляет на действующие маршруты", async ({ page }) => {
   await stubSw(page);
   await page.goto("/legacy/dpo");
   await expect(page).toHaveURL(/\/dpo$/);

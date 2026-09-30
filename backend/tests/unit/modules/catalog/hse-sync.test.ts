@@ -90,7 +90,7 @@ describe('Сохранность ДПО при синхронизации', () =
   it('пустой актуальный список не считается доказательством закрытия', async () => {
     const before = structuredClone(db.programs);
     collectMock.mockResolvedValue([]);
-    await expect(syncDpoCatalog()).rejects.toThrow('синк отменён');
+    await expect(syncDpoCatalog()).rejects.toThrow('обновление каталога отменено');
     expect(db.programs).toEqual(before);
   });
 });

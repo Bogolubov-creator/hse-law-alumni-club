@@ -40,7 +40,7 @@ function AdminGate({ onAuthed }: { onAuthed: (t: string) => void }) {
         <Mark kind="scales" size={38} style={{ color: "var(--c-accent-text)" }} />
         <h1 style={{ ...pageTitle, fontSize: 28, lineHeight: 1.1, margin: "16px 0 0" }}>Панель учебного офиса</h1>
         <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "8px 0 0", lineHeight: 1.5 }}>
-          Служебный вход. Все действия попадают в журнал безопасности.
+          Служебный вход для редакторов и администраторов учебного офиса.
         </p>
 
         <label htmlFor={emailId} style={{ ...caps, color: "var(--c-text-2)", display: "block", marginTop: 22 }}>Почта</label>

@@ -44,7 +44,7 @@ async function mockProfile(page: Page, over: Partial<Record<"me" | "ledger", unk
   await stubSession(page);
 }
 
-test.describe("Профиль v2", () => {
+test.describe("Профиль", () => {
   test.beforeEach(async ({ page }) => seedClientStorage(page));
   test("гостя уводит на вход, а не показывает пустую форму", async ({ page }) => {
     await page.goto("/lk/profile");

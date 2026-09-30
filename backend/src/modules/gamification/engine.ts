@@ -123,8 +123,7 @@ export async function runDecay(now = new Date()) {
   let affected = 0;
   for (const a of stale) {
     try {
-      // Баланс и дата последнего decay – из ledger (источник правды), а не из
-      // возможно рассинхронизированного points_cached: списываем корректную сумму.
+      // points_cached может отставать от журнала начислений.
       const ledger = (await di.request(
         readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, limit: -1, fields: ["delta", "reason", "created_at"] }),
       )) as { delta: number; reason: string; created_at: string | null }[];

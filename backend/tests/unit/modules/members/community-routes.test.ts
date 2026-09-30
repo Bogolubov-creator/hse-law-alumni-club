@@ -128,7 +128,7 @@ describe("DELETE /me/friends/:id – отклонить, отозвать, уд�
   });
 });
 
-describe("POST /me/friends – прежнее поведение не сломано", () => {
+describe("POST /me/friends – добавление контакта выпускника", () => {
   it("встречная заявка принимает дружбу", async () => {
     const app = await build();
     await addFriend(app, A, B);

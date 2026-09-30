@@ -42,8 +42,8 @@ function formatReply(out: BotReply, base: string): string {
       return [esc(out.text), "", `🌐 ${link(out.anchor, "Витрина ДПО")}`].join("\n");
     case "gap":
       return [
-        "Об этом на сайте не написано, а придумывать я не стану.",
-        `Напишите человеку в поддержку: ${link("/support", "открыть обращение")}.`,
+        "В материалах сайта нет ответа на этот вопрос.",
+        `Обратитесь в поддержку: ${link("/support", "открыть обращение")}.`,
       ].join("\n");
     case "programs":
     case "programs-weak": {
@@ -62,7 +62,7 @@ function formatReply(out: BotReply, base: string): string {
     }
     case "none":
       return [
-        "Такого не нашла. Задайте вопрос иначе или напишите человеку.",
+        "Ответ не найден. Уточните вопрос или обратитесь в поддержку.",
         `🌐 ${link("/support", "Поддержка на сайте")}`,
         `🌐 ${link("/dpo", "Витрина ДПО")}`,
       ].join("\n");

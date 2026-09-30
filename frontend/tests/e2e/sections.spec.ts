@@ -7,10 +7,10 @@ async function stubSw(page: Page) {
   });
 }
 
-test.describe("Новости v2", () => {
+test.describe("Новости", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
-  test("список открывается и ведёт на публикацию v2, а не v1", async ({ page }) => {
+  test("список новостей открывает страницу публикации", async ({ page }) => {
     await page.goto("/news");
     await expect(page.getByRole("heading", { level: 1, name: "Новости клуба" })).toBeVisible();
 
@@ -60,7 +60,7 @@ const EVENT = {
   status: "published", going: 12, my_rsvp: false, my_attended: false,
 };
 
-test.describe("События v2", () => {
+test.describe("События", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("афиша показывает ближайшие события с датой и местом", async ({ page }) => {
@@ -69,7 +69,7 @@ test.describe("События v2", () => {
     await expect(page.locator("article.v2-row").first()).toBeVisible();
   });
 
-  test("гостю предлагают вступить, а не молча ничего не делают", async ({ page }) => {
+  test("гостю доступна ссылка на вступление", async ({ page }) => {
     await page.route("**/api/events", (r) => r.fulfill({
       status: 200, contentType: "application/json", body: JSON.stringify([EVENT]),
     }));
@@ -126,7 +126,7 @@ const PODCASTS = {
 
 const RUTUBE_SRC = "https://rutube.ru/play/embed/a1b2c3d4e5f60718293a4b5c6d7e8f90";
 
-test.describe("Подкасты v2", () => {
+test.describe("Подкасты", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); });
 
   test("пробный выпуск даёт плеер, закрытый – замок и цену", async ({ page }) => {
@@ -141,7 +141,7 @@ test.describe("Подкасты v2", () => {
     await expect(page.locator("audio")).toHaveCount(1);
   });
 
-  test("гостя ведут в кабинет v2, а не в старый", async ({ page }) => {
+  test("гостя направляют на страницу входа", async ({ page }) => {
     await page.route("**/api/podcasts", (r) => r.fulfill({
       status: 200, contentType: "application/json", body: JSON.stringify(PODCASTS),
     }));
@@ -208,7 +208,7 @@ test.describe("Подкасты v2", () => {
   });
 });
 
-test("в шапке канона нет ссылок на legacy-фронт", async ({ page }) => {
+test("шапка содержит только действующие маршруты", async ({ page }) => {
   await stubSw(page);
   await page.goto("/");
   const hrefs = await page.locator("header a").evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute("href") ?? ""));

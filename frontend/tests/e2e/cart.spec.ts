@@ -31,10 +31,10 @@ const ORDER = {
   notified: { channel: "telegram", ok: true },
 };
 
-test.describe("Корзина v2", () => {
+test.describe("Корзина", () => {
   test.beforeEach(async ({ page }) => { await stubSw(page); await seedClientStorage(page); });
 
-  test("пустая корзина ведёт в витрины v2, а не в старые", async ({ page }) => {
+  test("пустая корзина содержит ссылки на ДПО и мерч", async ({ page }) => {
     await page.goto("/cart");
     await expect(page.getByRole("heading", { name: "В корзине пока пусто" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Программы ДПО" })).toHaveAttribute("href", "/dpo");

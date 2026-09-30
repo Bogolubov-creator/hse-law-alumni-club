@@ -19,8 +19,6 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  # Версии GitHub Actions (checkout/setup-node/action-setup) тоже стареют и тоже
-  # бывают уязвимы – обновляем на том же расписании.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
@@ -31,8 +29,6 @@ updates:
     commit-message:
       prefix: "chore(ci)"
 
-  # Docker-образы запинены по digest (compose + Dockerfile'ы). Чтобы пин не устаревал
-  # молча, Dependabot присылает PR на новые digest/версии – обновление проходит проверки.
   - package-ecosystem: docker
     directories:
       - "/"
