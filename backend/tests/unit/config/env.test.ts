@@ -86,7 +86,7 @@ describe("assertProdConfig – каждая небезопасная настр�
     expect(errs.some((e) => /TELEGRAM_WEBHOOK_SECRET/.test(e))).toBe(false);
   });
 
-  it("пустой SMTP_HOST – молча ломались бы сброс пароля и подтверждение адреса", async () => {
+  it("пустой SMTP_HOST блокирует запуск production", async () => {
     const errs = await errorsFor({ SMTP_HOST: "" });
     expect(errs.some((e) => /SMTP_HOST/.test(e))).toBe(true);
   });
@@ -107,7 +107,7 @@ describe("assertProdConfig – каждая небезопасная настр�
     expect((await errorsFor({ OFFICE_NOTIFY_CHANNEL: "both", OFFICE_TG_BOT_TOKEN: "", OFFICE_TG_CHAT_ID: "" })).some((e) => /OFFICE_TG/.test(e))).toBe(true);
   });
 
-  it("SEED_DEMO=true – демо-контент и тестовые аккаунты на боевом стенде", async () => {
+  it("SEED_DEMO=true блокирует запуск production", async () => {
     const errs = await errorsFor({ SEED_DEMO: "true" });
     expect(errs.some((e) => /SEED_DEMO/.test(e))).toBe(true);
   });

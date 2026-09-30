@@ -1,8 +1,9 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mapHseFormat, slugifyRu } from "@club/shared";
 import type { ProgramSeed } from "@club/shared/seeds";
+import { retainProgramCopy } from "./dpo-catalog-copy.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const REPO = process.env.DPO_MIRROR_REPO || "itspecR/dpo-pravo-hse";
@@ -285,6 +286,11 @@ async function downloadTeacherPhotos(teacherPhotos: Record<string, string> | und
 }
 
 async function main() {
+  const current = await readFile(OUT_TS, "utf8");
+  const match = /export const DPO_MIRROR_PROGRAMS: ProgramSeed\[\] = (\[[\s\S]*\]);\s*$/.exec(current.trim());
+  if (!match) throw new Error("Не удалось прочитать текущий каталог ДПО");
+  const existing = JSON.parse(match[1]!) as ProgramSeed[];
+  const existingById = new Map(existing.filter((p) => p.hse_id).map((p) => [p.hse_id!, p]));
   console.log(`Источник: ${REPO}`);
   const catalog = await fetchJson<CatalogPayload>(`${RAW}/.catalog-data.json`);
   const index = await fetchJson<{ programs: IndexProgram[] }>(`${RAW}/content/programs-index.json`);
@@ -307,7 +313,7 @@ async function main() {
     const idx = byId.get(id);
     const ext = await downloadImage(id, raw.image);
     if (ext) images++;
-    const seed = mapProgram(raw, idx, teacherLocalByName);
+    const seed = retainProgramCopy(mapProgram(raw, idx, teacherLocalByName), existingById.get(id));
     // cover должен совпасть с реально скачанным расширением
     if (ext) seed.cover = `/assets/programs/${id}.${ext}`;
     else seed.cover = null;

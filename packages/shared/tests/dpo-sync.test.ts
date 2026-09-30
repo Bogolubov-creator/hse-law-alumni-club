@@ -14,7 +14,7 @@ it("архивирует только управляемые пропавшие 
   expect(result[0]).toMatchObject({ kind: "create", data: { slug: "novoe-5678", status: "draft" } });
   expect(result[1]).toEqual({ kind: "archive", id: "p", data: { status: "archived" } });
 });
-it("не допускает планирование при неполном полном каталоге", async () => {
+it("не допускает обновление по неполному каталогу", async () => {
   const collect = vi.fn().mockResolvedValueOnce([card, card, card]).mockResolvedValueOnce([card]);
-  await expect(collectDpoSyncCards({ actual: "actual", all: "all" }, async () => "", collect)).rejects.toThrow("синк отменён");
+  await expect(collectDpoSyncCards({ actual: "actual", all: "all" }, async () => "", collect)).rejects.toThrow("обновление каталога отменено");
 });

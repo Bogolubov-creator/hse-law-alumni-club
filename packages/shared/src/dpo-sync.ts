@@ -13,13 +13,13 @@ export type DpoChange = { kind: "create"; data: Record<string, unknown> } | { ki
 export async function collectDpoSyncCards(sources: { actual: string; all: string }, fetchPage: (url: string) => Promise<string>, collect = collectHseDpoCards): Promise<TaggedCard[]> {
   const actual = await collect(sources.actual, fetchPage);
   if (actual.length < 3) {
-    throw new Error(`hse.ru: подозрительно мало актуальных карточек (${actual.length}) – синк отменён, каталог не тронут`);
+    throw new Error(`hse.ru: подозрительно мало актуальных карточек (${actual.length}) – обновление каталога отменено`);
   }
   // Архивировать можно только при доступности полного каталога.
   const all = await collect(sources.all, fetchPage);
   if (all.length < actual.length) {
     throw new Error(
-      `hse.ru: полный каталог (${all.length}) меньше актуального (${actual.length}) – синк отменён`,
+      `hse.ru: полный каталог (${all.length}) меньше актуального (${actual.length}) – обновление каталога отменено`,
     );
   }
 
@@ -88,7 +88,7 @@ export function planDpoSync(cards: TaggedCard[], existing: ExistingDpoProgram[])
   }
 
   const managedIds = new Set([...byHseId.values()].map((row) => row.id));
-  // В архив – только управляемые синком (source_url задан) и пропавшие из полного списка.
+  // В архив – только управляемые импортом (source_url задан) и пропавшие из полного списка.
   for (const r of existing) {
     if (managedIds.has(r.id) && !matchedIds.has(r.id) && r.status !== "archived") {
       changes.push({ kind: "archive", id: r.id, data: { status: "archived" } });

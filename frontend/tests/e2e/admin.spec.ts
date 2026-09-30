@@ -143,7 +143,7 @@ test.describe("Админ-панель", () => {
     await page.goto("/admin");
     await page.getByRole("button", { name: /Заявки/ }).click();
 
-    // Вебхук ЮKassa пометил заявку: пришла не та сумма. Это нельзя терять при редизайне.
+    // Несовпадение суммы платежа отображается в заявке.
     await expect(page.getByText("сумма ≠")).toBeVisible();
     await expect(page.getByText("ORD-000377")).toBeVisible();
   });
@@ -249,7 +249,7 @@ test.describe("Админ-панель", () => {
     });
     await page.route("**/api/admin/overview", (r) => r.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
     await page.goto("/admin");
-    // 5xx – это не разлогин: офис должен увидеть ретрай, а не форму входа
+    // При 5xx доступен повтор запроса; сессия сохраняется.
     await expect(page.getByRole("button", { name: "Повторить", exact: true }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Войти" })).toHaveCount(0);
   });

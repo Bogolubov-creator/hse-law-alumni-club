@@ -69,7 +69,7 @@ async function mockCabinet(page: Page, over: Partial<Record<"me" | "orders" | "c
   await stubSession(page);
 }
 
-test.describe("Кабинет v2", () => {
+test.describe("Кабинет", () => {
   test("гостю показываются ворота, а не данные", async ({ page }) => {
     await seedClientStorage(page);
     await page.goto("/lk");
@@ -157,7 +157,7 @@ test.describe("Кабинет v2", () => {
     await expect(page.getByRole("link", { name: "Программы ДПО →", exact: true })).toHaveAttribute("href", "/dpo");
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();
     await expect(page.getByText(/в клубе пока никого нет/)).toBeVisible();
-    // Пустые разделы не рисуются вовсе, а не пустыми заголовками
+    // Пустые разделы скрыты.
     await expect(page.getByRole("heading", { name: "Достижения" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Уведомления" })).toHaveCount(0);
   });

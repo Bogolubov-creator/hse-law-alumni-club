@@ -29,9 +29,9 @@ const TYPE_LABELS: Array<[string, string]> = [
   ["ПП", "Переподготовка"],
 ];
 const GAP_TEXT =
-  "Об этом на сайте не написано, а придумывать я не стану. Напишите человеку в поддержку – ответят.";
-const FAIL_TEXT = "Не получилось загрузить данные. Напишите в поддержку – ответим.";
-const WAIT_TEXT = "Секунду, гружу программы…";
+  "В материалах сайта нет ответа на этот вопрос. Обратитесь в поддержку.";
+const FAIL_TEXT = "Не удалось загрузить данные. Обратитесь в поддержку.";
+const WAIT_TEXT = "Загружаю программы…";
 
 function reportFaqHit(kind: "gap" | "none", gapId?: string) {
   void fetch("/api/support/faq-event", {
@@ -190,7 +190,7 @@ export function ClubSupportBot({ open, onClose }: Props) {
         break;
       case "none":
         reportFaqHit("none");
-        pushSay("Такого не нашла. Вот что стартует ближе всего:");
+        pushSay("Программ с такими условиями нет. Ближайшие даты начала:");
         pushCards(out.programs);
         items.push({ id: nextId(), kind: "escalate" });
         break;
@@ -278,7 +278,7 @@ export function ClubSupportBot({ open, onClose }: Props) {
     respond(() => {
       if (!matched.length) {
         return [
-          { id: nextId(), kind: "say", text: "Такого не нашла. Вот что стартует ближе всего:" },
+          { id: nextId(), kind: "say", text: "Программ с такими условиями нет. Ближайшие даты начала:" },
           ...upcoming(data.programs, 3).map((p) => ({ id: nextId(), kind: "card" as const, program: p })),
           { id: nextId(), kind: "escalate" },
         ];

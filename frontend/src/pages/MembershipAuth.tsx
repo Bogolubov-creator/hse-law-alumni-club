@@ -139,8 +139,6 @@ export function Join() {
     noindex: true,
   });
 
-  // Уже в клубе? Анкета нужна только новым выпускникам – не «кидаем» молча
-  // в кабинет, а объясняем и даём выбор.
   const [authed, setAuthed] = useState(() => !!localStorage.getItem(TOKEN_KEY));
   const [params] = useSearchParams();
   const ref = params.get("ref") ?? "";
@@ -437,7 +435,6 @@ export function ConfirmEmail() {
   if (state === "work") return <AuthShell title="Подтверждаем почту…" sub="Секунду."><span /></AuthShell>;
 
   if (state === "fail") {
-    // Ссылка без токена – это неполный адрес, а не провал подтверждения.
     return (
       <AuthShell title={token ? "Не удалось подтвердить" : "Ссылка неполная"} sub={err ?? "Ссылка недействительна или истекла."}>
         <ConfirmationResend />

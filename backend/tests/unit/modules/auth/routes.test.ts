@@ -363,7 +363,7 @@ describe("POST /auth/forgot и /auth/reset", () => {
     expect((db.audit_log ?? []).some((e) => e.event === "password.reset.replay")).toBe(true);
   });
 
-  it("без настроенного SMTP восстановление честно отвечает 503", async () => {
+  it("без настроенного SMTP восстановление возвращает 503", async () => {
     vi.stubEnv("SMTP_HOST", "");
     const app = await build();
     const r = await app.inject({ method: "POST", url: "/auth/forgot", payload: { email: "ivan@example.com" } });

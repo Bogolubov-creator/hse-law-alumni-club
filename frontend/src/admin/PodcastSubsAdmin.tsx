@@ -59,7 +59,7 @@ export function PodcastSubs() {
           ))}
           {!!d?.by_podcast.length && <div style={{ borderTop: "1px solid var(--c-line)" }} />}
           <p style={{ ...label, textTransform: "none", letterSpacing: 0, margin: "14px 0 0", lineHeight: 1.5 }}>
-            Считаются обращения к аудио на стороне сервера. Видеовыпуски RuTube сюда не попадают – их отдаёт чужой плеер.
+            Считаются обращения к аудио на стороне сервера. Просмотры RuTube в эту статистику не входят.
           </p>
         </Panel>
       </div>

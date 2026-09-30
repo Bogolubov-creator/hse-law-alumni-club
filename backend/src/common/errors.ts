@@ -16,8 +16,8 @@ export function registerErrorHandler(app: FastifyInstance): void {
     }
     app.log.error(err);
     const st = (err as { statusCode?: number }).statusCode;
-    if (!st || st >= 500) captureError(err); // в Sentry – только наши падения, не 4xx клиента
-    // 4xx – честное сообщение (это ошибка запроса, не наша); 5xx не раскрываем.
+    if (!st || st >= 500) captureError(err); // Ошибки 4xx не отправляются в Sentry.
+    // Ответы 5xx не раскрывают внутренние сведения.
     if (st && st < 500) return reply.code(st).send({ error: (err as Error).message || "Некорректный запрос" });
     return reply.code(500).send({ error: "Внутренняя ошибка" });
   });

@@ -37,8 +37,8 @@ const schema = z.object({
   SMTP_USER: z.string().default(""),
   SMTP_PASS: z.string().default(""),
   SMTP_FROM: z.string().default(""),
-  // Оплата через ЮKassa (yookassa.ru). Оба ключа заданы = оплата включена,
-  // иначе прежний режим «заявка без оплаты» (BLOCKED до получения ключей магазина).
+  // Оплата через ЮKassa (yookassa.ru) включена при наличии обоих ключей.
+  // Без обоих ключей доступны заявки без онлайн-оплаты.
   YOOKASSA_SHOP_ID: z.string().default(""),
   YOOKASSA_SECRET_KEY: z.string().default(""),
   // Публичный адрес сайта – для return_url после оплаты.

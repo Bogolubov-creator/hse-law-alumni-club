@@ -28,7 +28,7 @@ async function mockProgram(page: Page, over: Record<string, unknown> = {}) {
   }));
 }
 
-test.describe("Программа v2", () => {
+test.describe("Программа", () => {
   test("реальная программа каталога открывается из витрины", async ({ page }) => {
     await page.goto("/dpo");
     const row = page.locator("article.club-dpo-tile")

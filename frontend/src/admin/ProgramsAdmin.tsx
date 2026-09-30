@@ -36,7 +36,7 @@ export function ProgramsAdmin() {
           <button
             onClick={() => syncDpo.mutate()}
             disabled={syncDpo.isPending}
-            title="Синхронизация как на лендинге ДПО: актуальный набор + onlyActual=0 (весь каталог факультета права)"
+            title="Обновить весь каталог факультета права с hse.ru, включая закрытые наборы"
             className="foc rounded-[10px] border border-[var(--c-line)] bg-[var(--c-bg-raised)] px-4 py-2 text-sm font-semibold disabled:opacity-60"
           >
             {syncDpo.isPending ? "Синхронизируем…" : "⟳ Обновить с hse.ru"}
@@ -58,7 +58,7 @@ export function ProgramsAdmin() {
           <div className="min-w-0">
             <div className="truncate font-semibold">{p.title}</div>
             <div className="font-mono text-[11px] text-[var(--c-text-3)]">
-              <span className={`mr-1.5 rounded-full px-2 py-0.5 ${p.source_url ? "bg-[rgba(17,41,107,.1)] text-hse-blue" : "bg-[rgba(236,90,19,.14)] text-[var(--c-accent-text)]"}`}>{p.source_url ? "ВШЭ · синк" : "Клуба"}</span>
+              <span className={`mr-1.5 rounded-full px-2 py-0.5 ${p.source_url ? "bg-[rgba(17,41,107,.1)] text-hse-blue" : "bg-[rgba(236,90,19,.14)] text-[var(--c-accent-text)]"}`}>{p.source_url ? "ВШЭ · импорт" : "Клуба"}</span>
               {p.direction} · {FORMAT_RU[p.format] ?? p.format} · {p.duration}{p.dates?.start ? ` · старт ${p.dates.start}` : ""}{p.enrollment === "nonactual" ? " · набор закрыт" : ""}
             </div>
           </div>
@@ -103,7 +103,7 @@ function ProgramForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => 
     <Modal onClose={onClose} labelledBy="prog-form-title" maxWidth={520}>
       <form onSubmit={submit} className="rounded-[18px] bg-[var(--c-bg-raised)] p-7">
         <h3 id="prog-form-title" className="font-display text-lg font-bold">Новая программа клуба</h3>
-        <p className="mt-1 font-mono text-[11px] leading-relaxed text-[var(--c-text-3)]">Собственная программа клуба выпускников: запись и оплата – через сайт (корзина, скидка выпускника). Программы ВШЭ добавлять не нужно – они приходят из синка с hse.ru и ведут на маркетплейс.</p>
+        <p className="mt-1 font-mono text-[11px] leading-relaxed text-[var(--c-text-3)]">Форма для собственной программы клуба. Заявки оформляются через корзину сайта с расчётом скидки выпускника. Программы ВШЭ загружаются с hse.ru и ведут на маркетплейс университета.</p>
         <div className="mt-4 space-y-3">
           <FormField label="Название" value={f.title} onChange={(v) => set("title", v)} required />
           <div className="grid grid-cols-2 gap-3">

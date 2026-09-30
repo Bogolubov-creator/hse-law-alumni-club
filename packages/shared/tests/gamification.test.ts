@@ -52,7 +52,7 @@ describe("decayDelta (−15%)", () => {
   });
 });
 
-describe("evaluateAchievements (Design + ступени движка/Kimi)", () => {
+describe("evaluateAchievements", () => {
   it("«Первый шаг» – на первом мероприятии", () => {
     expect(evaluateAchievements({ events_attended: 0 })).not.toContain("first_step");
     expect(evaluateAchievements({ events_attended: 1 })).toContain("first_step");

@@ -1,6 +1,3 @@
-// Геймификация – единый источник правды для api, bootstrap и web.
-// Числа сверены с прототипом club-business-law.html и решением оркестратора 3.1.
-
 export type LevelKey = "graduate" | "friend" | "expert" | "ambassador";
 
 export interface LevelDef {

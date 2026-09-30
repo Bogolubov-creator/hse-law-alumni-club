@@ -77,7 +77,7 @@ export async function adminCatalogRoutes(app: FastifyInstance) {
     delete patch.start;
     if (b.start !== undefined) patch.dates = b.start ? { start: b.start } : null;
     await di.request((updateItem as any)("programs", id, patch));
-    // Цена – деньги: правка фиксируется в журнале с прежним и новым значением.
+    // Изменение цены сохраняется в журнале с обоими значениями.
     audit("program.patch", { actor: `admin:${ctx.userId}`, subject: `program:${id}`, detail: b, req });
     return { ok: true };
   });

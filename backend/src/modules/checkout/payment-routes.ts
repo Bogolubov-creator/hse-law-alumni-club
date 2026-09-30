@@ -70,14 +70,14 @@ export async function paymentsRoutes(app: FastifyInstance) {
 
     let verified;
     try {
-      verified = await fetchPayment(body.data.object.id); // источник правды – API, не тело вебхука
+      verified = await fetchPayment(body.data.object.id); // Статус подтверждается запросом к API ЮKassa.
     } catch (e) {
       req.log.error({ err: e }, "yookassa verify failed");
       return reply.code(502).send({ ok: false });
     }
 
     const orderNumber = verified.metadata?.order_number;
-    if (!orderNumber) return { ok: true }; // не наш платёж – молча подтверждаем приём
+    if (!orderNumber) return { ok: true }; // Несвязанный платёж не меняет заявки.
 
     const { outcome, order } = await applyVerifiedPayment(verified);
     if (!order) return { ok: true };

@@ -52,8 +52,6 @@ export function PodcastsAdmin() {
 function PodcastForm({ busy, onClose, onSave }: { busy: boolean; onClose: () => void; onSave: (v: { title: string; description?: string | null; cover?: string | null; audio_url?: string | null; video_url?: string | null; duration?: string | null }) => void }) {
   const [f, setF] = useState({ title: "", description: "", cover: "", audio_url: "", video_url: "", duration: "" });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
-  // Ссылку на видео проверяем сразу: в поле легко вставить не тот адрес,
-  // и тогда выпуск молча остался бы без плеера.
   const video = f.video_url.trim() ? rutubeEmbed(f.video_url.trim()) : null;
   const videoBad = !!f.video_url.trim() && !video;
   const valid = f.title.trim().length >= 3 && !videoBad;

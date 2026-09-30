@@ -41,7 +41,7 @@ describe("setLineQty", () => {
   it("qty=N устанавливает точное значение (мерч)", () => {
     expect(setLineQty([line({ type: "merch", ref_id: "a" })], "a", null, 5)[0]!.qty).toBe(5);
   });
-  it("ДПО: qty не поднимается выше 1 даже через прямой PATCH (канон «одно место»)", () => {
+  it("ДПО: PATCH не позволяет заказать больше одного места", () => {
     expect(setLineQty([line({ ref_id: "a" })], "a", null, 5)[0]!.qty).toBe(1);
   });
   it("несовпадающий ref – без изменений", () => {
