@@ -63,13 +63,17 @@
 
 ## Быстрый старт
 
-На компьютере разработчика нужны Git, Node.js 24 и pnpm 12.8.1. Команды ниже
-выполняются обычным пользователем в новом каталоге; они устанавливают зависимости,
-собирают код и запускают модульные тесты. Почта, платежи и бот не запускаются.
+На компьютере разработчика нужны Git, Python 3.14, uv, Node.js 24 и pnpm 12.8.1.
+Команды ниже устанавливают зависимости API, команд оператора и интерфейса,
+собирают интерфейс и запускают его модульные тесты. Выполняйте их обычным
+пользователем в новом каталоге. Запуск API описан в [локальном запуске](#локальный-запуск),
+проверки с PostgreSQL – в [testing.md](docs/development/testing.md).
 
 ```bash
 git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club
 cd club
+uv sync --directory backend --frozen
+uv sync --directory scripts --frozen
 pnpm install --frozen-lockfile
 pnpm -r build
 pnpm -r test
