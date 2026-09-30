@@ -29,11 +29,15 @@
 Сборку задают [edge.Dockerfile](../../deploy/edge.Dockerfile), `go.mod` и `go.sum`.
 Module cache проверяется до копирования и остаётся неизменным.
 [prepare.sh](../../deploy/caddy/prepare.sh) применяет патч без fuzz к копии
-источника. [overlay.json](../../deploy/caddy/overlay.json) задаёт новый граф
-импортов для `go mod tidy` и `go mod vendor`.
+источника. [vendor.sh](../../deploy/caddy/vendor.sh) временно задаёт локальный
+`replace`: `go mod tidy` и `go mod vendor` читают исправленный граф импортов.
+Это учитывает [ограничение Go](https://pkg.go.dev/cmd/go#hdr-Compile_packages_and_dependencies)
+на замену файлов внутри `GOMODCACHE` через overlay.
 
-Vendor копирует исходные файлы; патч применяется к ним отдельно. Компилятор,
-Go-тесты и govulncheck используют этот исправленный vendor. Обычная сборка
+После подготовки vendor локальный `replace` удаляется из `go.mod` и его
+метаданных. Базовая версия upstream сохраняется; применение патча явно указано
+в label образа. Контрольные суммы и `go.mod` должны совпасть с lockfile.
+Компилятор, Go-тесты и govulncheck используют исправленный vendor. Обычная сборка
 требует неизменных lockfile. Build info проверяет версии CEL/automemlimit и
 отсутствие прежнего CEL. Метаданные бинарника сохраняют базовый Caddy 2.11.4;
 label `club.caddy.backports` указывает перенесённые commits.
@@ -75,10 +79,9 @@ cp "$edge_lock_dir/go.mod" "$edge_lock_dir/go.sum" deploy/caddy/
 docker build -f deploy/edge.Dockerfile --target edge-check -t club-edge-check .
 ```
 
-Перечитайте diff lockfile, патча и overlay, затем запустите полный CI. При
+Перечитайте diff lockfile и патча, затем запустите полный CI. При
 обновлении базового Caddy сверяйте backports с новым релизом: уже включённые
-правки удаляются из патча. Путь overlay и проверка версии источника меняются
-вместе с `go.mod`. Ошибка применения патча останавливает сборку.
+правки удаляются из патча. Проверка версии источника меняется вместе с `go.mod`. Ошибка применения патча останавливает сборку.
 
 Обновление рабочего стека и откат выполняются по
 [runbook](../operations/deploy-runbook.md). Сертификаты, PostgreSQL и uploads

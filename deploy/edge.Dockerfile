@@ -7,14 +7,14 @@ COPY deploy/caddy/go.mod deploy/caddy/go.sum ./locked/
 COPY deploy/caddy/go.mod deploy/caddy/go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY deploy/caddy/main.go ./
-COPY deploy/caddy/compatibility.patch deploy/caddy/overlay.json deploy/caddy/prepare.sh ./
+COPY deploy/caddy/compatibility.patch deploy/caddy/vendor.sh deploy/caddy/prepare.sh ./
 COPY deploy/caddy/tests ./tests
 RUN --mount=type=cache,target=/go/pkg/mod sh prepare.sh
 
 # Обновление lockfile экспортируется отдельно; обычная сборка требует точного совпадения.
 FROM edge-source AS edge-lock-update
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    GOFLAGS=-overlay=/caddy/overlay.json go mod tidy
+    sh vendor.sh tidy
 
 FROM scratch AS edge-lock-export
 COPY --from=edge-lock-update /caddy/go.mod /caddy/go.sum /
@@ -22,8 +22,7 @@ COPY --from=edge-lock-update /caddy/go.mod /caddy/go.sum /
 FROM edge-source AS edge-build
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     cmp go.mod locked/go.mod && cmp go.sum locked/go.sum && \
-    GOFLAGS=-overlay=/caddy/overlay.json go mod vendor && \
-    patch --batch --fuzz=0 --strip=1 --directory=vendor/github.com/caddyserver/caddy/v2 < compatibility.patch && \
+    sh vendor.sh vendor && \
     go build -mod=vendor -p 2 -trimpath -ldflags='-s -w' -o /usr/bin/caddy . && \
     go version -m /usr/bin/caddy > /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+cel.dev/cel-go[[:space:]]+v0.32.0[[:space:]]' /caddy/build-info.txt && \

@@ -19,6 +19,7 @@ from club_api.core.errors import ApiError
 from club_api.core.models import guid
 from club_api.db.store import MEDIA_FIELDS, normalize
 
+THUMBNAIL_WORKERS = 1
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
 MAX_AUDIO_BYTES = 128 * 1024 * 1024
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"}
@@ -129,7 +130,7 @@ def render_thumbnail(data):
 class Media:
     def __init__(self, state):
         self.state = state
-        self.slots = asyncio.Semaphore(2)
+        self.slots = asyncio.Semaphore(THUMBNAIL_WORKERS)
         self.pending, self.cache = {}, OrderedDict()
         self.cache_bytes = 0
 

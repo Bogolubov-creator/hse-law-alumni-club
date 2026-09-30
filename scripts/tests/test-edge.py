@@ -15,21 +15,38 @@ import uuid
 
 REPO = Path(__file__).resolve().parents[2]
 MIB = 1024 * 1024
-PROBE = """const http = require('node:http');
-http.createServer((request, response) => {
-  let bytes = 0;
-  // Превышение лимита обрывает upstream; фикстура остаётся готова к следующему кейсу.
-  request.on('error', () => {});
-  request.on('data', chunk => bytes += chunk.length);
-  request.on('end', () => {
-    response.setHeader('Content-Type', 'application/json');
-    response.end(JSON.stringify({
-      path: request.url, bytes,
-      forwardedFor: request.headers['x-forwarded-for'],
-      forwardedProto: request.headers['x-forwarded-proto']
-    }));
-  });
-}).listen(3000, '0.0.0.0');
+PROBE = """import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+class Probe(BaseHTTPRequestHandler):
+    def do_GET(self):
+        size = int(self.headers.get('Content-Length', '0'))
+        received = 0
+        while received < size:
+            chunk = self.rfile.read(min(65536, size - received))
+            if not chunk:
+                return
+            received += len(chunk)
+        body = json.dumps({
+            'path': self.path, 'bytes': received,
+            'forwardedFor': self.headers.get('X-Forwarded-For'),
+            'forwardedProto': self.headers.get('X-Forwarded-Proto')
+        }).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    do_POST = do_GET
+
+    def log_message(self, *args):
+        pass
+
+ThreadingHTTPServer(('0.0.0.0', 3000), Probe).serve_forever()
 """
 
 
@@ -53,7 +70,7 @@ def run(args):
                 network = docker('network', 'create', *options, '--label', 'club.qa=edge', name + '-' + suffix).stdout.strip()
                 networks.append(network)
             for suffix, options in [
-                ('api', ['--entrypoint', 'node', args.api_image, '-e', PROBE]),
+                ('api', ['--entrypoint', 'python', args.api_image, '-c', PROBE]),
                 ('web', [args.web_image]),
             ]:
                 container = docker('run', '--detach', '--network', networks[0], '--network-alias', suffix,
@@ -98,7 +115,17 @@ def run(args):
                     connection.close()
 
             # CA проверяется стандартным TLS-клиентом; insecure-режима здесь нет.
-            status, headers, html = request('/')
+            # CA появляется раньше сертификата сайта; ждём завершения выдачи.
+            while True:
+                try:
+                    status, headers, html = request('/')
+                    if status == 200:
+                        break
+                except (OSError, http.client.HTTPException):
+                    if time.monotonic() >= deadline:
+                        raise
+                check(time.monotonic() < deadline, 'HTTPS не стал готов за 60 секунд')
+                time.sleep(0.25)
             check(status == 200 and b'<html' in html, 'HTTPS не вернул HTML')
             check('https://telegram.org' in headers.get('content-security-policy', ''), 'Потеряна CSP Telegram')
             check(headers.get('x-content-type-options') == 'nosniff' and 'server' not in headers, 'Потеряны защитные заголовки')
