@@ -25,7 +25,7 @@ trap 'result=$?; if [[ "$result" != 0 ]]; then record failed; echo "Обновл
 "${compose[@]}" images --format json > "$STATE_DIR/pre-deploy-images.json"
 "${compose[@]}" build --build-arg "VCS_REF=$revision"
 "${compose[@]}" run --rm --no-deps api node --input-type=module -e '
-  const { env, assertProdConfig } = await import("./dist/env.js");
+  const { env, assertProdConfig } = await import("./dist/config/env.js");
   const errors = assertProdConfig();
   if (env.APP_ENV !== "production") errors.push("Деплой требует APP_ENV=production");
   if (errors.length) { console.error(errors.join("\n")); process.exit(1); }

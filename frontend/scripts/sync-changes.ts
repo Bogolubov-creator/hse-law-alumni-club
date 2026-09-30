@@ -2,7 +2,7 @@ import { Window, type Node as HtmlNode, type Element as HtmlElement } from "happ
 import { readFile, writeFile, rename } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { CHANNEL, parseChanges, safeSourceUrl, validInstant, type ChangeBlock, type ChangeSegment, type ChangesSnapshot, type LawChange } from "../src/lib/changes-schema.js";
+import { CHANNEL, parseChanges, safeSourceUrl, validInstant, type ChangeBlock, type ChangeSegment, type ChangesSnapshot, type LawChange } from "../src/features/changes/changes-schema.js";
 
 const FEED = `https://t.me/s/${CHANNEL}`;
 const PUBLISHED = "https://bogolubov-creator.github.io/club-pravo-hse-mirror/data/changes.json";

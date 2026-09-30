@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import Modal from "../components/Modal.js";
-import { rub } from "../lib/api.js";
-import { useProductMutations, useAdminProducts, type AdminProduct, type ProductInput } from "../lib/admin.js";
+import { rub } from "../api/api.js";
+import { useProductMutations, useAdminProducts, type AdminProduct, type ProductInput } from "../api/admin.js";
 import { FormField, ConfirmDelete, StatusToggle } from "./common.js";
 
 export function ProductsAdmin() {

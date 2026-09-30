@@ -1,19 +1,19 @@
 import { isMirror } from "../lib/public-url.js";
 import "../styles/cabinet-gate.css";
 import { action as publicAction } from "../styles/primitives.js";
-import { CabinetClubOverview } from "../components/CabinetClubOverview.js";
+import { CabinetClubOverview } from "../features/cabinet/CabinetClubOverview.js";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { loginResponseSchema, ORDER_STATUS_RU, ORDER_STATUS_VERB_RU, type Classmate, type LkEvent } from "@club/shared";
-import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Me, type MyOrder } from "../lib/api.js";
-import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../lib/queries.js";
-import { clearToken, logout as logoutSession } from "../lib/cart.js";
+import { apiPost, isAuthError, rub, type LoginResponse, type AlumniBrief, type Me, type MyOrder } from "../api/api.js";
+import { useMe, useMyOrders, useClassmates, useAddFriend, useRemoveFriend, useLkEvents } from "../api/queries.js";
+import { clearToken, logout as logoutSession } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
 import { VisionCorner } from "../components/Vision.js";
 import { useToast } from "../components/Toast.js";
-import { BlankField, mono, disp } from "../v2/Shell.js";
-import { Mark } from "../v2/Mark.js";
-import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
+import { BlankField, mono, disp } from "../layouts/Shell.js";
+import { Mark } from "../layouts/Mark.js";
+import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../layouts/cabinet.js";
 
 /**
  * Личный кабинет v2. Режим отличается от внешнего контура (DESIGN.md):

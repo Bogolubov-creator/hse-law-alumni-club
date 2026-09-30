@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Modal from "../components/Modal.js";
 import { computeLevel } from "@club/shared";
 import { mono, disp, label, action, actionGhost, field, Pill } from "./ui.js";
-import { useOverview, useMembers, useMemberMutations, type Member } from "../lib/admin.js";
+import { useOverview, useMembers, useMemberMutations, type Member } from "../api/admin.js";
 import { VERIF } from "./common.js";
 
 export const LEVEL_RU: Record<string, string> = { graduate: "Выпускник", friend: "Друг клуба", expert: "Знаток", ambassador: "Амбассадор" };

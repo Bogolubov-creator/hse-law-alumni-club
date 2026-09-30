@@ -41,9 +41,9 @@ jobs:
 
       - name: Validate deployment configuration
         run: |
-          for script in scripts/*.sh; do bash -n "$script"; done
-          python3 scripts/test-ops.py
-          node --test scripts/measure-load.test.mjs
+          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d \( -name node_modules -o -name dist \) -prune -o -type f -name '*.sh' -print0)
+          python3 scripts/tests/test-ops.py
+          node --test scripts/tests/measure-load.test.mjs
           docker compose --env-file .env.example config --quiet
           docker compose --env-file .env.example config --format json | node -e '
             let input = "";
@@ -69,13 +69,13 @@ jobs:
         run: pnpm -r build
 
       - name: Check native web artifact
-        run: node scripts/check-web-build.mjs frontend/dist
+        run: node scripts/checks/check-web-build.mjs frontend/dist
 
       - name: Test (vitest)
         run: pnpm -r test
 
       # Уязвимости в прод-зависимостях. Порог high: сборка падает на high/critical,
-      # moderate показываются в отчёте (см. docs/deploy-runbook.md).
+      # moderate показываются в отчёте (см. docs/operations/deploy-runbook.md).
       - name: Audit (прод-зависимости, порог high)
         run: pnpm audit --prod --audit-level high
       - name: Audit (инструменты разработки, порог high)
@@ -96,7 +96,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @club/shared build && pnpm --filter @club/server-auth build
       - name: Checkout and support against disposable PostgreSQL
-        run: bash scripts/test-integration.sh
+        run: bash scripts/tests/test-integration.sh
 
   live-stack:
     runs-on: ubuntu-24.04
@@ -112,13 +112,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Typecheck live browser tests
-        run: pnpm --filter @club/web exec tsc --ignoreConfig --noEmit --module ESNext --moduleResolution Bundler --target ES2022 --types node --skipLibCheck e2e/live-stack.spec.ts playwright.live.config.ts
+        run: pnpm --filter @club/web exec tsc --ignoreConfig --noEmit --module ESNext --moduleResolution Bundler --target ES2022 --types node --skipLibCheck tests/e2e/live-stack.spec.ts playwright.live.config.ts
       - name: Install Chromium and its Ubuntu libraries
         run: pnpm --filter @club/web exec playwright install --with-deps chromium
       - name: Build images and check real persistence in desktop and mobile browsers
-        run: bash scripts/test-live.sh
+        run: bash scripts/tests/test-live.sh
       - name: Check final runtime image contents
-        run: bash scripts/check-runtime-images.sh club-ci-live-api club-ci-live-bootstrap club-ci-live-web
+        run: bash scripts/checks/check-runtime-images.sh club-ci-live-api club-ci-live-bootstrap club-ci-live-web
       - name: Scan application images (HIGH and CRITICAL)
         run: |
           for service in api bootstrap web caddy postgres; do

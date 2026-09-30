@@ -18,7 +18,6 @@
 !backend/
 !backend/package.json
 !backend/tsconfig.json
-!backend/Dockerfile
 !backend/src/
 !backend/src/**
 !frontend/
@@ -26,7 +25,6 @@
 !frontend/tsconfig.json
 !frontend/vite.config.ts
 !frontend/index.html
-!frontend/Caddyfile.static
 !frontend/src/
 !frontend/src/**
 !frontend/public/
@@ -34,17 +32,19 @@
 !scripts/
 !scripts/package.json
 !scripts/tsconfig.json
-!scripts/Dockerfile
 !scripts/src/
 !scripts/src/**
 !deploy/
+!deploy/api.Dockerfile
+!deploy/bootstrap.Dockerfile
+!deploy/web.Caddyfile
 !deploy/edge.Dockerfile
 !deploy/postgres.Dockerfile
 !deploy/caddy/
 !deploy/caddy/**
 **/*.test.*
 **/__tests__/**
-backend/src/test/**
+**/tests/**
 **/.env*
 **/*.pem
 **/*.key

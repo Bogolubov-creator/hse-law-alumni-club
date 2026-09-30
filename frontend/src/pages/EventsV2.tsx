@@ -2,14 +2,14 @@ import "../styles/editorial.css";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import EventDetails from "../components/EventDetails.js";
+import EventDetails from "../features/events/EventDetails.js";
 import Modal from "../components/Modal.js";
 import { useToast } from "../components/Toast.js";
-import { apiGet, apiPost } from "../lib/api.js";
-import { token } from "../lib/cart.js";
+import { apiGet, apiPost } from "../api/api.js";
+import { token } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
-import { fmtEventDate, type ClubEvent } from "../lib/events.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { fmtEventDate, type ClubEvent } from "../features/events/events.js";
+import { V2Shell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
 import { action, actionGhost, caps } from "../styles/primitives.js";
 
 /** Афиша и прямая страница события используют общие данные и запись. */

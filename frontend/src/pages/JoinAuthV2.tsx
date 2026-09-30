@@ -1,11 +1,11 @@
 import { useEffect, useId, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR } from "@club/shared";
-import { apiPost } from "../lib/api.js";
+import { apiPost } from "../api/api.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, mono, disp } from "../v2/Shell.js";
+import { V2Shell, mono, disp } from "../layouts/Shell.js";
 import { caps } from "../styles/primitives.js";
-import { Mark } from "../v2/Mark.js";
+import { Mark } from "../layouts/Mark.js";
 import { publicUrl } from "../lib/public-url.js";
 
 /**

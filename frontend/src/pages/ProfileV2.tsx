@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR, type LedgerEntry } from "@club/shared";
-import { apiGet, apiPatch, apiPost, isAuthError, type Me } from "../lib/api.js";
-import { useMe, useLedger } from "../lib/queries.js";
+import { apiGet, apiPatch, apiPost, isAuthError, type Me } from "../api/api.js";
+import { useMe, useLedger } from "../api/queries.js";
 import { useToast } from "../components/Toast.js";
-import { logout as logoutSession } from "../lib/cart.js";
+import { logout as logoutSession } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
-import { BlankField, mono, disp } from "../v2/Shell.js";
-import { CabinetShell, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../v2/cabinet.js";
+import { BlankField, mono, disp } from "../layouts/Shell.js";
+import { CabinetShell, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../layouts/cabinet.js";
 
 /**
  * Профиль выпускника v2 (/lk/profile) – тот же режим, что и кабинет:

@@ -1,0 +1,120 @@
+import { lookup, type CatalogInfo } from "../catalog/catalog-lookup.js";
+import { withCartLock } from "../../db/checkout-store.js";
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { readItems, createItem, updateItem } from "../../db/data-commands.js";
+import { z } from "zod";
+import { cartItemSchema, addLine, setLineQty, summarizeCart, cartLineLimitReached, MAX_CART_LINES, type StoredCartItem } from "@club/shared";
+import { data } from "../../db/data.js";
+
+const di = data;
+
+export function cartSession(req: FastifyRequest): string | null {
+  const s = req.headers["x-cart-session"];
+  return typeof s === "string" && z.guid().safeParse(s).success ? s : null;
+}
+
+async function loadCart(token: string): Promise<{ id: string; items: StoredCartItem[] } | null> {
+  const rows = (await di.request(readItems("carts", { filter: { session_token: { _eq: token } }, limit: 1, fields: ["id", "items_json"] }))) as any[];
+  if (!rows.length) return null;
+  return { id: rows[0].id, items: (rows[0].items_json as StoredCartItem[]) ?? [] };
+}
+
+async function saveCart(token: string, items: StoredCartItem[]) {
+  const existing = await loadCart(token);
+  if (existing) await di.request((updateItem as any)("carts", existing.id, { items_json: items, updated_at: new Date().toISOString() }));
+  else await di.request((createItem as any)("carts", { session_token: token, items_json: items, updated_at: new Date().toISOString() }));
+}
+
+/** Неизвестный остаток не блокирует заявку; наличие повторно проверяется при оформлении. */
+function exceedsStock(info: CatalogInfo, sku: string | null | undefined, qty: number): boolean {
+  const available = info.variants?.length
+    ? info.variants.find((variant) => variant.sku === sku)?.stock
+    : info.stock;
+  return typeof available === "number" && qty > available;
+}
+
+export async function cartRoutes(app: FastifyInstance) {
+  app.get("/cart", async (req, reply) => {
+    const token = cartSession(req);
+    if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
+    const cart = await loadCart(token);
+    return summarizeCart(cart?.items ?? []);
+  });
+
+  app.post("/cart", { config: { rateLimit: { max: 40, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const token = cartSession(req);
+    if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
+    const body = cartItemSchema.parse(req.body);
+    const info = await lookup(body.type, body.ref_id);
+    if (!info) return reply.code(404).send({ error: "Позиция не найдена" });
+    // Набор закрыт – заявка не оформляется (программа в каталоге справочно).
+    if (body.type === "dpo" && info.enrollment === "nonactual")
+      return reply.code(400).send({ error: "Набор на эту программу закрыт" });
+    // Программы ВШЭ (source_url) оформляются на маркетплейсе hse.ru, не через сайт.
+    if (body.type === "dpo" && info.source_url)
+      return reply.code(400).send({ error: "Запись на эту программу – на hse.ru" });
+
+    // Вариант товара сверяем с каталогом. Раньше variant_sku принимался как есть:
+    // в корзину, в заявку и в выгрузку офиса попадал любой выдуманный размер, а
+    // проверка остатков по такому SKU ничего не находила и молча пропускала заказ.
+    if (body.type === "merch") {
+      const variants = info.variants ?? [];
+      const sku = body.variant_sku ?? null;
+      if (variants.length) {
+        if (!sku) return reply.code(400).send({ error: "Выберите вариант товара" });
+        if (!variants.some((v) => v.sku === sku)) return reply.code(400).send({ error: "Такого варианта товара нет" });
+      } else if (sku) {
+        return reply.code(400).send({ error: "У этого товара нет вариантов" });
+      }
+    }
+
+    return withCartLock(token, async () => {
+    const cart = await loadCart(token);
+    const current = cart?.items ?? [];
+    // Потолок позиций: без него items_json рос без предела (одна сессия – сколько угодно строк).
+    if (cartLineLimitReached(current, { type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null }))
+      return reply.code(409).send({ error: `В корзине уже ${MAX_CART_LINES} позиций – оформите заявку или удалите лишнее` });
+
+    const items = addLine(current, {
+      type: body.type, ref_id: body.ref_id, variant_sku: body.variant_sku ?? null,
+      qty: body.qty, price: info.price, title: info.title,
+    });
+    const added = items.find((item) => item.ref_id === body.ref_id && (item.variant_sku ?? null) === (body.variant_sku ?? null));
+    if (body.type === "merch" && added && exceedsStock(info, body.variant_sku, added.qty))
+      return reply.code(409).send({ error: "Недостаточно товара в наличии." });
+    await saveCart(token, items);
+    return summarizeCart(items);
+    });
+  });
+
+  app.patch("/cart", async (req, reply) => {
+    const token = cartSession(req);
+    if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
+    const body = z.object({ ref_id: z.string(), variant_sku: z.string().nullish(), qty: z.number().int().min(0).max(99) }).parse(req.body);
+    return withCartLock(token, async () => {
+    const cart = await loadCart(token);
+    const line = cart?.items.find((item) => item.ref_id === body.ref_id && (item.variant_sku ?? null) === (body.variant_sku ?? null));
+    // Уменьшение и удаление доступны даже после снятия товара с продажи.
+    if (line?.type === "merch" && body.qty > line.qty) {
+      const info = await lookup("merch", body.ref_id);
+      if (!info) return reply.code(404).send({ error: "Позиция не найдена" });
+      if (info.variants?.length && !info.variants.some((variant) => variant.sku === body.variant_sku))
+        return reply.code(400).send({ error: "Такого варианта товара нет" });
+      if (exceedsStock(info, body.variant_sku, body.qty))
+        return reply.code(409).send({ error: "Недостаточно товара в наличии." });
+    }
+    const items = setLineQty(cart?.items ?? [], body.ref_id, body.variant_sku ?? null, body.qty);
+    await saveCart(token, items);
+    return summarizeCart(items);
+    });
+  });
+
+  app.delete("/cart", async (req, reply) => {
+    const token = cartSession(req);
+    if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
+    return withCartLock(token, async () => {
+      await saveCart(token, []);
+      return summarizeCart([]);
+    });
+  });
+}

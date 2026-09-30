@@ -1,15 +1,15 @@
-import SaveMaterial from "../components/SaveMaterial.js";
-import { MirrorPodcastDemo } from "../components/MirrorPodcastDemo.js";
+import SaveMaterial from "../features/reading/SaveMaterial.js";
+import { MirrorPodcastDemo } from "../features/podcasts/MirrorPodcastDemo.js";
 import { isMirror } from "../lib/public-url.js";
 import { Link, useParams } from "react-router-dom";
-import { usePodcasts } from "../lib/queries.js";
-import { token } from "../lib/cart.js";
+import { usePodcasts } from "../api/queries.js";
+import { token } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell } from "../v2/Shell.js";
-import { EpisodePlayer } from "../components/EpisodePlayer.js";
+import { V2Shell } from "../layouts/Shell.js";
+import { EpisodePlayer } from "../features/podcasts/EpisodePlayer.js";
 import { VideoEmbed } from "../components/VideoEmbed.js";
-import { PodcastArtwork, PodcastLock } from "../components/PodcastArtwork.js";
-import { rub } from "../lib/api.js";
+import { PodcastArtwork, PodcastLock } from "../features/podcasts/PodcastArtwork.js";
+import { rub } from "../api/api.js";
 import { action } from "../styles/primitives.js";
 import "../styles/podcast-episode.css";
 

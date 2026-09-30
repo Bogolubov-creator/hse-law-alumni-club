@@ -1,9 +1,9 @@
-import ContinueReading from "../components/ContinueReading.js";
+import ContinueReading from "../features/reading/ContinueReading.js";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { V2Shell } from "../v2/Shell.js";
+import { V2Shell } from "../layouts/Shell.js";
 import { useHead } from "../lib/title.js";
-import { READING_LABELS, toggleSaved, useReading } from "../lib/reading-list.js";
+import { READING_LABELS, toggleSaved, useReading } from "../features/reading/reading-list.js";
 import "../styles/reading-list.css";
 export default function Saved() {
   const { saved, unavailable } = useReading();

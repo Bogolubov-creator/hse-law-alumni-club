@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuditLog, type AuditEntry } from "../lib/admin.js";
+import { useAuditLog, type AuditEntry } from "../api/admin.js";
 
 export const AUDIT_RU: Record<string, { label: string; icon: string; group: string }> = {
   "login.ok": { label: "Вход выпускника", icon: "🔓", group: "Входы" },

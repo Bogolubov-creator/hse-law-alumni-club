@@ -34,5 +34,5 @@ RUN pnpm --filter @club/shared build && pnpm --filter @club/web build
 
 FROM caddy AS web
 COPY --from=web-build /repo/frontend/dist /srv
-COPY frontend/Caddyfile.static /etc/caddy/Caddyfile
+COPY deploy/web.Caddyfile /etc/caddy/Caddyfile
 EXPOSE 80

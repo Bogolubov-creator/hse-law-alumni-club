@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { rub } from "../lib/api.js";
+import { rub } from "../api/api.js";
 import { ORDER_STATUS_RU } from "@club/shared";
 import { mono, label, actionGhost, field, statusTone } from "./ui.js";
-import { useAdminOrders, useOrderMutations, downloadOrdersCsv, type AdminOrder } from "../lib/admin.js";
+import { useAdminOrders, useOrderMutations, downloadOrdersCsv, type AdminOrder } from "../api/admin.js";
 
 export const ORDER_FLOW = ["new", "in_progress", "confirmed", "done", "canceled", "expired"];
 

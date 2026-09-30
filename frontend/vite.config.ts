@@ -15,7 +15,7 @@ export default defineConfig({
   base: BASE,
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
+    include: ["tests/unit/**/*.test.ts"],
   },
   plugins: [
     react(),

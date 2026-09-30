@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import Modal from "../components/Modal.js";
-import { rub } from "../lib/api.js";
-import { useProgramMutations, useAdminPrograms, type AdminProgram, type ProgramInput } from "../lib/admin.js";
+import { rub } from "../api/api.js";
+import { useProgramMutations, useAdminPrograms, type AdminProgram, type ProgramInput } from "../api/admin.js";
 import { FormField, ConfirmDelete, StatusToggle } from "./common.js";
 
 export const FORMAT_RU: Record<string, string> = { online: "Онлайн", offline: "Очно", blended: "Смешанный" };

@@ -1,11 +1,11 @@
-import SizeDialog, { Stock, vLabel } from "../components/MerchSelection.js";
+import SizeDialog, { Stock, vLabel } from "../features/catalog/MerchSelection.js";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import ProductImage from "../components/ProductImage.js";
+import ProductImage from "../features/catalog/ProductImage.js";
 import { useHead } from "../lib/title.js";
-import { rub, type Product } from "../lib/api.js";
-import { useProducts } from "../lib/cart.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../v2/Shell.js";
+import { rub, type Product } from "../api/api.js";
+import { useProducts } from "../stores/cart.js";
+import { V2Shell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
 
 /**
  * Витрина мерча v2 – язык реестра (DESIGN.md).

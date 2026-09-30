@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { mediaUrl } from "../lib/public-url.js";
 import Modal from "../components/Modal.js";
-import { useEventMutations, useAdminEvents, useAdminEventRoster, type AdminEvent } from "../lib/admin.js";
+import { useEventMutations, useAdminEvents, useAdminEventRoster, type AdminEvent } from "../api/admin.js";
 import { FormField, ConfirmDelete } from "./common.js";
 
 export function EventsAdmin() {

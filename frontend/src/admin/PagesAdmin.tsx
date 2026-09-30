@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { usePageMutations, useAdminPage } from "../lib/admin.js";
+import { usePageMutations, useAdminPage } from "../api/admin.js";
 import { Card, FormField } from "./common.js";
 
 export function PagesAdmin() {

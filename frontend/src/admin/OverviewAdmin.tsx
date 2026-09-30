@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ORDER_STATUS_RU } from "@club/shared";
 import { mono, label, action, actionGhost, field, Panel, PanelTitle, Pill, Row, Stat } from "./ui.js";
-import { useOverview, useAdminOrders, useMembers, useMemberMutations, adminReq, type Member } from "../lib/admin.js";
+import { useOverview, useAdminOrders, useMembers, useMemberMutations, adminReq, type Member } from "../api/admin.js";
 import { MemberModal } from "./MembersAdmin.js";
 import { type Section } from "./common.js";
 

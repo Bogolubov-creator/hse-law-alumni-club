@@ -1,5 +1,5 @@
 import { mono, label, action, Panel, PanelTitle, Row, Stat } from "./ui.js";
-import { usePodcastSubs } from "../lib/admin.js";
+import { usePodcastSubs } from "../api/admin.js";
 
 export function PodcastSubs() {
   const q = usePodcastSubs();

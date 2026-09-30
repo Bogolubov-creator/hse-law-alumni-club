@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAnalytics, useSystemHealth, type AnalyticsRange } from "../lib/admin.js";
+import { useAnalytics, useSystemHealth, type AnalyticsRange } from "../api/admin.js";
 import { isMirror } from "../lib/public-url.js";
 import "./dashboard.css";
 

@@ -9,9 +9,16 @@
 - `frontend` – React и Vite; `backend` – Fastify; `packages/shared` – общие
   модели и расчёты; `packages/server-auth` – серверные Argon2-хеши; `scripts` –
   миграции, bootstrap, управление сотрудниками и резервные копии.
+- Серверные маршруты и логика области находятся в `backend/src/modules`;
+  общие SQL-механизмы – в `backend/src/db`. Компоненты функции интерфейса
+  находятся в `frontend/src/features`, общие элементы – в `components` и `layouts`.
+- Тесты и фикстуры находятся в `tests` соответствующего пакета, вне `src`.
+  Docker-файлы собраны в `deploy`. В `scripts` остаются команды оператора;
+  помощники, проверки и диагностика выделены в `lib`, `checks`, `diagnostics`.
+  Полная карта – `docs/development/repository-structure.md`.
 - Продакшен собирается через Docker Compose с PostgreSQL, Fastify и Caddy.
-  Directus исключён по решению владельца; основание – `docs/cms-options.md`.
-  Источник операционных команд и порядка отката – `docs/deploy-runbook.md`.
+  Directus исключён по решению владельца; основание – `docs/decisions/cms-options.md`.
+  Источник операционных команд и порядка отката – `docs/operations/deploy-runbook.md`.
 - Порт API не публикуется на хосте: входящие запросы и проверка IP проходят
   через Caddy. Не добавляй `ports` для API без пересмотра границы доверия.
 - Для интерфейса соблюдай решения `DESIGN.md`. Не перезаписывай его генератором.
@@ -63,13 +70,13 @@ pnpm install --frozen-lockfile
 pnpm -r build
 pnpm -r test
 pnpm audit --prod --audit-level high
-node scripts/check-web-build.mjs frontend/dist
+node scripts/checks/check-web-build.mjs frontend/dist
 docker compose --env-file .env.example config --quiet
-bash scripts/test-integration.sh
+bash scripts/tests/test-integration.sh
 ```
 
 Для изменённых shell-скриптов дополнительно используй `bash -n`. Для видимых
 изменений проверь сценарий в браузере на десктопе и телефоне. Результаты CI
 сверяй с точным коммитом PR. Перед выпуском проверь резервную копию, план
 отката и целевой контур по runbook. Для финальных образов используй
-`bash scripts/check-runtime-images.sh API_IMAGE BOOTSTRAP_IMAGE WEB_IMAGE`.
+`bash scripts/checks/check-runtime-images.sh API_IMAGE BOOTSTRAP_IMAGE WEB_IMAGE`.

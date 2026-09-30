@@ -1,4 +1,4 @@
-import { mirrorPodcastDemo } from "./mirror-podcast-demo.js";
+import { mirrorPodcastDemo } from "../features/podcasts/mirror-podcast-demo.js";
 /**
  * Статические ответы «API» для публичного зеркала на GitHub Pages.
  * Витрина + демо ЛК + демо админки без бэкенда (сиды и фикстуры).

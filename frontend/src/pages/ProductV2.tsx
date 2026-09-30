@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useProducts } from "../lib/cart.js";
+import { useProducts } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
-import { rub } from "../lib/api.js";
-import { V2Shell, pageTitle, mono } from "../v2/Shell.js";
-import SizeDialog from "../components/MerchSelection.js";
-import ProductImage from "../components/ProductImage.js";
+import { rub } from "../api/api.js";
+import { V2Shell, pageTitle, mono } from "../layouts/Shell.js";
+import SizeDialog from "../features/catalog/MerchSelection.js";
+import ProductImage from "../features/catalog/ProductImage.js";
 import { action } from "../styles/primitives.js";
 
 export default function ProductV2() {

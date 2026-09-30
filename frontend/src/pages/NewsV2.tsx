@@ -1,11 +1,11 @@
 import { canonicalNewsUrl, newsSourceLabel } from "@club/shared";
 import "../styles/editorial.css";
-import { ApiError } from "../lib/api.js";
+import { ApiError } from "../api/api.js";
 import { Link, useParams } from "react-router-dom";
-import { useNewsList, useNewsPost, formatNewsDate } from "../lib/queries.js";
+import { useNewsList, useNewsPost, formatNewsDate } from "../api/queries.js";
 import { useHead } from "../lib/title.js";
 import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
-import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../v2/Shell.js";
+import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../layouts/Shell.js";
 import { action } from "../styles/primitives.js";
 
 /**

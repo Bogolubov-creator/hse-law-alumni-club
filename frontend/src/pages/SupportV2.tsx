@@ -1,10 +1,10 @@
 import { isMirror } from "../lib/public-url.js";
-import { requestJson } from "../lib/http.js";
+import { requestJson } from "../api/http.js";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CLUB_OPERATOR } from "@club/shared";
-import { V2Shell, pageTitle } from "../v2/Shell.js";
+import { V2Shell, pageTitle } from "../layouts/Shell.js";
 import { action, actionGhost, field } from "../styles/primitives.js";
 import { useHead } from "../lib/title.js";
 

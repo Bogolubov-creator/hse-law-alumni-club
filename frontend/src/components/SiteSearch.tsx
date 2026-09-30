@@ -1,9 +1,9 @@
 import { useId, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { token, usePrograms } from "../lib/cart.js";
-import { useNewsList, usePodcasts, formatNewsDate } from "../lib/queries.js";
+import { token, usePrograms } from "../stores/cart.js";
+import { useNewsList, usePodcasts, formatNewsDate } from "../api/queries.js";
 import { useQuery } from "@tanstack/react-query";
-import { loadChanges, selectChanges } from "../lib/changes.js";
+import { loadChanges, selectChanges } from "../features/changes/changes.js";
 import { SEARCH_NAV } from "../config/navigation.js";
 import Modal from "./Modal.js";
 

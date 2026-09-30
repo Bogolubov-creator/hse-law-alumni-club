@@ -7,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
  * staged-сценарии создают тестовые заявки: запускать их только на изолированном стенде.
  */
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./tests/e2e",
   // Архивные staged-сценарии привязаны к прежнему стенду и запускаются только явно.
   testIgnore: ["**/live-stack.spec.ts", ...(process.env.E2E_INCLUDE_STAGED === "true" ? [] : ["**/staged-*.spec.ts"])],
   timeout: 30_000,

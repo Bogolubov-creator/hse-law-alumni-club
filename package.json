@@ -15,7 +15,7 @@
     "up": "docker compose up -d --build",
     "down": "docker compose down",
     "logs": "docker compose logs -f",
-    "lint": "eslint backend/src frontend/src packages scripts/src"
+    "lint": "eslint backend/src backend/tests frontend/src frontend/tests/unit packages scripts/src scripts/tests/unit"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

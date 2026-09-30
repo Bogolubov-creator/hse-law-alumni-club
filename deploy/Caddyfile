@@ -58,7 +58,7 @@
 			X-Content-Type-Options "nosniff"
 			Referrer-Policy "strict-origin-when-cross-origin"
 			# X-Frame-Options намеренно нет: Mini App Telegram встраивает сайт;
-			# фреймы режет CSP frame-ancestors (см. frontend/Caddyfile.static).
+			# фреймы режет CSP frame-ancestors (см. deploy/web.Caddyfile).
 			# CSP: Vite 'self'; React style=; обложки https; RuTube frame;
 			# connect same-origin (/api: pageviews, auth). ЮKassa – top-level
 			# redirect, не iframe. Дублирует static-контейнер – одинаковые CSP OK.

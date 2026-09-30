@@ -1,14 +1,14 @@
-import SaveMaterial from "../components/SaveMaterial.js";
-import { programStart } from "../lib/program-date.js";
+import SaveMaterial from "../features/reading/SaveMaterial.js";
+import { programStart } from "../features/catalog/program-date.js";
 import { useState, type CSSProperties } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ApiError, FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../lib/api.js";
-import { useProgram, useMemberDiscount, useCartMutations } from "../lib/cart.js";
+import { ApiError, FORMAT_LABEL, rub, type ProgramModule, type ProgramTeacher } from "../api/api.js";
+import { useProgram, useMemberDiscount, useCartMutations } from "../stores/cart.js";
 import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
 import { HeroPicture } from "../components/HeroPicture.js";
 import { mediaUrl } from "../lib/public-url.js";
-import { V2Shell, mono, disp, pageTitle } from "../v2/Shell.js";
+import { V2Shell, mono, disp, pageTitle } from "../layouts/Shell.js";
 import { action, actionGhost } from "../styles/primitives.js";
 import "../styles/program.css";
 

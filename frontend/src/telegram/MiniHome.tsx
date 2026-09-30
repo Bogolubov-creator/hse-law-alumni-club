@@ -1,15 +1,15 @@
-import ChangesPreview from "../components/ChangesPreview.js";
-import AlumniOpportunities from "../components/AlumniOpportunities.js";
+import ChangesPreview from "../features/changes/ChangesPreview.js";
+import AlumniOpportunities from "../features/cabinet/AlumniOpportunities.js";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { V2Shell } from "../v2/Shell.js";
+import { V2Shell } from "../layouts/Shell.js";
 import { publicUrl, isMirror } from "../lib/public-url.js";
-import { requestJson } from "../lib/http.js";
-import { usePrograms, token } from "../lib/cart.js";
+import { requestJson } from "../api/http.js";
+import { usePrograms, token } from "../stores/cart.js";
 import { useTelegramApp } from "./bridge.js";
-import { apiGet } from "../lib/api.js";
-import { fmtEventDate, type ClubEvent } from "../lib/events.js";
+import { apiGet } from "../api/api.js";
+import { fmtEventDate, type ClubEvent } from "../features/events/events.js";
 import { useHead } from "../lib/title.js";
 
 export default function MiniHome() {
