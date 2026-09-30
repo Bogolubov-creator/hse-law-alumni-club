@@ -59,15 +59,13 @@
 ```bash
 git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club
 cd club
-git checkout --detach origin/codex/dependency-refresh-2026-09-30
 pnpm install --frozen-lockfile
 pnpm -r build
 pnpm -r test
 ```
 
-До объединения PR `main` содержит прежний стек: команда checkout выбирает
-ветку с текущей структурой и обновлёнными зависимостями. Проверенные ревизии,
-актуальные PR и доказательства – в журнале состояния.
+Команды используют основную ветку `main`. Проверенные ревизии, результаты CI
+и сведения о локальном стенде – в [журнале состояния](docs/project-state.md).
 Ожидаемый результат – код завершения `0` у каждой команды. Тесты, требующие
 PostgreSQL, запускаются отдельно. Для работающего сайта продолжите по
 [локальному запуску](#локальный-запуск), для серверной репетиции – по
@@ -269,8 +267,8 @@ Docker Hub и npm. Node.js и pnpm на хост для Compose-деплоя н�
 
 Во всех вариантах выбирается полный `REVIEWED_COMMIT`, проверенный в CI и
 согласованный для установки. Текущие PR и проверенные SHA – в
-[журнале состояния](docs/project-state.md). До объединения PR `main` содержит
-предыдущий стек. Существующий `/opt/club` обновляют по [runbook](docs/deploy-runbook.md).
+[журнале состояния](docs/project-state.md). Существующий `/opt/club` обновляют
+по [runbook](docs/deploy-runbook.md).
 
 ### Вариант А: ключ развёртывания
 
