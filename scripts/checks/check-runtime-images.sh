@@ -42,6 +42,19 @@ for (const binary of ['/usr/local/bin/npm', '/usr/local/bin/corepack', '/usr/loc
 }
 console.log('Node runtime: только скомпилированные собственные модули и рабочие зависимости');
 JS
+  docker run --rm -i --network none --read-only --cap-drop ALL \
+    --security-opt no-new-privileges --entrypoint node "$image" --input-type=module <<'JS' | node scripts/checks/check-compiled-comments.mjs --stdin
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+function output(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const file = join(directory, entry.name);
+    if (entry.isDirectory()) output(file);
+    else process.stdout.write(JSON.stringify({ file, text: readFileSync(file, 'utf8') }) + '\n');
+  }
+}
+for (const root of ['/app/dist', '/app/node_modules/@club/shared/dist', '/app/node_modules/@club/server-auth/dist']) output(root);
+JS
  done
  docker run --rm --network none --read-only --cap-drop ALL \
    --security-opt no-new-privileges --entrypoint sh "$3" -euc '
