@@ -1,4 +1,4 @@
-name: CI
+name: Security & CI
 
 # Проверка на каждый push в main и на каждый PR: воспроизводимая установка
 # (frozen-lockfile ловит дрейф pnpm-lock.yaml), сборка всех пакетов (= typecheck

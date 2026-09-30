@@ -2,6 +2,8 @@
 
 **Сообщество выпускников · Мероприятия · Личный кабинет**
 
+[![Security & CI – main](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush)
+
 [![TypeScript 7](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/) [![Node.js 24 LTS](https://img.shields.io/badge/Node.js-24_LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/docs/latest-v24.x/api/) [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/) [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/) [![Fastify 5](https://img.shields.io/badge/Fastify-5-000000?logo=fastify&logoColor=white)](https://fastify.dev/docs/latest/) [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/16/) [![Caddy 2](https://img.shields.io/badge/Caddy-2-1F88C0?logo=caddy&logoColor=white)](https://caddyserver.com/docs/) [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/) [![Ubuntu 24.04 LTS](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://documentation.ubuntu.com/server/)
 
 Сайт объединяет новости и мероприятия Клуба, каталог ДПО и мерча, личный кабинет
@@ -12,8 +14,9 @@
 в изолированном Docker-стеке и на Ubuntu. Отдельная CMS-подписка не требуется.
 Стенды используют синтетические данные.
 Публичный запуск не выполнен. Точная версия стенда, завершённые проверки и открытые
-вопросы ведутся в одном [журнале состояния](docs/operations/project-state.md). Бейджи выше
-показывают используемые технологии, а не результат проверки безопасности.
+вопросы ведутся в одном [журнале состояния](docs/operations/project-state.md).
+Бейдж `Security & CI` показывает результат проверок ветки `main`;
+состав проверок и пороги – в [разделе «Безопасность»](#безопасность).
 
 ## Оглавление
 
@@ -551,6 +554,23 @@ Compose с новыми томами. Проверяются данные, фа�
 
 ## Безопасность
 
+Бейдж `Security & CI` связан с последним запуском workflow для `main` после push.
+Зелёный статус появляется, когда все задания завершились успешно, включая:
+
+| Проверка | Критерий успешного завершения |
+|---|---|
+| Секреты | Gitleaks завершился без срабатываний правил репозитория |
+| npm-зависимости приложения и инструментов | Аудит прошёл с порогом HIGH/CRITICAL |
+| Go-зависимости Caddy | `govulncheck` не обнаружил достижимых известных уязвимостей |
+| Пять рабочих образов | Trivy не обнаружил HIGH/CRITICAL в API, bootstrap, web, Caddy и PostgreSQL |
+| Состав выпуска | В конечных образах нет собственных исходников, тестов, env, sourcemap и демо-кода |
+| TLS и HTTP-периметр | Тесты сертификата, reload, CSP, proxy headers и лимитов прошли |
+| Права доступа | Серверные, SQL- и браузерные тесты ролей прошли |
+
+Ссылки на логи и проверенный SHA доступны по нажатию на бейдж.
+Команды и границы автоматических проверок – в [документе о безопасности](docs/development/security.md)
+и [описании тестов](docs/development/testing.md).
+
 Цены, права и операции с данными проверяются сервером. Хеши паролей, секреты JWT,
 пароли БД и ключи интеграций доступны только серверным компонентам. Вебхук ЮKassa
 проверяет отправителя, затем статус и сумму через API провайдера.
@@ -594,7 +614,7 @@ bash scripts/tests/test-integration.sh
 ## GitHub, CI и выпуск версий
 
 Изменения готовятся в небольших ветках `codex/...` и PR. Основной workflow –
-[CI](.github/workflows/ci.yml); результаты всегда сверяются с SHA проверяемого коммита.
+[Security & CI](.github/workflows/ci.yml); результаты всегда сверяются с SHA проверяемого коммита.
 В workflow включены установка по lockfile, линтер, типы, сборка, модульные тесты,
 аудит, PostgreSQL-интеграция и сборка контейнеров с настоящей браузерной цепочкой.
 Наличие шага не подтверждает его успешный запуск: результат берётся из CI нужного SHA.
