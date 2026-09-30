@@ -132,6 +132,9 @@ def run(args):
             check('max-age=' in headers.get('strict-transport-security', ''), 'Потерян HSTS')
             check(headers.get('cache-control') == 'no-cache', 'SPA кэшируется')
             check('x-frame-options' not in headers, 'Telegram embedding заблокирован')
+            while request('/api/ready')[0] != 200:
+                check(time.monotonic() < deadline, 'HTTP-фикстура не стала готова за 60 секунд')
+                time.sleep(0.25)
             for path in ['/admin', '/lk', '/v2/cart']:
                 status, headers, body = request(path)
                 check(status == 200 and body == html and headers.get('cache-control') == 'no-cache', 'SPA route: ' + path)
