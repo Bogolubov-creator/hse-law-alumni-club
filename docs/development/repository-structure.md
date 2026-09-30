@@ -55,9 +55,10 @@ HTTP-клиенты и запросы лежат в `api`, React-хуки – в
 доступность. Стили находятся в `styles`; CSS конкретного компонента может лежать
 рядом с ним. Изображения, шрифты и файлы PWA находятся в `public`.
 
-Маршруты определяет [App.tsx](../../frontend/src/App.tsx). Суффикс `V2` в именах
-страниц не означает отдельный старый интерфейс: `HomeV2` «Фасад и зал» и `LkV2`
-составляют основной сайт. Перенос файлов сохраняет выбранный дизайн и URL.
+Маршруты определяет [App.tsx](../../frontend/src/App.tsx). Имена страниц описывают
+назначение: `Home`, `Cabinet`, `Profile`, `Cart`, `MembershipAuth`. Общая оболочка
+сайта – `SiteShell`, кабинета – `CabinetShell`. Пути `/v2/*` и `/legacy/*`
+перенаправляют старые закладки на действующие страницы.
 
 ## Тесты
 
@@ -81,7 +82,7 @@ HTTP-клиенты и запросы лежат в `api`, React-хуки – в
 конфигурация Caddy, Compose override изолированного стенда и systemd units.
 Корневой `docker-compose.yml` остаётся основной точкой сборки стека.
 
-В корне `scripts` остаются команды оператора: `setup-ubuntu.sh`, `preflight.sh`,
+В корне `scripts` остаются команды оператора: `install.sh`, `setup-ubuntu.sh`, `preflight.sh`,
 `deploy.sh`, `backup.sh`, `restore.sh`, `monitor.sh`, `migrate.sh` и
 `apply-indexes.sh`. Вспомогательные shell/Python-функции находятся в `lib`,
 проверки артефактов – в `checks`, измерения – в `diagnostics`, нативный bootstrap,

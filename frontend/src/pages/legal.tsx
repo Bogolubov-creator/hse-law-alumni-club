@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useHead } from "../lib/title.js";
-import { V2Shell, mono, disp } from "../layouts/Shell.js";
+import { SiteShell, mono, disp } from "../layouts/Shell.js";
 
 /** Реквизиты оператора общие для политики и согласия поддержки. */
 import { CLUB_OPERATOR as OWNER } from "@club/shared";
@@ -15,7 +15,7 @@ function LegalShell({ title, updated, children }: { title: string; updated: stri
     noindex: true,
   });
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" style={{ maxWidth: 820, margin: "0 auto", padding: "48px var(--page-gutter) 0", fontSize: "var(--t-body)", lineHeight: 1.7 }}>
         {import.meta.env.VITE_LOCAL_REVIEW === "true" && <p role="note" className="club-support-note">Проект юридических документов. Оператор определён. Размещение данных и перечень сервисов требуют подтверждения перед публикацией. Не отправляйте реальные персональные данные на этот стенд.</p>}
         <h1 style={{ ...disp, fontWeight: 800, fontSize: "var(--t-h2)", lineHeight: 1.14, margin: 0 }}>{title}</h1>
@@ -27,7 +27,7 @@ function LegalShell({ title, updated, children }: { title: string; updated: stri
           {children}
         </div>
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }
 

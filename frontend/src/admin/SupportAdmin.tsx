@@ -2,7 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminReq } from "../api/admin.js";
 import { action, actionGhost, field } from "../styles/primitives.js";
-import { topics, type Ticket } from "../pages/SupportV2.js";
+import { topics, type Ticket } from "../pages/Support.js";
 import { mono, label, Panel, PanelTitle, Pill, Row } from "./ui.js";
 
 type BotStatus = {

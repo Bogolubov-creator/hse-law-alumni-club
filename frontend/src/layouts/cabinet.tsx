@@ -6,14 +6,6 @@ export { label, field, action, actionGhost } from "../styles/primitives.js";
 import { publicUrl } from "../lib/public-url.js";
 import "../styles/shell.css";
 
-/**
- * Общие примитивы кабинета v2 (DESIGN.md): плотность 7, движения нет,
- * один акцент на все действия. Вынесены из LkV2, чтобы профиль и кабинет
- * говорили одним языком, а не расходились при первой же правке.
- *
- * Внешний контур живёт в Shell.tsx – у него другой режим и другая шапка.
- */
-
 export const TOKEN_KEY = "club_token";
 
 /** Строка удостоверения: подпись слева, значение справа, разделитель – линия. */
@@ -73,7 +65,6 @@ const NAV = [
   { to: "/lk/profile", label: "профиль" },
 ];
 
-/** Шапка кабинета: одна на все приватные экраны v2. */
 export function CabinetShell({ active, onLogout, children }: { active: "lk" | "profile"; onLogout: () => void; children: ReactNode }) {
   const { pathname } = useLocation();
   return (

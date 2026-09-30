@@ -281,7 +281,7 @@ test('общий каталог достижений целиком и в одн
   await expect(page.locator(`[data-achievement="common_${ACH_N - 1}"]`)).toBeVisible();
   await page.getByRole('button', { name: `Все достижения (${ACH_N})`, exact: true }).click();
   await expect(page.locator('[data-achievement]')).toHaveCount(ACH_N);
-  await page.screenshot({ path: `/Users/macbook/alumni-staged-evidence/achievements-${info.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: info.outputPath(`achievements-${info.project.name}.png`), fullPage: true });
 });
 
 test('из кабинета доступны все разделы клуба и возврат из новостей', async ({ page }) => {

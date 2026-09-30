@@ -1,10 +1,7 @@
 import { aggregate } from "./data-commands.js";
 import { data } from "./data.js";
 
-/**
- * Агрегатные count/sum на стороне Directus/Postgres – считает БД и возвращает
- * число, не таща тысячи строк в API ради .length. Под масштаб (тысячи выпускников).
- */
+/** Агрегаты вычисляет PostgreSQL, чтобы не загружать все записи в память API. */
 export async function count(collection: string, filter?: object): Promise<number> {
   const r = (await data.request(
     (aggregate as any)(collection, { aggregate: { count: "*" }, ...(filter ? { query: { filter } } : {}) }),

@@ -4,12 +4,10 @@ import { defineConfig, devices } from "@playwright/test";
  * E2E против ЖИВОГО локального стека (docker compose up, http://localhost).
  * Стек не поднимается автоматически – тесты предполагают уже запущенный сайт
  * (как и ручные проверки). Запуск: pnpm --filter @club/web e2e
- * staged-сценарии создают тестовые заявки: запускать их только на изолированном стенде.
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  // Архивные staged-сценарии привязаны к прежнему стенду и запускаются только явно.
-  testIgnore: ["**/live-stack.spec.ts", ...(process.env.E2E_INCLUDE_STAGED === "true" ? [] : ["**/staged-*.spec.ts"])],
+  testIgnore: ["**/live-stack.spec.ts"],
   timeout: 30_000,
   retries: 0, // нестабильность расследуется, автоматический повтор её не скрывает
   fullyParallel: true,

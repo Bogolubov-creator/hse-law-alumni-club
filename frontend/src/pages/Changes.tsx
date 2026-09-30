@@ -3,7 +3,7 @@ import SaveMaterial from "../features/reading/SaveMaterial.js";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { V2Shell } from "../layouts/Shell.js";
+import { SiteShell } from "../layouts/Shell.js";
 import ChangesStatus from "../features/changes/ChangesStatus.js";
 import { changeDate, loadChanges, selectChanges, type LawChange } from "../features/changes/changes.js";
 import { useHead } from "../lib/title.js";
@@ -74,7 +74,7 @@ export default function Changes() {
   }
   const back = () => navigate(listUrl);
 
-  return <V2Shell><main id="main" className={`changes-page${id ? " changes-page--reading" : ""}`}>
+  return <SiteShell><main id="main" className={`changes-page${id ? " changes-page--reading" : ""}`}>
     <header className="changes-head">
       <div><p className="changes-eyebrow">Правовая библиотека клуба</p>
         <h1>Изменения<br className="changes-title-break" /> в праве</h1>
@@ -162,5 +162,5 @@ export default function Changes() {
         : <div className="changes-reader-hint"><span aria-hidden="true">§</span><h2>Выберите материал</h2><p>Откройте справку или обзор из списка.</p></div>}
       </section>
     </div>}
-  </main></V2Shell>;
+  </main></SiteShell>;
 }

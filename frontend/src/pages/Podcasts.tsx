@@ -9,26 +9,15 @@ import { type PodcastItem } from "../api/api.js";
 import { token } from "../stores/cart.js";
 import { usePodcasts } from "../api/queries.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
+import { SiteShell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
 import { action } from "../styles/primitives.js";
-
-/**
- * Подкасты v2 (/podcasts) – выпуски как записи фонотеки: номер и
- * длительность моноширинной колонкой слева, название и плеер справа.
- *
- * Обложки не выносим в крупные плитки: у части выпусков их нет, и сетка
- * распадается на «с картинкой» и «без». Обложка идёт компактной меткой рядом
- * с номером – она уточняет запись, а не заменяет её.
- *
- * SEO: noindex, canonical на v1 – разметку PodcastSeries отдаёт та страница.
- */
 
 const label = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
   textTransform: "none" as const, color: "var(--c-text-3)",
 };
 
-export default function PodcastsV2() {
+export default function Podcasts() {
   useHead({
     title: "Подкасты клуба",
     description: "Подкасты клуба выпускников факультета права Вышки: разговоры с выпускниками, преподавателями и практиками права.",
@@ -49,7 +38,7 @@ export default function PodcastsV2() {
   const items = data?.items ?? [];
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main">
         <ShowcaseHead
           photo={{ src: "assets/photos/hall-audience.jpg", alt: "Аудитория факультета права во время лекции", side: "left" }}
@@ -116,6 +105,6 @@ export default function PodcastsV2() {
         )}
         </div>
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

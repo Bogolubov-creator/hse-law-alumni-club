@@ -15,21 +15,7 @@ import { BlankField, mono, disp } from "../layouts/Shell.js";
 import { Mark } from "../layouts/Mark.js";
 import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../layouts/cabinet.js";
 
-/**
- * Личный кабинет v2. Режим отличается от внешнего контура (DESIGN.md):
- * плотность 7, движения нет – только состояния. Здесь действия совершаются
- * десятками раз, и анимация делает их медленнее, а не приятнее.
- *
- * Язык тот же – реестр: данные моноширинные, записи разделяются линиями,
- * а не карточками. Сигнатура «поле бланка» ложится буквально: карточка
- * выпускника и есть удостоверение, где под чертой подписано, что в неё вписано.
- *
- * Цвет: один акцент на страницу (охра) для всех действий. Зелёный и кармин –
- * только текст статуса и только через -text-токены: заливочные тона не
- * проходят AA на мелкой моно-подписи.
- *
- * Живёт на /lk рядом со старым кабинетом, чтобы их можно было сравнить.
- */
+/** Статусы используют text-токены: заливочные цвета не дают нужный контраст мелкому тексту. */
 
 /* ── Вход ─────────────────────────────────────────────────────────── */
 
@@ -612,7 +598,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   );
 }
 
-export default function LkV2() {
+export default function Cabinet() {
   useHead({ title: "Личный кабинет", noindex: true });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [pending, setPending] = useState<AlumniBrief | null>(null);

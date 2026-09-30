@@ -1,11 +1,3 @@
-/**
- * Витрина ДПО (/dpo): атмосферный мачта-блок и лаконичные цветовые моменты.
- * Переводит ритм лендинга dpo-pravo-hse (синий veil + золотой CTA) в токены клуба:
- * охра = действие, HSE blue = институциональный акцент, без чужой синей заливки CTA.
- *
- * Motion: один вход мачты + hover на CTA. Частотный гейт (emil), не perpetual micro-motion.
- */
-
 .club-dpo-vitrine {
   max-width: none;
   margin: 0;
@@ -52,12 +44,6 @@
   object-fit: cover;
   /* Шире кадра, чем колонка: cover режет бока, не верх. top – не режем голову ещё раз. */
   object-position: 40% 0%;
-}
-
-/* legacy hooks – atmosphere/veil больше не в разметке */
-.club-dpo-masthead__atmosphere,
-.club-dpo-masthead__veil {
-  display: none;
 }
 
 .club-dpo-masthead h1 {
@@ -290,7 +276,6 @@
   }
   .club-dpo-loading__bar:nth-child(2) { animation-delay: 80ms; }
   .club-dpo-loading__bar:nth-child(3) { animation-delay: 160ms; }
-  to { transform: translateY(0); }
 }
 
 @keyframes club-dpo-pulse {

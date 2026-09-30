@@ -17,30 +17,27 @@ import { VisionPanel } from "./components/Vision.js";
 import { ErrorBoundary, PageLoader } from "./components/ErrorBoundary.js";
 import { clearToken } from "./stores/cart.js";
 
-// Канон: публичное лицо – бывший v2. /v2/* и /legacy/* – только редиректы на канон.
-// Телефон – та же адаптивная вёрстка (решение заказчика 12.09), отдельного «приложения» нет.
-
-const SupportV2 = lazy(() => import("./pages/SupportV2.js"));
-const SupportConsent = lazy(() => import("./pages/SupportV2.js").then(m => ({ default: m.SupportConsent })));
-const HomeV2 = lazy(() => import("./pages/HomeV2.js"));
-const DpoV2 = lazy(() => import("./pages/DpoV2.js"));
-const ProductV2 = lazy(() => import("./pages/ProductV2.js"));
-const MerchV2 = lazy(() => import("./pages/MerchV2.js"));
-const ProgramV2 = lazy(() => import("./pages/ProgramV2.js"));
-const NewsV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsV2 })));
-const NewsPostV2 = lazy(() => import("./pages/NewsV2.js").then((m) => ({ default: m.NewsPostV2 })));
-const EventsV2 = lazy(() => import("./pages/EventsV2.js"));
+const Support = lazy(() => import("./pages/Support.js"));
+const SupportConsent = lazy(() => import("./pages/Support.js").then(m => ({ default: m.SupportConsent })));
+const Home = lazy(() => import("./pages/Home.js"));
+const Dpo = lazy(() => import("./pages/Dpo.js"));
+const Product = lazy(() => import("./pages/Product.js"));
+const Merch = lazy(() => import("./pages/Merch.js"));
+const Program = lazy(() => import("./pages/Program.js"));
+const News = lazy(() => import("./pages/News.js").then((m) => ({ default: m.News })));
+const NewsPost = lazy(() => import("./pages/News.js").then((m) => ({ default: m.NewsPost })));
+const Events = lazy(() => import("./pages/Events.js"));
 const PodcastEpisode = lazy(() => import("./pages/PodcastEpisode.js"));
-const PodcastsV2 = lazy(() => import("./pages/PodcastsV2.js"));
+const Podcasts = lazy(() => import("./pages/Podcasts.js"));
 const Saved = lazy(() => import("./pages/Saved.js"));
 const Changes = lazy(() => import("./pages/Changes.js"));
-const JoinV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.JoinV2 })));
-const ForgotV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ForgotV2 })));
-const ResetV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ResetV2 })));
-const ConfirmEmailV2 = lazy(() => import("./pages/JoinAuthV2.js").then((m) => ({ default: m.ConfirmEmailV2 })));
-const CartV2 = lazy(() => import("./pages/CartV2.js"));
-const LkV2 = lazy(() => import("./pages/LkV2.js"));
-const ProfileV2 = lazy(() => import("./pages/ProfileV2.js"));
+const Join = lazy(() => import("./pages/MembershipAuth.js").then((m) => ({ default: m.Join })));
+const ForgotPassword = lazy(() => import("./pages/MembershipAuth.js").then((m) => ({ default: m.ForgotPassword })));
+const ResetPassword = lazy(() => import("./pages/MembershipAuth.js").then((m) => ({ default: m.ResetPassword })));
+const ConfirmEmail = lazy(() => import("./pages/MembershipAuth.js").then((m) => ({ default: m.ConfirmEmail })));
+const Cart = lazy(() => import("./pages/Cart.js"));
+const Cabinet = lazy(() => import("./pages/Cabinet.js"));
+const Profile = lazy(() => import("./pages/Profile.js"));
 const Privacy = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Privacy })));
 const Confidential = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Confidential })));
 const Requisites = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Requisites })));
@@ -53,7 +50,7 @@ function StripV2Prefix() {
   return <Navigate to={`${next}${search}${hash}`} replace />;
 }
 
-/** Soft-cutover: /legacy/... → канон без старого UI (файлы pages/* legacy – hard-remove позже). */
+/** Сохраняет прежние ссылки вместе с query и hash. */
 function StripLegacyPrefix() {
   const { pathname, search, hash } = useLocation();
   const next = pathname === "/legacy" || pathname === "/legacy/" ? "/" : pathname.replace(/^\/legacy/, "") || "/";
@@ -98,33 +95,33 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <RouteScroll />
         <Routes>
-          <Route path="/" element={isMiniApp() || pwa ? <MiniHome /> : <HomeV2 />} />
+          <Route path="/" element={isMiniApp() || pwa ? <MiniHome /> : <Home />} />
           <Route path="/tg" element={<MiniHome />} />
-          <Route path="/support" element={<SupportV2 />} />
+          <Route path="/support" element={<Support />} />
           <Route path="/support/consent" element={<SupportConsent />} />
-          <Route path="/dpo" element={<DpoV2 />} />
-          <Route path="/dpo/:slug" element={<ProgramV2 />} />
-          <Route path="/merch" element={<MerchV2 />} />
-          <Route path="/merch/:slug" element={<ProductV2 />} />
-          <Route path="/cart" element={<CartV2 />} />
-          <Route path="/news" element={<NewsV2 />} />
-          <Route path="/news/:slug" element={<NewsPostV2 />} />
-          <Route path="/events" element={<EventsV2 />} />
-          <Route path="/events/:eventId" element={<EventsV2 />} />
-          <Route path="/podcasts" element={<PodcastsV2 />} />
+          <Route path="/dpo" element={<Dpo />} />
+          <Route path="/dpo/:slug" element={<Program />} />
+          <Route path="/merch" element={<Merch />} />
+          <Route path="/merch/:slug" element={<Product />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/news/:slug" element={<NewsPost />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/events/:eventId" element={<Events />} />
+          <Route path="/podcasts" element={<Podcasts />} />
           <Route path="/saved" element={<Saved />} />
           <Route path="/changes" element={<Changes />} />
           <Route path="/changes/:id" element={<Changes />} />
           <Route path="/podcasts/:id" element={<PodcastEpisode />} />
-          <Route path="/join" element={<JoinV2 />} />
-          <Route path="/forgot" element={<ForgotV2 />} />
-          <Route path="/reset" element={<ResetV2 />} />
-          <Route path="/confirm" element={<ConfirmEmailV2 />} />
+          <Route path="/join" element={<Join />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/reset" element={<ResetPassword />} />
+          <Route path="/confirm" element={<ConfirmEmail />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/confidential" element={<Confidential />} />
           <Route path="/requisites" element={<Requisites />} />
-          <Route path="/lk" element={<LkV2 />} />
-          <Route path="/lk/profile" element={<ProfileV2 />} />
+          <Route path="/lk" element={<Cabinet />} />
+          <Route path="/lk/profile" element={<Profile />} />
           <Route path="/admin/*" element={<AdminApp />} />
 
           <Route path="/v2" element={<StripV2Prefix />} />

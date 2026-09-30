@@ -107,7 +107,7 @@ export async function request(desc: DataCommand): Promise<any> {
       const row: Row = { id: randomUUID(), created_at: new Date().toISOString(), ...desc.data };
       // Уникальность номера заявки: в БД это UNIQUE-индекс, роут рассчитывает на отказ.
       if (desc.collection === "orders" && table("orders").some((r) => r.number === row.number)) {
-        throw new Error("duplicate key value violates unique constraint (orders.number)");
+        throw Object.assign(new Error("duplicate key value violates unique constraint (orders.number)"), { code: "23505" });
       }
       table(desc.collection!).push(row);
       return { ...row };

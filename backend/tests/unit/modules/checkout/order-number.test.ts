@@ -2,11 +2,14 @@ import { describe, it, expect } from "vitest";
 import { isUniqueViolation } from "../../../../src/modules/checkout/order-number.js";
 
 describe("isUniqueViolation – ретраить со следующим номером можно только коллизию", () => {
-  it("Directus code RECORD_NOT_UNIQUE → true", () => {
-    expect(isUniqueViolation({ errors: [{ extensions: { code: "RECORD_NOT_UNIQUE" } }] })).toBe(true);
+  it("коллизия PostgreSQL распознаётся независимо от текста ошибки", () => {
+    expect(isUniqueViolation({ code: "23505" })).toBe(true);
+    expect(isUniqueViolation(Object.assign(new Error("Номер занят"), { code: "23505" }))).toBe(true);
   });
-  it("текст постгрес-констрейнта (как в fake-data) → true", () => {
-    expect(isUniqueViolation(new Error("duplicate key value violates unique constraint (orders.number)"))).toBe(true);
+  it("текст без SQLSTATE и другие ограничения не разрешают повтор", () => {
+    expect(isUniqueViolation(new Error("timeout while checking duplicate key"))).toBe(false);
+    expect(isUniqueViolation({ code: "23503", message: "unique constraint" })).toBe(false);
+    expect(isUniqueViolation({ errors: [{ extensions: { code: "RECORD_NOT_UNIQUE" } }] })).toBe(false);
   });
   it("таймаут/сеть → false (не ретраим, иначе дубль заявки)", () => {
     expect(isUniqueViolation(new Error("network timeout"))).toBe(false);

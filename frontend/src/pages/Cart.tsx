@@ -7,23 +7,10 @@ import { useHead } from "../lib/title.js";
 import { rub, type CartLine, type OrderResult } from "../api/api.js";
 import { isMirror } from "../lib/public-url.js";
 import { useCart, useMemberDiscount, useCartMutations, submitOrder, token } from "../stores/cart.js";
-import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../layouts/Shell.js";
+import { SiteShell, ShowcaseHead, mono, disp, pageTitle } from "../layouts/Shell.js";
 import { Mark } from "../layouts/Mark.js";
 import { TELEGRAM_CHANNEL } from "../config/social.js";
 
-/**
- * Корзина v2 (/cart) – заявка в учебный офис на языке реестра.
- *
- * Режим смешанный и это осознанно: оболочка внешняя (V2Shell), потому что
- * корзина – часть публичного пути, а вот сама страница строгая, как опись:
- * движения нет, данные моноширинные, позиции разделяются линиями. На экране,
- * где человек оставляет свои контакты и деньги, украшения мешают.
- *
- * Логика заявки не переизобретается: те же хуки и тот же submitOrder, что и в
- * корзине v1, включая honeypot и правило «доставка только когда есть мерч».
- */
-
-/* Капс-лейблы полей, как у вступления (канон 12.09). */
 const label = {
   ...mono, fontSize: "var(--t-caps)", fontWeight: 600, letterSpacing: "var(--tr-caps)",
   textTransform: "uppercase" as const, color: "var(--c-text-3)",
@@ -35,7 +22,6 @@ const field = {
   fontSize: 16, fontFamily: "inherit",
 };
 
-/* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
 const primary = {
   border: "1px solid var(--c-accent)", background: "var(--c-accent)", color: "var(--c-on-accent)",
   borderRadius: "var(--r-sm)", padding: "13px 22px", fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase" as const, cursor: "pointer",
@@ -98,7 +84,7 @@ export function Submitted({ result }: { result: OrderResult }) {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" style={{ maxWidth: 620, margin: "0 auto", padding: "0 var(--page-gutter)" }}>
         <div style={{ paddingTop: 64 }}>
           <Mark kind="scales" size={44} style={{ color: "var(--c-accent-text)" }} />
@@ -160,13 +146,13 @@ export function Submitted({ result }: { result: OrderResult }) {
           </div>
         </div>
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }
 
 /* ── Корзина ──────────────────────────────────────────────────────── */
 
-export default function CartV2() {
+export default function Cart() {
   useHead({ title: "Корзина", noindex: true });
   const cart = useCart();
   const discount = useMemberDiscount();
@@ -219,7 +205,7 @@ export default function CartV2() {
   if (result) return <Submitted result={result} />;
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
         <ShowcaseHead
           eyebrow="корзина"
@@ -384,6 +370,6 @@ export default function CartV2() {
           </div>
         )}
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

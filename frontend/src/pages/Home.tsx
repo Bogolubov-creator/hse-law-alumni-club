@@ -7,7 +7,7 @@ import { useNewsList, usePage, formatNewsDate } from "../api/queries.js";
 import { apiGet, rub } from "../api/api.js";
 import { token, usePrograms, useMemberDiscount } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, text } from "../layouts/Shell.js";
+import { SiteShell, text } from "../layouts/Shell.js";
 import { HeroPicture } from "../components/HeroPicture.js";
 import { mediaUrl } from "../lib/public-url.js";
 import "../styles/home.css";
@@ -55,7 +55,7 @@ const timeOf = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour
  * строится на фотографии факультета во весь край. Ни eyebrow, ни списков-реестров;
  * HSE Slab 400 с одним курсивным словом, капс-кнопки 4px, движения нет.
  */
-export default function HomeV2() {
+export default function Home() {
   useHead({
     title: "Клуб выпускников факультета права",
     description: "Клуб выпускников факультета права НИУ ВШЭ: встречи, программы ДПО и кабинет участника.",
@@ -90,7 +90,7 @@ export default function HomeV2() {
   const joinTo = authed ? "/lk" : "/join";
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" className="home">
         {/* 1. Фасад: фото во весь край слева, чёрная панель с одной фразой справа */}
         <section className="home-hero" aria-label="Клуб выпускников факультета права">
@@ -258,6 +258,6 @@ export default function HomeV2() {
           </section>
         )}
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

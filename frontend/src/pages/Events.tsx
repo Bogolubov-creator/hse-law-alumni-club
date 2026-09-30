@@ -9,7 +9,7 @@ import { apiGet, apiPost } from "../api/api.js";
 import { token } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
 import { fmtEventDate, type ClubEvent } from "../features/events/events.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
+import { SiteShell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
 import { action, actionGhost, caps } from "../styles/primitives.js";
 
 /** Афиша и прямая страница события используют общие данные и запись. */
@@ -25,7 +25,7 @@ const chip = {
   padding: "4px 9px", borderRadius: 999, border: "1px solid var(--c-line-control)", color: "var(--c-text-2)",
 };
 
-export default function EventsV2() {
+export default function Events() {
   useHead({
     title: "События и встречи клуба",
     description: "Афиша клуба выпускников факультета права Вышки: нетворкинги, лекции и встречи выпусков.",
@@ -120,7 +120,7 @@ export default function EventsV2() {
   );
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main">
         {!eventId && <>
         <ShowcaseHead
@@ -187,7 +187,7 @@ export default function EventsV2() {
         )}
         </div>
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }
 

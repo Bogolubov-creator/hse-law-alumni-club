@@ -5,25 +5,15 @@ import { Link, useParams } from "react-router-dom";
 import { useNewsList, useNewsPost, formatNewsDate } from "../api/queries.js";
 import { useHead } from "../lib/title.js";
 import { useJsonLd, siteOrigin } from "../lib/jsonld.js";
-import { V2Shell, ShowcaseHead, mono, disp, pageTitle } from "../layouts/Shell.js";
+import { SiteShell, ShowcaseHead, mono, disp, pageTitle } from "../layouts/Shell.js";
 import { action } from "../styles/primitives.js";
-
-/**
- * Новости v2: список (/news) и публикация (/news/:slug).
- *
- * Список – хроника реестра: дата моноширинной колонкой слева, заголовок и
- * лид справа, разделитель – линия. Плашки-заглушки «[ новость ]» из v1 не
- * переносятся: под ними нет данных, а рисовать пустое место незачем.
- *
- * SEO: канонические URL /news и /news/:slug (этап 0 cutover).
- */
 
 const label = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
   textTransform: "none" as const, color: "var(--c-text-3)",
 };
 
-export function NewsV2() {
+export function News() {
   useHead({
     title: "Новости клуба",
     description: "Новости клуба выпускников факультета права Вышки: встречи, программы ДПО и обновления портала.",
@@ -34,7 +24,7 @@ export function NewsV2() {
   const list = news.data ?? [];
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main">
         <ShowcaseHead
           photo={{ src: "assets/photos/students-talk.jpg", alt: "Студенты факультета права после церемонии", side: "left" }}
@@ -86,11 +76,11 @@ export function NewsV2() {
         </div>
         </div>
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }
 
-export function NewsPostV2() {
+export function NewsPost() {
   const { slug = "" } = useParams();
   const post = useNewsPost(slug);
   const d = post.data;
@@ -137,7 +127,7 @@ export function NewsPostV2() {
   const paragraphs = (d?.body ?? "").split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" className="club-news-post">
         <nav style={{ ...label, paddingTop: 28 }}>
           <Link to="/news" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← все новости</Link>
@@ -181,6 +171,6 @@ export function NewsPostV2() {
           </article>
         )}
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

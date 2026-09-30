@@ -5,7 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { usePodcasts } from "../api/queries.js";
 import { token } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell } from "../layouts/Shell.js";
+import { SiteShell } from "../layouts/Shell.js";
 import { EpisodePlayer } from "../features/podcasts/EpisodePlayer.js";
 import { VideoEmbed } from "../components/VideoEmbed.js";
 import { PodcastArtwork, PodcastLock } from "../features/podcasts/PodcastArtwork.js";
@@ -22,7 +22,7 @@ export default function PodcastEpisode() {
   const episode = items[index];
   const locked = !!episode && !episode.is_free && !q.data?.subscribed;
   useHead({ title: episode?.title ?? "Выпуск подкаста", noindex: true });
-  return <V2Shell><main id="main" className="episode-page">
+  return <SiteShell><main id="main" className="episode-page">
     <Link to="/podcasts" className="foc episode-back">← Все подкасты</Link>
     <MirrorPodcastDemo />
     {q.isLoading ? <p role="status">Загружаем выпуск…</p> : q.isError ? <div role="alert"><p>Не удалось загрузить выпуск.</p><button className="foc" style={action} onClick={() => q.refetch()}>Повторить</button></div> : !episode ? <h1>Выпуск не найден</h1> : <>
@@ -49,5 +49,5 @@ export default function PodcastEpisode() {
         {items[index + 1] && <Link className="foc" to={`/podcasts/${encodeURIComponent(items[index + 1]!.id)}`}><span>Следующий выпуск →</span>{items[index + 1]!.title}</Link>}
       </nav>
     </>}
-  </main></V2Shell>;
+  </main></SiteShell>;
 }

@@ -1,24 +1,12 @@
 import { readItems } from "../../db/data-commands.js";
 import { data } from "../../db/data.js";
 
-/**
- * Последний использованный порядковый номер заявки за год – через индекс по number
- * (одна строка), без полного скана таблицы orders. Номер: ALU-<год>-<seq 6 цифр>.
- * Дальше orderNumber(year, seq, attempt) даёт seq+1+attempt.
- */
-/**
- * Ошибка создания – это коллизия уникального номера (а не таймаут/сеть)?
- * Ретраить со следующим номером можно ТОЛЬКО такую: при прочих сбоях строка
- * могла записаться на сервере, и повтор создал бы дубль заявки.
- * Directus SDK отдаёт code RECORD_NOT_UNIQUE; на всякий случай ловим и по тексту.
- */
+/** При сетевом сбое заявка могла сохраниться: повтор допустим только после коллизии SQL. */
 export function isUniqueViolation(e: unknown): boolean {
-  const errs = (e as { errors?: { extensions?: { code?: string } }[] })?.errors;
-  if (Array.isArray(errs) && errs.some((x) => x?.extensions?.code === "RECORD_NOT_UNIQUE")) return true;
-  const msg = (e as Error)?.message ?? "";
-  return /record_not_unique|unique constraint|duplicate key|has to be unique/i.test(msg);
+  return typeof e === "object" && e !== null && "code" in e && e.code === "23505";
 }
 
+/** Одна строка по индексу number вместо загрузки всех заявок за год. */
 export async function lastOrderSeq(year: number): Promise<number> {
   const rows = (await data.request((readItems as any)("orders", {
     filter: { number: { _starts_with: `ALU-${year}-` } },

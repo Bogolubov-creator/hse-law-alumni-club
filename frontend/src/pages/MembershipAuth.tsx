@@ -3,26 +3,13 @@ import { Link, useSearchParams } from "react-router-dom";
 import { LEGAL_INTERESTS, MAX_INTERESTS, CLUB_OPERATOR } from "@club/shared";
 import { apiPost } from "../api/api.js";
 import { useHead } from "../lib/title.js";
-import { V2Shell, mono, disp } from "../layouts/Shell.js";
+import { SiteShell, mono, disp } from "../layouts/Shell.js";
 import { caps } from "../styles/primitives.js";
 import { Mark } from "../layouts/Mark.js";
 import { publicUrl } from "../lib/public-url.js";
 
-/**
- * Воронка входа v2: /join – заявка на вступление, /forgot – запрос ссылки,
- * /reset – новый пароль, /confirm – подтверждение почты.
- *
- * Язык описи, как в корзине и профиле: моно-подпись над полем, разделитель –
- * линия. Помечаем не обязательные поля, а необязательные: здесь обязательны
- * почти все, и звёздочки превратились бы в шум.
- *
- * Логика не переизобретается: те же ручки /auth/register, /auth/forgot,
- * /auth/reset, /auth/confirm и тот же honeypot, что в v1.
- */
-
 const TOKEN_KEY = "club_token";
 
-/* Капс-лейблы полей, как у навигации и кнопок (канон 12.09). */
 const label: CSSProperties = {
   ...caps, color: "var(--c-text-3)",
 };
@@ -33,7 +20,6 @@ const input: CSSProperties = {
   fontSize: 15, fontFamily: "inherit",
 };
 
-/* Референс 12.09: действия монохромные – графит и обводка, 4px, капс. */
 const primary: CSSProperties = {
   border: "1px solid var(--c-accent)", background: "var(--c-accent)", color: "var(--c-on-accent)",
   borderRadius: "var(--r-sm)", padding: "13px 22px", minHeight: 44, fontWeight: 600, fontSize: "var(--t-caps)", letterSpacing: "var(--tr-caps)", textTransform: "uppercase",
@@ -65,7 +51,7 @@ function JoinAside() {
 
 function AuthShell({ title, sub, children, aside }: { title: string; sub?: string; children: ReactNode; aside?: ReactNode }) {
   return (
-    <V2Shell>
+    <SiteShell>
     <main id="main" className={aside ? "club-auth club-auth--split" : "club-auth"} style={{ paddingBottom: "calc(40px + var(--cookie-h, 0px))" }}>
       {aside}
       <div className="club-auth__card">
@@ -83,7 +69,7 @@ function AuthShell({ title, sub, children, aside }: { title: string; sub?: strin
       </div>
       </div>
     </main>
-    </V2Shell>
+    </SiteShell>
   );
 }
 
@@ -149,7 +135,7 @@ const EDU_LEVELS = ["бакалавриат", "магистратура", "сп�
 
 /* ── Заявка на вступление ─────────────────────────────────────────── */
 
-export function JoinV2() {
+export function Join() {
   useHead({
     title: "Вступить в клуб",
     description: "Заявка в клуб выпускников факультета права Вышки: проверка выпуска учебным офисом, кабинет и цена выпускника на ДПО.",
@@ -335,7 +321,7 @@ export function JoinV2() {
 
 /* ── Восстановление пароля ────────────────────────────────────────── */
 
-export function ForgotV2() {
+export function ForgotPassword() {
   useHead({ title: "Восстановление пароля", noindex: true });
   const [params] = useSearchParams();
   const returnTo = params.get("next") === "/podcasts#podcast-subscription"
@@ -383,7 +369,7 @@ export function ForgotV2() {
 
 /* ── Новый пароль по ссылке ───────────────────────────────────────── */
 
-export function ResetV2() {
+export function ResetPassword() {
   useHead({ title: "Новый пароль", noindex: true });
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
@@ -442,7 +428,7 @@ export function ResetV2() {
 
 /* ── Подтверждение почты ──────────────────────────────────────────── */
 
-export function ConfirmEmailV2() {
+export function ConfirmEmail() {
   useHead({ title: "Подтверждение почты", noindex: true });
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";

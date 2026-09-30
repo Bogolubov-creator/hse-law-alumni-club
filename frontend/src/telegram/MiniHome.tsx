@@ -3,7 +3,7 @@ import AlumniOpportunities from "../features/cabinet/AlumniOpportunities.js";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { V2Shell } from "../layouts/Shell.js";
+import { SiteShell } from "../layouts/Shell.js";
 import { publicUrl, isMirror } from "../lib/public-url.js";
 import { requestJson } from "../api/http.js";
 import { usePrograms, token } from "../stores/cart.js";
@@ -39,7 +39,7 @@ export default function MiniHome() {
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
-  return <V2Shell><main id="main" className="mini-home">
+  return <SiteShell><main id="main" className="mini-home">
     <section className="mini-welcome">
       <p className="mini-eyebrow">Сообщество выпускников</p>
       <h1>Свои люди.<br /><em>Новые возможности.</em></h1>
@@ -68,5 +68,5 @@ export default function MiniHome() {
     <AlumniOpportunities />
     <section className="mini-learning"><div><h2>Продолжайте учиться</h2><p>{programs.data ? `${programs.data.length} программ факультета права` : programs.isError ? "Каталог временно недоступен" : "Загружаем программы…"}</p><Link to="/dpo" className="foc">Выбрать программу →</Link></div><img src={publicUrl("assets/photos/students-talk.jpg")} width={1083} height={722} alt="Студенты факультета права" loading="lazy" /></section>
     <Link className="mini-shop foc" to="/merch">Вещи с символикой клуба <span>Мерч →</span></Link>
-  </main></V2Shell>;
+  </main></SiteShell>;
 }

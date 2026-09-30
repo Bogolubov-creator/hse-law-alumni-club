@@ -1,6 +1,6 @@
 /**
  * FAQ-бот сайта для Telegram @pravohse_alumni_bot.
- * Те же ответы, что у ClubSupportBot; каталог – из Directus programs.
+ * Ответы общие с ClubSupportBot; каталог загружается из PostgreSQL.
  */
 import { readItems } from "../../db/data-commands.js";
 import {

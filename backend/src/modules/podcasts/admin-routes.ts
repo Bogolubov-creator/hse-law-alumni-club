@@ -68,14 +68,14 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
 
   // ── Подкасты ──────────────────────────────────────────────────────
   // Обложка: только http(s). Аудио: http(s) для внешнего хоста либо UUID
-  // файла Directus (стрим через /api/podcasts/:id/audio).
+  // загруженного файла (стрим через /api/podcasts/:id/audio).
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   const httpUrl = z.url().max(500).refine((u) => /^https?:\/\//i.test(u), "Ссылка должна начинаться с http:// или https://");
 
   const audioRef = z.string().max(500).refine(
     (u) => /^https?:\/\//i.test(u) || UUID_RE.test(u),
-    "Укажите https://…/file.mp3 или UUID файла Directus",
+    "Укажите ссылку на аудио или идентификатор загруженного файла",
   );
 
   const podcastBody = z.object({
