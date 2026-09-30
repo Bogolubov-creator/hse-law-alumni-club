@@ -28,4 +28,9 @@ docs/Отчёт по дизайну*
 
 # Локальные кэши проверок
 **/__pycache__/
+**/.venv/
+**/.pytest_cache/
+**/.ruff_cache/
+*.py[cod]
+*.egg-info/
 **/.vitest/

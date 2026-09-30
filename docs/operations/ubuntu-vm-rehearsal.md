@@ -1,7 +1,7 @@
 # Репетиция native-выпуска в Ubuntu на Mac
 
 Инструкция проверяет выбранный SHA в отдельном локальном контуре Ubuntu 24.04:
-PostgreSQL, migrate, native bootstrap, Fastify, web, Caddy и Mailpit. Реальные
+PostgreSQL, migrate, native bootstrap, FastAPI, web, Caddy и Mailpit. Реальные
 участники, почтовые учётные данные и ключи внешних интеграций здесь не используются.
 
 Native live на локальном Docker прошёл запись desktop/mobile, повторный bootstrap
@@ -251,7 +251,7 @@ SQL-права API можно проверить без вывода credentials
 ```bash
 sudo docker compose --env-file /etc/club/runtime.env \
   -f docker-compose.yml -f /etc/club/qa-compose.yml \
-  run --rm --no-deps -T api node --input-type=module < scripts/tests/test-runtime-permissions.mjs
+  run --rm --no-deps -T api python - < scripts/tests/test-runtime-permissions.py
 ```
 
 Перед повторным deploy измените синтетические настройки/контент и сохраните

@@ -4,14 +4,15 @@
 
 [![Security & CI – main](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush)
 
-[![TypeScript 7](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/) [![Node.js 24 LTS](https://img.shields.io/badge/Node.js-24_LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/docs/latest-v24.x/api/) [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/) [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/) [![Fastify 5](https://img.shields.io/badge/Fastify-5-000000?logo=fastify&logoColor=white)](https://fastify.dev/docs/latest/) [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/16/) [![Caddy 2](https://img.shields.io/badge/Caddy-2-1F88C0?logo=caddy&logoColor=white)](https://caddyserver.com/docs/) [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/) [![Ubuntu 24.04 LTS](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://documentation.ubuntu.com/server/)
+[![TypeScript 7](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/) [![Node.js 24 LTS](https://img.shields.io/badge/Node.js-24_LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/docs/latest-v24.x/api/) [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/) [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/) [![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.14/) [![FastAPI](https://img.shields.io/badge/FastAPI-0.142-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/16/) [![Caddy 2](https://img.shields.io/badge/Caddy-2-1F88C0?logo=caddy&logoColor=white)](https://caddyserver.com/docs/) [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/) [![Ubuntu 24.04 LTS](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://documentation.ubuntu.com/server/)
 
 Сайт объединяет новости и мероприятия Клуба, каталог ДПО и мерча, личный кабинет
 выпускника и панель учебного офиса. Заявки сохраняются на сервере; онлайн-оплата
 включается отдельно при настройке ЮKassa.
 
-**Статус:** переход на Fastify/PostgreSQL и панель офиса реализован и проверен
-в изолированном Docker-стеке и на Ubuntu. Отдельная CMS-подписка не требуется.
+**Стек:** Python/FastAPI, PostgreSQL и React-панель офиса. Отдельная CMS-подписка
+не требуется. Сервер, bootstrap и команды импорта работают на Python; TypeScript
+используется в интерфейсе. Проверки выполняются в изолированном Docker-стеке и CI Ubuntu.
 Стенды используют синтетические данные.
 Публичный запуск не выполнен. Точная версия стенда, завершённые проверки и открытые
 вопросы ведутся в одном [журнале состояния](docs/operations/project-state.md).
@@ -127,23 +128,22 @@ PostgreSQL, запускаются отдельно. Для работающег
 
 ## Технологии и назначение компонентов
 
-Версии ниже взяты из lockfile и конфигурации контейнеров. Диапазон в `package.json`
-может отличаться от фактически установленной версии.
+Версии закреплены в `backend/uv.lock`, `scripts/uv.lock`, `pnpm-lock.yaml`
+и Docker-файлах. Решение о переносе сервера – в [ADR FastAPI](docs/decisions/fastapi-migration.md).
 
 | Компонент | Версия | Назначение |
 |---|---|---|
-| TypeScript | 7.0.2; compiler API 6.0.3 для ESLint | Типы API, интерфейса, общих функций и bootstrap |
-| Node.js / pnpm | 24.21.0 в Docker и CI / 12.8.1 | Выполнение API, сборка и воспроизводимая установка |
-| React / Router / TanStack Query | 19.3.0 / 7.18.4 / 5.104.0 | Интерфейс, маршруты и состояние серверных запросов |
-| Vite / Tailwind CSS | 8.3.1 / 4.3.3 | Сборка статических файлов и стили |
-| Fastify / Zod | 5.12.5 / 4.6.5 | HTTP API и валидация |
-| Helmet / rate-limit / CORS | 13.1.1 / 11.2.0 / 11.3.0 | Заголовки, ограничения запросов и разрешённые источники |
-| multipart / sharp | 10.1.2 / 0.35.5 | Приём медиа, декодирование и выдача аватара 256×256 |
-| pg / Argon2 | 8.23.0 / 0.45.1 | Параметризованные SQL-запросы и проверка хешей паролей |
-| jsonwebtoken | 9.0.3 | Подпись и проверка серверных JWT-сессий |
-| nodemailer / web-push | 10.0.12 / 3.6.7 | SMTP и Web Push при включении интеграций |
-| node-cron / cheerio | 4.6.0 / 1.2.0 | Фоновые расписания и разбор внешних HTML-источников |
-| Sentry | 11.1.0 | Отправка ошибок при заданном DSN |
+| Python / uv | 3.14.7 / 0.12.21 в сборке и CI | API, bootstrap и команды оператора; зависимости закреплены в uv.lock |
+| FastAPI / Uvicorn / Pydantic | 0.142.2 / 0.54.0 / 2.13.5 | HTTP API, ASGI-сервер и проверка запросов |
+| Psycopg / Argon2 / PyJWT | 3.3.6 / 25.1.0 / 2.15.1 | SQL-транзакции, прежние PHC-хеши и JWT-сессии |
+| Pillow / python-multipart | 12.3.0 / 0.0.32 | Приём медиа и аватары 256×256 |
+| HTTPX / Beautiful Soup | 0.28.1 / 4.15.0 | Проверяемые внешние запросы и разбор HTML |
+| aiosmtplib / pywebpush | 5.1.3 / 2.5.0 | SMTP и Web Push |
+| Sentry SDK | 2.71.0 | Только коды ошибок без запросов и персональных данных |
+| TypeScript / Node.js / pnpm | 7.0.2 / 24.21.0 / 12.8.1 | Интерфейс и его сборка; ESLint использует compiler API 6 |
+| React / Router / TanStack Query | 19.3.0 / 7.18.4 / 5.104.0 | Интерфейс, маршруты и серверное состояние |
+| Vite / Tailwind CSS | 8.3.1 / 4.3.3 | Статические файлы и стили |
+| pytest / Ruff | 9.1.1 / 0.16.9 | Проверки Python и PostgreSQL |
 | PostgreSQL | 16.15 | Постоянные данные и транзакции |
 | Caddy | 2.11.4 | HTTPS, прокси и выдача статических файлов |
 | Vitest / Playwright | 5.0.2 / 1.63.0 | Модульные, интеграционные и браузерные проверки |
@@ -165,7 +165,7 @@ Caddy собирается с актуальными CEL и automemlimit; офи
 flowchart LR
   B["Браузер: React SPA"] -->|"HTTP :80 / HTTPS :443"| C["Caddy"]
   C -->|"HTTP web:80, статика"| W["web: Vite dist"]
-  C -->|"HTTP api:3000, /api/*"| A["Fastify API"]
+  C -->|"HTTP api:3000, /api/*"| A["FastAPI API"]
   A -->|"PostgreSQL postgres:5432"| P["PostgreSQL"]
   P --- V["pgdata"]
   A --- U["directus_uploads: совместимое имя тома"]
@@ -180,15 +180,14 @@ PostgreSQL остаётся контейнером. Внутри Docker серв
 
 ```text
 backend/
-  src/modules/        маршруты и логика по предметным областям
-  src/db/             SQL-адаптер, схемы данных и транзакции
-  src/config/         проверка конфигурации приложения
-  src/common/         общие обработчики и блокировки
-  src/jobs/           расписание и хранение данных
-  src/observability/  аудит, журналы и проверки готовности
+  club_api/modules/        маршруты и логика по предметным областям
+  club_api/db/             SQL-адаптер, схемы данных и транзакции
+  club_api/core/         проверка конфигурации приложения
+  club_api/jobs/           расписание и хранение данных
+  club_api/observability/  аудит, журналы и проверки готовности
   migrations/         SQL-миграции приложения
   sql/                индексы и права роли API
-  tests/              unit, SQL integration и фикстуры
+  tests/python/       pytest, SQL integration и фикстуры
 frontend/
   src/pages/          публичные страницы и кабинет
   src/admin/          панель офиса
@@ -201,9 +200,8 @@ frontend/
   tests/unit/         модульные тесты интерфейса
   tests/e2e/          сценарии Playwright
 packages/shared/      модели, схемы, расчёты, справочники и их тесты
-packages/server-auth/ серверная проверка и создание хешей паролей
 scripts/              команды установки, выпуска, копирования и восстановления
-  src/                bootstrap, управление сотрудниками и импорты
+  club_ops/           bootstrap, управление сотрудниками и импорты
   lib/                общие shell/Python-функции операций
   checks/             проверка сборок и финальных образов
   diagnostics/        диагностика, ресурсы и нагрузка
@@ -482,14 +480,14 @@ sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
 ## Первый запуск и администратор
 
 `migrate` создаёт и дополняет схему PostgreSQL, применяет индексы и права SQL-роли.
-Затем [native-bootstrap.ts](scripts/src/native-bootstrap.ts) создаёт отсутствующие
+Затем [bootstrap.py](scripts/club_ops/bootstrap.py) создаёт отсутствующие
 роли, администратора из `ADMIN_EMAIL`/`ADMIN_PASSWORD`, справочники и главную страницу.
 API стартует только после успешного завершения обоих шагов.
 
 Повторный bootstrap сохраняет UUID, пароль, роль, настройки и редакторские изменения.
 Изменение `ADMIN_PASSWORD` не сбрасывает существующий пароль. Создание сотрудника и
 восстановление его пароля выполняет оператор через
-[manage-staff.ts](scripts/src/manage-staff.ts), с подключением владельца БД и паролем
+[staff.py](scripts/club_ops/staff.py), с подключением владельца БД и паролем
 через stdin. Публичное восстановление предназначено только для alumni. Команды и
 проверка повторного запуска – в [runbook](docs/operations/deploy-runbook.md).
 
@@ -509,7 +507,7 @@ sudo install -m 0600 /dev/null /etc/club/staff-password
 sudoedit /etc/club/staff-password
 sudo sh -c 'docker compose --env-file /etc/club/runtime.env -f /opt/club/docker-compose.yml \
   run --rm --no-deps -T -e STAFF_ACTION=reset-password -e STAFF_ROLE=admin \
-  -e STAFF_EMAIL=admin@example.com bootstrap node dist/manage-staff.js \
+  -e STAFF_EMAIL=admin@example.com bootstrap python -m club_ops.cli manage-staff \
   < /etc/club/staff-password'
 sudo rm /etc/club/staff-password
 ```
@@ -567,7 +565,7 @@ Compose добавляет к именам томов имя проекта. П�
 
 ## Фоновые задачи
 
-При одном экземпляре API `node-cron` обслуживает баллы, импорты, напоминания,
+При одном экземпляре API `планировщик asyncio` обслуживает баллы, импорты, напоминания,
 очистку по сроку хранения, истечение резервов и почтовую очередь. Расписания заданы
 в часовом поясе `Europe/Moscow`; общий выключатель – `JOBS_ENABLED=false`.
 
@@ -663,6 +661,8 @@ API и PostgreSQL не имеют опубликованных портов. Cad
 каждой команды – код `0`; сценарий PostgreSQL создаёт отдельную тестовую БД.
 
 ```bash
+uv sync --directory backend --frozen
+uv sync --directory scripts --frozen
 pnpm install --frozen-lockfile
 pnpm lint
 pnpm -r build
@@ -673,7 +673,7 @@ docker compose --env-file .env.example config --quiet
 bash scripts/tests/test-integration.sh
 ```
 
-Сборка включает TypeScript. Часть route-тестов подменяет SQL-хранилище и внешних
+Сборка интерфейса включает TypeScript; сервер и команды оператора используют Python. Часть тестов подменяет внешних
 провайдеров; они не доказывают сохранение в БД. PostgreSQL-интеграция использует
 настоящие миграции; браузерная цепочка запускается с собранными API, web и БД. Playwright запускают только против указанного тестового
 контура: некоторые сценарии изменяют данные. Команды и фактические прогоны – в

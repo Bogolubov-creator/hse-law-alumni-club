@@ -1,7 +1,7 @@
 # Конфигурация и секреты
 
 Источники настроек: [.env.example](../../.env.example),
-[env.ts](../../backend/src/config/env.ts), [Compose](../../docker-compose.yml),
+[config.py](../../backend/club_api/core/config.py), [Compose](../../docker-compose.yml),
 [Dockerfile web/Caddy](../../deploy/edge.Dockerfile), [Vite](../../frontend/vite.config.ts) и
 операционные скрипты. Рабочее состояние конкретного контура – в
 [project-state.md](../operations/project-state.md), процедуры – в [deploy-runbook.md](../operations/deploy-runbook.md).
@@ -175,7 +175,7 @@ Mailpit и проверяйте письмо в нём; не подставля�
 
 Эти сроки – действующие параметры проекта, а не универсальные законные сроки.
 Их изменение затрагивает данные и согласуется с оператором. Расписания и различие
-между `node-cron` и systemd описаны в [архитектуре](architecture.md#фоновые-задачи).
+между `планировщик asyncio` и systemd описаны в [архитектуре](architecture.md#фоновые-задачи).
 
 ## Обслуживание на Ubuntu
 

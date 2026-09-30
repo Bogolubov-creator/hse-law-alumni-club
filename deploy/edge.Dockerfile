@@ -52,9 +52,6 @@ WORKDIR /repo
 COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml ./
 COPY packages/shared/package.json packages/shared/
 COPY frontend/package.json frontend/
-COPY packages/server-auth/package.json packages/server-auth/
-COPY backend/package.json backend/
-COPY scripts/package.json scripts/
 RUN pnpm --filter @club/web... --filter club-pravo-hse install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY frontend frontend

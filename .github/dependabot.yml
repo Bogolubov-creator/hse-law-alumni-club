@@ -52,3 +52,14 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(edge)"
+
+  - package-ecosystem: pip
+    directories: ["/backend", "/scripts"]
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(python)"

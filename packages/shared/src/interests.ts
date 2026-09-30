@@ -1,26 +1,8 @@
-// Справочник интересов в юриспруденции – выбирается выпускником в профиле
-// (и при будущей самостоятельной регистрации). Единый источник для web/api.
+import domain from "./domain-data.json" with { type: "json" };
 
-export const LEGAL_INTERESTS: readonly string[] = [
-  "Корпоративное право",
-  "M&A и сделки",
-  "Гражданское право",
-  "Публичное право",
-  "Налоговое право",
-  "Банкротство",
-  "Разрешение споров",
-  "Арбитраж и медиация",
-  "Цифровое право и IT",
-  "Интеллектуальная собственность",
-  "Комплаенс и антикоррупция",
-  "Международное право",
-  "Уголовное право",
-  "Трудовое право",
-  "GR и публичная политика",
-  "LegalTech",
-] as const;
+export const LEGAL_INTERESTS: readonly string[] = domain.legal_interests;
 
-export const MAX_INTERESTS = 8; // разумный предел выбора
+export const MAX_INTERESTS = domain.limits.max_interests;
 
 export function sanitizeInterests(input: unknown): string[] {
   if (!Array.isArray(input)) return [];

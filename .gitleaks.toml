@@ -2,12 +2,8 @@
 useDefault = true
 
 [[allowlists]]
-description = "Три фиксированных синтетических значения теста prod-config; не рабочие ключи"
+description = "Фиксированный JWT прежней Node-реализации; синтетический секрет проверяется тестом совместимости"
 condition = "AND"
-paths = ['''backend/tests/unit/config/env\.test\.ts$''']
+paths = ['''backend/tests/python/legacy-auth\.json$''']
 regexTarget = "secret"
-regexes = [
-  '''^8f2c1a9d7e5b3c04f6a8d2e1b9c7a5f3$''',
-  '''^0123456789abcdef0123456789abcdef01234567$''',
-  '''^fedcba9876543210fedcba9876543210fedcba98$''',
-]
+regexes = ['''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJzdWIiOiI1YjY2Y2Q0MS0zNDQwLTQyMzgtYTM2NC1kZGQxOTVmZDcwYTEiLCJhbHVtbmlfaWQiOiI1YjY2Y2Q0MS0zNDQwLTQyMzgtYTM2NC1kZGQxOTVmZDcwYTIiLCJ2ZXIiOjAsImV4cCI6NDA3MDkwODgwMH0\.m\-617wjncpvMcXkbOVuNd5gonP1t9zwz5WCffmXvzLk$''']

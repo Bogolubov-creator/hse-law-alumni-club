@@ -1,0 +1,53 @@
+[project]
+name = "club-api"
+version = "0.1.0"
+description = "API Клуба выпускников факультета права НИУ ВШЭ"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+  "fastapi==0.142.2",
+  "uvicorn==0.54.0",
+  "pydantic-settings==2.15.0",
+  "psycopg[binary]==3.3.6",
+  "psycopg-pool==3.3.3",
+  "PyJWT==2.15.1",
+  "argon2-cffi==25.1.0",
+  "httpx==0.28.1",
+  "python-multipart==0.0.32",
+  "pillow==12.3.0",
+  "beautifulsoup4==4.15.0",
+  "pywebpush==2.5.0",
+  "aiohttp==3.14.3",
+  "aiosmtplib==5.1.3",
+  "sentry-sdk==2.71.0",
+]
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "ruff==0.16.9", "pip-audit==2.10.1"]
+
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["club_api"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"../packages/shared/src/domain-data.json" = "club_api/domain-data.json"
+"../packages/shared/src/faq-data.json" = "club_api/faq-data.json"
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["../scripts"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S"]
+ignore = ["E501", "S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]
