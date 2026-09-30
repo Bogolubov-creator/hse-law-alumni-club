@@ -45,6 +45,7 @@ jobs:
           python3 scripts/tests/test-ops.py
           python3 scripts/tests/test-install.py
           node --test scripts/tests/measure-load.test.mjs
+          node --test scripts/tests/compiled-comments.test.mjs
           docker compose --env-file .env.example config --quiet
           docker compose --env-file .env.example config --format json | node -e '
             let input = "";
@@ -70,7 +71,9 @@ jobs:
         run: pnpm -r build
 
       - name: Check native web artifact
-        run: node scripts/checks/check-web-build.mjs frontend/dist
+        run: |
+          node scripts/checks/check-web-build.mjs frontend/dist
+          node scripts/checks/check-compiled-comments.mjs backend/dist scripts/dist packages/shared/dist packages/server-auth/dist
 
       - name: Test (vitest)
         run: pnpm -r test

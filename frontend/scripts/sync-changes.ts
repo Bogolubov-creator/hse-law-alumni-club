@@ -9,7 +9,6 @@ const PUBLISHED = "https://bogolubov-creator.github.io/club-pravo-hse-mirror/dat
 const MAX_BYTES = 2_000_000;
 export interface FeedPage { posts: LawChange[]; nextBefore: number | null; visibleIds: number[] }
 
-/** Парсим инертный документ. Никакие скрипты, стили и iframe источника не запускаются. */
 export async function parseFeed(html: string): Promise<FeedPage> {
   if (Buffer.byteLength(html) > MAX_BYTES) throw new Error("source_too_large");
   const window = new Window({ settings: { disableJavaScriptEvaluation: true, disableJavaScriptFileLoading: true, disableCSSFileLoading: true, disableIframePageLoading: true } });

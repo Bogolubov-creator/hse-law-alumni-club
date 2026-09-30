@@ -30,6 +30,7 @@
 | Live stack | Собранные web/API, PostgreSQL, Caddy, нативный bootstrap и Mailpit | Платежи, Telegram, push, Sentry и фоновые синхронизации выключены; локальный HTTP | `scripts/tests/test-live.sh` |
 | Caddy Go | Исправленная сборка, CEL JSON privacy/matchers, govulncheck | Анализ достижимых вызовов vendor-исходников; внешний ACME отдельно | `edge.Dockerfile --target edge-check` |
 | Edge TLS/HTTP | Финальные web/Caddy, localhost CA, reload, заголовки и лимиты | HTTP-фикстура API; собственные временные контейнеры/сети | `scripts/tests/test-edge.py` |
+| Установщик Ubuntu | Зависимости, production-конфигурация, локальный TLS, PostgreSQL и вход администратора | Одноразовый Ubuntu runner, Mailpit; повтор сохраняет env и доступ | `scripts/tests/test-install.sh` |
 | Эксплуатация Ubuntu | Compose, внешняя конфигурация, TLS, копия и изолированное восстановление | Требует отдельного запуска на целевой VM; unit-тесты скриптов его не заменяют | [Runbook](../operations/deploy-runbook.md) |
 
 API-тесты могут использовать production-функцию расчёта переходов с хранилищем в
@@ -194,6 +195,11 @@ bash scripts/checks/check-runtime-images.sh API_IMAGE BOOTSTRAP_IMAGE WEB_IMAGE
 и менеджеров пакетов в Node runtime, а также отсутствие исходников проекта,
 его тестов и демоперехватчика в web. Сторонние npm-пакеты могут включать собственные
 исходники, типы и map; проверка не запрещает эти файлы и сохраняет лицензии.
+Собственная TypeScript-сборка исключает комментарии и sourcemap. JavaScript и типы
+наших пакетов из финальных Node-образов дополнительно разбираются проверкой
+`check-compiled-comments.mjs`; лицензии разрешены. Для этой проверки Node.js и
+зависимости разработчика нужны на проверяющем компьютере, в рабочие образы они
+не добавляются.
 В CI для него используются `club-ci-live-api`, `club-ci-live-bootstrap` и
 `club-ci-live-web`. Проверка содержимого не заменяет функциональные тесты и
 сканирование известных уязвимостей.
