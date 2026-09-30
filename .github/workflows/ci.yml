@@ -43,6 +43,7 @@ jobs:
         run: |
           while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d \( -name node_modules -o -name dist \) -prune -o -type f -name '*.sh' -print0)
           python3 scripts/tests/test-ops.py
+          python3 scripts/tests/test-install.py
           node --test scripts/tests/measure-load.test.mjs
           docker compose --env-file .env.example config --quiet
           docker compose --env-file .env.example config --format json | node -e '
@@ -130,6 +131,8 @@ jobs:
               aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
               image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "club-ci-live-$service"
           done
+      - name: Install and repeat on Ubuntu with local TLS
+        run: bash scripts/tests/test-install.sh
 
   secrets:
     runs-on: ubuntu-24.04

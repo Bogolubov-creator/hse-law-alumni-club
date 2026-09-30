@@ -36,4 +36,4 @@ systemctl enable --now docker
 docker version --format '{{.Server.Version}}'
 docker compose version
 docker buildx version
-echo 'Зависимости установлены. Далее заполните внешний env и выполните scripts/deploy.sh по runbook.'
+echo 'Зависимости Ubuntu, Docker Engine, Compose и Buildx готовы.'
