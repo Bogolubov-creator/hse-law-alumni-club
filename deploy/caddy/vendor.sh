@@ -20,7 +20,5 @@ if test "$1" = vendor; then
   test ! -d vendor/github.com/google/cel-go
 else
   # Tidy исключает контрольные суммы заменённого модуля; prepare.sh проверяет их до патча.
-  awk '$1 == "github.com/caddyserver/caddy/v2"' locked/go.sum >> go.sum
-  LC_ALL=C sort -u go.sum > go.sum.next
-  mv go.sum.next go.sum
+  go mod download github.com/caddyserver/caddy/v2
 fi
