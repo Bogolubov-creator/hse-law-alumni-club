@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CLUB_OPERATOR } from "@club/shared";
-import { V2Shell, pageTitle } from "../layouts/Shell.js";
+import { SiteShell, pageTitle } from "../layouts/Shell.js";
 import { action, actionGhost, field } from "../styles/primitives.js";
 import { useHead } from "../lib/title.js";
 
@@ -91,7 +91,7 @@ export function SupportConsent() {
   useHead({ title: "Согласие для обращения в поддержку", noindex: true });
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" className="club-support-page">
         <h1 style={pageTitle}>Согласие для обращения в поддержку</h1>
 
@@ -122,11 +122,11 @@ export function SupportConsent() {
         </p>
         <OperatorFooter />
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }
 
-export default function SupportV2() {
+export default function Support() {
   useHead({ title: "Поддержка клуба", noindex: true });
 
   const config = useQuery({
@@ -186,7 +186,7 @@ export default function SupportV2() {
   };
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" className="club-support-page">
         <h1 style={pageTitle}>Поддержка клуба</h1>
 
@@ -434,6 +434,6 @@ export default function SupportV2() {
           </>
         )}
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

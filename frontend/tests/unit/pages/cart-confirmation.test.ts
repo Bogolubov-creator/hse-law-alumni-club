@@ -3,10 +3,10 @@ import { act, createElement, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { expect, it, vi } from "vitest";
-import { Submitted } from "../../../src/pages/CartV2.js";
+import { Submitted } from "../../../src/pages/Cart.js";
 
 vi.mock("../../../src/layouts/Shell.js", () => ({
-  V2Shell: ({ children }: { children: ReactNode }) => children,
+  SiteShell: ({ children }: { children: ReactNode }) => children,
   ShowcaseHead: () => null, mono: {}, disp: {}, pageTitle: {},
 }));
 

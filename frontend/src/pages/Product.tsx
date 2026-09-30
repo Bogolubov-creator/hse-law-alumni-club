@@ -3,12 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import { useProducts } from "../stores/cart.js";
 import { useHead } from "../lib/title.js";
 import { rub } from "../api/api.js";
-import { V2Shell, pageTitle, mono } from "../layouts/Shell.js";
+import { SiteShell, pageTitle, mono } from "../layouts/Shell.js";
 import SizeDialog from "../features/catalog/MerchSelection.js";
 import ProductImage from "../features/catalog/ProductImage.js";
 import { action } from "../styles/primitives.js";
 
-export default function ProductV2() {
+export default function Product() {
   const { slug = "" } = useParams();
   const products = useProducts();
   const product = products.data?.find((p) => p.slug === slug);
@@ -26,7 +26,7 @@ export default function ProductV2() {
     : false;
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "32px 28px" }}>
         <nav aria-label="Хлебные крошки" style={{ ...mono, fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>
           <Link to="/merch" className="foc" style={{ color: "var(--c-text-2)", textDecoration: "underline", textUnderlineOffset: 4 }}>← весь мерч</Link>
@@ -92,6 +92,6 @@ export default function ProductV2() {
         )}
         {open && product && <SizeDialog product={product} onClose={() => setOpen(false)} />}
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

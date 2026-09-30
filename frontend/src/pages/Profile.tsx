@@ -9,16 +9,6 @@ import { useHead } from "../lib/title.js";
 import { BlankField, mono, disp } from "../layouts/Shell.js";
 import { CabinetShell, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../layouts/cabinet.js";
 
-/**
- * Профиль выпускника v2 (/lk/profile) – тот же режим, что и кабинет:
- * плотность 7, движения нет, один акцент. Форма собрана как опись: подпись
- * реестра слева, поле справа, разделитель – линия, а не рамка карточки.
- *
- * Функционально повторяет профиль v1 целиком, включая права по 152-ФЗ
- * (выгрузка копии данных и удаление аккаунта): урезать приватную зону
- * ради красоты нельзя.
- */
-
 const REASON_TEXT: Record<string, string> = {
   program: "Пройдена программа ДПО", event: "Участие в событии клуба", referral: "Приглашённый выпускник",
   mentorship: "Менторство младшего потока", order: "Заказ", decay: "Списание за неактивность",
@@ -458,7 +448,7 @@ function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
   );
 }
 
-export default function ProfileV2() {
+export default function Profile() {
   useHead({ title: "Профиль", noindex: true });
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return <Navigate to="/lk" replace />;

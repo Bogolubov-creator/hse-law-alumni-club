@@ -4,11 +4,11 @@ import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { expect, it, vi } from 'vitest';
-import CartV2 from '../../../src/pages/CartV2.js';
+import Cart from '../../../src/pages/Cart.js';
 
 vi.mock('../../../src/lib/title.js', () => ({ useHead: () => {} }));
 vi.mock('../../../src/layouts/Shell.js', () => ({
-  V2Shell: ({ children }: { children: ReactNode }) => children,
+  SiteShell: ({ children }: { children: ReactNode }) => children,
   ShowcaseHead: () => null, mono: {}, disp: {}, pageTitle: {},
 }));
 
@@ -28,7 +28,7 @@ it.each([
   const root = createRoot(host);
   const settle = () => new Promise(resolve => setTimeout(resolve, 30));
   try {
-    await act(async () => root.render(createElement(QueryClientProvider, { client }, createElement(MemoryRouter, null, createElement(CartV2)))));
+    await act(async () => root.render(createElement(QueryClientProvider, { client }, createElement(MemoryRouter, null, createElement(Cart)))));
     const plus = () => host.querySelector<HTMLButtonElement>('[aria-label="Увеличить количество: Худи"]')!;
     await act(async () => { plus().click(); await settle(); });
     expect(host.querySelector('[role="alert"]')?.textContent).toContain(message);

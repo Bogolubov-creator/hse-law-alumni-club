@@ -10,7 +10,7 @@ import ProgramCompare from "../features/catalog/ProgramCompare.js";
 import { field } from "../styles/primitives.js";
 import { HeroPicture } from "../components/HeroPicture.js";
 import { mediaUrl } from "../lib/public-url.js";
-import { V2Shell } from "../layouts/Shell.js";
+import { SiteShell } from "../layouts/Shell.js";
 import "../styles/dpo-vitrine.css";
 
 /** Русское склонение по числу: plural(31, ["программа", "программы", "программ"]). */
@@ -29,7 +29,7 @@ function hasFacultyCover(cover: string | null | undefined): boolean {
   return !!m && FACULTY_COVERS.has(m[1]!);
 }
 
-export default function DpoV2() {
+export default function Dpo() {
   useHead({
     title: "Программы ДПО",
     description: "Каталог программ дополнительного образования факультета права НИУ ВШЭ с ценой выпускника.",
@@ -79,7 +79,7 @@ export default function DpoV2() {
   </>;
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main" className="club-dpo-vitrine">
         <header className="club-dpo-masthead club-dark">
           <div className="club-dpo-masthead__inner">
@@ -216,6 +216,6 @@ export default function DpoV2() {
           )}
         </div>
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

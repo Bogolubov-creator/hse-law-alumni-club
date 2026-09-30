@@ -8,25 +8,9 @@ import { useToast } from "../components/Toast.js";
 import { useHead } from "../lib/title.js";
 import { HeroPicture } from "../components/HeroPicture.js";
 import { mediaUrl } from "../lib/public-url.js";
-import { V2Shell, mono, disp, pageTitle } from "../layouts/Shell.js";
+import { SiteShell, mono, disp, pageTitle } from "../layouts/Shell.js";
 import { action, actionGhost } from "../styles/primitives.js";
 import "../styles/program.css";
-
-/**
- * Карточка программы ДПО v2 (/dpo/:slug).
- *
- * Язык реестра: модули – нумерованные записи с моно-колонкой слева, а не
- * гармошка из карточек; преподаватели – записи, а не плитки с градиентами.
- * Справа «бланк программы»: цена крупно, ниже поля с данными под чертой.
- *
- * Раскрытие модуля – смена состояния, а не анимация: в каталоге из двадцати
- * программ человек открывает модули десятками, и подпрыгивающая гармошка
- * начинает мешать (DESIGN.md, разрешение конфликта в пользу emil-design-eng).
- *
- * SEO: страница noindex, а canonical ведёт на v1 (/dpo/:slug) – контент тот же,
- * индексируется он там, и структурированные данные Course отдаёт та страница.
- * Дублировать разметку на превью нельзя: получились бы два Course на один курс.
- */
 
 const label: CSSProperties = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
@@ -50,7 +34,7 @@ function plural(n: number, one: string, few: string, many: string): string {
   return many;
 }
 
-export default function ProgramV2() {
+export default function Program() {
   const { slug = "" } = useParams();
   const q = useProgram(slug);
   const discount = useMemberDiscount();
@@ -88,7 +72,7 @@ export default function ProgramV2() {
       { onSuccess: () => navigate("/cart"), onError: () => toast("Не удалось добавить", "err") });
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main">
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
         <nav style={{ ...label, paddingTop: 24, paddingBottom: 8 }} aria-label="Хлебные крошки">
@@ -341,6 +325,6 @@ export default function ProgramV2() {
           </>
         )}
       </main>
-    </V2Shell>
+    </SiteShell>
   );
 }

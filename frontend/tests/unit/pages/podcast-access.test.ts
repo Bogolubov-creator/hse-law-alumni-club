@@ -3,7 +3,7 @@ import { act, createElement, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import { expect, it, vi } from 'vitest';
-import PodcastsV2 from '../../../src/pages/PodcastsV2.js';
+import Podcasts from '../../../src/pages/Podcasts.js';
 const state = vi.hoisted(() => ({ subscribed: false }));
 vi.mock('../../../src/stores/cart.js', () => ({ token: () => null }));
 vi.mock('../../../src/lib/title.js', () => ({ useHead: () => {} }));
@@ -16,13 +16,13 @@ vi.mock('../../../src/api/queries.js', () => ({
   usePaymentsEnabled: () => ({}),
   useSubscribePodcasts: () => ({ mutate: vi.fn() }),
 }));
-vi.mock('../../../src/layouts/Shell.js', () => ({ V2Shell: ({ children }: { children: ReactNode }) => children, ShowcaseHead: () => null, mono: {}, disp: {} }));
+vi.mock('../../../src/layouts/Shell.js', () => ({ SiteShell: ({ children }: { children: ReactNode }) => children, ShowcaseHead: () => null, mono: {}, disp: {} }));
 it.each([false, true])('доступ к выпускам при подписке %s', (subscribed) => {
   state.subscribed = subscribed;
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   const host = document.createElement('div'); const root = createRoot(host);
   try {
-    act(() => root.render(createElement(MemoryRouter, null, createElement(PodcastsV2))));
+    act(() => root.render(createElement(MemoryRouter, null, createElement(Podcasts))));
     const rows = host.querySelectorAll('article');
     expect(rows[0]!.textContent).toContain('Прослушать');
     expect(rows[0]!.classList.contains('podcast-row--locked')).toBe(false);

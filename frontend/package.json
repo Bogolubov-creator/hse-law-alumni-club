@@ -19,7 +19,7 @@
     "preview:mirror": "vite preview --base /club-pravo-hse-mirror/",
     "test": "tsc -p tsconfig.tests.json && vitest run",
     "e2e": "playwright test",
-    "e2e:safari": "playwright test --project=safari --project=iphone-safari --workers=1 tests/e2e/public.spec.ts tests/e2e/a11y.spec.ts tests/e2e/lk-v2.spec.ts tests/e2e/admin.spec.ts tests/e2e/mobile-tabs-v2.spec.ts tests/e2e/pwa-shell.spec.ts"
+    "e2e:safari": "playwright test --project=safari --project=iphone-safari --workers=1 tests/e2e/public.spec.ts tests/e2e/a11y.spec.ts tests/e2e/cabinet.spec.ts tests/e2e/admin.spec.ts tests/e2e/mobile-tabs.spec.ts tests/e2e/pwa-shell.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

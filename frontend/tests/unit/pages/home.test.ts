@@ -3,7 +3,7 @@ import { act, createElement, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import HomeV2 from "../../../src/pages/HomeV2.js";
+import Home from "../../../src/pages/Home.js";
 
 const state = vi.hoisted(() => ({
   discount: 0,
@@ -35,14 +35,14 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 vi.mock("../../../src/api/queries.js", () => ({ usePage: () => ({}), useNewsList: () => ({ data: [] }), formatNewsDate: () => "" }));
 vi.mock("../../../src/lib/title.js", () => ({ useHead: () => {} }));
-vi.mock("../../../src/layouts/Shell.js", () => ({ V2Shell: ({ children }: { children: ReactNode }) => children, text: (value: string, fallback: string) => value || fallback }));
+vi.mock("../../../src/layouts/Shell.js", () => ({ SiteShell: ({ children }: { children: ReactNode }) => children, text: (value: string, fallback: string) => value || fallback }));
 
 function withHome(check: (host: HTMLElement) => void) {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   const host = document.createElement("div");
   const root = createRoot(host);
   try {
-    act(() => root.render(createElement(MemoryRouter, null, createElement(HomeV2))));
+    act(() => root.render(createElement(MemoryRouter, null, createElement(Home))));
     check(host);
   } finally {
     act(() => root.unmount());

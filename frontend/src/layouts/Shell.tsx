@@ -11,20 +11,12 @@ import { TELEGRAM_CHANNEL } from "../config/social.js";
 import "../styles/shell.css";
 import { CLUB_NAV as NAV } from "../config/navigation.js";
 
-/**
- * Общая оболочка публичного контура: шапка и подвал для всех страниц.
- * Пересобрана 12.09.2026 под референс: белая шапка 64px с hairline, капс-навигация,
- * поиск по программам и новостям, одно действие «Вступить»; тёмный подвал.
- */
-
 // Определения – в styles/primitives.ts, здесь только точка входа для витрин.
 import { pageTitle, action, caps } from "../styles/primitives.js";
 export { mono, disp, pageTitle } from "../styles/primitives.js";
 
 /**
- * Текст из админки или запасной. Именно так, а не `??`: Directus отдаёт
- * незаполненные поля пустой строкой, и `??` её пропускает – в разметку уезжает
- * пустой заголовок вместо запасного.
+ * Пустые строки контента тоже требуют запасного текста; `??` их пропускает.
  */
 export const text = (v: string | null | undefined, fallback: string): string => (v && v.trim() ? v : fallback);
 
@@ -47,7 +39,7 @@ const CartIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>
 );
 
-export function V2Shell({ children }: { children: ReactNode }) {
+export function SiteShell({ children }: { children: ReactNode }) {
   const cartCount = useCart().data?.count ?? 0;
   const authed = !!token();
   const [menuOpen, setMenuOpen] = useState(false);

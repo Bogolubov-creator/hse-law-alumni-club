@@ -5,18 +5,10 @@ import ProductImage from "../features/catalog/ProductImage.js";
 import { useHead } from "../lib/title.js";
 import { rub, type Product } from "../api/api.js";
 import { useProducts } from "../stores/cart.js";
-import { V2Shell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
-
-/**
- * Витрина мерча v2 – язык реестра (DESIGN.md).
- *
- * Как и в ДПО, позиция читается как запись описи: слева цена, справа название
- * и характеристики, действие в конце строки. Отличие от ДПО – остатки: они тут
- * настоящие данные, поэтому идут моноширинными и попадают под сигнатуру.
- */
+import { SiteShell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
 
 
-export default function MerchV2() {
+export default function Merch() {
   useHead({
     title: "Мерч клуба",
     description: "Фирменная одежда и аксессуары клуба выпускников факультета права Вышки.",
@@ -37,7 +29,7 @@ export default function MerchV2() {
     (p.variants_json?.length ? p.variants_json.reduce((s, v) => s + (v.stock || 0), 0) : p.stock) ?? 0;
 
   return (
-    <V2Shell>
+    <SiteShell>
       <main id="main">
         <ShowcaseHead
           photo={{ src: "assets/photos/alumni-field.jpg", alt: "Выпускники и студенты факультета права на спортивном поле" }}
@@ -125,6 +117,6 @@ export default function MerchV2() {
       </main>
 
       {open && <SizeDialog product={open} onClose={() => setOpen(null)} />}
-    </V2Shell>
+    </SiteShell>
   );
 }
