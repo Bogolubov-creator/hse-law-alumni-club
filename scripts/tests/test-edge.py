@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Проверка штатных Caddyfile и TLS в собственных контейнерах без рабочей БД."""
+
+import argparse
+import gzip
+import http.client
+import json
+from pathlib import Path
+import re
+import ssl
+import subprocess
+import tempfile
+import time
+import uuid
+
+REPO = Path(__file__).resolve().parents[2]
+MIB = 1024 * 1024
+PROBE = """const http = require('node:http');
+http.createServer((request, response) => {
+  let bytes = 0;
+  // Превышение лимита обрывает upstream; фикстура остаётся готова к следующему кейсу.
+  request.on('error', () => {});
+  request.on('data', chunk => bytes += chunk.length);
+  request.on('end', () => {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(JSON.stringify({
+      path: request.url, bytes,
+      forwardedFor: request.headers['x-forwarded-for'],
+      forwardedProto: request.headers['x-forwarded-proto']
+    }));
+  });
+}).listen(3000, '0.0.0.0');
+"""
+
+
+def docker(*args, check=True):
+    return subprocess.run(['docker', *args], text=True, capture_output=True, check=check)
+
+
+def check(condition, message):
+    if not condition:
+        raise AssertionError(message)
+
+
+def run(args):
+    name = 'club-edge-qa-' + uuid.uuid4().hex[:12]
+    networks, containers = [], []
+    cleanup_errors = []
+    with tempfile.TemporaryDirectory(prefix='club-edge-qa-') as directory:
+        try:
+            for suffix in ['internal', 'browser']:
+                options = ['--internal'] if suffix == 'internal' else []
+                network = docker('network', 'create', *options, '--label', 'club.qa=edge', name + '-' + suffix).stdout.strip()
+                networks.append(network)
+            for suffix, options in [
+                ('api', ['--entrypoint', 'node', args.api_image, '-e', PROBE]),
+                ('web', [args.web_image]),
+            ]:
+                container = docker('run', '--detach', '--network', networks[0], '--network-alias', suffix,
+                                   '--read-only', '--tmpfs', '/data', '--tmpfs', '/config',
+                                   '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+                                   '--name', name + '-' + suffix, *options).stdout.strip()
+                containers.append(container)
+            edge = docker('create', '--network', networks[1], '--read-only',
+                          '--tmpfs', '/data', '--tmpfs', '/config', '--memory', '128m',
+                          '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+                          '--publish', '127.0.0.1::443', '--publish', '127.0.0.1::80',
+                          '--publish', '127.0.0.1::8081', '--name', name + '-edge',
+                          '--env', 'WEB_DOMAIN=localhost', '--env', 'ADMIN_DOMAIN=:8081',
+                          '--env', 'PUBLIC_URL=https://localhost', '--env', 'ACME_EMAIL=edge-qa@example.invalid',
+                          '--mount', f'type=bind,source={REPO / "deploy/Caddyfile"},target=/etc/caddy/Caddyfile,readonly',
+                          args.edge_image).stdout.strip()
+            containers.append(edge)
+            docker('network', 'connect', networks[0], edge)
+            docker('start', edge)
+            ca = Path(directory) / 'root.crt'
+            deadline = time.monotonic() + 60
+            while True:
+                # docker cp не читает tmpfs; сертификат передаётся из namespace контейнера.
+                certificate = docker('exec', edge, 'cat', '/data/caddy/pki/authorities/local/root.crt', check=False)
+                if certificate.returncode == 0:
+                    ca.write_text(certificate.stdout)
+                    break
+                check(time.monotonic() < deadline, 'Caddy не создал локальную CA за 60 секунд')
+                time.sleep(0.25)
+            ports = json.loads(docker('inspect', edge).stdout)[0]['NetworkSettings']['Ports']
+            context = ssl.create_default_context(cafile=str(ca))
+
+            def request(path, body=None, headers=None, port='443/tcp'):
+                number = int(ports[port][0]['HostPort'])
+                connection = (http.client.HTTPSConnection('localhost', number, context=context, timeout=30)
+                              if port == '443/tcp' else http.client.HTTPConnection('127.0.0.1', number, timeout=30))
+                try:
+                    connection.request('GET' if body is None else 'POST', path, body=body, headers=headers or {})
+                    response = connection.getresponse()
+                    return response.status, dict((key.lower(), value) for key, value in response.getheaders()), response.read()
+                finally:
+                    connection.close()
+
+            # CA проверяется стандартным TLS-клиентом; insecure-режима здесь нет.
+            status, headers, html = request('/')
+            check(status == 200 and b'<html' in html, 'HTTPS не вернул HTML')
+            check('https://telegram.org' in headers.get('content-security-policy', ''), 'Потеряна CSP Telegram')
+            check(headers.get('x-content-type-options') == 'nosniff' and 'server' not in headers, 'Потеряны защитные заголовки')
+            check('max-age=' in headers.get('strict-transport-security', ''), 'Потерян HSTS')
+            check(headers.get('cache-control') == 'no-cache', 'SPA кэшируется')
+            check('x-frame-options' not in headers, 'Telegram embedding заблокирован')
+            for path in ['/admin', '/lk', '/v2/cart']:
+                status, headers, body = request(path)
+                check(status == 200 and body == html and headers.get('cache-control') == 'no-cache', 'SPA route: ' + path)
+            check(request('/not-a-club-route')[0] == 404, 'Потерян 404 неизвестной страницы')
+            for path in ['/.env', '/.git/config', '/wp-login.php']:
+                check(request(path)[0] == 404, 'Запрос сканера прошёл: ' + path)
+            for path, expected in [('/api/ready', '/ready'), ('/sitemap.xml', '/sitemap.xml'), ('/robots.txt', '/robots.txt'),
+                                   ('/assets/00000000-0000-4000-8000-000000000000/file', '/media/00000000-0000-4000-8000-000000000000/file')]:
+                status, _, body = request(path)
+                check(status == 200 and json.loads(body)['path'] == expected, 'Прокси изменил маршрут: ' + path)
+            status, _, body = request('/api/ready', headers={'X-Forwarded-For': '198.51.100.72', 'X-Forwarded-Proto': 'http'})
+            forwarded = json.loads(body)
+            check(status == 200 and '198.51.100.72' not in forwarded['forwardedFor'] and forwarded['forwardedProto'] == 'https', 'Доверие к поддельным proxy headers')
+            # kb/MB в штатном Caddyfile задают SI-байты; память Docker измеряется в MiB.
+            for path, limit in [('/api/body', 512_000), ('/api/me/avatar', 4_000_000), ('/api/admin/media', 129_000_000)]:
+                status, _, body = request(path, b'x' * limit)
+                check(status == 200 and json.loads(body)['bytes'] == limit, f'Отклонён допустимый размер: {path}, HTTP {status}')
+                check(request(path, b'x' * (limit + 1))[0] == 413, 'Не соблюдён лимит тела: ' + path)
+            check(request('/api/ready', headers={'X-Large': 'x' * (20 * 1024)})[0] == 431, 'Не соблюдён лимит заголовков')
+            status, headers, body = request('/', headers={'Accept-Encoding': 'gzip'})
+            check(status == 200 and headers.get('content-encoding') == 'gzip' and gzip.decompress(body) == html, 'gzip не работает')
+            asset = re.search(rb'<script[^>]+src="([^"]+\.js)"', html)
+            check(asset is not None, 'Не найден JS-артефакт')
+            status, headers, _ = request(asset[1].decode())
+            check(status == 200 and 'immutable' in headers.get('cache-control', ''), 'Потерян кэш хешированной статики')
+            check('no-cache' in request('/sw.js')[1].get('cache-control', ''), 'Service worker кэшируется')
+            status, headers, _ = request('/old-office', port='8081/tcp')
+            check(status == 308 and headers.get('location') == 'https://localhost/admin', 'Потерян legacy redirect')
+            status, headers, _ = request('/lk', port='80/tcp')
+            check(status == 308 and headers.get('location', '').startswith('https://'), 'Потерян HTTP → HTTPS redirect')
+            docker('exec', edge, 'caddy', 'validate', '--config', '/etc/caddy/Caddyfile')
+            docker('exec', edge, 'caddy', 'reload', '--config', '/etc/caddy/Caddyfile')
+            check(request('/api/ready')[0] == 200 and request('/')[0] == 200, 'Reload нарушил маршруты или TLS')
+            output = docker('logs', edge)
+            logs = output.stdout + output.stderr
+            memory = [json.loads(line)['GOMEMLIMIT'] for line in logs.splitlines()
+                      if line.startswith('{') and '"GOMEMLIMIT":' in line]
+            check(any(0 < value <= 128 * MIB for value in memory), 'CLI не применил cgroup memory limit')
+            print('Edge: доверенный TLS/CA, reload, маршруты, статика, CSP, gzip, client IP, 3 body limits, header limit и cgroup memory – успешно')
+        except Exception:
+            if containers:
+                output = docker('logs', containers[-1], check=False)
+                print((output.stdout + output.stderr)[-6000:])
+            raise
+        finally:
+            for container in reversed(containers):
+                result = docker('rm', '--force', '--volumes', container, check=False)
+                if result.returncode:
+                    cleanup_errors.append(result.stderr.strip())
+            for network in reversed(networks):
+                result = docker('network', 'rm', network, check=False)
+                if result.returncode:
+                    cleanup_errors.append(result.stderr.strip())
+            check(not cleanup_errors, 'Не завершена очистка QA: ' + '; '.join(cleanup_errors))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--edge-image', required=True)
+    parser.add_argument('--web-image', required=True)
+    parser.add_argument('--api-image', required=True)
+    run(parser.parse_args())

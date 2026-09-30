@@ -1,0 +1,10 @@
+{
+  "Replace": {
+    "/go/pkg/mod/github.com/caddyserver/caddy/v2@v2.11.4/cmd/main.go": "/caddy/patched/cmd/main.go",
+    "/go/pkg/mod/github.com/caddyserver/caddy/v2@v2.11.4/modules/caddyhttp/celmatcher.go": "/caddy/patched/modules/caddyhttp/celmatcher.go",
+    "/go/pkg/mod/github.com/caddyserver/caddy/v2@v2.11.4/modules/caddyhttp/fileserver/matcher.go": "/caddy/patched/modules/caddyhttp/fileserver/matcher.go",
+    "/go/pkg/mod/github.com/caddyserver/caddy/v2@v2.11.4/modules/caddyhttp/ip_matchers.go": "/caddy/patched/modules/caddyhttp/ip_matchers.go",
+    "/go/pkg/mod/github.com/caddyserver/caddy/v2@v2.11.4/modules/caddyhttp/matchers.go": "/caddy/patched/modules/caddyhttp/matchers.go",
+    "/go/pkg/mod/github.com/caddyserver/caddy/v2@v2.11.4/modules/caddyhttp/vars.go": "/caddy/patched/modules/caddyhttp/vars.go"
+  }
+}
