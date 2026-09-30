@@ -1,5 +1,5 @@
 # Контекст сборки – корень монорепо. Одноразовый прогон bootstrap'а.
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
+FROM node:26.10.0-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS build
 RUN npm install --global corepack@0.36.0 && corepack enable
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml* ./
@@ -18,7 +18,7 @@ RUN rm /app/pnpm-lock.yaml /app/pnpm-workspace.yaml \
     /app/node_modules/.modules.yaml /app/node_modules/.pnpm-workspace-state-v1.json \
     /app/node_modules/.pnpm/lock.yaml
 
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM node:26.10.0-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 ENV NODE_ENV=production
