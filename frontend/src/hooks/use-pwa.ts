@@ -1,10 +1,5 @@
 import { useSyncExternalStore } from "react";
 
-/**
- * Установленное PWA / iOS «На экран Домой».
- * QA: `?pwa=1` включает оболочку на сессию (sessionStorage), чтобы не слетала
- * при переходе без query.
- */
 const STANDALONE_QUERY = "(display-mode: standalone), (display-mode: minimal-ui)";
 const QA_KEY = "club_pwa_shell";
 
@@ -15,7 +10,7 @@ function rememberQaFlag(): void {
       sessionStorage.setItem(QA_KEY, "1");
     }
   } catch {
-    /* private mode */
+    // Хранилище может быть запрещено настройками браузера.
   }
 }
 
@@ -45,7 +40,6 @@ function subscribe(cb: () => void): () => void {
   return () => mql.removeEventListener("change", cb);
 }
 
-/** true в установленном приложении (или `?pwa=1` / session QA). */
 export function useIsPwaShell(): boolean {
   return useSyncExternalStore(subscribe, isStandaloneNow, () => false);
 }

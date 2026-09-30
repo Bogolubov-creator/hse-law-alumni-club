@@ -11,7 +11,6 @@ function fmtEventDate(iso: string): string {
   });
 }
 
-/** Разбор «/points@pravohse_alumni_bot арг» → cmd + args. */
 export function parseCommand(text: string): { cmd: string; arg: string } {
   const trimmed = text.trim();
   if (!trimmed.startsWith("/")) return { cmd: "", arg: "" };
@@ -133,7 +132,6 @@ export function formatUnlinkedPointsReply(publicUrl: string): string {
   ].join("\n");
 }
 
-/** Меню Telegram и быстрые переходы используют один список команд. */
 export const BOT_COMMANDS = [
   { command: "start", description: "Приветствие и ссылки клуба" },
   { command: "points", description: "Мои баллы и уровень" },

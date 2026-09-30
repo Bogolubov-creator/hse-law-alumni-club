@@ -7,10 +7,6 @@ import { loadChanges, selectChanges } from "../features/changes/changes.js";
 import { SEARCH_NAV } from "../config/navigation.js";
 import Modal from "./Modal.js";
 
-/**
- * Поиск по материалам клуба и быстрые переходы в разделы.
- * Загрузка и частичный отказ источников отображаются отдельно от пустого результата.
- */
 const LIMIT = 6;
 
 function norm(s: string): string {

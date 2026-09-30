@@ -4,24 +4,17 @@ export { ApiError } from "./http.js";
 
 type Parser<T> = { parse: (data: unknown) => T };
 
-/** true для ошибок недействительной сессии (истёк/битый токен) – повод показать логин заново. */
 export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.status === 401;
 }
 
-/**
- * Политика повторов для react-query: 4xx повторять бессмысленно – ответ не
- * изменится, а пользователь всё это время (три ретрая с backoff ≈ 7 с) видит
- * пустой экран вместо «не найдено». Сетевые сбои и 5xx повторяем дважды.
- */
+// Повторяются только сетевые ошибки и 5xx; повтор 4xx не изменит ответ.
 export function retryUnlessClientError(failureCount: number, error: unknown): boolean {
   if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
   return failureCount < 2;
 }
 
-// 401 при отправленном токене = сессия недействительна. Сообщаем приложению один раз
-// (глобальный слушатель в App очистит токен и уведёт на вход). Если токена не было –
-// это обычный «не авторизован» для анонимного запроса, ничего не делаем.
+// 401 отзывает только отправленную сессию, не анонимный запрос.
 function signalUnauthorized(status: number, hadToken: boolean): void {
   if (status === 401 && hadToken) {
     try { window.dispatchEvent(new Event("club:unauthorized")); } catch { /* SSR/страховка */ }

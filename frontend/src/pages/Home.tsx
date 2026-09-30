@@ -14,28 +14,23 @@ import "../styles/home.css";
 
 type EventItem = { id: string; title: string; starts_at: string; location?: string | null; format?: string | null; points?: number | null };
 
-/* Шапка уже держит бренд – H1 = одно обещание, не третье «Клуб выпускников». */
 const HERO_FALLBACK_TITLE = "Встречи, знания и связи после выпуска";
 const HERO_FALLBACK_SUB =
   "Клуб выпускников факультета права Вышки: встречи, программы ДПО и кабинет участника.";
 const CTA_FALLBACK =
   "Подайте заявку – учебный офис сверит выпуск с реестром факультета и откроет кабинет. Обычно это 1–2 рабочих дня.";
 
-/** Первоисточник фотографий и интервью – сайт факультета права. */
 const FACULTY_ALUMNI_PAGE = "https://pravo.hse.ru/businessandlaw/alumni";
 const FIRST_MEETING_NEWS = "https://pravo.hse.ru/news/1133936920.html";
 
-/** Обложки с логотипом факультета (просмотрены 12.09); остальные – сток без символики. */
 const FACULTY_COVERS = ["472681893", "474599435", "474776084", "494685723", "589527758", "802031223", "905186485", "906651510"];
 
-/** Старые маркетинговые формулировки из CMS – не показываем в предрелизе. */
 function sober(value: string | null | undefined, fallback: string, stale: RegExp): string {
   const v = (value ?? "").trim();
   if (!v || stale.test(v)) return fallback;
   return v;
 }
 
-/** Последнее слово титула охрой; начертание то же, что у остального текста. */
 function Emphasized({ title }: { title: string }) {
   const words = title.split(" ");
   if (words.length < 3) return <>{title}</>;
@@ -50,11 +45,6 @@ const monthOf = (iso: string) =>
     .find((part) => part.type === "month")?.value ?? "";
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Moscow" });
 
-/**
- * Главная «Фасад и зал» (направление утверждено заказчиком 12.09): каждая полоса
- * строится на фотографии факультета во весь край. Ни eyebrow, ни списков-реестров;
- * HSE Slab 400 с одним курсивным словом, капс-кнопки 4px, движения нет.
- */
 export default function Home() {
   useHead({
     title: "Клуб выпускников факультета права",
@@ -92,7 +82,6 @@ export default function Home() {
   return (
     <SiteShell>
       <main id="main" className="home">
-        {/* 1. Фасад: фото во весь край слева, чёрная панель с одной фразой справа */}
         <section className="home-hero" aria-label="Клуб выпускников факультета права">
           <div className="home-hero__photo">
             <HeroPicture
@@ -112,7 +101,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 2. Зал: ближайшие встречи слева, аудитория факультета во весь край справа */}
         <section className="home-agenda" aria-labelledby="home-agenda-title" data-reveal>
           <div className="home-agenda__copy">
             <h2 id="home-agenda-title">Ближайшие <em>встречи</em></h2>
@@ -148,7 +136,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 3. Витрина ДПО: обложки программ как предметы на белом */}
         <section className="home-dpo" aria-labelledby="home-dpo-title" data-reveal>
           <div className="home-dpo__head">
             <h2 id="home-dpo-title">{discount > 0 ? <>Программы ДПО с ценой <em>выпускника</em></> : <>Программы ДПО факультета <em>права</em></>}</h2>
@@ -183,7 +170,6 @@ export default function Home() {
 
         <ChangesPreview />
 
-        {/* 4. Встреча клуба: фото во всю ширину, чёрная подпись под ним */}
         <section className="home-meeting" aria-labelledby="home-meeting-title" data-reveal>
           <div className="home-meeting__photo">
             <img src={mediaUrl("/assets/photos/alumni-meeting-full.jpg")} alt="Выпускники факультета права на первой встрече клуба в актовом зале Вышки" width={1083} height={722} loading="lazy" decoding="async" />
@@ -195,7 +181,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Сообщество: отдельный кадр со встречи выпускников 2025 года */}
         <section id="community" className="home-voice home-community" aria-labelledby="home-community-title" data-reveal>
           <div className="home-voice__photo">
             <img src={mediaUrl("/assets/photos/alumni-conversation-2025.webp")} alt="Выпускники факультета права общаются на встрече 15 февраля 2025 года" width={1280} height={853} loading="lazy" decoding="async" />
@@ -207,7 +192,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5. Голос выпускника: портрет слева, слово справа */}
         <section className="home-voice" aria-labelledby="home-voice-title" data-reveal>
           <div className="home-voice__photo">
             <img src={mediaUrl("/assets/photos/alumni-voice.jpg")} alt="Екатерина Салугина-Сорокова, выпускница факультета права 2006 года" width={1083} height={720} decoding="async" />
@@ -221,7 +205,6 @@ export default function Home() {
 
         <AlumniOpportunities />
 
-        {/* 6. Вступление: чёрная полоса, три шага и одно действие */}
         <section id="kak" className="home-join club-dark" aria-labelledby="home-join-title" data-reveal>
           <div className="home-join__copy">
             <h2 id="home-join-title">Три шага, и вы <em>в клубе</em></h2>
@@ -233,13 +216,11 @@ export default function Home() {
             </ol>
             <Link to={joinTo} className="foc home-btn">{authed ? "Открыть кабинет" : text(cta.button, "Подать заявку")}<span aria-hidden="true">→</span></Link>
           </div>
-          {/* Фемида клуба выпускников – постер из фирменного набора клуба */}
           <div className="home-join__art">
             <img src={mediaUrl("/assets/photos/themis-club.jpg")} alt="Фемида – знак клуба выпускников факультета права" width={576} height={575} loading="lazy" decoding="async" />
           </div>
         </section>
 
-        {/* 7. Новости: три публикации, дата плитой */}
         {(news.data ?? []).length > 0 && (
           <section className="home-news" aria-labelledby="home-news-title" data-reveal>
             <div className="home-news__head">

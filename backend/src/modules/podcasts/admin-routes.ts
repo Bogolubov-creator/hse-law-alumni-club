@@ -10,11 +10,6 @@ const di = data;
 export async function adminPodcastsRoutes(app: FastifyInstance) {
 
 
-  /**
-   * Подписки на подкасты: кто подписан, до какой даты, кто скоро истекает.
-   * Отдельная ручка, а не фильтр по выпускникам: офису нужен срез именно по
-   * подпискам, с сортировкой по дате окончания и статистикой прослушиваний.
-   */
   app.get("/admin/podcast-subs", async (req, reply) => {
     if (!await requireAdmin(req, reply)) return;
     const now = new Date().toISOString();
@@ -66,9 +61,6 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
   });
 
 
-  // ── Подкасты ──────────────────────────────────────────────────────
-  // Обложка: только http(s). Аудио: http(s) для внешнего хоста либо UUID
-  // загруженного файла (стрим через /api/podcasts/:id/audio).
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   const httpUrl = z.url().max(500).refine((u) => /^https?:\/\//i.test(u), "Ссылка должна начинаться с http:// или https://");
@@ -97,7 +89,7 @@ export async function adminPodcastsRoutes(app: FastifyInstance) {
   });
 
 
-  /** UUID аудио не должен совпадать с alumni.avatar – иначе публичный прокси обходит /avatars. */
+  // UUID аудио не должен совпадать с аватаром: публичный прокси обходит /avatars.
   const rejectAvatarAsAudio = async (audioUrl: string | null | undefined, reply: any): Promise<boolean> => {
     if (!audioUrl || !UUID_RE.test(audioUrl)) return false;
     const hits = (await di.request((readItems as any)("alumni", {

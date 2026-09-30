@@ -25,7 +25,7 @@ async function saveCart(token: string, items: StoredCartItem[]) {
   else await di.request((createItem as any)("carts", { session_token: token, items_json: items, updated_at: new Date().toISOString() }));
 }
 
-/** Неизвестный остаток не блокирует заявку; наличие повторно проверяется при оформлении. */
+// Неизвестный остаток повторно проверяется при оформлении заявки.
 function exceedsStock(info: CatalogInfo, sku: string | null | undefined, qty: number): boolean {
   const available = info.variants?.length
     ? info.variants.find((variant) => variant.sku === sku)?.stock
@@ -54,9 +54,7 @@ export async function cartRoutes(app: FastifyInstance) {
     if (body.type === "dpo" && info.source_url)
       return reply.code(400).send({ error: "Запись на эту программу – на hse.ru" });
 
-    // Вариант товара сверяем с каталогом. Раньше variant_sku принимался как есть:
-    // в корзину, в заявку и в выгрузку офиса попадал любой выдуманный размер, а
-    // проверка остатков по такому SKU ничего не находила и молча пропускала заказ.
+    // SKU проверяется по каталогу до поиска остатка.
     if (body.type === "merch") {
       const variants = info.variants ?? [];
       const sku = body.variant_sku ?? null;

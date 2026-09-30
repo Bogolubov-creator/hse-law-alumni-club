@@ -10,7 +10,6 @@ export type TaggedCard = HseDpoCard & { enrollment: "actual" | "nonactual" };
 export type ExistingDpoProgram = { id: string; slug: string; title: string; status: string; source_url: string | null; duration: string | null; price: number; hse_id?: string | null };
 export type DpoChange = { kind: "create"; data: Record<string, unknown> } | { kind: "update" | "archive"; id: string; data: Record<string, unknown> };
 
-/** Проверяет полноту источника до любых изменений каталога. */
 export async function collectDpoSyncCards(sources: { actual: string; all: string }, fetchPage: (url: string) => Promise<string>, collect = collectHseDpoCards): Promise<TaggedCard[]> {
   const actual = await collect(sources.actual, fetchPage);
   if (actual.length < 3) {
@@ -39,7 +38,6 @@ export async function collectDpoSyncCards(sources: { actual: string; all: string
   return [...byId.values()];
 }
 
-/** Чистый план: сохраняет ручной контент, slug и порядок операций. */
 export function planDpoSync(cards: TaggedCard[], existing: ExistingDpoProgram[]): DpoChange[] {
   const byHseId = new Map<string, (typeof existing)[number]>();
   for (const r of existing) {

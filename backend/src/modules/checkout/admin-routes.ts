@@ -14,8 +14,6 @@ const di = data;
 export async function adminOrdersRoutes(app: FastifyInstance) {
 
 
-  // Заявки: страница + total. Раньше отдавались только последние 100 без
-  // пагинации – сто первая заявка исчезала из панели навсегда.
   app.get("/admin/orders", async (req, reply) => {
     if (!await requireAdmin(req, reply)) return;
     const qp = z.object({
@@ -67,7 +65,6 @@ export async function adminOrdersRoutes(app: FastifyInstance) {
   });
 
 
-  // ── Выгрузка заявок в CSV (Excel-совместимо: BOM + точка с запятой) ──
   app.get("/admin/orders/export.csv", async (req, reply) => {
     // Выгрузка содержит ПДн всех заявителей – только админ.
     const ctx = await requireFullAdmin(req, reply);
@@ -77,9 +74,7 @@ export async function adminOrdersRoutes(app: FastifyInstance) {
       fields: ["number", "created_at", "type", "contact_fio", "contact_phone", "contact_email", "fulfillment", "address", "items_json", "subtotal", "member_discount", "total_estimate", "status", "payment_status", "comment"],
     }))) as any[];
 
-    // Защита от CSV-инъекции: ячейку, начинающуюся с = + - @ (или таб/CR),
-    // Excel/Sheets выполняют как формулу. Данные заявок вводит любой гость,
-    // поэтому такие значения обезвреживаем ведущим апострофом.
+    // Апостроф исключает выполнение пользовательской ячейки CSV как формулы.
     const esc = (v: unknown) => {
       let s = String(v ?? "");
       if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;

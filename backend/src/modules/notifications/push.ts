@@ -3,11 +3,6 @@ import { readItems, deleteItem } from "../../db/data-commands.js";
 import { env } from "../../config/env.js";
 import { data } from "../../db/data.js";
 
-/**
- * Web-push: браузерные уведомления участникам («заявка в друзья», «новое
- * событие», «новый подкаст», «оплата прошла»). Включается VAPID-ключами в .env;
- * без них все вызовы – тихие no-op. Мёртвые подписки (404/410) подчищаются.
- */
 
 const enabled = !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY);
 if (enabled) {
@@ -33,7 +28,6 @@ async function sendToSubs(subs: { id: string; endpoint: string; keys: { p256dh: 
   }));
 }
 
-/** Пуш одному участнику (все его устройства). Fire-and-forget. */
 export function pushToAlumni(alumniId: string, payload: PushPayload): void {
   if (!enabled) return;
   void (async () => {
@@ -44,11 +38,6 @@ export function pushToAlumni(alumniId: string, payload: PushPayload): void {
   })().catch((e) => console.error("[push] alumni failed:", (e as Error).message));
 }
 
-/**
- * Пуш пачке участников с ОДНИМ payload (напоминания о событии): все подписки –
- * одним запросом (filter alumni_id _in, индекс), без N+1 по каждому выпускнику.
- * Возвращает число устройств, которым отправлено (крону нужно дождаться).
- */
 export async function pushToAlumniMany(alumniIds: string[], payload: PushPayload): Promise<number> {
   if (!enabled || !alumniIds.length) return 0;
   const uniq = [...new Set(alumniIds)];
@@ -59,7 +48,6 @@ export async function pushToAlumniMany(alumniIds: string[], payload: PushPayload
   return subs.length;
 }
 
-/** Пуш всем подписанным устройствам (анонсы: событие, подкаст). Fire-and-forget. */
 export function pushToAll(payload: PushPayload): void {
   if (!enabled) return;
   void (async () => {

@@ -16,12 +16,7 @@ export interface AddPointsInput {
   idempotencyKey?: string | null;
 }
 
-/**
- * Начисление баллов: запись в ledger (источник правды) + пересчёт кэша + достижения.
- * Запись ledger и пересчёт кэша сериализуются по участнику: разные начисления
- * не должны записать старую сумму поверх новой. Отдельный ключ идемпотентности
- * защищает повтор операции, включая ошибочное применение ключа к другому участнику.
- */
+// Ledger и кэш сериализуются по участнику; ключ повтора также привязан к участнику.
 export async function addPoints(alumniId: string, input: AddPointsInput) {
   return withLock(`points-alumni:${alumniId}`, () => {
     if (!input.idempotencyKey) return addPointsUnlocked(alumniId, input);
@@ -60,7 +55,6 @@ async function addPointsUnlocked(alumniId: string, input: AddPointsInput) {
   return res;
 }
 
-/** Пересчёт points_cached/level_cached из ledger (агрегат). */
 export async function recompute(alumniId: string) {
   return withLock(`points-alumni:${alumniId}`, () => recomputeUnlocked(alumniId));
 }
@@ -75,7 +69,6 @@ async function recomputeUnlocked(alumniId: string) {
   return { points, level: level.key };
 }
 
-/** Статистика по уже прочитанным данным; история достижений не ограничена периодом графика. */
 export function statsFromLedger(alumni: { points_cached?: number | null; verification_status?: string | null } | undefined, ledger: { reason: string }[]) {
   const counts = new Map<string, number>();
   for (const row of ledger) counts.set(row.reason, (counts.get(row.reason) ?? 0) + 1);
@@ -89,7 +82,6 @@ export function statsFromLedger(alumni: { points_cached?: number | null; verific
   };
 }
 
-/** Полная статистика выпускника (для прогресса достижений). */
 export async function alumniStats(alumniId: string) {
   const ledger = (await di.request(
     readItems("points_ledger", { filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["reason"] }),
@@ -100,7 +92,6 @@ export async function alumniStats(alumniId: string) {
   return statsFromLedger(rows[0], ledger);
 }
 
-/** Выдать заслуженные достижения, которых ещё нет. */
 export async function grantAchievements(alumniId: string) {
   // Полная статистика (включая verified/status_level) – иначе часть достижений не выдаётся.
   const stats = await alumniStats(alumniId);
@@ -119,7 +110,6 @@ export async function grantAchievements(alumniId: string) {
 
 export { levelInfo } from "@club/shared";
 
-/** Cron-decay: −15% за месяц неактивности; идемпотентно по месяцу. */
 export async function runDecay(now = new Date()) {
   const cutoff = new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString();
   const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -139,9 +129,7 @@ export async function runDecay(now = new Date()) {
         readItems("points_ledger", { filter: { alumni_id: { _eq: a.id } }, limit: -1, fields: ["delta", "reason", "created_at"] }),
       )) as { delta: number; reason: string; created_at: string | null }[];
       const balance = ledger.reduce((s, r) => s + (r.delta || 0), 0);
-      // Защита от двойного списания: если decay уже был за последние 27 дней
-      // (ручной /decay/run + cron на стыке месяцев), пропускаем. Ключ по месяцу
-      // защищает лишь от повтора в том же календарном месяце.
+      // Окно 27 дней исключает двойной decay на стыке календарных месяцев.
       const lastDecayAt = ledger.reduce((max, r) => (r.reason === "decay" && r.created_at && r.created_at > max ? r.created_at : max), "");
       if (lastDecayAt && now.getTime() - new Date(lastDecayAt).getTime() < MIN_GAP_MS) continue;
       const delta = decayDelta(balance);

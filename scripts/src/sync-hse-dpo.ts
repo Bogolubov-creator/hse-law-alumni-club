@@ -1,4 +1,3 @@
-/** CLI использует ту же проверку прав и синхронизацию, что кнопка в панели офиса. */
 import { officeRequest } from "./office-api.js";
 try {
   await officeRequest("dpo-sync", { method: "POST" });

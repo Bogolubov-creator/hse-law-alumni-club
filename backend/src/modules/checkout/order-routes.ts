@@ -50,10 +50,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     const items = (cartRows[0]?.items_json as any[]) ?? [];
     if (!items.length) return reply.code(400).send({ error: "Корзина пуста" });
 
-    // Переоценка по каталогу (анти-подмена цены): собрать актуальные цены, затем чистые функции.
-    // Позиция, ставшая недоступной, пока лежала в корзине (снята с публикации, удалена,
-    // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает – иначе
-    // заказ уходит по устаревшей цене на то, что больше не продаётся.
+    // Цены и доступность повторно проверяются по актуальному каталогу.
     const catalog = await lookupCatalog(items);
     const priceMap = new Map<string, CatalogInfo>();
     const unavailableTitles = new Set<string>();
@@ -67,9 +64,7 @@ export async function ordersRoutes(app: FastifyInstance) {
         priceMap.set(key, info);
       }
     }
-    // Ни одна позиция молча не выкидывается: если что-то стало недоступным (снято
-    // с публикации, удалено, ДПО ушла на маркетплейс или набор закрыт) – заявку не
-    // создаём и явно сообщаем пользователю, что убрать. Иначе «заказал, а его нет».
+    // При недоступной позиции отклоняется вся заявка.
     if (unavailableTitles.size) {
       return reply.code(409).send({
         error: `Эти позиции больше недоступны: ${[...unavailableTitles].join(", ")}. Удалите их из корзины и оформите заказ заново.`,
@@ -78,8 +73,7 @@ export async function ordersRoutes(app: FastifyInstance) {
     }
     const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
 
-    // Предварительная проверка остатков по позиции/варианту. commitCheckout повторно
-    // проверяет цену и доступность под блокировками и атомарно резервирует остатки.
+    // commitCheckout повторяет проверку под блокировками перед резервированием.
     const need = new Map<string, number>();
     for (const i of priced) {
       if (i.type !== "merch") continue;

@@ -3,7 +3,6 @@ import { useLocation, useNavigationType } from "react-router-dom";
 
 const positions = new Map<string, number>();
 
-/** Новая страница открывается с заголовка; возврат сохраняет место чтения. */
 export function RouteScroll() {
   const { key, hash } = useLocation();
   const navigation = useNavigationType();

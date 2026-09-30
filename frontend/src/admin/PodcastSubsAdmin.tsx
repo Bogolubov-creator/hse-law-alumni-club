@@ -35,7 +35,6 @@ export function PodcastSubs() {
                 {s.cohort && <span style={{ ...label, fontSize: 10, marginLeft: 8 }}>выпуск {s.cohort}</span>}
               </span>
               <span style={{ ...mono, fontSize: 12, color: "var(--c-text-3)" }}>{new Date(s.until).toLocaleDateString("ru-RU")}</span>
-              {/* Оставшиеся дни – главное, по чему офис решает, звонить ли */}
               <span style={{ ...mono, fontSize: 12, whiteSpace: "nowrap", color: s.days_left <= 10 ? "var(--c-danger-text)" : "var(--c-text)" }}>
                 {s.days_left} дн.{s.reminded ? " · напомнили" : ""}
               </span>

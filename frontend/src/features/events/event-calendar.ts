@@ -1,6 +1,5 @@
 import type { ClubEvent } from "./events.js";
 
-/** Публичное событие зеркала: файл календаря без обращения к API. */
 export function eventCalendar(event: ClubEvent, url: string, now = new Date()): string {
   const date = (value: Date) => value.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const escape = (value: string) => value.replace(/\\/g, "\\\\").replace(/\r\n|\r|\n/g, "\\n").replace(/;/g, "\\;").replace(/,/g, "\\,");

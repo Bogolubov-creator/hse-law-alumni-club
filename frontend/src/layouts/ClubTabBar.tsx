@@ -2,10 +2,6 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { isAndroid } from "../hooks/use-mobile.js";
 
-/**
- * Единая нижняя панель: Клуб · Лента · ДПО · Мерч · Кабинет.
- * Подкасты и корзина – из шапки/главной; здесь один набор пунктов для витрин и ЛК.
- */
 
 const ANDROID = isAndroid();
 
@@ -56,12 +52,7 @@ export function clubTabActive(pathname: string): string {
 }
 
 type Props = {
-  /** Явный активный таб; иначе из location. */
   active?: string;
-  /**
-   * embedded – внутри колонки MobileApp;
-   * fixed – поверх канон-страниц (Shell / кабинет), только .mob-only.
-   */
   variant?: "embedded" | "fixed";
 };
 

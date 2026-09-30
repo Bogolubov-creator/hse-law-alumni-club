@@ -1,9 +1,5 @@
 import { Component, type ReactNode } from "react";
 
-/**
- * Ошибка загрузки динамического чанка (устаревший хеш после деплоя, флейки сети).
- * Такое лечится перезагрузкой – показываем мягкое «сайт обновился», а не «ошибка».
- */
 function isChunkError(e: unknown): boolean {
   const m = e instanceof Error ? `${e.name} ${e.message}` : String(e);
   return /ChunkLoadError|Loading chunk|dynamically imported module|Importing a module script failed|error loading dynamically/i.test(m);
@@ -14,11 +10,7 @@ interface State {
   chunk: boolean;
 }
 
-/**
- * Граница ошибок верхнего уровня: ловит падение рендера или сбой lazy-import,
- * чтобы вместо белого экрана пользователь увидел понятный экран восстановления.
- * Стили инлайновые – работают даже если CSS не загрузился.
- */
+// Инлайн-стили сохраняют экран восстановления при сбое загрузки CSS.
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   state: State = { error: null, chunk: false };
 
@@ -55,7 +47,6 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   }
 }
 
-/** Видимый индикатор загрузки для Suspense-fallback (self-contained SMIL-спиннер). */
 export function PageLoader() {
   return (
     <div style={{ minHeight: "50vh", display: "flex", alignItems: "center", justifyContent: "center" }} role="status" aria-label="Загрузка">

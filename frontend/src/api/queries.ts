@@ -55,10 +55,6 @@ export function useAddFriend(token: string | null) {
   });
 }
 
-/**
- * Подключена ли онлайн-оплата. Тексты витрин раньше утверждали «оплаты на сайте
- * нет» жёстко – при включении ЮKassa они становились ложью.
- */
 export function usePaymentsEnabled() {
   return useQuery({
     queryKey: ["payments-config"],
@@ -67,11 +63,6 @@ export function usePaymentsEnabled() {
   });
 }
 
-/**
- * Отклонить входящую заявку, отозвать свою или удалить из друзей.
- * До этого связь можно было только создать: отклонить входящую было нечем,
- * и она висела в ленте событий бесконечно.
- */
 export function useRemoveFriend(token: string | null) {
   const qc = useQueryClient();
   return useMutation({
@@ -125,7 +116,7 @@ export function useNewsPost(slug: string) {
     queryKey: ["news", slug],
     queryFn: () => apiGet<NewsItem>(`/news/${slug}`, undefined, newsItemSchema),
     enabled: !!slug,
-    retry: retryUnlessClientError, // 404 показываем сразу, а не через три ретрая
+    retry: retryUnlessClientError,
   });
 }
 

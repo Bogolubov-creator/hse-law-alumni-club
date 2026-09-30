@@ -26,23 +26,16 @@ function upsertCanonical(href: string) {
 export interface HeadOptions {
   title?: string | null;
   description?: string | null;
-  /** Если не задан – origin + pathname (текущий путь без query). */
   canonical?: string | null;
   noindex?: boolean;
 }
 
-/**
- * Управление <head> на маршрут: title, description, canonical, og/twitter.
- * Googlebot исполняет JS и увидит эти значения per-route (для превью-скрейперов
- * без JS используется статический <head> в index.html и dynamic rendering).
- */
 export function useHead(o: HeadOptions): void {
   const { title, description, canonical, noindex } = o;
   useEffect(() => {
     document.title = title ? `${title} – ${BASE}` : BASE;
     upsertMeta("property", "og:title", title ?? BASE);
-    // Описание выставляем ВСЕГДА (дефолт из BASE_DESC), иначе маршрут без своего
-    // description унаследует чужое от предыдущей страницы (SPA не перезагружает head).
+    // Описание задаётся на каждом маршруте, чтобы SPA не сохраняла описание предыдущего.
     const desc = description || BASE_DESC;
     upsertMeta("name", "description", desc);
     upsertMeta("property", "og:description", desc);
@@ -53,7 +46,6 @@ export function useHead(o: HeadOptions): void {
   }, [title, description, canonical, noindex]);
 }
 
-/** Обратная совместимость: только заголовок вкладки. */
 export function usePageTitle(title?: string | null): void {
   useHead({ title });
 }

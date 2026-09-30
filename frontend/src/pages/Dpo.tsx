@@ -13,7 +13,6 @@ import { mediaUrl } from "../lib/public-url.js";
 import { SiteShell } from "../layouts/Shell.js";
 import "../styles/dpo-vitrine.css";
 
-/** Русское склонение по числу: plural(31, ["программа", "программы", "программ"]). */
 function plural(n: number, forms: [string, string, string]): string {
   const m10 = n % 10, m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return forms[0];
@@ -21,7 +20,6 @@ function plural(n: number, forms: [string, string, string]): string {
   return forms[2];
 }
 
-/** Обложки с логотипом факультета (просмотрены 12.09); остальные с hse.ru – сток без символики. */
 const FACULTY_COVERS = new Set(["472681893", "474599435", "474776084", "494685723", "589527758", "802031223", "905186485", "906651510"]);
 function hasFacultyCover(cover: string | null | undefined): boolean {
   if (cover && mediaUrl(cover).startsWith("/api/media/")) return true;
@@ -33,7 +31,6 @@ export default function Dpo() {
   useHead({
     title: "Программы ДПО",
     description: "Каталог программ дополнительного образования факультета права НИУ ВШЭ с ценой выпускника.",
-    /* indexable: канон */
   });
   const programs = usePrograms();
   const discount = useMemberDiscount();
@@ -162,9 +159,6 @@ export default function Dpo() {
             </div>
           )}
 
-          {/* Программы как предметы на белом (референс 12.09): сначала плитки с факультетской обложкой,
-              затем остальные текстом в две колонки – так ряды не рвутся пустотами. Порядок сортировки
-              сохраняется внутри каждой группы. */}
           {[list.filter((p) => hasFacultyCover(p.cover)), list.filter((p) => !hasFacultyCover(p.cover))].map((group, gi) => group.length === 0 ? null : (
           <div key={gi} className={gi === 0 ? "club-dpo-grid" : "club-dpo-grid club-dpo-grid--text"}>
             {gi === 1 && list.some((p) => hasFacultyCover(p.cover)) && <h2 className="club-dpo-grid__title">Ещё {group.length} {plural(group.length, ["программа", "программы", "программ"])}</h2>}
@@ -172,7 +166,6 @@ export default function Dpo() {
               const closed = p.enrollment === "nonactual";
               const external = !!p.source_url;
               const priced = discount > 0 ? p.price - Math.round(p.price * discount / 100) : p.price;
-              // Обложка только с символикой факультета (решение заказчика 12.09): сток с hse.ru не показываем.
               const cover = hasFacultyCover(p.cover) ? mediaUrl(p.cover!) : null;
               return (
                 <article key={p.id} className={cover ? "club-dpo-tile" : "club-dpo-tile club-dpo-tile--text"}>

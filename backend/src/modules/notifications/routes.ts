@@ -9,7 +9,6 @@ import { audit } from "../../observability/audit.js";
 
 const di = data;
 
-/** Подписка браузера участника на web-push. */
 export async function pushRoutes(app: FastifyInstance) {
   // Публичный VAPID-ключ (фронт подписывает браузер им).
   app.get("/push/vapid", async () => ({ enabled: pushEnabled(), key: env.VAPID_PUBLIC_KEY || null }));
@@ -24,10 +23,7 @@ export async function pushRoutes(app: FastifyInstance) {
     if (!me) return reply.code(401).send({ error: "Не авторизован" });
     if (me.verification_status !== "verified") return reply.code(403).send({ error: "Доступно после верификации" });
     const b = subBody.parse(req.body);
-    // Один endpoint – одна запись (переподписка того же браузера не дублирует).
-    // Но если этот endpoint уже закреплён за ДРУГИМ выпускником (общий компьютер,
-    // сменился пользователь), запись нужно переназначить: иначе пуши о заявках
-    // продолжали уходить прежнему владельцу устройства, а новый их не получал.
+    // Endpoint принадлежит последнему вошедшему участнику на этом устройстве.
     const dup = (await di.request((readItems as any)("push_subs", { filter: { endpoint: { _eq: b.endpoint } }, limit: 1, fields: ["id", "alumni_id"] }))) as any[];
     if (!dup.length) {
       await di.request((createItem as any)("push_subs", { alumni_id: me.id, endpoint: b.endpoint, keys: b.keys }));

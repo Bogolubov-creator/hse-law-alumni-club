@@ -1,12 +1,11 @@
 import { readItems } from "../../db/data-commands.js";
 import { data } from "../../db/data.js";
 
-/** При сетевом сбое заявка могла сохраниться: повтор допустим только после коллизии SQL. */
+// Сетевой сбой не исключает сохранения заявки; повтор допустим лишь после коллизии SQL.
 export function isUniqueViolation(e: unknown): boolean {
   return typeof e === "object" && e !== null && "code" in e && e.code === "23505";
 }
 
-/** Одна строка по индексу number вместо загрузки всех заявок за год. */
 export async function lastOrderSeq(year: number): Promise<number> {
   const rows = (await data.request((readItems as any)("orders", {
     filter: { number: { _starts_with: `ALU-${year}-` } },

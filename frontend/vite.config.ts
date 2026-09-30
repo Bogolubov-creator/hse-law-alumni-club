@@ -3,8 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// Абсолютный домен для статических og/JSON-LD в index.html (их читают превью-скрейперы
-// без JS). В проде задаётся VITE_SITE_URL=https://<домен>; по умолчанию – localhost.
+// Статические og/JSON-LD требуют абсолютного VITE_SITE_URL для превью без JS.
 const SITE_URL = (process.env.VITE_SITE_URL || "http://localhost").replace(/\/$/, "");
 // GitHub Pages project site: VITE_BASE=/club-pravo-hse-mirror/
 const BASE = process.env.VITE_BASE || "/";

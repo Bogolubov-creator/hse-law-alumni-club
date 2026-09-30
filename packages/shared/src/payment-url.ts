@@ -1,4 +1,3 @@
-/** Ссылка провайдера должна вести на защищённую страницу оплаты. */
 export function securePaymentUrl(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   try {

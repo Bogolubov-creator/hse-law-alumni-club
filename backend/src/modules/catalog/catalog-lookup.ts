@@ -16,7 +16,6 @@ function catalogInfo(row: any): CatalogInfo {
     stock: typeof row.stock === "number" ? row.stock : null, variants: Array.isArray(row.variants_json) ? row.variants_json : null };
 }
 
-/** Не более одного чтения на коллекцию, независимо от числа строк и вариантов. */
 export async function lookupCatalog(items: { type: "dpo" | "merch"; ref_id: string }[]): Promise<Map<string, CatalogInfo>> {
   const result = new Map<string, CatalogInfo>();
   await Promise.all((["dpo", "merch"] as const).map(async type => {

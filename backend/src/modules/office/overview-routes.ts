@@ -26,7 +26,6 @@ export async function adminOverviewRoutes(app: FastifyInstance) {
   });
 
 
-  /** Продуктовая аналитика за 7/30/90 дней – агрегаты без ПДн. */
   app.get("/admin/analytics", async (req, reply) => {
     if (!await requireAdmin(req, reply)) return reply;
     const { range: raw } = z.object({ range: z.enum(["7d", "30d", "90d"]).default("30d") }).parse(req.query);
@@ -64,7 +63,6 @@ export async function adminOverviewRoutes(app: FastifyInstance) {
   });
 
 
-  // ── Журнал безопасности: чтение аудит-лога ───────────────────────
   app.get("/admin/audit", async (req, reply) => {
     if (!await requireAdmin(req, reply)) return;
     const { limit } = z.object({ limit: z.coerce.number().int().min(1).max(500).default(300) }).parse(req.query);

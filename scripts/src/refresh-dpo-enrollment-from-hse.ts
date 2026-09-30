@@ -1,10 +1,4 @@
-/**
- * Обновляет enrollment (и недостающие программы) в зеркальном сиде
- * по живым листингам hse.ru: актуальный набор + onlyActual=0.
- *
- * Не затирает rich-поля (modules/teachers/cover) у уже известных slug/hse_id.
- * Запуск: pnpm --filter @club/scripts refresh-dpo-enrollment
- */
+// Обновление enrollment сохраняет ручные modules, teachers и cover.
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,12 +32,7 @@ function parseGenerated(ts: string): ProgramSeed[] {
 function serialize(programs: ProgramSeed[]): string {
   const body = JSON.stringify(programs, null, 2);
   return `/* eslint-disable */
-/**
- * Автогенерация: scripts/src/import-dpo-mirror-catalog.ts (+ refresh-dpo-enrollment-from-hse).
- * Источник контента – itspecR/dpo-pravo-hse; enrollment – живой hse.ru
- * (orgUnit=22753 и onlyActual=0).
- * Не редактировать вручную – перезапустите import-dpo / refresh-dpo-enrollment.
- */
+// Сгенерировано import-dpo / refresh-dpo-enrollment. Источники: itspecR/dpo-pravo-hse, hse.ru.
 import type { ProgramSeed } from "./seeds.js";
 
 export const DPO_MIRROR_PROGRAMS: ProgramSeed[] = ${body};

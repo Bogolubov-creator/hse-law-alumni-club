@@ -30,10 +30,6 @@ async function eventRoster(eventId?: string) {
   return rsvps.map(r => ({ id: r.id, event_id: r.event_id, alumni_id: r.alumni_id, attended: r.attended, fio: names.get(r.alumni_id) ?? "–" }));
 }
 
-/**
- * Календарь событий клуба: публичная афиша, RSVP («Пойду») для верифицированных,
- * отметка посещения офисом → автоначисление баллов (reason=event, идемпотентно).
- */
 export async function eventsRoutes(app: FastifyInstance) {
   // Публичные счётчики клуба для главной. Кэш в памяти на 5 минут.
   let statsCache: { at: number; data: unknown } | null = null;
@@ -59,8 +55,6 @@ export async function eventsRoutes(app: FastifyInstance) {
       fields: ["id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status"],
     }))) as any[];
 
-    // «Пойдут» – агрегатный count по показанным событиям (строк = число событий,
-    // не число RSVP): под масштаб не читаем все RSVP на каждый анонимный заход.
     const eventIds = rows.map((e) => e.id);
     const going = new Map<string, number>();
     const mine = new Map<string, { attended: boolean }>();
@@ -139,7 +133,6 @@ export async function eventsRoutes(app: FastifyInstance) {
     return { going: true };
   });
 
-  // ── Админ: CRUD событий + участники + отметка посещения (баллы) ──
   const eventBody = z.object({
     title: z.string().min(3),
     description: z.string().nullish(),
@@ -232,9 +225,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     if (rsvp.attended) return { ok: true, already: true };
 
     const ev = (await di.request((readItems as any)("events", { filter: { id: { _eq: rsvp.event_id } }, limit: 1, fields: ["title", "points"] }))) as any[];
-    // Сначала баллы (идемпотентны по ключу), потом attended:true. Иначе при сбое
-    // начисления attended уже стоял бы, а повтор коротко замыкался guard-ом выше –
-    // участник навсегда без баллов за событие.
+    // Баллы начисляются до attended: при сбое повтор должен иметь возможность начислить их.
     await addPoints(rsvp.alumni_id, {
       reason: "event",
       delta: ev[0]?.points ?? 60,

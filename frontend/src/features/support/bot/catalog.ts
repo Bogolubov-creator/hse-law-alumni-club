@@ -9,7 +9,7 @@ export async function loadBotCatalog(fetchImpl: typeof fetch = fetch): Promise<B
       if (list.length) return programsFromApi(list);
     }
   } catch {
-    /* fallback below */
+    // При отказе API загружается локальный каталог ниже.
   }
   const fallback = await fetchImpl("/content/bot-catalog.json");
   if (!fallback.ok) throw new Error("catalog unavailable");

@@ -7,12 +7,6 @@ import {
   writeCookieConsent,
 } from "./cookie-consent.js";
 
-/**
- * Баннер cookies по 152-ФЗ (ст. 9): информирование + свободный выбор.
- * Визуально – плашка как у сайта ДПО (светлая surface, пилюли, мягкая тень);
- * кнопки «Только необходимые» / «Принять все» равнозначны по размеру и доступны
- * сразу. Аналитика не грузится до «Принять все».
- */
 export default function CookieBanner() {
   const [visible, setVisible] = useState(() => !hasCookieChoice());
   const ref = useRef<HTMLDivElement>(null);
@@ -23,10 +17,7 @@ export default function CookieBanner() {
     return () => window.removeEventListener(COOKIE_SETTINGS_EVENT, reopen);
   }, []);
 
-  /**
-   * Пока баннер висит, он закрывает низ страницы – права по 152-ФЗ в профиле
-   * не должны оказаться под ним. Высота уходит в --cookie-h для оболочек.
-   */
+  // Высота баннера учитывается оболочкой, чтобы он не перекрывал нижние действия.
   useEffect(() => {
     const el = ref.current;
     const root = document.documentElement;

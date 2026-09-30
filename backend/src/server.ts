@@ -74,12 +74,7 @@ if (prodErrs.length) {
   app.log.fatal("НЕБЕЗОПАСНАЯ ПРОД-КОНФИГУРАЦИЯ (APP_ENV=production) – старт прерван");
   process.exit(1);
 }
-// Глобальный лимит запросов per-IP (на auth/оплату/заявки – жёстче, см. роуты).
-// Health-пинги мониторинга не лимитируем. Ключ – реальный IP за Caddy (trustProxy).
-//
-// Потолок вынесен в RATE_LIMIT_MAX: за университетским NAT с одного адреса
-// выходит целый корпус, и прежние 300 запросов в минуту на всех отсекали бы
-// живых людей. Настоящая защита – точечные лимиты чувствительных ручек.
+// Общий лимит учитывает NAT; health-проверки исключены.
 await app.register(rateLimit, {
   max: env.RATE_LIMIT_MAX,
   timeWindow: "1 minute",
@@ -131,8 +126,7 @@ app.get("/ready", async (_req, reply) => {
   return reply.code(ready ? 200 : 503).send({ status: ready ? "ok" : "degraded" });
 });
 
-// Плавная остановка: по SIGTERM/SIGINT (docker stop, редеплой) останавливаем cron
-// и даём Fastify закрыть уже принятые соединения, а не рвём их посреди запроса.
+// Остановка ждёт завершения принятых запросов и отключает cron.
 let shuttingDown = false;
 async function gracefulShutdown(signal: string) {
   if (shuttingDown) return;

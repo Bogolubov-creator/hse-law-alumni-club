@@ -15,9 +15,7 @@ import { BlankField, mono, disp } from "../layouts/Shell.js";
 import { Mark } from "../layouts/Mark.js";
 import { CabinetShell, DataRow, Section, Initial, TOKEN_KEY, label, field, action, actionGhost } from "../layouts/cabinet.js";
 
-/** Статусы используют text-токены: заливочные цвета не дают нужный контраст мелкому тексту. */
 
-/* ── Вход ─────────────────────────────────────────────────────────── */
 
 function Gate({ onAuthed, returnTo, sessionExpired }: { onAuthed: (r: LoginResponse) => void; returnTo: string | null; sessionExpired: boolean }) {
   const [email, setEmail] = useState("");
@@ -77,7 +75,6 @@ function Gate({ onAuthed, returnTo, sessionExpired }: { onAuthed: (r: LoginRespo
         </div>
       </form>
       </div>
-      {/* Без панели экран входа – тупик: во вкладках «кабинет» ведёт сюда */}
     </main>
   );
 }
@@ -120,7 +117,6 @@ function PendingScreen({ alumni, onBack }: { alumni: AlumniBrief; onBack: () => 
   );
 }
 
-/* ── Удостоверение ────────────────────────────────────────────────── */
 
 function Identity({ me }: { me: Me }) {
   const a = me.alumni;
@@ -134,10 +130,7 @@ function Identity({ me }: { me: Me }) {
           ? <img src={`/api/avatars/${a.avatar}`} alt="" width={64} height={64} style={{ width: 64, height: 64, flexShrink: 0, borderRadius: "var(--r-md)", objectFit: "cover" }} />
           : <Initial fio={a.fio} size={64} radius="var(--r-md)" />}
         <div style={{ minWidth: 0, flex: 1 }}>
-          {/* Сигнатура на своём месте: под чертой подписано, что в неё вписано */}
           <BlankField label={sub}>
-            {/* Кегль ниже h3 и перенос только по словам: «Кондратьев Сергей
-                Андреевич» в колонке 330px иначе рвётся посреди слова. */}
             <span style={{ ...disp, display: "block", fontWeight: 700, fontSize: 20, lineHeight: 1.2, hyphens: "none" }}>
               {a.fio ?? "Выпускник"}
             </span>
@@ -166,7 +159,6 @@ function Identity({ me }: { me: Me }) {
   );
 }
 
-/* ── Разделы ──────────────────────────────────────────────────────── */
 
 function EventsFeed({ token }: { token: string }) {
   const [showAll, setShowAll] = useState(false);
@@ -519,7 +511,6 @@ function Community({ token, referralCode }: { token: string; referralCode?: stri
   );
 }
 
-/* ── Каркас ───────────────────────────────────────────────────────── */
 
 function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [sectionParams, setSectionParams] = useSearchParams();
@@ -643,7 +634,6 @@ export default function Cabinet() {
   return <DashboardGate token={token} onExpired={onExpired} onLogout={doLogout} onPending={(a) => setPending(a)} />;
 }
 
-/** После refresh: если токен есть, но статус не verified – показать ожидание, не кабинет. */
 function DashboardGate({ token, onLogout, onPending, onExpired }: { token: string; onLogout: () => void; onPending: (a: AlumniBrief) => void; onExpired: () => void }) {
   const me = useMe(token);
   const expired = me.isError && isAuthError(me.error);

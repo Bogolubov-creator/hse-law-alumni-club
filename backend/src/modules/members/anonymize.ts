@@ -7,14 +7,7 @@ import { data } from "../../db/data.js";
 const di = data;
 const warn = (where: string, e: unknown) => console.error(`[anonymize] ${where}:`, (e as Error)?.message ?? e);
 
-/**
- * Обезличивание участника (152-ФЗ, право на стирание / отзыв согласия).
- * Вычищаем персональные данные из профиля, заявок и файла аватара, удаляем
- * аккаунт входа и связи (друзья, push-подписки), поднимаем token_version, чтобы
- * убить выданные сессии. Учётные строки (заявки, леджер) остаются для целостности,
- * но без ПДн. Обезличенный участник помечается rejected + alumni_left, чтобы не
- * попадать в «Сообщество» и не считаться активным verified. Идемпотентно.
- */
+// Учётные строки остаются без персональных данных; выданные сессии отзываются.
 export async function anonymizeAlumni(alumniId: string): Promise<boolean> {
   const rows = (await di.request((readItems as any)("alumni", {
     filter: { id: { _eq: alumniId } }, limit: 1,
@@ -48,8 +41,7 @@ export async function anonymizeAlumni(alumniId: string): Promise<boolean> {
 
   if (a.avatar) await deleteStoredFile(a.avatar).catch((e) => warn("avatar", e));
 
-  // Заявки: обезличить контактные ПДн. contact_email = "-" (сентинел «нет адреса»),
-  // иначе значение прошло бы гард уведомлений (contact_email && !== "-") → письмо в никуда.
+  // Сентинел «-» исключает повторную отправку уведомлений обезличенному адресу.
   const orders = (await di.request((readItems as any)("orders", {
     filter: { alumni_id: { _eq: alumniId } }, limit: -1, fields: ["id"],
   }))) as { id: string }[];
@@ -70,8 +62,7 @@ export async function anonymizeAlumni(alumniId: string): Promise<boolean> {
   }))) as { id: string }[];
   for (const sub of subs) await di.request((deleteItem as any)("push_subs", sub.id)).catch((e) => warn("push_sub", e));
 
-  // Аккаунт входа – удалить. Если удаление не прошло (email – ПДн!), не молчим:
-  // логируем и как fallback затираем email/имя и блокируем вход, чтобы ПДн не осталось.
+  // При сбое удаления аккаунт обезличивается и блокируется.
   if (a.user_id) {
     try {
       await di.request((deleteUser as any)(a.user_id));

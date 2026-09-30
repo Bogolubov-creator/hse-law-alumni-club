@@ -1,9 +1,6 @@
 import crypto from "node:crypto";
 
-/**
- * Валидация Telegram Mini App initData по подписи (HMAC-SHA256).
- * https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
- */
+// Проверка подписи: https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 export function validateInitData(
   initData: string,
   botToken: string,
@@ -39,7 +36,6 @@ export function validateInitData(
   return { ok: true, user };
 }
 
-/** Хелпер для тестов/инструментов: собрать подписанный initData. */
 export function signInitData(fields: Record<string, string>, botToken: string): string {
   const dataCheckString = Object.entries(fields)
     .sort((a, b) => (a[0] < b[0] ? -1 : 1))

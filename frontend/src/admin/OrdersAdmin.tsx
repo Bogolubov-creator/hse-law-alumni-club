@@ -43,7 +43,6 @@ export function Orders() {
     </div>
 
     <div>
-      {/* Шапка описи: те же колонки, что и у записей ниже */}
       <div className="adm-order-head" style={{ display: "grid", gridTemplateColumns: "108px 1fr 1fr 172px 152px", gap: 14, padding: "0 0 10px" }}>
         <span style={label}>номер</span><span style={label}>клиент</span><span style={label}>контакты</span><span style={label}>сумма</span><span style={label}>статус</span>
       </div>
@@ -56,7 +55,6 @@ export function Orders() {
             <span style={{ ...mono, fontSize: 12, color: "var(--c-text-3)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.contact_phone}</span>
             <span style={{ ...mono, fontSize: 13, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
               {rub(o.total_estimate)}
-              {/* Вебхук ЮKassa пометил заявку: пришла не та сумма. Молча оставлять нельзя. */}
               {o.payment_status === "review" && (
                 <span title="Оплата пришла на другую сумму – проверьте вручную"
                   style={{ ...mono, fontSize: 10, letterSpacing: "var(--tr-data)", color: "var(--c-danger-text)", border: "1px solid var(--c-danger-text)", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>сумма ≠</span>

@@ -3,7 +3,6 @@ import { useHead } from "../lib/title.js";
 import { SiteShell, pageTitle } from "../layouts/Shell.js";
 import { action, actionGhost } from "../styles/primitives.js";
 
-/** Страница-заглушка для неизвестных адресов: в общей оболочке, честная копия, два выхода. */
 export default function Stub({ title }: { title: string }) {
   useHead({ title, noindex: true });
   return (

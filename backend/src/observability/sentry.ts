@@ -1,16 +1,9 @@
 import { env } from "../config/env.js";
 
-/**
- * Sentry за фичефлагом: пустой SENTRY_DSN = полный no-op (пакет даже не
- * импортируется – на стендах без него ничего не падает). При заданном DSN
- * ловим необработанные исключения и 5xx из fastify-обработчика ошибок.
- */
 
 let client: typeof import("@sentry/node") | null = null;
 
-// Вычистить структурные ПДн (email/телефон) из произвольной строки перед отправкой
-// в Sentry. ФИО регуляркой не отловить – поэтому тело, заголовки и параметры
-// запроса удаляем целиком в beforeSend, а сообщения ошибок маскируем здесь.
+// ФИО нельзя надёжно удалить регуляркой; запросы очищаются целиком в beforeSend.
 function scrubPii(s: string): string {
   return s
     .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email]")
@@ -68,7 +61,6 @@ export async function initSentry(): Promise<void> {
   }
 }
 
-/** Отправка ошибки, если Sentry включён. Безопасно звать всегда. */
 export function captureError(err: unknown): void {
   client?.captureException(err);
 }

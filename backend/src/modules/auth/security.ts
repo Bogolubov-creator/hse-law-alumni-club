@@ -5,23 +5,14 @@ dockerProxyNetworks.addSubnet("10.0.0.0", 8);
 dockerProxyNetworks.addSubnet("172.16.0.0", 12);
 dockerProxyNetworks.addSubnet("192.168.0.0", 16);
 
-/** Доверяем одному Docker-прокси, проверяя адрес соединения и номер хопа. */
+// Доверяется только соединение от Docker-прокси с одним хопом.
 export function trustDockerProxy(address: string, hop: number): boolean {
   if (hop !== 0) return false;
   const ipv4Address = address.startsWith("::ffff:") ? address.slice(7) : address;
   return dockerProxyNetworks.check(ipv4Address, "ipv4");
 }
 
-/**
- * Анти-брутфорс входа (в дополнение к per-IP rate-limit @fastify/rate-limit).
- * Два независимых счётчика неудач:
- *  • по аккаунту (email) – гасит перебор пароля к ОДНОМУ аккаунту (в т.ч. с многих IP);
- *  • по IP – гасит password spraying (один IP по МНОГИМ аккаунтам: per-email лок не
- *    срабатывает, т.к. на каждый email лишь 1 неудача, а rate-limit сбрасывает окно).
- * Хранение в памяти процесса – при рестарте счётчики обнуляются (приемлемо: rate-limit
- * per-IP остаётся всегда). Одноинстансный деплой (см. deploy-runbook); при масштабировании
- * нужен общий стор (Redis).
- */
+// Счётчики по аккаунту и IP независимы; хранилище рассчитано на один процесс API.
 interface Entry { fails: number; first: number; lockedUntil: number }
 
 function isLocked(map: Map<string, Entry>, key: string): boolean {
@@ -63,7 +54,6 @@ export function registerLoginSuccess(email: string): void {
   emailAttempts.delete(email.toLowerCase());
 }
 
-/** Заблокирован ли IP по превышению суммарных неудач входа (password spraying). */
 export function ipLoginLocked(ip: string): boolean {
   return isLocked(ipAttempts, ip);
 }
@@ -74,7 +64,7 @@ export function registerIpSuccess(ip: string): void {
   ipAttempts.delete(ip);
 }
 
-/** IP-подсети уведомлений ЮKassa (https://yookassa.ru/developers/using-api/webhooks). */
+// Подсети ЮKassa: https://yookassa.ru/developers/using-api/webhooks
 const YOOKASSA_CIDRS = [
   "185.71.76.0/27",
   "185.71.77.0/27",
@@ -92,11 +82,6 @@ function ipToInt(ip: string): number | null {
   return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0;
 }
 
-/**
- * Использованные токены сброса пароля (одноразовость, слой 1). Ссылка живёт
- * 30 минут, поэтому и запись держим 30 минут – дольше она бессмысленна.
- * Слой 2 (token_version в самой ссылке) переживает рестарт процесса, см. auth-роут.
- */
 const usedResetJti = new Map<string, number>();
 const RESET_TTL_MS = 30 * 60 * 1000;
 setInterval(() => {
@@ -112,7 +97,6 @@ export function markResetTokenUsed(jti: string): void {
   usedResetJti.set(jti, Date.now() + RESET_TTL_MS);
 }
 
-/** true, если IPv4-адрес принадлежит официальным подсетям ЮKassa. */
 export function isYookassaIp(ip: string): boolean {
   const addr = ipToInt(ip.replace(/^::ffff:/, "")); // IPv4-mapped IPv6
   if (addr === null) return false;

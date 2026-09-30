@@ -5,12 +5,6 @@ import { env } from "../../config/env.js";
 
 const di = data;
 
-/**
- * Email-анонс нового события тем, до кого пуш и Telegram не дотянутся:
- * верифицированные без push-подписки и без привязанного telegram_id.
- * Пуш-подписчики и телеграм-привязанные получают анонс своими каналами –
- * не дублируем. Fire-and-forget, сбой почты события не ломает.
- */
 export function announceEventByEmail(ev: { id: string; title: string; starts_at: string; location?: string | null; format?: string; reg_url?: string | null }): void {
   void (async () => {
     const alumni = (await di.request((readItems as any)("alumni", {

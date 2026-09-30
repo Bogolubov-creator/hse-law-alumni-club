@@ -1,10 +1,5 @@
 import { useSyncExternalStore } from "react";
 
-/**
- * Версия для слабовидящих (ГОСТ Р 52872): размер шрифта, цветовая схема,
- * межбуквенный интервал, шрифт с засечками, показ/скрытие изображений.
- * Настройки применяются классами/переменными на <html> и сохраняются в localStorage.
- */
 export type VisScheme = "bw" | "wb" | "bb"; // чёрным по белому / белым по чёрному / синим по бежевому
 export interface VisionState {
   on: boolean;
@@ -45,7 +40,7 @@ export function setVision(patch: Partial<VisionState>): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
-    /* приватный режим – не критично */
+    // Настройки применяются и при недоступном хранилище.
   }
   apply();
   listeners.forEach((l) => l());

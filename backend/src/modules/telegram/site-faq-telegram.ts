@@ -1,7 +1,3 @@
-/**
- * FAQ-бот сайта для Telegram @pravohse_alumni_bot.
- * Ответы общие с ClubSupportBot; каталог загружается из PostgreSQL.
- */
 import { readItems } from "../../db/data-commands.js";
 import {
   BOT_FAQ,
@@ -78,13 +74,10 @@ function formatReply(out: BotReply, base: string): string {
   }
 }
 
-/** Ответ на свободный текст посетителя в Telegram (не команда). */
 export async function answerTelegramFaq(query: string): Promise<string | null> {
   const q = String(query || "").trim();
   if (!q || q.length < 2) return null;
   const tokens = tokenize(q);
-  // Telegram не показывает extra-рекомендации для FAQ. Длительность имеет
-  // приоритет над FAQ и вычисляется по каталогу, поэтому её не сокращаем.
   const needsDuration = BOT_FAQ.duration?.triggers.some(t => triggerMatches(t, tokens));
   const answer = !needsDuration ? findByTriggers(tokens, BOT_FAQ.answers) : null;
   const gap = !needsDuration && !answer ? findByTriggers(tokens, BOT_FAQ.gaps) : null;

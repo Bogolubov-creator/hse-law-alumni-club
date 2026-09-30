@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
 
-/* Значения утилит сохраняют действующую палитру и геометрию интерфейса. */
 @theme {
   --color-ohra: #EC5A13;
   --color-ohra-deep: #C24009;
@@ -23,7 +22,7 @@
   --radius-soft: 12px;
 }
 
-/* Сброс Tailwind 4 меняет эти значения; сохраняем прежнее оформление форм. */
+/* Сохраняет оформление форм после сброса Tailwind 4. */
 @layer base {
   *, ::before, ::after, ::backdrop, ::file-selector-button {
     border-color: #e5e7eb;
@@ -39,7 +38,6 @@
   }
 }
 
-/* Верхний отступ сохраняет ритм юридических страниц при смене space-y в Tailwind 4. */
 .legal > :not([hidden]) ~ :not([hidden]) { margin-top: 16px; }
 
 body {
@@ -50,14 +48,10 @@ body {
 
 ::selection { background: var(--c-accent); color: var(--c-on-accent); }
 .foc:focus-visible { outline: 3px solid var(--c-accent); outline-offset: 2px; border-radius: var(--r-sm); }
-/* .arow / .a-shell / .a-side и анимация g-pop убраны вместе со старой вёрсткой
-   админки: подсветка строки была зашита светлым #fbf7ef и в тёмной теме
-   вспыхивала белым. */
 @media (prefers-reduced-motion: reduce) {
   [class] { animation: none !important; transition: none !important; }
 }
 
-/* Главная: маркиза + адаптив (порт из Главная.dc.html) */
 @keyframes marq {
   to { transform: translateX(-50%); }
 }
@@ -71,7 +65,6 @@ body {
 .shop-nav:hover { color: var(--c-accent-text); }
 @media (max-width: 1024px) and (min-width: 761px) {
   .two-col { grid-template-columns: 1fr 1fr !important; }
-  /* Три витрины на планшете складываются в две колонки */
   .three-col { grid-template-columns: 1fr 1fr !important; }
 }
 @media (max-width: 760px) {
@@ -86,35 +79,28 @@ body {
   .marq-track { animation: none !important; }
 }
 
-/* Мобильная навигация: бургер только на телефоне, десктоп не трогаем */
 .mob-only { display: none !important; }
 @media (max-width: 768px) {
   .mob-only { display: flex !important; }
   .desk-only { display: none !important; }
 }
 
-/* ── PWA/мобильная полировка (десктоп не затрагивается) ── */
 html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
 body { -webkit-tap-highlight-color: transparent; }
-button, a, input, select, textarea { touch-action: manipulation; } /* без 300мс-задержки и дабл-тап-зума */
+button, a, input, select, textarea { touch-action: manipulation; }
 @media (max-width: 768px) {
-  /* iOS зумит страницу при фокусе на поле со шрифтом <16px – не даём */
+  /* Минимум 16px исключает увеличение страницы при фокусе в iOS. */
   input, select, textarea { font-size: 16px !important; }
-  /* Слишком горячие ховер-подъёмы карточек не нужны на таче */
   .vcard { transition: none; }
 }
-/* Отступы под «чёлку»/индикатор на телефонах (standalone-режим PWA) */
 @supports (padding: env(safe-area-inset-left)) {
   header { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
   footer { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
 }
-/* В установленном приложении убираем прыжки резинового скролла за шапкой */
 @media (display-mode: standalone) {
   html { overscroll-behavior-y: none; }
 }
 
-/* ── PWA-оболочка (установленное приложение / ?pwa=1) ───────────────
-   Phone-column на широком экране, мобильная навигация вместо desk-chrome. */
 html.pwa-shell {
   overscroll-behavior-y: none;
 }
@@ -154,7 +140,6 @@ html.pwa-shell body {
     box-shadow: none;
   }
 }
-/* В оболочке приложения всегда мобильный хром, даже на широком viewport */
 html.pwa-shell .mob-only { display: flex !important; }
 html.pwa-shell .desk-only { display: none !important; }
 html.pwa-shell {
@@ -176,9 +161,6 @@ html.pwa-shell [role="dialog"][aria-label="Установка приложени
   }
 }
 
-/* ─────────────── Версия для слабовидящих (ГОСТ Р 52872) ───────────────
-   Агрессивное переопределение: заменяем дизайн простой высококонтрастной
-   раскладкой. Масштаб – через zoom, цвета – через переменные схемы. */
 html.vis { zoom: var(--vis-zoom, 1); }
 html[data-vis-scheme="bw"] { --vis-bg: #ffffff; --vis-fg: #000000; --vis-link: #0000cc; }
 html[data-vis-scheme="wb"] { --vis-bg: #000000; --vis-fg: #ffffff; --vis-link: #74c0ff; }
@@ -200,55 +182,34 @@ html.vis .vis-btn {
   border: 2px solid var(--vis-fg) !important;
   color: var(--vis-fg) !important;
 }
-/* Активная опция панели – инверсия (специфичнее универсального правила). */
 html.vis .vis-btn.vis-active { background: var(--vis-fg) !important; color: var(--vis-bg) !important; }
-/* Шапка/панель не должны быть прозрачными (иначе текст наезжает при скролле). */
 html.vis header, html.vis .vis-bar { background: var(--vis-bg) !important; border-bottom: 2px solid var(--vis-fg) !important; }
-/* Панель версии и шапка сайта обе липли к верху экрана и наезжали друг на
-   друга: название клуба, разделы и органы панели складывались в одну
-   нечитаемую кашу. Липкой остаётся панель – она нужна постоянно; шапка в этом
-   режиме прокручивается вместе со страницей. */
+/* Шапка прокручивается, чтобы не перекрывать липкую панель доступности. */
 html.vis header { position: static !important; }
 .vis-bar { position: sticky; top: 0; z-index: 9999; font-size: 16px; }
-/* Изображения: серым в обычном режиме версии; полностью скрыть по кнопке. */
 html.vis img, html.vis video { filter: grayscale(1); }
 html.vis-noimg img, html.vis-noimg video, html.vis-noimg [style*="url("] { display: none !important; }
-/* Индикатор фокуса. Охряная обводка на бежевой схеме даёт 1,97:1 – в режиме,
-   которым пользуются как раз при слабом зрении, было не видно, где ты
-   находишься. В версии обводка берёт цвет текста схемы: он по построению
-   максимально контрастен фону (11,25:1 на бежевой, 21:1 на чёрно-белых).
-   Отступ в 3px оставляет зазор фона между собственной рамкой элемента и
-   обводкой – иначе они сливаются в одну толстую линию. */
+/* Контур фокуса использует контрастный цвет текущей схемы. */
 html.vis :focus-visible,
 html.vis .foc:focus-visible {
   outline: 3px solid var(--vis-fg) !important;
   outline-offset: 3px !important;
 }
 
-/* Слои, которым фон обязателен. Универсальное правило выше снимало его со
-   всего подряд и выигрывало по специфичности даже у явных правил ниже. Отсюда
-   две беды: текст cookie-баннера ложился поверх фильтров витрины, а панель
-   версии – поверх заголовка страницы, складываясь в нечитаемую кашу. Диалоги,
-   панель и шапка из сброса исключены. */
+/* Диалоги и навигация исключены из сброса фона, чтобы текст не накладывался на страницу. */
 html.vis [role="dialog"] {
   background: var(--vis-bg) !important;
   border: 2px solid var(--vis-fg) !important;
 }
 
-/* Шрифт с засечками / межбуквенный интервал. */
 html.vis-serif, html.vis-serif *:not(svg) { font-family: Georgia, "Times New Roman", serif !important; }
 html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.14em !important; line-height: 1.8 !important; }
 
-/* Мобильная оболочка (Claude Design): спиннер загрузки и эквалайзер плеера подкастов. */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
 
-/* Адаптивная главная. */
 @media (max-width: 900px) {
   .v2-hero { grid-template-columns: 1fr !important; gap: 24px !important; }
-  /* Знак остаётся первым, но не съедает первый экран: заголовок и кнопка
-     должны попадать в вьюпорт без прокрутки. Замерено: при иллюстрации 210px
-     главная кнопка уходила на 715px и пряталась под баннером cookie (566px). */
   .v2-hero-art { order: -1; max-width: 132px; }
   .v2-hero-sec { padding-top: 28px !important; padding-bottom: 36px !important; }
   .v2-hero-cta { margin-top: 20px !important; }
@@ -256,15 +217,9 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
 }
 @media (max-width: 620px) {
   .v2-row, .v2-row + div a { grid-template-columns: 68px 1fr !important; gap: 16px !important; }
-  /* Телефон: первый экран делится с баннером cookie (174px). Иллюстрация
-     сжимается до печати над титулом – так её ставят на бланке, и заголовок,
-     лид и кнопка помещаются над баннером. */
   .v2-hero-art { max-width: 76px; }
   .v2-hero-sec { padding-top: 16px !important; }
 }
-/* ── Админ-панель: адаптив ─────────────────────────────────────────
-   На узком экране боковая колонка перестаёт быть колонкой: она
-   разворачивается в строку вкладок сверху и не липнет. */
 @media (max-width: 900px) {
   .adm-grid { grid-template-columns: 1fr !important; }
   .adm-aside {
@@ -282,8 +237,6 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
 @media (max-width: 620px) {
   .adm-stats { grid-template-columns: 1fr 1fr !important; }
 }
-/* Широкие описи заявок и выпускников на узком экране складываются в две
-   строки: шапка колонок теряет смысл и убирается. */
 @media (max-width: 1000px) {
   .adm-order-head, .adm-member-head { display: none !important; }
   .adm-order { grid-template-columns: 1fr auto !important; row-gap: 6px !important; }
@@ -295,11 +248,7 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
   .adm-member > :nth-child(2) { order: 2; }
 }
 
-/* ── Оболочка приложения v2 на телефоне ────────────────────────────
-   Панель вкладок фиксирована внизу, поэтому её высоту нужно знать всем,
-   кто рисует что-то у нижнего края: подвалу, кабинету и cookie-баннеру.
-   На десктопе переменная равна нулю и ничего не сдвигает. */
-/* Cookie-баннер (152-ФЗ): плашка как у ДПО – светлая surface, пилюли, мягкая тень. */
+/* Высота фиксированных вкладок учитывается подвалом, кабинетом и cookie-баннером. */
 .club-cookie-banner {
   max-height: calc(100dvh - var(--tabs-h, 0px) - env(safe-area-inset-top, 0px) - 32px);
   overflow-y: auto;
@@ -358,8 +307,7 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
   border-radius: var(--r-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  /* Без transition на color: смена data-theme иначе красит подписи
-     через промежуточный серый и валит AA-замер (secondary ~1.2:1). */
+  /* Переход цвета при смене темы временно снижает контраст текста. */
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .club-cookie-banner__btn--primary {
@@ -398,7 +346,6 @@ html.vis .club-cookie-banner__btn--primary {
   color: var(--vis-bg, #fff) !important;
 }
 
-/* Компактный launcher поддержки на телефоне (вместо вороны). */
 .club-support-pill {
   position: fixed;
   z-index: 41;
@@ -415,7 +362,6 @@ html.vis .club-cookie-banner__btn--primary {
   box-shadow: 0 8px 24px -16px rgba(20, 24, 31, 0.45);
 }
 
-/* CTA-пилюли как на dpo-pravo-hse (mobile-cta). */
 .club-btn {
   appearance: none;
   box-sizing: border-box;
@@ -446,7 +392,6 @@ html.vis .club-cookie-banner__btn--primary {
   opacity: 0.55;
   cursor: not-allowed;
 }
-/* Референс 12.09: заливка контрастом и обводка; охра действий не красит. */
 .club-btn--primary {
   background: var(--c-accent);
   border-color: var(--c-accent);
@@ -475,9 +420,8 @@ html.vis .club-cookie-banner__btn--primary {
 @media (max-width: 768px) {
   :root {
     --tabs-h: 0px;
-    --crow-h: 108px; /* SupportDock: 96px wide × 1465/1400 */
+    --crow-h: 108px;
   }
-  /* Баннер и install поднимаются над вкладками; crow/invite читают --cookie-h */
   .club-cookie-banner,
   [role="dialog"][aria-label="Согласие на использование cookies"],
   [role="dialog"][aria-label="Установка приложения"] {
@@ -488,22 +432,15 @@ html { scroll-padding-bottom: var(--tabs-h, 0px); }
 @media (min-width: 481px) {
   html.pwa-shell .club-tab-bar { max-width: 430px; margin-inline: auto; }
 }
-/* В установленном приложении «резинка» за панелью выглядит поломкой */
 @media (display-mode: standalone) {
   .v2-tabs { padding-bottom: max(env(safe-area-inset-bottom, 0px), 6px); }
 }
 
-/* ── Карточка программы v2: адаптив ────────────────────────────────
-   На планшете бланк с ценой уходит наверх: решение принимают по цене
-   и датам, а не по описанию модулей. */
 @media (max-width: 900px) {
   .v2-prog-page { grid-template-columns: 1fr !important; gap: 28px !important; }
   .v2-prog-aside { position: static !important; order: -1; }
 }
 
-/* ── Корзина v2: адаптив ───────────────────────────────────────────
-   На планшете форма заявки уходит под список позиций, на телефоне запись
-   складывается в две строки: тип и название сверху, количество и сумма снизу. */
 @media (max-width: 900px) {
   .v2-cart { grid-template-columns: 1fr !important; gap: 24px !important; }
 }
@@ -513,10 +450,6 @@ html { scroll-padding-bottom: var(--tabs-h, 0px); }
   .v2-cart-row > :nth-child(2) { grid-column: 1 / -1; }
 }
 
-/* ── Кабинет v2: адаптив ───────────────────────────────────────────
-   Режим кабинета – плотность 7 и никакого движения. На телефоне
-   удостоверение перестаёт липнуть к верху (иначе съедает пол-экрана),
-   а записи заявок и однокурсников складываются в две строки. */
 @media (max-width: 900px) {
   .lkv2-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
   .lkv2-aside { position: static !important; }
@@ -525,7 +458,6 @@ html { scroll-padding-bottom: var(--tabs-h, 0px); }
   .lkv2-order { grid-template-columns: 1fr auto !important; gap: 4px 12px !important; }
   .lkv2-order > :first-child { grid-column: 1 / -1; }
   .lkv2-mate { grid-template-columns: 36px 1fr auto !important; row-gap: 8px !important; }
-  /* Кнопка «в друзья» уходит под имя, крестик остаётся справа от неё */
   .lkv2-mate > :nth-child(3) { grid-column: 2; justify-self: start; }
   .lkv2-mate > :nth-child(4) { grid-column: 3; }
 }
@@ -536,16 +468,10 @@ html { scroll-padding-bottom: var(--tabs-h, 0px); }
 }
 .v2-card:active { transform: scale(0.995); }
 
-/* Тач-цель. Метки реестра компактны по смыслу – 29px попадают под мышь, но не
-   под палец. На сенсорном вводе они дорастают до 44px, на мыши плотность
-   витрины сохраняется. */
 @media (pointer: coarse) {
   .tap { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
 }
 
-/* Недоступное действие. В коде 27 мест с `disabled`, и почти нигде это не было
-   видно: кнопка выглядела рабочей и молча не срабатывала. Правило одно на все,
-   курсор и прозрачность – без изменения цвета, чтобы не плодить токенов. */
 button:disabled,
 button[aria-disabled="true"],
 [data-disabled="true"] {
@@ -553,7 +479,6 @@ button[aria-disabled="true"],
   cursor: not-allowed;
 }
 
-/* Иконки шапки: тема и версия для слабовидящих – один размер hit-target. */
 .club-chrome-icon-btn {
   box-sizing: border-box;
   display: inline-flex;
@@ -581,10 +506,6 @@ button[aria-disabled="true"],
   border-color: color-mix(in srgb, var(--c-text) 35%, transparent);
 }
 
-/* Пропуск блоков (WCAG 2.4.1, уровень A). До содержания на каждой странице
-   стояло 11 остановок табуляции: логотип, шесть разделов, корзина, тема,
-   версия для слабовидящих и кнопка вступления. Ссылка не видна мышью и
-   появляется первой же при табуляции. */
 .skip {
   position: absolute;
   left: 12px;
@@ -600,7 +521,6 @@ button[aria-disabled="true"],
 }
 .skip:focus { top: 12px; }
 
-/* Главная: входы в участие имеют собственный ритм, отличающийся от каталога. */
 .club-entry-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--c-line-control); }
 .club-entry { color: var(--c-text); text-decoration: none; padding: 28px 22px; display: grid; gap: 10px; }
 .club-entry + .club-entry { border-left: 1px solid var(--c-line-control); }
@@ -622,7 +542,6 @@ button[aria-disabled="true"],
   .club-event-row > :last-child { grid-column: 1; }
 }
 
-/* Витрина: фильтры переносятся по доступной ширине; сравнение скроллится локально. */
 .club-catalog-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 18px; padding-block: 24px; border-block: 1px solid var(--c-line); align-items: end; }
 .club-catalog-filters label { display: grid; gap: 8px; min-width: 0; }
 .club-catalog-filters input, .club-catalog-filters select { min-width: 0; max-width: 100%; }
@@ -660,7 +579,6 @@ button[aria-disabled="true"],
 @media (max-width: 1100px) { .adm-two { grid-template-columns: minmax(0, 1fr) !important; } }
 @media (max-width: 620px) { .club-requisites-row { grid-template-columns: minmax(0, 1fr); } }
 
-/* Главная: самостоятельная афиша, публикации и короткая хронология. */
 .club-home-events { display: grid; grid-template-columns: 1.45fr 1fr; gap: 24px; }
 .club-home-event { display: flex; flex-direction: column; padding: 36px; min-height: 290px; background: var(--c-bg-sunken); color: var(--c-text); text-decoration: none; border-top: 4px solid var(--c-accent); }
 .club-home-event:first-child { background: var(--c-bg-inverse); color: var(--c-text-inverse); }
@@ -695,7 +613,6 @@ button[aria-disabled="true"],
 }
 .club-local-notice { padding: 7px 20px; background: var(--c-bg-sunken); color: var(--c-text-2); font: 13px/1.45 var(--f-body); text-align: center; border-bottom: 1px solid var(--c-line); }
 
-/* У программ сначала читают содержание, затем сопоставляют стоимость. */
 .club-program-description { grid-column: 1; grid-row: 1; }
 .club-program-price { grid-column: 2; grid-row: 1; }
 .club-program-row > :last-child { grid-column: 3; grid-row: 1; }
@@ -709,11 +626,9 @@ button[aria-disabled="true"],
  .club-program-description { order: -1; }
 }
 
-/* Цвет сохраняется и на рабочих страницах, а поля остаются нейтральными. */
 .club-catalog-filters { background: var(--c-surface-blue); }
 .club-identity-desktop > div, .club-identity-mobile > div { background: var(--c-surface-warm) !important; }
 
-/* Поддержка и место для маскота учитывают вкладки, cookies и безопасную область. */
 .club-support-dock { position: fixed; right: 18px; bottom: calc(18px + var(--tabs-h, 0px) + var(--cookie-h, 0px)); z-index: 40; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 12px 16px; border-radius: 28px; background: var(--p-blue); color: white; text-decoration: none; border: 1px solid white; font: 600 15px var(--f-body); cursor: pointer; }
 .club-support-page { max-width: 820px; padding: 40px 24px; margin: auto; line-height: 1.65; }
 .club-support-page h1 { font-size: var(--t-h1-page); line-height: 1.2; margin: 0 0 22px; }
@@ -737,7 +652,6 @@ button[aria-disabled="true"],
 @media (max-width: 700px) { .club-mascot-hero { display: none; } .club-support-dock { padding: 12px; } .club-support-dock > span:not(.crow-support-portrait) { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .club-support-dock { transition: background-color 160ms ease, transform 160ms ease; } .club-support-dock:hover { transform: translateY(-2px); } }
 
-/* Афиша: поиск отделён от хронологии; анимация не задерживает ввод. */
 .club-agenda-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 240px); gap: 24px; padding: 20px 0; margin: 12px 0 24px; border-block: 1px solid var(--c-line); }
 .club-agenda-filters label { display: grid; gap: 8px; font-size: 15px; }
 .club-agenda-filters input, .club-agenda-filters select { width: 100%; min-width: 0; min-height: 46px; border: 1px solid var(--c-line-control); background: var(--c-bg); color: var(--c-text); border-radius: var(--r-sm); padding: 10px 12px; }
@@ -755,7 +669,6 @@ button[aria-disabled="true"],
  .club-event-row:hover > div:first-child { transform: translateX(5px); }
 }
 
-/* Коллекция клуба: знак, состояние и условие читаются отдельно. */
 .club-awards-intro { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 28px; background: var(--p-blue); color: white; border-radius: 12px 12px 36px 12px; }
 .club-awards-intro h3 { margin: 0; font: 400 28px/1.2 var(--f-display); }
 .club-awards-intro p { max-width: 46ch; margin: 12px 0 0; line-height: 1.6; color: #e1e7f5; }
@@ -800,7 +713,6 @@ button[aria-disabled="true"],
 @media (max-width: 520px) { .club-awards-intro { align-items: start; flex-direction: column; padding: 22px; } .club-awards-total strong { font-size: 36px; } .club-achievement-list { gap: 12px; } .club-award summary { padding: 20px 12px 14px; } .club-award h3 { font-size: 16px; } .club-award-description { padding-inline: 12px; } }
 @media (prefers-reduced-motion: no-preference) { .club-award-medal { transition: transform 240ms ease-out; } .club-award summary:is(:hover,:focus-visible) .club-award-medal { transform: rotate(-5deg); } .club-award-disclosure > span { transition: transform 180ms ease-out; } }
 
-/* Кабинет остаётся частью клуба: общая навигация и содержательный обзор. */
 .cabinet-club-nav { display: flex; flex-wrap: wrap; gap: 6px; max-width: 1140px; margin: 18px auto 0; padding: 10px 12px; background: var(--c-surface-blue); border-radius: 8px; }
 .cabinet-club-nav a { display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; font-size: 15px; color: var(--c-text); text-decoration: none; border-radius: 5px; }
 .cabinet-club-nav a:is(:hover,:focus-visible) { background: var(--c-bg); text-decoration: underline; text-underline-offset: 4px; }
@@ -853,20 +765,17 @@ button[aria-disabled="true"],
 @media (max-width: 1180px) { .cabinet-club-nav { margin-inline: 20px; } }
 @media (max-width: 600px) { .cabinet-club-nav { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2px; padding: 8px; } .cabinet-club-nav a { padding: 8px 4px; font-size: 14px; } .cabinet-welcome h1 { font-size: 30px; } .cabinet-next-event { padding: 22px; } .cabinet-next-event h3 { font-size: 25px; } .cabinet-opportunities { grid-template-columns: 1fr; } }
 
-/* Портрет использует оригинал маскота с обрезкой только в интерфейсе. */
 .crow-support-portrait { position: relative; display: block; flex: 0 0 44px; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; background: #f0c74d; }
 .crow-support-portrait img { position: absolute; width: 102px; max-width: none; height: auto; left: -30px; top: -17px; }
 .club-support-dock:has(.crow-support-portrait) { padding: 5px 16px 5px 5px; }
 @media (max-width: 700px) { .club-support-dock:has(.crow-support-portrait) { padding: 3px; } }
 
-/* Глубина витрин (12.09, вечер): дата события плитой охрой, предметы мерча с рассеянной тенью и подъёмом */
 .club-event-row > div:first-child > div:first-child { font-family: var(--f-display) !important; font-size: 22px !important; line-height: 1.1; color: var(--c-accent-text) !important; }
 .club-merch-image { border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-ambient); transition: transform 520ms var(--ease-spring), box-shadow 520ms var(--ease-spring); }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .club-merch-item:hover .club-merch-image { box-shadow: var(--shadow-ambient-lift); }
 }
 
-/* Страница товара (12.09, вечер): фото как предмет, варианты чипами */
 .club-product-photo { border-radius: var(--r-lg); overflow: hidden; background: linear-gradient(180deg, var(--c-bg-raised) 0%, var(--c-bg-sunken) 100%); box-shadow: var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9); }
 .club-product-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: start; margin-top: 28px; }
 .club-product-detail > section { position: sticky; top: 96px; }
@@ -877,7 +786,6 @@ button[aria-disabled="true"],
 .club-product-variants li[data-out] { border-style: dashed; color: var(--c-text-3); }
 @media (max-width: 900px) { .club-product-detail { grid-template-columns: 1fr; gap: 28px; } .club-product-detail > section { position: static; } }
 
-/* ── Кабинет в языке сайта (12.09, вечер): материалы, hairline, графитовая панель встречи ── */
 .cabinet-header__tabs { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
 .cabinet-club-nav { background: transparent; border-radius: 0; padding: 4px 6px 0; margin: 0 auto; max-width: 1180px; border-bottom: 1px solid var(--c-line); gap: 0; }
 .cabinet-club-nav a { min-height: 44px; padding: 10px 14px; border-radius: 0; font-size: var(--t-caps); font-weight: 600; letter-spacing: var(--tr-caps); text-transform: uppercase; color: var(--c-text-2); }
@@ -899,25 +807,21 @@ button[aria-disabled="true"],
 .club-awards-empty { background: var(--c-bg-sunken); border: 1px solid var(--c-line); border-radius: var(--r-lg); }
 .club-award.is-earned { background: color-mix(in srgb, var(--c-accent) 8%, var(--c-bg)); }
 
-/* ── Админка в языке сайта (12.09, ночь): графитовая колонка подвала, титулы Slab 400, панели-материалы ── */
 .adm-aside { border-right: 1px solid rgb(255 255 255 / 0.1); overflow-y: auto; }
 .adm-aside > button[aria-current="page"] { color: var(--p-paper) !important; }
 .adm-aside > button:not([aria-current]):is(:hover, :focus-visible) { color: var(--p-paper) !important; background: rgb(255 255 255 / 0.04) !important; }
 
-/* Подкасты: на телефоне метаданные не сужают заголовок выпуска. */
 @media (max-width: 620px) {
   .podcast-row { grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
   .podcast-row__meta { display: flex; align-items: center; gap: 14px; }
   .podcast-row__meta > * { margin-top: 0 !important; }
 }
 
-/* Закрытые выпуски различаются фоном и подписью, без снижения читаемости. */
 .podcast-row--locked { background: var(--c-bg-sunken); padding-left: 18px !important; padding-right: 18px !important; }
 .podcast-access-label { display: inline-block; margin-top: 10px; padding: 4px 8px; border: 1px solid var(--c-line-control); border-radius: var(--r-sm); font-size: 12px; color: var(--c-text-2); }
 .podcast-subscribe-link { display: inline-flex; margin-top: 18px; min-height: 44px; align-items: center; padding: 12px 18px; border: 1px solid var(--c-text); border-radius: var(--r-sm); color: var(--c-text); text-transform: uppercase; font-size: var(--t-caps); letter-spacing: var(--tr-caps); font-weight: 600; text-decoration: none; }
 .podcast-subscribe-link:hover { background: var(--c-bg-raised); }
 
-/* Возможности ВШЭ: один блок на активном варианте главной. */
 .alumni-opportunities { margin: 48px 0; padding: clamp(20px,4vw,48px); border: 1px solid var(--c-line); border-radius: 18px; background: var(--c-bg-raised); scroll-margin-top: 110px; }
 .alumni-opportunities h2 { font-family: var(--f-display); font-size: clamp(26px,4vw,42px); font-weight: 400; margin: 12px 0; }
 .alumni-opportunities > p { color: var(--c-text-2); }

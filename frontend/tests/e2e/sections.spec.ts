@@ -1,13 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
 
-/**
- * Разделы v2: новости, события, подкасты.
- *
- * Списки проверяются на живом API – это заодно проверяет, что шапка v2 больше
- * никуда не роняет в старый интерфейс. Отдельные состояния (закрытый выпуск,
- * запись на событие, прошедшие события) подменяются: в базе их сейчас нет,
- * и без фикстур они остались бы непроверенными.
- */
 
 async function stubSw(page: Page) {
   await page.addInitScript(() => {
@@ -194,7 +186,6 @@ test.describe("Подкасты v2", () => {
   });
 
   test("закрытому выпуску не отдаётся ни аудио, ни видео", async ({ page }) => {
-    // Сервер уже не прислал ссылок – страница обязана показать замок, а не пустоту
     await page.route("**/api/podcasts", (r) => r.fulfill({
       status: 200, contentType: "application/json",
       body: JSON.stringify({ ...PODCASTS, items: [{ ...PODCASTS.items[1], video_url: null }] }),

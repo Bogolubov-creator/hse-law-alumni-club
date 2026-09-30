@@ -48,10 +48,6 @@ describe("Напоминание об окончании подписки на �
     expect(notify.sendEmail).not.toHaveBeenCalled();
   });
 
-  /**
-   * Cron ходит каждый день. Без флага выпускник получал бы одно и то же
-   * письмо десять дней подряд.
-   */
   it("повторный прогон в тот же период ничего не шлёт", async () => {
     db.alumni = [alum({ podcast_sub_until: days(5) })];
     await runPodcastSubReminders();
@@ -75,10 +71,6 @@ describe("Напоминание об окончании подписки на �
     expect(r.due).toBe(0);
   });
 
-  /**
-   * Флаг ставится независимо от того, ушло ли письмо: иначе при выключенном
-   * SMTP выборка оставалась бы «горячей» и cron дёргал бы её каждый день.
-   */
   it("без почты и SMTP флаг всё равно ставится", async () => {
     vi.mocked(notify.mailEnabled).mockReturnValue(false);
     db.alumni = [alum({ contacts_json: null })];

@@ -1,14 +1,6 @@
 import { seedClientStorage } from "./harness.js";
 import { test, expect, type Page } from "@playwright/test";
 
-/**
- * Профиль v2 (/v2/lk/profile) – на подменённых ответах API, как и кабинет:
- * настоящие учётные данные в тесты не кладём. Схемы ответов – прод-овские
- * zod-схемы, поэтому расхождение фикстуры с контрактом сразу видно.
- *
- * Отдельно проверяются права по 152-ФЗ: выгрузка данных и удаление аккаунта
- * с подтверждением словом. Это не косметика, урезать её при редизайне нельзя.
- */
 
 const ME = {
   alumni: {
@@ -37,14 +29,7 @@ const LEDGER = [
   { id: "l2", delta: -50, reason: "decay", ref: null, comment: null, created_at: "2026-03-01T10:00:00.000Z" },
 ];
 
-/**
- * Тестовая сессия: токен-заглушка и выключенный service worker.
- *
- * SW отключаем не для красоты: мобильный проект Playwright бежит на WebKit
- * (девайс iPhone 13), а там запросы, прошедшие через активный service worker,
- * до page.route() не доходят – перехват мутаций молча пролетает на живой API.
- * Прод это не затрагивает: sw.js и так не трогает /api (см. public/sw.js).
- */
+// SW отключён, чтобы WebKit передавал запросы в page.route().
 async function stubSession(page: Page) {
   await page.addInitScript(() => {
     localStorage.setItem("club_token", "e2e-stub-token");
@@ -90,8 +75,6 @@ test.describe("Профиль v2", () => {
     await expect(page.getByText("+300")).toBeVisible();
     await expect(page.getByText("Списание за неактивность")).toBeVisible();
     await expect(page.getByText("-50")).toBeVisible();
-
-    // В профиле счётчик и прямой переход; полный прогресс проверяется в lk-v2.
     await expect(page.getByText("открыто 1 из 2", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Открыть достижения →" })).toHaveAttribute("href", "/lk?section=achievements");
   });

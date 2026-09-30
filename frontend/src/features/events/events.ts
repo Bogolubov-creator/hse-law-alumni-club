@@ -1,8 +1,3 @@
-/**
- * Событие клуба: тип, форматирование дат и ссылка «в Google Календарь».
- * Вынесено из страницы, чтобы v1 и v2 не разошлись в описании одной сущности.
- */
-
 export interface ClubEvent {
   id: string; title: string; description: string | null; starts_at: string;
   location: string | null; cover: string | null; reg_url: string | null;
@@ -16,7 +11,6 @@ export const fmtEventDate = (iso: string) =>
 export const fmtEventDateFull = (iso: string) =>
   new Date(iso).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-/** Ссылка «добавить в Google Календарь» (2 часа по умолчанию, как в .ics). */
 export function gcalUrl(e: ClubEvent): string {
   const dt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const start = new Date(e.starts_at);

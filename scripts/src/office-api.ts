@@ -1,4 +1,3 @@
-/** Сессия администратора передаётся через окружение и никогда не выводится. */
 export async function officeRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const base = new URL(process.env.CLUB_API_URL || "http://localhost");
   if (base.protocol !== "https:" && !(base.protocol === "http:" && ["localhost", "127.0.0.1"].includes(base.hostname))) {

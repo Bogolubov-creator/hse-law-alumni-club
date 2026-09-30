@@ -1,4 +1,3 @@
-/* Оформление – без движения; сумма и форма используют общие материалы. */
 .club-checkout-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .club-checkout-fields button { min-height: 44px; }
 .club-checkout-fields [role="alert"] { padding: 16px; background: var(--c-bg-sunken); border: 1px solid var(--c-line); border-radius: var(--r-sm); line-height: 1.5; }

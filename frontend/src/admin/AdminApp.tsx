@@ -83,8 +83,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     support: "Поддержка",
   };
 
-  // На вход выкидываем ТОЛЬКО при 401 (истёкшая сессия). Прочие ошибки (5xx/сеть)
-  // не должны маскироваться под разлогин – показываем ретрай в основной области.
+  // Только 401 требует повторного входа; сетевые ошибки сохраняют сессию.
   if (ov.isError && (ov.error as { status?: number })?.status === 401)
     return <AdminGate onAuthed={(t) => { setAdminToken(t); location.reload(); }} />;
 
@@ -119,7 +118,6 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         <button onClick={onLogout} className="foc" style={{ ...actionGhost, marginTop: "auto", textAlign: "left" }}>Выйти</button>
       </aside>
 
-      {/* Низ панели не должен уезжать под cookie-баннер */}
       <main id="main" style={{ minWidth: 0, padding: "26px 32px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px))" }}>
         <h1 style={{ ...pageTitle, fontSize: 36, lineHeight: 1.1, margin: "0 0 24px" }}>{titles[section]}</h1>
         {ov.isError && (

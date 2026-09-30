@@ -2,11 +2,6 @@ import { useEffect, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { useIsPwaShell } from "../../hooks/use-pwa.js";
 
-/**
- * Оболочка установленного приложения: класс на html, phone-column на широком
- * экране, мобильная навигация вместо десктоп-шапки.
- * Админка и обычный браузер – без рамки.
- */
 export function PwaShell({ children }: { children: ReactNode }) {
   const pwa = useIsPwaShell();
   const { pathname } = useLocation();

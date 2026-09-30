@@ -1,17 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 
-/**
- * Визуальное направление: название, контраст, шкала.
- *
- * Эти три вещи разъезжаются тише всего – их не видно в диффе и не ловит tsc.
- * Название клуба жило в трёх вариантах одновременно; приглушённый серый
- * проваливал AA на 0,1 пункта; титул витрины был того же кегля, что и главной,
- * поэтому иерархии страниц не было. Тест держит зафиксированное решение.
- */
 
 const NAME = "Клуб выпускников факультета права Вышки";
 
-/** Витрины и главная. Кабинет и админка живут по своим правилам плотности. */
 const PUBLIC_V2 = ["/", "/dpo", "/merch", "/podcasts", "/events", "/news", "/cart"];
 
 async function stubSw(page: Page) {
@@ -20,15 +11,6 @@ async function stubSw(page: Page) {
   });
 }
 
-/**
- * Замер контраста прямо в браузере: цвет текста и фон под ним, как считает WCAG.
- *
- * Две тонкости, на которых легко намерить ерунду. Первая: полупрозрачный фон
- * (шапка v2 – `color-mix(... transparent)`) надо смешивать с тем, что под ним,
- * а не брать как есть. Вторая: Chromium сериализует такой цвет как
- * `color(srgb 0.98 0.95 0.91 / 0.88)` – доли единицы, а не 0–255, и наивный
- * разбор чисел даёт из светлой шапки почти чёрную.
- */
 async function contrastFailures(page: Page) {
   return page.evaluate(() => {
     type RGBA = { r: number; g: number; b: number; a: number };
@@ -51,7 +33,6 @@ async function contrastFailures(page: Page) {
       }) as [number, number, number];
       return 0.2126 * R + 0.7152 * G + 0.0722 * B;
     };
-    /** Собираем стопку полупрозрачных фонов вверх по дереву до непрозрачного. */
     const bgOf = (el: Element): RGBA => {
       const stack: RGBA[] = [];
       let n: Element | null = el;
@@ -156,7 +137,6 @@ test.describe("Один акцент на действие", () => {
     if (await first.count()) await first.click();
     const external = page.getByRole("link", { name: /Записаться на hse\.ru/ }).first();
     if (await external.count()) {
-      // Заливки быть не должно (канон 10.09): внешний уход – обводка, не заливка
       await expect(external).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     }
   });

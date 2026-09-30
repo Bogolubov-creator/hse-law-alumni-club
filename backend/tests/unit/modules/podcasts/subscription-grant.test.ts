@@ -11,13 +11,6 @@ const { adminRoutes } = await import("../../../../src/modules/office/routes.js")
 const { registerErrorHandler } = await import("../../../../src/common/errors.js");
 const { env } = await import("../../../../src/config/env.js");
 
-/**
- * Выдача подписки на подкасты офисом (POST /admin/members/:id/podcast-sub).
- *
- * Это операция с деньгами: подписка стоит 4 999 ₽ в год, и её выдача вручную –
- * то, чем офис закрывает оплату по счёту. Ручка не была покрыта тестами вообще,
- * хотя от неё зависит, откроются ли платные выпуски.
- */
 
 const ADMIN_ID = "user-admin";
 const EDITOR_ID = "user-editor";
@@ -37,7 +30,6 @@ async function build(): Promise<FastifyInstance> {
 const grant = (app: FastifyInstance, token: string, id = ALUMNI_ID) =>
   app.inject({ method: "POST", url: `/admin/members/${id}/podcast-sub`, headers: { authorization: `Bearer ${token}` }, payload: {} });
 
-/** Аудит пишется fire-and-forget, чтобы его сбой не ломал операцию: ждём микротаск. */
 const settled = () => new Promise((r) => setTimeout(r, 0));
 
 const days = (n: number) => new Date(Date.now() + n * 86400000).toISOString();
@@ -72,10 +64,6 @@ describe("Выдача подписки офисом", () => {
     expect(monthsBetween(until)).toBeLessThan(367);
   });
 
-  /**
-   * Главное в продлении: год прибавляется к остатку, а не затирает его.
-   * Иначе оплативший заранее терял оплаченные месяцы.
-   */
   it("подписка ещё активна – год прибавляется к остатку", async () => {
     const app = await build();
     db.alumni![0]!.podcast_sub_until = days(100);
@@ -96,10 +84,6 @@ describe("Выдача подписки офисом", () => {
     expect(left).toBeLessThan(367);
   });
 
-  /**
-   * Без сброса флага выпускник получил бы предупреждение об окончании
-   * один раз в жизни, а на следующий год – нет.
-   */
   it("флаг «уже напомнили» сбрасывается при продлении", async () => {
     const app = await build();
     db.alumni![0]!.podcast_reminder_sent = true;
@@ -141,10 +125,6 @@ describe("Выдача подписки – кто имеет право", () =>
     expect(db.alumni![0]!.podcast_sub_until).toBeNull();
   });
 
-  /**
-   * Редактор ведёт контент сайта, но деньгами не распоряжается: подписка
-   * стоит 4 999 ₽, и выдавать её может только администратор клуба.
-   */
   it("редактору контента – 403, подписка не выдана", async () => {
     const app = await build();
     const r = await grant(app, tokenFor(EDITOR_ID, "editor"));

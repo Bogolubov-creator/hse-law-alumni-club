@@ -4,9 +4,7 @@ import { z } from "zod";
 const schema = z.object({
   API_HOST: z.string().default("0.0.0.0"),
   API_PORT: z.coerce.number().default(3000),
-  // Явный флаг «боевой прод». NODE_ENV в образе всегда production, поэтому для
-  // fail-fast нужен отдельный сигнал, который оператор включает на VPS (APP_ENV=production).
-  // Локальный стенд оставляет development → проверки только предупреждают, не роняют старт.
+  // APP_ENV задаёт контур; NODE_ENV=production используется и локальным образом.
   APP_ENV: z.enum(["development", "production"]).default("development"),
   CHECKOUT_DATABASE_URL: z.string().default(""),
   UPLOADS_PATH: z.string().default("/data/uploads"),
@@ -31,7 +29,6 @@ const schema = z.object({
   TELEGRAM_BOT_USERNAME: z.string().default("pravohse_alumni_bot"),
   // Доп. разрешённые cross-origin источники (через запятую); same-origin и Telegram разрешены всегда.
   CORS_ORIGINS: z.string().default(""),
-  // Уведомление офиса (решение 3.2) – на старте telegram
   OFFICE_NOTIFY_CHANNEL: z.enum(["telegram", "email", "both"]).default("telegram"),
   OFFICE_TG_BOT_TOKEN: z.string().default(""),
   OFFICE_TG_CHAT_ID: z.string().default(""),
@@ -46,7 +43,6 @@ const schema = z.object({
   YOOKASSA_SECRET_KEY: z.string().default(""),
   // Публичный адрес сайта – для return_url после оплаты.
   PUBLIC_URL: z.string().default("http://localhost"),
-  // Web-push (VAPID). Пусто = пуши выключены, сайт работает как раньше.
   VAPID_PUBLIC_KEY: z.string().default(""),
   VAPID_PRIVATE_KEY: z.string().default(""),
   SENTRY_DSN: z.string().default(""), // пусто = мониторинг ошибок выключен
@@ -58,21 +54,13 @@ const schema = z.object({
   RESERVE_TTL_HOURS: z.coerce.number().int().min(0).max(720).default(72),
   // Максимум попыток доставки из mail outbox.
   MAIL_OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(50).default(8),
-  // Глобальный потолок запросов с одного IP в минуту. Настраиваемый, потому что
-  // за университетским NAT с одного адреса выходит целый корпус: при рассылке о
-  // наборе легко упереться и получить 429 всем сразу. Чувствительные операции
-  // защищены отдельными лимитами по маршрутам (логин 5, регистрация 3, оплата 10).
+  // Общий лимит учитывает NAT; чувствительные маршруты имеют отдельные лимиты.
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(1000),
 });
 
 export const env = schema.parse(process.env);
 export type Env = z.infer<typeof schema>;
 
-/**
- * Fail-fast небезопасной прод-конфигурации. Возвращает список фатальных проблем
- * (пусто – всё ок). Активна только при APP_ENV=production, чтобы локальный стенд
- * (собранный тем же production-образом) не падал на плейсхолдерах.
- */
 export function assertProdConfig(): string[] {
   if (env.APP_ENV !== "production") return [];
   const errs: string[] = [];
@@ -92,8 +80,7 @@ export function assertProdConfig(): string[] {
   if (!publicUrl || publicUrl.protocol !== "https:" || publicUrl.username || publicUrl.password || publicUrl.search || publicUrl.hash || publicUrl.pathname !== "/") errs.push("PUBLIC_URL должен быть https://<домен> на проде (return_url оплаты, sitemap, canonical)");
   if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_POLLING !== "true" && !env.TELEGRAM_WEBHOOK_SECRET)
     errs.push("бот на webhook без TELEGRAM_WEBHOOK_SECRET – кто угодно сможет слать поддельные апдейты");
-  // Почта – не опция: без неё молча ломаются восстановление пароля и подтверждение
-  // адреса при регистрации (любой занимает чужой email). Стартовать так на проде нельзя.
+  // Рабочий контур требует SMTP для подтверждения адреса и восстановления доступа.
   if (!env.SMTP_HOST)
     errs.push("SMTP_HOST пуст – без почты не работают восстановление пароля и подтверждение адреса при регистрации");
   if (env.SMTP_HOST && !env.SMTP_FROM && !env.SMTP_USER)

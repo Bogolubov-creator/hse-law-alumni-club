@@ -15,12 +15,9 @@ import { CLUB_NAV as NAV } from "../config/navigation.js";
 import { pageTitle, action, caps } from "../styles/primitives.js";
 export { mono, disp, pageTitle } from "../styles/primitives.js";
 
-/**
- * Пустые строки контента тоже требуют запасного текста; `??` их пропускает.
- */
+// Пустая строка требует запасного текста; оператор ?? её сохраняет.
 export const text = (v: string | null | undefined, fallback: string): string => (v && v.trim() ? v : fallback);
 
-/** Сигнатура «поле бланка»: линия и моно-подпись под ней. Только там, где под ней данные. */
 export function BlankField({ children, label }: { children: ReactNode; label: string }) {
   return (
     <span className="blank-field">
@@ -180,11 +177,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Заголовок витрины. С фотографией – тёмный разворот 50/50 как на главной («Фасад и зал»,
- * 12.09): титул плитой слева, фото факультета во весь край справа. Без фото (корзина) –
- * тихая шапка на белом. Eyebrow не рендерится: заголовок несёт себя сам.
- */
 export function ShowcaseHead({ title, lead, count, photo }: { eyebrow?: string; title: string; lead: string; count?: string; photo?: { src: string; alt: string; side?: "left" | "right" } }) {
   const copy = (
     <>

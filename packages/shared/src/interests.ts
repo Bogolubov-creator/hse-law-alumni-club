@@ -22,7 +22,6 @@ export const LEGAL_INTERESTS: readonly string[] = [
 
 export const MAX_INTERESTS = 8; // разумный предел выбора
 
-/** Отфильтровать произвольный ввод до валидных интересов из справочника. */
 export function sanitizeInterests(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   const set = new Set(LEGAL_INTERESTS);

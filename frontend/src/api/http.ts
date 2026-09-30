@@ -1,4 +1,3 @@
-/** Общий транспорт. Сессии выпускника, офиса и поддержки задаются вызывающим кодом. */
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }

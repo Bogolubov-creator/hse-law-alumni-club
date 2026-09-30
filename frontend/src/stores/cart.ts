@@ -46,7 +46,6 @@ export function useProducts() {
   return useQuery({ queryKey: ["products"], queryFn: () => apiGet<Product[]>("/products", undefined, productsSchema) });
 }
 
-/** Скидка выпускника (если вошёл и верифицирован) – для справочного бейджа на витринах. */
 export function useMemberDiscount(): number {
   const token = localStorage.getItem(TOKEN_KEY);
   const q = useMe(token);
@@ -57,16 +56,11 @@ export function token(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
-/** Убрать сессию ЛК (истёкший/битый токен). Централизованно вызывается при 401. */
 export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-/**
- * Полный выход: гасим сессию ЛК И сессию корзины. Без второго на общем
- * компьютере следующий человек открывал сайт с чужим набором позиций
- * (сессия корзины живёт в отдельном ключе и переживала выход).
- */
+// Выход очищает отдельную сессию корзины, чтобы не оставлять её следующему пользователю.
 export function logout(): void {
   clearToken();
   localStorage.removeItem(CART_KEY);

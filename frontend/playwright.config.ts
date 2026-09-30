@@ -1,10 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/**
- * E2E против ЖИВОГО локального стека (docker compose up, http://localhost).
- * Стек не поднимается автоматически – тесты предполагают уже запущенный сайт
- * (как и ручные проверки). Запуск: pnpm --filter @club/web e2e
- */
 export default defineConfig({
   testDir: "./tests/e2e",
   testIgnore: ["**/live-stack.spec.ts"],
@@ -19,8 +14,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     // Фикстуры page.route должны видеть каждый запрос. Настоящий SW проверяется отдельным runtime-набором.
     serviceWorkers: "block",
-    // Ждём разбор HTML, а не полный "load": последний висит на внешних Google Fonts
-    // и давал ложные таймауты page.goto (шрифты к проверяемой логике отношения не имеют).
+    // domcontentloaded исключает ожидание внешних шрифтов.
     navigationTimeout: 20_000,
   },
   projects: [

@@ -20,7 +20,7 @@ export function assertPayableOrder(order: PaymentOrder | undefined, alumniId: st
   if (!Number.isSafeInteger(order.total_estimate) || order.total_estimate <= 0) throw failure("Некорректная сумма оплаты", 400);
 }
 
-/** Решение одно для HTTP-тестов и SQL. Состояние succeeded нельзя понизить. */
+// Подтверждённый succeeded нельзя понизить последующим уведомлением.
 export function paymentOutcome(order: PaymentOrder, payment: YkPayment): PaymentOutcome {
   if (order.payment_id && order.payment_id !== payment.id) return "ignored";
   if (order.payment_status === "succeeded") return "duplicate";
@@ -55,7 +55,7 @@ async function extendPodcast(client: PoolClient, alumniId: string, months = 12) 
   return until;
 }
 
-/** Ручная выдача офиса использует ту же блокировку профиля, что и оплата. */
+// Ручное продление и оплата используют одну блокировку профиля.
 export async function extendPodcastSubscription(alumniId: string, months = 12) {
   const client = await checkoutPool().connect();
   try {
@@ -66,7 +66,6 @@ export async function extendPodcastSubscription(alumniId: string, months = 12) {
   } catch (error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
 }
 
-/** Первый запрос резервирует pending; у связанного платежа сохраняем проверенный статус. */
 export async function prepareOrderPayment(number: string, alumniId: string): Promise<PaymentOrder> {
   const client = await checkoutPool().connect();
   try {
@@ -82,7 +81,7 @@ export async function prepareOrderPayment(number: string, alumniId: string): Pro
   } catch (error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
 }
 
-/** Проверенный ответ провайдера применяется целиком или откатывается целиком. */
+// Ответ провайдера применяется в одной транзакции.
 export async function applyVerifiedPayment(payment: YkPayment): Promise<PaymentResult> {
   const number = payment.metadata?.order_number;
   if (!number) return { outcome: "missing" };

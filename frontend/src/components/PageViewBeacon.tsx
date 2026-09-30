@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { allowsOptionalCookies } from "../features/privacy/cookie-consent.js";
 import { isMirror } from "../lib/public-url.js";
 
-/** Лёгкий page-view маяк: только при «Принять все», только path, без cookies на запросе. */
 export function PageViewBeacon() {
   const { pathname } = useLocation();
   const last = useRef<string | null>(null);
@@ -22,7 +21,7 @@ export function PageViewBeacon() {
           return;
         }
       } catch {
-        /* fallback ниже */
+        // При отказе sendBeacon используется fetch ниже.
       }
       void fetch("/api/analytics/pageview", {
         method: "POST",

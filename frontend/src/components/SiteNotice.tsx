@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 
-/** Учитываем высоту баннера в полноэкранной мобильной оболочке. */
 export function SiteNotice({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {

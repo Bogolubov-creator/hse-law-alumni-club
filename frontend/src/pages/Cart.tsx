@@ -33,7 +33,6 @@ const ghost = {
   cursor: "pointer", textDecoration: "none", display: "inline-block",
 };
 
-/** Строка итога: подпись слева, число справа, разделитель – линия. */
 function Total({ name, value, strong, tone }: { name: string; value: string; strong?: boolean; tone?: "ok" | "accent" }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: strong ? "14px 0 0" : "9px 0", borderTop: strong ? "1px solid var(--c-line-strong)" : undefined }}>
@@ -52,8 +51,6 @@ function Field({ name, value, onChange, type = "text", required, ph, autoComplet
   const id = useId();
   return (
     <div style={{ padding: "12px 0", borderTop: "1px solid var(--c-line)" }}>
-      {/* Помечаем необязательное, а не обязательное: обязательных тут почти все,
-а звёздочки у почти всех полей превратились бы в шум. */}
       <label htmlFor={id} style={{ ...label, display: "block" }}>
         {name}{!required && <span style={{ textTransform: "none", letterSpacing: 0, opacity: 0.75 }}> · необязательно</span>}
       </label>
@@ -72,7 +69,6 @@ function Empty({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/* ── Экран подтверждения ──────────────────────────────────────────── */
 
 export function Submitted({ result }: { result: OrderResult }) {
   const authed = !!token();
@@ -93,7 +89,6 @@ export function Submitted({ result }: { result: OrderResult }) {
             Заявка отправлена в учебный офис
           </h1>
 
-          {/* Номер – главные данные экрана, поэтому он крупный и моноширинный */}
           <div style={{ marginTop: 26, paddingTop: 16, borderTop: "1px solid var(--c-line-strong)" }}>
             <div style={label}>номер заявки</div>
             <div style={{ ...mono, fontSize: 28, fontWeight: 600, marginTop: 6, letterSpacing: "0.04em" }}>{result.number}</div>
@@ -109,7 +104,6 @@ export function Submitted({ result }: { result: OrderResult }) {
               : "Сохраните номер заявки, чтобы назвать его при обращении в учебный офис. Вы оформили её без входа, поэтому в кабинете она не отображается."}
           </p>
 
-          {/* Уведомление офиса не прошло – это надо сказать, а не спрятать */}
           {!result.notified.ok && (
             <p role="alert" style={{ margin: "18px 0 0", padding: "14px 16px", borderRadius: "var(--r-md)", border: "1px solid var(--c-danger-text)", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>
               Заявка сохранена, но автоматическое уведомление офиса не прошло. Продублируйте её в Telegram{" "}
@@ -150,7 +144,6 @@ export function Submitted({ result }: { result: OrderResult }) {
   );
 }
 
-/* ── Корзина ──────────────────────────────────────────────────────── */
 
 export default function Cart() {
   useHead({ title: "Корзина", noindex: true });
@@ -237,7 +230,6 @@ export default function Cart() {
 
         {items.length > 0 && (
           <div className="v2-cart" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 32, alignItems: "start" }}>
-            {/* ── Позиции как записи описи ── */}
             <div>
               {setQty.isError && (
                 <p role="alert" style={{ margin: "0 0 16px", padding: 16, border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", color: "var(--c-danger-text)", background: "var(--c-bg-raised)", fontSize: "var(--t-small)", lineHeight: 1.5 }}>
@@ -299,7 +291,6 @@ export default function Cart() {
               </div>
             </div>
 
-            {/* ── Форма заявки ── */}
             <form onSubmit={submit} style={{ border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", background: "var(--c-bg-raised)", padding: 26, boxShadow: "var(--shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9)" }}>
               <fieldset disabled={busy} className="club-checkout-fields">
               <h2 style={{ ...pageTitle, fontSize: 28, margin: 0 }}>Ваши контакты</h2>
@@ -307,7 +298,6 @@ export default function Cart() {
                 По ним менеджер подтвердит заявку.
               </p>
 
-              {/* Honeypot: убран за экран и от скринридеров; боты заполняют – заявка отклоняется */}
               <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
                 value={form.website} onChange={(e) => set("website", e.target.value)}
                 style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
@@ -354,8 +344,6 @@ export default function Cart() {
 
               {err && <p role="alert" style={{ ...mono, margin: "12px 0 0", fontSize: "var(--t-caption)", color: "var(--c-danger-text)" }}>{err}</p>}
 
-              {/* Недоступная кнопка становится нейтральной, а не бледно-охряной:
-                  полупрозрачная охра читалась как активная и роняла контраст текста. */}
               <button type="submit" aria-busy={busy} disabled={isMirror || busy || setQty.isPending || !form.consent} className="foc"
                 style={{
                   ...primary, width: "100%", marginTop: 16,

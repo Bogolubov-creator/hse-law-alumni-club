@@ -1,17 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { seedClientStorage, stubSw, mockPublicApi } from "./harness.js";
 
-/**
- * Админ-панель офиса.
- *
- * Тесты написаны ДО редизайна и фиксируют поведение, а не оформление: панель –
- * рабочий инструмент учебного офиса, и редизайн не имеет права его сломать.
- * Проверяется то, что офис делает каждый день: верификация выпускника, смена
- * статуса заявки, начисление баллов, поиск, выход.
- *
- * Все ручки /api/admin/* подменяются. Настоящий админ-пароль в тесты не кладём,
- * а живые заявки и верификации трогать нельзя тем более.
- */
 
 const OVERVIEW = {
   new_orders: 2, orders_count: 41, orders_paid: 12,
@@ -64,7 +53,6 @@ const SUBS = {
   ],
 };
 
-/** Панель за админ-логином: кладём токен и подменяем ручки. */
 async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
   await seedClientStorage(page);
   await stubSw(page);
@@ -224,8 +212,6 @@ test.describe("Админ-панель", () => {
   test("пуш-рассылка заблокирована и называет причину", async ({ page }) => {
     await mockAdmin(page);
     await page.goto("/admin");
-    // Изменено сознательно при редизайне: раньше кнопка молчала бледной охрой,
-    // а причину приходилось искать подписью рядом. Теперь она на самой кнопке.
     await expect(page.getByRole("button", { name: "Подписчиков пока нет" })).toBeDisabled();
   });
 

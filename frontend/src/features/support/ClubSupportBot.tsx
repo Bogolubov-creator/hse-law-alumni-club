@@ -33,7 +33,6 @@ const GAP_TEXT =
 const FAIL_TEXT = "Не получилось загрузить данные. Напишите в поддержку – ответим.";
 const WAIT_TEXT = "Секунду, гружу программы…";
 
-/** Счётчик gap/none без текста вопроса. */
 function reportFaqHit(kind: "gap" | "none", gapId?: string) {
   void fetch("/api/support/faq-event", {
     method: "POST",

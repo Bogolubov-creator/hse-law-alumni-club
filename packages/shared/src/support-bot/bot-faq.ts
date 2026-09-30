@@ -1,6 +1,5 @@
 import type { BotFaqData } from "./types.js";
 
-/** Канонический FAQ клуба+ДПО – тот же набор, что public/content/bot-faq.json. */
 export const BOT_FAQ: BotFaqData = {
   answers: [
     {

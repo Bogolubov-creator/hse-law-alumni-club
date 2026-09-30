@@ -23,7 +23,6 @@ export const AUDIT_RU: Record<string, { label: string; icon: string; group: stri
   "avatar.upload": { label: "Загружено фото профиля", icon: "🖼️", group: "Изменения" },
   "avatar.reject": { label: "Отклонён файл аватара (не изображение)", icon: "🚫", group: "Изменения" },
   "admin.logout": { label: "Выход администратора", icon: "🔒", group: "Входы" },
-  // Контент витрин: раньше правки цен и публикаций не логировались вовсе.
   "program.create": { label: "Добавлена программа ДПО", icon: "🎓", group: "Изменения" },
   "program.patch": { label: "Изменена программа ДПО", icon: "🎓", group: "Изменения" },
   "program.delete": { label: "Удалена программа ДПО", icon: "🗑️", group: "Изменения" },

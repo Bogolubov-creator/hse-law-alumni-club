@@ -12,14 +12,12 @@ import { fmtEventDate, type ClubEvent } from "../features/events/events.js";
 import { SiteShell, ShowcaseHead, mono, disp } from "../layouts/Shell.js";
 import { action, actionGhost, caps } from "../styles/primitives.js";
 
-/** Афиша и прямая страница события используют общие данные и запись. */
 
 const label = {
   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)",
   textTransform: "none" as const, color: "var(--c-text-3)",
 };
 
-/* Бейдж: пилюля 999 – единственное место, где она уместна по канону 12.09. */
 const chip = {
   ...mono, fontSize: "var(--t-micro)", letterSpacing: "var(--tr-data)", textTransform: "none" as const,
   padding: "4px 9px", borderRadius: 999, border: "1px solid var(--c-line-control)", color: "var(--c-text-2)",
@@ -61,7 +59,6 @@ export default function Events() {
   const past = list.filter(matches).filter((e) => new Date(e.starts_at).getTime() < now || e.status === "done");
   const opened = list.find((e) => e.id === (eventId ?? openId)) ?? null;
 
-  /** Кнопка записи – одна и та же в строке афиши и в модалке. */
   const rsvpButton = (e: ClubEvent, isPast: boolean) => {
     if (isPast) return null;
     if (!t) {

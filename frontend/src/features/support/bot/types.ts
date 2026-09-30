@@ -1,4 +1,3 @@
-/** Реэкспорт канона из @club/shared. */
 export type {
   BotProgram,
   BotFaqAnswer,

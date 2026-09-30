@@ -8,7 +8,6 @@ import "../../styles/merch-selection.css";
 
 export const vLabel = (v: ProductVariant) => [v.size, v.color].filter(Boolean).join(" · ") || v.sku;
 
-/** Остаток на складе: это данные, а не украшение, поэтому моноширинный и точный. */
 export function Stock({ n }: { n: number | null | undefined }) {
   if (typeof n !== "number") return null;
   const tone = n <= 0 ? "var(--c-danger-text)" : n <= 3 ? "var(--c-accent-text)" : "var(--c-text-3)";

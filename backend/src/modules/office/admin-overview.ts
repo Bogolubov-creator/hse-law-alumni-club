@@ -8,7 +8,6 @@ function total(groups: CountGroup[], field?: string, value?: string): number {
   return groups.reduce((n, group) => n + (!field || group[field] === value ? group.count : 0), 0);
 }
 
-/** Счётчики обзора: БД возвращает группы, а не строки заказов и участников. */
 export async function buildAdminOverview(now = new Date().toISOString()) {
   const [orders, alumni, points_total, podcast_subscribers, programs,
     products_count, news_count, friends, podcasts_count, push_subs_count, events] = await Promise.all([

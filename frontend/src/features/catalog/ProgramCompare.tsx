@@ -6,7 +6,6 @@ import { apiGet, FORMAT_LABEL, rub } from "../../api/api.js";
 import { useMemberDiscount } from "../../stores/cart.js";
 import { actionGhost } from "../../styles/primitives.js";
 
-/** Сравниваем опубликованные данные подробной страницы, без параллельной копии каталога. */
 export default function ProgramCompare({ slugs, onRemove }: { slugs: string[]; onRemove: (slug: string) => void }) {
   const discount = useMemberDiscount();
   const queries = useQueries({ queries: slugs.map((slug) => ({ queryKey: ["program", slug], queryFn: () => apiGet<ProgramFull>(`/programs/${slug}`, undefined, programFullSchema) })) });

@@ -34,7 +34,6 @@ function string(v: unknown, max = 3000): string {
   if (typeof v !== "string" || v.length > max) throw new Error("Некорректный текст материалов");
   return v;
 }
-/** Общая проверка сборщика и браузера; только публичные поля. */
 export function parseChanges(value: unknown): ChangesSnapshot {
   const data = record(value);
   if ((data.version !== 1 && data.version !== 2) || !["archive", "channel"].includes(String(data.mode))

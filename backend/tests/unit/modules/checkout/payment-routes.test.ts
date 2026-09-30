@@ -34,7 +34,6 @@ async function build(): Promise<FastifyInstance> {
   return app;
 }
 
-/** Уведомление ЮKassa: тело + адрес отправителя. */
 function webhook(app: FastifyInstance, ip: string, paymentId = "pay-1", remoteAddress = "172.20.0.5") {
   return app.inject({
     method: "POST", url: "/payments/yookassa/webhook",

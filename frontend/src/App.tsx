@@ -43,14 +43,12 @@ const Confidential = lazy(() => import("./pages/legal.js").then((m) => ({ defaul
 const Requisites = lazy(() => import("./pages/legal.js").then((m) => ({ default: m.Requisites })));
 const AdminApp = lazy(() => import("./admin/AdminApp.js"));
 
-/** Старые закладки /v2/... → канонические пути. */
 function StripV2Prefix() {
   const { pathname, search, hash } = useLocation();
   const next = pathname === "/v2" || pathname === "/v2/" ? "/" : pathname.replace(/^\/v2/, "") || "/";
   return <Navigate to={`${next}${search}${hash}`} replace />;
 }
 
-/** Сохраняет прежние ссылки вместе с query и hash. */
 function StripLegacyPrefix() {
   const { pathname, search, hash } = useLocation();
   const next = pathname === "/legacy" || pathname === "/legacy/" ? "/" : pathname.replace(/^\/legacy/, "") || "/";

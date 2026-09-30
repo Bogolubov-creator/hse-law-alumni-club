@@ -10,12 +10,6 @@ import { audit } from "../../observability/audit.js";
 
 const di = data;
 
-/**
- * «Сообщество» ЛК: найти своих – однокурсники того же выпуска (cohort)
- * и/или той же образовательной программы (edu_program) + добавление в друзья.
- * Связь хранится в alumni_friends (pending → accepted); встречная заявка
- * автоматически принимает дружбу.
- */
 export async function communityRoutes(app: FastifyInstance) {
   app.get("/me/classmates", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
@@ -100,7 +94,6 @@ export async function communityRoutes(app: FastifyInstance) {
     for (const l of incoming) events.push({ kind: "friend_request", from_id: l.alumni_id, from_fio: names.get(l.alumni_id) ?? null, created_at: l.created_at });
     for (const l of acceptedMine) events.push({ kind: "friend_accepted", by_fio: names.get(l.friend_id) ?? null, created_at: l.created_at });
 
-    // Мои заявки со сдвинутым статусом (за месяц; new не показываем – это не событие).
     const orders = (await di.request((readItems as any)("orders", {
       filter: { alumni_id: { _eq: me.id }, status: { _neq: "new" }, created_at: { _gte: monthAgo } },
       limit: 10, fields: ["number", "status", "payment_status", "created_at"], sort: ["-created_at"],
@@ -158,12 +151,6 @@ export async function communityRoutes(app: FastifyInstance) {
     return { status: "pending" };
   });
 
-  /**
-   * Отклонить входящую заявку, отозвать свою или удалить из друзей.
-   * Одна операция на все три случая: связь пары удаляется целиком в обе стороны
-   * (гонка встречных заявок могла создать две строки). Раньше отменить заявку
-   * было нечем – входящая висела в ленте событий вечно.
-   */
   app.delete("/me/friends/:alumniId", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
     const me = await resolveAlumni(req);
     if (!me) return reply.code(401).send({ error: "Не авторизован" });

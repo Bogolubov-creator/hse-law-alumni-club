@@ -1,8 +1,4 @@
 import { mirrorPodcastDemo } from "../features/podcasts/mirror-podcast-demo.js";
-/**
- * Статические ответы «API» для публичного зеркала на GitHub Pages.
- * Витрина + демо ЛК + демо админки без бэкенда (сиды и фикстуры).
- */
 import {
   ACHIEVEMENTS,
   addLine, setLineQty, summarizeCart, cartSummarySchema, cartItemSchema, cartLineLimitReached,
@@ -586,7 +582,6 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/cart") return jsonResponse(summarizeCart(readCart()));
   if (clean === "/health" || clean === "/ready") return jsonResponse({ ok: true, mirror: true });
 
-  // ── ЛК ──
   if (clean === "/me") return jsonResponse(ME);
   if (clean === "/me/ledger") return jsonResponse(LEDGER);
   if (clean === "/me/orders") return jsonResponse(MY_ORDERS);
@@ -595,7 +590,6 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/me/level") return jsonResponse(DEMO_LEVEL);
   // Демо-профили используют инициалы вместо отсутствующего фото.
 
-  // ── Админка ──
   if (clean === "/admin/system-health") return jsonResponse({
     checked_at: new Date().toISOString(), uptime_seconds: null, status: "partial",
     checks: ["API сайта", "Файлы", "База данных · PostgreSQL", "Telegram-бот", "Электронная почта", "Push-уведомления"].map((name, i) => ({
@@ -720,21 +714,16 @@ function mirrorMutation(path: string, method: string, body: unknown): Response {
   return errorResponse(503, MIRROR_MUTATION);
 }
 
-/** Демо-токены, чтобы /lk и /admin открывались сразу. */
 export function seedMirrorSession(): void {
   if (!isMirror || typeof window === "undefined") return;
   try {
     if (!localStorage.getItem("club_token")) localStorage.setItem("club_token", MIRROR_ALUMNI_TOKEN);
     if (!localStorage.getItem("club_admin_token")) localStorage.setItem("club_admin_token", MIRROR_ADMIN_TOKEN);
   } catch {
-    /* private mode */
+    // Хранилище может быть запрещено настройками браузера.
   }
 }
 
-/**
- * Перехват fetch(/api/…) в режиме зеркала.
- * Вызывать один раз из main.tsx до рендера приложения.
- */
 export function installMirrorFetch(): void {
   if (!isMirror || typeof window === "undefined") return;
   seedMirrorSession();
@@ -773,7 +762,7 @@ export function installMirrorFetch(): void {
         }
       }
     } catch {
-      /* fall through */
+      // При отказе разбора запрос передаётся обычному fetch.
     }
 
     return realFetch(input, init);

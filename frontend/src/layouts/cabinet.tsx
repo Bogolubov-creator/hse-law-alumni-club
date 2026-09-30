@@ -8,7 +8,6 @@ import "../styles/shell.css";
 
 export const TOKEN_KEY = "club_token";
 
-/** Строка удостоверения: подпись слева, значение справа, разделитель – линия. */
 export function DataRow({ name, value, accent }: { name: string; value: string; accent?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "11px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -30,7 +29,6 @@ export function Section({ title, note, children }: { title: string; note?: strin
   );
 }
 
-/** Инициал в плашке – когда аватара нет. */
 export function Initial({ fio, size, radius }: { fio: string | null | undefined; size: number; radius: string }) {
   return (
     <div aria-hidden style={{ width: size, height: size, flexShrink: 0, borderRadius: radius, background: "var(--c-bg-sunken)", border: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 700, fontSize: Math.round(size / 2.6), color: "var(--c-text-2)" }}>
@@ -39,11 +37,6 @@ export function Initial({ fio, size, radius }: { fio: string | null | undefined;
   );
 }
 
-/**
- * Полоса прогресса. Ширина задаётся раз при отрисовке и не анимируется:
- * в кабинете движения нет (DESIGN.md), а «ползущая» полоса при каждом
- * обновлении данных только мешает читать число рядом.
- */
 export function Progress({ value, target, done }: { value: number; target: number; done: boolean }) {
   const pct = done ? 100 : target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
@@ -70,7 +63,6 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
   return (
     <div className="cabinet-shell" style={{ background: "var(--c-bg)", color: "var(--c-text)", fontFamily: "var(--f-body)", minHeight: "100dvh" }}>
       <a href="#main" className="skip">К содержанию страницы</a>
-      {/* Шапка кабинета – общий локап и вкладки на непрозрачной поверхности формы */}
       <header className="club-header cabinet-header">
         <div className="club-header__inner">
           <Link to="/" className="foc club-header__brand">
@@ -101,7 +93,6 @@ export function CabinetShell({ active, onLogout, children }: { active: "lk" | "p
         return <Link className="foc" key={to} to={to!} aria-current={current ? "page" : undefined}>{title}</Link>;
       })}</nav>
 
-      {/* Низ не должен уезжать под cookie-баннер: внизу профиля права по 152-ФЗ */}
       <main id="main" style={{ maxWidth: 1180, margin: "0 auto", padding: "26px 20px 64px", paddingBottom: "calc(64px + var(--cookie-h, 0px) + var(--tabs-h, 0px))" }}>{children}</main>
     </div>
   );

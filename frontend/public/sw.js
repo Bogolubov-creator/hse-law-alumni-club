@@ -1,12 +1,7 @@
-/* Service worker PWA.
-   Статика – cache-first; при потере сети открывается автономная страница.
-   API и HTML кабинета не сохраняются. Кэш изолирован по scope регистрации.
-   На зеркале Pages SW не регистрируется (см. main.tsx). */
 const SCOPE = self.registration.scope;
 const CACHE_PREFIX = `club-pwa-${encodeURIComponent(SCOPE)}-`;
 const CACHE = `${CACHE_PREFIX}v7`;
 
-/** Абсолютный URL внутри scope SW (`offline.html` → …/offline.html). */
 function scoped(path) {
   return new URL(String(path).replace(/^\//, ""), SCOPE).href;
 }
@@ -44,7 +39,6 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-/** Pathname без Vite/base prefix (`/club-…/assets/x` → `/assets/x`). */
 function pathInScope(pathname) {
   const basePath = new URL(SCOPE).pathname.replace(/\/$/, "");
   if (!basePath) return pathname;
