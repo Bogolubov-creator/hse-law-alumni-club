@@ -1,0 +1,21 @@
+# Локальная репетиция с production-проверками и внутренней CA Caddy.
+name: club-local
+services:
+  caddy:
+    networks: [default, browser]
+    ports: !override
+      - "127.0.0.1:9443:443"
+  mailpit:
+    image: axllent/mailpit@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    networks: [default, browser]
+    ports:
+      - "127.0.0.1:8025:8025"
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }
+networks:
+  default:
+    internal: true
+  browser:
