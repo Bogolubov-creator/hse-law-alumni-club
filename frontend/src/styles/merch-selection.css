@@ -1,4 +1,3 @@
-/* Выбор товара – спокойная форма с теми же материалами, что витрина. */
 .club-merch-selection { border: 1px solid var(--c-line); box-shadow: var(--shadow-ambient); }
 .club-merch-selection h2 { overflow-wrap: anywhere; line-height: 1.15; }
 .club-merch-selection button { min-height: 44px; }

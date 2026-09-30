@@ -14,11 +14,6 @@ const updateSchema = z.object({
   }).optional(),
 }).passthrough();
 
-/**
- * Webhook @pravohse_alumni_bot: /start, /points, /calendar, /help.
- * Токен TELEGRAM_BOT_TOKEN; обязательный TELEGRAM_WEBHOOK_SECRET (заголовок
- * X-Telegram-Bot-Api-Secret-Token при setWebhook).
- */
 export async function telegramRoutes(app: FastifyInstance) {
   app.post("/telegram/webhook", { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!env.TELEGRAM_BOT_TOKEN) return reply.code(503).send({ error: "Telegram-бот не настроен" });

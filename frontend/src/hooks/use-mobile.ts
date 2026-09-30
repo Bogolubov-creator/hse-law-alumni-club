@@ -13,15 +13,10 @@ function getSnapshot(): boolean {
   return typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(QUERY).matches;
 }
 
-/** true на телефонах (<768px). Обновляется при ресайзе/повороте. */
 export function useIsMobile(): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
-/**
- * true на Android – для платформенно-идиоматичной мобильной оболочки (Material vs iOS).
- * Оверрайд ?platform=android|ios (превью/QA любого варианта без реального устройства).
- */
 export function isAndroid(): boolean {
   if (typeof window !== "undefined") {
     const p = new URLSearchParams(window.location.search).get("platform");

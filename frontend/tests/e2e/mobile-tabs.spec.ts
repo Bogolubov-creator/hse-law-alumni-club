@@ -3,9 +3,6 @@ import { seedClientStorage, stubSw, mockPublicApi } from "./harness.js";
 
 test.beforeEach(async ({ page }) => { await mockPublicApi(page); });
 
-/**
- * Телефон: адаптивные страницы, меню шапки и общая нижняя навигация (14.09).
- */
 
 const tabs = (page: Page) => page.getByRole("navigation", { name: "Основные разделы" });
 const menu = (page: Page) => page.getByRole("navigation", { name: "Меню" });
@@ -73,7 +70,6 @@ test.describe("Панель вкладок в кабинете", () => {
   });
 });
 
-/** Баннер специально не гасим – проверяем, что его кнопка нажимается на телефоне. */
 test.describe("cookie-баннер на телефоне", () => {
   test.beforeEach(async ({ page }) => {
     await stubSw(page);

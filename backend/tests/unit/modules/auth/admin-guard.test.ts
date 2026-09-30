@@ -17,7 +17,6 @@ const EDITOR_ID = "user-editor";
 const ADMIN_ID = "user-admin";
 const ALUMNI_ID = "alumni-1";
 
-/** Маршруты админки, которые обязаны быть закрыты гардом. */
 const GUARDED = [
   { method: "GET" as const, url: "/admin/news-sources" },
   { method: "POST" as const, url: "/admin/news-sources/telegram/refresh" },

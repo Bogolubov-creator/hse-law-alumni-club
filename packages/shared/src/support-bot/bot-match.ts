@@ -1,7 +1,4 @@
-/**
- * Подбор программ для бота поддержки.
- * Порт js/bot-match.js из SergeyBuzanov/dpo-pravo-hse (без IIFE, ESM).
- */
+// Источник: SergeyBuzanov/dpo-pravo-hse, js/bot-match.js.
 import type { BotProgram, ParsedQuery, SearchResult } from "./types.js";
 
 const ENDINGS = [

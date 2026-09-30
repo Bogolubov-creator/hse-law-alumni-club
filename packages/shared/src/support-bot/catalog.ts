@@ -1,6 +1,5 @@
 import type { BotProgram } from "./types.js";
 
-/** Сырая программа клуба с GET /api/programs. */
 export type ClubProgramApi = {
   id: string;
   slug: string;
@@ -30,7 +29,6 @@ function mapType(document: string | null | undefined, title: string): string {
   return "";
 }
 
-/** Цены API в копейках → рубли для бота. */
 export function programToBot(p: ClubProgramApi): BotProgram {
   const keywords: string[] = [];
   if (p.description) keywords.push(p.description);

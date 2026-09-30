@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test';
 test.beforeEach(async({page})=>{await page.addInitScript(()=>{localStorage.setItem('club_cookie_consent','1');localStorage.setItem('club_pwa_dismiss','1')});});
-// Решение заказчика 12.09 (вечер): живое движение – один оркестрированный вход героя,
-// проявление полос при прокрутке; при reduced-motion всё гаснет, содержание видно сразу.
 test('герой входит один раз, reduced motion гасит движение без потери содержания',async({page},info)=>{
  await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/');
  expect(await page.locator('.home-hero').evaluate(e=>e.getAnimations({subtree:true}).length)).toBeGreaterThan(0);

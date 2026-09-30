@@ -3,17 +3,6 @@ import { seedClientStorage, mockPublicApi } from "./harness.js";
 
 test.beforeEach(async ({ page }) => { await mockPublicApi(page); });
 
-/**
- * Кабинет (/lk).
- *
- * Авторизованный экран проверяется на подменённых ответах API, а не реальным
- * логином: настоящие учётные данные в тесты не кладём, а отрисовку и пустые
- * состояния проверить надо. Токен в localStorage – заглушка, до бэкенда
- * запросы не доходят: их перехватывает route().
- *
- * Схемы ответов – те же zod-схемы, что и в проде: если фикстура разойдётся
- * с контрактом, парсинг упадёт и тест это покажет.
- */
 
 const ME = {
   alumni: {
@@ -54,15 +43,7 @@ const EVENTS = [
   { kind: "order_status", number: "ORD-000418", status: "confirmed", paid: true, created_at: "2026-07-29T09:00:00.000Z" },
 ];
 
-/** Подменяем только личные ручки; остальное идёт на живой стек как обычно. */
-/**
- * Тестовая сессия: токен-заглушка и выключенный service worker.
- *
- * SW отключаем не для красоты: мобильный проект Playwright бежит на WebKit
- * (девайс iPhone 13), а там запросы, прошедшие через активный service worker,
- * до page.route() не доходят – перехват мутаций молча пролетает на живой API.
- * Прод это не затрагивает: sw.js и так не трогает /api (см. public/sw.js).
- */
+// SW отключён, чтобы WebKit передавал запросы в page.route().
 async function stubSession(page: Page) {
   await seedClientStorage(page);
   await page.addInitScript(() => {

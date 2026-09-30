@@ -6,7 +6,6 @@ export function PodcastLock() {
   return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v3" /></svg>;
 }
 
-/** Одна обложка для списка и страницы выпуска; замок дублируется текстом рядом. */
 export function PodcastArtwork({ cover, number, locked = false }: { cover?: string | null; number: number; locked?: boolean }) {
   const [failed, setFailed] = useState(false);
   return <div className={`podcast-artwork${locked ? " podcast-artwork--locked" : ""}`} aria-hidden="true">

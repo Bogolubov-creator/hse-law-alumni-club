@@ -87,7 +87,7 @@ export async function commitCheckout(input: { session: string; key: string; requ
   } catch (e) { await c.query("ROLLBACK"); throw e; } finally { c.release(); }
 }
 
-/** Отмена / истечение освобождает только наш резерв и ровно один раз. Оплаченный заказ требует возврата. */
+// Резерв освобождается один раз; оплаченная заявка требует возврата.
 async function releaseReservations(c: PoolClient, orderId: string) {
   const { rows: commits } = await c.query("SELECT reservations,released FROM club_checkout_commits WHERE order_id=$1 FOR UPDATE", [orderId]);
   if (!commits[0] || commits[0].released) return;
@@ -124,10 +124,6 @@ export async function changeOrderStatus(id: string, status: string) {
   } catch (e) { await c.query("ROLLBACK"); throw e; } finally { c.release(); }
 }
 
-/**
- * Истечение резерва мерча: заявки «new» без активного платежа старше RESERVE_TTL_HOURS.
- * Возвращает число истёкших. 0 часов в env – выключено.
- */
 export async function expireStaleReservations(now = Date.now()): Promise<number> {
   if (!env.CHECKOUT_DATABASE_URL || env.RESERVE_TTL_HOURS <= 0) return 0;
   const cutoff = new Date(now - env.RESERVE_TTL_HOURS * 3600_000).toISOString();
@@ -147,7 +143,7 @@ export async function expireStaleReservations(now = Date.now()): Promise<number>
     try {
       if (await changeOrderStatus(row.id, "expired")) n += 1;
     } catch {
-      /* гонка с оплатой/админом – пропуск */
+      // Гонка с оплатой или оператором оставляет заявку без изменения.
     }
   }
   return n;

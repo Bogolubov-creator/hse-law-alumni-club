@@ -1,13 +1,5 @@
 import { useVision, setVision } from "../lib/a11y.js";
 
-/**
- * Кнопка-переключатель «Версия для слабовидящих» (в шапке).
- *
- * `v2` переводит кнопку на семантические токены: в тёмной теме зашитый
- * bg-white светился белой плашкой на графите. Старый фронт остаётся на
- * Tailwind-классах – там тёмной темы нет и менять нечего.
- * `compact` в v2 совпадает по размеру с кнопкой темы (`.club-chrome-icon-btn`).
- */
 export function VisionToggle({ compact = false, v2 = false }: { compact?: boolean; v2?: boolean }) {
   const v = useVision();
   if (v2 && compact) {
@@ -42,7 +34,6 @@ export function VisionToggle({ compact = false, v2 = false }: { compact?: boolea
   );
 }
 
-/** Плавающая кнопка версии для слабовидящих для страниц без общей шапки (auth/ЛК/админка). */
 export function VisionCorner() {
   const v = useVision();
   if (v.on) return null; // когда режим включён, панель настроек уже видна сверху
@@ -53,7 +44,6 @@ export function VisionCorner() {
   );
 }
 
-/** Панель настроек версии для слабовидящих – показывается вверху, когда режим включён. */
 export function VisionPanel() {
   const v = useVision();
   if (!v.on) return null;

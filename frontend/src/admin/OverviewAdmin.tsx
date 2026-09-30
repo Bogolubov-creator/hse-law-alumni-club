@@ -20,11 +20,6 @@ export function Overview({ onGo }: { onGo: (s: Section) => void }) {
     { key: "verify", count: d?.pending_verifications ?? 0, title: "На верификацию", hint: "подтвердить выпуск", go: "members" as Section },
   ].filter((x) => x.count > 0);
   // Вся статистика сайта – одним экраном.
-  /**
-   * Акцентом помечены только те два числа, по которым офис действует прямо
-   * сейчас. Раньше каждый показатель был своего цвета – десять акцентов
-   * означают, что акцента нет ни одного.
-   */
   const stats = [
     { label: "Новые заявки", value: d?.new_orders ?? 0, act: true },
     { label: "На верификацию", value: d?.pending_verifications ?? 0, act: true },
@@ -144,7 +139,6 @@ function PushBroadcast({ subs }: { subs: number }) {
         <input aria-label="Ссылка, куда ведёт уведомление" value={f.url} onChange={(e) => setF((s) => ({ ...s, url: e.target.value }))} placeholder="/events" className="foc" style={{ ...field, ...mono }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 14 }}>
-        {/* Заблокированная кнопка называет причину, а не молчит бледной охрой */}
         <button disabled={blocked} onClick={() => send.mutate()} className="foc"
           style={blocked
             ? { ...actionGhost, cursor: send.isPending ? "wait" : "not-allowed", color: "var(--c-text-3)" }

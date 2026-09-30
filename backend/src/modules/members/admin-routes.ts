@@ -32,8 +32,6 @@ export async function adminMembersRoutes(app: FastifyInstance) {
     const filter = and.length ? { _and: and } : undefined;
     const listOpts = filter ? { filter } : {};
 
-    // Страница + total (агрегат count, не скан). Дубли и друзья считаем только по
-    // показанным участникам – без полного скана alumni на каждый заход (масштаб).
     const pageRows = (await di.request((readItems as any)("alumni", {
       ...listOpts, sort: ["-points_cached", "id"], limit: qp.limit, offset: (qp.page - 1) * qp.limit,
       fields: ["id", "user_id", "fio", "cohort", "status", "verification_status", "points_cached", "level_cached", "personal_discount", "podcast_sub_until", "edu_level", "edu_program", "interests_json", "contacts_json", "joined_at", "avatar"],
@@ -49,7 +47,6 @@ export async function adminMembersRoutes(app: FastifyInstance) {
             limit: -1, fields: ["alumni_id", "friend_id"],
           }))
         : Promise.resolve([]),
-      // Возможные дубли: одинаковые ФИО+выпуск среди показанных, обезличенных исключаем.
       pageFios.length
         ? groupCount("alumni", ["fio", "cohort"], { _and: [{ fio: { _in: pageFios } }, { status: { _neq: "alumni_left" } }] })
         : Promise.resolve([]),

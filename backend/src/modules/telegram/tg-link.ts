@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { checkoutPool, digest } from "../../db/checkout-store.js";
 
-/** Одноразовый код на 10 минут. В БД хранится только хеш; старые HMAC-ссылки недействительны. */
 export async function makeTgLinkCode(alumniId: string): Promise<string> {
   const code = `l${randomBytes(24).toString("base64url")}`;
   await checkoutPool().query("DELETE FROM club_telegram_links WHERE expires_at <= now()");
@@ -11,7 +10,7 @@ export async function makeTgLinkCode(alumniId: string): Promise<string> {
   return code;
 }
 
-/** Привязка и погашение кода в одной транзакции. Уже привязанные аккаунты не переносятся. */
+// Привязка и погашение кода атомарны; уже привязанный аккаунт не переносится.
 export async function consumeTgLinkCode(code: string, tgId: string): Promise<{ fio: string } | null> {
   if (!/^l[A-Za-z0-9_-]{32}$/.test(code) || !/^[1-9][0-9]{0,15}$/.test(tgId) || !Number.isSafeInteger(Number(tgId))) return null;
   const c = await checkoutPool().connect();

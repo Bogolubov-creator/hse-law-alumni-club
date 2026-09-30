@@ -1,17 +1,3 @@
-/**
- * Импорт полного каталога ДПО из зеркала itspecR/dpo-pravo-hse.
- *
- * Тянет `.catalog-data.json` + `content/programs-index.json`, скачивает:
- *  – обложки программ → `frontend/public/assets/programs/` (+ thumbs)
- *  – фото преподавателей из `teacherPhotos` → `frontend/public/assets/teachers/`
- * и генерирует:
- *  – `packages/shared/src/dpo-mirror-catalog.generated.ts`
- *  – `frontend/public/content/bot-catalog.json`
- *
- * Идемпотентен: повторный запуск перезаписывает артефакты.
- * Запуск: `pnpm --filter @club/scripts import-dpo`
- * Опционально: `DPO_MIRROR_REPO=owner/repo` (по умолчанию itspecR/dpo-pravo-hse).
- */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -138,7 +124,6 @@ function priceKop(p: CatalogProgram): number {
 }
 
 function descriptionOf(p: CatalogProgram): string | undefined {
-  // Tagline показывается отдельно под заголовком – в description кладём about.
   const about = (p.about || "").trim();
   const tagline = (p.tagline || "").trim();
   if (about) return about;
@@ -240,11 +225,7 @@ function serializePrograms(programs: ProgramSeed[]): string {
     .replace(/\\\\/g, "\\")
     .replace(/\u2026/g, "…");
   return `/* eslint-disable */
-/**
- * Автогенерация: scripts/src/import-dpo-mirror-catalog.ts
- * Источник – ${REPO} \`.catalog-data.json\` (+ programs-index.json).
- * Не редактировать вручную – перезапустите \`pnpm --filter @club/scripts import-dpo\`.
- */
+// Сгенерировано import-dpo. Источник: ${REPO}.
 import type { ProgramSeed } from "./seeds.js";
 
 export const DPO_MIRROR_PROGRAMS: ProgramSeed[] = ${body};
@@ -276,7 +257,6 @@ async function downloadImage(id: string, imageRel: string | null | undefined): P
   return ext;
 }
 
-/** Скачивает teacherPhotos → локальные `/assets/teachers/{file}`; ключ карты – ФИО. */
 async function downloadTeacherPhotos(teacherPhotos: Record<string, string> | undefined): Promise<Map<string, string>> {
   const localByName = new Map<string, string>();
   const entries = Object.entries(teacherPhotos || {});

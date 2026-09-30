@@ -44,8 +44,6 @@ describe("баллы одного участника при одновремен
     await barrier.paused;
     const second = addPoints(A, { reason: "manual", delta: 80, idempotencyKey: secondKey });
     try {
-      // Все готовые микрозадачи второго запроса выполняются до возврата первого snapshot.
-      // До исправления второй запрос писал 640, после чего первый затирал кэш числом 560.
       await new Promise<void>(resolve => setImmediate(resolve));
       barrier.resume();
       await Promise.all([first, second]);

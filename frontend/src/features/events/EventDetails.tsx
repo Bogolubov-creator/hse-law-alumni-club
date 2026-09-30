@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 import { fmtEventDateFull, gcalUrl, type ClubEvent } from "./events.js";
 import "../../styles/event-details.css";
 
-/** Общие сведения и действия для прямой страницы и быстрого просмотра. */
 export default function EventDetails({ event, detail, onClose, rsvp }: {
   event: ClubEvent; detail: boolean; onClose: () => void; rsvp: ReactNode;
 }) {

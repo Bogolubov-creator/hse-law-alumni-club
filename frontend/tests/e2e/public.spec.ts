@@ -3,13 +3,6 @@ import { preparePage, mockPublicApi } from "./harness.js";
 
 test.beforeEach(async ({ page }) => { await mockPublicApi(page); });
 
-/**
- * Публичные витрины (десктоп + мобила). Только чтение: ничего не отправляем.
- * Cookie-баннер гасим заранее, чтобы не перекрывал низ.
- *
- * Каталог/новости подменяем: Safari-приёмка не должна краснеть из-за падения
- * Directus на стенде (CMS – отдельный контур; живой каталог – staged-catalog).
- */
 
 const PROGRAMS = [
   {
@@ -135,7 +128,6 @@ test("robots.txt и sitemap.xml отдаются", async ({ request }) => {
   expect(await robots.text()).toContain("Sitemap:");
 
   const sitemap = await request.get("/sitemap.xml");
-  // Sitemap ходит в Directus; без CMS – осознанный skip, не ложный fail Safari.
   test.skip(sitemap.status() !== 200, "sitemap.xml требует живой Directus на стенде");
   const xml = await sitemap.text();
   expect(xml).toContain("<urlset");

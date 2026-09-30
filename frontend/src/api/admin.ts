@@ -9,11 +9,7 @@ export function adminToken(): string | null {
 export function setAdminToken(t: string) { localStorage.setItem(ADMIN_TOKEN, t); }
 export function clearAdminToken() { localStorage.removeItem(ADMIN_TOKEN); }
 
-/**
- * Выход из панели: сначала гасим сессию на сервере (иначе токен оставался
- * годным все 12 часов и «выход» был только очисткой localStorage), потом
- * убираем токен локально. Сетевой сбой не должен помешать выйти.
- */
+// Локальный выход выполняется и при недоступном сервере.
 export async function adminLogout(): Promise<void> {
   const t = adminToken();
   if (t) {
@@ -128,7 +124,6 @@ export function useAnalytics(range: AnalyticsRange) {
   });
 }
 
-/** CSV аналитики за выбранное окно (без ПДн). */
 export async function downloadAnalyticsCsv(range: AnalyticsRange): Promise<void> {
   const t = adminToken();
   const res = await fetch(`/api/admin/analytics/export.csv?range=${range}`, { headers: t ? { authorization: `Bearer ${t}` } : {} });
@@ -145,10 +140,6 @@ export async function downloadAnalyticsCsv(range: AnalyticsRange): Promise<void>
 }
 export type OrdersPage = { items: AdminOrder[]; total: number; page: number; limit: number };
 export type OrdersQuery = { q?: string; status?: string; payment?: string; page?: number; limit?: number };
-/**
- * Заявки постранично. Раньше сервер отдавал только последние 100 без пагинации –
- * сто первая заявка в панели не показывалась вообще.
- */
 export function useAdminOrders(params: OrdersQuery = {}) {
   const qs = new URLSearchParams();
   if (params.q) qs.set("q", params.q);
@@ -182,7 +173,6 @@ export type PodcastSubs = {
   items: PodcastSub[]; plays_total: number; by_podcast: PodcastPlays[];
 };
 
-/** Подписки на подкасты и статистика прослушиваний – один срез для офиса. */
 export function usePodcastSubs() {
   return useQuery({ queryKey: ["adm", "podcast-subs"], queryFn: () => req<PodcastSubs>("GET", "/admin/podcast-subs"), retry: false });
 }
@@ -191,7 +181,7 @@ export function useAuditLog() {
   return useQuery({ queryKey: ["adm", "audit"], queryFn: () => req<AuditEntry[]>("GET", "/admin/audit?limit=300"), retry: false, refetchInterval: 60_000 });
 }
 
-/** Скачивание CSV с Bearer-токеном (обычная ссылка не передаст авторизацию). */
+// CSV загружается запросом: обычная ссылка не передаёт Bearer-токен.
 export async function downloadOrdersCsv(): Promise<void> {
   const t = adminToken();
   const res = await fetch("/api/admin/orders/export.csv", { headers: t ? { authorization: `Bearer ${t}` } : {} });

@@ -1,4 +1,3 @@
-/** Импорт из локального JSON-манифеста. Пути к аудио и учётные данные не входят в репозиторий. */
 import { openAsBlob } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";

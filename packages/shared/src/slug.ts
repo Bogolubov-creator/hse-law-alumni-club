@@ -19,10 +19,6 @@ function hash(s: string): number {
   return h;
 }
 
-/**
- * Нормализация названия для сопоставления: регистр, «ё», пробелы,
- * латинский дубль – и после « / », и хвостом в скобках «(Le français …)».
- */
 export function normalizeTitle(s: string): string {
   return s.split(" / ")[0]!
     .replace(/\s*\([^)]*\)\s*$/, "")

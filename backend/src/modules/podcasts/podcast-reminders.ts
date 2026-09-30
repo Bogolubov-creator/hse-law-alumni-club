@@ -5,19 +5,9 @@ import { sendEmail, mailEnabled } from "../notifications/notify.js";
 
 const di = data;
 
-/** За сколько дней до конца подписки предупреждаем. */
 export const REMIND_DAYS_BEFORE = 10;
 
-/**
- * Напоминание об окончании подписки на подкасты.
- *
- * Идемпотентность через `podcast_reminder_sent`: флаг ставится после отправки
- * и сбрасывается при продлении подписки (см. активацию подписки). Без него
- * ежедневный cron слал бы напоминание все десять дней подряд.
- *
- * Письмо и пуш – независимо: у выпускника может не быть ни подписки на пуши,
- * ни настроенного SMTP, и молчать в обоих случаях нельзя.
- */
+// Флаг напоминания сбрасывается при продлении, чтобы cron не повторял отправку ежедневно.
 export async function runPodcastSubReminders(): Promise<{ due: number; pushes: number; emails: number }> {
   const now = Date.now();
   const horizon = now + REMIND_DAYS_BEFORE * 24 * 3600 * 1000;

@@ -11,12 +11,7 @@ import { applyVerifiedPayment, prepareOrderPayment, recordCreatedPayment } from 
 
 
 
-/**
- * Оплата заявок через ЮKassa. Весь контур за фичефлагом paymentsEnabled():
- * без ключей магазина сайт работает в прежнем режиме «заявка без оплаты».
- */
 export async function paymentsRoutes(app: FastifyInstance) {
-  // Публичный флаг для фронта: показывать ли кнопку оплаты.
   app.get("/payments/config", async () => ({ enabled: paymentsEnabled() }));
 
   // Создать (или переиспользовать) платёж по своей заявке → ссылка на оплату.
@@ -24,9 +19,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (!paymentsEnabled()) return reply.code(503).send({ error: "Оплата на сайте пока не подключена" });
     const { number } = z.object({ number: z.string().min(1) }).parse(req.params);
 
-    // Платить может владелец: авторизованный выпускник по alumni_id
-    // или гость с той же корзинной сессией нам недоступен постфактум – поэтому
-    // гостевые оплаты создаются только сразу при оформлении (см. orders.ts).
+    // Повторная оплата доступна владельцу; гостевой платёж создаётся при оформлении.
     const alumni = await resolveAlumni(req);
     if (!alumni) return reply.code(403).send({ error: "Оплата доступна владельцу заявки" });
     const order = await prepareOrderPayment(number, alumni.id);
@@ -61,9 +54,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
   // прямым запросом к API ЮKassa по payment.id (рекомендация ЮKassa).
   app.post("/payments/yookassa/webhook", { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!paymentsEnabled()) return reply.code(503).send({ ok: false });
-    // Слой 1: уведомления принимаем только с официальных подсетей ЮKassa
-    // (слой 2 ниже – верификация статуса прямым запросом к API).
-    // Локальную разработку допускаем без подсети ЮKassa; в production её нет.
+    // В production проверяется подсеть отправителя, затем статус в API ЮKassa.
     const ip = req.ip.replace(/^::ffff:/, "");
     const isLocal = env.APP_ENV !== "production" &&
       (ip === "127.0.0.1" || ip === "::1" || /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip));

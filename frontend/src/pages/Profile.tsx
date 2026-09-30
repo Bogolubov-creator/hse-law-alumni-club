@@ -23,7 +23,6 @@ const CONTACT_FIELDS: { key: string; name: string; ph: string; type?: string; au
   { key: "max", name: "макс", ph: "max.ru/username" },
 ];
 
-/** Поле описи: моно-подпись над полем, разделитель сверху. */
 function Field({ name, value, onChange, ph, type, autoComplete }: {
   name: string; value: string; onChange: (v: string) => void; ph: string; type?: string; autoComplete?: string;
 }) {
@@ -42,7 +41,6 @@ function fmtDay(iso: string): string {
   return Number.isNaN(d.getTime()) ? "--.--" : `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/* ── Удостоверение с загрузкой фото ───────────────────────────────── */
 
 function IdentityCard({ me, token, onChanged }: { me: Me; token: string; onChanged: () => void }) {
   const a = me.alumni;
@@ -172,7 +170,6 @@ function TelegramLink({ me, token }: { me: Me; token: string }) {
   </Section>;
 }
 
-/* ── Контакты и интересы ──────────────────────────────────────────── */
 
 function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: () => void }) {
   const [fio, setFio] = useState(me.alumni.fio ?? "");
@@ -225,7 +222,6 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
             const on = interests.includes(name);
             return (
               <button key={name} type="button" onClick={() => toggle(name)} aria-pressed={on}
-                /* Лимит выбран – невыбранные гасим, но не прячем: иначе непонятно, куда делся список */
                 disabled={!on && full} className="foc"
                 style={{
                   ...mono, fontSize: "var(--t-caption)", letterSpacing: "var(--tr-data)", textTransform: "none",
@@ -257,7 +253,6 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
   );
 }
 
-/* ── История баллов ───────────────────────────────────────────────── */
 
 function History({ token }: { token: string }) {
   const ledger = useLedger(token);
@@ -291,7 +286,6 @@ function History({ token }: { token: string }) {
   );
 }
 
-/* ── Достижения: ссылка в кабинет, без второго каталога ───────────── */
 
 function AchievementsLink({ me }: { me: Me }) {
   const earned = me.achievements.filter((a) => a.earned).length;
@@ -309,7 +303,6 @@ function AchievementsLink({ me }: { me: Me }) {
   );
 }
 
-/* ── Права по 152-ФЗ ──────────────────────────────────────────────── */
 
 function DataRights({ token }: { token: string }) {
   const toast = useToast();
@@ -389,7 +382,6 @@ function DataRights({ token }: { token: string }) {
   );
 }
 
-/* ── Экран ────────────────────────────────────────────────────────── */
 
 function Body({ token, onLogout }: { token: string; onLogout: () => void }) {
   const me = useMe(token);

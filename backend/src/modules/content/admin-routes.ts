@@ -11,7 +11,6 @@ const slugify = slugifyRu;
 export async function adminContentRoutes(app: FastifyInstance) {
 
 
-  // ── Новости: пишутся и публикуются из админ-панели ──────────────
   const newsBody = z.object({
     title: z.string().min(3),
     excerpt: z.string().nullish(),
@@ -63,7 +62,6 @@ export async function adminContentRoutes(app: FastifyInstance) {
   });
 
 
-  // ── «История» на главной ─────────────────────────────────────────
   const timelineBody = z.object({
     year: z.string().min(4).max(4),
     title: z.string().min(2),
@@ -115,7 +113,6 @@ export async function adminContentRoutes(app: FastifyInstance) {
   });
 
 
-  // ── Наполнение страниц: hero и CTA главной (M2A-блоки) ──────────
   const pageBlocks = async (slug: string) => {
     const rows = (await di.request((readItems as any)("pages", {
       filter: { slug: { _eq: slug } }, limit: 1,

@@ -1,13 +1,5 @@
 import { useState } from "react";
-/**
- * Встроенный плеер RuTube для выпуска подкаста.
- *
- * Адрес приходит с сервера уже разобранным (`rutubeEmbed` в общем пакете):
- * в `src` айфрейма попадает только rutube.ru и только известная форма адреса.
- * Произвольную строку из админки сюда пускать нельзя – это была бы дыра.
- *
- * `v2` меняет лишь оформление рамки; сам плеер одинаков в обеих версиях.
- */
+// src принимает только адрес, проверенный rutubeEmbed.
 export function VideoEmbed({ src, title, v2 = false }: { src: string; title: string; v2?: boolean }) {
   const [enabled, setEnabled] = useState(false);
   return (

@@ -1,7 +1,4 @@
-/**
- * Логика ответа бота – чистые функции без DOM.
- * Порт js/bot-reply.js из SergeyBuzanov/dpo-pravo-hse.
- */
+// Источник: SergeyBuzanov/dpo-pravo-hse, js/bot-reply.js.
 import { parseQuery, sameStem, search, stem } from "./bot-match.js";
 import type {
   BotFaqAnswer,

@@ -35,7 +35,6 @@ export async function supportRoutes(app: FastifyInstance) {
   });
   app.addHook("onSend", async (_req, reply) => { reply.header("Cache-Control", "no-store"); });
   app.get("/support/config", async () => supportConfig());
-  /** Счётчик FAQ-gap / unmatched – без текста вопроса. */
   app.post("/support/faq-event", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (req) => {
     const body = z.object({
       kind: z.enum(["gap", "none"]),
@@ -86,7 +85,6 @@ export async function supportRoutes(app: FastifyInstance) {
     audit("support.read", { actor: `admin:${ctx.userId}` });
     return rows;
   });
-  /** Статус FAQ/Telegram – чтение для офиса (editor+admin), без ПДн. */
   app.get("/admin/bot-status", async (req, reply) => {
     const ctx = await requireAdmin(req, reply); if (!ctx) return reply;
     const { BOT_FAQ } = await import("@club/shared");

@@ -20,25 +20,14 @@ export function subActive(until: string | null | undefined): boolean {
   return !!until && new Date(until).getTime() > Date.now();
 }
 
-/** Права проверены подписанным маршрутом; аудио читается потоком из общего uploads. */
 async function streamAudio(reply: import("fastify").FastifyReply, fileId: string, range: string | undefined) {
   if (await mediaStore.isAvatar(fileId)) return reply.code(404).send({ error: "Выпуск не найден" });
   return mediaStore.stream(reply, fileId, { kind: "audio", range, cache: "private, max-age=3600" });
 }
 
-/** Не чаще одной записи на связку «выпуск + слушатель» за это время. */
 const PLAY_DEDUP_MS = 6 * 3600 * 1000;
 
-/**
- * Отметить прослушивание выпуска.
- *
- * Пишет сервер, а не браузер: счётчик, который шлёт фронт, накручивается
- * одной строкой в консоли. `holder` – это alumni-id подписчика либо "free"
- * у пробного выпуска, тогда слушателя мы не знаем и пишем без него.
- *
- * Дедупликация по окну: один человек, вернувшийся к выпуску через час,
- * не должен считаться дважды.
- */
+// Прослушивание считает сервер; Range-запросы одного слушателя дедуплицируются.
 async function recordPlay(podcastId: string, holder: string): Promise<void> {
   const alumniId = holder === "free" ? null : holder;
   const since = new Date(Date.now() - PLAY_DEDUP_MS).toISOString();
@@ -54,13 +43,7 @@ async function recordPlay(podcastId: string, holder: string): Promise<void> {
   await di.request((createItem as any)("podcast_plays", { podcast_id: podcastId, alumni_id: alumniId }));
 }
 
-// ── Подписанные ссылки на аудио ────────────────────────────────────
-// Реальный audio_url наружу не отдаётся никогда. Клиент получает
-// /api/podcasts/:id/audio?h=<holder>&exp=<unix>&sig=HMAC(id.holder.exp).
-// holder = alumni-id подписчика (платный выпуск) либо "free" (пробный).
-// Ссылка привязана к держателю: при отдаче платного аудио сервер повторно
-// проверяет, что у этого выпускника ещё активна подписка → перепродажа
-// ссылки бесполезна после истечения подписки или срока ссылки (аудит M3).
+// Подписанная аудиоссылка привязана к участнику; подписка проверяется и при выдаче файла.
 const AUDIO_LINK_TTL_SEC = 2 * 3600;
 
 function audioSig(id: string, holder: string, exp: number): string {
@@ -79,12 +62,6 @@ function verifyAudioSig(id: string, holder: string, exp: number, sig: string): b
   return expected.length === got.length && timingSafeEqual(expected, got); // сравнение без утечки по времени
 }
 
-/**
- * Подкасты клуба. Список публичен (обложка/описание), но audio_url отдаётся
- * ТОЛЬКО активным подписчикам (подписка 4 999 ₽/год, alumni.podcast_sub_until).
- * Оформление подписки = заявка type=podcast (+онлайн-оплата ЮKassa при ключах);
- * подписку активирует оплата (webhook) или офис вручную из админ-панели.
- */
 export async function podcastsRoutes(app: FastifyInstance) {
   app.get("/podcasts", async (req) => {
     const alumni = await resolveAlumni(req);
@@ -103,9 +80,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
         audio_url: p.audio_url && (p.is_free || subscribed)
           ? signedAudioPath(p.id, p.is_free ? "free" : alumni!.id)
           : null,
-        // Ссылку на видео подписать нельзя – она чужая. Поэтому просто не
-        // отдаём её тем, кому выпуск не открыт: в закрытой папке RuTube
-        // защита ровно в том, что ссылку не публикуют.
+        // Токен приватного RuTube-видео не выдаётся без доступа к выпуску.
         video_url: p.video_url && (p.is_free || subscribed) ? rutubeEmbed(p.video_url)?.src ?? null : null,
       })),
       subscribed,
@@ -131,9 +106,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
       const a = (await di.request(readItems("alumni", { filter: { id: { _eq: q.data.h } }, limit: 1, fields: ["podcast_sub_until"] }))) as any[];
       if (!subActive(a[0]?.podcast_sub_until)) return reply.code(403).send({ error: "Подписка неактивна" });
     }
-    // Учёт прослушивания. Считаем начало воспроизведения, а не каждый кусок:
-    // при перемотке плеер шлёт десятки Range-запросов, и без этого счётчик
-    // показывал бы не слушателей, а сетевую активность.
+    // Range-запросы при перемотке не считаются отдельными прослушиваниями.
     if (!req.headers.range || /^bytes=0-/.test(req.headers.range)) {
       void recordPlay(id, q.data.h).catch(() => undefined); // учёт не должен ломать выдачу
     }
@@ -151,11 +124,7 @@ export async function podcastsRoutes(app: FastifyInstance) {
     if (subActive(alumni.podcast_sub_until)) return reply.code(400).send({ error: "Подписка уже активна" });
 
     return withCartLock(`podcast:${alumni.id}`, async () => {
-    // Незакрытая заявка на подписку уже есть – возвращаем её, а не плодим новые.
-    // Без этого каждый повторный клик создавал заявку и дёргал офис уведомлением.
-    // ВНИМАНИЕ про NULL: `_nin` транслируется в SQL `NOT IN`, а `NULL NOT IN (…)`
-    // не даёт совпадения. При выключенной оплате payment_status у новой заявки
-    // как раз NULL – без явной ветки `_null` дедупликация не нашла бы её вовсе.
+    // SQL NOT IN исключает NULL; неоплаченные заявки включаются отдельной веткой.
     const pending = (await di.request((readItems as any)("orders", {
       filter: {
         _and: [
@@ -225,7 +194,6 @@ export async function podcastsRoutes(app: FastifyInstance) {
   });
 }
 
-/** Продлить подписку выпускнику на N месяцев (оплата или решение офиса). */
 export async function extendPodcastSub(alumniId: string, months = 12): Promise<string> {
   return extendPodcastSubscription(alumniId, months);
 }

@@ -1,18 +1,7 @@
 import { seedClientStorage } from "./harness.js";
 import { test, expect, type Page } from "@playwright/test";
 
-/**
- * Десктопная корзина v2 (/cart). Мобильную оболочку проверяет mobile-cart.spec.ts.
- *
- * Наполнение корзины идёт через ЖИВОЙ API – это проверяет реальную связку
- * витрина → корзина → суммы. Подменяется только POST /api/orders: заявка
- * улетела бы настоящему учебному офису, а тесты не должны создавать работу
- * живым людям (в playwright.config это и записано: заказы не отправляем).
- *
- * SW отключаем по той же причине, что и в приватных сюитах: мобильный проект
- * бежит на WebKit, где запросы через активный service worker до page.route()
- * не доходят и подмена молча пролетает на живой API.
- */
+// POST заявки подменяется; SW отключён для перехвата запросов в WebKit.
 
 async function stubSw(page: Page) {
   await page.addInitScript(() => {
@@ -20,13 +9,6 @@ async function stubSw(page: Page) {
   });
 }
 
-/**
- * Кладёт в корзину первую СВОЮ программу каталога и возвращает её название.
- *
- * Именно «свою»: у программ с source_url вместо «В корзину» стоит «Запись на
- * hse.ru» – они продаются на маркетплейсе Вышки, а не у нас. Брать просто
- * первую строку нельзя, порядок каталога задаётся в админке.
- */
 async function addProgram(page: Page): Promise<string> {
   await page.goto("/dpo");
   const row = page.locator("article.club-dpo-tile")

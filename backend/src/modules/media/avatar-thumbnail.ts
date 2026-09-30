@@ -11,7 +11,6 @@ export class AvatarThumbnailError extends Error {
   constructor(public statusCode: number, message: string) { super(message); }
 }
 
-/** Ограничения действуют на весь процесс, включая загрузки и чтение старых фото. */
 export class AvatarThumbnails {
   private active = 0;
   private waiting: Array<() => void> = [];

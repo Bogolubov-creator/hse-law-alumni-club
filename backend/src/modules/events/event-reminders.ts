@@ -4,11 +4,6 @@ import { pushToAlumniMany } from "../notifications/push.js";
 
 const di = data;
 
-/**
- * Пуш-напоминание записавшимся за сутки до события. Запускается кроном раз в
- * день; идемпотентно через events.reminder_sent – событие напоминается один раз,
- * даже если крон перезапустился. Окно [сейчас; +24ч] покрывает любой час старта.
- */
 export async function runEventReminders(): Promise<{ events: number; pushes: number }> {
   const now = Date.now();
   const events = (await di.request((readItems as any)("events", {

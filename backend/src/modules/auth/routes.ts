@@ -46,9 +46,7 @@ export async function authRoutes(app: FastifyInstance) {
     const tgId = String(userId);
     const rows = (await data.request(readItems("alumni", {
       filter: { telegram_id: { _eq: tgId } }, limit: 1,
-      // token_version обязателен: resolveAlumni сверяет его с версией в токене.
-      // Без него в сессию всегда писался 0, и у любого, кто хоть раз сбрасывал
-      // пароль (версия ≥1), вход через мини-апп молча переставал работать.
+      // Версия токена должна совпадать с token_version профиля.
       fields: ["id", "fio", "cohort", "verification_status", "user_id", "token_version"],
     }))) as any[];
     const alumni = rows[0];
@@ -66,8 +64,7 @@ export async function authRoutes(app: FastifyInstance) {
     // нормализовать так же, иначе «Ivan@Mail.ru» не найдёт «ivan@mail.ru» → ложное 401.
     const email = parsed.email.toLowerCase().trim();
     const { password } = parsed;
-    // Блок по аккаунту (перебор пароля к одному email, в т.ч. с многих IP) И по IP
-    // (password spraying: один IP по многим аккаунтам). Оба – поверх per-IP rate-limit.
+    // Блокировки по аккаунту и IP независимы от лимита маршрута.
     if (loginLocked(email) || ipLoginLocked(req.ip)) {
       audit("login.locked", { actor: `email:${email}`, req });
       return reply.code(429).send({ error: "Слишком много неудачных попыток – попробуйте позже" });
@@ -93,9 +90,6 @@ export async function authRoutes(app: FastifyInstance) {
     return { token, alumni: { fio: alumni.fio, cohort: alumni.cohort, verification_status: alumni.verification_status } };
   });
 
-  // ── Заявка на вступление в клуб ─────────────────────────────────
-  // Создаёт аккаунт (роль alumni) + профиль выпускника со статусом pending;
-  // офис подтверждает в готовой очереди верификации админ-панели.
   const registerBody = z.object({
     fio: z.string().min(2).max(200),
     email: z.email().max(200),
@@ -205,8 +199,7 @@ export async function authRoutes(app: FastifyInstance) {
     }
   });
 
-  // Подтверждение почты по ссылке из письма. Одноразовость обеспечивает сам статус:
-  // повторный переход по ссылке видит уже активного пользователя и просто говорит «готово».
+  // Повторное подтверждение определяется сохранённым статусом аккаунта.
   app.post("/auth/confirm", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { token } = z.object({ token: z.string().min(10) }).parse(req.body);
     let payload: { sub?: string; purpose?: string };
@@ -226,13 +219,9 @@ export async function authRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // ── Восстановление пароля ───────────────────────────────────────
-  // Ответ всегда одинаковый (не раскрываем существование аккаунта).
   app.post("/auth/forgot", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { email, next } = z.object({ email: z.email(), next: z.string().max(200).optional() }).parse(req.body);
-    // Без SMTP письмо физически не уйдёт. Раньше роут всё равно отвечал ok –
-    // человек ждал ссылку, которой нет. Отвечаем честно и одинаково для всех
-    // адресов (проверка про канал, а не про аккаунт – существование не раскрывается).
+    // Проверка SMTP одинакова для всех адресов и не раскрывает наличие аккаунта.
     if (!mailEnabled()) {
       req.log.error("password.forgot: SMTP не настроен – восстановление пароля недоступно");
       return reply.code(503).send({ error: "Восстановление пароля временно недоступно: почтовый канал не настроен. Напишите в учебный офис." });

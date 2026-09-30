@@ -9,7 +9,6 @@ export interface ProgramModuleSeed {
 export interface ProgramTeacherSeed {
   name: string;
   role: string;
-  /** Локальный путь обложки/фото (public) или URL. */
   photo?: string | null;
 }
 export interface ProgramSeed {
@@ -24,21 +23,13 @@ export interface ProgramSeed {
   description?: string;
   modules?: ProgramModuleSeed[];
   teachers?: ProgramTeacherSeed[];
-  /** Актуальный набор / набор закрыт. По умолчанию – actual. */
   enrollment?: "actual" | "nonactual";
-  /** Обложка карточки/героя: путь в public или URL. */
   cover?: string | null;
-  /** Страница программы на hse.ru. */
   source_url?: string | null;
-  /** Числовой id программы на hse.ru. */
   hse_id?: string;
-  /** Короткий слоган с витрины ДПО. */
   tagline?: string;
-  /** «Кому подойдёт». */
   audience?: string[];
-  /** «Чему научитесь». */
   results?: string[];
-  /** «Преимущества». */
   advantages?: string[];
 }
 
@@ -79,7 +70,6 @@ export interface ProductSeed {
   price: number; // копейки
   stock: number;
   variants_json: { sku: string; size?: string; color?: string; stock: number }[];
-  /** Пути/URL фото в frontend/public – то, чего не хватало V3 vs живой стенд/V1. */
   images?: string[] | null;
 }
 

@@ -17,7 +17,7 @@ const SHUTDOWN_TIMEOUT_MS = 20_000;
 type JobLogger = Pick<Console, "info" | "warn" | "error">;
 export type Job = { id: string; schedule: string; enabled?: boolean; run: () => Promise<unknown> };
 
-/** Один процесс API: повторный тик пропускается, пока предыдущий запуск не завершён. */
+// Блокировка действует в одном процессе API и исключает наложение запусков.
 export function createJobRunner(logger: JobLogger) {
   const running = new Map<string, Promise<void>>();
   let stopped = false;

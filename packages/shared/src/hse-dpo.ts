@@ -1,9 +1,4 @@
-// Каталог ДПО факультета права НИУ ВШЭ (orgUnit=22753).
-// Источники (как на материнском сайте и лендинге itspecR/dpo-pravo-hse):
-//   • актуальный набор – https://www.hse.ru/edu/dpo/?orgUnit=22753
-//   • весь каталог     – https://www.hse.ru/edu/dpo/?onlyActual=0&orgUnit=22753
-// Данные в HTML: window.__INITIAL_STATE__ (пагинация pageSize≈20).
-// HTML-карточки dpob-card оставлены как запасной парсер/фикстуры.
+// Источники каталога: hse.ru/edu/dpo, itspecR/dpo-pravo-hse.
 
 export const HSE_DPO_ORG_UNIT = "22753";
 export const HSE_DPO_ACTUAL_URL = `https://www.hse.ru/edu/dpo/?orgUnit=${HSE_DPO_ORG_UNIT}`;
@@ -31,7 +26,6 @@ export interface HseInitialStatePage {
 const MONTHS_RU_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 const MAX_PAGES = 20;
 
-/** «06.07.2026» → «6 июля 2026». Невалидная дата – как есть. */
 export function humanizeDate(ddmmyyyy: string): string {
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(ddmmyyyy.trim());
   if (!m) return ddmmyyyy.trim();
@@ -39,7 +33,6 @@ export function humanizeDate(ddmmyyyy: string): string {
   return month ? `${Number(m[1])} ${month} ${m[3]}` : ddmmyyyy.trim();
 }
 
-/** «Онлайн синхронный» / «Очный» / «Смешанный» / «Гибридный …» → канонический формат. */
 export function mapHseFormat(raw: string): "online" | "offline" | "blended" {
   const s = raw.toLowerCase();
   if (s.startsWith("онлайн")) return "online";
@@ -47,7 +40,6 @@ export function mapHseFormat(raw: string): "online" | "offline" | "blended" {
   return "blended"; // смешанный, гибридный
 }
 
-/** «22 000 ₽» → 2200000 коп. Нечисловое – null. */
 export function parseHsePrice(raw: string): number | null {
   const digits = raw.replace(/[^\d]/g, "");
   if (!digits) return null;
@@ -57,11 +49,7 @@ export function parseHsePrice(raw: string): number | null {
 const decode = (s: string) =>
   s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
 
-/**
- * hse.ru вшивает каталог как JS-литерал (не JSON):
- *   window.__INITIAL_STATE__ = { items: [...], new Date(169…), __proto__: null … }
- * Приводим к JSON без eval – порт логики itspecR/dpo-pravo-hse/lib/hse-catalog.js.
- */
+// Разбор без eval; источник алгоритма: itspecR/dpo-pravo-hse/lib/hse-catalog.js.
 function quoteKeysOutsideStrings(src: string): string {
   const parts: string[] = [];
   let inString = false;
@@ -134,7 +122,6 @@ function quoteKeysOutsideStrings(src: string): string {
   return parts.join("");
 }
 
-/** Разбор window.__INITIAL_STATE__ из HTML листинга. */
 export function parseHseInitialState(html: string): HseInitialStatePage {
   const m = html.match(/window\.__INITIAL_STATE__\s*=\s*(\{[\s\S]*?\});\s*window\.__URQL_DATA__/);
   if (!m?.[1]) throw new Error("window.__INITIAL_STATE__ не найден – разметка hse.ru изменилась");
@@ -176,7 +163,6 @@ function humanizeStartMs(ms: number, withoutDay?: boolean): string | null {
   return new Intl.DateTimeFormat("ru-RU", opts).format(new Date(ms));
 }
 
-/** Элемент __INITIAL_STATE__.items → карточка синка. Без названия/id – null. */
 export function mapHseStateItem(raw: unknown): HseDpoCard | null {
   if (!raw || typeof raw !== "object") return null;
   const item = raw as Record<string, unknown>;
@@ -217,7 +203,6 @@ export function mapHseStateItem(raw: unknown): HseDpoCard | null {
   };
 }
 
-/** URL страницы листинга с page=N (1 – без параметра). */
 export function hseDpoPageUrl(baseUrl: string, page: number): string {
   let url = baseUrl.replace(/([?&])page=\d+/g, "$1").replace(/[?&]$/, "");
   if (!/[?&]orgUnit=/.test(url)) {
@@ -227,10 +212,6 @@ export function hseDpoPageUrl(baseUrl: string, page: number): string {
   return url;
 }
 
-/**
- * Собирает все страницы листинга из HTML-ответов.
- * `fetchPage(url)` должен вернуть HTML; пагинация – по total/pageSize.
- */
 export async function collectHseDpoCards(
   baseUrl: string,
   fetchPage: (url: string) => Promise<string>,
@@ -259,10 +240,6 @@ export async function collectHseDpoCards(
   return [...byId.values()];
 }
 
-/**
- * Разбор HTML листинга в карточки (dpob-card). Запасной путь / фикстуры тестов.
- * Карточки без названия или цены пропускаются.
- */
 export function parseHseDpoCards(html: string): HseDpoCard[] {
   // Карточка тянется от заголовка до следующего заголовка (или конца списка).
   const chunks = html.split(/(?=<div class="dpob-card dpob-cards__item")/).slice(1);

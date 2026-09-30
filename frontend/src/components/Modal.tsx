@@ -1,10 +1,6 @@
 import { createPortal } from "react-dom";
 import { useEffect, useRef, type ReactNode } from "react";
 
-/**
- * Доступная модалка: Esc закрывает, фокус уходит внутрь и возвращается на триггер,
- * role=dialog + aria-modal, клик по фону закрывает.
- */
 export default function Modal({
   onClose, children, labelledBy, maxWidth = 460,
 }: { onClose: () => void; children: ReactNode; labelledBy?: string; maxWidth?: number }) {

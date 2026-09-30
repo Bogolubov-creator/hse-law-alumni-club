@@ -3,10 +3,8 @@ import { Link } from "react-router-dom";
 import { useHead } from "../lib/title.js";
 import { SiteShell, mono, disp } from "../layouts/Shell.js";
 
-/** Реквизиты оператора общие для политики и согласия поддержки. */
 import { CLUB_OPERATOR as OWNER } from "@club/shared";
 
-/** Единый каркас юридических страниц; текст хранится в одном экземпляре. */
 function LegalShell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   useHead({
     title,
@@ -31,7 +29,6 @@ function LegalShell({ title, updated, children }: { title: string; updated: stri
   );
 }
 
-/** Политика обработки персональных данных (152-ФЗ). */
 export function Privacy() {
   return (
     <LegalShell title="Политика обработки персональных данных" updated="10 сентября 2026 года">
@@ -135,7 +132,6 @@ export function Privacy() {
   );
 }
 
-/** Политика конфиденциальности. */
 export function Confidential() {
   return (
     <LegalShell title="Политика конфиденциальности" updated="10 сентября 2026 года">
@@ -174,7 +170,6 @@ export function Confidential() {
   );
 }
 
-/** Реквизиты владельца сайта (информация об операторе). */
 export function Requisites() {
   const row = (k: string, v: ReactNode) => (
     <div className="club-requisites-row gap-2 border-b border-[#f0ece2] py-3">

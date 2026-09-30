@@ -132,7 +132,6 @@ export function MemberModal({ member, onClose }: { member: Member; onClose: () =
           </div>
         </div>
 
-        {/* Анкета из формы вступления – всё, что заполнил выпускник */}
         <div style={{ marginTop: 16 }}>
           {member.email && <Fact name="почта" value={member.email} />}
           {(member.edu_level || member.edu_program) && (
@@ -171,7 +170,6 @@ export function MemberModal({ member, onClose }: { member: Member; onClose: () =
           {grantPodcastSub.isPending ? "Продлеваем…" : "Продлить подписку на год (оплата по счёту)"}
         </button>
 
-        {/* 152-ФЗ: исполнение запроса на удаление ПДн без разработчика */}
         <div style={{ marginTop: 24, border: "1px solid var(--c-danger-text)", borderRadius: "var(--r-md)", padding: 14 }}>
           <div style={{ ...label, color: "var(--c-danger-text)" }}>удаление данных · 152-ФЗ</div>
           {anonymizeMember.isSuccess ? (

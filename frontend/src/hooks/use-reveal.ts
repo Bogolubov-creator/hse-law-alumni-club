@@ -1,13 +1,5 @@
 import { useEffect, type RefObject } from "react";
 
-/**
- * Проявление полос при прокрутке (решение заказчика 12.09: живое движение на
- * публичном контуре). Элементы с data-reveal получают класс is-in, когда входят
- * в окно; до этого они лишь приглушены и сдвинуты на 18px – содержание видно
- * и без анимации. Полосы, смонтированные позже (после загрузки данных), ловит
- * MutationObserver; страховка через 2,5 с показывает каждую полосу полностью.
- * При reduced-motion и без IntersectionObserver ничего не делаем.
- */
 export function useReveal(root: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const el = root.current;

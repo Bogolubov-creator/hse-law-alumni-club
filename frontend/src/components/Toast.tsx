@@ -12,11 +12,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToast({ msg, kind });
     timer.current = window.setTimeout(() => setToast(null), 2600);
   }, []);
+  // Постоянная live-region озвучивает и первое уведомление.
   return (
     <ToastCtx.Provider value={show}>
       {children}
-      {/* Live-region смонтирован постоянно (меняется только текст) – иначе скринридеры
-          часто не озвучивают ПЕРВЫЙ тост, появившийся вместе с самим регионом. */}
       <div
         role="status"
         aria-live="polite"

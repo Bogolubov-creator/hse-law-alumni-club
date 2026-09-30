@@ -8,7 +8,6 @@ import { adminCatalogRoutes } from "../catalog/admin-routes.js";
 import { adminContentRoutes } from "../content/admin-routes.js";
 import { adminPodcastsRoutes } from "../podcasts/admin-routes.js";
 
-/** Регистрация доменов офиса; каждый маршрут сохраняет собственный гард доступа. */
 export async function adminRoutes(app: FastifyInstance) {
   await adminAuthRoutes(app);
   await adminOverviewRoutes(app);

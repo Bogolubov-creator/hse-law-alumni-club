@@ -9,7 +9,6 @@ import { fmtEventDate, type ClubEvent } from "../events/events.js";
 
 type NextAction = { title: string; note: string; to: string; cta: string };
 
-/** Одно действие на обзор – без равных конкурентов в первом экране. */
 function pickNextAction(me: Me, next: ClubEvent | undefined): NextAction {
   const contacts = me.alumni.contacts ?? {};
   const hasContact = !!(contacts.phone || contacts.telegram || contacts.email);
@@ -92,7 +91,6 @@ function BenefitsStrip({ me, token }: { me: Me; token: string }) {
   );
 }
 
-/** Обзор: «Сейчас» + встреча + льготы; остальное – под «Ещё в клубе». */
 export function CabinetClubOverview({ me, token }: { me: Me; token: string }) {
   const news = useNewsList(2);
   const events = useQuery({ queryKey: ["events", token], queryFn: () => apiGet<ClubEvent[]>("/events", token) });

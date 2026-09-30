@@ -1,7 +1,3 @@
-/**
- * Переменные окружения для тестов. Ставятся ДО импорта модулей приложения:
- * env.ts валидирует process.env на этапе загрузки и без этих значений упадёт.
- */
 process.env.APP_ENV = "development";
 process.env.POINTS_SERVICE_TOKEN ??= "test-service-token";
 process.env.AUTH_SECRET ??= "test-auth-secret-not-a-real-one-32ch";

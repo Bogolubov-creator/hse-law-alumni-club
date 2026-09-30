@@ -128,9 +128,6 @@ export async function meRoutes(app: FastifyInstance) {
     };
   });
 
-  // 152-ФЗ: самоудаление данных и выход из клуба (право на стирание/отзыв согласия).
-  // Требует явного подтверждения телом. Необратимо: профиль обезличивается, аккаунт
-  // входа удаляется, сессии гаснут. После – фронт чистит токен.
   app.post("/me/delete", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } }, async (req, reply) => {
     const a = await resolveAlumni(req);
     if (!a) return reply.code(401).send({ error: "Не авторизован" });

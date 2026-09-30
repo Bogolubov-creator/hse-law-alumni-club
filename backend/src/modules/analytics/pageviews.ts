@@ -3,7 +3,6 @@ import { checkoutPool } from "../../db/checkout-store.js";
 
 const MAX_PATH = 120;
 
-/** Разрешённые префиксы канона (без /admin и API). */
 const ALLOWED = [
   /^\/$/,
   /^\/dpo(\/[\w.-]+)?$/,
@@ -23,10 +22,6 @@ const ALLOWED = [
   /^\/requisites$/,
 ];
 
-/**
- * Нормализует pathname для агрегата: без query/hash, без /legacy|/v2 префиксов,
- * только allowlist. Иначе null (маяк молча отбрасывается).
- */
 export function normalizePagePath(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   let path = raw.trim();
@@ -40,7 +35,6 @@ export function normalizePagePath(raw: unknown): string | null {
   return path;
 }
 
-/** UPSERT hits за UTC-день. Без ПДн. */
 export async function recordPageView(pathRaw: unknown, now = Date.now()): Promise<boolean> {
   const path = normalizePagePath(pathRaw);
   if (!path || !env.CHECKOUT_DATABASE_URL) return false;

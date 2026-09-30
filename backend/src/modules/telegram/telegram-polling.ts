@@ -2,12 +2,6 @@ import { setTimeout as delay } from "node:timers/promises";
 import { env } from "../../config/env.js";
 import { handleTelegramUpdate, type TgUpdate } from "./telegram-bot.js";
 
-/**
- * Long-polling для @pravohse_alumni_bot – режим без публичного HTTPS (локальный
- * стенд, dev). Включается TELEGRAM_POLLING=true; на проде вместо него ставится
- * webhook (scripts/setup-telegram-webhook.ts), одновременно они не работают –
- * при настроенном webhook polling не запускается и не меняет его.
- */
 export function startTelegramPolling(): () => Promise<void> {
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token || env.TELEGRAM_POLLING !== "true") return async () => {};

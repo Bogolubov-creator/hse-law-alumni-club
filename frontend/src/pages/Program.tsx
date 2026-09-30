@@ -17,7 +17,6 @@ const label: CSSProperties = {
   textTransform: "none", color: "var(--c-text-3)",
 };
 
-/** Поле бланка: подпись слева, значение справа, разделитель – линия. */
 function Fact({ name, value }: { name: string; value: string }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, padding: "10px 0", borderTop: "1px solid var(--c-line)" }}>
@@ -98,7 +97,6 @@ export default function Program() {
         </div>
         {p && (
           <>
-          {/* Мачта программы: обложка как предмет на графите с тёплым свечением, титул плитой справа */}
           <header className="club-program-mast club-dark">
             <div className="club-program-mast__art">
               {coverIsHeroFallback ? (
@@ -118,7 +116,6 @@ export default function Program() {
           </header>
           <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
           <div className="v2-prog-page" style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 40, alignItems: "start", paddingTop: 22 }}>
-            {/* ── Содержание записи ── */}
             <div style={{ minWidth: 0 }}>
 
               {p.enrollment === "nonactual" && (
@@ -261,7 +258,6 @@ export default function Program() {
               )}
             </div>
 
-            {/* ── Бланк программы ── */}
             <aside className="v2-prog-aside" style={{ position: "sticky", top: 92 }}>
               <div className="club-program-blank">
                 <div style={{ ...mono, fontSize: 26, fontWeight: 600, color: "var(--c-text)" }}>{rub(priced)}</div>
@@ -285,7 +281,6 @@ export default function Program() {
                   <div style={{ borderTop: "1px solid var(--c-line)" }} />
                 </div>
 
-                {/* Действие следует из данных: закрыт набор / программа ВШЭ / своя */}
                 {p.enrollment === "nonactual" ? (
                   <>
                     <div style={{ marginTop: 18, padding: "13px 16px", borderRadius: "var(--r-md)", border: "1px dashed var(--c-line)", textAlign: "center", color: "var(--c-text-3)", fontWeight: 600 }}>Набор закрыт</div>

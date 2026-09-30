@@ -3,7 +3,6 @@ import type { AuthRecord, AuthIdentity, AuthTransaction } from "../../src/module
 
 function table(name: string) { return db[name] ??= []; }
 
-/** Явная фикстура связанных аккаунтов для HTTP-сценариев кабинета. */
 export function resetAuthDb(seed: Record<string, Row[]>): void {
   const roles = [...(seed.directus_roles ?? [])];
   const roleId = roles.find(role => role.name === "alumni")?.id ?? "fixture-alumni-role";

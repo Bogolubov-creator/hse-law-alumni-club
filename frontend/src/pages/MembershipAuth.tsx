@@ -31,8 +31,6 @@ const ghost: CSSProperties = {
   border: "1px solid var(--c-text)",
 };
 
-/** Общая оболочка экранов входа: знак, заголовок, карточка, юр-ссылки под ней. */
-/** Тёмная панель рядом с анкетой вступления: фото факультета, три шага, срок проверки. */
 function JoinAside() {
   return (
     <aside className="club-auth__aside club-auth__aside--photo club-dark" aria-label="Как проходит вступление">
@@ -61,7 +59,6 @@ function AuthShell({ title, sub, children, aside }: { title: string; sub?: strin
         {sub && <p style={{ margin: "10px 0 0", color: "var(--c-text-2)", fontSize: "var(--t-small)", lineHeight: 1.55 }}>{sub}</p>}
         {children}
       </div>
-      {/* 152-ФЗ: юр-документы доступны и с экранов входа */}
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px 18px", marginTop: 20, fontSize: "var(--t-small)" }}>
         <Link to="/privacy" className="foc" style={{ color: "var(--c-text-3)" }}>Политика обработки ПДн</Link>
         <Link to="/confidential" className="foc" style={{ color: "var(--c-text-3)" }}>Конфиденциальность</Link>
@@ -133,7 +130,6 @@ function ConfirmationResend({ initialEmail = "" }: { initialEmail?: string }) {
 
 const EDU_LEVELS = ["бакалавриат", "магистратура", "специалитет", "аспирантура"] as const;
 
-/* ── Заявка на вступление ─────────────────────────────────────────── */
 
 export function Join() {
   useHead({
@@ -243,12 +239,10 @@ export function Join() {
       {ref && <Note tone="ok">Вы пришли по приглашению однокурсника – после подтверждения выпуска он получит баллы клуба.</Note>}
 
       <form onSubmit={submit} style={{ marginTop: 18 }}>
-        {/* Honeypot: убран за экран и от скринридеров; боты заполняют – отказ */}
         <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
           value={f.website} onChange={(e) => set("website", e.target.value)}
           style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
-        {/* Две группы вместо одной ленты полей: «о вас» – что сверяет офис, «доступ» – что нужно вам. */}
         <h2 style={{ ...disp, fontWeight: 600, fontSize: 18, margin: "8px 0 6px" }}>О вас</h2>
         <Field name="фио" value={f.fio} onChange={(v) => set("fio", v)} ph="Иван Иванов" autoComplete="name" />
         <Field name="почта" type="email" value={f.email} onChange={(v) => set("email", v)} ph="you@mail.ru" autoComplete="email" />
@@ -305,7 +299,6 @@ export function Join() {
           Учебный офис сверит выпуск с реестром факультета – обычно 1–2 рабочих дня. Ответ придёт на почту.
         </p>
 
-        {/* Кнопка всегда активна: без согласия браузер подсветит чекбокс, а не «сломанную» серую кнопку. */}
         <button type="submit" disabled={busy} className="foc"
           style={{ ...primary, width: "100%", marginTop: 14, cursor: busy ? "wait" : "pointer" }}>
           {busy ? "Отправляем…" : "Подать заявку на вступление"}
@@ -319,7 +312,6 @@ export function Join() {
   );
 }
 
-/* ── Восстановление пароля ────────────────────────────────────────── */
 
 export function ForgotPassword() {
   useHead({ title: "Восстановление пароля", noindex: true });
@@ -367,7 +359,6 @@ export function ForgotPassword() {
   );
 }
 
-/* ── Новый пароль по ссылке ───────────────────────────────────────── */
 
 export function ResetPassword() {
   useHead({ title: "Новый пароль", noindex: true });
@@ -426,7 +417,6 @@ export function ResetPassword() {
   );
 }
 
-/* ── Подтверждение почты ──────────────────────────────────────────── */
 
 export function ConfirmEmail() {
   useHead({ title: "Подтверждение почты", noindex: true });

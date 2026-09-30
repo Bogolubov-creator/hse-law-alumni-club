@@ -2,20 +2,10 @@ import { useRef, useState } from "react";
 import { apiGet, type PodcastItem } from "../../api/api.js";
 import { token } from "../../stores/cart.js";
 
-/**
- * Плеер выпуска подкаста. Вынесен из страницы: логика тут нетривиальная
- * (позиция в localStorage, тихое обновление протухшей подписанной ссылки),
- * и держать её в двух версиях фронта нельзя – разойдутся.
- *
- * `v2` меняет только оформление кнопки скорости: v1 остаётся на Tailwind,
- * v2 берёт семантические токены и потому работает в тёмной теме.
- */
 
 const RATES = [1, 1.25, 1.5, 2] as const;
 
-/** Плеер выпуска: запоминает позицию (localStorage) и умеет менять скорость.
-    Подписанная ссылка живёт 2 часа – если вкладка провисела дольше и источник
-    вернул ошибку, тихо берём свежую ссылку из API и продолжаем с того же места. */
+// После истечения аудиоссылки загружается новая с сохранением позиции.
 export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: string; src: string; v2?: boolean; expanded?: boolean }) {
   const ref = useRef<HTMLAudioElement>(null);
   const lastSave = useRef(0);

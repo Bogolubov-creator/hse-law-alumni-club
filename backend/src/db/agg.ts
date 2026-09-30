@@ -1,7 +1,7 @@
 import { aggregate } from "./data-commands.js";
 import { data } from "./data.js";
 
-/** Агрегаты вычисляет PostgreSQL, чтобы не загружать все записи в память API. */
+// Агрегаты считаются в SQL, чтобы не загружать все строки в API.
 export async function count(collection: string, filter?: object): Promise<number> {
   const r = (await data.request(
     (aggregate as any)(collection, { aggregate: { count: "*" }, ...(filter ? { query: { filter } } : {}) }),
@@ -9,7 +9,6 @@ export async function count(collection: string, filter?: object): Promise<number
   return Number(r?.[0]?.count ?? 0);
 }
 
-/** Группировка со счётчиком: [{ ...ключи, count }]. count приведён к числу. */
 export async function groupCount(collection: string, groupBy: string[], filter?: object): Promise<Array<Record<string, unknown> & { count: number }>> {
   const r = (await data.request(
     (aggregate as any)(collection, { aggregate: { count: "*" }, groupBy, query: { limit: -1, ...(filter ? { filter } : {}) } }),

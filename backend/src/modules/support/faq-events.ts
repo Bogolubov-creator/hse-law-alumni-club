@@ -4,7 +4,6 @@ import { checkoutPool } from "../../db/checkout-store.js";
 export type FaqEventKind = "gap" | "none";
 export type FaqEventChannel = "site" | "telegram";
 
-/** Append-only счётчик FAQ-gap / unmatched – без текста вопроса (ПДн). */
 export async function logFaqEvent(input: {
   kind: FaqEventKind;
   gapId?: string | null;
@@ -17,7 +16,7 @@ export async function logFaqEvent(input: {
       [input.kind, input.gapId ?? null, input.channel],
     );
   } catch {
-    /* таблица ещё не накачена / стенд без PG */
+    // Недоступность счётчика не блокирует ответ поддержки.
   }
 }
 

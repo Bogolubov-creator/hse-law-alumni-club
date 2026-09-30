@@ -2,12 +2,6 @@ import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 import { captureError } from "../observability/sentry.js";
 
-/**
- * Единый обработчик ошибок API. Вынесен из server.ts, чтобы тесты роутов
- * (каталог tests/unit) поднимали приложение с той же обработкой, а не со своей
- * копией: иначе тест на «невалидное тело → 400» проверял бы поведение, которого
- * в проде нет.
- */
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((err, _req, reply) => {
     // Валидационные ошибки zod → 400 (не 500).

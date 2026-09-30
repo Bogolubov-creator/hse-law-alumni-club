@@ -1,4 +1,3 @@
-/** Публичные соцсети клуба (витрина, не бот поддержки). */
 export const TELEGRAM_CHANNEL = {
   username: "AlumniLawHSE",
   url: "https://t.me/AlumniLawHSE",

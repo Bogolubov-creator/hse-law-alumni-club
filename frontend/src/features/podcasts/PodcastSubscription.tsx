@@ -9,7 +9,6 @@ import "../../styles/podcast-subscription.css";
 
 const loginUrl = "/lk?next=%2Fpodcasts%23podcast-subscription";
 
-/** Оформление опирается на статус профиля и заявки из API. */
 export function PodcastSubscription({ token, price }: { token: string | null; price: number }) {
   const me = useMe(token);
   const verified = me.data?.alumni.verification_status === "verified";

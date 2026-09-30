@@ -45,14 +45,13 @@ export interface AchievementDef {
   key: string;
   title: string;
   description: string;
-  icon: string; // символ/буква на «ромбе» бейджа (как в Claude Design)
+  icon: string;
   kind: string; // подпись прогресса, напр. «мероприятия»
   rule_json: { type: string; gte: number };
   sort: number;
   star?: boolean; // «следующее» достижение – оранжевая подсветка
 }
 
-// База – «Дашборд ЛК.dc.html» (Claude Design); плюс ступени из продуктового движка и Kimi.
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { key: "first_step", title: "Первый шаг", description: "Посетите своё первое мероприятие клуба – встречу, лекцию или нетворкинг.", icon: "1", kind: "мероприятия", rule_json: { type: "events_attended", gte: 1 }, sort: 1 },
   { key: "office_seal", title: "Печать офиса", description: "Пройдите верификацию профиля у учебного офиса и подтвердите свой выпуск.", icon: "✓", kind: "статус", rule_json: { type: "verified", gte: 1 }, sort: 2 },
@@ -77,7 +76,6 @@ export interface AchievementProgressItem {
   current: number; target: number; earned: boolean; star: boolean;
 }
 
-/** Прогресс по каждому достижению для данной статистики (для «Правил и прогресса»). */
 export function achievementProgress(stats: AchievementStats): AchievementProgressItem[] {
   const s = stats as Record<string, number | undefined>;
   return ACHIEVEMENTS.map((a) => {
@@ -90,7 +88,6 @@ export function achievementProgress(stats: AchievementStats): AchievementProgres
   });
 }
 
-/** Текущий уровень по сумме баллов. */
 export function computeLevel(points: number): LevelDef {
   let current = LEVELS[0]!;
   for (const lvl of LEVELS) {
@@ -104,10 +101,6 @@ export const MEMBER_DISCOUNT_CAP = 25; // потолок итоговой спр
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
-/**
- * Справочная членская скидка (оплаты в проекте нет).
- * min(база_уровня + clamp(personal, 0..10), 25), не ниже 0.
- */
 export function computeMemberDiscount(points: number, personalDiscount = 0): number {
   const base = computeLevel(points).discount_percent;
   const personal = clamp(personalDiscount, 0, PERSONAL_DISCOUNT_MAX);
@@ -116,7 +109,6 @@ export function computeMemberDiscount(points: number, personalDiscount = 0): num
 
 export const DECAY_RATE = 0.15; // −15% за месяц неактивности
 
-/** Дельта decay для записи в ledger: отрицательная, округлённая. */
 export function decayDelta(points: number): number {
   return -Math.round(Math.max(0, points) * DECAY_RATE) || 0; // || 0 убирает -0
 }
@@ -134,7 +126,6 @@ export interface AchievementStats {
   status_level?: number; // порядковый номер уровня (1..4)
 }
 
-/** Ключи достижений, заслуженных при данной статистике (по rule_json). */
 export function evaluateAchievements(stats: AchievementStats): string[] {
   const earned: string[] = [];
   for (const a of ACHIEVEMENTS) {
@@ -146,7 +137,6 @@ export function evaluateAchievements(stats: AchievementStats): string[] {
   return earned;
 }
 
-/** Сводка уровня по баллам: ключ/название уровня, скидка, прогресс до следующего. */
 export function levelInfo(points: number, personalDiscount = 0) {
   const level = computeLevel(points);
   const idx = LEVELS.findIndex((l) => l.key === level.key);

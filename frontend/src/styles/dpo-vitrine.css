@@ -4,7 +4,6 @@
   padding: 0;
 }
 
-/* Мачта – тёмный разворот 50/50 по референсу: текст слева, фото во весь край справа. */
 .club-dpo-masthead {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -42,7 +41,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Шире кадра, чем колонка: cover режет бока, не верх. top – не режем голову ещё раз. */
   object-position: 40% 0%;
 }
 
@@ -269,7 +267,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Пульс полосок загрузки – единственное движение витрины (состояние, не декор) */
 @media (prefers-reduced-motion: no-preference) {
   .club-dpo-loading__bar {
     animation: club-dpo-pulse 1.2s var(--ease-out) infinite alternate;
@@ -329,7 +326,6 @@ html.vis .club-dpo-masthead {
   background: var(--vis-bg, var(--c-bg)) !important;
 }
 
-/* ── Плитки программ: предметы на белом ───────────────────────── */
 .club-dpo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -360,7 +356,6 @@ html.vis .club-dpo-masthead {
 @media (max-width: 960px) { .club-dpo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 20px; } }
 @media (max-width: 560px) { .club-dpo-grid { grid-template-columns: 1fr; } }
 
-/* Плитка без факультетской обложки: текст ведёт, hairline сверху вместо картинки */
 .club-dpo-tile--text { padding-top: 16px; border-top: 1px solid var(--c-line); }
 .club-dpo-tile--text h2 { font-size: 20px; }
 .club-dpo-grid--text { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; margin-top: 56px; }
@@ -380,11 +375,9 @@ html.vis .club-dpo-masthead {
 .club-dpo-mode { box-shadow: var(--shadow-ambient); }
 .club-dpo-tile__price { color: var(--c-accent-text); }
 
-/* Панорамный исходник показывается целиком, без увеличения по короткой стороне. */
 .club-dpo-masthead__media { min-height: 0; aspect-ratio: 1100 / 330; align-self: center; overflow: hidden; isolation: isolate; }
 .club-dpo-masthead__photo { object-fit: contain; object-position: center; }
 
-/* Каталог на телефоне начинается ближе к заголовку; поля совпадают с витринами. */
 @media (max-width: 900px) {
   .club-dpo-masthead { gap: 0; padding: 0; }
   .club-dpo-masthead__inner { padding: 32px 24px; }

@@ -16,10 +16,6 @@ type CrowInstance = {
   host: HTMLElement;
 };
 
-/**
- * Угловая ворона Шерлок = launcher FAQ-бота (как на dpo-pravo-hse).
- * Синяя пилюля убрана: прозрачный hit поверх маскота; в html.vis – текстовая кнопка.
- */
 export function SupportDock() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);

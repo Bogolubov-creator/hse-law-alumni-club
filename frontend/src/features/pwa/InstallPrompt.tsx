@@ -4,7 +4,6 @@ import { hasCookieChoice } from "../privacy/cookie-consent.js";
 
 const DISMISS_KEY = "club_pwa_dismiss";
 
-/** Событие Chrome/Android для программного вызова установки PWA. */
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
 const isStandalone = () =>
@@ -18,12 +17,6 @@ const isIos = () => {
   return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
 };
 
-/**
- * Приглашение установить сайт как приложение.
- * iOS Safari не шлёт beforeinstallprompt – показываем подсказку «Поделиться».
- * На телефоне поднимаем над нижней таб-панелью MobileApp (~64px + safe-area),
- * чтобы не перекрывать навигацию.
- */
 export default function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
@@ -95,7 +88,6 @@ export default function InstallPrompt() {
         position: "fixed",
         left: 16,
         right: 16,
-        /* Как cookie: над вкладками; --cookie-h поднимает выше баннера, если он открыт. */
         bottom: "calc(16px + var(--tabs-h, 0px) + var(--cookie-h, 0px))",
         zIndex: 290,
         maxWidth: 560,

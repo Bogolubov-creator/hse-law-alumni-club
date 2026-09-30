@@ -1,10 +1,5 @@
 /* eslint-disable */
-/**
- * Автогенерация: scripts/src/import-dpo-mirror-catalog.ts (+ enrollment с hse.ru).
- * Источник контента – itspecR/dpo-pravo-hse; enrollment – живой hse.ru
- * (orgUnit=22753 и onlyActual=0).
- * Не редактировать вручную – перезапустите import-dpo / refresh-dpo-enrollment.
- */
+// Сгенерировано import-dpo / refresh-dpo-enrollment. Источники: itspecR/dpo-pravo-hse, hse.ru.
 import type { ProgramSeed } from "./seeds.js";
 
 export const DPO_MIRROR_PROGRAMS: ProgramSeed[] = [

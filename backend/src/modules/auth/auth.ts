@@ -40,7 +40,6 @@ export async function findUserByEmail(email: string) {
   return findAuthUser({ email });
 }
 
-// ── Админ-сессия (роли editor/admin) ──────────────────────────
 export interface AdminCtx { userId: string; role: string; jti?: string }
 
 // Список отозванных сессий восстанавливается из БД до открытия HTTP-порта.
@@ -82,11 +81,7 @@ export async function resolveAdmin(req: FastifyRequest): Promise<AdminCtx | null
   }
 }
 
-/**
- * Полные права (не редактор). Разделение: editor ведёт контент витрин,
- * а операции с ПДн и деньгами (обезличивание, выгрузка заявок, скидки,
- * баллы, рассылка) доступны только администратору.
- */
+// Операции с персональными данными и деньгами требуют роли admin.
 const FULL_ROLES = new Set(["admin", "Administrator"]);
 export function isFullAdmin(ctx: AdminCtx): boolean {
   return FULL_ROLES.has(ctx.role);
@@ -120,7 +115,6 @@ export async function findAlumniByUser(userId: string): Promise<AlumniCtx | null
   return rows[0] ?? null;
 }
 
-/** Текущий выпускник по нашей сессии (Bearer JWT). */
 export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | null> {
   const token = bearer(req);
   if (!token || isServiceToken(req)) return null;
@@ -148,17 +142,12 @@ export async function resolveAlumni(req: FastifyRequest): Promise<AlumniCtx | nu
   return alumni;
 }
 
-/** Гард админ-маршрута: 401 если нет валидного admin-JWT, иначе контекст. */
 export async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
   const ctx = await resolveAdmin(req);
   if (!ctx) { reply.code(401).send({ error: "Требуется вход администратора" }); return null; }
   return ctx;
 }
 
-/**
- * Гард операций с ПДн и деньгами: мало быть в панели – нужна роль admin.
- * Редактор (editor) получает 403, а не тихий доступ.
- */
 export async function requireFullAdmin(req: FastifyRequest, reply: FastifyReply) {
   const ctx = await requireAdmin(req, reply);
   if (!ctx) return null;

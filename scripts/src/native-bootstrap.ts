@@ -174,7 +174,7 @@ async function ensureSiteSettings(client: SqlClient, publicUrl: string): Promise
   await client.query("INSERT INTO club_settings(key,value) VALUES('site',$1::jsonb) ON CONFLICT(key) DO NOTHING", [JSON.stringify(site)]);
 }
 
-/** Один transaction и общий lock не допускают частичного home и конкурирующих сидов. */
+// Транзакция и общий lock исключают частичную запись home и конкуренцию bootstrap.
 export async function nativeBootstrap(
   client: SqlClient, config: NativeBootstrapConfig, passwordHasher = hashPassword,
 ): Promise<BootstrapResult> {

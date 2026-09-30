@@ -12,7 +12,6 @@ export default function Merch() {
   useHead({
     title: "Мерч клуба",
     description: "Фирменная одежда и аксессуары клуба выпускников факультета права Вышки.",
-    /* indexable: канон */
   });
   const products = useProducts();
   const [params, setParams] = useSearchParams();

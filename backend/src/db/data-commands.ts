@@ -1,4 +1,4 @@
-/** Внутренние запросы приложения. HTTP не принимает эти команды от клиента. */
+// Эти команды доступны только коду сервера, не HTTP-клиенту.
 export type DataQuery = {
   fields?: readonly string[]; filter?: object; sort?: readonly string[];
   limit?: number; offset?: number; page?: number; deep?: object;

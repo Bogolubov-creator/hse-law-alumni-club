@@ -2,7 +2,7 @@ import { env } from "../../config/env.js";
 import { checkoutPool } from "../../db/checkout-store.js";
 import type { PoolClient } from "pg";
 
-/** Одноинстансный сервер: при старте восстанавливаем погашенные сессии из БД. */
+// Погашенные сессии восстанавливаются из БД после перезапуска API.
 export async function loadAdminRevocations(): Promise<[string, number][]> {
   if (!env.CHECKOUT_DATABASE_URL) return [];
   await checkoutPool().query("DELETE FROM club_auth_revocations WHERE expires_at <= now()");
@@ -14,7 +14,7 @@ export async function saveAdminRevocation(jti: string, expires: number): Promise
   await checkoutPool().query(`INSERT INTO club_auth_revocations(token_key,expires_at) VALUES($1,$2)
     ON CONFLICT(token_key) DO UPDATE SET expires_at=EXCLUDED.expires_at`, [`admin:${jti}`, new Date(expires)]);
 }
-/** Сброс передаёт свою транзакцию, чтобы погашение откатывалось вместе с паролем. */
+// Погашение сессии откатывается вместе со сбросом пароля.
 export async function consumeReset(jti: string, database?: Pick<PoolClient, "query">): Promise<boolean> {
   if (!database && !env.CHECKOUT_DATABASE_URL) return true;
   const result = await (database ?? checkoutPool()).query(`INSERT INTO club_auth_revocations(token_key,expires_at)

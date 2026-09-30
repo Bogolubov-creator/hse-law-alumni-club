@@ -1,4 +1,3 @@
-/** Реэкспорт канона из @club/shared – один источник для web и Telegram. */
 export {
   tokenize,
   triggerMatches,

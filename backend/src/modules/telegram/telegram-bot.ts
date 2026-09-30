@@ -70,7 +70,6 @@ async function upcomingEvents(tgId: string | null) {
   });
 }
 
-/** Текст ответа на команду. */
 export async function buildBotReply(cmd: string, arg: string, tgId: string): Promise<string | null> {
   const url = env.PUBLIC_URL;
   switch (cmd) {
@@ -107,7 +106,6 @@ export async function tgSendMessage(chatId: number, text: string, token: string)
   return r.ok;
 }
 
-/** Обработка входящего update от Telegram webhook. */
 export async function handleTelegramUpdate(update: TgUpdate, token: string): Promise<void> {
   if (update.message_reaction) { await recordReaction(update.message_reaction, update.update_id); return; }
   const msg = update.message;
@@ -128,7 +126,6 @@ export async function handleTelegramUpdate(update: TgUpdate, token: string): Pro
   await tgSendMessage(msg.chat.id, reply ?? "Не знаю такой команды. Нажмите /help или напишите вопрос про клуб и ДПО.", token);
 }
 
-/** Регистрация меню команд в Telegram (идемпотентно при старте API). */
 export async function registerBotCommands(token: string): Promise<void> {
   try {
     const r = await fetch(`https://api.telegram.org/bot${token}/setMyCommands`, {

@@ -20,7 +20,6 @@ export function rangeSince(range: AnalyticsRange, now = Date.now()): string {
   return new Date(now - RANGE_DAYS[range] * 86400000).toISOString();
 }
 
-/** Дни YYYY-MM-DD (UTC) в окне range, включая сегодня. */
 export function daysInRange(range: AnalyticsRange, now = Date.now()): string[] {
   const n = RANGE_DAYS[range];
   const days: string[] = [];
@@ -34,7 +33,6 @@ export function daysInRange(range: AnalyticsRange, now = Date.now()): string[] {
   return days;
 }
 
-/** Считает по дням UTC; дырки заполняются нулями. */
 export function bucketByDay(isoDates: Array<string | null | undefined>, range: AnalyticsRange, now = Date.now()): Array<{ day: string; count: number }> {
   const counts = new Map<string, number>();
   for (const raw of isoDates) {
@@ -48,10 +46,6 @@ export function bucketByDay(isoDates: Array<string | null | undefined>, range: A
 
 export type ProgramTopRow = { ref_id: string; title: string; qty: number; orders: number };
 
-/**
- * Топ программ ДПО из снапшотов `orders.items_json`.
- * Считает qty и число заявок, где позиция встречалась; merch/podcast игнорирует.
- */
 export function topProgramsFromItems(
   orderItems: Array<unknown>,
   limit = 12,
@@ -127,7 +121,6 @@ async function supportStats(since: string): Promise<{
   }
 }
 
-/** Продуктовая аналитика за окно – только уже существующие факты в БД. */
 export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now()) {
   const since = rangeSince(range, now);
   const di = data;
@@ -364,7 +357,6 @@ export async function buildAdminAnalytics(range: AnalyticsRange, now = Date.now(
 
 export type AdminAnalytics = Awaited<ReturnType<typeof buildAdminAnalytics>>;
 
-/** Плоский CSV без ПДн – секция / показатель / значение. */
 export function analyticsToCsv(data: AdminAnalytics): string {
   const esc = (v: unknown) => {
     let s = String(v ?? "");

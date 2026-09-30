@@ -1,12 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-/**
- * Воронка входа v2 и юридические страницы v2.
- *
- * POST /auth/register и /auth/confirm подменяются: иначе каждый прогон создавал
- * бы живые заявки на вступление и работу учебному офису. Всё остальное –
- * настоящая страница на живом стеке.
- */
+// Регистрация и подтверждение подменяются, чтобы тест не создавал аккаунты.
 
 async function stubSw(page: Page) {
   await page.addInitScript(() => {
@@ -207,7 +201,6 @@ test.describe("Юридические страницы v2", () => {
       await expect(page.getByText(/редакция от/)).toBeVisible();
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", p.canonical);
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-      // Оболочка именно v2 – со своей шапкой
       await expect(page.getByRole("link", { name: /Клуб выпускников/ })).toBeVisible();
     });
   }
@@ -228,9 +221,6 @@ test.describe("Юридические страницы v2", () => {
   });
 });
 
-/**
- * Сторож изоляции: после cutover канон на `/`. Ссылки не должны вести в `/legacy/*`.
- */
 const LEGACY_PATH = /^\/legacy(\/|$)/;
 
 for (const url of ["/", "/dpo", "/merch", "/cart", "/news", "/events", "/podcasts", "/join", "/privacy"]) {

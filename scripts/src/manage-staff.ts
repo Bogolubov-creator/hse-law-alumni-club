@@ -22,7 +22,6 @@ export function validateStaffInput(input: StaffInput): StaffInput {
   return { ...input, email };
 }
 
-/** Оператор работает от владельца БД; публичный API не создаёт роли и сотрудников. */
 export async function manageStaff(client: Pick<PoolClient, "query">, raw: StaffInput): Promise<"created" | "password-reset"> {
   const input = validateStaffInput(raw);
   const hash = await hashPassword(input.password);

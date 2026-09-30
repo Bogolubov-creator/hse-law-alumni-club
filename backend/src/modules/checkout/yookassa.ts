@@ -1,15 +1,7 @@
 import { env } from "../../config/env.js";
 import { orderIdempotenceKey } from "../../common/idempotency.js";
 
-/**
- * ЮKassa (yookassa.ru) – создание платежа и верификация статуса.
- *
- * Включается только при заданных YOOKASSA_SHOP_ID + YOOKASSA_SECRET_KEY;
- * без ключей сайт работает в прежнем режиме «заявка без оплаты».
- *
- * Безопасность: webhook-уведомлениям не доверяем на слово – статус всегда
- * перепроверяется прямым GET /payments/{id} к API ЮKassa (рекомендация ЮKassa).
- */
+// Статус из вебхука подтверждается отдельным запросом к API ЮKassa.
 
 const API = "https://api.yookassa.ru/v3";
 
@@ -30,10 +22,6 @@ export interface YkPayment {
   metadata?: Record<string, string>;
 }
 
-/**
- * Создать платёж: redirect-подтверждение, автосписание (capture: true).
- * amountKop – сумма в копейках (как во всей денежной математике проекта).
- */
 export async function createPayment(input: {
   amountKop: number;
   description: string;
@@ -78,7 +66,6 @@ export async function createPayment(input: {
   return data;
 }
 
-/** Актуальный статус платежа напрямую из API (верификация webhook-уведомлений). */
 export async function fetchPayment(paymentId: string): Promise<YkPayment> {
   const res = await fetch(`${API}/payments/${encodeURIComponent(paymentId)}`, {
     headers: { authorization: authHeader() },

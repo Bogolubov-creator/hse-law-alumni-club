@@ -5,9 +5,7 @@ import { checkoutPool } from "../../db/checkout-store.js";
 
 export const EMAIL_CONFIRMATION_KIND = "email_confirmation";
 
-// SMTP-транспорт создаётся при первой отправке и переиспользуется. Лениво, а не
-// на импорте: источник правды – env.SMTP_HOST в момент запроса, иначе модуль,
-// загруженный раньше конфигурации, навсегда остался бы «без почты».
+// SMTP создаётся лениво, чтобы использовать конфигурацию на момент отправки.
 let mailer: ReturnType<typeof nodemailer.createTransport> | null = null;
 function transport(): ReturnType<typeof nodemailer.createTransport> | null {
   if (!env.SMTP_HOST) return null;
@@ -22,16 +20,10 @@ function transport(): ReturnType<typeof nodemailer.createTransport> | null {
   return mailer;
 }
 
-/**
- * Настроен ли почтовый канал. Роуты, смысл которых – доставить письмо
- * (восстановление пароля), обязаны это проверять и говорить правду, а не
- * отвечать «письмо отправлено», когда отправлять нечем.
- */
 export function mailEnabled(): boolean {
   return !!env.SMTP_HOST;
 }
 
-/** Прямая отправка (восстановление пароля и т.п.). Без SMTP – false. */
 export async function sendEmail(to: string, subject: string, text: string): Promise<boolean> {
   const t = transport();
   if (!t) {
@@ -47,7 +39,6 @@ export async function sendEmail(to: string, subject: string, text: string): Prom
   }
 }
 
-/** Кладёт письмо в outbox и сразу пробует отправить; при сбое – повтор из cron. */
 export async function enqueueMail(input: {
   to: string;
   subject: string;
@@ -99,7 +90,6 @@ export async function enqueueMail(input: {
   return { id, sent, blocked: !mailEnabled() };
 }
 
-/** Слив due-писем из outbox. Возвращает { sent, failed, pending }. */
 export async function drainMailOutbox(limit = 20): Promise<{ sent: number; failed: number; skipped: number }> {
   if (!env.CHECKOUT_DATABASE_URL) return { sent: 0, failed: 0, skipped: 0 };
   let sent = 0, failed = 0, skipped = 0;
@@ -145,12 +135,11 @@ export async function drainMailOutbox(limit = 20): Promise<{ sent: number; faile
       }
     }
   } catch {
-    /* таблица ещё не накачена */
+    // Сбой outbox не прерывает остальные фоновые задачи.
   }
   return { sent, failed, skipped };
 }
 
-/** Текстовое уведомление офису через выбранный канал; в лог не пишем текст. */
 export async function notifyOfficeText(text: string): Promise<void> {
   let delivered = false;
   if ((env.OFFICE_NOTIFY_CHANNEL === "email" || env.OFFICE_NOTIFY_CHANNEL === "both") && env.OFFICE_EMAIL) {
@@ -180,11 +169,8 @@ export interface OrderNotice {
   member_discount: number;
 }
 
-/** Уведомление офиса о новой заявке. Telegram если есть токен, иначе лог + BLOCKED-пометка. */
 export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; ok: boolean; blocked?: boolean }> {
-  // 152-ФЗ: Telegram – зарубежный сервис (трансграничная передача). НЕ отправляем
-  // туда ПДн заявителя (ФИО/телефон/email) – только номер, состав и сумму; контакты
-  // офис смотрит в админ-панели (РФ, под доступом). Так же не пишем ПДн в лог.
+  // Telegram и журналы не получают ФИО, телефон или email заявителя.
   const text =
     `🆕 Новая заявка ${o.number}\n` +
     `${o.itemsSummary}\n` +
@@ -224,7 +210,6 @@ export async function notifyOffice(o: OrderNotice): Promise<{ channel: string; o
   return { channel: results.map((r) => r.channel).join("+"), ok: results.every((r) => r.ok), blocked: results.some((r) => r.blocked) };
 }
 
-/** Подтверждение заявителю: письмо через SMTP (или лог в dev). */
 export async function confirmApplicant(o: OrderNotice): Promise<void> {
   await sendEmail(
     o.contact_email,

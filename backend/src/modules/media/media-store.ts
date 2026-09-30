@@ -28,7 +28,7 @@ export class MediaError extends Error {
   constructor(public statusCode: number, message: string) { super(message); }
 }
 
-/** Старые абсолютные ссылки CMS переводятся в локальный UUID без сетевого запроса. */
+// Старые ссылки CMS переводятся в UUID без сетевого запроса.
 export function mediaId(value: unknown): string | null {
   if (typeof value !== "string") return null;
   if (UUID_PATTERN.test(value)) return value.toLowerCase();
@@ -81,7 +81,7 @@ function referencedIds(value: unknown, result = new Set<string>()): Set<string> 
   return result;
 }
 
-/** Вызывается adapter внутри той же транзакции перед INSERT/UPDATE. */
+// Проверка выполняется в транзакции записи, чтобы исключить гонку.
 export async function assertMediaReferences(db: Queryable, table: string, input: Record<string, unknown>): Promise<void> {
   const fields = MEDIA_FIELDS[table];
   if (!fields) return;

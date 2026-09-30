@@ -4,14 +4,9 @@ import { mediaUrl, webpSiblingUrl } from "../../lib/public-url.js";
 type Props = {
   src?: string;
   title: string;
-  /** LCP / above-fold: eager + high; иначе lazy (каталог, карточки). */
   priority?: boolean;
 };
 
-/**
- * Картинка товара: локальные `/assets/…` через Vite `base`.
- * Для jpeg/png сначала пробуем соседний `.webp`, при ошибке – оригинал.
- */
 export default function ProductImage({ src, title, priority = false }: Props) {
   const resolved = src ? mediaUrl(src) : undefined;
   const webp = src ? webpSiblingUrl(src) : null;

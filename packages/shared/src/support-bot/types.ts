@@ -1,4 +1,3 @@
-/** Программа в формате бота поддержки (как content/bot-catalog.json у ДПО). */
 export type BotProgram = {
   id: string;
   title: string;

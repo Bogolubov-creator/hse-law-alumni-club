@@ -35,7 +35,6 @@ async function build(): Promise<FastifyInstance> {
   return app;
 }
 
-/** multipart-тело с одним файлом и заявленным клиентом типом. */
 function multipart(body: Buffer, filename: string, declaredType: string) {
   const b = "----vitestboundary";
   const head = Buffer.from(

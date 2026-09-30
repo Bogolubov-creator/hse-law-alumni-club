@@ -112,7 +112,7 @@ function writeValues(table: string, input: unknown, p: Parameters): { names: str
   return { names, params };
 }
 
-/** SQL-идентификаторы берутся из allowlist; значения всегда передаются параметрами. */
+// Идентификаторы SQL берутся из allowlist, значения передаются параметрами.
 export async function executeData(db: Database, command: DataCommand): Promise<any> {
   const table = command.collection;
   columns(table);

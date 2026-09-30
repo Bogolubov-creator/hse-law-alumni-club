@@ -1,5 +1,3 @@
-/* Угловая ворона – launcher бота. Угол принадлежит маскоту (как на ДПО). */
-
 body > .crow-mascot.club-crow-corner {
   right: 18px !important;
   bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--install-h, 0px)) !important;
@@ -29,7 +27,7 @@ body > .crow-mascot.club-crow-corner {
   display: none;
   position: fixed;
   right: 18px;
-  /* --tabs-h уже с safe-area; не дублируем env(safe-area-inset-bottom). */
+  /* --tabs-h включает safe-area; повторный inset не нужен. */
   bottom: calc(16px + var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--install-h, 0px));
   z-index: 41;
   min-height: 44px;
@@ -67,17 +65,14 @@ html.crow-inline-live .club-crow-hit {
   }
 }
 
-/* Панель бота выше вороны */
 .club-bot-panel {
   z-index: 50;
 }
 
-/* При разговоре с поддержкой предложение установки не закрывает ввод. */
 body:has(.club-bot-panel) [role="dialog"][aria-label="Установка приложения"] {
   display: none !important;
 }
 
-/* На телефоне меню, клавиатура и диалог важнее плавающей помощи. */
 @media (max-width: 1280px) {
   body:has(.club-menu[data-open="true"]) > .club-crow-hit,
   body:has(.club-menu[data-open="true"]) > .crow-mascot,

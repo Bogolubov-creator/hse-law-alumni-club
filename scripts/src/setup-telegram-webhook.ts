@@ -1,10 +1,3 @@
-/**
- * Одноразовая настройка webhook @pravohse_alumni_bot.
- * Требует PUBLIC_URL с https:// (Telegram не принимает localhost).
- *
- *   PUBLIC_URL=https://club.example.ru TELEGRAM_BOT_TOKEN=... TELEGRAM_WEBHOOK_SECRET=... \
- *     pnpm exec tsx scripts/setup-telegram-webhook.ts
- */
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const publicUrl = (process.env.PUBLIC_URL ?? "").replace(/\/$/, "");
 const secret = process.env.TELEGRAM_WEBHOOK_SECRET ?? "";

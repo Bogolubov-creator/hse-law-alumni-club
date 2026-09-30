@@ -50,7 +50,6 @@ export default function Podcasts() {
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--page-gutter)" }}>
 
         <MirrorPodcastDemo />
-        {/* Подписка: состояние вверху, чтобы не искать его среди выпусков */}
         {data && !data.subscribed && <PodcastSubscription token={t} price={data.price} />}
 
         {data?.subscribed && (

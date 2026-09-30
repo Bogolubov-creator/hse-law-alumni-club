@@ -25,7 +25,7 @@ const subscribe = (notify: () => void) => {
 };
 export const useTelegramApp = () => useSyncExternalStore(subscribe, telegramApp);
 
-/** Только маршрутизация: параметр запуска не подтверждает личность или права. */
+// Параметр запуска определяет маршрут и не подтверждает права.
 export function miniStartRoute(value: string | null | undefined): string | null {
   if (!value || value.length > 512) return null;
   const sections: Record<string, string> = { club: "/", dpo: "/dpo", events: "/events", news: "/news", podcasts: "/podcasts", merch: "/merch", lk: "/lk", support: "/support" };
@@ -42,7 +42,6 @@ export function leaveMiniPreview() {
   window.location.assign(publicUrl(""));
 }
 
-/** Загружаем официальный SDK только для входа /tg или запуска из Telegram. */
 export async function prepareTelegram(): Promise<void> {
   const entry = location.pathname.replace(/\/$/, "") === publicUrl("tg").replace(/\/$/, "");
   const launched = new URLSearchParams(location.hash.slice(1)).has("tgWebAppData");

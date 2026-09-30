@@ -1,22 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { preparePage, stubSw } from "./harness.js";
 
-/**
- * Доступность: WCAG 2.1 AA на публичном контуре.
- *
- * Текстовый контраст и нижняя граница шкалы проверяются в
- * `design-language.spec.ts`. Здесь – то, что легко теряется при правках
- * вёрстки: пропуск блоков, контур элементов управления и версия для
- * слабовидящих. Последняя особенно: её ломает любое новое правило, потому что
- * работает она агрессивным переопределением всего подряд.
- */
 
 const V2 = ["/", "/dpo", "/cart", "/join"];
-/** Экраны входа обходятся без ссылки-пропуска: повторяющегося блока навигации
- *  там нет, пропускать нечего – требование 2.4.1 к ним не применяется. */
 const V2_WITH_NAV = ["/", "/dpo", "/cart"];
 
-/** Композит цвета с учётом прозрачности: полупрозрачный контур смешивается с фоном. */
 const CONTRAST_FN = `
   const parse = (c) => {
     const n = (c.match(/-?\\d*\\.?\\d+/g) || []).map(Number);
@@ -35,7 +23,6 @@ const CONTRAST_FN = `
 `;
 
 
-/** Включает версию для слабовидящих: на телефоне переключатель лежит в меню. */
 async function enableVision(page: Page) {
   await page.locator("#main").waitFor();
   const burger = page.getByLabel("Открыть меню");
@@ -45,9 +32,7 @@ async function enableVision(page: Page) {
 }
 
 test.describe("2.4.1 Пропуск блоков", () => {
-  // WebKit в Playwright не двигает фокус по Tab без «полного доступа с
-  // клавиатуры» – это модель ввода движка, а не дефект страницы. Клавиатурные
-  // проверки живут в desktop-проекте, а мобильный остаётся на touch.
+  // В мобильном WebKit клавиатурный Tab не моделируется; он проверяется desktop-проектом.
   test.skip(({ browserName }) => browserName === "webkit", "Tab в WebKit требует Full Keyboard Access");
 
   for (const path of V2_WITH_NAV) {
@@ -73,7 +58,6 @@ test.describe("2.4.1 Пропуск блоков", () => {
 });
 
 test.describe("1.4.11 Контраст нетекстовых элементов", () => {
-  // Одна светлая тема (решение заказчика 12.09); тёмные панели живут областью .club-dark.
   for (const theme of ["light"] as const) {
     test(`контур полей и кнопок различим, тема ${theme}`, async ({ page }) => {
       await preparePage(page);
@@ -111,11 +95,6 @@ test.describe("Версия для слабовидящих", () => {
     { key: "bb", name: "тёмно-синим по бежевому" },
   ];
 
-  /**
-   * Индикатор фокуса здесь ломался: охряная обводка на бежевой схеме давала
-   * 1,97:1, и человек не видел, где он находится – в режиме, которым как раз
-   * и пользуются при слабом зрении.
-   */
   for (const s of schemes) {
     test(`${s.name}: обводка фокуса различима`, async ({ page, browserName }) => {
       test.skip(browserName === "webkit", "Tab в WebKit требует Full Keyboard Access");
@@ -123,9 +102,7 @@ test.describe("Версия для слабовидящих", () => {
       await page.goto("/dpo");
       await enableVision(page);
       await page.evaluate((k) => document.documentElement.setAttribute("data-vis-scheme", k), s.key);
-      // Только клавиатура: программный focus() не включает :focus-visible,
-      // и обводки в замере не оказалось бы – ровно та ловушка, из-за которой
-      // дефект и жил незамеченным.
+      // Программный focus() не включает :focus-visible; нужен ввод с клавиатуры.
       for (let i = 0; i < 12; i++) {
         await page.keyboard.press("Tab");
         if (await page.evaluate(() => document.activeElement?.classList.contains("vis-btn"))) break;
@@ -155,11 +132,6 @@ test.describe("Версия для слабовидящих", () => {
     expect(without).toEqual([]);
   });
 
-  /**
-   * Универсальное правило версии снимает фон со всего подряд. Диалогу это
-   * оставляло текст висеть поверх страницы: cookie-баннер накрывал фильтры.
-   * Согласие специально НЕ гасим – нужен живой dialog.
-   */
   test("у диалога остаётся непрозрачный фон", async ({ page }) => {
     await stubSw(page);
     await page.goto("/dpo");
