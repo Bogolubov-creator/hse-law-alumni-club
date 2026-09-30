@@ -1,0 +1,37 @@
+{
+  "name": "@club/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@club/shared": "workspace:*",
+    "@tanstack/react-query": "5.104.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router-dom": "7.18.4"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "build:mirror": "tsc -p tsconfig.json && VITE_MIRROR=true VITE_BASE=/club-pravo-hse-mirror/ VITE_SITE_URL=https://bogolubov-creator.github.io/club-pravo-hse-mirror vite build && bash scripts/prepare-pages.sh",
+    "preview": "vite preview",
+    "preview:mobile": "vite --host 127.0.0.1 --port 5285 --open http://127.0.0.1:5285/?pwa=1",
+    "preview:mirror": "vite preview --base /club-pravo-hse-mirror/",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:safari": "playwright test --project=safari --project=iphone-safari --workers=1 e2e/public.spec.ts e2e/a11y.spec.ts e2e/lk-v2.spec.ts e2e/admin.spec.ts e2e/mobile-tabs-v2.spec.ts e2e/pwa-shell.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "happy-dom": "20.14.5",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.1",
+    "vitest": "5.0.2",
+    "@types/node": "26.6.3",
+    "@tailwindcss/vite": "4.3.3"
+  }
+}

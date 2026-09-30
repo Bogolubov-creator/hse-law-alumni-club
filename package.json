@@ -2,8 +2,8 @@
   "name": "club-pravo-hse",
   "version": "0.0.0",
   "private": true,
-  "description": "Клуб выпускников факультета права НИУ ВШЭ — монорепо (web + api + directus)",
-  "packageManager": "pnpm@9.12.0",
+  "description": "Клуб выпускников факультета права НИУ ВШЭ – React, Fastify и PostgreSQL",
+  "packageManager": "pnpm@12.8.1",
   "engines": {
     "node": ">=24 <25"
   },
@@ -14,19 +14,14 @@
     "bootstrap": "pnpm --filter @club/scripts bootstrap",
     "up": "docker compose up -d --build",
     "down": "docker compose down",
-    "logs": "docker compose logs -f"
+    "logs": "docker compose logs -f",
+    "lint": "eslint backend/src frontend/src packages scripts/src"
   },
   "devDependencies": {
-    "typescript": "^5.6.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "fast-uri": "^3.1.7",
-      "find-my-way": "^9.7.0",
-      "uuid": "^11.1.1"
-    },
-    "auditConfig": {
-      "ignoreGhsas": ["GHSA-qwww-vcr4-c8h2"]
-    }
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-eslint": "8.71.0",
+    "@typescript/native": "npm:typescript@7.0.2"
   }
 }

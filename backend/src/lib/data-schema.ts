@@ -1,0 +1,322 @@
+// Разрешённые поля внутреннего слоя данных. Секреты учётных записей сюда не входят.
+export const DATA_COLUMNS: Readonly<Record<string, readonly string[]>> = {
+  "achievements": [
+    "id",
+    "key",
+    "title",
+    "description",
+    "rule_json",
+    "points_reward",
+    "sort",
+    "icon",
+    "kind"
+  ],
+  "alumni": [
+    "id",
+    "user_id",
+    "fio",
+    "cohort",
+    "status",
+    "verification_status",
+    "points_cached",
+    "level_cached",
+    "personal_discount",
+    "contacts_json",
+    "edu_program",
+    "edu_level",
+    "interests_json",
+    "podcast_reminder_sent",
+    "podcast_sub_until",
+    "avatar",
+    "referral_code",
+    "telegram_id",
+    "token_version",
+    "consent_at",
+    "consent_version",
+    "verified_at",
+    "referred_by",
+    "joined_at",
+    "last_activity_at"
+  ],
+  "alumni_achievements": [
+    "id",
+    "alumni_id",
+    "achievement_id",
+    "earned_at"
+  ],
+  "alumni_friends": [
+    "id",
+    "alumni_id",
+    "friend_id",
+    "status",
+    "created_at"
+  ],
+  "audit_log": [
+    "id",
+    "event",
+    "actor",
+    "subject",
+    "detail",
+    "ip",
+    "created_at"
+  ],
+  "block_cta": [
+    "id",
+    "title",
+    "text",
+    "button"
+  ],
+  "block_hero": [
+    "id",
+    "badge",
+    "title_pre",
+    "title_accent",
+    "subtitle",
+    "cta_primary",
+    "cta_secondary",
+    "history_eyebrow",
+    "history_title",
+    "history_hint",
+    "marquee"
+  ],
+  "carts": [
+    "id",
+    "alumni_id",
+    "session_token",
+    "items_json",
+    "updated_at"
+  ],
+  "directus_roles": [
+    "id",
+    "name"
+  ],
+  "directus_users": [
+    "id",
+    "email",
+    "first_name",
+    "last_name",
+    "status",
+    "role"
+  ],
+  "event_rsvps": [
+    "id",
+    "event_id",
+    "alumni_id",
+    "attended",
+    "created_at"
+  ],
+  "events": [
+    "id",
+    "title",
+    "description",
+    "starts_at",
+    "location",
+    "cover",
+    "reg_url",
+    "reminder_sent",
+    "format",
+    "points",
+    "status",
+    "created_at"
+  ],
+  "levels": [
+    "id",
+    "key",
+    "title",
+    "min_points",
+    "discount_percent",
+    "sort",
+    "color"
+  ],
+  "news": [
+    "id",
+    "slug",
+    "title",
+    "excerpt",
+    "body",
+    "source_url",
+    "published_at",
+    "status"
+  ],
+  "offers": [
+    "id",
+    "kind",
+    "alumni_id",
+    "level_key",
+    "percent",
+    "title",
+    "active",
+    "valid_until"
+  ],
+  "orders": [
+    "id",
+    "number",
+    "alumni_id",
+    "type",
+    "items_json",
+    "subtotal",
+    "member_discount",
+    "total_estimate",
+    "contact_fio",
+    "contact_phone",
+    "contact_email",
+    "fulfillment",
+    "address",
+    "comment",
+    "consent_pdn",
+    "payment_id",
+    "payment_status",
+    "paid_at",
+    "status",
+    "created_at"
+  ],
+  "pages": [
+    "id",
+    "slug",
+    "title",
+    "status",
+    "sort"
+  ],
+  "pages_blocks": [
+    "id",
+    "collection",
+    "item",
+    "sort",
+    "pages_id"
+  ],
+  "podcast_plays": [
+    "id",
+    "podcast_id",
+    "alumni_id",
+    "created_at"
+  ],
+  "podcasts": [
+    "id",
+    "title",
+    "description",
+    "cover",
+    "audio_url",
+    "video_url",
+    "duration",
+    "is_free",
+    "sort",
+    "status",
+    "created_at"
+  ],
+  "point_rules": [
+    "id",
+    "reason",
+    "points",
+    "active",
+    "description"
+  ],
+  "points_ledger": [
+    "id",
+    "alumni_id",
+    "delta",
+    "reason",
+    "ref",
+    "comment",
+    "idempotency_key",
+    "created_at"
+  ],
+  "products": [
+    "id",
+    "slug",
+    "title",
+    "category",
+    "price",
+    "images",
+    "variants_json",
+    "stock",
+    "description",
+    "status"
+  ],
+  "programs": [
+    "id",
+    "slug",
+    "title",
+    "direction",
+    "format",
+    "duration",
+    "price",
+    "dates",
+    "capacity",
+    "seats_taken",
+    "modules",
+    "teachers",
+    "document",
+    "source_url",
+    "enrollment",
+    "description",
+    "cover",
+    "hse_id",
+    "tagline",
+    "audience",
+    "results",
+    "advantages",
+    "status"
+  ],
+  "push_subs": [
+    "id",
+    "alumni_id",
+    "endpoint",
+    "keys",
+    "created_at"
+  ],
+  "referrals": [
+    "id",
+    "referrer_id",
+    "invited_user_id",
+    "code",
+    "status",
+    "reward_points",
+    "created_at"
+  ],
+  "timeline_items": [
+    "id",
+    "year",
+    "title",
+    "text",
+    "metric",
+    "sort",
+    "status"
+  ]
+};
+
+export const JSON_COLUMNS: Readonly<Record<string, readonly string[]>> = {
+  "achievements": [
+    "rule_json"
+  ],
+  "alumni": [
+    "contacts_json",
+    "interests_json"
+  ],
+  "audit_log": [
+    "detail"
+  ],
+  "block_hero": [
+    "marquee"
+  ],
+  "carts": [
+    "items_json"
+  ],
+  "orders": [
+    "items_json"
+  ],
+  "products": [
+    "images",
+    "variants_json"
+  ],
+  "programs": [
+    "dates",
+    "modules",
+    "teachers",
+    "audience",
+    "results",
+    "advantages"
+  ],
+  "push_subs": [
+    "keys"
+  ]
+};

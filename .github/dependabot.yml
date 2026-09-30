@@ -1,10 +1,9 @@
 version: 2
 
-# Еженедельная проверка обновлений. Цель — не «всегда последние версии», а чтобы
-# уязвимость в зависимости не лежала незамеченной месяцами: security-обновления
-# Dependabot присылает отдельным PR вне зависимости от расписания.
+# Еженедельная проверка стабильных обновлений. Новые версии проходят сборку,
+# тесты и ревью; обновления безопасности приходят отдельными PR.
 updates:
-  # pnpm-workspace: Dependabot читает корневой pnpm-lock.yaml и покрывает все пакеты монорепо.
+  # Корневой lockfile покрывает workspace; поддержку его формата pnpm 12 ещё нужно подтвердить.
   - package-ecosystem: npm
     directory: "/"
     schedule:
@@ -14,14 +13,14 @@ updates:
       timezone: Europe/Moscow
     open-pull-requests-limit: 5
     groups:
-      # Патчи и минорные версии — одним PR, чтобы не забивать очередь ревью.
+      # Патчи и минорные версии – одним PR, чтобы не забивать очередь ревью.
       minor-and-patch:
         update-types: [minor, patch]
     commit-message:
       prefix: "chore(deps)"
 
   # Версии GitHub Actions (checkout/setup-node/action-setup) тоже стареют и тоже
-  # бывают уязвимы — обновляем на том же расписании.
+  # бывают уязвимы – обновляем на том же расписании.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
@@ -33,12 +32,12 @@ updates:
       prefix: "chore(ci)"
 
   # Docker-образы запинены по digest (compose + Dockerfile'ы). Чтобы пин не устаревал
-  # молча, Dependabot присылает PR на новые dig/версии — обновление остаётся осознанным.
+  # молча, Dependabot присылает PR на новые digest/версии – обновление проходит проверки.
   - package-ecosystem: docker
     directories:
       - "/"
-      - "/apps/web"
-      - "/apps/api"
+      - "/deploy"
+      - "/backend"
       - "/scripts"
     schedule:
       interval: weekly
@@ -47,3 +46,15 @@ updates:
       timezone: Europe/Moscow
     commit-message:
       prefix: "chore(docker)"
+
+  # Зависимости пересобираемого Caddy проверяются отдельно от базового образа.
+  - package-ecosystem: gomod
+    directory: "/deploy/caddy"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(edge)"

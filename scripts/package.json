@@ -4,19 +4,29 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "bootstrap": "tsx src/directus-bootstrap.ts",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "tsx --test src/*.test.ts",
+    "bootstrap": "tsx src/native-bootstrap.ts",
     "import-dpo": "tsx src/import-dpo-mirror-catalog.ts",
     "refresh-dpo-enrollment": "tsx src/refresh-dpo-enrollment-from-hse.ts",
-    "load-pravovaya-gramotnost": "tsx src/load-pravovaya-gramotnost.ts"
+    "manage-staff": "tsx src/manage-staff.ts",
+    "import-podcasts": "tsx src/import-podcasts.ts",
+    "sync-dpo": "tsx src/sync-hse-dpo.ts"
   },
   "dependencies": {
+    "@club/server-auth": "workspace:*",
     "@club/shared": "workspace:*",
-    "@directus/sdk": "^17.0.1"
+    "pg": "8.23.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^22.9.0",
-    "tsx": "^4.23.15",
-    "typescript": "^5.6.3"
-  }
+    "@types/node": "26.6.3",
+    "@types/pg": "8.23.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
+  },
+  "files": [
+    "dist"
+  ]
 }

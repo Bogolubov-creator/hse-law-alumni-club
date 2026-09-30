@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily club backup at 03:30 Moscow time
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Europe/Moscow
+Persistent=true
+Unit=club-backup.service
+
+[Install]
+WantedBy=timers.target

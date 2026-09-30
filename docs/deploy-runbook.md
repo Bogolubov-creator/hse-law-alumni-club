@@ -1,354 +1,387 @@
-# Прод-runbook — Клуб выпускников факультета права Вышки
+# Эксплуатация Клуба на Ubuntu
 
-## Порядок выпуска, обновлён 29.09.2026
+Рабочий стек: PostgreSQL → миграции → нативный bootstrap → Fastify API, web и Caddy.
+Отдельного сервера Directus нет. Сохранены совместимые имена таблиц пользователей,
+ролей и файлов, а также том `directus_uploads`. Основание – [ADR](cms-options.md).
 
-Исторический результат проверок: [release-readiness.md](release-readiness.md).
-Для нового деплоя и обновления используйте `scripts/deploy.sh`.
-Для репетиции на Mac с отдельной Ubuntu VM: [ubuntu-vm-rehearsal.md](ubuntu-vm-rehearsal.md).
+Этот документ задаёт порядок операций. Проверенные SHA, результаты локального live,
+Ubuntu и открытые вопросы находятся только в [project-state.md](project-state.md).
+Успешный live на Mac не подтверждает выпуск на Ubuntu или публичном сервере.
 
-### Зависимости на Ubuntu 24.04
+## Пути и доступ
+
+| Путь | Назначение | Права |
+|---|---|---|
+| `/opt/club` | Чистый checkout выбранного SHA | root, без рабочих секретов |
+| `/etc/club/runtime.env` | Конфигурация приложения | root:root, `0600`; каталог `0700` |
+| `/etc/club/operations.env` | Пути и пороги systemd | root:root, `0600` |
+| `/var/backups/club` | Зашифрованные снимки | Каталог `0700`, файлы `0600` |
+| `/var/lib/club-ops` | Lock и последние результаты операций | Закрытый каталог root |
+| Docker volumes | `pgdata`, `directus_uploads`, `caddy_data`, `caddy_config` | Имена получают префикс Compose-проекта |
+
+Docker socket даёт полномочия root. Операции ниже выполняются через `sudo`, API и
+bootstrap в контейнерах работают как `node`. Полный env, `docker inspect` и вывод
+`compose config` не публикуются. [Справочник настроек](configuration.md) различает
+секреты, сборку, запуск и операторские команды.
+
+Скрипты эксплуатации принимают Ubuntu 24.04. ARM64 и AMD64 требуют проверки своих
+собранных образов; ресурсы выбираются по [capacity.md](capacity.md). Node/pnpm на
+сервере не нужны для Compose-деплоя; они потребуются для запуска тестов вне Docker.
+
+## Подготовка и первый запуск
+
+Команды рассчитаны на новый `/opt/club`. Существующий checkout сначала проверяют,
+его изменения не сбрасывают. Замените `REVIEWED_COMMIT` проверенным полным SHA:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y --no-install-recommends \
-  git curl ca-certificates openssl tar gzip cron rclone
+sudo apt-get install -y --no-install-recommends git ca-certificates
+sudo git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git /opt/club
+sudo git -C /opt/club checkout --detach REVIEWED_COMMIT
+cd /opt/club
+sudo bash scripts/setup-ubuntu.sh
+sudo install -d -m 0700 /etc/club
+sudo install -m 0600 .env.example /etc/club/runtime.env
+sudoedit /etc/club/runtime.env
 ```
 
-Docker Engine, Buildx и Compose plugin установите по
-[официальной инструкции Docker](https://docs.docker.com/engine/install/ubuntu/).
-Проверьте `sudo docker version`, `sudo docker buildx version`,
-`sudo docker compose version` и `sudo systemctl is-active docker`.
-Node.js и pnpm на VPS для Compose-деплоя не нужны: зависимости приложения
-устанавливаются внутри образов по `pnpm-lock.yaml`.
+`setup-ubuntu.sh` ставит системные утилиты и при необходимости Docker Engine,
+Buildx и Compose из официального APT-источника. Конфликтующий runtime или отличный
+существующий Docker source требует разбора; скрипт не удаляет его автоматически.
+Проверка: `sudo systemctl is-active docker`, `sudo docker compose version`.
+Источник процедуры – [Docker для Ubuntu](https://docs.docker.com/engine/install/ubuntu/).
 
-Операционные команды ниже запускаются через `sudo`. Рабочий env имеет права
-`0600` и лежит вне git; бэкапы по умолчанию сохраняются в
-`/root/.local/state/club/backups`. Если настроен `BACKUP_OFFSITE_REMOTE`,
-конфигурация rclone должна быть доступна root.
+До продолжения заполните env:
 
-1. Сохраните рабочий env **вне git-каталога**, например `/etc/club/runtime.env`, с правами 600.
-   Пример значений находится в `.env.example`; плейсхолдеры нужно заменить.
-2. Обязательны `APP_ENV=production`, `SEED_DEMO=false`, разные случайные `AUTH_SECRET` и
-   `ADMIN_AUTH_SECRET`, настоящие SMTP и отправитель, рабочий канал уведомлений офиса.
-   При `OFFICE_NOTIFY_CHANNEL=email` задайте `OFFICE_EMAIL`; при `telegram` нужны оба `OFFICE_TG_*`.
-3. `CHECKOUT_DB_USER=club_api` и случайный hex-пароль `CHECKOUT_DB_PASSWORD` задают отдельную
-   SQL-роль API. `CHECKOUT_DATABASE_URL` можно оставить пустым: Compose соберёт внутренний URL.
-   Если URL задан вручную, он должен ссылаться на эту же роль и базу. Владелец БД и роль API различаются.
-4. `PUBLIC_URL=https://<сайт>`, `DIRECTUS_PUBLIC_URL=https://<studio>`, `WEB_DOMAIN`, `ADMIN_DOMAIN`
-   и `DIRECTUS_CORS_ORIGIN` должны соответствовать DNS сервера. API и PostgreSQL наружу не открывать.
-   API доверяет одному прокси из внутренней Docker-сети; публикация порта API на хосте запрещена.
-5. До первого запуска задайте `BACKUP_ENCRYPTION_KEY` и внешнее место хранения копий.
-   Выполните из нужного checkout:
+- `APP_ENV=production`, `SEED_DEMO=false`.
+- Независимые случайные `POSTGRES_PASSWORD`, `CHECKOUT_DB_PASSWORD`,
+  `AUTH_SECRET`, `ADMIN_AUTH_SECRET`, `ADMIN_PASSWORD`, `BACKUP_ENCRYPTION_KEY`.
+  Для ключа копий нужны ровно 64 hex-символа; храните его отдельную защищённую копию.
+- `ADMIN_EMAIL` – начальный администратор; SMTP, отправитель и выбранный канал офиса.
+- `PUBLIC_URL` – корневой HTTPS-адрес; `WEB_DOMAIN` – сайт. `ADMIN_DOMAIN` обслуживает
+  прежние `/assets` и перенаправляет в `/admin`, Studio на нём больше нет.
+- Неиспользуемые ЮKassa, Telegram, push, Sentry и `POINTS_SERVICE_TOKEN` оставьте пустыми.
+
+`CHECKOUT_DATABASE_URL` можно оставить пустым: Compose соберёт URL отдельной роли
+из `CHECKOUT_DB_*`. Preflight не допускает подмену `postgres:5432`, внешнюю БД,
+PG service/host overrides и подключение API от владельца базы. Порты API/PG на
+host запрещены. Для локальной репетиции сначала примените [QA-конфигурацию](ubuntu-vm-rehearsal.md#изолированная-конфигурация).
 
 ```bash
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/preflight.sh
 sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
 ```
 
-Скрипт собирает образы, проверяет production-конфигурацию, сохраняет и проверяет копию БД,
-сохраняет файлы CMS, запускает bootstrap, миграции, API, web и Caddy, перезагружает конфигурацию
-прокси и ждёт `/ready`. Ошибка прерывает деплой. Автоматического отката данных нет.
-При первом запуске копия отсутствующего стенда не создаётся. Перед переносом существующего
-контента включите окно обслуживания: дамп БД и архив uploads должны относиться к одному состоянию.
+Для QA к **каждой** операции добавляются одинаковые `DEPLOY_COMPOSE_OVERRIDE` и
+`HTTPS_CA_FILE`, как в инструкции репетиции. `ENV_FILE` должен быть абсолютным путём
+вне checkout, принадлежать оператору команды и иметь права `0600`. Скрипты читают
+его как данные, не как shell-код. Окружение процесса имеет приоритет над файлом.
 
-`bootstrap` создаёт схему и справочники, `migrate` применяет все SQL-файлы и индексы.
-API зависит от успешного окончания обоих шагов. Миграции добавочные и повторяемые;
-обнаруженные конфликты данных исправляют отдельно, без автоматического удаления строк.
-Роль API получает права только на прикладные таблицы, без таблиц пользователей/политик Directus.
+Preflight проверяет ОС, инструменты, чистоту checkout, env, свободное место,
+конфигурацию и занятые порты. Минимум свободного места для сборки – 5120 MiB,
+настройка `MIN_FREE_DISK_MB`; копия и restore требуют дополнительного запаса.
+В проекте с любым контейнером сервиса `directus`, в том числе остановленным,
+нативный deploy отклоняется. Используйте [перенос legacy](#перенос-установки-directus).
 
-Readiness проверяет CMS сервисным токеном и наличие служебных таблиц SQL. `/health` проверяет
-только процесс. Письма, Telegram, платежи и push требуют отдельной проверки доставки:
-наличие ключей в дашборде не равно успешной интеграции.
+## Порядок выпуска и права
 
-Письмо подтверждения регистрации проходит через `club_mail_outbox`. При временном сбое SMTP
-очередь повторяет доставку; пользователь может запросить новую ссылку на экране заявки или
-истёкшего подтверждения. Повтор для одного адреса ограничен десятью минутами, а ответ
-`/auth/resend-confirmation` не сообщает, есть ли аккаунт. После отправки или окончательного
-сбоя тело письма с одноразовой ссылкой очищается из очереди. При разборе жалобы проверьте
-статусы `email_confirmation` в outbox и почтовые журналы, не выводя тело и адрес в общий лог.
+`deploy.sh` берёт общий `flock`, сохраняет ID образов, собирает выбранный SHA и
+проверяет production-конфигурацию API. Если PostgreSQL уже работает, он делает
+снимок текущей версии и удерживает API остановленным на время обновления. Затем:
 
-### Резервные копии и откат
+1. Запускает PostgreSQL и, только в QA override, Mailpit.
+2. Выполняет `migrate`: SQL-файлы по порядку имён, индексы, `runtime-role.sql`.
+3. Выполняет bootstrap отсутствующих ролей, администратора, справочников и home.
+4. Запускает API/web/Caddy, перечитывает Caddyfile, проверяет HTTPS `/api/ready` и HTML `/`.
 
-`backup-db.sh`, `backup-verify.sh` и `backup-uploads.sh` принимают `ENV_FILE` и `BACKUP_DIR`.
-Для иного имени Compose-проекта задайте также `PG_CONTAINER` / `DIRECTUS_CONTAINER`.
-Проверка SQL восстанавливает копию в новую уникальную временную базу с `ON_ERROR_STOP=1`.
-Файловый архив проверяется полным чтением tar. Ключ храните отдельно; копии выгружайте offsite.
-Проверка tar не заменяет пробного восстановления файлов в отдельный том и открытия медиа.
+На первой пустой установке снимок отсутствует. До повторного выпуска должны быть
+созданы PostgreSQL, API и web; неполный старт требует диагностики. Bootstrap не
+сбрасывает пароли, роли, UUID, настройки и редакторский контент. Дубликаты
+`alumni.user_id`, неоднозначные роли или неожиданная роль/status начального
+администратора останавливают подготовку без автоматического удаления данных.
 
-При сбое не удаляйте тома (`down -v` запрещён на рабочем стенде). Сохраните журналы и SHA,
-вернитесь к предыдущему проверенному commit в отдельном checkout и пересоберите его образы.
-Добавленные таблицы не удаляйте для отката приложения. Восстановление БД/медиа выполняйте
-в отдельные тома с проверкой целостности, затем переключайте стек в окно обслуживания.
-Текущий релиз содержит исправления безопасности; откат к старому коду допустим только как
-временная аварийная мера с ограничением доступа.
+| Учётная запись | Полномочия |
+|---|---|
+| Владелец PostgreSQL | Только migrate/bootstrap и операторские команды |
+| `club_api` | Данные приложения/файлы, чтение ролей, перечисленные auth-поля пользователей; без superuser/создания БД/ролей/репликации |
+| Общий data adapter | Только allowlist таблиц/полей; без хешей, token/TFA и системных изменений ролей |
+| Специализированный auth | Чтение хеша/provider/TFA, проверка пароля; изменение пароля и сессий по серверным правилам |
 
-### Telegram и мобильное приложение
+Runtime не читает `club_settings`, прочие CMS metadata и прежний token; не обновляет
+роль пользователя. SQL-права столбцов не изолируют строки между участниками – это
+задача guards API. Подробности: [security.md](security.md#нативный-auth-sql-права-и-bootstrap).
 
-При заданном токене production-API на старте настраивает команды и кнопку «Клуб» на `/tg`.
-Webhook нужно отдельно зарегистрировать на публичном HTTPS через `scripts/setup-telegram-webhook.ts`
-и проверить `getWebhookInfo`. Не включайте polling одновременно с webhook.
-Токен из переписки следует заменить перед публичным запуском; новый храните только во внешнем env.
+Существующие SSO/MFA-записи сохраняются, но не переводятся автоматически на вход
+одним паролем. Изменение `ADMIN_PASSWORD` в env не меняет пароль созданного аккаунта.
+Миграция помечает текущие UUID-аватары `club_upload_kind=avatar`, сохраняя остальные
+ключи metadata. Метка остаётся после замены аватара. Необъектные metadata у такого
+файла останавливают миграцию до изменений и требуют разбора в изолированной копии.
 
-Привязка из профиля действует 10 минут, одноразовая и не переносит существующую связь.
-Старые бессрочные ссылки недействительны. После привязки вход Mini App использует проверенное
-сервером `initData`. Для смены связанного Telegram нужен подтверждённый запрос в поддержку.
-Реальный Telegram на iOS/Android, платежный магазин и push-устройства принимаются отдельно.
-
-### Воспроизводимая проверка
+Для ручного повторения схемы используется тот же построенный сервис `migrate`:
 
 ```bash
-pnpm -r build
-pnpm -r test
-bash scripts/test-integration.sh
-LOCAL_QA_ENV=/путь/к/изолированному/runtime.env E2E_TRUSTED_PROXY_SIMULATION=true E2E_BASE_URL=http://127.0.0.1:5296 pnpm --filter @club/web exec playwright test
+cd /opt/club
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/apply-indexes.sh
 ```
 
-На Vite-стенде `E2E_TRUSTED_PROXY_SIMULATION=true` моделирует разных посетителей через
-доверенный локальный прокси: четыре браузера не расходуют один лимит обращений.
-Флаг разрешён только для localhost, боевые ограничения API сохраняются.
+Обёртка требует внешний env, общий lock и native-проект; она применяет все миграции,
+индексы и runtime-права. Это не команда только для одного индекса. Для обновления
+работающего приложения используйте deploy, который останавливает запись на время схемы.
+В QA добавьте тот же `DEPLOY_COMPOSE_OVERRIDE`.
 
-Основной Playwright-набор исключает архивные `staged-*`. Их включают только явно через
-`E2E_INCLUDE_STAGED=true` после настройки прежнего стенда. Мутационные проверки поддержки и корзины
-нельзя направлять на production. `scripts/release-smoke.py` работает только с отдельным локальным
-стеком `alumni-release-qa`, SMTP Mailpit и базой `club_release`; адреса зафиксированы намеренно.
+## Сотрудники и восстановление доступа
 
+Публичный forgot/reset обслуживает alumni. Сотрудника создаёт или восстанавливает
+оператор через `manage-staff`. Команда подключается от владельца БД; пароль
+передаётся через stdin либо `STAFF_PASSWORD`, не через аргументы командной строки.
 
-
-Оперативная инструкция для оператора VPS: деплой, обновление, откат, восстановление,
-ротация секретов, мониторинг, инциденты. Секреты и операции с Docker доступны через `sudo`.
-
-## Архитектура (кратко)
-
-Один VPS, один инстанс API. Docker Compose: `postgres` (16) → `directus` (11, CMS/схема) →
-`bootstrap` (одноразовый идемпотентный сид) → `api` (Fastify) + `web` (SPA за Caddy) →
-`caddy` (внешний TLS-прокси). Postgres — только во внутренней сети (не публикуется).
-Cron-задачи (decay, dpo-sync, напоминания, ретенция ПДн) выполняются **внутри процесса API**.
-
-> **Ограничение single-instance.** Cron и стор rate-limit/лока входа — в памяти процесса.
-> **Нельзя** масштабировать API в несколько реплик без распределённого лока (advisory-lock
-> Postgres / Redis) и общего стора — иначе задвоятся напоминания/начисления, а лимиты
-> перестанут действовать (см. `apps/api/src/lib/mutex.ts`, `lib/security.ts`, `server.ts`).
-
-## 1. Предпосылки перед прод-запуском
-
-Заполнить `.env` из `.env.example` и обязательно:
-
-- Сгенерировать секреты: `POSTGRES_PASSWORD`, `DIRECTUS_KEY`, `DIRECTUS_SECRET`,
-  `DIRECTUS_SERVICE_TOKEN`, `AUTH_SECRET` (≥32), `ADMIN_AUTH_SECRET` (отдельный), `ADMIN_PASSWORD`,
-  `BACKUP_ENCRYPTION_KEY` — каждый через `openssl rand -hex 32`.
-- `APP_ENV=production` – включает **fail-fast**. API не стартует, если: секреты выглядят
-  плейсхолдерами; `PUBLIC_URL` не `https://`; пуст `ADMIN_AUTH_SECRET`; бот на webhook без
-  секрета; **пуст `SMTP_HOST`**; SMTP задан без отправителя; **`SEED_DEMO=true`**.
-  Проверки покрыты тестами (`apps/api/src/env.test.ts`) – каждая ветка отдельно.
-- Реальные `WEB_DOMAIN`/`ADMIN_DOMAIN`, валидный `ACME_EMAIL` (не `.local` — Let's Encrypt отклонит),
-  `PUBLIC_URL=https://<домен>`, `DIRECTUS_PUBLIC_URL=https://admin.<домен>`,
-  `DIRECTUS_CORS_ORIGIN=https://admin.<домен>` (не `true`).
-- `SEED_DEMO=false` – одним флагом закрываются и демо-контент витрин, и тестовые аккаунты
-  (`TEST_EDITOR_*`, `TEST_ALUMNI_*`); иначе editor со слабым паролем станет бэкдором.
-- **`VITE_LOCAL_REVIEW` не задавать** на сборке web (docker build-args его не передают).
-  Иначе на `/privacy` / `/confidential` / `/requisites` появится баннер «Проект юридических
-  документов». Локальный стенд: `VITE_LOCAL_REVIEW=true pnpm -C apps/web build` – см. handoff.
-- **`SMTP_*` обязателен**, а не опционален: без почтового канала не работают восстановление
-  пароля (`/auth/forgot` честно отвечает 503) и подтверждение адреса при регистрации.
-- Завести сотрудникам офиса **личные** аккаунты Directus с ролью `editor` (см. §1.1), а не
-  выдавать общий Administrator.
-- Опционально: `TELEGRAM_*`, `OFFICE_TG_*`, `YOOKASSA_*`, `VAPID_*` (пусто = пуши выключены),
-  `SENTRY_DSN`, `BACKUP_OFFSITE_REMOTE` (rclone-remote для offsite-бэкапа в РФ).
-
-### Контент, которого нет в репозитории
-
-Код разворачивается из git, но часть контента живёт только в хранилище того
-стенда, где её загрузили. При переезде на прод её нужно перенести руками:
-
-- **Аудио подкастов.** Файлы лежат в томе `directus_uploads`, а не в git (гигабайты
-  туда класть нельзя). После деплоя: загрузить mp3 через Directus Studio → медиа,
-  затем в записи выпуска подставить в `audio_url` идентификатор файла (UUID).
-  Внешняя ссылка на mp3 тоже допустима – ручка `/podcasts/:id/audio` понимает оба
-  варианта: UUID отдаётся через наш прокси, `https://…` – редиректом.
-- **Обложки и картинки витрин**, если их загружали в Directus.
-- **Записи подкастов, программ, новостей, событий** – это строки в базе. Переносятся
-  вместе с дампом (см. §5) либо заводятся в админке заново.
-
-Проверка после переноса: на `/podcasts` у бесплатного выпуска должен появиться
-плеер, у платных – замок; подписчик должен получать 206 на запрос с `Range`.
-
-### Проверка после релиза
-
-Быстрый обход, который ловит самое заметное:
+Пример для нового редактора; сначала в закрытом файле сохраните одну строку пароля
+длиной 12–100 символов. Для QA добавьте свой `-f /etc/club/qa-compose.yml`:
 
 ```bash
-curl -sI https://<домен>/fonts/HSESans-Regular.woff2 | head -1   # 200 – фирменный шрифт на месте
-curl -s https://<домен>/robots.txt | head -3                      # правила отдаются
-curl -s https://<домен>/sitemap.xml | grep -c '<url>'             # адреса в карте
-curl -so /dev/null -w '%{http_code}\n' https://<домен>/nope       # 404, а не 200
+sudo install -m 0600 /dev/null /etc/club/staff-password
+sudoedit /etc/club/staff-password
+sudo sh -c 'docker compose --env-file /etc/club/runtime.env -f /opt/club/docker-compose.yml \
+  run --rm --no-deps -T -e STAFF_ACTION=create -e STAFF_ROLE=editor \
+  -e STAFF_EMAIL=editor@example.com bootstrap node dist/manage-staff.js \
+  < /etc/club/staff-password'
+sudo rm /etc/club/staff-password
 ```
 
-Шрифты НИУ ВШЭ лежат в репозитории (`apps/web/public/fonts`) и уезжают вместе с
-образом – отдельного шага не требуют. Если запрос к ним отдаёт 404, сайт покажется
-системным шрифтом: значит, образ собран без `public/`.
+Для сброса задайте `STAFF_ACTION=reset-password`, ожидаемую роль и существующий
+адрес. Повторное create не перезаписывает аккаунт. Reset не повышает alumni, не
+снимает suspended, MFA или внешний provider; меняет хеш и поколение сессии одним
+COMMIT. Проверьте новый вход и отказ старого JWT, затем удалите временный файл пароля.
 
-> **Важно про web.** `PUBLIC_URL` и `DIRECTUS_PUBLIC_URL` инлайнятся в SPA-бандл **на сборке**
-> (build-args `VITE_SITE_URL`/`VITE_DIRECTUS_URL`). При смене доменов web нужно **пересобрать**.
+## Обновление и отказ операции
 
-Организационные шаги 152-ФЗ (РКН, локализация в РФ, ответственный, DPA с ЮKassa) — см.
-[152fz-compliance.md](152fz-compliance.md).
+Из `/opt/club` после проверки CI и миграций нужного SHA:
 
-## 1.1. Доступы и роли
+```bash
+sudo git status --short
+sudo git fetch origin
+sudo git checkout --detach REVIEWED_COMMIT
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
+```
 
-Bootstrap создаёт две политики (Directus 11, идемпотентно):
+Текущая работающая версия фиксируется в OCI labels API/web и `last-deploy.json`.
+Checkout с правками отклоняется. Образы не удаляются автоматически. Старый образ
+без revision label требует `ADOPT_DEPLOYED_REVISION` – подтверждённого SHA прежнего
+выпуска, а не нового checkout. При наличии labels API и web должны совпадать.
 
-| Кто | Роль / политика | Что может |
+Ошибка даёт ненулевой exit status. Ошибки после preflight записываются в
+`last-deploy-attempt.json`; `last-deploy.json` обновляется только при успехе.
+Ошибка самого preflight происходит до установки этой записи. После сбоя миграций
+API может оставаться остановленным. Проверьте `compose ps`, логи и версию схемы;
+не запускайте прежний код без подтверждения совместимости и не удаляйте тома.
+Автоматического отката БД нет. Успешный smoke не заменяет пользовательские сценарии.
+
+## Согласованная резервная копия
+
+Для native-проекта нужны работающий PostgreSQL и созданные контейнеры API/web:
+
+```bash
+cd /opt/club
+sudo env ENV_FILE=/etc/club/runtime.env bash scripts/backup.sh
+sudo cat /var/lib/club-ops/last-backup.json
+```
+
+Backup удерживает общий lock, останавливает работающий API, проверяет место,
+снимает custom dump, uploads и счётчики. После чтения он запускает прежний контейнер
+API через `docker start`, без повторного bootstrap, затем до 60 секунд ждёт healthcheck;
+при ошибке возврат пытается выполнить trap. Утилиты файлов запускаются по OCI ID
+доступного образа PostgreSQL; container config digest не используется как `docker run` image.
+Во время копии не запускайте другие
+процессы записи, импорты и `manage-staff`: штатный lock не управляет внешними командами.
+
+Набор `snapshot-<UTC>-<pid>` содержит зашифрованный `snapshot.tar.gz.enc`,
+`metadata.json`, `SHA256SUMS`. Внутри – dump без ACL/owners, архив uploads, counts,
+рабочий `commit.txt`, инструментальный `tool-commit.txt`, состояние checkout,
+список миграций/образов, время и внутренние checksum. Рабочий env не включается.
+
+Проверяются запас диска и читаемость полного зашифрованного потока. Завершённый
+набор публикуется rename. AES-256-CBC/PBKDF2 шифрует хранение; SHA-256 обнаруживает
+повреждение, но не подтверждает автора архива. Используйте доверенные копии и
+храните ключ отдельно. Проверка архива не равна восстановлению приложения.
+
+`BACKUP_KEEP_DAYS` по умолчанию 14: старые завершённые локальные наборы удаляются
+только после успешной новой копии и offsite-проверки, если она настроена.
+`BACKUP_OFFSITE_REMOTE` включает rclone copy и `check --one-way --download`.
+Неуспех не обновляет последнюю успешную запись и не запускает retention; завершённая
+локальная копия при этом может уже существовать. Пустой remote означает только
+локальное хранение. Сроки offsite и тест чтения назначает оператор.
+
+Старые раздельные `.sql.gz.enc` и uploads-копии не являются входом нового restore.
+Используйте одну полную копию через `scripts/backup.sh` и `club-backup.timer`;
+прежние отдельные задания копирования удалите после проверки нового снимка.
+
+## Изолированное восстановление
+
+`restore.sh` всегда создаёт новый проект `club-restore-*` и новые тома. Он не
+перезаписывает исходную БД. Возможны два режима:
+
+| Режим | Код | Действие со схемой |
 |---|---|---|
-| Сотрудник офиса | `editor` → «Офис (контент)» | вход в Studio, CRUD контента (страницы, новости, программы, товары, события, подкасты, таймлайн, файлы) |
-| `apps/api` | `service` → «Сервис (apps/api)» | данные приложения + `directus_users`/`directus_files`/`directus_roles`; **без** доступа к схеме, настройкам и расширениям |
-| Владелец | `Administrator` | всё, включая схему — только для миграций и разбора инцидентов |
+| `exact` – по умолчанию | Чистый native-checkout с SHA из snapshot `commit.txt` | Восстановление dump/files и runtime SQL-роли; без миграций/bootstrap |
+| `migrate-legacy` | Чистый native-checkout выбранной версии; отдельный `LEGACY_APP_REVISION` совпадает со snapshot | Восстановление legacy-копии, затем нативные миграции и bootstrap |
 
-Что это даёт: `alumni`, `orders`, `points_ledger`, `audit_log` и корзины **недоступны редактору** —
-персональные данные и заявки офис ведёт в админ-панели сайта (`/admin`), где каждое действие
-попадает в аудит. Утечка `DIRECTUS_SERVICE_TOKEN` больше не даёт захватить инсталляцию: сменить
-схему, создать администратора или прочитать настройки этим токеном нельзя.
+Подготовьте `/etc/club/restore.env` и `/etc/club/restore-compose.yml` по
+[изолированной QA-конфигурации](ubuntu-vm-rehearsal.md#изолированная-конфигурация),
+выбрав свободные loopback-порты, например 10443/10444/10125. Env содержит новый пароль
+SQL-runtime, ключ снимка и подходящие сохранённым аккаунтам настройки. Для
+migrate-legacy `ADMIN_EMAIL` должен указывать на активного администратора копии;
+bootstrap не изменит его пароль. Не добавляйте demo и внешние ключи.
 
-Заведение сотрудника: Studio → *User Directory* → создать пользователя, роль `editor`,
-включить 2FA. Общий аккаунт Administrator для повседневной работы использовать не нужно —
-иначе в аудите не видно, кто именно что сделал.
+Restore проверяет до запуска:
 
-> Обновляетесь со старой версии, где офис работал под Administrator? Запустите
-> `scripts/deploy.sh` по §3: он повторно выполнит `bootstrap`, создаст политики и
-> понизит роль сервисного аккаунта. Затем переведите сотрудников на личные
-> `editor`-аккаунты.
+- Проект и все целевые тома ещё не существуют; только новые named volumes с его
+  префиксом, без external/driver_opts, без bind mounts данных API/PG.
+- Default-сеть internal; API/migrate/bootstrap/PG используют только её. Нет внешних
+  сетей, links, network_mode, extra_hosts или volumes_from в Compose.
+- API/PG не публикуют порты; все опубликованные порты остальных сервисов – 127.0.0.1.
+- Jobs/demo выключены; SMTP заканчивается в Mailpit; Telegram/оплата/push/Sentry
+  выключены; PUBLIC_URL указывает на localhost или 127.0.0.1.
+- SQL/PG-настройки указывают только на PostgreSQL этого проекта под ожидаемыми ролями.
 
-## 1.2. Подтверждение почты при регистрации
-
-Заданный `SMTP_HOST` включает подтверждение: аккаунт создаётся со статусом `unverified`,
-войти нельзя, пока человек не откроет ссылку из письма (24 часа, `/confirm?token=…`).
-Офис получает уведомление о заявке **после** подтверждения — очередь верификации не забивается
-заявками с чужих и несуществующих адресов. Без SMTP поведение прежнее (аккаунт активен сразу),
-иначе на стенде без почты зарегистрироваться было бы невозможно. **На проде режим «без SMTP»
-недостижим:** `APP_ENV=production` с пустым `SMTP_HOST` прерывает старт, поэтому подтверждение
-почты на боевом стенде включено всегда.
-
-## 2. Первичный деплой
+Создайте чистый checkout целевого SHA, например `/opt/club-restore-code`. Прочитайте
+`application_revision` в доверенном `metadata.json`, выберите точный snapshot:
 
 ```bash
-git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club-pravo-hse
-cd club-pravo-hse
-sudo install -d -m 700 /etc/club
-sudo install -m 600 .env.example /etc/club/runtime.env
-sudoedit /etc/club/runtime.env       # заменить плейсхолдеры по §1
-sudo docker compose --env-file /etc/club/runtime.env config --quiet
-sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
-curl -fsS https://club.example.ru/api/ready  # замените домен на свой
+cd /opt/club
+sudo env ENV_FILE=/etc/club/restore.env \
+  DEPLOY_COMPOSE_OVERRIDE=/etc/club/restore-compose.yml \
+  RESTORE_CODE_DIR=/opt/club-restore-code \
+  RESTORE_PROJECT=club-restore-drill \
+  RESTORE_MODE=exact \
+  SNAPSHOT_DIR=/var/backups/club/snapshot-YYYYMMDDTHHMMSSZ-PID \
+  bash scripts/restore.sh
 ```
 
-В `infra/cron.example` замените путь к checkout и домен, затем установите задания
-через `sudo crontab -e`. Они используют тот же внешний env и того же пользователя,
-что и `deploy.sh`: копия БД в 03:30, файлы CMS в 03:45, проверка БД по понедельникам
-в 04:00, uptime каждые пять минут. Проверьте `sudo crontab -l` и журналы после первого
-запуска. Внешнее хранилище и срок хранения его копий настройте отдельно.
+Скрипт проверяет внешний и внутренний checksum, имена/тип tar entries, размеры,
+запас диска, SHA и чистоту checkout инструмента снимка/целевого кода. Восстанавливает
+dump и файлы, назначает файлам UID/GID 1000, сравнивает counts alumni/orders/ledger/files.
+В legacy-режиме это сравнение выполняется **до** миграций; после них нужны отдельные
+сверки сохранения UUID, хешей, настроек и контента. Это не автоматическая проверка
+каждого файла или всех бизнес-сумм.
 
-## 3. Обновление / редеплой
+В конце стартуют Mailpit/API/web/Caddy. Restore не проверяет HTTPS и не экспортирует
+новую CA автоматически. Экспортируйте публичный корень **нового** проекта и проверьте
+`/api/ready`, вход, роли, данные и медиа по инструкции репетиции. Повторите чтение
+после рестарта. Исходная CA не подходит к новому тому Caddy.
+
+Восстановленный проект остаётся для диагностики, включая неудачный запуск. Повтор
+требует другого нового имени. Переключение пользователей и удаление прежних томов
+в эти команды не входят. Если после snapshot появились новые записи, возврат к нему
+теряет эти изменения; нужен согласованный перенос разницы или окно остановки записи.
+
+## Перенос установки Directus
+
+Нативные `deploy.sh` и `backup.sh` намеренно отклоняют проект с контейнером Directus.
+Не обходите проверку удалением контейнера при сохранённой общей БД. Для старой
+установки сначала создаётся единый snapshot закреплённым pre-native инструментом:
+`17053fad1b61f7408cc21788035b3b52c5da94d4`. Его backup останавливает API и CMS,
+копирует БД и `/directus/uploads`, затем запускает прежние контейнеры через
+`docker start`, без повторного выполнения зависимостей bootstrap.
+
+Из существующего клона создайте отдельный чистый worktree; исходный checkout и
+Compose-проект не переключаются. В env/override указываются настройки **источника**:
 
 ```bash
-git pull --ff-only
-sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh
-curl -fsS https://club.example.ru/api/ready  # замените домен на свой
+sudo git -C /opt/club worktree add --detach /opt/club-legacy-tool \
+  17053fad1b61f7408cc21788035b3b52c5da94d4
+cd /opt/club-legacy-tool
+sudo docker compose --env-file /etc/club/legacy.env \
+  -f docker-compose.yml -f /etc/club/legacy-compose.yml ps -a
+sudo env ENV_FILE=/etc/club/legacy.env \
+  DEPLOY_COMPOSE_OVERRIDE=/etc/club/legacy-compose.yml \
+  ADOPT_DEPLOYED_REVISION=VERIFIED_LEGACY_40_CHAR_SHA \
+  STATE_DIR=/var/lib/club-legacy-ops \
+  bash scripts/backup.sh
 ```
 
-SIGTERM обрабатывается gracefully (cron останавливается, активные запросы дозавершаются,
-`stop_grace_period: 30s`). Если менялись домены/`PUBLIC_URL`, `deploy.sh` пересоберёт web
-с новыми build-args. После обновления проверьте HTTPS, пользовательский сценарий и журналы.
+Перед копией подтвердите имя source-проекта, его контейнеры, тома и работающий SHA.
+`ADOPT_DEPLOYED_REVISION` нужен только без labels; он не устанавливает происхождение
+образа сам по себе. Для исходной синтетической VM `club-ubuntu-qa` известен
+`93fc86f7b76477d06a404cc47af549695f7a6bdb`; значение неприменимо к другому серверу без
+проверки. Не используйте SHA новой native-версии вместо версии источника.
 
-## 3.1. E2E-проверка перед релизом (Playwright)
-
-Полный набор гоняется против **изолированного** живого стенда (локального или staging).
-Часть сценариев создаёт и меняет записи; на публичный production полный набор не направляйте.
-В CI его нет, там нет БД/API:
+Затем из текущего native-checkout выполните новый изолированный restore:
 
 ```bash
-pnpm --filter @club/web e2e
+cd /opt/club
+sudo env ENV_FILE=/etc/club/restore.env \
+  DEPLOY_COMPOSE_OVERRIDE=/etc/club/restore-compose.yml \
+  RESTORE_CODE_DIR=/opt/club-restore-code \
+  RESTORE_PROJECT=club-restore-native \
+  RESTORE_MODE=migrate-legacy \
+  LEGACY_APP_REVISION=VERIFIED_LEGACY_40_CHAR_SHA \
+  SNAPSHOT_DIR=/var/backups/club/snapshot-YYYYMMDDTHHMMSSZ-PID \
+  bash scripts/restore.sh
 ```
 
-На публичном адресе запускайте только проверки чтения, например:
-`E2E_BASE_URL=https://<домен> pnpm --filter @club/web exec playwright test e2e/public.spec.ts`.
-Первый запуск на тестовом хосте с Node.js 24 и pnpm 9.12.0:
-`pnpm --filter @club/web exec playwright install chromium`.
+`LEGACY_APP_REVISION` должен совпадать с `commit.txt`, а целевой код содержать
+`001_native_base.sql`. Пользовательские UUID/хеши, ссылки файлов и старые настройки
+не сбрасываются. CMS metadata остаётся в копии; полный JSON настроек архивируется
+приватно в `club_settings`. До переключения пройдите отрицательные проверки ролей,
+сверьте файлы/хеши/данные и проверьте новый snapshot с последующим exact-restore.
+Прежний проект продолжает существовать; дублировать его фоновые интеграции нельзя.
 
-## 4. Откат
+## Таймеры и мониторинг
 
-- **Код:** подготовить отдельный checkout предыдущего проверенного коммита, затем
-  выполнить `sudo env ENV_FILE=/etc/club/runtime.env bash scripts/deploy.sh` из него.
-  Перед изменением рабочей БД скрипт создаёт и проверяет новую копию.
-- **Данные:** если проблема повредила БД, восстанавливать её вместе с файлами CMS
-  по §5. Схема Directus и сиды идемпотентны, но новая миграция может быть
-  несовместима со старым кодом; сначала проверьте откат на копии.
-
-## 5. Проверка и восстановление из бэкапа
-
-Бэкапы – AES-256 (`scripts/backup-db.sh` и `scripts/backup-uploads.sh`).
-Восстановимость SQL проверяется еженедельно в отдельной временной БД:
+Systemd-unit рассчитаны на `/opt/club` и `/etc/club/runtime.env`. Уберите только
+старые задания Клуба для тех же операций, сохраняя остальные задания сервера:
 
 ```bash
-sudo env ENV_FILE=/etc/club/runtime.env bash scripts/backup-verify.sh
+cd /opt/club
+sudo install -m 0644 deploy/systemd/club-* /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now club-backup.timer club-monitor.timer
+sudo systemctl list-timers club-backup.timer club-monitor.timer
 ```
 
-Прямой импорт в рабочую БД затрёт текущие данные. Для фактического отката
-восстанавливайте SQL и файлы CMS в отдельные тома, сверяйте состав и открытие медиа,
-затем переключайте стек в окно обслуживания. Этот шаг пока требует отдельной
-репетиции на целевом сервере. Ключ `BACKUP_ENCRYPTION_KEY` храните **отдельно** от копий.
-При `BACKUP_OFFSITE_REMOTE` оба скрипта копируют архивы во внешнее хранилище.
+Backup: ежедневно 03:30 `Europe/Moscow`, `Persistent=true`; monitor: через пять
+минут после загрузки, затем каждые пять минут. Повтор неудачной копии – ручной запуск
+`club-backup.service` после исправления причины. Общий lock исключает одновременные
+backup/deploy/restore с тем же STATE_DIR.
 
-## 6. Ротация секретов
+В `/etc/club/operations.env` задайте нужные ENV_FILE/override/CA и пороги как
+`NAME=value`. Для внутренней CA задают `MONITOR_CERT_MIN_DAYS=0.25`; для публичного
+сертификата штатный порог 14 дней. Файл читается systemd, shell-команды в нём запрещены.
 
-- **`AUTH_SECRET` / `ADMIN_AUTH_SECRET`:** заменить во внешнем `/etc/club/runtime.env`,
-  затем запустить `sudo docker compose --env-file /etc/club/runtime.env up -d --no-deps api`.
-  Все текущие сессии ЛК/админки станут недействительны (потребуется повторный вход) — это ожидаемо.
-- **`DIRECTUS_SERVICE_TOKEN`:** пересоздать токен сервис-аккаунта в Directus Studio, обновить внешний env,
-  перезапустить `api` и `bootstrap`.
-- **Компрометация аккаунта выпускника:** сброс пароля бампает `token_version` — старые токены
-  этого пользователя отзываются немедленно (`lib/auth.ts`). Массовый отзыв — сменой `AUTH_SECRET`.
-- **`POSTGRES_PASSWORD`:** сменить в Postgres и во внешнем env согласованно (иначе Directus не подключится).
-- **Пароль сервисного аккаунта** (`service@club.example.com`) задаётся bootstrap'ом случайным и
-  нигде не хранится: машине он не нужен, `apps/api` ходит статическим токеном. Раньше сюда клали
-  сам `DIRECTUS_SERVICE_TOKEN`, и его утечка давала вход в публичную Studio полным админом.
-  При обновлении со старой версии **обязательно перезапустите `bootstrap`** — иначе прежний
-  пароль (равный токену) останется рабочим.
+```bash
+sudo systemctl start club-monitor.service
+sudo journalctl -u club-backup.service -u club-monitor.service --since today
+sudo cat /var/lib/club-ops/last-monitor.json
+```
 
-## 6.1. Зависимости и уязвимости
+Monitor проверяет четыре постоянных сервиса – postgres/api/web/caddy, healthy,
+OOM/restarts, HTTPS, диск 85%, RAM 90%, возраст копии 36 часов, TLS, ошибки API и
+результаты включённых jobs. Первая проверка до первой копии сообщает её отсутствие.
+Результат – exit status, journald и `last-monitor.json`. Внешний канал нужно отдельно
+выбрать и проверить; локальный monitor не обнаруживает собственную полную остановку.
+Docker logs ограничены тремя файлами по 10 MB на сервис; retention journald задаёт оператор.
 
-- CI гоняет `pnpm audit --prod --audit-level high` — сборка падает на high/critical.
-- Транзитивные фиксы, которые не приходят обновлением родителя, зафиксированы в
-  `pnpm.overrides` корневого `package.json` (`fast-uri`, `find-my-way`, `uuid`). При обновлении
-  fastify/node-cron проверьте, не стали ли оверрайды лишними — снимайте, когда родитель
-  подтянет патч сам.
-- Dependabot (`.github/dependabot.yml`) — еженедельные PR на npm и GitHub Actions.
-- **Исключение в аудите** — `pnpm.auditConfig.ignoreGhsas` в корневом `package.json`:
-  `GHSA-qwww-vcr4-c8h2` (React Router, CSRF в режиме RSC). Уязвимость закрыта только в
-  React Router 8, который требует React 19, а сайт на React 18. К нам она не относится:
-  RSC-режим и серверные экшены не используются — это обычный SPA на `BrowserRouter`.
-  **Снять исключение** при переезде на React 19 + React Router 8. Учтите: `pnpm audit`
-  всё равно печатает эту запись в отчёте, но код возврата с `--audit-level high` уже нулевой.
+## Проверка и диагностика
 
-## 7. Мониторинг
+После успешного скрипта проверьте реальные сценарии: регистрация и Mailpit/SMTP,
+подтверждение и вход, профиль/верификация, заявка, роли офиса, загрузка/открытие файла,
+сохранение после рестарта. Обычные unit и mocked E2E не подтверждают запись в БД.
+Команды SQL, live и браузерных наборов: [testing.md](testing.md).
 
-- **Healthchecks:** у всех сервисов в compose (`docker compose --env-file "$ENV_FILE" ps` показывает healthy/unhealthy).
-  `/api/health` – liveness, `/api/ready` – связь с Directus и таблицы приложения.
-- **Uptime:** `scripts/uptime-check.sh` (host-cron) шлёт алерт в офисный TG при падении/восстановлении.
-- **Ошибки:** Sentry при заданном `SENTRY_DSN` (ПДн вычищаются в `beforeSend`).
-- **Логи:** json-file с ротацией (`max-size 10m`, `max-file 3`) — диск не забьётся.
-- **Рекомендация:** добавить **внешний** аптайм-пробник (UptimeRobot/Healthchecks.io) — host-cron
-  не сообщит, если сам VPS недоступен.
+| Симптом | Проверка и действие |
+|---|---|
+| Preflight: найден Directus | Использовать isolated migrate-legacy; не удалять контейнер для обхода |
+| Занят порт | `sudo ss -ltnp`, выбрать свободный loopback-порт QA или устранить конфликт |
+| Bootstrap: роль/status или duplicate user_id | Проверить записи в изолированной копии; не сбрасывать пароль/роль и не удалять дубликаты автоматически |
+| `/api/ready` даёт 503 | Проверить PostgreSQL, migrate, bootstrap и SQL grants, затем вход |
+| Сайт 502 при ready 200 | Проверить web/Caddy, сборку и маршрут |
+| TLS не проходит | Проверить имя, часы, CA/DNS/ACME; не использовать `-k` для признания успеха |
+| Копия не создаётся | Проверить lock, место, labels/SHA, ключ и journal; повторить после исправления |
+| Restore отклоняет том/сеть | Выбрать новый project и новые тома, проверить эффективный override |
+| Старый пароль сотрудника | Использовать manage-staff; изменение ADMIN_PASSWORD в env не является reset |
 
-## 8. Инциденты
-
-- **API не стартует после деплоя:** `docker compose --env-file "$ENV_FILE" logs api` — при `APP_ENV=production` в начале
-  печатаются причины fail-fast (`[prod-config] …`). Исправить `.env`, перезапустить.
-- **Directus/БД недоступны:** `/api/ready` → 503; проверить `docker compose --env-file "$ENV_FILE" ps`, логи postgres/directus.
-- **Компрометация:** сменить `AUTH_SECRET` (отзыв всех сессий) и `DIRECTUS_SERVICE_TOKEN`,
-  проверить `GET /api/admin/audit`, при необходимости восстановить БД из чистого бэкапа.
-- **Наплыв/DoS:** per-IP rate-limit + per-route лимиты активны; при необходимости ужесточить
-  лимиты Caddy/`server.ts` и увеличить ресурсы (`mem_limit`).
-
-## Связанные документы
-
-- [152fz-compliance.md](152fz-compliance.md) — 152-ФЗ: что в коде, что делает оператор.
-- [seo-plan.md](seo-plan.md) — SEO-план и мета-разметка.
-- `.env.example` — все переменные окружения с комментариями.
+При инциденте сохраните SHA, image ID и очищенные журналы. Возврат кода допустим
+только при совместимой схеме; иначе используйте проверенную копию в новом проекте.
+Ротация JWT-ключей отзывает соответствующие сессии. Ротация пароля SQL требует
+согласованного изменения роли и env. Публичные DNS/TLS, почта, магазин и внешние
+сообщения проверяются отдельно после решения владельца.

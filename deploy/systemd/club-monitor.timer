@@ -1,0 +1,10 @@
+[Unit]
+Description=Club local monitoring every five minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+Unit=club-monitor.service
+
+[Install]
+WantedBy=timers.target

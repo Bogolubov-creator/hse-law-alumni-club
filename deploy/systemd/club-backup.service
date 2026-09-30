@@ -1,0 +1,17 @@
+[Unit]
+Description=Club consistent database and files backup
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/club
+Environment=ENV_FILE=/etc/club/runtime.env
+EnvironmentFile=-/etc/club/operations.env
+ExecStart=/bin/bash /opt/club/scripts/backup.sh
+UMask=0077
+TimeoutStartSec=30min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

@@ -1,0 +1,182 @@
+import { randomUUID } from "node:crypto";
+import { commitCheckout, findCheckout, checkoutKey, digest, saveReceipt } from "../lib/checkout-store.js";
+import type { FastifyInstance } from "fastify";
+import { readItems } from "../lib/data-commands.js";
+import { recordCreatedPayment } from "../lib/payment-store.js";
+import { z } from "zod";
+import { effectiveDiscount, computeOrderTotals, repriceItems, securePaymentUrl } from "@club/shared";
+import { data } from "../lib/data.js";
+import { resolveAlumni } from "../lib/auth.js";
+import { notifyOffice, confirmApplicant } from "../lib/notify.js";
+import { paymentsEnabled, createPayment } from "../lib/yookassa.js";
+import { audit } from "../lib/audit.js";
+import { cartSession } from "./cart.js";
+import { lookupCatalog, type CatalogInfo } from "../lib/catalog-lookup.js";
+
+
+const di = data;
+
+
+
+
+const createOrderBody = z.object({
+  contact_fio: z.string().min(2).max(200),
+  contact_phone: z.string().min(5).max(40),
+  contact_email: z.email().max(200),
+  fulfillment: z.enum(["pickup", "delivery"]),
+  address: z.string().max(500).nullish(),
+  comment: z.string().max(2000).nullish(),
+  consent_pdn: z.literal(true, { error: "Требуется согласие на обработку ПДн" }),
+  // Honeypot: скрытое поле, которое видят только боты. Заполнено → отказ.
+  website: z.string().max(0).optional(),
+});
+
+export async function ordersRoutes(app: FastifyInstance) {
+  // Оформление заявки. Жёсткий лимит: заявка триггерит уведомление офиса и
+  // создание платежа ЮKassa – защищаем от флуда/DoS (аудит H1).
+  app.post("/orders", { config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async (req, reply) => {
+    const token = cartSession(req);
+    if (!token) return reply.code(400).send({ error: "Нет сессии корзины" });
+    const body = createOrderBody.parse(req.body);
+    if (body.fulfillment === "delivery" && !body.address?.trim()) return reply.code(400).send({ error: "Укажите адрес доставки" });
+    const alumni = await resolveAlumni(req);
+    const suppliedKey = req.headers["idempotency-key"];
+    const key = checkoutKey(token, suppliedKey === undefined ? randomUUID() : z.guid().parse(suppliedKey));
+    const requestHash = digest(JSON.stringify({ body, alumni: alumni?.id ?? null }));
+    const previous = await findCheckout(key, requestHash);
+    if (previous) return previous;
+
+    const cartRows = (await di.request(readItems("carts", { filter: { session_token: { _eq: token } }, limit: 1, fields: ["id", "items_json"] }))) as any[];
+    const items = (cartRows[0]?.items_json as any[]) ?? [];
+    if (!items.length) return reply.code(400).send({ error: "Корзина пуста" });
+
+    // Переоценка по каталогу (анти-подмена цены): собрать актуальные цены, затем чистые функции.
+    // Позиция, ставшая недоступной, пока лежала в корзине (снята с публикации, удалена,
+    // ДПО ушла на маркетплейс hse.ru или набор закрыт), в заявку не попадает – иначе
+    // заказ уходит по устаревшей цене на то, что больше не продаётся.
+    const catalog = await lookupCatalog(items);
+    const priceMap = new Map<string, CatalogInfo>();
+    const unavailableTitles = new Set<string>();
+    for (const i of items) {
+      const key = `${i.type}:${i.ref_id}`;
+      if (priceMap.has(key)) continue;
+      const info = catalog.get(key);
+      if (!info || (i.type === "dpo" && (info.source_url || info.enrollment === "nonactual"))) {
+        unavailableTitles.add(i.title || i.ref_id);
+      } else {
+        priceMap.set(key, info);
+      }
+    }
+    // Ни одна позиция молча не выкидывается: если что-то стало недоступным (снято
+    // с публикации, удалено, ДПО ушла на маркетплейс или набор закрыт) – заявку не
+    // создаём и явно сообщаем пользователю, что убрать. Иначе «заказал, а его нет».
+    if (unavailableTitles.size) {
+      return reply.code(409).send({
+        error: `Эти позиции больше недоступны: ${[...unavailableTitles].join(", ")}. Удалите их из корзины и оформите заказ заново.`,
+        unavailable: [...unavailableTitles],
+      });
+    }
+    const priced = repriceItems(items, (t, r) => priceMap.get(`${t}:${r}`));
+
+    // Предварительная проверка остатков по позиции/варианту. commitCheckout повторно
+    // проверяет цену и доступность под блокировками и атомарно резервирует остатки.
+    const need = new Map<string, number>();
+    for (const i of priced) {
+      if (i.type !== "merch") continue;
+      const k = `${i.ref_id}|${i.variant_sku ?? ""}`;
+      need.set(k, (need.get(k) ?? 0) + i.qty);
+    }
+    const insufficient: string[] = [];
+    for (const [k, qty] of need) {
+      const sep = k.indexOf("|");
+      const ref = k.slice(0, sep);
+      const sku = k.slice(sep + 1);
+      const info = priceMap.get(`merch:${ref}`);
+      if (!info) continue;
+      const avail = sku && Array.isArray(info.variants)
+        ? info.variants.find((v) => v.sku === sku)?.stock
+        : info.stock;
+      if (typeof avail === "number" && qty > avail) {
+        insufficient.push(`${info.title}${sku ? ` (${sku})` : ""} – в наличии ${avail}`);
+      }
+    }
+    if (insufficient.length) {
+      return reply.code(409).send({
+        error: `Недостаточно на складе: ${insufficient.join("; ")}. Уменьшите количество и попробуйте снова.`,
+        insufficient,
+      });
+    }
+
+    const discount = effectiveDiscount(
+      !!alumni && alumni.verification_status === "verified",
+      alumni?.points_cached ?? 0,
+      alumni?.personal_discount ?? 0,
+    );
+    const { subtotal, total } = computeOrderTotals(priced, discount);
+    // Санити-гейт суммы: даже с капом qty защищаемся от переполнения/аномальной
+    // цены в каталоге – не создаём заявку с суммой вне безопасного диапазона.
+    if (!Number.isSafeInteger(subtotal) || !Number.isSafeInteger(total) || total < 0) {
+      return reply.code(400).send({ error: "Некорректная сумма заказа" });
+    }
+
+    const types = [...new Set(priced.map((i) => i.type))];
+    const type = types.length > 1 ? "mixed" : types[0] === "dpo" ? "dpo" : "merch";
+
+    const base = {
+      alumni_id: alumni?.id ?? null, type, items_json: priced,
+      subtotal, member_discount: discount, total_estimate: total,
+      contact_fio: body.contact_fio, contact_phone: body.contact_phone, contact_email: body.contact_email,
+      fulfillment: body.fulfillment, address: body.address ?? null, comment: body.comment ?? null,
+      consent_pdn: true, status: "new",
+      payment_status: paymentsEnabled() && total > 0 ? "pending" : null,
+    };
+
+    const committed = await commitCheckout({ session: token, key, requestHash, cartId: cartRows[0].id, cartItems: items, base });
+    if (committed.replay) return committed.replay;
+    const number = committed.number;
+
+    const notice = {
+      number, contact_fio: body.contact_fio, contact_phone: body.contact_phone, contact_email: body.contact_email,
+      itemsSummary: priced.map((i) => `${i.title}${i.variant_sku ? ` (${i.variant_sku})` : ""} ×${i.qty}`).join("; "),
+      total_estimate: total, member_discount: discount,
+    };
+    const notified = await notifyOffice(notice).catch((e) => {
+      req.log.error({ err: e, number }, "notifyOffice threw");
+      return { channel: "none", ok: false, blocked: true };
+    });
+    await confirmApplicant(notice).catch((e) => req.log.error({ err: e, number }, "confirmApplicant threw"));
+
+    // Оплата (ЮKassa) – если подключена: создаём платёж сразу, отдаём ссылку.
+    // Неоднозначный сбой оплаты сохраняет pending до сверки офисом с провайдером.
+    let payment_url: string | undefined;
+    if (paymentsEnabled() && total > 0) {
+      try {
+        const payment = await createPayment({
+          amountKop: total,
+          description: `Заявка ${number} · Клуб выпускников факультета права Вышки`,
+          orderNumber: number,
+          customerEmail: body.contact_email,
+        });
+        payment_url = securePaymentUrl(payment.confirmation?.confirmation_url);
+        await recordCreatedPayment(number, payment);
+      } catch (e) {
+        req.log.error({ err: e, number }, "yookassa create on order failed");
+      }
+    }
+
+    audit("order.created", { actor: alumni ? `alumni:${alumni.id}` : "guest", subject: `order:${number}`, detail: { total, discount, type }, req });
+    const receipt = { number, status: "new", member_discount: discount, subtotal, total_estimate: total, notified, payment_url };
+    await saveReceipt(key, receipt).catch(() => req.log.error({ number }, "receipt update failed after commit"));
+    return receipt;
+  });
+
+  // Заявки выпускника.
+  app.get("/me/orders", async (req, reply) => {
+    const alumni = await resolveAlumni(req);
+    if (!alumni) return reply.code(401).send({ error: "Не авторизован" });
+    return di.request(readItems("orders", {
+      filter: { alumni_id: { _eq: alumni.id } }, sort: ["-created_at"], limit: 50,
+      fields: ["number", "type", "status", "subtotal", "member_discount", "total_estimate", "created_at", "items_json", "fulfillment", "payment_status"],
+    }));
+  });
+}

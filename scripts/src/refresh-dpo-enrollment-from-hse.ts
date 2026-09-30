@@ -13,12 +13,12 @@ import {
   HSE_DPO_ACTUAL_URL,
   HSE_DPO_ALL_URL,
   slugifyRu,
-  type ProgramSeed,
 } from "@club/shared";
+import type { ProgramSeed } from "@club/shared/seeds";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const OUT_TS = path.join(ROOT, "packages/shared/src/dpo-mirror-catalog.generated.ts");
-const OUT_BOT = path.join(ROOT, "apps/web/public/content/bot-catalog.json");
+const OUT_BOT = path.join(ROOT, "frontend/public/content/bot-catalog.json");
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36";
 const DOC_PK = "Удостоверение о повышении квалификации НИУ ВШЭ";
 const DOC_PP = "Диплом о профессиональной переподготовке НИУ ВШЭ";
