@@ -608,6 +608,11 @@ try {
 } catch {}
 document.querySelector("#cookies").hidden = ["all", "essential", "0", "1"].includes(stored("club_cookie_consent"));
 prepareMini(currentPath(), url);
+const mirrorNotice = document.querySelector(".site-notice");
+if (mirrorNotice) new ResizeObserver(() => {
+  document.body.style.setProperty("--office-notice-height", mirrorNotice.offsetHeight + "px");
+  alignOfficeNavigation();
+}).observe(mirrorNotice);
 if (navigator.serviceWorker && window.isSecureContext) void navigator.serviceWorker.register(url("sw.js"), { scope: base }).catch(() => {});
 setupPage();
 if ((token() && (currentPath().startsWith("/lk") || currentPath().startsWith("/admin") || currentPath().startsWith("/podcasts") || currentPath().startsWith("/events"))) || currentPath() === "/cart") void refresh();

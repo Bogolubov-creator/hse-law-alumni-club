@@ -135,7 +135,6 @@ body:has(.site-office)>.support-launcher { bottom:20px; font-size:14px; }
   .office-workspace { grid-template-columns:1fr; gap:0; }
 }
 @media(max-width:900px) {
-  body[data-mirror=true]:has(.site-office) { --office-notice-height:80px; }
   .site-office { grid-template-columns:minmax(0,1fr); }
   .office-sidebar { position:sticky; height:auto; z-index:150; border-right:0; border-bottom:1px solid var(--c-line); }
   .office-brand-row { justify-content:space-between; padding:12px 20px; }
@@ -148,10 +147,6 @@ body:has(.site-office)>.support-launcher { bottom:20px; font-size:14px; }
   .office-nav-group a { font-size:16px; }
   .office-topbar { min-height:60px; }
   .office-page-header { padding:24px 0; }
-}
-@media(min-width:901px) {
-  body[data-mirror=true]:has(.site-office) { --office-notice-height:52px; }
-  body[data-mirror=true]:has(.site-office)>.site-notice { height:var(--office-notice-height); }
 }
 @media(max-width:640px) {
   .site-office-content { padding:0 16px 96px; }

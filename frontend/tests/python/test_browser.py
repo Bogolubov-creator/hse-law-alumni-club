@@ -400,6 +400,15 @@ def test_mirror_mobile_preview_navigation_and_exit(chromium, mirror_site, width)
     expect(page).to_have_url(mirror_site + "?site=1")
     expect(page.locator("html")).not_to_have_class(re.compile("pwa-shell|telegram-mini"))
     expect(page.locator(".home-hero")).to_be_visible()
+    page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Панель офиса").click()
+    expect(page.locator(".office-page-header")).to_be_visible()
+    assert (
+        page.locator(".office-brand-row").bounding_box()["y"] >= page.locator(".site-notice").bounding_box()["height"]
+    )
+    if width <= 900:
+        page.get_by_role("button", name="Разделы офиса", exact=True).click()
+    expect(page.get_by_role("button", name="Выйти", exact=True)).to_be_in_viewport()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
     assert not errors and not telegram and not writes
     context.close()
 
