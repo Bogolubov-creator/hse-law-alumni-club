@@ -29,7 +29,7 @@ updates:
       timezone: Europe/Moscow
     open-pull-requests-limit: 3
     allow:
-      - dependency-type: all
+      - dependency-type: direct
     commit-message:
       prefix: "chore(edge)"
 
