@@ -20,7 +20,7 @@ test.describe("PWA: автономный запуск и изоляция кэш
       };
       if (files[asset]) {
         res.setHeader("Content-Type", files[asset]!);
-        res.end(await readFile(new URL(`../public/${asset}`, import.meta.url)));
+        res.end(await readFile(new URL(`../../public/${asset}`, import.meta.url)));
       } else if (path.includes("/api/")) {
         res.setHeader("Content-Type", "application/json");
         res.end('{"private":true}');

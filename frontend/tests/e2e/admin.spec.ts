@@ -202,7 +202,7 @@ test.describe("Админ-панель", () => {
     await expect(page.getByText("Прослушивания", { exact: true })).toBeVisible();
     await expect(page.getByText("11 · 24")).toBeVisible();
     await expect(page.getByText(/слушателей 19/)).toBeVisible();
-    await expect(page.getByText(/Видеовыпуски RuTube сюда не попадают/)).toBeVisible();
+    await expect(page.getByText(/Просмотры RuTube в эту статистику не входят/)).toBeVisible();
   });
 
   test("пуш-рассылка заблокирована и называет причину", async ({ page }) => {

@@ -60,3 +60,20 @@ test("шапка помещается на промежуточной ширин
   await expect(page.getByRole("button", { name: "Открыть меню", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test("медиа на зеркале показывает пустой список и запрещает загрузку", async ({ page }) => {
+  await page.goto(`${base}/admin`);
+  await page.getByRole("button", { name: "Только необходимые" }).click();
+  await page.locator("aside").getByRole("button", { name: "Контент", exact: true }).click();
+  await page.getByRole("button", { name: "Медиа", exact: true }).click();
+  await expect(page.getByText("Файлов пока нет.", { exact: true })).toBeVisible();
+  await page.getByRole("textbox", { name: "Найти файл", exact: true }).fill("test");
+  await page.getByRole("button", { name: "Найти", exact: true }).click();
+  await expect(page.getByText("Файлы не найдены.", { exact: true })).toBeVisible();
+  await page.getByLabel("Файл", { exact: true }).setInputFiles({
+    name: "test.png", mimeType: "image/png", buffer: Buffer.from("mirror test"),
+  });
+  await page.getByRole("button", { name: "Загрузить", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText("На зеркале сохранение отключено – это демо-витрина.");
+  await expect(page.getByText("Файл загружен", { exact: true })).toHaveCount(0);
+});
