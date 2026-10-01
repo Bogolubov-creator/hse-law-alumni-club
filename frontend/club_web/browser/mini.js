@@ -19,6 +19,13 @@ export function prepareMini(path, url) {
     if (entry || query.has("tgWebAppData") || new URLSearchParams(location.hash.slice(1)).has("tgWebAppData")) sessionStorage.setItem("club_telegram_preview", "1");
     preview = sessionStorage.getItem("club_telegram_preview") === "1";
   } catch {}
+  if (document.documentElement.classList.contains("pwa-shell")) {
+    document.querySelectorAll("[data-mini-preview]").forEach(node => { node.textContent = "Мобильный просмотр"; });
+    document.querySelectorAll("[data-mobile-preview]").forEach(node => {
+      node.textContent = "Обычный сайт";
+      node.href = url("?site=1");
+    });
+  }
   if (!preview && !window.Telegram?.WebApp?.initData) return;
   document.documentElement.classList.add("telegram-mini");
   const club = document.querySelector(".mobile-tabs a");
@@ -48,7 +55,7 @@ export function prepareMini(path, url) {
     if (entry && sdkStart && sdkStart !== "tg" && !query.has("startapp")) location.replace(url(sdkStart));
   }
   if (window.Telegram?.WebApp) connected();
-  else {
+  else if (!document.documentElement.classList.contains("pwa-shell") || query.has("tgWebAppData") || new URLSearchParams(location.hash.slice(1)).has("tgWebAppData")) {
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-web-app.js";
     script.addEventListener("load", connected); document.head.append(script);
