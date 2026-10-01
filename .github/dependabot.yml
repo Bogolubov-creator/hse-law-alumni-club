@@ -4,8 +4,7 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
-      day: monday
+      interval: daily
       time: "06:00"
       timezone: Europe/Moscow
     commit-message:
@@ -16,8 +15,7 @@ updates:
       - "/"
       - "/deploy"
     schedule:
-      interval: weekly
-      day: monday
+      interval: daily
       time: "06:00"
       timezone: Europe/Moscow
     commit-message:
@@ -26,21 +24,26 @@ updates:
   - package-ecosystem: gomod
     directory: "/deploy/caddy"
     schedule:
-      interval: weekly
-      day: monday
+      interval: daily
       time: "06:00"
       timezone: Europe/Moscow
     open-pull-requests-limit: 3
+    allow:
+      - dependency-type: all
     commit-message:
       prefix: "chore(edge)"
 
-  - package-ecosystem: pip
+  - package-ecosystem: uv
     directories: ["/backend", "/frontend", "/scripts"]
     schedule:
-      interval: weekly
-      day: monday
+      interval: daily
       time: "06:00"
       timezone: Europe/Moscow
     open-pull-requests-limit: 3
+    allow:
+      - dependency-type: all
+    groups:
+      python:
+        patterns: ["*"]
     commit-message:
       prefix: "chore(python)"
