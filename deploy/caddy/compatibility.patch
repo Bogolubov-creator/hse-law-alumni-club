@@ -1,14 +1,8 @@
 --- a/cmd/main.go
 +++ b/cmd/main.go
-@@ -482,7 +482,7 @@
- 
- 	// Configure the maximum memory to use to match the Linux container quota (if any) or system memory
- 	// See https://pkg.go.dev/runtime/debug#SetMemoryLimit
+@@ -485 +485 @@
 -	_, _ = memlimit.SetGoMemLimitWithOpts(
 +	_, _ = memlimit.Set(
- 		memlimit.WithLogger(
- 			slog.New(zapslog.NewHandler(
- 				logger.Core(),
 --- a/modules/caddyhttp/celmatcher.go
 +++ b/modules/caddyhttp/celmatcher.go
 @@ -25,17 +25,17 @@
@@ -40,24 +34,16 @@
  	"go.uber.org/zap"
  
  	"github.com/caddyserver/caddy/v2"
-@@ -503,7 +503,7 @@
- 			}
- 			return interpreter.NewCall(
+@@ -505,3 +505,3 @@
  				i.ID(), funcName, funcName+"_opt",
 -				[]interpreter.Interpretable{reqAttr},
 +				[]interpreter.InterpretableV2{reqAttr},
  				func(args ...ref.Val) ref.Val {
- 					// The request value, guaranteed to be of type celHTTPRequest
- 					celReq := args[0]
-@@ -526,7 +526,7 @@
- 			}
- 			return interpreter.NewCall(
+@@ -528,3 +528,3 @@
  				i.ID(), funcName, funcName+"_opt",
 -				[]interpreter.Interpretable{reqAttr},
 +				[]interpreter.InterpretableV2{reqAttr},
  				func(args ...ref.Val) ref.Val {
- 					// The request value, guaranteed to be of type celHTTPRequest
- 					celReq := args[0]
 --- a/modules/caddyhttp/fileserver/matcher.go
 +++ b/modules/caddyhttp/fileserver/matcher.go
 @@ -25,13 +25,13 @@

@@ -1,4 +1,3 @@
-// @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiGet, apiPost, ApiError } from "../../../src/api/api.js";
 import { adminReq } from "../../../src/api/admin.js";

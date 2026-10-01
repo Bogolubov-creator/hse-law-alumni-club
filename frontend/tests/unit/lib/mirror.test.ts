@@ -1,5 +1,5 @@
 import { setMirrorPodcastDemo } from "../../../src/features/podcasts/mirror-podcast-demo.js";
-// @vitest-environment happy-dom
+
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { cartSummarySchema, meSchema } from "@club/shared";
 vi.mock("../../../src/lib/public-url.js", () => ({ isMirror: true }));

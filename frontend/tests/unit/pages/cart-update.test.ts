@@ -1,4 +1,3 @@
-/** @vitest-environment happy-dom */
 import { act, createElement, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
