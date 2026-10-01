@@ -6,11 +6,12 @@ from pathlib import Path
 
 import httpx
 
+from club_web.asgi import initialize_django
 from club_web.build import build_public
 from club_web.calendar import calendar_file
 from club_web.client import Api
-from club_web.main import templates
 from club_web.pages import OFFICE_NAV, PUBLIC_PAGES, context, resource
+from club_web.rendering import templates
 
 
 def fixtures(root):
@@ -132,6 +133,7 @@ async def export(destination, base, data):
         paths.extend(f"/{prefix}/{row[identifier]}" for row in data[key])
     paths.extend("/changes/" + row["id"] for row in changes["items"])
     paths.append("/404")
+    initialize_django()
     renderer = templates()
     async with httpx.AsyncClient(transport=httpx.MockTransport(upstream), base_url="http://mirror.test") as client:
         for path in paths:

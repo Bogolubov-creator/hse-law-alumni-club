@@ -1,17 +1,17 @@
 import re
-from typing import Annotated, Literal
+from typing import Literal
 
-from fastapi import APIRouter, Depends, Request
+from django.http import HttpRequest
 from pydantic import Field, field_validator
 
 from club_api.core.errors import ApiError
+from club_api.core.views import api_view, parse_body
 from club_api.db.store import normalize
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
 from club_api.modules.news.sources import SOURCES, import_candidate, refresh_source
 from club_api.observability.audit import audit
 
-router = APIRouter()
 ROUTE_LIMITS = {("POST", "/admin/news-sources/{source}/refresh"): 6}
 
 
@@ -30,14 +30,15 @@ class StateBody(Body):
 
 
 def candidate_id(value):
-    if not re.fullmatch(r"[a-f0-9]{64}", value):
+    if not re.fullmatch("[a-f0-9]{64}", value):
         raise ApiError(400, "Некорректный идентификатор")
     return value
 
 
-@router.get("/admin/news-sources")
-async def sources(request: Request, _admin: Annotated[dict, Depends(require_admin)]):
-    state = request.app.state
+@api_view
+async def sources(request: HttpRequest):
+    await require_admin(request)
+    state = request.services
     runs = await state.database.rows("SELECT * FROM club_news_source_runs")
     by_source = {row["source"]: row for row in runs}
     items = await state.database.rows(
@@ -52,23 +53,28 @@ async def sources(request: Request, _admin: Annotated[dict, Depends(require_admi
     )
 
 
-@router.post("/admin/news-sources/{source}/refresh")
-async def refresh(request: Request, source: str, admin: Annotated[dict, Depends(require_admin)]):
-    result = await refresh_source(request.app.state, source)
+@api_view
+async def refresh(request: HttpRequest, source: str):
+    admin = await require_admin(request)
+    result = await refresh_source(request.services, source)
     await audit(request, "news.source.refresh", actor="admin:" + admin["userId"], subject=source, detail=result)
     return result
 
 
-@router.post("/admin/news-sources/{id}/import")
-async def import_news(request: Request, id: str, body: ImportBody, admin: Annotated[dict, Depends(require_admin)]):
-    result = await import_candidate(request.app.state, candidate_id(id), body.title, body.excerpt)
+@api_view
+async def import_news(request: HttpRequest, id: str):
+    admin = await require_admin(request)
+    body = parse_body(request, ImportBody)
+    result = await import_candidate(request.services, candidate_id(id), body.title, body.excerpt)
     await audit(request, "news.source.import", actor="admin:" + admin["userId"], subject="news:" + result["id"])
     return result
 
 
-@router.patch("/admin/news-sources/{id}")
-async def patch(request: Request, id: str, body: StateBody, _admin: Annotated[dict, Depends(require_admin)]):
-    await request.app.state.database.execute(
+@api_view
+async def patch(request: HttpRequest, id: str):
+    await require_admin(request)
+    body = parse_body(request, StateBody)
+    await request.services.database.execute(
         "UPDATE club_news_inbox SET state=%s WHERE id=%s AND state<>'imported'", (body.state, candidate_id(id))
     )
     return {"ok": True}

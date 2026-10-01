@@ -6,7 +6,7 @@
 
 ## Устройство проекта
 
-- `frontend` – FastAPI web и Jinja2; `backend` – FastAPI API; `data` – общие
+- `frontend` – Django web и Jinja2; `backend` – Django API; `data` – общие
   справочники; `scripts` –
   миграции, bootstrap, управление сотрудниками и резервные копии.
 - Серверные маршруты и логика области находятся в `backend/club_api/modules`;
@@ -16,7 +16,7 @@
   Docker-файлы собраны в `deploy`. В `scripts` остаются команды оператора;
   помощники, проверки и диагностика выделены в `lib`, `checks`, `diagnostics`.
   Полная карта – `docs/development/repository-structure.md`.
-- Продакшен собирается через Docker Compose с PostgreSQL, FastAPI и Caddy.
+- Продакшен собирается через Docker Compose с PostgreSQL, Django и Caddy.
   Directus исключён по решению владельца; основание – `docs/decisions/cms-options.md`.
   Источник операционных команд и порядка отката – `docs/operations/deploy-runbook.md`.
 - Порт API не публикуется на хосте: входящие запросы и проверка IP проходят
@@ -73,6 +73,8 @@ uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
 uv sync --directory frontend --frozen
 uv run --directory frontend playwright install chromium
+uv run --directory backend python manage.py check
+uv run --directory frontend python manage.py check
 uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
 uv run --directory frontend ruff check club_web tests/python
 uv run --directory frontend python -m club_web.build --output /tmp/club-web

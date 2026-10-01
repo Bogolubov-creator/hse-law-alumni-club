@@ -1,18 +1,17 @@
 import math
 from datetime import UTC, datetime, timedelta
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from django.http import HttpRequest
 
 from club_api.core.errors import ApiError
+from club_api.core.views import api_view, parse_body, parse_uuid
 from club_api.db.store import normalize
 from club_api.domain import compute_level
 from club_api.modules.auth.routes import Body
 from club_api.modules.gamification.routes import verified_alumni
 from club_api.observability.audit import audit
 
-router = APIRouter()
 ROUTE_LIMITS = {"/me/classmates": 30, "/me/friends": 20, "/me/friends/{alumniId}": 20}
 
 
@@ -29,9 +28,10 @@ def pair_filter(first, second):
     }
 
 
-@router.get("/me/classmates")
-async def classmates(request: Request, me: Annotated[dict, Depends(verified_alumni)]):
-    store = request.app.state.store
+@api_view
+async def classmates(request: HttpRequest):
+    me = await verified_alumni(request)
+    store = request.services.store
     alternatives = [{name: {"_eq": me[name]}} for name in ("cohort", "edu_program") if me[name]]
     if not alternatives:
         return []
@@ -77,10 +77,11 @@ async def classmates(request: Request, me: Annotated[dict, Depends(verified_alum
     return result
 
 
-@router.get("/me/events")
-async def notifications(request: Request, me: Annotated[dict, Depends(verified_alumni)]):
-    store = request.app.state.store
-    now, events = datetime.now(UTC), []
+@api_view
+async def notifications(request: HttpRequest):
+    me = await verified_alumni(request)
+    store = request.services.store
+    now, events = (datetime.now(UTC), [])
     cutoff = normalize(now - timedelta(days=30))
     incoming = await store.read(
         "alumni_friends",
@@ -144,15 +145,17 @@ async def notifications(request: Request, me: Annotated[dict, Depends(verified_a
     return events
 
 
-@router.post("/me/friends")
-async def friend(request: Request, body: FriendBody, me: Annotated[dict, Depends(verified_alumni)]):
+@api_view
+async def friend(request: HttpRequest):
+    me = await verified_alumni(request)
+    body = parse_body(request, FriendBody)
     try:
         UUID(body.alumni_id)
     except ValueError as error:
         raise ApiError(400, "Некорректный участник") from error
     if body.alumni_id == me["id"]:
         raise ApiError(400, "Нельзя добавить в друзья себя")
-    state = request.app.state
+    state = request.services
     target = await state.store.one("alumni", body.alumni_id, fields=("verification_status",))
     if target["verification_status"] != "verified":
         raise ApiError(404, "Выпускник не найден")
@@ -195,10 +198,12 @@ async def friend(request: Request, body: FriendBody, me: Annotated[dict, Depends
     return {"status": status}
 
 
-@router.delete("/me/friends/{alumniId}")
-async def remove_friend(request: Request, alumniId: UUID, me: Annotated[dict, Depends(verified_alumni)]):
+@api_view
+async def remove_friend(request: HttpRequest, alumniId: UUID):
+    alumniId = parse_uuid(alumniId)
+    me = await verified_alumni(request)
     other = str(alumniId)
-    store = request.app.state.store
+    store = request.services.store
     links = await store.read("alumni_friends", filters=pair_filter(me["id"], other), fields=("status",), limit=-1)
     if links:
         await store.delete("alumni_friends", filters=pair_filter(me["id"], other))

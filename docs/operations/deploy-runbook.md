@@ -1,6 +1,6 @@
 # Эксплуатация Клуба на Ubuntu
 
-Рабочий стек: PostgreSQL → миграции → нативный bootstrap → FastAPI API, web и Caddy.
+Рабочий стек: PostgreSQL → миграции → нативный bootstrap → Django API, web и Caddy.
 Отдельного сервера Directus нет. Сохранены совместимые имена таблиц пользователей,
 ролей и файлов, а также том `directus_uploads`. Основание – [ADR](../decisions/cms-options.md).
 

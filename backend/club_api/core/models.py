@@ -12,7 +12,7 @@ def partial(model):
     fields = {}
     for name, info in model.model_fields.items():
         optional = copy.deepcopy(info)
-        optional.default, optional.default_factory = None, None
+        optional.default, optional.default_factory = (None, None)
         fields[name] = (info.annotation, optional)
     return create_model(model.__name__ + "Patch", __base__=model, **fields)
 
@@ -28,24 +28,24 @@ def guid(value):
 
 def query_page(request, *, default_limit=50):
     try:
-        page = int(request.query_params.get("page", "1"))
-        limit = int(request.query_params.get("limit", str(default_limit)))
+        page = int(request.GET.get("page", "1"))
+        limit = int(request.GET.get("limit", str(default_limit)))
         if not 1 <= page <= 1000000 or not 1 <= limit <= 100:
             raise ValueError
-        return page, limit
+        return (page, limit)
     except ValueError:
         raise ApiError(400, "Некорректные параметры страницы") from None
 
 
 def query_choice(request, name, choices):
-    value = request.query_params.get(name)
+    value = request.GET.get(name)
     if value is not None and value not in choices:
         raise ApiError(400, "Некорректный фильтр")
     return value
 
 
 def query_search(request):
-    value = request.query_params.get("q", "")
+    value = request.GET.get("q", "")
     if len(value) > 100:
         raise ApiError(400, "Слишком длинный поисковый запрос")
     return value.strip()
@@ -109,13 +109,13 @@ def slugify(value):
         "ya",
     ]
     translated = value.lower().translate(str.maketrans(dict(zip(alphabet, latin, strict=True))))
-    slug = re.sub(r"[^a-z0-9]+", "-", translated).strip("-")[:60]
+    slug = re.sub("[^a-z0-9]+", "-", translated).strip("-")[:60]
     if slug:
         return slug
     hashed = 0
     encoded = value.encode("utf-16-le", errors="surrogatepass")
     for offset in range(0, len(encoded), 2):
-        hashed = (hashed * 31 + int.from_bytes(encoded[offset : offset + 2], "little")) & 0xFFFFFFFF
+        hashed = hashed * 31 + int.from_bytes(encoded[offset : offset + 2], "little") & 4294967295
     return f"item-{abs(hashed if hashed < 2**31 else hashed - 2**32)}"
 
 

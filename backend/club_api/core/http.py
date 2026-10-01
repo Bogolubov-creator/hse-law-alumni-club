@@ -1,8 +1,7 @@
+import json
 import logging
 import re
-
-from starlette.requests import Request
-from starlette.responses import JSONResponse
+from types import SimpleNamespace
 
 from club_api.core.errors import ApiError
 from club_api.core.security import RateLimits, client_ip
@@ -33,7 +32,10 @@ class SecurityMiddleware:
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
-        request = Request(scope)
+        request = SimpleNamespace(
+            META={"REMOTE_ADDR": scope.get("client", ("", 0))[0]},
+            headers={key.decode().lower(): value.decode("latin1") for key, value in scope["headers"]},
+        )
         path, method = scope["path"], scope["method"]
         ip = client_ip(request)
         status = 500
@@ -53,7 +55,15 @@ class SecurityMiddleware:
             await send(message)
 
         async def error(code, text):
-            await JSONResponse({"error": text}, status_code=code)(scope, receive, secure_send)
+            body = json.dumps({"error": text}, ensure_ascii=False).encode()
+            await secure_send(
+                {
+                    "type": "http.response.start",
+                    "status": code,
+                    "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())],
+                }
+            )
+            await secure_send({"type": "http.response.body", "body": body})
 
         if path not in ("/health", "/ready"):
             if not self.limits.check((ip, "global"), self.settings.RATE_LIMIT_MAX):

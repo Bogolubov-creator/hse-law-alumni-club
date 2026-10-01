@@ -16,9 +16,10 @@ from playwright.sync_api import expect, sync_playwright
 from test_pages import EPISODE, EVENT, NEWS, PRODUCT, PROFILE, PROGRAM
 
 from club_web.build import build_public
-from club_web.main import PUBLIC, create_app
+from club_web.main import create_app
 from club_web.mirror import export, fixtures
 from club_web.pages import OFFICE_NAV, PUBLIC_PAGES
+from club_web.views import PUBLIC
 
 
 @pytest.fixture(scope="module")

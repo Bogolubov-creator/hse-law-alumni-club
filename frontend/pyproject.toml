@@ -3,7 +3,12 @@ name = "club-web"
 version = "0.1.0"
 description = "Сайт Клуба выпускников факультета права НИУ ВШЭ"
 requires-python = ">=3.14,<3.15"
-dependencies = ["fastapi==0.142.2", "uvicorn==0.54.0", "httpx==0.28.1", "jinja2==3.1.6"]
+dependencies = [
+    "uvicorn==0.54.0",
+    "httpx==0.28.1",
+    "jinja2==3.1.6",
+    "django==6.1.1",
+]
 
 [dependency-groups]
 dev = [

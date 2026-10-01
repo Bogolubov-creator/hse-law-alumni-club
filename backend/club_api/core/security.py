@@ -32,7 +32,7 @@ def trust_proxy(address, hop=0):
 
 
 def client_ip(request):
-    peer = request.client.host if request.client else ""
+    peer = request.META.get("REMOTE_ADDR", "")
     if trust_proxy(peer):
         forwarded = request.headers.get("x-forwarded-for", "").split(",")[-1].strip()
         try:

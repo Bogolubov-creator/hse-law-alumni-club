@@ -8,7 +8,7 @@
 выпускника и панель учебного офиса. Заявки сохраняются на сервере; онлайн-оплата
 включается отдельно при настройке ЮKassa.
 
-**Стек:** Python/FastAPI, Jinja2 и PostgreSQL. Страницы сайта, кабинет и панель
+**Стек:** Python/Django, Jinja2 и PostgreSQL. Страницы сайта, кабинет и панель
 офиса формируются на сервере. React и TypeScript удалены; Node.js, npm и pnpm
 для установки, сборки и запуска не нужны. JavaScript обслуживает браузерные
 действия, плеер, PWA и Telegram. Отдельная CMS-подписка не требуется.
@@ -159,15 +159,15 @@ PostgreSQL, запускаются отдельно. Для работающег
 ## Технологии и назначение компонентов
 
 Версии закреплены в `backend/uv.lock`, `frontend/uv.lock`, `scripts/uv.lock`
-и Docker-файлах. Решение о переносе сервера – в [ADR FastAPI](docs/decisions/fastapi-migration.md).
+и Docker-файлах. Решение о переносе сервера – в [ADR Django](docs/decisions/django-migration.md).
 
 | Компонент | Версия | Назначение |
 |---|---|---|
 | Python / uv | 3.14.7 / 0.12.21 в сборке и CI | Сайт, API, команды оператора и экспорт зеркала; зависимости закреплены в uv.lock |
-| FastAPI / Uvicorn / Pydantic | 0.142.2 / 0.54.0 / 2.13.5 | Web и HTTP API, ASGI-сервер и проверка запросов |
+| Django / Uvicorn / Pydantic | 6.1.1 / 0.54.0 / 2.13.5 | Web и HTTP API, ASGI-сервер и проверка запросов |
 | Jinja2 | 3.1.6 | Серверные HTML-шаблоны сайта, кабинета и офиса |
 | Psycopg / Argon2 / PyJWT | 3.3.6 / 25.1.0 / 2.15.1 | SQL-транзакции, прежние PHC-хеши и JWT-сессии |
-| Pillow / python-multipart | 12.3.0 / 0.0.32 | Приём медиа и аватары 256×256 |
+| Pillow | 12.3.0 | Проверка медиа и аватары 256×256; multipart принимает Django |
 | HTTPX / Beautiful Soup | 0.28.1 / 4.15.0 | Проверяемые внешние запросы и разбор HTML |
 | aiosmtplib / pywebpush | 5.1.3 / 2.5.0 | SMTP и Web Push |
 | Sentry SDK | 2.71.0 | Только коды ошибок без запросов и персональных данных |
@@ -191,8 +191,8 @@ Caddy собирается с актуальными CEL и automemlimit; офи
 ```mermaid
 flowchart LR
   B["Браузер: HTML и JavaScript"] -->|"HTTP :80 / HTTPS :443"| C["Caddy"]
-  C -->|"HTTP web:80, страницы"| W["web: FastAPI + Jinja2"]
-  C -->|"HTTP api:3000, /api/*"| A["FastAPI API"]
+  C -->|"HTTP web:80, страницы"| W["web: Django + Jinja2"]
+  C -->|"HTTP api:3000, /api/*"| A["Django API"]
   W -->|"HTTP api:3000, чтение контента"| A
   A -->|"PostgreSQL postgres:5432"| P["PostgreSQL"]
   P --- V["pgdata"]
@@ -208,6 +208,8 @@ PostgreSQL остаётся контейнером. Внутри Docker серв
 
 ```text
 backend/
+  club_api/urls.py         Django URLconf
+  club_api/django_settings.py настройки Django
   club_api/modules/        маршруты и логика по предметным областям
   club_api/db/             SQL-адаптер, схемы данных и транзакции
   club_api/core/           проверка конфигурации приложения
@@ -219,7 +221,8 @@ backend/
   pyproject.toml          зависимости и настройки Python-пакета
   uv.lock                 закреплённые версии зависимостей
 frontend/
-  club_web/               FastAPI web, клиент API и подготовка страниц
+  club_web/               Django web, клиент API и подготовка страниц
+    urls.py, views.py      маршруты и обработчики Django
     templates/            Jinja2: сайт, кабинет и разделы офиса
     browser/              JavaScript-модули браузерных действий
     styles/               CSS и токены дизайна

@@ -3,15 +3,15 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Request
+from django.http import HttpRequest
 from pydantic import Field
 
 from club_api.core.errors import ApiError
+from club_api.core.views import api_view, parse_body
 from club_api.domain import MAX_CART_LINES, MAX_LINE_QTY, effective_discount, order_totals, same_line, summarize_cart
 from club_api.modules.auth.routes import Body
 from club_api.modules.catalog.lookup import lookup_catalog
 
-router = APIRouter()
 ROUTE_LIMITS = {("POST", "/cart"): 40}
 
 
@@ -70,9 +70,9 @@ def exceeds_stock(info, sku, qty):
     return isinstance(available, int | float) and qty > available
 
 
-@router.get("/cart")
-async def cart(request: Request):
-    state = request.app.state
+@api_view
+async def cart(request: HttpRequest):
+    state = request.services
     existing = await load_cart(state.store, cart_session(request))
     items = existing["items"] if existing else []
     alumni = await state.auth.resolve_alumni(request)
@@ -93,9 +93,10 @@ async def cart(request: Request):
     }
 
 
-@router.post("/cart")
-async def add_cart(request: Request, body: CartItem):
-    state, token = request.app.state, cart_session(request)
+@api_view
+async def add_cart(request: HttpRequest):
+    body = parse_body(request, CartItem)
+    state, token = (request.services, cart_session(request))
     info = (await lookup_catalog(state.store, [body.model_dump()])).get(body.type + ":" + body.ref_id)
     if not info:
         raise ApiError(404, "Позиция не найдена")
@@ -133,9 +134,10 @@ async def add_cart(request: Request, body: CartItem):
         return summarize_cart(items)
 
 
-@router.patch("/cart")
-async def change_qty(request: Request, body: ChangeQty):
-    state, token = request.app.state, cart_session(request)
+@api_view
+async def change_qty(request: HttpRequest):
+    body = parse_body(request, ChangeQty)
+    state, token = (request.services, cart_session(request))
     async with locked_cart(state, token) as connection:
         existing = await load_cart(state.store, token, connection)
         items = existing["items"] if existing else []
@@ -143,11 +145,11 @@ async def change_qty(request: Request, body: ChangeQty):
             (item for item in items if item["ref_id"] == body.ref_id and item.get("variant_sku") == body.variant_sku),
             None,
         )
-        if match and match["type"] == "merch" and body.qty > match["qty"]:
+        if match and match["type"] == "merch" and (body.qty > match["qty"]):
             info = (await lookup_catalog(state.store, [match], connection)).get("merch:" + body.ref_id)
             if not info:
                 raise ApiError(404, "Позиция не найдена")
-            if info["variants"] and not any(value["sku"] == body.variant_sku for value in info["variants"]):
+            if info["variants"] and (not any(value["sku"] == body.variant_sku for value in info["variants"])):
                 raise ApiError(400, "Такого варианта товара нет")
             if exceeds_stock(info, body.variant_sku, body.qty):
                 raise ApiError(409, "Недостаточно товара в наличии.")
@@ -159,9 +161,9 @@ async def change_qty(request: Request, body: ChangeQty):
         return summarize_cart(items)
 
 
-@router.delete("/cart")
-async def clear_cart(request: Request):
-    state, token = request.app.state, cart_session(request)
+@api_view
+async def clear_cart(request: HttpRequest):
+    state, token = (request.services, cart_session(request))
     async with locked_cart(state, token) as connection:
         await save_cart(state.store, token, [], connection)
     return summarize_cart([])

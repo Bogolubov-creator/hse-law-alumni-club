@@ -1,18 +1,18 @@
 from collections import Counter
 from datetime import UTC, datetime
-from typing import Annotated, Literal
+from typing import Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from django.http import HttpRequest
 from pydantic import Field
 
 from club_api.core.errors import ApiError
 from club_api.core.models import count, group_count, guid, query_choice, query_page, query_search, sub_active
+from club_api.core.views import api_view, defer, parse_body
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin, require_full_admin
 from club_api.modules.members.service import alumni_email, anonymize
 from club_api.observability.audit import audit
 
-router = APIRouter()
 MEMBER_FIELDS = (
     "id",
     "user_id",
@@ -44,12 +44,13 @@ class PointsBody(Body):
     comment: str = None
 
 
-@router.get("/admin/members")
-async def members(request: Request, _admin: Annotated[dict, Depends(require_admin)]):
-    store = request.app.state.store
+@api_view
+async def members(request: HttpRequest):
+    await require_admin(request)
+    store = request.services.store
     page, limit = query_page(request)
     status = query_choice(request, "status", ("pending", "verified", "rejected"))
-    search, filters = query_search(request), []
+    search, filters = (query_search(request), [])
     if status:
         filters.append({"verification_status": {"_eq": status}})
     if search:
@@ -116,9 +117,10 @@ async def members(request: Request, _admin: Annotated[dict, Depends(require_admi
     }
 
 
-@router.post("/admin/members/{id}/podcast-sub")
-async def grant_subscription(request: Request, id: str, admin: Annotated[dict, Depends(require_full_admin)]):
-    until = await request.app.state.payments.extend_subscription(guid(id))
+@api_view
+async def grant_subscription(request: HttpRequest, id: str):
+    admin = await require_full_admin(request)
+    until = await request.services.payments.extend_subscription(guid(id))
     await audit(
         request, "podcast.sub.grant", actor="admin:" + admin["userId"], subject="alumni:" + id, detail={"until": until}
     )
@@ -142,15 +144,11 @@ async def notify_verification(state, id, status):
     await state.notifications.send_email(email, subject, text)
 
 
-@router.patch("/admin/members/{id}")
-async def patch_member(
-    request: Request,
-    id: str,
-    body: MemberPatch,
-    tasks: BackgroundTasks,
-    admin: Annotated[dict, Depends(require_full_admin)],
-):
-    state, id = request.app.state, guid(id)
+@api_view
+async def patch_member(request: HttpRequest, id: str):
+    admin = await require_full_admin(request)
+    body = parse_body(request, MemberPatch)
+    state, id = (request.services, guid(id))
     data = body.model_dump(exclude_unset=True)
     patch = {**data}
     if data.get("verification_status") == "verified":
@@ -158,7 +156,7 @@ async def patch_member(
     row = await state.store.update("alumni", patch, id=id)
     await audit(request, "member.patch", actor="admin:" + admin["userId"], subject="alumni:" + id, detail=data)
     if data.get("verification_status") in ("verified", "rejected"):
-        tasks.add_task(notify_verification, state, id, data["verification_status"])
+        defer(request, notify_verification, state, id, data["verification_status"])
     if data.get("verification_status") == "verified" and row.get("referred_by"):
         await state.gamification.add(
             row["referred_by"],
@@ -170,9 +168,11 @@ async def patch_member(
     return {"ok": True}
 
 
-@router.post("/admin/members/{id}/points")
-async def points(request: Request, id: str, body: PointsBody, admin: Annotated[dict, Depends(require_full_admin)]):
-    result = await request.app.state.gamification.add(
+@api_view
+async def points(request: HttpRequest, id: str):
+    admin = await require_full_admin(request)
+    body = parse_body(request, PointsBody)
+    result = await request.services.gamification.add(
         guid(id), reason=body.reason, delta=body.delta, comment=body.comment or "Ручное начисление офисом"
     )
     await audit(
@@ -181,9 +181,10 @@ async def points(request: Request, id: str, body: PointsBody, admin: Annotated[d
     return {"ok": True, **result}
 
 
-@router.post("/admin/members/{id}/anonymize")
-async def erase(request: Request, id: str, admin: Annotated[dict, Depends(require_full_admin)]):
-    if not await anonymize(request.app.state, guid(id)):
+@api_view
+async def erase(request: HttpRequest, id: str):
+    admin = await require_full_admin(request)
+    if not await anonymize(request.services, guid(id)):
         raise ApiError(404, "Участник не найден")
     await audit(request, "admin.member.anonymize", actor="admin:" + admin["userId"], subject="alumni:" + id)
     return {"ok": True}

@@ -1,16 +1,16 @@
 from datetime import UTC, datetime
 from typing import Annotated, Literal, get_args
 
-from fastapi import APIRouter, Depends, Request
+from django.http import HttpRequest
+from django.urls import path
 from pydantic import Field
 
 from club_api.core.errors import ApiError
 from club_api.core.models import guid, partial, unique_slug
+from club_api.core.views import api_view, endpoint, parse_body
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
 from club_api.observability.audit import audit
-
-router = APIRouter()
 
 
 class NewsBody(Body):
@@ -99,13 +99,18 @@ async def product_reservations(connection, id):
         raise ApiError(409, "У товара есть резерв в незавершённой заявке. Сначала завершите или отмените её")
 
 
-def content_crud(router, path, table, model, *, sort, fields, subject, notify=None):
+def content_crud(route, table, model, *, sort, fields, subject, notify=None):
     patch_model = partial(model)
 
-    async def listing(request: Request, _admin: Annotated[dict, Depends(require_admin)]):
-        return await request.app.state.store.read(table, sort=sort, fields=fields, limit=-1)
+    @api_view
+    async def listing(request: HttpRequest):
+        await require_admin(request)
+        return await request.services.store.read(table, sort=sort, fields=fields, limit=-1)
 
-    async def create(request: Request, body: model, admin: Annotated[dict, Depends(require_admin)]):
+    @api_view
+    async def create(request: HttpRequest):
+        admin = await require_admin(request)
+        body = parse_body(request, model)
         data = body.model_dump(exclude_unset=False)
         data = {
             key: value
@@ -114,7 +119,7 @@ def content_crud(router, path, table, model, *, sort, fields, subject, notify=No
             or key in body.model_fields_set
             or type(None) in get_args(model.model_fields[key].annotation)
         }
-        row = await write_content(request.app.state, table, data)
+        row = await write_content(request.services, table, data)
         await audit(
             request,
             subject + ".create",
@@ -127,21 +132,26 @@ def content_crud(router, path, table, model, *, sort, fields, subject, notify=No
             },
         )
         if notify and data.get("status") == "published":
-            await request.app.state.push.to_all(
-                {"title": notify, "body": data["title"], "url": path.replace("/admin", "")}
+            await request.services.push.to_all(
+                {"title": notify, "body": data["title"], "url": route.replace("/admin", "")}
             )
         return {"ok": True, "id": row["id"], **({"slug": row["slug"]} if table in ("programs", "products") else {})}
 
-    async def patch(request: Request, id: str, body: patch_model, admin: Annotated[dict, Depends(require_admin)]):
+    @api_view
+    async def patch(request: HttpRequest, id: str):
+        admin = await require_admin(request)
+        body = parse_body(request, patch_model)
         data = body.model_dump(exclude_unset=True)
-        await write_content(request.app.state, table, data, id=guid(id))
+        await write_content(request.services, table, data, id=guid(id))
         await audit(
             request, subject + ".patch", actor="admin:" + admin["userId"], subject=subject + ":" + id, detail=data
         )
         return {"ok": True}
 
-    async def delete(request: Request, id: str, admin: Annotated[dict, Depends(require_admin)]):
-        state, id = request.app.state, guid(id)
+    @api_view
+    async def delete(request: HttpRequest, id: str):
+        admin = await require_admin(request)
+        state, id = (request.services, guid(id))
         if table == "products":
             async with state.database.transaction() as connection:
                 await product_reservations(connection, id)
@@ -151,17 +161,15 @@ def content_crud(router, path, table, model, *, sort, fields, subject, notify=No
         await audit(request, subject + ".delete", actor="admin:" + admin["userId"], subject=subject + ":" + id)
         return {"ok": True}
 
-    for method, endpoint, suffix in (
-        ("GET", listing, ""),
-        ("POST", create, ""),
-        ("PATCH", patch, "/{id}"),
-        ("DELETE", delete, "/{id}"),
-    ):
-        router.add_api_route(path + suffix, endpoint, methods=[method], name=table + "_" + method.lower())
+    return [
+        path(route.lstrip("/"), endpoint({"GET": listing, "POST": create}), name=table + "_collection"),
+        path(route.lstrip("/") + "/<str:id>", endpoint({"PATCH": patch, "DELETE": delete}), name=table + "_item"),
+    ]
 
 
-content_crud(
-    router,
+urlpatterns = []
+
+urlpatterns += content_crud(
     "/admin/news",
     "news",
     NewsBody,
@@ -169,8 +177,7 @@ content_crud(
     fields=("id", "slug", "title", "excerpt", "body", "published_at", "status", "source_url"),
     subject="news",
 )
-content_crud(
-    router,
+urlpatterns += content_crud(
     "/admin/timeline",
     "timeline_items",
     TimelineBody,
@@ -178,8 +185,7 @@ content_crud(
     fields=("id", "year", "title", "text", "metric", "sort", "status"),
     subject="timeline",
 )
-content_crud(
-    router,
+urlpatterns += content_crud(
     "/admin/programs",
     "programs",
     ProgramBody,
@@ -202,8 +208,7 @@ content_crud(
     ),
     subject="program",
 )
-content_crud(
-    router,
+urlpatterns += content_crud(
     "/admin/products",
     "products",
     ProductBody,
@@ -250,9 +255,10 @@ async def page(store, slug, *, connection=None):
     return rows[0]
 
 
-@router.get("/admin/pages/{slug}")
-async def admin_page(request: Request, slug: str, _admin: Annotated[dict, Depends(require_admin)]):
-    row = await page(request.app.state.store, slug)
+@api_view
+async def admin_page(request: HttpRequest, slug: str):
+    await require_admin(request)
+    row = await page(request.services.store, slug)
     return {
         "slug": row["slug"],
         "title": row["title"],
@@ -264,9 +270,11 @@ async def admin_page(request: Request, slug: str, _admin: Annotated[dict, Depend
     }
 
 
-@router.patch("/admin/pages/{slug}")
-async def patch_page(request: Request, slug: str, body: PageBody, admin: Annotated[dict, Depends(require_admin)]):
-    state = request.app.state
+@api_view
+async def patch_page(request: HttpRequest, slug: str):
+    admin = await require_admin(request)
+    body = parse_body(request, PageBody)
+    state = request.services
     async with state.database.transaction() as connection:
         row = await page(state.store, slug, connection=connection)
         for block in row["blocks"]:

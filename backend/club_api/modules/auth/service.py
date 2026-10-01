@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import jwt
-from fastapi import Request
+from django.http import HttpRequest
 from psycopg.types.json import Jsonb
 
 from club_api.core.errors import ApiError
@@ -36,11 +36,11 @@ ALUMNI_FIELDS = (
 
 
 def local_account(user):
-    return user and user.get("provider") in (None, "", "default") and not user.get("tfa_secret")
+    return user and user.get("provider") in (None, "", "default") and (not user.get("tfa_secret"))
 
 
 def recoverable_alumni(user):
-    return local_account(user) and user["role_name"] == "alumni" and user["status"] in ("active", "unverified")
+    return local_account(user) and user["role_name"] == "alumni" and (user["status"] in ("active", "unverified"))
 
 
 def public_user(user):
@@ -75,10 +75,11 @@ async def find_user(connection, *, id=None, email=None, lock=False):
         "FROM directus_users u LEFT JOIN directus_roles r ON r.id=u.role "
         "LEFT JOIN club_staff_sessions s ON s.user_id=u.id LEFT JOIN alumni a ON a.user_id=u.id "
         "WHERE "
-        + ("u.id=%s" if id is not None else "lower(u.email)=%s")
-        + " LIMIT 2"
-        + (" FOR UPDATE OF u" if lock else "")
     )
+    query += "u.id=%s" if id is not None else "lower(u.email)=%s"
+    query += " LIMIT 2"
+    if lock:
+        query += " FOR UPDATE OF u"
     cursor = await connection.execute(query, (id if id is not None else email.lower().strip(),))
     rows = await cursor.fetchall()
     return rows[0] if len(rows) == 1 else None
@@ -114,7 +115,7 @@ class AuthService:
 
     @staticmethod
     def bearer(request):
-        match = re.fullmatch(r"Bearer\s+(.+)", request.headers.get("authorization", ""), re.I)
+        match = re.fullmatch("Bearer\\s+(.+)", request.headers.get("authorization", ""), re.I)
         return match[1] if match else None
 
     def service_token(self, request):
@@ -123,7 +124,7 @@ class AuthService:
     async def user(self, *, id=None, email=None, alumni=False, active=False, staff=False):
         async with self.database.connection() as connection:
             user = await find_user(connection, id=id, email=email)
-        if not user or (alumni and not recoverable_alumni(user)):
+        if not user or (alumni and (not recoverable_alumni(user))):
             return None
         if staff and (not local_account(user) or user["role_name"] not in STAFF_ROLES):
             return None
@@ -137,15 +138,15 @@ class AuthService:
         if (
             not local_account(user)
             or user["status"] not in ("active", "unverified")
-            or not await verify_password(user["password"], password)
+            or (not await verify_password(user["password"], password))
         ):
-            return "invalid", None
+            return ("invalid", None)
         allowed = user["role_name"] == "alumni" if scope == "alumni" else user["role_name"] in STAFF_ROLES
         if not allowed:
-            return "forbidden", None
+            return ("forbidden", None)
         if user["status"] == "unverified":
-            return "unverified" if scope == "alumni" else "invalid", None
-        return "ok", public_user(user)
+            return ("unverified" if scope == "alumni" else "invalid", None)
+        return ("ok", public_user(user))
 
     async def profile(self, user_id):
         rows = await self.store.read("alumni", filters={"user_id": {"_eq": user_id}}, fields=ALUMNI_FIELDS, limit=1)
@@ -203,8 +204,7 @@ class AuthService:
 
     async def revoke_admin(self, jti):
         await self.database.execute(
-            "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + interval '12 hours') "
-            "ON CONFLICT(token_key) DO UPDATE SET expires_at=EXCLUDED.expires_at",
+            "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + interval '12 hours') ON CONFLICT(token_key) DO UPDATE SET expires_at=EXCLUDED.expires_at",
             ("admin:" + jti,),
         )
 
@@ -218,15 +218,13 @@ class AuthService:
             roles = await cursor.fetchall()
             if len(roles) != 1:
                 raise RuntimeError("Роль выпускника не настроена")
-            user_id, profile_id = str(uuid4()), str(uuid4())
+            user_id, profile_id = (str(uuid4()), str(uuid4()))
             await connection.execute(
                 "INSERT INTO directus_users(id,email,password,role,status,provider,first_name,last_name) VALUES(%s,%s,%s,%s,%s,'default',%s,%s)",
                 (user_id, email, hashed, roles[0]["id"], status, first_name, last_name),
             )
             await connection.execute(
-                "INSERT INTO alumni(id,user_id,fio,cohort,edu_level,edu_program,interests_json,referral_code,referred_by,"
-                "consent_at,consent_version,status,verification_status,points_cached,level_cached,personal_discount,token_version) "
-                "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active','pending',0,'graduate',0,0)",
+                "INSERT INTO alumni(id,user_id,fio,cohort,edu_level,edu_program,interests_json,referral_code,referred_by,consent_at,consent_version,status,verification_status,points_cached,level_cached,personal_discount,token_version) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active','pending',0,'graduate',0,0)",
                 (
                     profile_id,
                     user_id,
@@ -283,25 +281,25 @@ class AuthService:
             return "reset"
 
 
-def auth_service(request: Request) -> AuthService:
-    return request.app.state.auth
+def auth_service(request: HttpRequest) -> AuthService:
+    return request.services.auth
 
 
-async def require_admin(request: Request):
+async def require_admin(request: HttpRequest):
     admin = await auth_service(request).resolve_admin(request)
     if not admin:
         raise ApiError(401, "Требуется вход администратора")
     return admin
 
 
-async def require_full_admin(request: Request):
+async def require_full_admin(request: HttpRequest):
     admin = await require_admin(request)
     if admin["role"] not in FULL_ROLES:
         raise ApiError(403, "Операция доступна только администратору клуба")
     return admin
 
 
-async def require_alumni(request: Request):
+async def require_alumni(request: HttpRequest):
     alumni = await auth_service(request).resolve_alumni(request)
     if not alumni:
         raise ApiError(401, "Требуется вход выпускника")

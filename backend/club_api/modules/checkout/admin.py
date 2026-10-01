@@ -1,18 +1,17 @@
 import csv
 import io
 from datetime import UTC, datetime
-from typing import Annotated, Literal
+from typing import Literal
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
-from fastapi.responses import Response
+from django.http import HttpRequest, HttpResponse
 
 from club_api.core.models import count, guid, parse_date, query_choice, query_page, query_search
+from club_api.core.views import api_view, defer, parse_body
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin, require_full_admin
 from club_api.observability.audit import audit
 
-router = APIRouter()
 STATUS_LABELS = {
     "new": "Новая",
     "in_progress": "В работе",
@@ -68,20 +67,21 @@ def csv_text(rows):
 
 
 def csv_response(rows, name):
-    return Response(
+    return HttpResponse(
         csv_text(rows),
-        media_type="text/csv",
+        content_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{name}-{datetime.now(UTC):%Y-%m-%d}.csv"'},
     )
 
 
-@router.get("/admin/orders")
-async def orders(request: Request, _admin: Annotated[dict, Depends(require_admin)]):
-    store = request.app.state.store
+@api_view
+async def orders(request: HttpRequest):
+    await require_admin(request)
+    store = request.services.store
     page, limit = query_page(request)
     status = query_choice(request, "status", STATUS_LABELS)
     payment = query_choice(request, "payment", ("succeeded", "pending", "canceled", "none"))
-    search, filters = query_search(request), []
+    search, filters = (query_search(request), [])
     if status:
         filters.append({"status": {"_eq": status}})
     if payment:
@@ -123,11 +123,11 @@ async def notify_status(state, id, status):
         )
 
 
-@router.patch("/admin/orders/{id}")
-async def patch_order(
-    request: Request, id: str, body: StatusBody, tasks: BackgroundTasks, admin: Annotated[dict, Depends(require_admin)]
-):
-    changed = await request.app.state.checkout.change_status(guid(id), body.status)
+@api_view
+async def patch_order(request: HttpRequest, id: str):
+    admin = await require_admin(request)
+    body = parse_body(request, StatusBody)
+    changed = await request.services.checkout.change_status(guid(id), body.status)
     if changed:
         await audit(
             request,
@@ -136,13 +136,14 @@ async def patch_order(
             subject="order:" + id,
             detail={"status": body.status},
         )
-        tasks.add_task(notify_status, request.app.state, id, body.status)
+        defer(request, notify_status, request.services, id, body.status)
     return {"ok": True, "status": body.status}
 
 
-@router.get("/admin/orders/export.csv")
-async def export_orders(request: Request, admin: Annotated[dict, Depends(require_full_admin)]):
-    orders = await request.app.state.store.read("orders", sort=("-created_at",), limit=-1)
+@api_view
+async def export_orders(request: HttpRequest):
+    admin = await require_full_admin(request)
+    orders = await request.services.store.read("orders", sort=("-created_at",), limit=-1)
     types = {"dpo": "ДПО", "merch": "Мерч", "mixed": "Смешанная", "podcast": "Подписка на подкасты"}
     rows = [
         [
@@ -165,7 +166,7 @@ async def export_orders(request: Request, admin: Annotated[dict, Depends(require
     ]
     for order in orders:
         items = "; ".join(
-            f"{item['title']}{' (' + item['variant_sku'] + ')' if item.get('variant_sku') else ''} ×{item['qty']}"
+            f"{item['title']}{(' (' + item['variant_sku'] + ')' if item.get('variant_sku') else '')} ×{item['qty']}"
             for item in order["items_json"] or []
         )
         payment = {"succeeded": "Оплачено", "canceled": "Отменена", "review": "ТРЕБУЕТ ПРОВЕРКИ: сумма не совпала"}.get(

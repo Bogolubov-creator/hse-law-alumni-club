@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -25,8 +26,14 @@ from club_api.observability.errors import scrub_event
 
 
 def test_all_legacy_routes_are_present():
-    app = create_app(Settings(AUTH_SECRET="synthetic-session-secret-for-tests-only"))
-    actual = {(method.upper(), path) for path, methods in app.openapi()["paths"].items() for method in methods}
+    create_app(Settings(AUTH_SECRET="synthetic-session-secret-for-tests-only"))
+    from club_api.urls import urlpatterns
+
+    actual = {
+        (method, "/" + re.sub(r"<str:(\w+)>", r"{\1}", str(route.pattern)))
+        for route in urlpatterns
+        for method in route.callback.methods
+    }
     old = json.loads(Path(__file__).with_name("legacy-routes.json").read_text())
     expected = {(row["method"], row["path"]) for row in old}
     assert actual == expected | {("GET", "/auth/admin-session"), ("POST", "/support/ask")} and len(actual) == 119

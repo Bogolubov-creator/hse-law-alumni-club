@@ -1,21 +1,20 @@
 import time
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Literal
+from typing import Literal
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
-from fastapi.responses import Response
+from django.http import HttpRequest, HttpResponse
 from pydantic import Field, field_validator
 
 from club_api.core.errors import ApiError
 from club_api.core.models import count, group_count, guid, parse_date, partial, query_page
+from club_api.core.views import api_view, defer, parse_body
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
 from club_api.modules.events.notifications import announce
 from club_api.modules.gamification.routes import verified_alumni
 from club_api.observability.audit import audit
 
-router = APIRouter()
 ROUTE_LIMITS = {("POST", "/events/{id}/rsvp"): 20}
 EVENT_FIELDS = ("id", "title", "description", "starts_at", "location", "cover", "reg_url", "format", "points", "status")
 
@@ -74,9 +73,9 @@ async def roster(store, event_id=None):
     return [{**row, "fio": names.get(row["alumni_id"], "–")} for row in rows]
 
 
-@router.get("/stats")
-async def stats(request: Request):
-    state = request.app.state
+@api_view
+async def stats(request: HttpRequest):
+    state = request.services
     cached = getattr(state, "public_stats", None)
     if cached and time.monotonic() - cached[0] < 300:
         return cached[1]
@@ -89,9 +88,9 @@ async def stats(request: Request):
     return data
 
 
-@router.get("/events")
-async def events(request: Request):
-    state = request.app.state
+@api_view
+async def events(request: HttpRequest):
+    state = request.services
     alumni = await state.auth.resolve_alumni(request)
     rows = await state.store.read(
         "events", filters={"status": {"_in": ["published", "done"]}}, sort=("starts_at",), fields=EVENT_FIELDS, limit=50
@@ -132,9 +131,9 @@ def ics_escape(value):
     )
 
 
-@router.get("/events/{id}.ics")
-async def calendar(request: Request, id: str):
-    rows = await request.app.state.store.read(
+@api_view
+async def calendar(request: HttpRequest, id: str):
+    rows = await request.services.store.read(
         "events",
         filters={"id": {"_eq": guid(id)}, "status": {"_in": ["published", "done"]}},
         fields=EVENT_FIELDS,
@@ -168,7 +167,7 @@ async def calendar(request: Request, id: str):
         lines.append("LOCATION:" + ics_escape(event["location"]))
     lines.extend(
         [
-            "URL:" + request.app.state.settings.PUBLIC_URL + "/events",
+            "URL:" + request.services.settings.PUBLIC_URL + "/events",
             "BEGIN:VALARM",
             "TRIGGER:-PT2H",
             "ACTION:DISPLAY",
@@ -178,16 +177,17 @@ async def calendar(request: Request, id: str):
             "END:VCALENDAR",
         ]
     )
-    return Response(
+    return HttpResponse(
         "\r\n".join(lines),
-        media_type="text/calendar",
+        content_type="text/calendar",
         headers={"Content-Disposition": 'attachment; filename="club-event.ics"'},
     )
 
 
-@router.post("/events/{id}/rsvp")
-async def rsvp(request: Request, id: str, alumni: Annotated[dict, Depends(verified_alumni)]):
-    state, id = request.app.state, guid(id)
+@api_view
+async def rsvp(request: HttpRequest, id: str):
+    alumni = await verified_alumni(request)
+    state, id = (request.services, guid(id))
     async with state.database.transaction() as connection:
         await connection.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("rsvp:" + id + ":" + alumni["id"],)
@@ -220,10 +220,11 @@ async def rsvp(request: Request, id: str, alumni: Annotated[dict, Depends(verifi
     return {"going": True}
 
 
-@router.get("/admin/events")
-async def admin_events(request: Request, _admin: Annotated[dict, Depends(require_admin)]):
-    store = request.app.state.store
-    if "page" in request.query_params or "limit" in request.query_params:
+@api_view
+async def admin_events(request: HttpRequest):
+    await require_admin(request)
+    store = request.services.store
+    if "page" in request.GET or "limit" in request.GET:
         page, limit = query_page(request, default_limit=20)
         rows = await store.read(
             "events", sort=("-starts_at", "id"), fields=EVENT_FIELDS, limit=limit, offset=(page - 1) * limit
@@ -259,20 +260,21 @@ async def admin_events(request: Request, _admin: Annotated[dict, Depends(require
     ]
 
 
-@router.get("/admin/events/{id}/rsvps")
-async def admin_roster(request: Request, id: str, _admin: Annotated[dict, Depends(require_admin)]):
-    await request.app.state.store.one("events", guid(id), fields=("id",))
+@api_view
+async def admin_roster(request: HttpRequest, id: str):
+    await require_admin(request)
+    await request.services.store.one("events", guid(id), fields=("id",))
     return [
         {key: value for key, value in row.items() if key != "event_id"}
-        for row in await roster(request.app.state.store, id)
+        for row in await roster(request.services.store, id)
     ]
 
 
-@router.post("/admin/events")
-async def create_event(
-    request: Request, body: EventBody, tasks: BackgroundTasks, admin: Annotated[dict, Depends(require_admin)]
-):
-    row = await request.app.state.store.create("events", body.model_dump())
+@api_view
+async def create_event(request: HttpRequest):
+    admin = await require_admin(request)
+    body = parse_body(request, EventBody)
+    row = await request.services.store.create("events", body.model_dump())
     await audit(
         request,
         "event.create",
@@ -281,28 +283,32 @@ async def create_event(
         detail={"title": body.title},
     )
     if body.status == "published":
-        tasks.add_task(announce, request.app.state, row)
+        defer(request, announce, request.services, row)
     return {"ok": True, "id": row["id"]}
 
 
-@router.patch("/admin/events/{id}")
-async def patch_event(request: Request, id: str, body: EventPatch, admin: Annotated[dict, Depends(require_admin)]):
+@api_view
+async def patch_event(request: HttpRequest, id: str):
+    admin = await require_admin(request)
+    body = parse_body(request, EventPatch)
     data = body.model_dump(exclude_unset=True)
-    await request.app.state.store.update("events", data, id=guid(id))
+    await request.services.store.update("events", data, id=guid(id))
     await audit(request, "event.patch", actor="admin:" + admin["userId"], subject="event:" + id, detail=data)
     return {"ok": True}
 
 
-@router.delete("/admin/events/{id}")
-async def delete_event(request: Request, id: str, admin: Annotated[dict, Depends(require_admin)]):
-    await request.app.state.store.delete("events", id=guid(id))
+@api_view
+async def delete_event(request: HttpRequest, id: str):
+    admin = await require_admin(request)
+    await request.services.store.delete("events", id=guid(id))
     await audit(request, "event.delete", actor="admin:" + admin["userId"], subject="event:" + id)
     return {"ok": True}
 
 
-@router.post("/admin/events/rsvp/{rsvpId}/attend")
-async def attend(request: Request, rsvpId: str, admin: Annotated[dict, Depends(require_admin)]):
-    state = request.app.state
+@api_view
+async def attend(request: HttpRequest, rsvpId: str):
+    admin = await require_admin(request)
+    state = request.services
     row = await state.store.one("event_rsvps", guid(rsvpId))
     if not row:
         raise ApiError(404, "RSVP не найден")

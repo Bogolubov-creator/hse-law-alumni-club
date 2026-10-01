@@ -37,7 +37,7 @@ def forwarded_headers(request):
     allowed = ("authorization", "x-cart-session", "x-support-key")
     headers = {key: request.headers[key] for key in allowed if request.headers.get(key)}
     try:
-        peer = ipaddress.ip_address(request.client.host.removeprefix("::ffff:"))
+        peer = ipaddress.ip_address(request.META.get("REMOTE_ADDR", "").removeprefix("::ffff:"))
         candidate = request.headers.get("x-forwarded-for", "").split(",")[-1].strip()
         if peer.version == 4 and any(peer in network for network in PROXY_NETWORKS) and candidate:
             peer = ipaddress.ip_address(candidate)

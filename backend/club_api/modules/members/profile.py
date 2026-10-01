@@ -2,10 +2,11 @@ import asyncio
 from datetime import UTC, datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Request, Response
+from django.http import HttpRequest, JsonResponse
 from pydantic import Field, field_validator
 
 from club_api.core.errors import ApiError
+from club_api.core.views import api_view, parse_body
 from club_api.domain import MAX_INTERESTS, achievement_progress, level_info
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_alumni
@@ -16,7 +17,6 @@ from club_api.modules.members.service import anonymize
 from club_api.modules.telegram.links import make_link
 from club_api.observability.audit import audit
 
-router = APIRouter()
 ROUTE_LIMITS = {"/me/tg-link": 10, "/me/profile": 20, "/me/export": 5, "/me/delete": 3}
 MONTHS = ("янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек")
 
@@ -51,9 +51,10 @@ class DeleteBody(Body):
     confirm: Literal["УДАЛИТЬ"]
 
 
-@router.get("/me/tg-link")
-async def telegram_link(request: Request, alumni: Annotated[dict, Depends(verified_alumni)]):
-    state = request.app.state
+@api_view
+async def telegram_link(request: HttpRequest):
+    alumni = await verified_alumni(request)
+    state = request.services
     if not state.settings.secret("TELEGRAM_BOT_TOKEN"):
         raise ApiError(503, "Telegram пока не подключён")
     code = await make_link(state.database, alumni["id"])
@@ -63,9 +64,10 @@ async def telegram_link(request: Request, alumni: Annotated[dict, Depends(verifi
     }
 
 
-@router.get("/me")
-async def me(request: Request, alumni: Annotated[dict, Depends(require_alumni)]):
-    state = request.app.state
+@api_view
+async def me(request: HttpRequest):
+    alumni = await require_alumni(request)
+    state = request.services
     ledger, referred = await asyncio.gather(
         state.store.read(
             "points_ledger",
@@ -105,8 +107,10 @@ async def me(request: Request, alumni: Annotated[dict, Depends(require_alumni)])
     return result
 
 
-@router.patch("/me/profile")
-async def profile(request: Request, body: ProfileBody, alumni: Annotated[dict, Depends(verified_alumni)]):
+@api_view
+async def profile(request: HttpRequest):
+    alumni = await verified_alumni(request)
+    body = parse_body(request, ProfileBody)
     data = body.model_dump(exclude_unset=True)
     patch = {}
     if "fio" in data:
@@ -115,16 +119,18 @@ async def profile(request: Request, body: ProfileBody, alumni: Annotated[dict, D
         patch["contacts_json"] = data["contacts"]
     if "interests" in data:
         patch["interests_json"] = list(
-            dict.fromkeys(value for value in data["interests"] if value in request.app.state.domain["legal_interests"])
+            dict.fromkeys(value for value in data["interests"] if value in request.services.domain["legal_interests"])
         )[:MAX_INTERESTS]
     if patch:
-        await request.app.state.store.update("alumni", patch, id=alumni["id"])
+        await request.services.store.update("alumni", patch, id=alumni["id"])
     return {"ok": True}
 
 
-@router.get("/me/export")
-async def export(request: Request, response: Response, alumni: Annotated[dict, Depends(require_alumni)]):
-    store, id = request.app.state.store, alumni["id"]
+@api_view
+async def export(request: HttpRequest):
+    response = JsonResponse({}, safe=False)
+    alumni = await require_alumni(request)
+    store, id = (request.services.store, alumni["id"])
     profile, orders, ledger, friends, subscriptions = await asyncio.gather(
         store.read(
             "alumni",
@@ -184,18 +190,24 @@ async def export(request: Request, response: Response, alumni: Annotated[dict, D
     )
     await audit(request, "alumni.self_export", actor="alumni:" + id, subject="alumni:" + id)
     response.headers["content-disposition"] = 'attachment; filename="moi-dannye-kluba.json"'
-    return {
-        "exported_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-        "profile": profile[0] if profile else None,
-        "orders": orders,
-        "points_ledger": ledger,
-        "friends": friends,
-        "push_subscriptions": subscriptions,
-    }
+    response.content = JsonResponse(
+        {
+            "exported_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "profile": profile[0] if profile else None,
+            "orders": orders,
+            "points_ledger": ledger,
+            "friends": friends,
+            "push_subscriptions": subscriptions,
+        },
+        safe=False,
+    ).content
+    return response
 
 
-@router.post("/me/delete")
-async def delete_me(request: Request, body: DeleteBody, alumni: Annotated[dict, Depends(require_alumni)]):
-    await anonymize(request.app.state, alumni["id"])
+@api_view
+async def delete_me(request: HttpRequest):
+    parse_body(request, DeleteBody)
+    alumni = await require_alumni(request)
+    await anonymize(request.services, alumni["id"])
     await audit(request, "alumni.self_delete", actor="alumni:" + alumni["id"], subject="alumni:" + alumni["id"])
     return {"ok": True}

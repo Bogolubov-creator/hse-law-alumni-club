@@ -255,7 +255,7 @@ def test_provider_https_redirect_is_preserved():
     ],
 )
 def test_web_forwards_ip_only_from_trusted_proxy(peer, supplied, expected):
-    from starlette.requests import Request
+    from request_helpers import request_from_scope as Request
 
     from club_web.client import forwarded_headers
 

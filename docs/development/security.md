@@ -240,7 +240,7 @@ uv lock --directory scripts --upgrade
 ```
 
 После обновления перечитайте diff и выполните проверки зависимостей из
-[AGENTS.md](../../AGENTS.md). Версии FastAPI в API и web обновляются вместе.
+[AGENTS.md](../../AGENTS.md). Версии Django в API и web обновляются вместе.
 Порядок обновления Caddy описан в
 [решении о сборке](../decisions/caddy-dependencies.md).
 
