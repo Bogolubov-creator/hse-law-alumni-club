@@ -588,7 +588,6 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/me/classmates") return jsonResponse(CLASSMATES);
   if (clean === "/me/events") return jsonResponse(LK_EVENTS);
   if (clean === "/me/level") return jsonResponse(DEMO_LEVEL);
-  // Демо-профили используют инициалы вместо отсутствующего фото.
 
   if (clean === "/admin/system-health") return jsonResponse({
     checked_at: new Date().toISOString(), uptime_seconds: null, status: "partial",
@@ -720,7 +719,6 @@ export function seedMirrorSession(): void {
     if (!localStorage.getItem("club_token")) localStorage.setItem("club_token", MIRROR_ALUMNI_TOKEN);
     if (!localStorage.getItem("club_admin_token")) localStorage.setItem("club_admin_token", MIRROR_ADMIN_TOKEN);
   } catch {
-    // Хранилище может быть запрещено настройками браузера.
   }
 }
 
@@ -745,7 +743,7 @@ export function installMirrorFetch(): void {
         if (res) return method === "HEAD" ? new Response(null, { status: res.status, headers: res.headers }) : res;
       } else {
         let body: unknown = null;
-        try { body = init?.body ? JSON.parse(String(init.body)) : input instanceof Request ? await input.clone().json() : null; } catch { /* Не-JSON формы не сохраняются на зеркале. */ }
+        try { body = init?.body ? JSON.parse(String(init.body)) : input instanceof Request ? await input.clone().json() : null; } catch {}
         return mirrorMutation(apiPath, method, body);
       }
     }
@@ -762,7 +760,6 @@ export function installMirrorFetch(): void {
         }
       }
     } catch {
-      // При отказе разбора запрос передаётся обычному fetch.
     }
 
     return realFetch(input, init);

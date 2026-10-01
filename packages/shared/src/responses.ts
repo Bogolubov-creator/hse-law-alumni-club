@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Zod-схемы ответов API – единый источник типов фронта (z.infer) + рантайм-валидация.
 
 export const newsItemSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(),
@@ -9,27 +8,25 @@ export const newsItemSchema = z.object({
 });
 export const newsListSchema = z.array(newsItemSchema);
 
-// «История» на главной (редактируется в админ-панели)
 export const timelineItemSchema = z.object({
   id: z.string(), year: z.string(), title: z.string(),
   text: z.string().nullable(), metric: z.string().nullable(), sort: z.number().nullable().optional(),
 });
 export const timelineSchema = z.array(timelineItemSchema);
 
-// Подкасты клуба: audio_url отдаётся только активным подписчикам
-export const PODCAST_SUB_PRICE_KOP = 499_900; // 4 999 ₽ / год
+export const PODCAST_SUB_PRICE_KOP = 499_900;
 export const podcastItemSchema = z.object({
   id: z.string(), title: z.string(), description: z.string().nullable(),
   cover: z.string().nullable(), duration: z.string().nullable(),
-  is_free: z.boolean().optional(), // пробный выпуск – слушается без подписки
-  audio_url: z.string().nullable().optional(), // подписанная ссылка; null без доступа
-  video_url: z.string().nullable().optional(), // ссылка RuTube; null без доступа
+  is_free: z.boolean().optional(),
+  audio_url: z.string().nullable().optional(),
+  video_url: z.string().nullable().optional(),
 });
 export const podcastsResSchema = z.object({
   items: z.array(podcastItemSchema),
   subscribed: z.boolean(),
   sub_until: z.string().nullable(),
-  price: z.number(), // копейки, в год
+  price: z.number(),
 });
 
 export const heroBlockSchema = z.object({
@@ -46,14 +43,12 @@ export const pageHomeSchema = z.object({
 
 export const programSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(), direction: z.string(), format: z.string(), duration: z.string(), price: z.number(),
-  enrollment: z.enum(["actual", "nonactual"]).nullable().optional(), // актуальный набор / набор закрыт
-  // Есть source_url → программа ВШЭ: запись и оплата на маркетплейсе hse.ru.
-  // Нет → собственная программа клуба: заявка и оплата через сайт.
+  enrollment: z.enum(["actual", "nonactual"]).nullable().optional(),
   source_url: z.string().nullable().optional(),
   dates: z.object({ start: z.string().optional() }).nullable().optional(),
   document: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-  cover: z.string().nullable().optional(), // путь/URL обложки программы
+  cover: z.string().nullable().optional(),
 });
 export const programsSchema = z.array(programSchema);
 export const programModuleSchema = z.object({ title: z.string(), hours: z.number().optional(), points: z.array(z.string()).optional() });
@@ -80,7 +75,7 @@ export const productVariantSchema = z.object({ sku: z.string(), size: z.string()
 export const productSchema = z.object({
   id: z.string(), slug: z.string(), title: z.string(), category: z.string(), price: z.number(),
   variants_json: z.array(productVariantSchema).nullable(), stock: z.number(), description: z.string().nullable().optional(),
-  images: z.array(z.string()).nullable().optional(), // пути/URL фото товара
+  images: z.array(z.string()).nullable().optional(),
 });
 export const productsSchema = z.array(productSchema);
 
@@ -104,12 +99,11 @@ export const alumniBriefSchema = z.object({
   fio: z.string().nullable(), cohort: z.string().nullable(), verification_status: z.string(),
   contacts: z.record(z.string(), z.string()).optional(), edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
   interests: z.array(z.string()).optional(),
-  avatar: z.string().nullable().optional(), // uuid файла → /api/avatars/{id}
-  referral_code: z.string().nullable().optional(), // код для «пригласи однокурсника»
+  avatar: z.string().nullable().optional(),
+  referral_code: z.string().nullable().optional(),
   referrals_verified: z.number().optional(),
   referrals_pending: z.number().optional(),
 });
-// Однокурсник в «Сообществе» ЛК (тот же выпуск или та же ОП).
 export const classmateSchema = z.object({
   id: z.string(), fio: z.string().nullable(), cohort: z.string().nullable(),
   edu_program: z.string().nullable().optional(), edu_level: z.string().nullable().optional(),
@@ -120,7 +114,6 @@ export const classmateSchema = z.object({
 });
 export const classmatesSchema = z.array(classmateSchema);
 
-// «События» вверху ЛК: заявки в друзья, статусы заказов, подписка.
 export const lkEventSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("friend_request"), from_id: z.string(), from_fio: z.string().nullable(), created_at: z.string().nullable() }),
   z.object({ kind: z.literal("friend_accepted"), by_fio: z.string().nullable(), created_at: z.string().nullable() }),
@@ -137,7 +130,7 @@ export const loginResponseSchema = z.object({ token: z.string(), alumni: alumniB
 export const orderResultSchema = z.object({
   number: z.string(), status: z.string(), member_discount: z.number(), subtotal: z.number(), total_estimate: z.number(),
   notified: z.object({ channel: z.string(), ok: z.boolean(), blocked: z.boolean().optional() }),
-  payment_url: z.string().optional(), // ссылка на оплату ЮKassa (если оплата подключена)
+  payment_url: z.string().optional(),
 });
 export const myOrderSchema = z.object({
   items_json: z.array(cartLineSchema.extend({ type: z.enum(["dpo", "merch", "podcast"]) })).nullish(),
@@ -151,7 +144,6 @@ export const ledgerEntrySchema = z.object({
 });
 export const ledgerListSchema = z.array(ledgerEntrySchema);
 
-// Инференс типов из схем – единый источник для фронта.
 export type NewsItem = z.infer<typeof newsItemSchema>;
 export type TimelineItem = z.infer<typeof timelineItemSchema>;
 export type PodcastItem = z.infer<typeof podcastItemSchema>;

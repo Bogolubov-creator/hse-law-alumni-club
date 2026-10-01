@@ -3,7 +3,6 @@
   --p-ohra: #ec5a13;
   --p-blue: #11296b;
 
-  /* Для текста используется глубокая охра с контрастом AA. */
   --p-ohra-deep: #c24009;
   --p-karmin: #b5331b;
   --p-blue-bright: #2e6fae;
@@ -12,7 +11,6 @@
   --p-brass-deep: #856419;
   --p-brass-light: #e3c272;
   --p-green: #1f8a5b;
-  /* Текстовые цвета статусов отличаются от заливок для сохранения контраста AA. */
   --p-green-deep: #0f6b43;
   --p-green-light: #4fc98f;
   --p-karmin-light: #ff8a70;
@@ -28,7 +26,6 @@
   --p-paper: #ffffff;
   --p-paper-2: #f3f5f7;
   --p-line: #e5e7eb;
-  /* Граница управления требует контраста 3:1; разделитель такого требования не имеет. */
   --p-line-control: #7c828c;
 
   --c-surface-warm: color-mix(in srgb, var(--p-ohra) 14%, var(--c-bg));
@@ -51,7 +48,6 @@
   --c-status: var(--p-brass);
   --c-ok: var(--p-green);
   --c-danger: var(--p-karmin);
-  /* Текстовые и заливочные цвета статусов не взаимозаменяемы. */
   --c-ok-text: var(--p-green-deep);
   --c-danger-text: var(--p-karmin);
   --c-status-text: var(--p-brass-deep);
@@ -59,7 +55,6 @@
   --c-line-control: var(--p-line-control);
   --c-line-strong: rgb(20 24 31 / 0.14);
 
-  /* Тёмный текст сохраняет контраст на акцентной кнопке. */
   --c-on-accent: var(--p-ink);
 
   --f-display: "HSE Slab", Georgia, serif;
@@ -147,7 +142,6 @@
   letter-spacing: var(--tr-data);
 }
 
-/* Порядок слоёв: оболочка < панели < согласие < меню < модалка < уведомления. */
 :root { --layer-modal: 500; --layer-toast: 600; }
 
 :root { --page-gutter: 28px; }

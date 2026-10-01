@@ -26,7 +26,6 @@ const values = {
   E2E_LIVE_AUTHORIZED: 'club-ci-live', E2E_BASE_URL: 'http://127.0.0.1:8180',
   E2E_MAIL_URL: 'http://127.0.0.1:8182', E2E_STATE_DIR: resolve(stateDirectory),
 };
-// Файл создаётся один раз: существующая конфигурация никогда не перезаписывается.
 writeFileSync(destination, Object.entries(values).map(([key, value]) => `${key}=${value}\n`).join(''), { mode: 0o600, flag: 'wx' });
 if (process.env.GITHUB_ACTIONS === 'true') {
   for (const [key, value] of Object.entries(values)) {

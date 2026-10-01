@@ -8,7 +8,7 @@ describe("computeOrderTotals (копейки)", () => {
     expect(r.total).toBe(5640000);
   });
   it("скидка с округлением (ДПО)", () => {
-    expect(computeOrderTotals([{ type: "dpo", price: 999, qty: 1 }], 5).total).toBe(949); // 999 - round(49.95)=50
+    expect(computeOrderTotals([{ type: "dpo", price: 999, qty: 1 }], 5).total).toBe(949);
     expect(computeOrderTotals([{ type: "dpo", price: 10000, qty: 1 }], 10).total).toBe(9000);
   });
   it("скидка не действует на мерч", () => {
@@ -19,13 +19,13 @@ describe("computeOrderTotals (копейки)", () => {
   it("смешанная заявка: скидка только с ДПО-части", () => {
     const r = computeOrderTotals([{ type: "dpo", price: 10000, qty: 1 }, { type: "merch", price: 5000, qty: 1 }], 10);
     expect(r.subtotal).toBe(15000);
-    expect(r.discountAmount).toBe(1000); // 10% только с 10000
+    expect(r.discountAmount).toBe(1000);
     expect(r.total).toBe(14000);
   });
   it("discount=0 → total==subtotal; total не отрицателен; пустой список → 0", () => {
     expect(computeOrderTotals([{ type: "dpo", price: 5000, qty: 1 }], 0).total).toBe(5000);
     expect(computeOrderTotals([], 20)).toEqual({ subtotal: 0, discount: 20, discountAmount: 0, total: 0 });
-    expect(computeOrderTotals([{ type: "dpo", price: 100, qty: 1 }], 200).total).toBe(0); // clamp 100%
+    expect(computeOrderTotals([{ type: "dpo", price: 100, qty: 1 }], 200).total).toBe(0);
   });
 });
 
@@ -34,7 +34,7 @@ describe("effectiveDiscount (только верифицированным)", ()
     expect(effectiveDiscount(false, 1000, 10)).toBe(0);
   });
   it("верифицированный → членская скидка (cap 25)", () => {
-    expect(effectiveDiscount(true, 1000, 10)).toBe(25); // 20 + 10 → cap 25
+    expect(effectiveDiscount(true, 1000, 10)).toBe(25);
     expect(effectiveDiscount(true, 0, 0)).toBe(5);
   });
 });

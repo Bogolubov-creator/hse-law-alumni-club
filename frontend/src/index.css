@@ -22,7 +22,6 @@
   --radius-soft: 12px;
 }
 
-/* Сохраняет оформление форм после сброса Tailwind 4. */
 @layer base {
   *, ::before, ::after, ::backdrop, ::file-selector-button {
     border-color: #e5e7eb;
@@ -89,7 +88,6 @@ html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
 body { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea { touch-action: manipulation; }
 @media (max-width: 768px) {
-  /* Минимум 16px исключает увеличение страницы при фокусе в iOS. */
   input, select, textarea { font-size: 16px !important; }
   .vcard { transition: none; }
 }
@@ -184,19 +182,16 @@ html.vis .vis-btn {
 }
 html.vis .vis-btn.vis-active { background: var(--vis-fg) !important; color: var(--vis-bg) !important; }
 html.vis header, html.vis .vis-bar { background: var(--vis-bg) !important; border-bottom: 2px solid var(--vis-fg) !important; }
-/* Шапка прокручивается, чтобы не перекрывать липкую панель доступности. */
 html.vis header { position: static !important; }
 .vis-bar { position: sticky; top: 0; z-index: 9999; font-size: 16px; }
 html.vis img, html.vis video { filter: grayscale(1); }
 html.vis-noimg img, html.vis-noimg video, html.vis-noimg [style*="url("] { display: none !important; }
-/* Контур фокуса использует контрастный цвет текущей схемы. */
 html.vis :focus-visible,
 html.vis .foc:focus-visible {
   outline: 3px solid var(--vis-fg) !important;
   outline-offset: 3px !important;
 }
 
-/* Диалоги и навигация исключены из сброса фона, чтобы текст не накладывался на страницу. */
 html.vis [role="dialog"] {
   background: var(--vis-bg) !important;
   border: 2px solid var(--vis-fg) !important;
@@ -248,7 +243,6 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
   .adm-member > :nth-child(2) { order: 2; }
 }
 
-/* Высота фиксированных вкладок учитывается подвалом, кабинетом и cookie-баннером. */
 .club-cookie-banner {
   max-height: calc(100dvh - var(--tabs-h, 0px) - env(safe-area-inset-top, 0px) - 32px);
   overflow-y: auto;
@@ -307,7 +301,6 @@ html.vis-spacing *:not(svg) { letter-spacing: 0.1em !important; word-spacing: 0.
   border-radius: var(--r-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  /* Переход цвета при смене темы временно снижает контраст текста. */
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .club-cookie-banner__btn--primary {

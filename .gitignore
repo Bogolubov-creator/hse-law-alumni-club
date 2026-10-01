@@ -10,7 +10,6 @@ dist/
 frontend/dist/
 caddy_data/
 caddy_config/
-# Локальные экспортные файлы и кэши дизайн-инструментов.
 design-export/
 .superdesign/
 .impeccable/
@@ -20,13 +19,11 @@ design-export/
 backups/
 test-results/
 playwright-report/
-# Локальные отчёты/компы дизайна – не в релизный артефакт без явного запроса
 docs/report-assets/
 docs/Отчёт по дизайну*
 
 .tmp
 
-# Локальные кэши проверок
 **/__pycache__/
 **/.venv/
 **/.pytest_cache/

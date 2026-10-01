@@ -1,7 +1,6 @@
 import { seedClientStorage } from "./harness.js";
 import { test, expect, type Page } from "@playwright/test";
 
-// POST заявки подменяется; SW отключён для перехвата запросов в WebKit.
 
 async function stubSw(page: Page) {
   await page.addInitScript(() => {
@@ -16,8 +15,6 @@ async function addProgram(page: Page): Promise<string> {
     .first();
   await expect(row).toBeVisible();
   const title = (await row.locator("h2").innerText()).trim();
-  // Ждём ответ API, а не счётчик в шапке: на телефоне шапка сворачивается
-  // в бургер и ссылки «Корзина» в DOM просто нет.
   await Promise.all([
     page.waitForResponse((r) => r.url().includes("/api/cart") && r.request().method() !== "GET" && r.ok()),
     row.getByRole("button", { name: "В корзину" }).click(),
@@ -48,7 +45,6 @@ test.describe("Корзина", () => {
     await expect(page.getByText(title, { exact: true })).toBeVisible();
     await expect(page.getByText("1 место")).toBeVisible();
 
-    // Итог совпадает с подытогом: гостю скидка выпускника не положена
     const sub = await page.getByText("подытог").locator("xpath=following-sibling::*[1]").innerText();
     const total = await page.getByText("итого (справочно)").locator("xpath=following-sibling::*[1]").innerText();
     expect(total).toBe(sub);
@@ -58,7 +54,6 @@ test.describe("Корзина", () => {
   test("выбор получения не показывается, когда доставлять нечего", async ({ page }) => {
     await addProgram(page);
     await page.goto("/cart");
-    // В корзине одни программы – самовывоз/доставка и адрес только сбивали бы с толку
     await expect(page.getByRole("button", { name: "самовывоз" })).toHaveCount(0);
     await expect(page.getByText("адрес доставки")).toHaveCount(0);
   });
@@ -104,7 +99,7 @@ test.describe("Корзина", () => {
     expect(body.contact_fio).toBe("Орлова Мария Петровна");
     expect(body.contact_email).toBe("orlova@example.com");
     expect(body.consent_pdn).toBe(true);
-    expect(body.website).toBe(""); // honeypot остаётся пустым у живого человека
+    expect(body.website).toBe("");
     expect(body.fulfillment).toBe("pickup");
   });
 

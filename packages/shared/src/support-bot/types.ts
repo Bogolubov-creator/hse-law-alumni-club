@@ -3,10 +3,10 @@ export type BotProgram = {
   title: string;
   url: string;
   sphere: string;
-  type: string; // ПК | ПП | ""
+  type: string;
   format: "online" | "offline" | "mixed" | "hybrid" | string;
   formatLabel?: string;
-  price: number | null; // рубли
+  price: number | null;
   duration: string | null;
   start: string | null;
   startIso?: string | null;

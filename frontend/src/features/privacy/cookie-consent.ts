@@ -9,7 +9,6 @@ export function readCookieConsent(): CookieConsent | null {
     if (v === "1" || v === "all") return "all";
     if (v === "essential" || v === "0") return "essential";
   } catch {
-    // Хранилище может быть запрещено настройками браузера.
   }
   return null;
 }

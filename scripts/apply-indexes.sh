@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Совместимая команда ручного применения схемы через общий migrate-сервис.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 ops_init

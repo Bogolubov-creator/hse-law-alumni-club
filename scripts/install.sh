@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Первый запуск и повторение после сбоя используют проверенный deploy.
 set -euo pipefail
 if [[ "${1:-}" = --help ]]; then
   echo 'Ubuntu 24.04: sudo ./scripts/install.sh [--local] [--config-dir /etc/club]'

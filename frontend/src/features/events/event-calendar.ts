@@ -13,7 +13,6 @@ export function eventCalendar(event: ClubEvent, url: string, now = new Date()): 
     ...(event.location && event.format !== "online" ? [`LOCATION:${escape(event.location)}`] : []),
     `URL:${url.replace(/[\r\n]/g, "")}`, "END:VEVENT", "END:VCALENDAR",
   ];
-  // RFC 5545: строка не длиннее 75 октетов; не разрываем UTF-8 символы.
   return lines.map(line => {
     let result = "", bytes = 0;
     for (const character of line) {

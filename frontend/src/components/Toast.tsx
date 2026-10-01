@@ -8,11 +8,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<{ msg: string; kind: "ok" | "err" } | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const show = useCallback<Show>((msg, kind = "ok") => {
-    window.clearTimeout(timer.current); // таймер прежнего тоста не гасит новый
+    window.clearTimeout(timer.current);
     setToast({ msg, kind });
     timer.current = window.setTimeout(() => setToast(null), 2600);
   }, []);
-  // Постоянная live-region озвучивает и первое уведомление.
   return (
     <ToastCtx.Provider value={show}>
       {children}

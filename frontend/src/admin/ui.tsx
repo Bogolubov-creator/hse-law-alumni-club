@@ -1,7 +1,6 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 
-// Определения общие с витринами и кабинетом – в styles/primitives.ts.
 import { mono, label } from "../styles/primitives.js";
 export { mono, disp, label, action, actionGhost } from "../styles/primitives.js";
 export { fieldCompact as field } from "../styles/primitives.js";

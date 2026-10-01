@@ -18,7 +18,6 @@ const ME = {
     referrals_verified: 3,
     referrals_pending: 1,
   },
-  // level – строка по схеме (levelInfoSchema), не номер уровня
   level: { points: 480, level: "2", level_title: "Активный выпускник", discount: 10, next_level: "Амбассадор", to_next: 220 },
   achievements: [
     { key: "first_order", title: "Первая заявка", description: "Оформлена первая заявка", earned: true, current: 1, target: 1, icon: "📄", kind: "count", star: false },
@@ -43,11 +42,9 @@ const EVENTS = [
   { kind: "order_status", number: "ORD-000418", status: "confirmed", paid: true, created_at: "2026-07-29T09:00:00.000Z" },
 ];
 
-// SW отключён, чтобы WebKit передавал запросы в page.route().
 async function stubSession(page: Page) {
   await seedClientStorage(page);
   await page.addInitScript(() => {
-    // Полная навигация после выхода не должна заново создавать тестовую сессию.
     if (!sessionStorage.getItem("e2e-session-seeded")) {
       localStorage.setItem("club_token", "e2e-stub-token");
       sessionStorage.setItem("e2e-session-seeded", "1");
@@ -75,7 +72,6 @@ test.describe("Кабинет", () => {
     await page.goto("/lk");
     await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Войти в кабинет" })).toBeVisible();
-    // Ни одного раздела кабинета быть не должно
     await expect(page.getByRole("heading", { name: "Мои заявки" })).toHaveCount(0);
   });
 
@@ -87,7 +83,6 @@ test.describe("Кабинет", () => {
     const mobileIdentity = page.locator(".club-identity-mobile");
     if (await mobileIdentity.isVisible()) await mobileIdentity.locator("summary").click();
     const identity = page.locator(".club-identity-desktop, .club-identity-mobile").filter({ visible: true });
-    // Удостоверение: имя, подпись бланка и данные уровня
     await expect(identity.getByText("Кондратьев Сергей Андреевич", { exact: true })).toBeVisible();
     await expect(identity.getByText("выпуск 2019 · Публичное право")).toBeVisible();
     await expect(identity.getByText("Активный выпускник")).toBeVisible();
@@ -95,13 +90,10 @@ test.describe("Кабинет", () => {
     await expect(identity.getByText("10%", { exact: true })).toBeVisible();
     await expect(identity.getByText("SK-2019-4471")).toBeVisible();
 
-    // Обзор: одно явное следующее действие (star-достижение)
     await expect(page.locator(".cabinet-next-action")).toContainText("Следующее достижение: Пятеро однокурсников");
     await expect(page.locator(".cabinet-next-action").getByRole("link", { name: /К прогрессу/ })).toBeVisible();
 
-    // Подробности обзора открываются по запросу пользователя.
     await page.locator("summary").filter({ hasText: /^Уведомления и заявки$/ }).click();
-    // Заявки: номер и посчитанная сумма
     await expect(page.getByRole("heading", { name: "Мои заявки" })).toBeVisible();
     await expect(page.getByText("ORD-000418", { exact: true })).toBeVisible();
     await expect(page.locator("summary").filter({ hasText: "ORD-000418" })).toContainText("Подтверждена");
@@ -116,14 +108,12 @@ test.describe("Кабинет", () => {
     await page.getByRole("button", { name: "Все", exact: true }).click();
 
     await page.getByRole("button", { name: "Достижения", exact: true }).click();
-    // Достижения: полученное и заметное «следующее»
     await expect(page.getByRole("heading", { name: "Первая заявка", exact: true })).toBeVisible();
     await expect(page.locator("main").getByRole("status").filter({ hasText: "Следующее:" })).toContainText("Следующее:");
     await expect(page.locator("main").getByRole("status").filter({ hasText: "Следующее:" })).toContainText("Пятеро однокурсников");
     await expect(page.locator(".club-award.is-next")).toContainText("следующее · 2 / 5");
 
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();
-    // Однокурсники, поиск и входящие заявки в одном разделе
     await expect(page.getByLabel("поиск")).toBeVisible();
     await expect(page.getByText("Орлова Мария Петровна")).toBeVisible();
     await expect(page.getByRole("button", { name: "в друзьях – Орлова Мария Петровна" })).toBeDisabled();
@@ -139,7 +129,6 @@ test.describe("Кабинет", () => {
     await page.getByRole("button", { name: "Обзор", exact: true }).click();
     await page.locator("summary").filter({ hasText: /^Уведомления и заявки$/ }).click();
     await expect(page.getByText("Заявка ORD-000418 подтверждена · оплата прошла", { exact: false })).toBeVisible();
-    // Входящие в друзья больше не дублируются в ленте обзора
     await expect(page.getByText("хочет добавить вас в друзья")).toHaveCount(0);
   });
 
@@ -157,7 +146,6 @@ test.describe("Кабинет", () => {
     await expect(page.getByRole("link", { name: "Программы ДПО →", exact: true })).toHaveAttribute("href", "/dpo");
     await page.getByRole("button", { name: "Сообщество", exact: true }).click();
     await expect(page.getByText(/в клубе пока никого нет/)).toBeVisible();
-    // Пустые разделы скрыты.
     await expect(page.getByRole("heading", { name: "Достижения" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Уведомления" })).toHaveCount(0);
   });
@@ -191,7 +179,6 @@ test.describe("Кабинет", () => {
   });
 });
 
-// Обзор остаётся компактным, полная история доступна отдельным переходом.
 for (const width of [320, 390, 700]) {
   test(`шапка кабинета на ${width}px сохраняет профиль и выход в пределах экрана`, async ({ page }) => {
     await mockCabinet(page);

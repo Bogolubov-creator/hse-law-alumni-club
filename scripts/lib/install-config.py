@@ -1,4 +1,3 @@
-"""Настройка новой установки; секреты не передаются через argv и не печатаются."""
 import argparse
 import getpass
 import json
@@ -98,7 +97,6 @@ def mode(value):
 
 
 def dotenv(values):
-    # Compose интерполирует $, включая пароли SMTP. $$ сохраняет буквальный знак.
     def quoted(value):
         return '"' + value.replace('\\', '\\\\').replace('"', '\\"').replace('$', '$$') + '"'
     return ''.join(key + '=' + quoted(value) + '\n' for key, value in values.items())
@@ -171,13 +169,11 @@ def install(directory, local):
         values = configuration(local)
     subprocess.run(['bash', str(REPO / 'scripts/setup-ubuntu.sh')], check=True)
     if not previous.exists():
-        # Проверяем старые тома до записи новых ключей и до любых миграций.
         fresh_project('club-local' if local else 'club-pravo-hse')
         directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         write_new(directory / 'runtime.env', dotenv(values))
         write_new(directory / 'operations.env', dotenv(operations(directory, local)))
         write_new(directory / 'initial-admin.txt', 'Email: ' + values['ADMIN_EMAIL'] + '\nPassword: ' + values['ADMIN_PASSWORD'] + '\n')
-        # Маркер пишется последним: неполная подготовка не считается готовой конфигурацией.
         metadata = {'version': 1, 'mode': 'local' if local else 'public'}
         write_new(previous, json.dumps(metadata) + '\n')
     environment = {'PATH': os.environ['PATH'], **operations(directory, local)}
@@ -203,7 +199,6 @@ def main():
     try:
         install(args.config_dir, args.local)
     except (ValueError, OSError, EOFError, KeyboardInterrupt, subprocess.CalledProcessError) as error:
-        # Не печатаем ответы оператора, env или stdout внешних команд при отказе.
         message = str(error) if isinstance(error, ValueError) else 'Установка прервана; проверьте предыдущий этап и повторите команду'
         print(message, file=sys.stderr)
         return 1

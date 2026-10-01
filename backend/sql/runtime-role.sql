@@ -4,7 +4,6 @@ SELECT format('CREATE ROLE %I LOGIN', :'runtime_user') WHERE NOT EXISTS (SELECT 
 SELECT format('ALTER ROLE %I PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION', :'runtime_user', :'runtime_password') \gexec
 SELECT format('GRANT CONNECT ON DATABASE %I TO %I', current_database(), :'runtime_user') \gexec
 SELECT format('GRANT USAGE ON SCHEMA public TO %I', :'runtime_user') \gexec
--- Прочие metadata CMS и архив её настроек API не получает.
 SELECT format('REVOKE ALL ON TABLE directus_users,directus_roles,directus_files,club_settings FROM %I', :'runtime_user') \gexec
 SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO %I', tablename, :'runtime_user')
   FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE 'directus_%' AND tablename NOT IN ('club_bootstrap_state','club_settings') \gexec

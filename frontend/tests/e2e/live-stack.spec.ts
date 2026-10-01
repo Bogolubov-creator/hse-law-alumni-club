@@ -12,7 +12,6 @@ const value = (name: string) => {
 const auth = (token: string) => ({ authorization: `Bearer ${token}` });
 
 async function json<T = Record<string, unknown>>(response: APIResponse): Promise<T> {
-  // Не печатаем тела ответов: среди них есть одноразовые ссылки и сессии.
   expect(response.ok(), `${new URL(response.url()).pathname}: ${response.status()}`).toBe(true);
   return response.json();
 }
@@ -164,7 +163,6 @@ test('настоящий стек: пользователь, офис и сох�
   await json(await request.post(`/api/admin/members/${member!.id}/podcast-sub`, { headers: adminHeaders, data: {} }));
   expect((await json<{ subscribed: boolean }>(await request.get('/api/podcasts', { headers: auth(previousToken) }))).subscribed).toBe(true);
 
-  // Учётную запись редактора заранее создала команда оператора.
   const editor = await json<{ token: string }>(await request.post('/api/auth/admin-login', { data: { email: value('TEST_EDITOR_EMAIL'), password: value('TEST_EDITOR_PASSWORD') } }));
   expect((await request.get('/api/admin/programs', { headers: auth(editor.token) })).status()).toBe(200);
   expect((await request.patch(`/api/admin/members/${member!.id}`, { headers: auth(editor.token), data: { verification_status: 'rejected' } })).status()).toBe(403);

@@ -1,4 +1,3 @@
-# Алгоритм поиска: SergeyBuzanov/dpo-pravo-hse, js/bot-match.js и js/bot-reply.js.
 import html
 import math
 import re

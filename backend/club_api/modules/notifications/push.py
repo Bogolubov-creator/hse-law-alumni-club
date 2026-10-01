@@ -40,7 +40,7 @@ class PushSession:
     def __init__(self, session):
         self.session = session
 
-    async def post(self, endpoint, *, timeout, **params):  # noqa: ASYNC109 – контракт pywebpush.
+    async def post(self, endpoint, *, timeout, **params):  # noqa: ASYNC109
         EndpointBody.endpoint_valid(endpoint)
         return await self.session.post(
             endpoint, timeout=aiohttp.ClientTimeout(total=timeout), allow_redirects=False, **params

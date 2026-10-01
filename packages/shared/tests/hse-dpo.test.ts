@@ -12,7 +12,6 @@ import {
 } from "../src/hse-dpo";
 import { slugifyRu, normalizeTitle } from "../src/slug";
 
-// Фикстура – фрагмент реальной вёрстки листинга hse.ru (dpob-card), 2 карточки.
 const FIXTURE = `
 <div class="dpob-cards__list">
 <div class="dpob-card dpob-cards__item"><div class="dpob-card__heading"><div>

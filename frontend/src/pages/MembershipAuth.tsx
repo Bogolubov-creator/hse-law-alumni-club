@@ -142,7 +142,6 @@ export function Join() {
   const [authed, setAuthed] = useState(() => !!localStorage.getItem(TOKEN_KEY));
   const [params] = useSearchParams();
   const ref = params.get("ref") ?? "";
-  // Deep-link после заявки (например из корзины: ?next=/cart).
   const nextRaw = params.get("next");
   const next =
     nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : null;
@@ -151,8 +150,6 @@ export function Join() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  // При настроенном SMTP аккаунт неактивен до перехода по ссылке из письма –
-  // экран «готово» должен вести в почту, а не в кабинет.
   const [needConfirm, setNeedConfirm] = useState(false);
   const [confirmationQueued, setConfirmationQueued] = useState(true);
   const set = (k: string, v: string | boolean) => setF((s) => ({ ...s, [k]: v }));
@@ -172,7 +169,7 @@ export function Join() {
         edu_level: f.edu_level, edu_program: f.edu_program, interests,
         ref: ref || undefined,
         consent_pdn: f.consent,
-        website: f.website, // honeypot
+        website: f.website,
       });
       setNeedConfirm(!!res?.confirm_required);
       setConfirmationQueued(res?.confirmation_queued !== false);
@@ -326,7 +323,6 @@ export function ForgotPassword() {
     setBusy(true);
     setErr(null);
     try {
-      // Сервер одинаково отвечает для существующих и неизвестных адресов.
       await apiPost("/auth/forgot", { email, ...(returnTo !== "/lk" ? { next: "/podcasts#podcast-subscription" } : {}) });
       setSent(true);
     } catch {

@@ -21,7 +21,6 @@ export function PageViewBeacon() {
           return;
         }
       } catch {
-        // При отказе sendBeacon используется fetch ниже.
       }
       void fetch("/api/analytics/pageview", {
         method: "POST",

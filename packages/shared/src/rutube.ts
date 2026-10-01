@@ -1,10 +1,8 @@
-// DOM/Node-типы отсутствуют; домен ограничен целиком, чтобы исключить rutube.ru.evil.com.
 const LINK_RE = /^https:\/\/(?:[a-z0-9-]+\.)*rutube\.ru\/(video\/private|video|play\/embed)\/([0-9a-f]{32})\/?(?:\?([^#]*))?(?:#.*)?$/i;
 const TOKEN_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
 export interface RutubeEmbed {
   src: string;
-  // Ссылка приватного видео содержит токен доступа.
   private: boolean;
 }
 
@@ -16,8 +14,6 @@ export function rutubeEmbed(raw: string | null | undefined): RutubeEmbed | null 
   const kind = m[1]!.toLowerCase();
   const id = m[2]!.toLowerCase();
 
-  // Токен подставляется в адрес, поэтому проверяется отдельно: иначе через `p`
-  // можно было бы дописать в src что угодно.
   let token: string | null = null;
   for (const pair of (m[3] ?? "").split("&")) {
     const eq = pair.indexOf("=");

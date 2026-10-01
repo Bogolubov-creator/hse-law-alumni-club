@@ -10,7 +10,7 @@ export function mediaUrl(src: string): string {
     const path = new URL(src, "http://media.local").pathname;
     const legacy = /^\/(?:assets|api\/media)\/([0-9a-f-]{36})(?:\/[^/]*)?\/?$/i.exec(path);
     if (legacy && uuid.test(legacy[1]!)) return `/api/media/${legacy[1]}`;
-  } catch { /* Обычный локальный путь обработает publicUrl. */ }
+  } catch {}
   if (src.startsWith("/api/")) return src;
   if (/^(https?:|data:|blob:)/i.test(src)) return src;
   return publicUrl(src);

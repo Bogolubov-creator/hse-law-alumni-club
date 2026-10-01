@@ -1,7 +1,5 @@
 BEGIN;
--- Срок резерва мерча: статус expired + outbox писем офису (повтор без очереди брокера).
 
--- События FAQ-gap без текста вопроса (только kind/gap_id/channel).
 CREATE TABLE IF NOT EXISTS club_faq_events (
   id bigserial PRIMARY KEY,
   kind text NOT NULL CHECK (kind IN ('gap', 'none')),
@@ -12,7 +10,6 @@ CREATE TABLE IF NOT EXISTS club_faq_events (
 CREATE INDEX IF NOT EXISTS club_faq_events_created_idx ON club_faq_events (created_at DESC);
 CREATE INDEX IF NOT EXISTS club_faq_events_gap_idx ON club_faq_events (kind, gap_id);
 
--- Очередь писем офису / системных: повтор при сбое SMTP.
 CREATE TABLE IF NOT EXISTS club_mail_outbox (
   id bigserial PRIMARY KEY,
   kind text NOT NULL DEFAULT 'office',

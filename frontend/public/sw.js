@@ -23,7 +23,7 @@ self.addEventListener("install", (e) => {
   e.waitUntil(
     caches.open(CACHE).then((c) =>
       Promise.all(
-        PRECACHE.map((u) => c.add(u).catch(() => { /* optional asset */ })),
+        PRECACHE.map((u) => c.add(u).catch(() => {})),
       ),
     ),
   );
@@ -54,7 +54,6 @@ self.addEventListener("fetch", (e) => {
   const path = pathInScope(url.pathname);
   if (path === null || path.startsWith("/api")) return;
 
-  // Хешированные ассеты Vite и шрифты/иконки – cache-first
   if (
     path.startsWith("/assets/")
     || path.startsWith("/fonts/")
@@ -76,15 +75,12 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Автономный документ не зависит от ранее загруженных React-чанков.
   if (e.request.mode === "navigate") {
     e.respondWith(
       fetch(e.request).catch(async () => {
         const cache = await caches.open(CACHE);
         const offline = await cache.match(scoped("./offline.html"));
         if (!offline) return Response.error();
-        // Адрес остаётся исходным: «Обновить» вернёт на него после восстановления сети.
-        // base сохраняет пути иконки на вложенных маршрутах и при Vite base.
         const html = (await offline.text()).replace("<head>", `<head><base href="${SCOPE}">`);
         return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       }),

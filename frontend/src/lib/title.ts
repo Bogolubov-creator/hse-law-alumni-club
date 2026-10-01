@@ -35,7 +35,6 @@ export function useHead(o: HeadOptions): void {
   useEffect(() => {
     document.title = title ? `${title} – ${BASE}` : BASE;
     upsertMeta("property", "og:title", title ?? BASE);
-    // Описание задаётся на каждом маршруте, чтобы SPA не сохраняла описание предыдущего.
     const desc = description || BASE_DESC;
     upsertMeta("name", "description", desc);
     upsertMeta("property", "og:description", desc);

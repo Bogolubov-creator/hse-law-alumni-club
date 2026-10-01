@@ -3,13 +3,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// Статические og/JSON-LD требуют абсолютного VITE_SITE_URL для превью без JS.
 const SITE_URL = (process.env.VITE_SITE_URL || "http://localhost").replace(/\/$/, "");
-// GitHub Pages project site: VITE_BASE=/club-pravo-hse-mirror/
 const BASE = process.env.VITE_BASE || "/";
 const IS_MIRROR = process.env.VITE_MIRROR === "true";
 
-// В dev /api проксируется на локальный backend; в проде этим занимается Caddy.
 export default defineConfig({
   base: BASE,
   test: {
@@ -21,8 +18,6 @@ export default defineConfig({
     tailwindcss(),
     {
       name: "html-site-url",
-      // order:'pre' – заменяем плейсхолдеры ДО того, как Vite парсит URL-атрибуты
-      // (иначе decodeURI спотыкается о «%SITE_URL%»).
       transformIndexHtml: {
         order: "pre",
         handler: (html: string) => {

@@ -4,7 +4,6 @@ packages:
 injectWorkspacePackages: true
 syncInjectedDepsAfterScripts:
   - build
-# Точные версии из проверенного lockfile; общий срок выдержки новых выпусков сохранён.
 minimumReleaseAgeExclude:
   - "@types/ws@8.18.2"
   - "electron-to-chromium@1.5.440"

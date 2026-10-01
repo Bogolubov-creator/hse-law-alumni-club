@@ -1,4 +1,3 @@
-// Маскот из design_handoff_crow_mascot; слои из ворона_шерлок_новые_ботинки.pdf.
 'use strict';
 
 const TAU = Math.PI * 2;
@@ -163,7 +162,6 @@ A.askQ = { dur: 4.6, loop: 0, bubble: [0.45, 3.9], text: 'Есть вопрос�
   p.cy += -3 * u;
   p.ey += -3 * u;
 } };
-// Долгая нецикличная поза удерживает приглашение до выхода слота из кадра.
 A.invite = { dur: 999, loop: 0, bubble: [0.15, 998], text: 'Подсказать?', fn: A.idle.fn };
 
 var LAYERS = ['torso','neck','head','eyeL','eyeR','arm','legR','legL','body','mouth','beak'];
@@ -181,10 +179,9 @@ function askQAlreadyShown() {
   }
 }
 function markAskQShown() {
-  try { localStorage.setItem(ASKQ_KEY, String(Date.now())); } catch (e) { /* приватный режим */ }
+  try { localStorage.setItem(ASKQ_KEY, String(Date.now())); } catch (e) {}
 }
 
-// Новый одиночный маскот скрывает прежние и восстанавливает их при уничтожении.
 var LIVE = [];
 function suppressExisting(newcomer) {
   var hidden = [];
@@ -216,26 +213,18 @@ function CrowMascot(opts) {
     idleAnim: opts.idleAnim || 'askQ',
     onClick: opts.onClick || null,
     zIndex: opts.zIndex || 40,
-    // solo по умолчанию true: маскот, смонтированный без оговорки, прячет
-    // уже стоящих (историческое правило «маскот на экране один»).
     solo: opts.solo !== false
   };
   this.mouse = null;
   this.reducedMotion = REDUCED_MOTION;
-  // prefers-reduced-motion: без раннего забега слева ('runIn' – само по себе
-  // движение), сразу поза покоя.
   this.anim = this.reducedMotion ? 'idle' : 'runIn';
   this.t0 = null;
   this.queue = ['idle'];
   this.build();
   this.bind();
-  // Маскот на экране – один: новый инстанс сразу же прячет тех, что уже
-  // смонтированы (см. suppressExisting выше), и вернёт их сам при destroy().
   LIVE.push(this);
-  // solo:false оставляет ранее смонтированных маскотов видимыми.
   this.suppressedByMe = this.opt.solo === false ? [] : suppressExisting(this);
   if (this.reducedMotion) {
-    // reduced-motion отключает RAF, слежение за курсором и автоматические реплики.
     var restPose = rest();
     A.idle.fn(0, restPose);
     this.apply(restPose);
@@ -245,7 +234,6 @@ function CrowMascot(opts) {
   }
 }
 
-// Декоративные слои скрыты в режиме высокой контрастности.
 function ensureViModeStyle() {
   if (document.getElementById('crow-vi-mode-style')) return;
   var style = document.createElement('style');
@@ -270,13 +258,11 @@ CrowMascot.prototype.build = function () {
     host.style.cssText = 'position:fixed;' + side + ';bottom:0;width:' + w + 'px;height:' + h + 'px;cursor:pointer;z-index:' + o.zIndex + ';' + fade;
     document.body.appendChild(host);
   }
-  // Размер хвостика зависит от ширины маскота, чтобы он оставался у клюва.
   host.style.setProperty('--crow-k', (w / 200).toFixed(4));
 
   var stage = document.createElement('div');
   stage.setAttribute('data-rig', 'crow');
   stage.style.cssText = 'position:absolute;left:0;bottom:-4%;width:100%;aspect-ratio:1400/1465';
-  // Safari начинает загрузку src при разборе HTML, до присоединения к документу.
   stage.innerHTML = RIG_HTML.replace(/ src=/g, " data-src=");
   stage.querySelectorAll('img').forEach(function (im) {
     var s = im.getAttribute('data-src').replace(/^parts\//, '').split('?')[0];
@@ -317,7 +303,6 @@ CrowMascot.prototype.play = function (name) {
   this.anim = name; this.t0 = null; this.queue = ['idle'];
 };
 
-// Цикличный walkAcross не читает очередь; переход в invite выполняется таймером.
 CrowMascot.prototype.walkIn = function (skipWalk) {
   if (this.reducedMotion) {
     if (this.parts.bubbleText) this.parts.bubbleText.textContent = A.invite.text;
@@ -330,7 +315,6 @@ CrowMascot.prototype.walkIn = function (skipWalk) {
   clearTimeout(this.walkInTimer);
   this.walkInTimer = setTimeout(function () {
     if (self.anim !== 'walkAcross') return;
-    // Конечное смещение сохраняется: invite не задаёт rx и иначе вернул бы маскота к старту.
     self.holdRx = 300 - 900;
     self.play('invite');
   }, A.walkAcross.dur * 1000 / (this.opt.speed || 1));
@@ -360,11 +344,8 @@ CrowMascot.prototype.tick = function (now) {
     this.t0 = now - (t % def.dur) / speed; t = t % def.dur;
   }
   var p = rest();
-  // Смещение, на котором ворона остановилась после пробега (см. walkIn).
   var holdRx = this.holdRx || 0;
   def.fn(t, p);
-  // Пробег сам ведёт rx, остальным позам смещение добавляется здесь –
-  // иначе ворона после реплики вернулась бы к месту старта.
   if (holdRx && name !== 'walkAcross') p.rx += holdRx;
 
   if (this.opt.followCursor && def.track !== 0 && this.mouse) {
@@ -393,7 +374,6 @@ CrowMascot.prototype.tick = function (now) {
 
 CrowMascot.prototype.apply = function (p) {
   var q = this.parts, pc = function (v, d) { return (v / d * 100).toFixed(3); };
-  // Пузырь вынесен из отражаемого root; его смещение повторяет rx без зеркального текста.
   this.rxPx = p.rx / 1400 * this.opt.width;
   if (q.root) {
     q.root.style.transform = 'translate(' + pc(p.rx, 1400) + '%,' + pc(p.ry, 1465) + '%) scaleX(' + p.flip + ')';
@@ -430,14 +410,12 @@ CrowMascot.prototype.bubble = function (def, t) {
     ((1 - v) * 10).toFixed(2) + 'px) scale(' + (0.72 + 0.28 * v).toFixed(3) + ')';
 };
 
-// display:none останавливает кадры через IntersectionObserver.
 CrowMascot.prototype.hide = function () {
   if (this.hidden) return;
   this.hidden = true;
   clearTimeout(this.hideTimer);
   var host = this.host;
   if (this.reducedMotion) {
-    // Без перехода – тем же приёмом, что и статичная поза при монтировании.
     host.style.display = 'none';
     return;
   }
@@ -456,15 +434,12 @@ CrowMascot.prototype.show = function () {
   var host = this.host;
   host.style.display = '';
   if (this.reducedMotion) return;
-  // Перерасчёт стилей между снятием display:none и сменой opacity – иначе
-  // браузер схлопывает оба шага в один кадр, и переход не проигрывается.
   void host.offsetWidth;
   host.style.opacity = '1';
   host.style.transform = '';
 };
 
 CrowMascot.prototype.destroy = function () {
-  // reducedMotion: цикл кадров не запускался, this.raf не назначался.
   if (this.raf) cancelAnimationFrame(this.raf);
   window.removeEventListener('pointermove', this.onMove);
   window.removeEventListener('scroll', this.onAct);
@@ -481,7 +456,6 @@ CrowMascot.prototype.destroy = function () {
   }
 };
 
-// Инстанс уничтожается при выходе слота из кадра, чтобы не считать невидимые кадры.
 function ensureWalkStyle() {
   if (document.getElementById('crow-walk-style')) return;
   var style = document.createElement('style');
@@ -517,22 +491,18 @@ function mountWalkIn(slot, opts) {
       followCursor: false,
       idleSeconds: 0,
       solo: false,
-      onClick: function () {} // клики ловит .crow-walk-hit поверх, см. ниже
+      onClick: function () {}
     });
     var hit = document.createElement('button');
     hit.type = 'button';
     hit.className = 'crow-walk-hit';
     hit.setAttribute('data-bot-open', '');
     hit.setAttribute('aria-label', 'Открыть поддержку');
-    // Кнопка выше слоёв рисунка, чтобы они не перехватывали клик.
     hit.style.cssText = 'position:absolute;inset:0;background:transparent;border:0;padding:0;margin:0;cursor:pointer;z-index:41';
     hit.addEventListener('click', teardown);
     slot.appendChild(hit);
     current = { crow: crow, hit: hit };
-    // Угловой маскот не перехватывает клики, пока показан маскот в содержимом.
     document.documentElement.classList.add('crow-inline-live');
-    // Телефон: 390px мало для пробега на всю длину walkAcross – маскот
-    // появляется сразу в позе приглашения, без бега.
     var narrow = typeof matchMedia === 'function' && matchMedia('(max-width:600px)').matches;
     crow.walkIn(narrow);
   }

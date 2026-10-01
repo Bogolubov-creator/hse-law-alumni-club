@@ -1,4 +1,3 @@
--- Обращения отделены от публичных коллекций CMS. Ключ доступа хранится только как хеш.
 CREATE TABLE IF NOT EXISTS club_support_tickets (
  id uuid PRIMARY KEY,
  key_hash text NOT NULL,

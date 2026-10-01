@@ -47,19 +47,15 @@ test.describe("Программа", () => {
 
     await expect(page.getByText("3 раздела · 48 ак. ч.")).toBeVisible();
 
-    // Первый модуль открыт по умолчанию – содержание видно сразу
     await expect(page.getByText("Простая письменная форма")).toBeVisible();
 
-    // Второй раскрывается, первый закрывается: открыт всегда один
     await page.getByRole("button", { name: /Оспаривание и толкование/ }).click();
     await expect(page.getByText("Пороки воли")).toBeVisible();
     await expect(page.getByText("Простая письменная форма")).toHaveCount(0);
 
-    // Повторный клик закрывает
     await page.getByRole("button", { name: /Оспаривание и толкование/ }).click();
     await expect(page.getByText("Пороки воли")).toHaveCount(0);
 
-    // Модуль без пунктов не притворяется кликабельным
     await expect(page.getByRole("button", { name: /Без раскрытия/ })).toBeDisabled();
   });
 
@@ -90,8 +86,6 @@ test.describe("Программа", () => {
   });
 
   test("«оставить заявку» кладёт программу в корзину и ведёт к оформлению", async ({ page }) => {
-    // Здесь фикстура не годится: кнопка обращается к живой корзине, и подменённого
-    // слага на сервере нет. Берём настоящую программу каталога.
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });
     });
@@ -138,11 +132,9 @@ test.describe("Программа", () => {
   test("canonical ведёт на индексируемую страницу v1", async ({ page }) => {
     await mockProgram(page);
     await page.goto("/dpo/test-program");
-    // Превью не должно конкурировать в выдаче с настоящей карточкой
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/dpo\/test-program$/);
   });
 
-  // Адаптив Program (aside order:-1) – на 768..900; ниже – та же вёрстка в одну колонку.
   test("на планшете бланк с ценой уходит над описанием, прокрутки вбок нет", async ({ page }) => {
     await mockProgram(page);
     await page.setViewportSize({ width: 820, height: 900 });
@@ -170,7 +162,6 @@ test('сбой API программы отличим от 404 и повтор в
   await page.screenshot({path:test.info().outputPath('program-api-error.png'),fullPage:true});
   available=true;await page.getByRole('button',{name:'Повторить загрузку'}).click();
   await expect(page.getByRole('heading',{level:1,name:BASE.title})).toBeVisible();
-  // Планшетный брейкпоинт Program: заголовок выше бланка, бланк выше модулей.
   await page.setViewportSize({width:820,height:900});
   const heading=await page.locator('h1').boundingBox();const price=await page.locator('.v2-prog-aside').boundingBox();
   expect(heading!.y+heading!.height).toBeLessThanOrEqual(price!.y);

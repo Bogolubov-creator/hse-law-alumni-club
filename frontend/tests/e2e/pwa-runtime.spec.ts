@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import { readFile } from "node:fs/promises";
 
-// Настоящий SW, изолированный HTTP-сервер; без API и пользовательской базы.
 test.describe("PWA: автономный запуск и изоляция кэша", () => {
   test.use({ serviceWorkers: "allow" });
   test.describe.configure({ mode: "serial" });
@@ -80,8 +79,6 @@ test.describe("PWA: автономный запуск и изоляция кэш
       await navigator.serviceWorker.ready;
     });
     await page.reload();
-    // WebKit не поддерживает offline-навигацию через SW в Playwright.
-    // Для него рвём соединение на HTTP-сервере; Chromium отключаем полностью.
     if (browserName === "webkit") disconnected = true;
     else await context.setOffline(true);
     await page.goto(`${origin}/club/news/never-visited`);

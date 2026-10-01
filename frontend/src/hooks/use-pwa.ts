@@ -10,7 +10,6 @@ function rememberQaFlag(): void {
       sessionStorage.setItem(QA_KEY, "1");
     }
   } catch {
-    // Хранилище может быть запрещено настройками браузера.
   }
 }
 

@@ -16,7 +16,7 @@ import { Content } from "./ContentAdmin.js";
 import { type Section } from "./common.js";
 
 export default function AdminApp() {
-  useHead({ title: "Админ-панель", noindex: true }); // офисная зона – не индексируем
+  useHead({ title: "Админ-панель", noindex: true });
   const [token, setToken] = useState<string | null>(() => adminToken());
   if (!token) return <AdminGate onAuthed={(t) => { setAdminToken(t); setToken(t); }} />;
   return <AdminShell onLogout={() => { void adminLogout().finally(() => setToken(null)); }} />;
@@ -83,7 +83,6 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     support: "Поддержка",
   };
 
-  // Только 401 требует повторного входа; сетевые ошибки сохраняют сессию.
   if (ov.isError && (ov.error as { status?: number })?.status === 401)
     return <AdminGate onAuthed={(t) => { setAdminToken(t); location.reload(); }} />;
 

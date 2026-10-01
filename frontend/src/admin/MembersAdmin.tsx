@@ -15,7 +15,6 @@ export function Members() {
   const [page, setPage] = useState(1);
   const pendingCount = useOverview().data?.pending_verifications ?? 0;
 
-  // Серверный поиск с дебаунсом (не запрос на каждую клавишу).
   useEffect(() => {
     const t = setTimeout(() => { setQ(qInput.trim()); setPage(1); }, 300);
     return () => clearTimeout(t);
@@ -41,7 +40,6 @@ export function Members() {
           { key: "rejected", label: "отклонённые" },
         ].map((f) => {
           const on = vf === f.key;
-          // Очередь на верификацию помечена акцентом, только когда в ней кто-то есть
           const urgent = f.key === "pending" && pendingCount > 0 && !on;
           return (
             <button key={f.key} onClick={() => setFilter(f.key)} aria-pressed={on} className="foc"

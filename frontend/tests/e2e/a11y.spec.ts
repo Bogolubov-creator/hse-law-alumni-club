@@ -27,12 +27,10 @@ async function enableVision(page: Page) {
   await page.locator("#main").waitFor();
   const burger = page.getByLabel("Открыть меню");
   if (await burger.isVisible().catch(() => false)) await burger.click();
-  // На телефоне кнопка есть и в скрытой десктопной строке – берём видимую
   await page.getByLabel("Версия для слабовидящих").locator("visible=true").first().click();
 }
 
 test.describe("2.4.1 Пропуск блоков", () => {
-  // В мобильном WebKit клавиатурный Tab не моделируется; он проверяется desktop-проектом.
   test.skip(({ browserName }) => browserName === "webkit", "Tab в WebKit требует Full Keyboard Access");
 
   for (const path of V2_WITH_NAV) {
@@ -41,7 +39,6 @@ test.describe("2.4.1 Пропуск блоков", () => {
       await page.goto(path);
       await page.locator("#main").waitFor();
       await page.keyboard.press("Tab");
-      // Ссылка выезжает переходом 140ms – замер сразу поймал бы её на полпути
       await page.waitForTimeout(300);
       const active = await page.evaluate(() => {
         const a = document.activeElement as HTMLAnchorElement;
@@ -49,9 +46,7 @@ test.describe("2.4.1 Пропуск блоков", () => {
       });
       expect(active.tag).toBe("A");
       expect(active.href).toBe("#main");
-      // Появляется только при фокусе: мышью её быть не должно
       expect(active.top).toBeGreaterThan(0);
-      // Якорь существует, иначе ссылка ведёт в никуда
       expect(await page.locator("#main").count()).toBeGreaterThan(0);
     });
   }
@@ -102,7 +97,6 @@ test.describe("Версия для слабовидящих", () => {
       await page.goto("/dpo");
       await enableVision(page);
       await page.evaluate((k) => document.documentElement.setAttribute("data-vis-scheme", k), s.key);
-      // Программный focus() не включает :focus-visible; нужен ввод с клавиатуры.
       for (let i = 0; i < 12; i++) {
         await page.keyboard.press("Tab");
         if (await page.evaluate(() => document.activeElement?.classList.contains("vis-btn"))) break;
@@ -175,7 +169,6 @@ test.describe("1.3.1 Структура страницы", () => {
 
 test.describe("Доступ к версии для слабовидящих", () => {
   test("режим включается и с телефона, и с десктопа", async ({ page, isMobile }) => {
-    // На узком viewport /events остаётся SiteShell (не MobileApp takeover).
     const path = isMobile ? "/events" : "/dpo";
     await preparePage(page);
     await page.goto(path);

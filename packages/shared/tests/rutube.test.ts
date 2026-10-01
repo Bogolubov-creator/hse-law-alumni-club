@@ -21,7 +21,6 @@ describe("rutubeEmbed – ссылка из админки", () => {
   });
 
   it("лишние параметры адреса отбрасываются", () => {
-    // ?t=120 и utm-метки в src плеера не нужны и только мешают
     expect(rutubeEmbed(`https://rutube.ru/video/${ID}/?t=120&utm_source=tg`)?.src)
       .toBe(`https://rutube.ru/play/embed/${ID}`);
   });
@@ -57,7 +56,6 @@ describe("rutubeEmbed – чужие и опасные адреса не про�
   });
 
   it("мусор в токене доступа не попадает в адрес", () => {
-    // Иначе через `p` можно было бы дописать в src произвольную строку
     const r = rutubeEmbed(`https://rutube.ru/video/private/${ID}/?p="><script>`);
     expect(r?.src).toBe(`https://rutube.ru/play/embed/${ID}`);
     expect(r?.src).not.toContain("script");

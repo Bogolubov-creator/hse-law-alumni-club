@@ -12,7 +12,6 @@ export function TelegramShell() {
   const started = useRef(false);
   useEffect(() => {
     if (!active || started.current) return;
-    // Поздний SDK не должен увести пользователя с уже открытого им раздела.
     const browserPath = window.location.pathname.replace(/\/$/, "");
     const atEntry = [publicUrl(""), publicUrl("tg")].some(path => path.replace(/\/$/, "") === browserPath);
     if (!atEntry || (pathname !== "/" && pathname !== "/tg")) { started.current = true; return; }
@@ -25,7 +24,6 @@ export function TelegramShell() {
     const root = document.documentElement;
     root.classList.add("telegram-mini");
     const update = () => {
-      // Telegram отдаёт inset в CSS px; значения не включают друг друга.
       root.style.setProperty("--mini-top", `${Math.max(0, tg?.contentSafeAreaInset?.top ?? 0) + Math.max(0, tg?.safeAreaInset?.top ?? 0)}px`);
       root.style.setProperty("--mini-bottom", `${Math.max(0, tg?.contentSafeAreaInset?.bottom ?? 0) + Math.max(0, tg?.safeAreaInset?.bottom ?? 0)}px`);
       if (tg?.initData) {

@@ -3,8 +3,6 @@ SET LOCAL lock_timeout = '10s';
 LOCK TABLE public.alumni IN SHARE MODE;
 LOCK TABLE public.directus_files IN SHARE ROW EXCLUSIVE MODE;
 
--- Метка сохраняется после смены аватара и запрещает общую выдачу его оригинала.
--- Необъектные legacy metadata требуют отдельного решения, а не потери значения.
 DO $$
 BEGIN
   IF EXISTS (

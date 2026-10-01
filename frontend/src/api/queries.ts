@@ -34,7 +34,6 @@ export function useMe(token: string | null) {
   });
 }
 
-// «Сообщество»: однокурсники того же выпуска/ОП + заявка в друзья.
 export function useClassmates(token: string | null) {
   return useQuery({
     queryKey: ["classmates", token],
@@ -74,7 +73,6 @@ export function useRemoveFriend(token: string | null) {
   });
 }
 
-// «События» вверху ЛК (заявки в друзья, статусы заказов, подписка).
 export function useLkEvents(token: string | null) {
   return useQuery({
     queryKey: ["lk-events", token],
@@ -84,7 +82,6 @@ export function useLkEvents(token: string | null) {
   });
 }
 
-// Подкасты: audio_url приходит только активным подписчикам.
 export function usePodcasts(token: string | null) {
   const demo = useMirrorPodcastDemo();
   return useQuery({

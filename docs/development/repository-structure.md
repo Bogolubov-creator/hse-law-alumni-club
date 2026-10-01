@@ -107,3 +107,9 @@ checkout и прежний путь к файлу прав runtime при его
 [docs/README.md](../README.md) служит картой документов. Новая инструкция
 добавляется в соответствующий каталог и в эту карту. История изменений хранится
 в Git и PR; временные отчёты и снимки не добавляются к исходникам.
+
+## Источники
+
+- Поиск и ответы FAQ в `packages/shared/src/support-bot` и `backend/club_api/modules/telegram/faq.py` используют алгоритмы `js/bot-match.js` и `js/bot-reply.js` из [SergeyBuzanov/dpo-pravo-hse](https://github.com/SergeyBuzanov/dpo-pravo-hse).
+- Каталог ДПО импортируется из [itspecR/dpo-pravo-hse](https://github.com/itspecR/dpo-pravo-hse) и [каталога ВШЭ](https://www.hse.ru/edu/dpo/).
+- Реквизиты в `packages/shared/src/operator.ts` сверялись 10.09.2026 по [карточке организации](https://www.rusprofile.ru/id/1257700005551).

@@ -1,20 +1,19 @@
-// Источники каталога: hse.ru/edu/dpo, itspecR/dpo-pravo-hse.
 
 export const HSE_DPO_ORG_UNIT = "22753";
 export const HSE_DPO_ACTUAL_URL = `https://www.hse.ru/edu/dpo/?orgUnit=${HSE_DPO_ORG_UNIT}`;
 export const HSE_DPO_ALL_URL = `https://www.hse.ru/edu/dpo/?onlyActual=0&orgUnit=${HSE_DPO_ORG_UNIT}`;
 
 export interface HseDpoCard {
-  hseId: string; // числовой id программы на hse.ru
-  url: string; // страница программы
+  hseId: string;
+  url: string;
   title: string;
-  category: string; // «Право» и т. п.
-  type: "ПК" | "ПП"; // повышение квалификации / профпереподготовка
-  formatRaw: string; // как на сайте
+  category: string;
+  type: "ПК" | "ПП";
+  formatRaw: string;
   format: "online" | "offline" | "blended";
-  start: string | null; // человекочитаемо: «6 июля 2026»
-  duration: string | null; // «2 недели», «1,5 месяца» …
-  priceKop: number; // копейки; 0 – цена не указана
+  start: string | null;
+  duration: string | null;
+  priceKop: number;
 }
 
 export interface HseInitialStatePage {
@@ -37,7 +36,7 @@ export function mapHseFormat(raw: string): "online" | "offline" | "blended" {
   const s = raw.toLowerCase();
   if (s.startsWith("онлайн")) return "online";
   if (s.startsWith("очн")) return "offline";
-  return "blended"; // смешанный, гибридный
+  return "blended";
 }
 
 export function parseHsePrice(raw: string): number | null {
@@ -49,7 +48,6 @@ export function parseHsePrice(raw: string): number | null {
 const decode = (s: string) =>
   s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
 
-// Разбор без eval; источник алгоритма: itspecR/dpo-pravo-hse/lib/hse-catalog.js.
 function quoteKeysOutsideStrings(src: string): string {
   const parts: string[] = [];
   let inString = false;
@@ -140,7 +138,6 @@ export function parseHseInitialState(html: string): HseInitialStatePage {
 
 function safeHseUrl(raw: unknown): string | null {
   const s = String(raw ?? "").trim();
-  // Только https://*.hse.ru – без DOM URL (shared без lib DOM).
   if (!/^https:\/\/(?:[a-z0-9-]+\.)*hse\.ru(?:[/?#]|$)/i.test(s)) return null;
   return s;
 }
@@ -241,7 +238,6 @@ export async function collectHseDpoCards(
 }
 
 export function parseHseDpoCards(html: string): HseDpoCard[] {
-  // Карточка тянется от заголовка до следующего заголовка (или конца списка).
   const chunks = html.split(/(?=<div class="dpob-card dpob-cards__item")/).slice(1);
   const out: HseDpoCard[] = [];
   for (const c of chunks) {

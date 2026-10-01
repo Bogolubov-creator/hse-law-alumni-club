@@ -1,4 +1,3 @@
-"""Регрессии опасных вариантов restore; тесты не создают контейнеров и томов."""
 import copy
 import importlib.util
 import pathlib

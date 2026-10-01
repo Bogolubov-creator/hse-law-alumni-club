@@ -10,7 +10,7 @@ export function RouteScroll() {
     const previous = window.history.scrollRestoration;
     window.history.scrollRestoration = "manual";
     if (hash) {
-      try { document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView(); } catch { /* Некорректный якорь. */ }
+      try { document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView(); } catch {}
     } else {
       window.scrollTo({ top: navigation === "POP" ? positions.get(key) ?? 0 : 0, behavior: "instant" });
     }

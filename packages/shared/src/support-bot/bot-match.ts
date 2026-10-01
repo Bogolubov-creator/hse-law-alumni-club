@@ -1,4 +1,3 @@
-// Источник: SergeyBuzanov/dpo-pravo-hse, js/bot-match.js.
 import type { BotProgram, ParsedQuery, SearchResult } from "./types.js";
 
 const ENDINGS = [

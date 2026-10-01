@@ -1,4 +1,3 @@
-"""Проверка, что приложение использует БД и bootstrap своего Compose-проекта."""
 from urllib.parse import unquote, urlsplit
 
 

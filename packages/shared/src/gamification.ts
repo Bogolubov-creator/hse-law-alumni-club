@@ -35,10 +35,10 @@ export interface AchievementDef {
   title: string;
   description: string;
   icon: string;
-  kind: string; // подпись прогресса, напр. «мероприятия»
+  kind: string;
   rule_json: { type: string; gte: number };
   sort: number;
-  star?: boolean; // «следующее» достижение – оранжевая подсветка
+  star?: boolean;
 }
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = domain.achievements as readonly AchievementDef[];
@@ -82,7 +82,7 @@ export function computeMemberDiscount(points: number, personalDiscount = 0): num
 export const DECAY_RATE = domain.limits.decay_rate;
 
 export function decayDelta(points: number): number {
-  return -Math.round(Math.max(0, points) * DECAY_RATE) || 0; // || 0 убирает -0
+  return -Math.round(Math.max(0, points) * DECAY_RATE) || 0;
 }
 
 export interface AchievementStats {
@@ -92,10 +92,10 @@ export interface AchievementStats {
   events_attended?: number;
   mentorship_count?: number;
   referrals_count?: number;
-  orders_count?: number; // заказы мерча (ledger reason = order)
+  orders_count?: number;
   points?: number;
-  verified?: number; // 1 если верифицирован учебным офисом
-  status_level?: number; // порядковый номер уровня (1..4)
+  verified?: number;
+  status_level?: number;
 }
 
 export function evaluateAchievements(stats: AchievementStats): string[] {

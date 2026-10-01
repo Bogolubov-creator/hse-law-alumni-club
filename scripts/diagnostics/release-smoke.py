@@ -1,4 +1,3 @@
-"""Мутационные проверки только выделенного локального release-стенда, без внешних писем."""
 import base64, json, os, re, secrets, time, urllib.request, urllib.error, urllib.parse, uuid
 from pathlib import Path
 
@@ -87,7 +86,6 @@ assert all(c["status"] == "ok" for c in health["checks"] if c["id"] in ("api", "
 request("/auth/admin-logout", {}, admin)
 request("/admin/overview", token=admin, expected=401)
 check("analytics, dependency health and admin logout")
-# Только вне репозитория: для проверки после рестарта и браузерного входа.
 credentials = {"email": email, "password": new_password, "admin_token": admin, "reset_token": reset, "member_id": member["id"]}
 f = root / "smoke-session.json"; f.write_text(json.dumps(credentials)); f.chmod(0o600)
 (root / "smoke-result.json").write_text(json.dumps({"checks": report}, ensure_ascii=False, indent=2))

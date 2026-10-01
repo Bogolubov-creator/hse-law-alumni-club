@@ -179,7 +179,6 @@ function ContactsForm({ me, token, onSaved }: { me: Me; token: string; onSaved: 
   const [err, setErr] = useState<string | null>(null);
   const toast = useToast();
 
-  // Данные могут приехать позже формы (refetch после загрузки фото) – подхватываем.
   useEffect(() => {
     setFio(me.alumni.fio ?? "");
     setContacts(me.alumni.contacts ?? {});

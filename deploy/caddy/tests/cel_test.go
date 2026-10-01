@@ -20,7 +20,6 @@ type ClubProfile struct {
 	Secret string `json:"-"`
 }
 
-// Штатные matcher используют новую фабрику; этот модуль проверяет совместимость старой.
 type legacyPathMatcher struct{ path string }
 
 var legacyFactoryCalls int

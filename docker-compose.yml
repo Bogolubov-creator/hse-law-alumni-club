@@ -1,6 +1,5 @@
 name: club-pravo-hse
 
-# Единые лимиты логов: не дать json-file-логам забить диск на долгоживущем VPS.
 x-logging: &default-logging
   driver: json-file
   options:
@@ -9,9 +8,6 @@ x-logging: &default-logging
 
 services:
   postgres:
-    # Пин по digest (не только по тегу): major-тег молча тянет любой новый минор.
-    # Обновление – осознанным PR (Dependabot умеет обновлять digest). Проверить/обновить
-    # digest: docker manifest inspect postgres:16-alpine
     build:
       context: .
       dockerfile: deploy/postgres.Dockerfile
@@ -23,13 +19,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data   # named volume – переживает пересоздание (доп. п.4)
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 20
-    mem_limit: 1g   # подберите под размер VPS; защита от OOM всего хоста
+    mem_limit: 1g
     logging: *default-logging
 
   bootstrap:
@@ -124,25 +120,18 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
-      # Явный прод-флаг: включает fail-fast небезопасной конфигурации (core/config.py).
       APP_ENV: ${APP_ENV:-development}
       SEED_DEMO: ${SEED_DEMO:-false}
-      # Публичный адрес – return_url оплаты, абсолютные URL sitemap/robots/canonical.
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
-      # Оплата ЮKassa (пусто = контур выключен, «заявка без оплаты»).
       YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
       YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
-      # Сроки хранения ПДн (152-ФЗ): заявки 3 года, аудит 1 год.
       ORDER_RETENTION_DAYS: ${ORDER_RETENTION_DAYS:-1095}
       AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-1000}
       RESERVE_TTL_HOURS: ${RESERVE_TTL_HOURS:-72}
       MAIL_OUTBOX_MAX_ATTEMPTS: ${MAIL_OUTBOX_MAX_ATTEMPTS:-8}
     volumes:
-      # Имя тома сохраняет файлы прежней установки.
       - directus_uploads:/data/uploads
-    # API доступен только контейнерам Compose; с хоста запросы идут через Caddy.
-    # Публикация localhost-порта позволяла подделать X-Forwarded-For через Docker gateway.
     expose:
       - "3000"
     healthcheck:
@@ -152,7 +141,7 @@ services:
       retries: 10
       start_period: 15s
     mem_limit: 512m
-    stop_grace_period: 30s   # успеть плавно завершить активные запросы (SIGTERM → lifespan)
+    stop_grace_period: 30s
     logging: *default-logging
 
   web:
@@ -161,8 +150,6 @@ services:
       dockerfile: deploy/edge.Dockerfile
       target: web
       args:
-        # Build-time конфиг SPA (Vite инлайнит в бандл – рантаймом не задать).
-        # Site – публичный домен для og/canonical; Media – адрес файлов API.
         VITE_SITE_URL: ${PUBLIC_URL:-http://localhost}
         VITE_MEDIA_URL: ${PUBLIC_URL:-http://localhost}
     restart: unless-stopped
@@ -198,13 +185,12 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "127.0.0.1:8081:8081"   # локальная админка через Caddy; на VPS не публичен
+      - "127.0.0.1:8081:8081"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:
-      # Admin API Caddy на localhost:2019 – не зависит от домена/Host сайта.
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2019/config/ >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 5s

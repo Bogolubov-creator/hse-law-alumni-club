@@ -8,7 +8,6 @@ export async function seedClientStorage(page: Page): Promise<void> {
   });
 }
 
-// В WebKit активный SW скрывает запросы от page.route().
 export async function stubSw(page: Page): Promise<void> {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "serviceWorker", { get: () => undefined });

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Зависимости единственного Compose-пути. Не меняет данные и не запускает приложение.
 set -euo pipefail
 [[ "$(id -u)" = 0 ]] || { echo 'Запустите через sudo' >&2; exit 1; }
 source /etc/os-release

@@ -137,7 +137,7 @@ async def assert_media_references(connection, table, data):
         ids.update(media_ids(data.get(name)))
     if not ids:
         return
-    await connection.execute(f'LOCK TABLE "{table}" IN ROW EXCLUSIVE MODE')  # noqa: S608 – имя из MEDIA_FIELDS.
+    await connection.execute(f'LOCK TABLE "{table}" IN ROW EXCLUSIVE MODE')  # noqa: S608
     cursor = await connection.execute(
         "SELECT f.id,f.metadata->>'club_upload_kind' AS upload_kind,"
         "EXISTS(SELECT 1 FROM alumni a WHERE a.avatar=f.id::text) AS is_avatar "
@@ -169,7 +169,7 @@ class Store:
         projection = [*fields, "id"] if hidden_id else fields
         params = []
         where = predicate(table, filters, params)
-        query = f'SELECT {selection(table, projection)} FROM "{table}" WHERE {where}'  # noqa: S608 – поля проверены allowlist.
+        query = f'SELECT {selection(table, projection)} FROM "{table}" WHERE {where}'  # noqa: S608
         if sort:
             query += " ORDER BY " + ",".join(
                 field(table, name.removeprefix("-")) + (" DESC" if name.startswith("-") else " ASC") for name in sort
@@ -246,7 +246,7 @@ class Store:
         ]
         where = predicate(table, {"id": {"_eq": id}} if id else filters, params)
         await assert_media_references(connection, table, data)
-        query = f'UPDATE "{table}" SET {assignments} WHERE {where} RETURNING {selection(table)}'  # noqa: S608 – имена проверены по схеме.
+        query = f'UPDATE "{table}" SET {assignments} WHERE {where} RETURNING {selection(table)}'  # noqa: S608
         cursor = await connection.execute(query, params)
         rows = normalize(await cursor.fetchall())
         if id and not rows:

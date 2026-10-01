@@ -71,10 +71,9 @@ async function mockAdmin(page: Page, over: Record<string, unknown> = {}) {
     r.request().method() === "GET" ? r.fulfill(json(over.orders ?? ORDERS)) : r.fulfill(json({ ok: true })));
   await page.route("**/api/admin/members**", (r) =>
     r.request().method() === "GET" ? r.fulfill(json(over.members ?? MEMBERS)) : r.fulfill(json({ ok: true })));
-  await page.route("**/api/admin/audit**", (r) => r.fulfill(json([]))); // ручка отдаёт массив, не страницу
+  await page.route("**/api/admin/audit**", (r) => r.fulfill(json([])));
   await page.route("**/api/admin/podcast-subs", (r) => r.fulfill(json(over.subs ?? SUBS)));
   await page.route("**/api/admin/events**", r => r.fulfill(json({ items: [], total: 0, page: 1, limit: 20 })));
-  // Остальные разделы контента – пустыми списками, чтобы не падали
   for (const p of ["programs", "products", "news", "timeline", "podcasts"]) {
     await page.route(`**/api/admin/${p}**`, (r) =>
       r.request().method() === "GET" ? r.fulfill(json([])) : r.fulfill(json({ ok: true })));
@@ -101,7 +100,7 @@ test.describe("Админ-панель", () => {
     await page.goto("/admin");
 
     await expect(page.getByText("Новые заявки", { exact: true })).toBeVisible();
-    await expect(page.getByText("128", { exact: true })).toBeVisible();   // выпускников
+    await expect(page.getByText("128", { exact: true })).toBeVisible();
     await expect(page.getByText("подтверждено 119")).toBeVisible();
     await expect(page.getByText("Встреча выпуска 2026")).toBeVisible();
     await expect(page.getByText("записались: 12")).toBeVisible();
@@ -143,7 +142,6 @@ test.describe("Админ-панель", () => {
     await page.goto("/admin");
     await page.getByRole("button", { name: /Заявки/ }).click();
 
-    // Несовпадение суммы платежа отображается в заявке.
     await expect(page.getByText("сумма ≠")).toBeVisible();
     await expect(page.getByText("ORD-000377")).toBeVisible();
   });
@@ -193,7 +191,6 @@ test.describe("Админ-панель", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Подписки на подкасты" })).toBeVisible();
     await expect(page.getByText("Активных подписок")).toBeVisible();
     await expect(page.getByText("Кондратьев Сергей Андреевич")).toBeVisible();
-    // Осталось меньше десяти дней – по этому офис решает, звонить ли
     await expect(page.getByText(/8 дн\. · напомнили/)).toBeVisible();
   });
 
@@ -205,7 +202,6 @@ test.describe("Админ-панель", () => {
     await expect(page.getByText("Прослушивания", { exact: true })).toBeVisible();
     await expect(page.getByText("11 · 24")).toBeVisible();
     await expect(page.getByText(/слушателей 19/)).toBeVisible();
-    // Видео отдаёт чужой плеер – офис не должен думать, что цифры полные
     await expect(page.getByText(/Видеовыпуски RuTube сюда не попадают/)).toBeVisible();
   });
 
@@ -249,7 +245,6 @@ test.describe("Админ-панель", () => {
     });
     await page.route("**/api/admin/overview", (r) => r.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
     await page.goto("/admin");
-    // При 5xx доступен повтор запроса; сессия сохраняется.
     await expect(page.getByRole("button", { name: "Повторить", exact: true }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Войти" })).toHaveCount(0);
   });

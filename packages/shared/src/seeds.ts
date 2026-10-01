@@ -1,5 +1,3 @@
-// Сид каталога ДПО – полный зеркальный импорт itspecR/dpo-pravo-hse
-// (см. scripts/src/import-dpo-mirror-catalog.ts). price – в копейках.
 
 export interface ProgramModuleSeed {
   title: string;
@@ -17,9 +15,9 @@ export interface ProgramSeed {
   direction: string;
   format: "online" | "offline" | "blended";
   duration: string;
-  price: number; // копейки
-  dates?: { start: string }; // человекочитаемая дата старта
-  document?: string; // выдаваемый документ
+  price: number;
+  dates?: { start: string };
+  document?: string;
   description?: string;
   modules?: ProgramModuleSeed[];
   teachers?: ProgramTeacherSeed[];
@@ -39,11 +37,9 @@ export interface NewsSeed {
   title: string;
   excerpt: string;
   body: string;
-  published_at: string; // ISO
+  published_at: string;
 }
 
-// Проверенная подборка со страницы pravo.hse.ru/businessandlaw/alumni, 14.09.2026.
-// Краткие пересказы; полные материалы доступны по ссылкам первоисточников.
 export const NEWS_SEED: NewsSeed[] = [
   {
     slug: "hse-alumni-meeting-2026",
@@ -67,14 +63,12 @@ export interface ProductSeed {
   slug: string;
   title: string;
   category: string;
-  price: number; // копейки
+  price: number;
   stock: number;
   variants_json: { sku: string; size?: string; color?: string; stock: number }[];
   images?: string[] | null;
 }
 
-// Демонстрационный мерч для зеркала и явно включённого локального bootstrap.
-// Эти записи не подставляются в ответы рабочего API. price – в копейках.
 export const PRODUCTS_SEED: ProductSeed[] = [
   {
     slug: "hoodie-faculty", title: "Худи с логотипом факультета", category: "Одежда", price: 420_000, stock: 18,
@@ -99,5 +93,4 @@ export const PRODUCTS_SEED: ProductSeed[] = [
   },
 ];
 
-// Источник – itspecR/dpo-pravo-hse `.catalog-data.json` (см. scripts/src/import-dpo-mirror-catalog.ts).
 export { DPO_MIRROR_PROGRAMS as PROGRAMS_SEED } from "./dpo-mirror-catalog.generated.js";

@@ -77,8 +77,6 @@ export default function Merch() {
           {list.map((p) => {
             const stock = totalStock(p);
             const sizes = (p.variants_json ?? []).filter((v) => v.stock > 0).map(vLabel);
-            // У части товаров вариант – это цвет, а не размер (шоппер). Подпись кнопки
-            // идёт от данных, иначе просим выбрать размер там, где размеров нет.
             const hasSizes = (p.variants_json ?? []).some((v) => !!v.size);
             return (
               <article key={p.id} className="club-merch-item" style={{ display: "grid", gridTemplateColumns: "150px 96px 1fr auto", gap: 22, alignItems: "center", padding: "20px 0", borderTop: "1px solid var(--c-line)" }}>

@@ -44,7 +44,6 @@ export default function Program() {
 
   const p = q.data;
   const notFound = q.error instanceof ApiError && q.error.status === 404;
-  // Та же математика, что на сервере (order-calc): округлённая скидка в копейках.
   const priced = p ? p.price - Math.round((p.price * discount) / 100) : 0;
   const modules: ProgramModule[] = Array.isArray(p?.modules) ? p!.modules : [];
   const teachers: ProgramTeacher[] = Array.isArray(p?.teachers) ? p!.teachers : [];
@@ -65,7 +64,6 @@ export default function Program() {
   const addToCart = () =>
     p && add.mutate({ type: "dpo", ref_id: p.slug },
       { onSuccess: () => toast(`«${p.title}» в корзине`), onError: () => toast("Не удалось добавить", "err") });
-  // «Оставить заявку» – положить и сразу перейти к оформлению.
   const leaveRequest = () =>
     p && add.mutate({ type: "dpo", ref_id: p.slug },
       { onSuccess: () => navigate("/cart"), onError: () => toast("Не удалось добавить", "err") });

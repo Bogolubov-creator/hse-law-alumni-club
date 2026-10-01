@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from "react";
 
-// Мобильный брейкпоинт (<768px) – граница включения native-app-оболочки (см. mobile/MobileApp).
 const QUERY = "(max-width: 767px)";
 
 function subscribe(cb: () => void): () => void {

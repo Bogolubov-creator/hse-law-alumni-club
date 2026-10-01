@@ -1,5 +1,4 @@
 #!/bin/sh
-# Запускается перед bootstrap. Пароли не выводятся и не передаются в argv.
 set -eu
 : "${CHECKOUT_DB_PASSWORD:?Задайте CHECKOUT_DB_PASSWORD вне репозитория}"
 [ "$CHECKOUT_DB_USER" != "$PGUSER" ] || { echo "SQL-роль API должна отличаться от владельца БД" >&2; exit 1; }
