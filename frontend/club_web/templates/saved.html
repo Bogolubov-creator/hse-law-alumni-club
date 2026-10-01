@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<main id="main" class="site-container">
+<header class="site-masthead">
+<h1>Сохранённое</h1>
+<p>Материалы хранятся в этом браузере. Можно сохранить до 200 материалов.</p>
+</header>
+<section>
+<h2>Сохранённые материалы</h2>
+<label>Тип материала<select aria-label="Тип материала" data-reading-kind>
+<option value="">Все</option>
+{% for key,label in [("program","ДПО"),("news","Новости"),("change","Изменения в праве"),("podcast","Подкасты"),("event","События"),("merch","Мерч")] %}
+<option value="{{ key }}">{{ label }}</option>
+{% endfor %}
+</select>
+</label>
+<div data-reading-list="saved">
+</div>
+</section>
+<section>
+<h2>Продолжить чтение</h2>
+<div data-reading-list="recent">
+</div>
+</section>
+<button data-action="clear-reading">Очистить историю чтения</button>
+</main>
+{% endblock %}

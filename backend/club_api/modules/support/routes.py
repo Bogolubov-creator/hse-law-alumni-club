@@ -19,6 +19,7 @@ from club_api.observability.audit import audit
 router = APIRouter()
 ROUTE_LIMITS = {
     ("POST", "/support/faq-event"): 30,
+    ("POST", "/support/ask"): 30,
     ("POST", "/support"): (3, 600),
     ("GET", "/support/{id}"): 30,
     ("POST", "/support/{id}/messages"): (10, 600),
@@ -77,6 +78,10 @@ class FaqBody(Body):
     channel: Literal["site", "telegram"] = "site"
 
 
+class QuestionBody(StrictBody):
+    question: str = Field(min_length=2, max_length=500)
+
+
 def support_key(request):
     value = request.headers.get("x-support-key", "")
     if not re.fullmatch(r"[a-f0-9]{64}", value):
@@ -97,6 +102,13 @@ async def config(request: Request):
 async def faq_event(request: Request, body: FaqBody):
     await log_faq(request.app.state, kind=body.kind, gap_id=body.gapId, channel=body.channel)
     return {"ok": True}
+
+
+@router.post("/support/ask")
+async def ask(request: Request, body: QuestionBody):
+    from club_api.modules.telegram.faq import site_reply
+
+    return await site_reply(request.app.state, body.question)
 
 
 @router.post("/support")

@@ -31,3 +31,12 @@ docs/Отчёт по дизайну*
 *.py[cod]
 *.egg-info/
 **/.vitest/
+
+frontend/public/assets/site.css
+frontend/public/assets/site.js
+frontend/public/assets/crow-mascot.js
+
+frontend/public/assets/mini.js
+frontend/public/assets/mirror.js
+
+frontend/public/sw.js

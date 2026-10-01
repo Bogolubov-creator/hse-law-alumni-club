@@ -1,0 +1,74 @@
+import re
+from datetime import datetime
+from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
+
+MONTHS = (
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря",
+)
+FORMAT_LABELS = {"online": "онлайн", "offline": "очно", "blended": "смешанный"}
+
+
+def rub(value):
+    amount = (value or 0) / 100
+    formatted = f"{amount:,.2f}".rstrip("0").rstrip(".")
+    return formatted.replace(",", "\u00a0").replace(".", ",") + " ₽"
+
+
+def date(value, time=False):
+    if not value:
+        return ""
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo:
+            parsed = parsed.astimezone(ZoneInfo("Europe/Moscow"))
+        result = f"{parsed.day} {MONTHS[parsed.month - 1]} {parsed.year}"
+        return result + (parsed.strftime(" · %H:%M") if time else "")
+    except ValueError, TypeError:
+        return str(value)
+
+
+def safe_url(value):
+    if not isinstance(value, str) or re.search(r"[\x00-\x20\\]", value):
+        return ""
+    if value.startswith("/") and not value.startswith("//"):
+        return value
+    try:
+        parts = urlsplit(value)
+        _ = parts.port
+        if parts.scheme in ("http", "https") and parts.hostname and not parts.username and not parts.password:
+            return value
+    except ValueError:
+        pass
+    return ""
+
+
+def payment_url(value):
+    url = safe_url(value)
+    parts = urlsplit(url)
+    return url if parts.scheme == "https" else ""
+
+
+def media(value):
+    if not value:
+        return ""
+    if re.fullmatch(r"[0-9a-fA-F-]{36}", value):
+        return "/api/media/" + value
+    if re.fullmatch(r"/assets/[0-9a-fA-F-]{36}", value):
+        return "/api/media/" + value.rsplit("/", 1)[1]
+    return safe_url(value)
+
+
+def page_items(value):
+    return value.get("items", []) if isinstance(value, dict) else value or []

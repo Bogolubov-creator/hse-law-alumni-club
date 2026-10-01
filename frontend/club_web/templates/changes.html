@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import save,empty %}
+{% block content %}
+<main id="main" class="site-container changes-page">
+<header class="site-masthead">
+<h1>{{ item.title if item else 'Изменения в праве' }}</h1>
+<p>Справки, обзоры и опубликованные правовые акты.</p>
+</header>
+{% if item %}
+<article class="site-article" data-reading-title="{{ item.title }}" data-reading-kind="change">
+<p>{{ item.kind }} · {{ item.topic }} · {{ (item.sourcePublishedAt or item.published)|date }}</p>
+<p class="site-prose">{{ item.summary }}</p>
+{% for block in item.blocks or [] %}
+{% if block.heading %}
+<h2>
+{% else %}
+<p class="site-prose">
+{% endif %}
+{% for segment in block.segments %}
+{% if segment.url %}
+<a href="{{ segment.url|safe_url }}" target="_blank" rel="noopener noreferrer">{{ segment.text }}</a>
+{% else %}{{ segment.text }}{% endif %}
+{% endfor %}
+{% if block.heading %}
+</h2>
+{% else %}
+</p>
+{% endif %}
+{% endfor %}
+{% if item.url|safe_url %}
+<a href="{{ item.url|safe_url }}" target="_blank" rel="noopener noreferrer">Источник ↗</a>
+{% endif %}{{ save(path,item.title,'change') }}<button data-action="mark-read" data-href="{{ path }}" aria-pressed="false">Отметить прочитанным</button>
+<p>Дата публикации не означает дату вступления норм в силу.</p>
+<a href="/changes">← Все материалы</a>
+</article>
+{% else %}
+<p class="changes-muted">Проверено: {{ snapshot.checkedAt|date(true) }}. Период: {{ snapshot.periodFrom|date }} – {{ snapshot.periodTo|date }}.</p>
+<form method="get" class="site-filters">
+<label>Материалы<select aria-label="Материалы" name="view">
+<option value="digest">Справки и обзоры</option>
+<option value="act" {% if query.get('view')=='act' %}selected{% endif %}>Архив актов</option>
+<option value="all" {% if query.get('view')=='all' %}selected{% endif %}>Всё</option>
+</select>
+</label>
+<label>Название, номер или ключевые слова<input type="search" name="q" value="{{ query.get('q','') }}">
+</label>
+{% for name,values in filters.items() %}
+<label>{{ 'Тип материала' if name=='kind' else 'Рубрика' }}<select aria-label="{{ 'Тип материала' if name=='kind' else 'Рубрика' }}" name="{{ name }}">
+<option value="">Все</option>
+{% for value in values %}
+<option {% if query.get(name)==value %}selected{% endif %}>{{ value }}</option>
+{% endfor %}
+</select>
+</label>
+{% endfor %}
+<label>Опубликовано с<input type="date" name="from" value="{{ query.get('from','') }}">
+</label>
+<label>Опубликовано по<input type="date" name="to" value="{{ query.get('to','') }}">
+</label>
+<label>Порядок<select aria-label="Порядок" name="sort">
+<option value="newest">Сначала новые</option>
+<option value="oldest" {% if query.get('sort')=='oldest' %}selected{% endif %}>Сначала старые</option>
+</select>
+</label>
+<button>Показать</button>
+<a href="/changes">Сбросить</a>
+</form>
+<label>
+<input type="checkbox" data-unread-filter>Только непрочитанные в этом браузере</label>
+<p role="status">Найдено: {{ total }}</p>
+<div class="site-editorial-list">
+{% for entry in items %}
+<article data-reading-path="/changes/{{ entry.id }}" data-change-row='{{ {"title":entry.title,"number":entry.number,"summary":entry.summary,"kind":entry.kind,"topic":entry.topic,"date":entry.sourcePublishedAt or entry.published,"entryType":entry.entryType}|tojson }}'>
+<time>{{ (entry.sourcePublishedAt or entry.published)|date }}</time>
+<p>{{ entry.kind }} · {{ entry.topic }}</p>
+<h2>
+<a href="/changes/{{ entry.id }}">{{ entry.title }}</a>
+</h2>
+<p>{{ entry.summary }}</p>
+<div class="site-actions">{{ save('/changes/'+entry.id,entry.title,'change') }}<button data-action="mark-read" data-href="/changes/{{ entry.id }}" aria-pressed="false">Отметить прочитанным</button>
+</div>
+</article>
+{% else %}{{ empty('По выбранным фильтрам ничего не найдено.') }}{% endfor %}
+</div>
+{% if next_page %}
+<a href="{{ next_page }}" class="site-primary">Следующая страница →</a>
+{% endif %}
+{% endif %}
+</main>
+{% endblock %}

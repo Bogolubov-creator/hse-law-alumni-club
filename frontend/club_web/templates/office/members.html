@@ -1,0 +1,46 @@
+<form class="site-filters">
+<label>Поиск<input name="q" value="{{ query.get('q','') }}">
+</label>
+<label>Статус<select aria-label="Статус" name="status">
+<option value="">Все</option>
+{% for status in ['pending','verified','rejected'] %}
+<option value="{{ status }}" {% if query.get('status')==status %}selected{% endif %}>{{ labels.get(status,status) }}</option>
+{% endfor %}
+</select>
+</label>
+<button>Показать</button>
+</form>
+{% for member in rows %}
+<article class="site-panel">
+<h2>{{ member.fio }}</h2>
+<p>{{ member.email or '' }} · {{ member.cohort }} · {{ member.edu_program or '' }}</p>
+<p>{{ member.points_cached }} баллов · {{ labels.get(member.verification_status,member.verification_status) }}</p>
+{% if role in ('admin','Administrator') %}
+<form data-api="/admin/members/{{ member.id }}" data-method="PATCH">
+<label>Проверка<select aria-label="Проверка" name="verification_status">
+{% for status in ['pending','verified','rejected'] %}
+<option value="{{ status }}" {% if member.verification_status==status %}selected{% endif %}>{{ labels.get(status,status) }}</option>
+{% endfor %}
+</select>
+</label>
+<label>Персональная скидка, %<input name="personal_discount" type="number" value="{{ member.personal_discount or 0 }}" min="0" max="{{ domain.limits.personal_discount_max }}">
+</label>
+<button>Сохранить</button>
+<p role="alert" data-error hidden>
+</p>
+</form>
+<details>
+<summary>Начислить или списать баллы</summary>
+<form data-api="/admin/members/{{ member.id }}/points">{{ field('delta','Изменение баллов',type='number') }}{{ field('comment','Причина') }}<input type="hidden" name="reason" value="manual">
+<button>Применить</button>
+<p role="alert" data-error hidden>
+</p>
+</form>
+</details>
+<div class="site-actions">
+<button data-api="/admin/members/{{ member.id }}/podcast-sub">Выдать подписку на подкасты</button>
+<button class="site-danger" data-api="/admin/members/{{ member.id }}/anonymize" data-confirm="Обезличить профиль выпускника и закрыть ему доступ?">Обезличить</button>
+</div>
+{% endif %}
+</article>
+{% else %}{{ empty('Выпускников по выбранным фильтрам нет.') }}{% endfor %}

@@ -42,22 +42,3 @@ LABEL org.opencontainers.image.revision=$VCS_REF
 COPY --from=edge-build /usr/bin/caddy /usr/bin/caddy
 COPY deploy/caddy/LICENSE /usr/share/licenses/club-caddy/LICENSE
 LABEL club.caddy.backports="d0e93c2,b2693fb,df77f8b"
-
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS web-build
-RUN npm install --global corepack@0.36.0 && corepack enable
-WORKDIR /repo
-COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml ./
-COPY packages/shared/package.json packages/shared/
-COPY frontend/package.json frontend/
-RUN pnpm --filter @club/web... --filter club-pravo-hse install --frozen-lockfile
-COPY packages/shared packages/shared
-COPY frontend frontend
-ARG VITE_SITE_URL=http://localhost
-ARG VITE_MEDIA_URL=http://localhost
-ENV VITE_SITE_URL=$VITE_SITE_URL VITE_MEDIA_URL=$VITE_MEDIA_URL
-RUN pnpm --filter @club/shared build && pnpm --filter @club/web build
-
-FROM caddy AS web
-COPY --from=web-build /repo/frontend/dist /srv
-COPY deploy/web.Caddyfile /etc/caddy/Caddyfile
-EXPOSE 80

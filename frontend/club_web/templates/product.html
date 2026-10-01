@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import save,add_cart %}
+{% block content %}
+<main id="main" class="site-container">
+<a href="/merch">← Мерч клуба</a>
+<header class="site-masthead">
+<span class="club-caps">{{ item.category }}</span>
+<h1>{{ item.title }}</h1>
+</header>
+<div class="site-two-col">
+<div class="site-gallery">
+{% for image in item.images or [] %}
+{% if image|media %}
+<img src="{{ image|media }}" alt="{{ item.title }}" width="800" height="800" loading="lazy">
+{% endif %}
+{% endfor %}
+</div>
+<aside class="site-panel">
+<p class="site-price">{{ item.price|rub }}</p>
+<p class="site-prose">{{ item.description or '' }}</p>{{ add_cart(item,'merch') }}{{ save(path,item.title,'merch') }}<p>Скидка выпускника на мерч не распространяется.</p>
+</aside>
+</div>
+</main>
+{% endblock %}

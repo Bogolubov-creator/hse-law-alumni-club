@@ -157,6 +157,11 @@ async def admin_logout(request: Request, admin: Annotated[dict, Depends(require_
     return {"ok": True}
 
 
+@router.get("/auth/admin-session")
+async def admin_session(admin: Annotated[dict, Depends(require_admin)]):
+    return {"role": admin["role"]}
+
+
 @router.post("/auth/register")
 async def register(request: Request, body: RegisterBody):
     service = auth_service(request)

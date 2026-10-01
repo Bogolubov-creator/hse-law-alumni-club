@@ -2,7 +2,7 @@ FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230
 RUN pip install --no-cache-dir uv==0.12.21
 WORKDIR /repo/backend
 COPY backend/pyproject.toml backend/uv.lock ./
-COPY packages/shared/src/domain-data.json packages/shared/src/faq-data.json /repo/packages/shared/src/
+COPY data/domain-data.json data/faq-data.json /repo/data/
 COPY backend/club_api ./club_api
 RUN uv sync --frozen --no-dev --no-editable --python /usr/local/bin/python
 RUN .venv/bin/python -m compileall -q -b -s /repo -p /app .venv/lib/python3.14/site-packages/club_api \

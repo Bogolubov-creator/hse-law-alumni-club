@@ -1,20 +1,6 @@
 version: 2
 
 updates:
-  - package-ecosystem: npm
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: monday
-      time: "06:00"
-      timezone: Europe/Moscow
-    open-pull-requests-limit: 5
-    groups:
-      minor-and-patch:
-        update-types: [minor, patch]
-    commit-message:
-      prefix: "chore(deps)"
-
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
@@ -49,7 +35,7 @@ updates:
       prefix: "chore(edge)"
 
   - package-ecosystem: pip
-    directories: ["/backend", "/scripts"]
+    directories: ["/backend", "/frontend", "/scripts"]
     schedule:
       interval: weekly
       day: monday

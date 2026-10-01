@@ -1,0 +1,20 @@
+<div class="site-metrics">
+{% for key,label in [('active','Активны'),('expiring_30d','Истекают за 30 дней'),('expired','Истекли'),('plays_total','Прослушивания')] %}
+<article>
+<strong>{{ records[key] }}</strong>
+<span>{{ label }}</span>
+</article>
+{% endfor %}
+</div>
+{% for episode in records.by_podcast or [] %}
+<article class="site-panel">
+<h2>{{ episode.title }}</h2>
+<p>Прослушиваний: {{ episode.plays }} · Слушателей: {{ episode.listeners }} · За 30 дней: {{ episode.plays_30d }}</p>
+</article>
+{% endfor %}
+{% for subscriber in records['items'] or [] %}
+<article class="site-panel">
+<h2>{{ subscriber.fio }}</h2>
+<p>{{ subscriber.email }} · до {{ subscriber.until|date }} · {{ subscriber.days_left }} дней</p>
+</article>
+{% endfor %}

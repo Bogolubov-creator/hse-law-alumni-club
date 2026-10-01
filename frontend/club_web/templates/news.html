@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import save,empty %}
+{% block content %}
+<main id="main" class="site-container">
+<header class="site-masthead">
+<h1>Новости</h1>
+<p>Новости факультета и клуба выпускников.</p>
+</header>
+<div class="site-editorial-list">
+{% for item in items %}
+<article>
+<time>{{ item.published_at|date }}</time>
+<h2>
+<a href="/news/{{ item.slug }}">{{ item.title }}</a>
+</h2>
+<p>{{ item.excerpt or '' }}</p>{{ save('/news/'+item.slug,item.title,'news') }}</article>
+{% else %}{{ empty('Новостей пока нет.') }}{% endfor %}
+</div>
+</main>
+{% endblock %}

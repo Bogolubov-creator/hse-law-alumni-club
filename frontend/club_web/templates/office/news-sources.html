@@ -1,0 +1,24 @@
+<p>Автоматическое обновление: {{ 'включено' if records.automatic else 'выключено' }}</p>
+{% for source in records.sources or [] %}
+<article class="site-panel">
+<h2>{{ source.title or source.name or source.id }}</h2>
+<p>{{ source.last_error or '' }}</p>
+<button data-api="/admin/news-sources/{{ source.id }}/refresh">Обновить источник</button>
+</article>
+{% endfor %}
+{% for item in rows %}
+<article class="site-panel">
+<h2>{{ item.title }}</h2>
+<p>{{ item.published_at|date }} · {{ labels.get(item.state,item.state) }}</p>
+{% if item.url|safe_url %}
+<a href="{{ item.url|safe_url }}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
+{% endif %}
+{% if item.state!='imported' %}
+<form data-api="/admin/news-sources/{{ item.id }}/import">{{ field('title','Заголовок',item.title) }}{{ field('excerpt','Краткое описание',item.excerpt,required=false) }}<button>Добавить в новости</button>
+<p role="alert" data-error hidden>
+</p>
+</form>
+<button data-api="/admin/news-sources/{{ item.id }}" data-method="PATCH" data-body='{"state":"ignored"}'>Скрыть</button>
+{% endif %}
+</article>
+{% endfor %}

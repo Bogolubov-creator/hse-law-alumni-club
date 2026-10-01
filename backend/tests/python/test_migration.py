@@ -29,7 +29,7 @@ def test_all_legacy_routes_are_present():
     actual = {(method.upper(), path) for path, methods in app.openapi()["paths"].items() for method in methods}
     old = json.loads(Path(__file__).with_name("legacy-routes.json").read_text())
     expected = {(row["method"], row["path"]) for row in old}
-    assert actual == expected and len(actual) == 117
+    assert actual == expected | {("GET", "/auth/admin-session"), ("POST", "/support/ask")} and len(actual) == 119
 
 
 def test_hse_state_dates_and_manual_fields():

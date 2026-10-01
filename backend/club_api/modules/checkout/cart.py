@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from pydantic import Field
 
 from club_api.core.errors import ApiError
-from club_api.domain import MAX_CART_LINES, MAX_LINE_QTY, same_line, summarize_cart
+from club_api.domain import MAX_CART_LINES, MAX_LINE_QTY, effective_discount, order_totals, same_line, summarize_cart
 from club_api.modules.auth.routes import Body
 from club_api.modules.catalog.lookup import lookup_catalog
 
@@ -72,8 +72,25 @@ def exceeds_stock(info, sku, qty):
 
 @router.get("/cart")
 async def cart(request: Request):
-    existing = await load_cart(request.app.state.store, cart_session(request))
-    return summarize_cart(existing["items"] if existing else [])
+    state = request.app.state
+    existing = await load_cart(state.store, cart_session(request))
+    items = existing["items"] if existing else []
+    alumni = await state.auth.resolve_alumni(request)
+    discount = effective_discount(
+        bool(alumni and alumni["verification_status"] == "verified"),
+        alumni["points_cached"] or 0 if alumni else 0,
+        alumni["personal_discount"] or 0 if alumni else 0,
+    )
+    catalog = await lookup_catalog(state.store, items) if items else {}
+    priced = [
+        {**item, "price": catalog.get(item["type"] + ":" + item["ref_id"], {}).get("price", item["price"])}
+        for item in items
+    ]
+    return {
+        **summarize_cart(items),
+        "estimated_total": order_totals(priced, discount)["total"],
+        "member_discount": discount,
+    }
 
 
 @router.post("/cart")
