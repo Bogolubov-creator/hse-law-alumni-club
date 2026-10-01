@@ -394,6 +394,11 @@ def test_mirror_mobile_preview_navigation_and_exit(chromium, mirror_site, width)
         expect(page.locator("#main")).to_be_visible()
         expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), path
+    page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Панель офиса").click()
+    expect(page.locator(".office-page-header")).to_be_visible()
+    expect(page.locator("html")).not_to_have_class(re.compile("pwa-shell|telegram-mini"))
+    assert page.locator(".site-office").bounding_box()["width"] == width
+    page.get_by_role("link", name="На сайт", exact=True).click()
     page.reload()
     expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
     page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Обычный сайт").click()
