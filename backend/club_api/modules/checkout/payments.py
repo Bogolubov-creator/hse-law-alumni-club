@@ -3,17 +3,16 @@ import re
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote, urlsplit
 
-from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from django.http import HttpRequest, JsonResponse
 
 from club_api.core.errors import ApiError
 from club_api.core.security import client_ip, trust_proxy, yookassa_ip
+from club_api.core.views import api_view, json_body
 from club_api.db.store import normalize
 from club_api.modules.auth.service import require_alumni
 from club_api.modules.checkout.store import digest
 from club_api.observability.audit import audit
 
-router = APIRouter()
 logger = logging.getLogger("club.payments")
 ROUTE_LIMITS = {"/orders/{number}/pay": 10, "/payments/yookassa/webhook": 60}
 SAFE_INTEGER_MAX = 9007199254740991
@@ -42,16 +41,16 @@ def payment_outcome(order, payment):
         value = amount.get("value")
         kop = (
             int(value.replace(".", ""))
-            if isinstance(value, str) and len(value) <= 18 and re.fullmatch(r"\d+\.\d{2}", value, re.ASCII)
+            if isinstance(value, str) and len(value) <= 18 and re.fullmatch("\\d+\\.\\d{2}", value, re.ASCII)
             else None
         )
         if (
             amount.get("currency") != "RUB"
             or payment.get("paid") is not True
             or kop is None
-            or kop > SAFE_INTEGER_MAX
-            or kop != order["total_estimate"]
-            or order["status"] in ("canceled", "expired")
+            or (kop > SAFE_INTEGER_MAX)
+            or (kop != order["total_estimate"])
+            or (order["status"] in ("canceled", "expired"))
         ):
             return "review"
         return "succeeded"
@@ -95,8 +94,8 @@ class Payments:
             if (
                 not response.is_success
                 or not isinstance(payment, dict)
-                or not isinstance(payment.get("id"), str)
-                or payment.get("status") not in ("pending", "waiting_for_capture", "succeeded", "canceled")
+                or (not isinstance(payment.get("id"), str))
+                or (payment.get("status") not in ("pending", "waiting_for_capture", "succeeded", "canceled"))
             ):
                 raise ValueError
             return payment
@@ -204,14 +203,14 @@ class Payments:
         return await self.apply({**payment, "metadata": {**payment.get("metadata", {}), "order_number": number}})
 
 
-@router.get("/payments/config")
-async def payment_config(request: Request):
-    return {"enabled": request.app.state.payments.enabled}
+@api_view
+async def payment_config(request: HttpRequest):
+    return {"enabled": request.services.payments.enabled}
 
 
-@router.post("/orders/{number}/pay")
-async def pay(request: Request, number: str):
-    payments = request.app.state.payments
+@api_view
+async def pay(request: HttpRequest, number: str):
+    payments = request.services.payments
     if not payments.enabled:
         raise ApiError(503, "Оплата на сайте пока не подключена")
     alumni = await require_alumni(request)
@@ -242,28 +241,28 @@ async def pay(request: Request, number: str):
     return {"payment_url": url}
 
 
-@router.post("/payments/yookassa/webhook")
-async def webhook(request: Request):
-    state = request.app.state
+@api_view
+async def webhook(request: HttpRequest):
+    state = request.services
     if not state.payments.enabled:
-        return JSONResponse({"ok": False}, status_code=503)
+        return JsonResponse({"ok": False}, status=503, safe=False)
     ip = client_ip(request).removeprefix("::ffff:")
     local = state.settings.APP_ENV != "production" and (ip in ("127.0.0.1", "::1") or trust_proxy(ip))
-    if not local and not yookassa_ip(ip):
+    if not local and (not yookassa_ip(ip)):
         await audit(request, "payment.webhook.badip", actor="ip:" + ip)
-        return JSONResponse({"ok": False}, status_code=403)
+        return JsonResponse({"ok": False}, status=403, safe=False)
     try:
-        body = await request.json()
+        body = json_body(request)
         if not isinstance(body.get("event"), str) or not isinstance(body.get("object", {}).get("id"), str):
             raise ValueError
     except ValueError, AttributeError, TypeError:
-        return JSONResponse({"ok": False}, status_code=400)
+        return JsonResponse({"ok": False}, status=400, safe=False)
     try:
         payment = await state.payments.fetch(body["object"]["id"])
     except ApiError:
-        return JSONResponse({"ok": False}, status_code=502)
+        return JsonResponse({"ok": False}, status=502, safe=False)
     result = await state.payments.apply(payment)
-    order, outcome = result.get("order"), result["outcome"]
+    order, outcome = (result.get("order"), result["outcome"])
     if order and outcome in ("review", "succeeded", "canceled"):
         await audit(
             request,
@@ -272,7 +271,7 @@ async def webhook(request: Request):
             subject="order:" + order["number"],
             detail={"payment_id": payment["id"]},
         )
-    if order and outcome == "succeeded" and order["contact_email"] and order["contact_email"] != "-":
+    if order and outcome == "succeeded" and order["contact_email"] and (order["contact_email"] != "-"):
         text = f"Здравствуйте, {order['contact_fio']}!\n\nОплата по заявке {order['number']} на сумму {order['total_estimate'] / 100:g} ₽ прошла успешно."
         text += (
             "\nПодписка на подкасты клуба активирована на год – приятного прослушивания!"

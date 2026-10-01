@@ -34,7 +34,7 @@
 flowchart TB
   Browser["Браузер: React SPA"] -->|"HTTP :80 или HTTPS :443"| Caddy["caddy: прокси"]
   Caddy -->|"HTTP web:80 /"| Web["web: статические файлы"]
-  Caddy -->|"HTTP api:3000 /api/*"| API["api: FastAPI + планировщик asyncio"]
+  Caddy -->|"HTTP api:3000 /api/*"| API["api: Django + планировщик asyncio"]
   Caddy -->|"HTTP directus:8055, домен Studio"| Directus["directus"]
   API -->|"HTTP directus:8055 + токен"| Directus
   API -->|"PostgreSQL postgres:5432, club_api"| PG["postgres"]
@@ -51,10 +51,16 @@ flowchart TB
 Раздельные копии не задавали общую точку состояния БД и файлов. Проверка SQL в
 временной БД не подтверждала восстановление полного приложения с загрузками.
 
+## История архитектуры
+
+Прежняя схема с React и Directus сохранена в
+[истории Git](https://github.com/Bogolubov-creator/hse-law-alumni-club/blob/a03b14174f31ee0821e14a70411979f6d780a844/docs/development/architecture.md).
+Для текущего приложения действует схема ниже.
+
 ## Схема обслуживания после изменений
 
-По [решению владельца](../decisions/cms-options.md) Directus исключён из runtime. Существующие
-FastAPI API обслуживает auth, контент и файлы; FastAPI web и Jinja2 формируют сайт
+По [решению владельца](../decisions/cms-options.md) Directus исключён из runtime.
+Django API обслуживает auth, контент и файлы; Django web и Jinja2 формируют сайт
 и панель офиса. PostgreSQL хранит данные. Имена legacy
 таблиц и тома сохранены для совместимости. Успешный запуск этой схемы в конкретном
 контуре подтверждается отдельно в журнале состояния.
@@ -70,8 +76,8 @@ flowchart TB
     Build["Python / uv / Go: Docker build"]
     subgraph Network["Внутренняя Docker bridge-сеть"]
       Caddy["caddy: TLS, маршруты, legacy redirect"]
-      Web["web: FastAPI + Jinja2"]
-      API["api: FastAPI, один экземпляр"]
+      Web["web: Django + Jinja2"]
+      API["api: Django, один экземпляр"]
       PG["postgres: PostgreSQL 16"]
       Migrate["migrate: схема, индексы, SQL-права"]
       Bootstrap["bootstrap: отсутствующие роли и начальные данные"]
@@ -129,8 +135,8 @@ flowchart TB
 | Браузер | HTML, CSS и JavaScript | Устройство пользователя, HTTPS сайта | К Caddy | Локальное состояние; не основная БД | Сценарий и console |
 | Сборка | Python, uv; Go для инфраструктуры | Docker build stages, реестры по HTTPS | Исходящий при сборке | Кэш и готовые образы | Код `0`, типы, тесты, скан образа |
 | Прокси | Caddy | `caddy`; host `:80`, `:443`, loopback `:8081` | Сайт; прежний admin-домен перенаправляет в `/admin` | `caddy_data`, `caddy_config` | Внутренний `127.0.0.1:2019`, затем HTTPS |
-| Статика | Caddy | `web:80`, файлы `/srv` | Через прокси | Включена в образ | Внутренний HTTP `/` |
-| API | FastAPI | `api:3000`, один экземпляр | Через Caddy | БД и uploads | `/health` – процесс; `/ready` – PostgreSQL и схема |
+| Страницы и статика | Django и Jinja2 | `web:80`, шаблоны и public | Через Caddy | Включены в образ | Внутренний HTTP `/` |
+| API | Django | `api:3000`, один экземпляр | Через Caddy | БД и uploads | `/health` – процесс; `/ready` – PostgreSQL и схема |
 | База | PostgreSQL 16 | `postgres:5432` | Порта хоста нет | `pgdata` | `pg_isready`, затем `/ready` API |
 | Миграции | psql и shell | Одноразовый `migrate` | Нет входящего порта | Схема, индексы, права `club_api` | Завершение с кодом `0` |
 | Bootstrap | Python и Psycopg | Одноразовый `bootstrap` | Нет входящего порта | Отсутствующие роли, администратор, справочники, home | Завершение с кодом `0` |
@@ -266,20 +272,20 @@ origins, но не заменяет авторизацию. `POINTS_SERVICE_TOKE
 ## Версии и совместимость
 
 API и команды оператора используют Python 3.14.7 и зависимости из `uv.lock`.
-Интерфейс формируется FastAPI и Jinja2; TypeScript и React удалены. Версии и назначение компонентов перечислены
+Интерфейс формируется Django и Jinja2; TypeScript и React удалены. Версии и назначение компонентов перечислены
 в [README](../../README.md#технологии-и-назначение-компонентов); основание переноса –
-[ADR FastAPI](../decisions/fastapi-migration.md).
+[ADR Django](../decisions/django-migration.md).
 
 | Компонент | Совместимость |
 |---|---|
-| Python / FastAPI / Uvicorn | Один ASGI-процесс; HTTP-документация и автоматическая телеметрия отключены |
+| Python / Django / Uvicorn | Django 6.1.1 через ASGI; URLconf, HttpRequest и HTTP-ответы; один процесс API |
 | Psycopg 3 | Async pool, параметризованные значения, прежняя схема PostgreSQL 16 |
 | Pydantic 2 | Строгие запросы; PATCH различает пропущенное поле и null |
 | Argon2 / PyJWT | Прежние PHC/JWT сохранены; роль и поколение читаются из БД |
 | Pillow | Аватар PNG 256×256, ограничение пикселей и памяти, удаление метаданных |
 | HTTPX / aiohttp | Таймауты, запрет редиректов, ограничение HTML; DNS Web Push отклоняет приватные адреса |
 | Sentry | Только фиксированные коды ошибок; нет тел, заголовков, пользователя, SQL и stack locals |
-| FastAPI / Jinja2 / JavaScript | Серверные страницы, формы и стили; проверяются шаблоны и браузерные сценарии |
+| Django / Jinja2 / JavaScript | Серверные страницы, формы и стили; проверяются шаблоны и браузерные сценарии |
 | GitHub Actions | Ubuntu 24.04; Python-пакеты проверяются отдельно, затем финальные образы и установщик |
 
 Caddy 2.11.4 пересобирается из закреплённых исходников Go 1.27.1 с обновлёнными
@@ -315,9 +321,8 @@ CI выполняет `govulncheck` по тем же исправленным ve
 
 ## Решения и применимость внешнего примера
 
-Сохраняются PostgreSQL в контейнере, FastAPI для бизнес-операций, один API и Caddy
-на входе. Directus заменён собственными auth/data/media по согласованному ADR. Перенос БД на хост,
-Смена сервера на FastAPI выполнена по отдельному поручению владельца.
+Сохраняются PostgreSQL в контейнере, Django для бизнес-операций, один API и Caddy
+на входе. Directus заменён собственными auth/data/media по согласованному ADR. Смена сервера на Django выполнена по отдельному поручению владельца.
 Переход на несколько API потребует устойчивых блокировок, очередей и анализа
 идемпотентности; смена сборочного стека – собственного PR с проверками.
 

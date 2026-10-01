@@ -17,7 +17,7 @@
 
 ## Что сохраняем при изменениях
 
-- FastAPI/Jinja2 web в `frontend`, FastAPI API в `backend`, общие справочники
+- Django/Jinja2 web в `frontend`, Django API в `backend`, общие справочники
   в `data`, серверные расчёты в API, хеши в `backend/club_api/modules/auth`, контейнерный
   PostgreSQL и Caddy перед сервисами.
 - Серверную проверку прав, цены, скидки, суммы заявки и остатков.
@@ -39,5 +39,5 @@
 используйте актуальный runbook, внешний env и конкретный проверенный SHA.
 
 Сравнение с `itspecR/journal` используется для организации кода, документации и
-эксплуатации. Сервер Клуба перенесён на Python/FastAPI по отдельному поручению владельца.
-PostgreSQL, Caddy и дизайн сохраняются; основание – [ADR FastAPI](../decisions/fastapi-migration.md).
+эксплуатации. Сервер Клуба перенесён на Python/Django по отдельному поручению владельца.
+PostgreSQL, Caddy и дизайн сохраняются; основание – [ADR Django](../decisions/django-migration.md).

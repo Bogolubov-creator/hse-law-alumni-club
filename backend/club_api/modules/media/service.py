@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import uuid4
 
-from fastapi.responses import Response, StreamingResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from PIL import Image, ImageOps
 from psycopg.types.json import Jsonb
 
@@ -33,19 +33,18 @@ UPLOAD_TYPES = {
     "audio/mp4": "m4a",
 }
 SANDBOX_CSP = "default-src 'none'; sandbox"
-UUID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
 
-class FileResponse(StreamingResponse):
+class FileResponse(StreamingHttpResponse):
     def __init__(self, *args, descriptor, **kwargs):
         super().__init__(*args, **kwargs)
         self.descriptor = descriptor
 
-    async def __call__(self, scope, receive, send):
-        try:
-            await super().__call__(scope, receive, send)
-        finally:
+    def close(self):
+        if not self.closed:
             os.close(self.descriptor)
+        super().close()
 
 
 def media_id(value):
@@ -57,7 +56,7 @@ def media_id(value):
         url = urlsplit(value)
         if url.scheme and url.scheme not in ("http", "https"):
             return None
-        match = re.fullmatch(r"/(?:api/media|assets)/(" + UUID_PATTERN + r")(?:/[^/]*)?/?", url.path, re.I)
+        match = re.fullmatch("/(?:api/media|assets)/(" + UUID_PATTERN + ")(?:/[^/]*)?/?", url.path, re.I)
         return match[1].lower() if match else None
     except ValueError:
         return None
@@ -83,7 +82,7 @@ def sniff_media(header):
         return "audio/wav"
     if header[:4] == b"OggS" and (b"OpusHead" in header or b"vorbis" in header):
         return "audio/ogg"
-    if header[:3] == b"ID3" or (header[0] == 255 and header[1] & 0xE6 == 0xE2):
+    if header[:3] == b"ID3" or (header[0] == 255 and header[1] & 230 == 226):
         return "audio/mpeg"
     return None
 
@@ -91,15 +90,15 @@ def sniff_media(header):
 def parse_range(value, size):
     if not value:
         return None
-    match = re.fullmatch(r"bytes=([0-9]*)-([0-9]*)", value)
+    match = re.fullmatch("bytes=([0-9]*)-([0-9]*)", value)
     if not match or not (match[1] or match[2]) or any(len(part) > 16 for part in match.groups()):
         return False
     suffix = not match[1]
     first = int(match[1] or match[2])
-    last = int(match[2]) if match[2] and not suffix else size - 1
-    if first > 9007199254740991 or last > 9007199254740991 or (suffix and not first):
+    last = int(match[2]) if match[2] and (not suffix) else size - 1
+    if first > 9007199254740991 or last > 9007199254740991 or (suffix and (not first)):
         return False
-    start, end = max(0, size - first) if suffix else first, min(last, size - 1)
+    start, end = (max(0, size - first) if suffix else first, min(last, size - 1))
     return False if start >= size or start > end else (start, end)
 
 
@@ -131,19 +130,20 @@ class Media:
     def __init__(self, state):
         self.state = state
         self.slots = asyncio.Semaphore(THUMBNAIL_WORKERS)
-        self.pending, self.cache = {}, OrderedDict()
+        self.pending, self.cache = ({}, OrderedDict())
         self.cache_bytes = 0
 
     async def directory(self):
+
         def prepare():
             path = self.state.settings.UPLOADS_PATH
-            path.mkdir(parents=True, mode=0o750, exist_ok=True)
+            path.mkdir(parents=True, mode=488, exist_ok=True)
             return path.resolve()
 
         return await asyncio.to_thread(prepare)
 
     async def path(self, filename):
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,254}", filename or ""):
+        if not re.fullmatch("[A-Za-z0-9][A-Za-z0-9._-]{0,254}", filename or ""):
             raise ApiError(404, "Файл не найден")
         return await self.directory() / filename
 
@@ -163,14 +163,14 @@ class Media:
             if table == "alumni":
                 continue
             fields = [name for name in MEDIA_FIELDS[table] if name != "audio_url"]
-            condition = " OR ".join(f"strpos(COALESCE(\"{field}\"::text,''),%s)>0" for field in fields)
-            query = f"SELECT id FROM \"{table}\" WHERE status='published' AND ({condition}) LIMIT 1"
+            condition = " OR ".join(f'''strpos(COALESCE("{field}"::text,''),%s)>0''' for field in fields)
+            query = f'''SELECT id FROM "{table}" WHERE status='published' AND ({condition}) LIMIT 1'''
             if await self.state.database.rows(query, [id] * len(fields)):
                 return True
         return False
 
     async def list(self, page, limit, search):
-        pattern = "%" + re.sub(r"[\\%_]", lambda match: "\\" + match[0], search) + "%"
+        pattern = "%" + re.sub("[\\\\%_]", lambda match: "\\" + match[0], search) + "%"
         where = "NOT EXISTS(SELECT 1 FROM alumni a WHERE a.avatar=f.id::text) AND COALESCE(f.metadata->>'club_upload_kind','')<>'avatar' AND (COALESCE(f.title,'') ILIKE %s OR f.filename_download ILIKE %s)"
         rows = await self.state.database.rows(
             "SELECT f.* FROM directus_files f WHERE " + where + " ORDER BY f.created_on DESC,f.id LIMIT %s OFFSET %s",
@@ -200,14 +200,14 @@ class Media:
         if (await asyncio.to_thread(shutil.disk_usage, directory)).free < max_bytes + 64 * 1024 * 1024:
             raise ApiError(507, "Недостаточно места для загрузки")
         id = str(uuid4())
-        temporary, final = directory / (id + ".upload"), None
+        temporary, final = (directory / (id + ".upload"), None)
         descriptor = await asyncio.to_thread(
-            os.open, temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600
+            os.open, temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 384
         )
         file = os.fdopen(descriptor, "wb")
-        size, header = 0, b""
+        size, header = (0, b"")
         try:
-            while chunk := await upload.read(65536):
+            while chunk := (await asyncio.to_thread(upload.read, 65536)):
                 size += len(chunk)
                 header = (header + chunk)[:512] if len(header) < 512 else header
                 detected = sniff_media(header)
@@ -243,7 +243,7 @@ class Media:
             raise
 
     async def delete(self, id):
-        id, path = guid(id), None
+        id, path = (guid(id), None)
         async with self.state.database.transaction() as connection:
             tables = ",".join(f'"{table}"' for table in sorted(MEDIA_FIELDS))
             await connection.execute(f"LOCK TABLE {tables} IN SHARE MODE")
@@ -261,7 +261,7 @@ class Media:
             if shared:
                 raise ApiError(409, "Файл связан с другой записью медиатеки")
             for table, fields in sorted(MEDIA_FIELDS.items()):
-                condition = " OR ".join(f"strpos(COALESCE(\"{field}\"::text,''),%s)>0" for field in fields)
+                condition = " OR ".join(f'''strpos(COALESCE("{field}"::text,''),%s)>0''' for field in fields)
                 query = f'SELECT id FROM "{table}" WHERE {condition} LIMIT 1'
                 if await (await connection.execute(query, [id] * len(fields))).fetchone():
                     raise ApiError(409, "Файл используется. Сначала уберите его из материалов или профиля.")
@@ -343,9 +343,9 @@ class Media:
             raise ApiError(404, "Файл не найден") from None
         except OSError:
             raise ApiError(404, "Файл не найден") from None
-        return Response(
+        return HttpResponse(
             data,
-            media_type="image/png",
+            content_type="image/png",
             headers={"Content-Security-Policy": SANDBOX_CSP, "Cache-Control": "public, max-age=300"},
         )
 
@@ -369,7 +369,7 @@ class Media:
                 raise ApiError(404, "Файл не найден")
             selected = parse_range(range, info.st_size)
             if selected is False:
-                return Response(status_code=416, headers={"Content-Range": f"bytes */{info.st_size}"})
+                return HttpResponse(status=416, headers={"Content-Range": f"bytes */{info.st_size}"})
             start, end = selected or (0, info.st_size - 1)
             await asyncio.to_thread(os.lseek, descriptor, start, os.SEEK_SET)
 
@@ -392,11 +392,7 @@ class Media:
                 headers["Content-Range"] = f"bytes {start}-{end}/{info.st_size}"
             owned = False
             return FileResponse(
-                chunks(),
-                descriptor=descriptor,
-                media_type=detected,
-                status_code=206 if selected else 200,
-                headers=headers,
+                chunks(), descriptor=descriptor, content_type=detected, status=206 if selected else 200, headers=headers
             )
         finally:
             if owned:

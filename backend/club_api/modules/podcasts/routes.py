@@ -5,16 +5,16 @@ import math
 import re
 import time
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Literal
+from typing import Literal
 from urllib.parse import quote, urlsplit
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse
+from django.http import HttpRequest, HttpResponseRedirect
 from pydantic import Field, field_validator
 
 from club_api.core.errors import ApiError
 from club_api.core.models import guid, parse_date, sub_active
+from club_api.core.views import api_view
 from club_api.domain import DOMAIN
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
@@ -25,7 +25,6 @@ from club_api.modules.gamification.routes import verified_alumni
 from club_api.modules.media.service import media_id
 from club_api.observability.audit import audit
 
-router = APIRouter()
 logger = logging.getLogger("club.podcasts")
 PODCAST_SUB_PRICE_KOP = DOMAIN["limits"]["podcast_year_price"]
 ROUTE_LIMITS = {("GET", "/podcasts/{id}/audio"): 120, ("POST", "/podcasts/subscribe"): 5}
@@ -45,7 +44,7 @@ def signed_audio(state, id, holder):
 def rutube_embed(value):
     match = (
         re.fullmatch(
-            r"https://(?:[a-z0-9-]+\.)*rutube\.ru/(video/private|video|play/embed)/([0-9a-f]{32})/?(?:\?([^#]*))?(?:#.*)?",
+            "https://(?:[a-z0-9-]+\\.)*rutube\\.ru/(video/private|video|play/embed)/([0-9a-f]{32})/?(?:\\?([^#]*))?(?:#.*)?",
             value.strip(),
             re.I,
         )
@@ -57,7 +56,7 @@ def rutube_embed(value):
     token = None
     for pair in (match[3] or "").split("&"):
         if pair.startswith("p="):
-            if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", pair[2:]):
+            if re.fullmatch("[A-Za-z0-9_-]{1,64}", pair[2:]):
                 token = pair[2:]
             break
     return "https://rutube.ru/play/embed/" + match[2].lower() + ("?p=" + token if token else "")
@@ -82,9 +81,9 @@ async def record_play(state, id, holder):
         logger.warning("Не удалось записать прослушивание")
 
 
-@router.get("/podcasts")
-async def podcasts(request: Request):
-    state = request.app.state
+@api_view
+async def podcasts(request: HttpRequest):
+    state = request.services
     alumni = await state.auth.resolve_alumni(request)
     until = alumni.get("podcast_sub_until") if alumni else None
     subscribed = sub_active(until)
@@ -113,15 +112,15 @@ async def podcasts(request: Request):
     }
 
 
-@router.get("/podcasts/{id}/audio")
-async def audio(request: Request, id: str):
-    state, id = request.app.state, guid(id)
-    holder, signature = request.query_params.get("h", ""), request.query_params.get("sig", "")
-    raw_expires = request.query_params.get("exp", "")
+@api_view
+async def audio(request: HttpRequest, id: str):
+    state, id = (request.services, guid(id))
+    holder, signature = (request.GET.get("h", ""), request.GET.get("sig", ""))
+    raw_expires = request.GET.get("exp", "")
     if (
-        not re.fullmatch(r"[0-9]{1,12}", raw_expires)
+        not re.fullmatch("[0-9]{1,12}", raw_expires)
         or not 1 <= len(holder) <= 64
-        or not re.fullmatch(r"[a-f0-9]{64}", signature)
+        or (not re.fullmatch("[a-f0-9]{64}", signature))
     ):
         raise ApiError(403, "Ссылка недействительна или истекла")
     expires = int(raw_expires)
@@ -156,12 +155,13 @@ async def audio(request: Request, id: str):
     target = urlsplit(podcast["audio_url"])
     if target.scheme not in ("http", "https") or not target.hostname or target.username or target.password:
         raise ApiError(404, "Выпуск не найден")
-    return RedirectResponse(podcast["audio_url"], status_code=302)
+    return HttpResponseRedirect(podcast["audio_url"], status=302)
 
 
-@router.post("/podcasts/subscribe")
-async def subscribe(request: Request, alumni: Annotated[dict, Depends(verified_alumni)]):
-    state = request.app.state
+@api_view
+async def subscribe(request: HttpRequest):
+    alumni = await verified_alumni(request)
+    state = request.services
     if sub_active(alumni.get("podcast_sub_until")):
         raise ApiError(400, "Подписка уже активна")
     async with locked_cart(state, "podcast:" + alumni["id"]) as connection:
@@ -278,8 +278,7 @@ class PodcastBody(Body):
         return value
 
 
-content_crud(
-    router,
+urlpatterns = content_crud(
     "/admin/podcasts",
     "podcasts",
     PodcastBody,
@@ -290,9 +289,10 @@ content_crud(
 )
 
 
-@router.get("/admin/podcast-subs")
-async def subscribers(request: Request, _admin: Annotated[dict, Depends(require_admin)]):
-    store = request.app.state.store
+@api_view
+async def subscribers(request: HttpRequest):
+    await require_admin(request)
+    store = request.services.store
     now = datetime.now(UTC)
     subs = await store.read(
         "alumni",

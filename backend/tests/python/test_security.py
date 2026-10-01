@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 import httpx
 import pytest
 from pydantic import ValidationError
-from starlette.requests import Request
+from request_helpers import request_from_scope as Request
 
 from club_api.core.config import Settings
 from club_api.core.security import LoginAttempts, client_ip, trust_proxy, yookassa_ip
@@ -164,7 +164,7 @@ async def test_http_security_limits_logs_and_body(caplog, tmp_path):
     app = create_app(settings(UPLOADS_PATH=tmp_path))
     caplog.set_level(logging.INFO, logger="club.http")
     async with (
-        app.router.lifespan_context(app),
+        app.lifespan(app),
         httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://api.test") as client,
     ):
         health = await client.get("/health?token=never-log-query", headers={"authorization": "Bearer never-log-header"})
@@ -196,7 +196,6 @@ async def test_http_security_limits_logs_and_body(caplog, tmp_path):
             "access-control-allow-origin"
             not in (await client.get("/health", headers={"origin": "https://evil.test"})).headers
         )
-    assert not app._native_telemetry.enabled()
 
 
 @pytest.mark.parametrize("consent", [False, 1, "true"])

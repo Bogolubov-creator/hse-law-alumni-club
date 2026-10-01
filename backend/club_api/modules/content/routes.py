@@ -1,15 +1,13 @@
 import asyncio
 import time
-from typing import Annotated
 from urllib.parse import quote
 from xml.sax.saxutils import escape
 
-from fastapi import APIRouter, Query, Request
-from fastapi.responses import Response
+from django.http import HttpRequest, HttpResponse
 
 from club_api.core.errors import ApiError
+from club_api.core.views import api_view, query_integer
 
-router = APIRouter()
 NEWS_FIELDS = ("id", "slug", "title", "excerpt", "body", "published_at", "source_url")
 PROGRAM_FIELDS = (
     "id",
@@ -32,20 +30,20 @@ PRODUCT_FIELDS = ("id", "slug", "title", "category", "price", "images", "variant
 PUBLISHED = {"status": {"_eq": "published"}}
 
 
-@router.get("/robots.txt")
-async def robots(request: Request):
+@api_view
+async def robots(request: HttpRequest):
     text = "User-agent: *\nAllow: /\nDisallow: /lk\nDisallow: /admin\nDisallow: /cart\nDisallow: /api/\n"
-    text += f"Sitemap: {request.app.state.settings.PUBLIC_URL.rstrip('/')}/sitemap.xml\n"
-    return Response(text, media_type="text/plain")
+    text += f"Sitemap: {request.services.settings.PUBLIC_URL.rstrip('/')}/sitemap.xml\n"
+    return HttpResponse(text, content_type="text/plain")
 
 
-@router.get("/sitemap.xml")
-async def sitemap(request: Request):
-    state = request.app.state
+@api_view
+async def sitemap(request: HttpRequest):
+    state = request.services
     cached = getattr(state, "sitemap_cache", None)
     now = time.monotonic()
     if cached and now - cached[0] < 3600:
-        return Response(cached[1], media_type="application/xml")
+        return HttpResponse(cached[1], content_type="application/xml")
     news, programs = await asyncio.gather(
         state.store.read("news", filters=PUBLISHED, fields=("slug", "published_at"), limit=-1),
         state.store.read("programs", filters=PUBLISHED, fields=("slug",), limit=-1),
@@ -85,20 +83,21 @@ async def sitemap(request: Request):
             "</urlset>",
         ]
     )
-    state.sitemap_cache = now, xml
-    return Response(xml, media_type="application/xml")
+    state.sitemap_cache = (now, xml)
+    return HttpResponse(xml, content_type="application/xml")
 
 
-@router.get("/news")
-async def news(request: Request, limit: Annotated[int | None, Query(ge=1, le=100)] = None):
-    return await request.app.state.store.read(
+@api_view
+async def news(request: HttpRequest):
+    limit = query_integer(request, "limit", minimum=1, maximum=100)
+    return await request.services.store.read(
         "news", filters=PUBLISHED, fields=NEWS_FIELDS, sort=("-published_at",), limit=limit or -1
     )
 
 
-@router.get("/news/{slug}")
-async def news_detail(request: Request, slug: str):
-    rows = await request.app.state.store.read(
+@api_view
+async def news_detail(request: HttpRequest, slug: str):
+    rows = await request.services.store.read(
         "news", filters={**PUBLISHED, "slug": {"_eq": slug}}, fields=NEWS_FIELDS, limit=1
     )
     if not rows:
@@ -106,16 +105,16 @@ async def news_detail(request: Request, slug: str):
     return rows[0]
 
 
-@router.get("/programs")
-async def programs(request: Request):
-    return await request.app.state.store.read(
+@api_view
+async def programs(request: HttpRequest):
+    return await request.services.store.read(
         "programs", filters=PUBLISHED, fields=PROGRAM_FIELDS, sort=("title",), limit=-1
     )
 
 
-@router.get("/programs/{slug}")
-async def program_detail(request: Request, slug: str):
-    rows = await request.app.state.store.read(
+@api_view
+async def program_detail(request: HttpRequest, slug: str):
+    rows = await request.services.store.read(
         "programs",
         filters={**PUBLISHED, "slug": {"_eq": slug}},
         fields=(*PROGRAM_FIELDS, "modules", "teachers", "audience", "results", "advantages"),
@@ -126,16 +125,16 @@ async def program_detail(request: Request, slug: str):
     return rows[0]
 
 
-@router.get("/products")
-async def products(request: Request):
-    return await request.app.state.store.read(
+@api_view
+async def products(request: HttpRequest):
+    return await request.services.store.read(
         "products", filters=PUBLISHED, fields=PRODUCT_FIELDS, sort=("title",), limit=-1
     )
 
 
-@router.get("/timeline")
-async def timeline(request: Request):
-    return await request.app.state.store.read(
+@api_view
+async def timeline(request: HttpRequest):
+    return await request.services.store.read(
         "timeline_items",
         filters=PUBLISHED,
         fields=("id", "year", "title", "text", "metric", "sort"),
@@ -144,9 +143,9 @@ async def timeline(request: Request):
     )
 
 
-@router.get("/pages/{slug}")
-async def page(request: Request, slug: str):
-    rows = await request.app.state.store.read(
+@api_view
+async def page(request: HttpRequest, slug: str):
+    rows = await request.services.store.read(
         "pages",
         filters={**PUBLISHED, "slug": {"_eq": slug}},
         limit=1,

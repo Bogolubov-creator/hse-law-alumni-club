@@ -41,7 +41,7 @@ async def test_roles_existing_passwords_and_one_time_reset(database_app):
         0
     ] == "invalid"
     assert (await auth.authenticate(user_id + "@example.test", "synthetic-new-password", scope="alumni"))[0] == "ok"
-    from starlette.requests import Request
+    from request_helpers import request_from_scope as Request
 
     scope = {"type": "http", "app": app, "headers": [(b"authorization", ("Bearer " + original).encode())]}
     assert await auth.resolve_alumni(Request(scope)) is None
@@ -73,7 +73,7 @@ async def test_no_role_or_sso_bypass(database_app, role, provider, tfa, scope, e
 
 @pytest.mark.asyncio
 async def test_current_office_role_and_revocation_survive_new_service(database_app):
-    from starlette.requests import Request
+    from request_helpers import request_from_scope as Request
 
     from club_api.modules.auth.service import AuthService
 
@@ -100,7 +100,7 @@ async def test_legacy_node_hash_and_jwt_compatibility(database_app):
     assert await verify_password(legacy["hash"], "synthetic-cross-runtime")
     payload = app.state.auth.decode(legacy["token"])
     assert payload["sub"] == legacy["user"] and payload["alumni_id"] == legacy["alumni"]
-    from starlette.requests import Request
+    from request_helpers import request_from_scope as Request
 
     request = Request(
         {"type": "http", "app": app, "headers": [(b"authorization", ("Bearer " + legacy["token"]).encode())]}

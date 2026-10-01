@@ -2,27 +2,27 @@ import logging
 import re
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Request
+from django.http import HttpRequest
 from pydantic import Field
 
+from club_api.core.views import api_view, parse_body
 from club_api.modules.auth.routes import Body
 
-router = APIRouter()
 logger = logging.getLogger("club.analytics")
 ROUTE_LIMITS = {("POST", "/analytics/pageview"): 60}
 ALLOWED = [
-    r"/",
-    r"/(?:dpo|merch|news|events)(?:/[\w.-]+)?",
-    r"/(?:podcasts|cart|join|forgot|reset|confirm|privacy|confidential|requisites)",
-    r"/lk(?:/profile)?",
-    r"/support(?:/consent)?",
+    "/",
+    "/(?:dpo|merch|news|events)(?:/[\\w.-]+)?",
+    "/(?:podcasts|cart|join|forgot|reset|confirm|privacy|confidential|requisites)",
+    "/lk(?:/profile)?",
+    "/support(?:/consent)?",
 ]
 
 
 def normalize_page_path(value):
     if not isinstance(value, str):
         return None
-    path = re.split(r"[?#]", value.strip())[0]
+    path = re.split("[?#]", value.strip())[0]
     if not path.startswith("/") or len(path) > 120:
         return None
     if path != "/" and path.endswith("/"):
@@ -37,9 +37,10 @@ class PageViewBody(Body):
     path: str = Field(min_length=1, max_length=200)
 
 
-@router.post("/analytics/pageview")
-async def pageview(request: Request, body: PageViewBody):
-    state, path = request.app.state, normalize_page_path(body.path)
+@api_view
+async def pageview(request: HttpRequest):
+    body = parse_body(request, PageViewBody)
+    state, path = (request.services, normalize_page_path(body.path))
     if path and state.database.pool:
         try:
             await state.database.execute(

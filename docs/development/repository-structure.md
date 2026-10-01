@@ -7,6 +7,10 @@
 
 ## Сервер
 
+`backend/club_api/django_settings.py` задаёт настройки Django, `urls.py` содержит
+URLconf. Обработчики получают `HttpRequest`, явно проверяют роль и тело запроса
+и возвращают Django HTTP-ответы.
+
 В [backend/club_api/modules](../../backend/club_api/modules) маршруты лежат рядом с логикой
 своей предметной области. Имена `routes.py` и `admin.py` обозначают HTTP-обработчики;
 остальные файлы содержат расчёты, права, работу с данными или интеграции области.
@@ -43,7 +47,9 @@
 
 ## Интерфейс
 
-`frontend/club_web/main.py` запускает отдельный FastAPI web. `pages.py` выбирает
+`frontend/club_web/main.py` запускает Django web через ASGI. `urls.py` описывает
+маршруты, `views.py` обрабатывает страницы и фрагменты, `rendering.py` настраивает
+штатный Django-движок Jinja2. `pages.py` выбирает
 маршрут и получает данные через `client.py` из внутреннего API. Web не подключается
 к PostgreSQL и не принимает окончательных решений о правах, цене или скидке.
 

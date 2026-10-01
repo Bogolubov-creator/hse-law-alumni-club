@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Request
+from django.http import HttpRequest
 from pydantic import Field
 
 from club_api.core.errors import ApiError
 from club_api.core.security import constant_equal
+from club_api.core.views import api_view, defer, parse_body
 from club_api.modules.auth.routes import Body
 
-router = APIRouter()
 ROUTE_LIMITS = {("POST", "/telegram/webhook"): 120}
 SafeId = Annotated[int, Field(ge=-9007199254740991, le=9007199254740991)]
 
@@ -44,9 +44,10 @@ class UpdateBody(Body):
     message_reaction: Reaction = None
 
 
-@router.post("/telegram/webhook")
-async def webhook(request: Request, body: UpdateBody, tasks: BackgroundTasks):
-    state = request.app.state
+@api_view
+async def webhook(request: HttpRequest):
+    body = parse_body(request, UpdateBody)
+    state = request.services
     if not state.settings.secret("TELEGRAM_BOT_TOKEN"):
         raise ApiError(503, "Telegram-бот не настроен")
     if not state.settings.secret("TELEGRAM_WEBHOOK_SECRET"):
@@ -59,5 +60,5 @@ async def webhook(request: Request, body: UpdateBody, tasks: BackgroundTasks):
     if body.message_reaction:
         await state.telegram.handle(update)
     else:
-        tasks.add_task(state.telegram.safe_handle, update)
+        defer(request, state.telegram.safe_handle, update)
     return {"ok": True}

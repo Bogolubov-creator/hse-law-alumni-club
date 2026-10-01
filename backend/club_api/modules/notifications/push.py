@@ -3,21 +3,20 @@ import ipaddress
 import json
 import logging
 import socket
-from typing import Annotated
 from urllib.parse import urlsplit
 
 import aiohttp
-from fastapi import APIRouter, Depends, Request
+from django.http import HttpRequest
 from py_vapid import Vapid
 from pydantic import Field, field_validator
 from pywebpush import WebPushException, webpush_async
 
+from club_api.core.views import api_view, parse_body
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_alumni
 from club_api.modules.gamification.routes import verified_alumni
 from club_api.observability.audit import audit
 
-router = APIRouter()
 ROUTE_LIMITS = {"/me/push/subscribe": 10}
 logger = logging.getLogger("club.push")
 
@@ -59,7 +58,7 @@ class EndpointBody(Body):
             or not url.hostname
             or url.username
             or url.password
-            or url.hostname == "localhost"
+            or (url.hostname == "localhost")
             or url.hostname.endswith((".local", ".internal"))
         ):
             raise ValueError("Некорректный адрес уведомлений")
@@ -67,7 +66,7 @@ class EndpointBody(Body):
             address = ipaddress.ip_address(url.hostname)
         except ValueError:
             address = None
-        if address is not None and not address.is_global:
+        if address is not None and (not address.is_global):
             raise ValueError("Некорректный адрес уведомлений")
         return value
 
@@ -130,14 +129,16 @@ class Push:
         return await self.send(None, payload)
 
 
-@router.get("/push/vapid")
-async def vapid(request: Request):
-    return {"enabled": request.app.state.push.enabled, "key": request.app.state.settings.VAPID_PUBLIC_KEY or None}
+@api_view
+async def vapid(request: HttpRequest):
+    return {"enabled": request.services.push.enabled, "key": request.services.settings.VAPID_PUBLIC_KEY or None}
 
 
-@router.post("/me/push/subscribe")
-async def subscribe(request: Request, body: SubscribeBody, alumni: Annotated[dict, Depends(verified_alumni)]):
-    state = request.app.state
+@api_view
+async def subscribe(request: HttpRequest):
+    alumni = await verified_alumni(request)
+    body = parse_body(request, SubscribeBody)
+    state = request.services
     previous = None
     async with state.database.transaction() as connection:
         await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("push:" + body.endpoint,))
@@ -159,9 +160,11 @@ async def subscribe(request: Request, body: SubscribeBody, alumni: Annotated[dic
     return {"ok": True}
 
 
-@router.post("/me/push/unsubscribe")
-async def unsubscribe(request: Request, body: EndpointBody, alumni: Annotated[dict, Depends(require_alumni)]):
-    await request.app.state.store.delete(
+@api_view
+async def unsubscribe(request: HttpRequest):
+    alumni = await require_alumni(request)
+    body = parse_body(request, EndpointBody)
+    await request.services.store.delete(
         "push_subs", filters={"endpoint": {"_eq": body.endpoint}, "alumni_id": {"_eq": alumni["id"]}}
     )
     return {"ok": True}

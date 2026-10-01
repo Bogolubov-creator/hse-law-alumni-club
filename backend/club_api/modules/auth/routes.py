@@ -2,21 +2,21 @@ import re
 import secrets
 import time
 from datetime import UTC, datetime
-from typing import Annotated, Literal
+from typing import Literal
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Request
+from django.http import HttpRequest
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from club_api.core.errors import ApiError
 from club_api.core.security import client_ip
+from club_api.core.views import api_view, parse_body
 from club_api.domain import MAX_INTERESTS
 from club_api.modules.auth.service import auth_service, require_admin
 from club_api.modules.notifications.mail import EMAIL_CONFIRMATION_KIND
 from club_api.modules.telegram.signature import validate_init_data
 from club_api.observability.audit import audit
 
-router = APIRouter()
 PDN_POLICY_VERSION = "2026-07-02"
 RESEND_COOLDOWN_SECONDS = 600
 RESEND_CACHE_LIMIT = 10000
@@ -43,7 +43,8 @@ class EmailBody(Body):
     @classmethod
     def email_valid(cls, value):
         if not re.fullmatch(
-            r"(?!\.)(?!.*\.\.)[A-Za-z0-9_'+.\-]*[A-Za-z0-9_+\-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}", value
+            "(?!\\.)(?!.*\\.\\.)[A-Za-z0-9_'+.\\-]*[A-Za-z0-9_+\\-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}",
+            value,
         ):
             raise ValueError("Некорректная почта")
         return value
@@ -56,7 +57,7 @@ class LoginBody(EmailBody):
 class RegisterBody(EmailBody):
     fio: str = Field(min_length=2, max_length=200)
     password: str = Field(min_length=8, max_length=100)
-    cohort: str = Field(pattern=r"^(19|20)\d{2}$")
+    cohort: str = Field(pattern="^(19|20)\\d{2}$")
     edu_level: Literal["бакалавриат", "магистратура", "специалитет", "аспирантура"]
     edu_program: str = Field(min_length=2, max_length=200)
     interests: list[str] = Field(default_factory=list)
@@ -91,13 +92,8 @@ class TelegramBody(Body):
 async def queue_confirmation(request, user_id, email):
     service = auth_service(request)
     token = service.token({"sub": user_id, "purpose": "email-confirm"}, 86400)
-    body = (
-        "Здравствуйте!\n\nВы подали заявку на вступление в клуб выпускников факультета права Вышки.\n"
-        f"Подтвердите, что почта ваша – ссылка действует 24 часа:\n{service.settings.PUBLIC_URL}/confirm?token={quote(token)}\n\n"
-        "После подтверждения заявку проверит учебный офис.\n\n"
-        "Если заявку подавали не вы – просто проигнорируйте письмо, аккаунт останется неактивным."
-    )
-    return await request.app.state.notifications.enqueue_mail(
+    body = f"Здравствуйте!\n\nВы подали заявку на вступление в клуб выпускников факультета права Вышки.\nПодтвердите, что почта ваша – ссылка действует 24 часа:\n{service.settings.PUBLIC_URL}/confirm?token={quote(token)}\n\nПосле подтверждения заявку проверит учебный офис.\n\nЕсли заявку подавали не вы – просто проигнорируйте письмо, аккаунт останется неактивным."
+    return await request.services.notifications.enqueue_mail(
         email, "Подтвердите почту – Клуб выпускников факультета права", body, kind=EMAIL_CONFIRMATION_KIND
     )
 
@@ -108,7 +104,7 @@ def alumni_view(alumni):
 
 async def login(request, body, scope):
     service = auth_service(request)
-    email, ip = body.email.lower().strip(), client_ip(request)
+    email, ip = (body.email.lower().strip(), client_ip(request))
     prefix = "admin.login" if scope == "admin" else "login"
     if service.attempts.locked(email, ip):
         await audit(request, prefix + ".locked", actor="email:" + email)
@@ -139,31 +135,36 @@ async def login(request, body, scope):
     }
 
 
-@router.post("/auth/login")
-async def alumni_login(request: Request, body: LoginBody):
+@api_view
+async def alumni_login(request: HttpRequest):
+    body = parse_body(request, LoginBody)
     return await login(request, body, "alumni")
 
 
-@router.post("/auth/admin-login")
-async def admin_login(request: Request, body: LoginBody):
+@api_view
+async def admin_login(request: HttpRequest):
+    body = parse_body(request, LoginBody)
     return await login(request, body, "admin")
 
 
-@router.post("/auth/admin-logout")
-async def admin_logout(request: Request, admin: Annotated[dict, Depends(require_admin)]):
+@api_view
+async def admin_logout(request: HttpRequest):
+    admin = await require_admin(request)
     if admin.get("jti"):
         await auth_service(request).revoke_admin(admin["jti"])
     await audit(request, "admin.logout", actor="user:" + admin["userId"])
     return {"ok": True}
 
 
-@router.get("/auth/admin-session")
-async def admin_session(admin: Annotated[dict, Depends(require_admin)]):
+@api_view
+async def admin_session(request: HttpRequest):
+    admin = await require_admin(request)
     return {"role": admin["role"]}
 
 
-@router.post("/auth/register")
-async def register(request: Request, body: RegisterBody):
+@api_view
+async def register(request: HttpRequest):
+    body = parse_body(request, RegisterBody)
     service = auth_service(request)
     email = body.email.lower().strip()
     if await service.user(email=email):
@@ -172,8 +173,8 @@ async def register(request: Request, body: RegisterBody):
     if body.ref:
         rows = await service.store.read("alumni", filters={"referral_code": {"_eq": body.ref}}, fields=["id"], limit=1)
         referred_by = rows[0]["id"] if rows else None
-    interests = request.app.state.domain["legal_interests"]
-    confirm_required = request.app.state.notifications.mail_enabled
+    interests = request.services.domain["legal_interests"]
+    confirm_required = request.services.notifications.mail_enabled
     user_id = await service.register(
         email=email,
         password=body.password,
@@ -208,18 +209,19 @@ async def register(request: Request, body: RegisterBody):
             "confirm_required": True,
             "confirmation_queued": result["sent"] or result["id"] is not None,
         }
-    await request.app.state.notifications.office_text(
+    await request.services.notifications.office_text(
         "🎓 Новая заявка на вступление в клуб – очередь верификации в админ-панели."
     )
     return {"ok": True, "pending": True, "confirm_required": False}
 
 
-@router.post("/auth/resend-confirmation")
-async def resend_confirmation(request: Request, body: EmailBody):
-    if not request.app.state.notifications.mail_enabled:
+@api_view
+async def resend_confirmation(request: HttpRequest):
+    body = parse_body(request, EmailBody)
+    if not request.services.notifications.mail_enabled:
         raise ApiError(503, "Почта временно недоступна – повторите позже")
     service = auth_service(request)
-    email, now = body.email.lower().strip(), time.monotonic()
+    email, now = (body.email.lower().strip(), time.monotonic())
     entries = service.confirmation_resends
     if entries.get(email, 0) > now:
         return {"ok": True}
@@ -246,8 +248,9 @@ async def resend_confirmation(request: Request, body: EmailBody):
     return {"ok": True}
 
 
-@router.post("/auth/confirm")
-async def confirm(request: Request, body: TokenBody):
+@api_view
+async def confirm(request: HttpRequest):
+    body = parse_body(request, TokenBody)
     service = auth_service(request)
     payload = service.decode(body.token)
     if not payload:
@@ -260,16 +263,17 @@ async def confirm(request: Request, body: TokenBody):
     if result == "already":
         return {"ok": True, "already": True}
     await audit(request, "email.confirm", actor="user:" + payload["sub"])
-    await request.app.state.notifications.office_text(
+    await request.services.notifications.office_text(
         "🎓 Новая заявка на вступление в клуб (почта подтверждена) – очередь верификации в админ-панели."
     )
     return {"ok": True}
 
 
-@router.post("/auth/forgot")
-async def forgot(request: Request, body: ForgotBody):
+@api_view
+async def forgot(request: HttpRequest):
+    body = parse_body(request, ForgotBody)
     service = auth_service(request)
-    if not request.app.state.notifications.mail_enabled:
+    if not request.services.notifications.mail_enabled:
         raise ApiError(
             503, "Восстановление пароля временно недоступно: почтовый канал не настроен. Напишите в учебный офис."
         )
@@ -284,7 +288,7 @@ async def forgot(request: Request, body: ForgotBody):
         continuation = "&next=" + quote(body.next, safe="") if body.next == "/podcasts#podcast-subscription" else ""
         url = f"{service.settings.PUBLIC_URL}/reset?token={quote(token)}{continuation}"
         await audit(request, "password.forgot", actor="email:" + body.email)
-        await request.app.state.notifications.send_email(
+        await request.services.notifications.send_email(
             body.email,
             "Восстановление пароля – Клуб выпускников факультета права Вышки",
             f"Вы запросили восстановление пароля.\n\nСсылка действует 30 минут и срабатывает один раз:\n{url}\n\nЕсли это были не вы – просто проигнорируйте письмо.",
@@ -292,8 +296,9 @@ async def forgot(request: Request, body: ForgotBody):
     return {"ok": True}
 
 
-@router.post("/auth/reset")
-async def reset(request: Request, body: ResetBody):
+@api_view
+async def reset(request: HttpRequest):
+    body = parse_body(request, ResetBody)
     service = auth_service(request)
     payload = service.decode(body.token)
     if not payload:
@@ -301,7 +306,7 @@ async def reset(request: Request, body: ResetBody):
     if (
         payload.get("purpose") != "reset"
         or not isinstance(payload.get("jti"), str)
-        or not await service.user(id=payload["sub"], alumni=True)
+        or (not await service.user(id=payload["sub"], alumni=True))
     ):
         raise ApiError(400, "Ссылка недействительна")
     result = await service.reset(payload["sub"], body.password, payload["jti"], payload.get("ver"))
@@ -314,8 +319,9 @@ async def reset(request: Request, body: ResetBody):
     return {"ok": True}
 
 
-@router.post("/auth/telegram")
-async def telegram_login(request: Request, body: TelegramBody):
+@api_view
+async def telegram_login(request: HttpRequest):
+    body = parse_body(request, TelegramBody)
     service = auth_service(request)
     token = service.settings.secret("TELEGRAM_BOT_TOKEN")
     if not token:
@@ -332,7 +338,7 @@ async def telegram_login(request: Request, body: TelegramBody):
     if not rows:
         raise ApiError(404, "Профиль выпускника не привязан к Telegram")
     alumni = rows[0]
-    if alumni["user_id"] and not await service.user(id=alumni["user_id"], alumni=True, active=True):
+    if alumni["user_id"] and (not await service.user(id=alumni["user_id"], alumni=True, active=True)):
         raise ApiError(403, "Вход в профиль закрыт – обратитесь в учебный офис")
     return {
         "token": service.session(alumni["id"], alumni["user_id"] or telegram_id, alumni["token_version"] or 0),

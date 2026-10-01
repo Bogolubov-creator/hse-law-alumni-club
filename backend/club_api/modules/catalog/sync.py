@@ -3,19 +3,18 @@ import json
 import math
 import re
 from datetime import UTC, datetime
-from typing import Annotated
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, Request
+from django.http import HttpRequest
 
 from club_api.core.errors import ApiError
 from club_api.core.models import slugify
 from club_api.core.outgoing import get_html
+from club_api.core.views import api_view
 from club_api.modules.auth.service import require_admin
 from club_api.observability.audit import audit
 
-router = APIRouter()
 ROUTE_LIMITS = {("POST", "/admin/dpo-sync"): 3}
 ACTUAL_URL = "https://www.hse.ru/edu/dpo/?orgUnit=22753"
 ALL_URL = "https://www.hse.ru/edu/dpo/?onlyActual=0&orgUnit=22753"
@@ -54,27 +53,27 @@ DOCUMENTS = {
 
 
 def state_json(source):
-    tokens, index = [], 0
+    tokens, index = ([], 0)
     while index < len(source):
         char = source[index]
         if char == '"':
-            match = re.compile(r'"(?:\\.|[^"\\])*"').match(source, index)
+            match = re.compile('"(?:\\\\.|[^"\\\\])*"').match(source, index)
             if not match:
                 raise ValueError("Некорректная строка")
             tokens.append(match[0])
             index += len(match[0])
             continue
-        if re.match(r"[A-Za-z_$]", char):
-            word = re.compile(r"[A-Za-z0-9_$]+").match(source, index)[0]
+        if re.match("[A-Za-z_$]", char):
+            word = re.compile("[A-Za-z0-9_$]+").match(source, index)[0]
             end = index + len(word)
             if word == "new":
-                match = re.compile(r"\s*Date\s*\(\s*([0-9]+)\s*\)").match(source, end)
+                match = re.compile("\\s*Date\\s*\\(\\s*([0-9]+)\\s*\\)").match(source, end)
                 if match:
                     tokens.append(match[1])
                     index = end + len(match[0])
                     continue
             if word == "__proto__":
-                match = re.compile(r"\s*:\s*null\b").match(source, end)
+                match = re.compile("\\s*:\\s*null\\b").match(source, end)
                 if match:
                     index = end + len(match[0])
                     previous = len(tokens) - 1
@@ -83,7 +82,7 @@ def state_json(source):
                     if previous >= 0 and tokens[previous] == ",":
                         tokens = tokens[:previous]
                     else:
-                        comma = re.compile(r"\s*,").match(source, index)
+                        comma = re.compile("\\s*,").match(source, index)
                         if comma:
                             index += len(comma[0])
                     continue
@@ -99,7 +98,7 @@ def state_json(source):
 
 
 def parse_initial_state(html):
-    match = re.search(r"window\.__INITIAL_STATE__\s*=\s*(\{[\s\S]*?\});\s*window\.__URQL_DATA__", html)
+    match = re.search("window\\.__INITIAL_STATE__\\s*=\\s*(\\{[\\s\\S]*?\\});\\s*window\\.__URQL_DATA__", html)
     if not match:
         raise ApiError(502, "Разметка каталога изменилась. Обновление отменено")
     try:
@@ -127,11 +126,11 @@ def label(value):
 def map_item(item):
     if not isinstance(item, dict):
         return None
-    id, title = str(item.get("id") or "").strip(), str(item.get("title") or "").strip()
-    if not re.fullmatch(r"[0-9]+", id) or not title:
+    id, title = (str(item.get("id") or "").strip(), str(item.get("title") or "").strip())
+    if not re.fullmatch("[0-9]+", id) or not title:
         return None
     url = str(item.get("url") or "").strip()
-    if not re.match(r"https://(?:[a-z0-9-]+\.)*hse\.ru(?:[/?#]|$)", url, re.I):
+    if not re.match("https://(?:[a-z0-9-]+\\.)*hse\\.ru(?:[/?#]|$)", url, re.I):
         url = "https://www.hse.ru/edu/dpo/" + id
     format_raw = label(item.get("studyFormat"))
     format = (
@@ -143,7 +142,7 @@ def map_item(item):
     )
     price = item.get("discountPrice") if item.get("discountPrice") is not None else item.get("educationPricing")
     price_kop = (
-        math.floor(price + 0.5) * 100 if type(price) in (int, float) and math.isfinite(price) and price >= 0 else 0
+        math.floor(price + 0.5) * 100 if type(price) in (int, float) and math.isfinite(price) and (price >= 0) else 0
     )
     if price_kop > 9007199254740991:
         raise ApiError(502, "Цена в источнике превышает допустимый размер")
@@ -175,7 +174,7 @@ def map_item(item):
 def page_url(base, page):
     url = urlsplit(base)
     params = [(key, value) for key, value in parse_qsl(url.query) if key != "page"]
-    if not any(key == "orgUnit" for key, _ in params):
+    if not any((key == "orgUnit" for key, _ in params)):
         params.append(("orgUnit", "22753"))
     if page > 1:
         params.append(("page", str(page)))
@@ -183,6 +182,7 @@ def page_url(base, page):
 
 
 async def collect(state, base):
+
     async def fetch(page):
         html = await get_html(state, page_url(base, page), allowed_hosts={"www.hse.ru", "hse.ru"}, max_bytes=8000000)
         return await asyncio.to_thread(parse_initial_state, html)
@@ -201,21 +201,23 @@ async def collect(state, base):
 
 
 def normalized_title(title):
-    return re.sub(r"\s+", " ", re.sub(r"\s*\([^)]*\)\s*$", "", title.split(" / ")[0]).lower().replace("ё", "е")).strip()
+    return re.sub(
+        "\\s+", " ", re.sub("\\s*\\([^)]*\\)\\s*$", "", title.split(" / ")[0]).lower().replace("ё", "е")
+    ).strip()
 
 
 def plan_sync(cards, existing):
-    by_id, by_title, managed = {}, {}, set()
+    by_id, by_title, managed = ({}, {}, set())
     for row in existing:
-        source = re.match(r"https://(?:www\.)?hse\.ru/edu/dpo/([0-9]+)", row["source_url"] or "")
-        if re.fullmatch(r"[0-9]+", row.get("hse_id") or ""):
+        source = re.match("https://(?:www\\.)?hse\\.ru/edu/dpo/([0-9]+)", row["source_url"] or "")
+        if re.fullmatch("[0-9]+", row.get("hse_id") or ""):
             by_id[row["hse_id"]] = row
             managed.add(row["id"])
         if source:
             by_id[source[1]] = row
             by_title[normalized_title(row["title"])] = row
             managed.add(row["id"])
-    slugs, matched, changes = {row["slug"] for row in existing}, set(), []
+    slugs, matched, changes = ({row["slug"] for row in existing}, set(), [])
     for card in cards:
         row = by_id.get(card["hseId"]) or by_title.get(normalized_title(card["title"]))
         patch = {
@@ -259,14 +261,14 @@ def plan_sync(cards, existing):
     changes.extend(
         {"kind": "archive", "id": row["id"], "data": {"status": "archived"}}
         for row in existing
-        if row["id"] in managed and row["id"] not in matched and row["status"] != "archived"
+        if row["id"] in managed and row["id"] not in matched and (row["status"] != "archived")
     )
     return changes
 
 
 async def sync_catalog(state):
-    actual_url, all_url = state.settings.HSE_DPO_URL or ACTUAL_URL, state.settings.HSE_DPO_ALL_URL or ALL_URL
-    actual, all_cards = await collect(state, actual_url), await collect(state, all_url)
+    actual_url, all_url = (state.settings.HSE_DPO_URL or ACTUAL_URL, state.settings.HSE_DPO_ALL_URL or ALL_URL)
+    actual, all_cards = (await collect(state, actual_url), await collect(state, all_url))
     if len(actual) < 3 or len(all_cards) < len(actual):
         raise ApiError(502, "Источник вернул неполный каталог. Обновление отменено")
     actual_ids = {card["hseId"] for card in actual}
@@ -302,8 +304,9 @@ async def sync_catalog(state):
     return result
 
 
-@router.post("/admin/dpo-sync")
-async def sync(request: Request, admin: Annotated[dict, Depends(require_admin)]):
-    result = await sync_catalog(request.app.state)
+@api_view
+async def sync(request: HttpRequest):
+    admin = await require_admin(request)
+    result = await sync_catalog(request.services)
     await audit(request, "catalog.dpo_sync", actor="admin:" + admin["userId"], detail=result)
     return {"ok": True, **result}

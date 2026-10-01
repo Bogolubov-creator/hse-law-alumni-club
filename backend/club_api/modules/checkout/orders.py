@@ -1,13 +1,13 @@
 import json
 import logging
-from typing import Annotated, Literal
+from typing import Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse
+from django.http import HttpRequest, JsonResponse
 from pydantic import Field, field_validator
 
 from club_api.core.errors import ApiError
+from club_api.core.views import api_view, parse_body
 from club_api.domain import effective_discount, order_totals
 from club_api.modules.auth.routes import Body, EmailBody, RegisterBody
 from club_api.modules.auth.service import require_alumni
@@ -17,7 +17,6 @@ from club_api.modules.checkout.payments import SAFE_INTEGER_MAX, secure_payment_
 from club_api.modules.checkout.store import digest
 from club_api.observability.audit import audit
 
-router = APIRouter()
 logger = logging.getLogger("club.orders")
 ROUTE_LIMITS = {"/orders": 6}
 
@@ -47,10 +46,11 @@ def json_string(value):
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
-@router.post("/orders")
-async def create_order(request: Request, body: OrderBody):
-    state, session = request.app.state, cart_session(request)
-    if body.fulfillment == "delivery" and not (body.address or "").strip():
+@api_view
+async def create_order(request: HttpRequest):
+    body = parse_body(request, OrderBody)
+    state, session = (request.services, cart_session(request))
+    if body.fulfillment == "delivery" and (not (body.address or "").strip()):
         raise ApiError(400, "Укажите адрес доставки")
     alumni = await state.auth.resolve_alumni(request)
     supplied_key = request.headers.get("idempotency-key")
@@ -65,7 +65,7 @@ async def create_order(request: Request, body: OrderBody):
     request_hash = digest(
         json_string({"body": body.model_dump(exclude_unset=True), "alumni": alumni["id"] if alumni else None})
     )
-    if previous := await state.checkout.replay(key, request_hash):
+    if previous := (await state.checkout.replay(key, request_hash)):
         return previous
     cart = await load_cart(state.store, session)
     if not cart or not cart["items"]:
@@ -82,12 +82,13 @@ async def create_order(request: Request, body: OrderBody):
             priced.append({**item, "price": info["price"], "title": info["title"]})
     if unavailable:
         unavailable = list(dict.fromkeys(unavailable))
-        return JSONResponse(
+        return JsonResponse(
             {
                 "error": f"Эти позиции больше недоступны: {', '.join(unavailable)}. Удалите их из корзины и оформите заказ заново.",
                 "unavailable": unavailable,
             },
-            status_code=409,
+            status=409,
+            safe=False,
         )
     discount = effective_discount(
         bool(alumni and alumni["verification_status"] == "verified"),
@@ -167,9 +168,10 @@ async def create_order(request: Request, body: OrderBody):
     return receipt
 
 
-@router.get("/me/orders")
-async def my_orders(request: Request, alumni: Annotated[dict, Depends(require_alumni)]):
-    return await request.app.state.store.read(
+@api_view
+async def my_orders(request: HttpRequest):
+    alumni = await require_alumni(request)
+    return await request.services.store.read(
         "orders",
         filters={"alumni_id": {"_eq": alumni["id"]}},
         sort=("-created_at",),

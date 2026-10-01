@@ -1,14 +1,13 @@
-from typing import Annotated, Literal
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from django.http import HttpRequest
 
 from club_api.core.errors import ApiError
+from club_api.core.views import api_view, parse_body
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_alumni
 from club_api.observability.audit import audit
-
-router = APIRouter()
 
 
 class PointsBody(Body):
@@ -20,16 +19,17 @@ class PointsBody(Body):
     idempotency_key: str | None = None
 
 
-async def verified_alumni(request: Request):
+async def verified_alumni(request: HttpRequest):
     alumni = await require_alumni(request)
     if alumni["verification_status"] != "verified":
         raise ApiError(403, "Доступно после верификации")
     return alumni
 
 
-@router.post("/points")
-async def points(request: Request, body: PointsBody):
-    state = request.app.state
+@api_view
+async def points(request: HttpRequest):
+    body = parse_body(request, PointsBody)
+    state = request.services
     if not state.auth.service_token(request):
         raise ApiError(401, "Требуется сервисный токен")
     try:
@@ -47,16 +47,17 @@ async def points(request: Request, body: PointsBody):
     return {"ok": True, **result}
 
 
-@router.post("/decay/run")
-async def decay(request: Request):
-    if not request.app.state.auth.service_token(request):
+@api_view
+async def decay(request: HttpRequest):
+    if not request.services.auth.service_token(request):
         raise ApiError(401, "Требуется сервисный токен")
-    return await request.app.state.gamification.decay()
+    return await request.services.gamification.decay()
 
 
-@router.get("/me/ledger")
-async def ledger(request: Request, alumni: Annotated[dict, Depends(verified_alumni)]):
-    return await request.app.state.store.read(
+@api_view
+async def ledger(request: HttpRequest):
+    alumni = await verified_alumni(request)
+    return await request.services.store.read(
         "points_ledger",
         filters={"alumni_id": {"_eq": alumni["id"]}},
         fields=("id", "delta", "reason", "ref", "comment", "created_at"),

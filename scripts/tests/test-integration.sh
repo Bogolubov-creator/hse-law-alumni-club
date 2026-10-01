@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-exec bash "$REPO_DIR/scripts/tests/test-fastapi-integration.sh" "$@"
+exec bash "$REPO_DIR/scripts/tests/test-django-integration.sh" "$@"

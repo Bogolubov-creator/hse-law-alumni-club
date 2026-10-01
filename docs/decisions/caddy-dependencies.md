@@ -58,7 +58,7 @@ python3 scripts/tests/test-edge.py \
 Первый шаг проверяет сборку, скрытые/публичные JSON-поля, обычные CEL matcher
 и достижимые Go-уязвимости. Второй использует конечные образы и штатные Caddyfile.
 HTTP-фикстура вместо API читает тело и показывает переданный путь и proxy
-headers; отдельный `test-live.sh` проверяет настоящий FastAPI/PostgreSQL.
+headers; отдельный `test-live.sh` проверяет настоящий Django/PostgreSQL.
 
 TLS проверяется стандартным клиентом с собственной CA, без отключения проверки
 сертификата. Тест также проверяет reload, legacy assets/redirect, SPA/404, CSP,

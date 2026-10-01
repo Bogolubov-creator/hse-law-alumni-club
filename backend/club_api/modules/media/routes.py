@@ -1,58 +1,55 @@
 import logging
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse
+from django.http import HttpRequest, JsonResponse
 
 from club_api.core.errors import ApiError
 from club_api.core.models import guid, query_page
+from club_api.core.views import api_view
 from club_api.modules.auth.service import require_admin, require_alumni
-from club_api.modules.media.service import MAX_AUDIO_BYTES
 from club_api.observability.audit import audit
 
-router = APIRouter()
 logger = logging.getLogger("club.media")
 ROUTE_LIMITS = {("POST", "/admin/media"): 8, ("POST", "/me/avatar"): 10}
 
 
 async def upload_form(request):
+    from asgiref.sync import sync_to_async
+
     try:
-        form = await request.form(max_files=1, max_fields=0, max_part_size=MAX_AUDIO_BYTES)
+        uploads = await sync_to_async(lambda: list(request.FILES.values()), thread_sensitive=True)()
+        if request.POST or len(uploads) != 1:
+            raise ValueError
+        return uploads[0]
     except Exception:
         raise ApiError(400, "Прикрепите один файл") from None
-    uploads = list(form.values())
-    if len(uploads) != 1 or not hasattr(uploads[0], "read"):
-        await form.close()
-        raise ApiError(400, "Выберите файл")
-    return form, uploads[0]
 
 
-@router.get("/media/{fileId}")
-async def public_media(request: Request, fileId: str):
-    media, id = request.app.state.media, guid(fileId)
+@api_view
+async def public_media(request: HttpRequest, fileId: str):
+    media, id = (request.services.media, guid(fileId))
     if not await media.is_published_image(id):
         raise ApiError(404, "Файл не найден")
     return await media.stream(id, kind="image", range=request.headers.get("range"), cache="public, max-age=300")
 
 
-@router.get("/admin/media")
-async def media_list(request: Request, _admin: Annotated[dict, Depends(require_admin)]):
+@api_view
+async def media_list(request: HttpRequest):
+    await require_admin(request)
     page, limit = query_page(request, default_limit=20)
-    search = request.query_params.get("q", "")
+    search = request.GET.get("q", "")
     if len(search) > 120 or page > 100000:
         raise ApiError(400, "Некорректные параметры")
-    return await request.app.state.media.list(page, limit, search)
+    return await request.services.media.list(page, limit, search)
 
 
-@router.post("/admin/media")
-async def upload_office(request: Request, admin: Annotated[dict, Depends(require_admin)]):
-    form, upload = await upload_form(request)
+@api_view
+async def upload_office(request: HttpRequest):
+    admin = await require_admin(request)
+    upload = await upload_form(request)
     try:
-        file = await request.app.state.media.save(
-            upload, filename=upload.filename or "file", uploaded_by=admin["userId"]
-        )
+        file = await request.services.media.save(upload, filename=upload.name or "file", uploaded_by=admin["userId"])
     finally:
-        await form.close()
+        upload.close()
     await audit(
         request,
         "media.upload",
@@ -60,9 +57,10 @@ async def upload_office(request: Request, admin: Annotated[dict, Depends(require
         subject="file:" + file["id"],
         detail={"size": int(file["filesize"]), "type": file["type"]},
     )
-    return JSONResponse(
+    return JsonResponse(
         {"id": file["id"], "filename": file["filename_download"], "type": file["type"], "size": int(file["filesize"])},
-        status_code=201,
+        status=201,
+        safe=False,
     )
 
 
@@ -73,32 +71,35 @@ async def office_file(media, id):
     return file
 
 
-@router.get("/admin/media/{fileId}/content")
-async def office_content(request: Request, fileId: str, _admin: Annotated[dict, Depends(require_admin)]):
-    media, id = request.app.state.media, guid(fileId)
+@api_view
+async def office_content(request: HttpRequest, fileId: str):
+    await require_admin(request)
+    media, id = (request.services.media, guid(fileId))
     file = await office_file(media, id)
     return await media.stream(
         id, kind="image" if file["type"].startswith("image/") else "audio", range=request.headers.get("range")
     )
 
 
-@router.delete("/admin/media/{fileId}")
-async def delete_media(request: Request, fileId: str, admin: Annotated[dict, Depends(require_admin)]):
-    media, id = request.app.state.media, guid(fileId)
+@api_view
+async def delete_media(request: HttpRequest, fileId: str):
+    admin = await require_admin(request)
+    media, id = (request.services.media, guid(fileId))
     await office_file(media, id)
     await media.delete(id)
     await audit(request, "media.delete", actor="admin:" + admin["userId"], subject="file:" + id)
     return {"ok": True}
 
 
-@router.post("/me/avatar")
-async def upload_avatar(request: Request, alumni: Annotated[dict, Depends(require_alumni)]):
+@api_view
+async def upload_avatar(request: HttpRequest):
+    alumni = await require_alumni(request)
     if alumni["verification_status"] == "rejected":
         raise ApiError(403, "Заявка отклонена – загрузка фото недоступна")
     if alumni["verification_status"] not in ("pending", "verified"):
         raise ApiError(403, "Доступно после подачи заявки")
-    form, upload = await upload_form(request)
-    state = request.app.state
+    upload = await upload_form(request)
+    state = request.services
     try:
         if upload.content_type not in ("image/jpeg", "image/png", "image/webp"):
             raise ApiError(400, "Поддерживаются JPEG, PNG или WebP")
@@ -116,7 +117,7 @@ async def upload_avatar(request: Request, alumni: Annotated[dict, Depends(requir
                 ) from None
             raise
     finally:
-        await form.close()
+        upload.close()
     try:
         await state.store.update("alumni", {"avatar": file["id"]}, id=alumni["id"])
     except BaseException:
@@ -136,9 +137,9 @@ async def upload_avatar(request: Request, alumni: Annotated[dict, Depends(requir
     return {"ok": True, "avatar": file["id"]}
 
 
-@router.get("/avatars/{fileId}")
-async def avatar(request: Request, fileId: str):
-    media, id = request.app.state.media, guid(fileId)
+@api_view
+async def avatar(request: HttpRequest, fileId: str):
+    media, id = (request.services.media, guid(fileId))
     if not await media.is_avatar(id):
         raise ApiError(404, "Не найдено")
     return await media.avatar(id)

@@ -54,7 +54,7 @@ bash scripts/tests/test-integration.sh
 Команда создаёт отдельный контейнер с tmpfs и случайным локальным портом,
 применяет миграции, индексы и ограниченную SQL-роль, затем запускает pytest.
 Контейнер удаляется после теста. Фикстура принимает только БД
-`fastapi_migration_test`. Приложение проверяется через HTTPX с его lifespan.
+`django_migration_test`. Приложение проверяется через HTTPX с его lifespan.
 
 Фикстура [legacy-auth.json](../../backend/tests/python/legacy-auth.json)
 проверяет совместимость с синтетическими PHC-хешами и JWT прежнего сервера.
