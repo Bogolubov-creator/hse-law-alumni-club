@@ -125,7 +125,7 @@ test("robots.txt и sitemap.xml отдаются", async ({ request }) => {
   expect(await robots.text()).toContain("Sitemap:");
 
   const sitemap = await request.get("/sitemap.xml");
-  test.skip(sitemap.status() !== 200, "sitemap.xml требует живой Directus на стенде");
+  expect(sitemap.status()).toBe(200);
   const xml = await sitemap.text();
   expect(xml).toContain("<urlset");
   expect(xml).toContain("changefreq");

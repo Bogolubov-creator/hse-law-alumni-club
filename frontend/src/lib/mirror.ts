@@ -620,6 +620,10 @@ function mirrorGet(path: string): Response | null {
   if (clean === "/admin/programs") return jsonResponse(PROGRAMS);
   if (clean === "/admin/products") return jsonResponse(PRODUCTS);
   if (clean === "/admin/news") return jsonResponse(NEWS);
+  if (clean === "/admin/media") {
+    const page = Math.max(1, Number(q?.get("page")) || 1);
+    return jsonResponse({ items: [], total: 0, page, limit: 20 });
+  }
   if (clean === "/admin/timeline") return jsonResponse(TIMELINE);
   if (clean === "/admin/events") {
     if (!q?.has("page") && !q?.has("limit")) return jsonResponse(EVENTS);

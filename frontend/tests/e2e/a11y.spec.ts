@@ -96,7 +96,8 @@ test.describe("Версия для слабовидящих", () => {
       await preparePage(page);
       await page.goto("/dpo");
       await enableVision(page);
-      await page.evaluate((k) => document.documentElement.setAttribute("data-vis-scheme", k), s.key);
+      await page.locator(".vis-bar").getByRole("button", { name: new RegExp(`^${s.name}$`, "i") }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-vis-scheme", s.key);
       for (let i = 0; i < 12; i++) {
         await page.keyboard.press("Tab");
         if (await page.evaluate(() => document.activeElement?.classList.contains("vis-btn"))) break;
@@ -105,11 +106,11 @@ test.describe("Версия для слабовидящих", () => {
         ${CONTRAST_FN}
         const el = document.activeElement;
         const cs = getComputedStyle(el);
-        const hex = getComputedStyle(document.documentElement).getPropertyValue("--vis-bg").trim();
-        const bg = { r: parseInt(hex.slice(1,3),16), g: parseInt(hex.slice(3,5),16), b: parseInt(hex.slice(5,7),16), a: 1 };
-        return { ratio: Math.round(ratio(cs.outlineColor, bg) * 100) / 100, width: parseFloat(cs.outlineWidth), style: cs.outlineStyle };
-      })()`) as { ratio: number; width: number; style: string };
-      expect(res.ratio).toBeGreaterThanOrEqual(3);
+        const background = getComputedStyle(document.documentElement).backgroundColor;
+        const bg = bgOf(document.documentElement);
+        return { ratio: Math.round(ratio(cs.outlineColor, bg) * 100) / 100, width: parseFloat(cs.outlineWidth), style: cs.outlineStyle, background, outline: cs.outlineColor };
+      })()`) as { ratio: number; width: number; style: string; background: string; outline: string };
+      expect(res.ratio, JSON.stringify(res)).toBeGreaterThanOrEqual(3);
       expect(res.width).toBeGreaterThanOrEqual(2);
       expect(res.style).toBe("solid");
     });

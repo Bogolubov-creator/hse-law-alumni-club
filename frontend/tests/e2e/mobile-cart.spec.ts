@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { seedClientStorage } from "./harness.js";
 
 async function addProgram(page: Page): Promise<string> {
   const response = await page.request.get("/api/programs");
@@ -8,22 +9,25 @@ async function addProgram(page: Page): Promise<string> {
   expect(program, "Для проверки нужна доступная программа ДПО").toBeDefined();
 
   await page.goto(`/dpo/${program!.slug}`);
-  await Promise.all([
-    page.waitForResponse((r) => r.url().endsWith("/api/cart") && r.request().method() === "POST" && r.ok()),
-    page.getByRole("button", { name: "В корзину", exact: true }).click(),
+  const [added] = await Promise.all([
+    page.waitForResponse((r) => r.url().endsWith("/api/cart") && r.request().method() === "POST"),
+    page.getByRole("button", { name: "Положить в корзину", exact: true }).click(),
   ]);
-  await page.getByRole("link", { name: "Корзина" }).click();
+  expect(added.status()).toBe(200);
+  await page.getByRole("button", { name: "Открыть меню", exact: true }).click();
+  await page.getByRole("navigation", { name: "Меню", exact: true }).getByRole("link", { name: "Корзина" }).click();
   await expect(page.getByText(program!.title, { exact: true })).toBeVisible();
   return program!.title;
 }
 
 test.describe("Мобильная заявка", () => {
   test.skip(({ isMobile }) => !isMobile, "Мобильный сценарий");
+  test.beforeEach(async ({ page }) => { await seedClientStorage(page); });
 
   test("пустая заявка ведёт к программам", async ({ page }) => {
     await page.goto("/cart");
-    await expect(page.getByRole("heading", { name: "Заявка пуста" })).toBeVisible();
-    await page.getByRole("button", { name: "К программам" }).click();
+    await expect(page.getByRole("heading", { name: "В корзине пока пусто" })).toBeVisible();
+    await page.getByRole("link", { name: "Программы ДПО", exact: true }).click();
     await expect(page).toHaveURL(/\/dpo$/);
   });
 
@@ -38,7 +42,6 @@ test.describe("Мобильная заявка", () => {
 
   test("заявка сохраняет контакты и сообщает о сбое уведомления", async ({ page }) => {
     await addProgram(page);
-    await page.getByRole("button", { name: "Только необходимые" }).click();
     let submitted: Record<string, unknown> | undefined;
     await page.route("**/api/orders", async (route) => {
       submitted = route.request().postDataJSON() as Record<string, unknown>;
@@ -48,12 +51,12 @@ test.describe("Мобильная заявка", () => {
       }) });
     });
 
-    await expect(page.getByRole("button", { name: "Отправить заявку" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Нужно согласие на обработку данных" })).toBeDisabled();
     await page.getByRole("textbox", { name: "ФИО" }).fill("Тестовая заявка");
     await page.getByRole("textbox", { name: "Телефон" }).fill("+7 000 000-00-00");
-    await page.getByRole("textbox", { name: "E-mail" }).fill("qa@example.com");
+    await page.getByRole("textbox", { name: "почта" }).fill("qa@example.com");
     await page.getByRole("checkbox").check();
-    await page.getByRole("button", { name: "Отправить заявку" }).click();
+    await page.getByRole("button", { name: "Оформить заявку" }).click();
 
     await expect(page.getByRole("heading", { name: "Заявка отправлена" })).toBeVisible();
     await expect(page.getByText("QA-000001")).toBeVisible();
