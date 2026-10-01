@@ -1,6 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
 
-// Регистрация и подтверждение подменяются, чтобы тест не создавал аккаунты.
 
 async function stubSw(page: Page) {
   await page.addInitScript(() => {
@@ -27,7 +26,6 @@ test.describe("Вступление в клуб", () => {
     const submit = page.getByRole("button", { name: "Подать заявку на вступление" });
     await expect(submit).toBeEnabled();
     await submit.click();
-    // Кнопка не серая: браузер подсвечивает обязательный чекбокс, запрос не уходит
     await expect(page.getByRole("checkbox")).toHaveJSProperty("validity.valid", false);
     expect(posted).toBe(false);
 
@@ -57,7 +55,7 @@ test.describe("Вступление в клуб", () => {
     expect(body.cohort).toBe("2019");
     expect(body.edu_level).toBe("магистратура");
     expect(body.consent_pdn).toBe(true);
-    expect(body.website).toBe(""); // honeypot: живой человек его не видит
+    expect(body.website).toBe("");
   });
 
   test("при включённой почте зовут в письмо, а не в кабинет", async ({ page }) => {
@@ -121,7 +119,6 @@ test.describe("Вступление в клуб", () => {
     await expect(page.getByRole("link", { name: "В личный кабинет" })).toHaveAttribute("href", "/lk");
     await expect(page.getByLabel("фио")).toHaveCount(0);
 
-    // Выход возвращает анкету – заявку можно подать за другого человека
     await page.getByRole("button", { name: "Выйти и заполнить анкету" }).click();
     await expect(page.getByLabel("фио")).toBeVisible();
   });
@@ -136,7 +133,6 @@ test.describe("Восстановление пароля", () => {
     await page.getByLabel("почта").fill("net-takogo@example.com");
     await page.getByRole("button", { name: "Прислать ссылку" }).click();
 
-    // Сервер отвечает одинаковым 200 независимо от наличия аккаунта.
     await expect(page.getByText(/Если такой аккаунт существует/)).toBeVisible();
   });
 
@@ -207,11 +203,10 @@ test.describe("Юридические страницы", () => {
 
   test("реквизиты оператора не потерялись при переносе", async ({ page }) => {
     await page.goto("/requisites");
-    // Скоуп на main: ОГРН/ИНН/адрес дублируются строкой оператора в подвале.
     const main = page.locator("main");
-    await expect(main.getByText("1257700005551", { exact: true })).toBeVisible(); // ОГРН
-    await expect(main.getByText("9707041865", { exact: true })).toBeVisible(); // ИНН
-    await expect(main.getByText("771801001", { exact: true })).toBeVisible(); // КПП
+    await expect(main.getByText("1257700005551", { exact: true })).toBeVisible();
+    await expect(main.getByText("9707041865", { exact: true })).toBeVisible();
+    await expect(main.getByText("771801001", { exact: true })).toBeVisible();
     await expect(main.getByText(/Большая Черкизовская/)).toBeVisible();
     await expect(main.getByText(/Спиваков Алексей Игоревич/)).toBeVisible();
     await expect(main.getByRole("link", { name: /Rusprofile/i })).toHaveAttribute(

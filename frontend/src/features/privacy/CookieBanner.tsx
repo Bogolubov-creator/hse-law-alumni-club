@@ -17,7 +17,6 @@ export default function CookieBanner() {
     return () => window.removeEventListener(COOKIE_SETTINGS_EVENT, reopen);
   }, []);
 
-  // Высота баннера учитывается оболочкой, чтобы он не перекрывал нижние действия.
   useEffect(() => {
     const el = ref.current;
     const root = document.documentElement;

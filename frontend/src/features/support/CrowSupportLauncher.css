@@ -27,7 +27,6 @@ body > .crow-mascot.club-crow-corner {
   display: none;
   position: fixed;
   right: 18px;
-  /* --tabs-h включает safe-area; повторный inset не нужен. */
   bottom: calc(16px + var(--tabs-h, 0px) + var(--cookie-h, 0px) + var(--install-h, 0px));
   z-index: 41;
   min-height: 44px;

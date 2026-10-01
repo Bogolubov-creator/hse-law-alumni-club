@@ -12,16 +12,12 @@ export function Orders() {
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
-  // Поиск и фильтр считает сервер: в панели больше нет «последних 100»,
-  // видно все заявки постранично.
   const orders = useAdminOrders({ q: q.trim() || undefined, status: statusFilter || undefined, page, limit: ORDERS_PER_PAGE });
   const { setOrderStatus } = useOrderMutations();
   const [csvBusy, setCsvBusy] = useState(false);
   const list = orders.data?.items ?? [];
   const total = orders.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / ORDERS_PER_PAGE));
-  // Смена запроса/фильтра всегда возвращает на первую страницу – иначе пустой
-  // экран «страница 7» при выборке из трёх заявок.
   const resetTo = (fn: () => void) => { fn(); setPage(1); };
   const exportCsv = async () => {
     setCsvBusy(true);

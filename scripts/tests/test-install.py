@@ -1,4 +1,3 @@
-"""Проверки установщика: секреты, границы ввода и сохранение конфигурации."""
 import importlib.util
 import contextlib
 import io

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Восстановление только в новый изолированный Compose-проект и новые тома.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 ops_init
@@ -26,7 +25,6 @@ export BACKUP_ENCRYPTION_KEY="$(ops_value BACKUP_ENCRYPTION_KEY)"
 work="$(mktemp -d "$BACKUP_DIR/.restore-XXXXXX")"
 trap 'rm -rf -- "$work"' EXIT
 snapshot="$(realpath "$SNAPSHOT_DIR")"
-# Проверяем строго ожидаемое имя, чтобы SHA256SUMS не мог читать чужие пути.
 [[ "$(wc -l < "$snapshot/SHA256SUMS")" = 2 ]]
 [[ "$(awk '{print $2}' "$snapshot/SHA256SUMS" | sort)" = $'metadata.json\nsnapshot.tar.gz.enc' ]]
 (cd "$snapshot" && sha256sum -c SHA256SUMS)
@@ -92,14 +90,11 @@ import json,pathlib,sys
 p=pathlib.Path(sys.argv[1]); assert json.loads((p/'counts.json').read_text()) == json.loads((p/'restored-counts.json').read_text()), 'Количество строк не совпало'
 PY
 if [[ "$RESTORE_MODE" = migrate-legacy ]]; then
-  # Перенос выполняется только в новой изолированной копии; исходный проект не меняется.
   "${compose[@]}" build --build-arg "VCS_REF=$target_revision" migrate bootstrap
   "${compose[@]}" run --rm --no-deps migrate
   "${compose[@]}" run --rm --no-deps bootstrap
 else
-  # При точном восстановлении схема уже в дампе; bootstrap/миграции не запускаются.
   runtime_role_sql="$RESTORE_CODE_DIR/backend/sql/runtime-role.sql"
-  # Старые snapshot закрепляют checkout с прежним расположением SQL-файла.
   if [[ ! -f "$runtime_role_sql" ]]; then runtime_role_sql="$RESTORE_CODE_DIR/scripts/runtime-role.sql"; fi
   [[ -f "$runtime_role_sql" ]] || { echo 'В закреплённом checkout нет SQL-прав runtime' >&2; exit 1; }
   docker exec -i -e CHECKOUT_DB_USER -e CHECKOUT_DB_PASSWORD "$pg" sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < "$runtime_role_sql"

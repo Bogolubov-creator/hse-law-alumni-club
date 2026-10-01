@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Настоящая установка в одноразовом Ubuntu runner после сборки live-образов.
 set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 temp="$(sudo mktemp -d /tmp/club-install.XXXXXX)"
@@ -8,7 +7,6 @@ compose=(sudo docker compose --env-file "$config/runtime.env" -f "$temp/repo/doc
 cleanup() {
   result=$?
   trap - EXIT
-  # Маркер возникает только после проверки, что у проекта не было контейнеров/томов.
   if sudo test -f "$config/install.json"; then
     if ! "${compose[@]}" down --volumes --remove-orphans --timeout 30; then result=1; fi
   fi

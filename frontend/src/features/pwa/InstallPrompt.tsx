@@ -13,7 +13,6 @@ const isStandalone = () =>
 const isIos = () => {
   const ua = navigator.userAgent;
   if (/iphone|ipad|ipod/i.test(ua)) return true;
-  // iPadOS 13+: desktop UA, но с тачем
   return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
 };
 
@@ -49,7 +48,6 @@ export default function InstallPrompt() {
     };
   }, []);
 
-  // Угловая поддержка учитывает реальную высоту приглашения, включая переносы.
   useEffect(() => {
     const el = promptRef.current;
     const root = document.documentElement;

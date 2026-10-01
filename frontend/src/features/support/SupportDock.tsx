@@ -23,7 +23,6 @@ export function SupportDock() {
   const mobile = useIsMobile();
   const pwa = useIsPwaShell();
   const compact = mobile || pwa;
-  // На главной мини-приложения помощь доступна отдельной карточкой.
   const hidden = pathname.startsWith("/admin") || pathname.includes("/support") || ((isMiniApp() || pwa) && (pathname === "/" || pathname === "/tg"));
 
   useEffect(() => {
@@ -40,7 +39,6 @@ export function SupportDock() {
     const mount = () => {
       if (cancelled || crowRef.current || hit) return;
 
-      // На телефоне персонаж меньше, чтобы оставить место содержимому.
       const width = compact ? 56 : 96;
       const height = Math.round((width * 1465) / 1400);
 
@@ -108,7 +106,6 @@ export function SupportDock() {
       open={open}
       onClose={() => {
         setOpen(false);
-        // Кнопка становится видимой после удаления панели из DOM.
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".club-crow-hit")?.focus({ preventScroll: true }));
       }}
     />

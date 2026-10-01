@@ -7,7 +7,7 @@ export type ClubProgramApi = {
   direction?: string | null;
   format?: string | null;
   duration?: string | null;
-  price?: number | null; // копейки
+  price?: number | null;
   document?: string | null;
   dates?: { start?: string | null } | null;
   description?: string | null;

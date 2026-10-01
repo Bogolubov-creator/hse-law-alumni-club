@@ -11,7 +11,6 @@ export const disp: CSSProperties = {
   letterSpacing: "var(--tr-display)",
 };
 
-// HSE Slab содержит только начертание 400; остальные браузер синтезирует.
 export const pageTitle: CSSProperties = {
   fontFamily: "var(--f-display)",
   fontWeight: 400,

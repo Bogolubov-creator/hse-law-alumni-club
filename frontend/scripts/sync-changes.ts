@@ -113,13 +113,11 @@ export async function synchronize(previous: ChangesSnapshot, now: string, get: (
     const latest = [...found.values()].map(p => p.sourcePublishedAt!).sort().at(-1)!;
     if (previous.lastPostAt && Date.parse(latest) < Date.parse(previous.lastPostAt)) throw new Error("source_went_backwards");
     const items = new Map(previous.items.map(item => [item.id, item]));
-    // Отсутствие поста в последней странице не означает его удаления из архива.
     for (const [id, item] of found) items.set(id, item);
     const dates = [...items.values()].map(item => item.published).sort();
     return parseChanges({ version: 2, mode: "channel", periodFrom: dates[0], periodTo: dates.at(-1),
       checkedAt: now, lastSuccessAt: now, lastPostAt: latest, syncStatus: "ok", items: [...items.values()] });
   } catch {
-    // Не выводим исходный ответ или текст исключения: публичный JSON содержит только состояние.
     return parseChanges({ ...previous, checkedAt: now, syncStatus: "unavailable" });
   }
 }
@@ -130,7 +128,6 @@ async function main() {
   if (!args.includes("--output")) throw new Error("output_required");
   let previous = parseChanges(JSON.parse(await readFile(output, "utf8")));
   if (args.includes("--previous-published")) {
-    // Если прежнюю выкладку получить нельзя, прекращаем сборку, а не теряем накопленный архив.
     previous = parseChanges(JSON.parse(await fetchText(PUBLISHED)));
   }
   const result = await synchronize(previous, new Date().toISOString());

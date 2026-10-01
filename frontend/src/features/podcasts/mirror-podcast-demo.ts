@@ -11,7 +11,7 @@ export function mirrorPodcastDemo(): boolean {
 export function setMirrorPodcastDemo(enabled: boolean): void {
   if (!isMirror) return;
   fallback = enabled;
-  try { if (enabled) sessionStorage.setItem(key, "subscriber"); else sessionStorage.removeItem(key); } catch { /* Состояние живёт в памяти при недоступном хранилище. */ }
+  try { if (enabled) sessionStorage.setItem(key, "subscriber"); else sessionStorage.removeItem(key); } catch {}
   window.dispatchEvent(new Event(event));
 }
 function subscribe(callback: () => void) {

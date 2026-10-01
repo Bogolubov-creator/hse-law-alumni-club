@@ -60,7 +60,6 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-// Выход очищает отдельную сессию корзины, чтобы не оставлять её следующему пользователю.
 export function logout(): void {
   clearToken();
   localStorage.removeItem(CART_KEY);

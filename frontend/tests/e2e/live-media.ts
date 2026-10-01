@@ -1,6 +1,5 @@
 import { expect, type APIRequestContext, type Page, type TestInfo } from '@playwright/test';
 
-// Маленький настоящий PNG; загрузка и выдача проходят через действующий API и том.
 const IMAGE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWNQqZ4DAAICATy18HNuAAAAAElFTkSuQmCC', 'base64');
 const AUDIO = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(90, 7)]);
 

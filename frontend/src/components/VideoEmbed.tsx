@@ -1,5 +1,4 @@
 import { useState } from "react";
-// src принимает только адрес, проверенный rutubeEmbed.
 export function VideoEmbed({ src, title, v2 = false }: { src: string; title: string; v2?: boolean }) {
   const [enabled, setEnabled] = useState(false);
   return (
@@ -7,7 +6,6 @@ export function VideoEmbed({ src, title, v2 = false }: { src: string; title: str
       className={v2 ? undefined : "overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-black"}
       style={{
         position: "relative",
-        // 16:9 – если не задать, айфрейм схлопнется в 150px и видео не видно
         aspectRatio: enabled ? "16 / 9" : undefined,
         minHeight: enabled ? undefined : 180,
         overflow: "hidden",

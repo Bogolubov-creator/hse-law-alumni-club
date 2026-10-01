@@ -87,7 +87,6 @@ test.describe("События", () => {
     await page.goto("/events");
     await page.getByRole("button", { name: "Быстрый просмотр" }).click();
 
-    // Заголовок есть и в строке афиши, и в модалке – смотрим именно модалку
     await expect(page.locator("#ev2-modal-title")).toHaveText("Встреча выпуска: нетворкинг");
     await expect(page.getByText("Милютинский пер., 13").first()).toBeVisible();
     await expect(page.getByRole("link", { name: ".ics" })).toHaveAttribute("href", "/api/events/e1.ics");
@@ -105,7 +104,6 @@ test.describe("События", () => {
     await expect(page.getByText("ближайших 1")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Прошедшие" })).toBeVisible();
     await expect(page.getByText("Лекция прошлого года")).toBeVisible();
-    // У прошедшего события записи быть не должно; у ближайшего – одна кнопка вступления
     await expect(page.getByRole("link", { name: "вступить, чтобы записаться" })).toHaveCount(1);
   });
 
@@ -181,7 +179,6 @@ test.describe("Подкасты", () => {
     await expect(frame).toHaveAttribute("title", /Видеовыпуск клуба/);
     await expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
     await expect.poll(() => videoRequests).toBe(1);
-    // Видео вытесняет аудио: два плеера на один выпуск – это шум
     await expect(page.locator("audio")).toHaveCount(0);
   });
 

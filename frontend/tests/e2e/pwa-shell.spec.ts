@@ -7,7 +7,6 @@ test("PWA-оболочка: ?pwa=1 включает phone-shell с адапти�
   await page.goto("/?pwa=1");
   await expect(page.locator('[data-testid="pwa-shell"]')).toBeVisible();
   await expect(page.locator("html")).toHaveClass(/pwa-shell/);
-  // В колонке телефона – та же адаптивная главная с бургер-меню (решение 12.09)
   await expect(page.getByRole("button", { name: "Открыть меню" })).toBeVisible();
   await expect(page.locator("#main")).toBeVisible();
 });
@@ -18,7 +17,6 @@ test("PWA deep link /lk: оболочка не ломает кабинет", asy
   await page.goto("/lk?pwa=1");
   await expect(page.locator('[data-testid="pwa-shell"]')).toBeVisible();
   await expect(page.locator("html")).toHaveClass(/pwa-shell/);
-  // /lk не в MobileApp takeover – Gate/кабинет внутри PwaShell
   await expect(page.getByRole("heading", { name: "Вход для выпускников" })).toBeVisible({ timeout: 15_000 });
 });
 

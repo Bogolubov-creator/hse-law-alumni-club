@@ -1,4 +1,3 @@
-# Стабильный Caddy с официальными backport-правками для актуальных CEL и automemlimit.
 FROM golang:1.27.1-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS edge-source
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOMAXPROCS=2
 RUN apk add --no-cache patch
@@ -11,7 +10,6 @@ COPY deploy/caddy/compatibility.patch deploy/caddy/vendor.sh deploy/caddy/prepar
 COPY deploy/caddy/tests ./tests
 RUN --mount=type=cache,target=/go/pkg/mod sh prepare.sh
 
-# Обновление lockfile экспортируется отдельно; обычная сборка требует точного совпадения.
 FROM edge-source AS edge-lock-update
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     sh vendor.sh tidy
@@ -54,7 +52,6 @@ COPY frontend/package.json frontend/
 RUN pnpm --filter @club/web... --filter club-pravo-hse install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY frontend frontend
-# Адреса становятся частью SPA при сборке; секреты в build args не передаются.
 ARG VITE_SITE_URL=http://localhost
 ARG VITE_MEDIA_URL=http://localhost
 ENV VITE_SITE_URL=$VITE_SITE_URL VITE_MEDIA_URL=$VITE_MEDIA_URL

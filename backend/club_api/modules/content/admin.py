@@ -107,7 +107,6 @@ def content_crud(router, path, table, model, *, sort, fields, subject, notify=No
 
     async def create(request: Request, body: model, admin: Annotated[dict, Depends(require_admin)]):
         data = body.model_dump(exclude_unset=False)
-        # Необязательные флаги оставляют значения по умолчанию в PostgreSQL.
         data = {
             key: value
             for key, value in data.items()

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Ограниченный сбор метрик Linux и выбранного Compose-проекта; вывод JSONL."""
 import json
 import os
 import re

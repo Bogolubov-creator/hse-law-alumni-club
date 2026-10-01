@@ -8,8 +8,7 @@ export default [
     languageOptions: { parser: tseslint.parser, parserOptions: { ecmaFeatures: { jsx: true } } },
     rules: {
       ...js.configs.recommended.rules,
-      // Имена проверяет TypeScript. В проекте ещё есть неиспользуемые legacy-экспорты;
-      // их удаление требует анализа маршрутов, а не автоматической правки линтером.
+      "no-empty": ["error", { allowEmptyCatch: true }],
       "no-undef": "off",
       "no-unused-vars": "off",
     },

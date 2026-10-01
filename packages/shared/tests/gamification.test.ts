@@ -26,15 +26,15 @@ describe("computeMemberDiscount (cap 25, personal 0..10)", () => {
     expect(computeMemberDiscount(1000)).toBe(20);
   });
   it("сумма с персональной", () => {
-    expect(computeMemberDiscount(200, 5)).toBe(15); // 10 + 5
-    expect(computeMemberDiscount(0, 10)).toBe(15); // 5 + 10
+    expect(computeMemberDiscount(200, 5)).toBe(15);
+    expect(computeMemberDiscount(0, 10)).toBe(15);
   });
   it("потолок 25%", () => {
-    expect(computeMemberDiscount(1000, 10)).toBe(MEMBER_DISCOUNT_CAP); // 20 + 10 → 25
+    expect(computeMemberDiscount(1000, 10)).toBe(MEMBER_DISCOUNT_CAP);
   });
   it("персональная клампится в 0..10 и не уходит ниже 0", () => {
-    expect(computeMemberDiscount(0, 50)).toBe(15); // personal → 10
-    expect(computeMemberDiscount(0, -5)).toBe(5); // personal → 0
+    expect(computeMemberDiscount(0, 50)).toBe(15);
+    expect(computeMemberDiscount(0, -5)).toBe(5);
   });
 });
 
@@ -45,9 +45,9 @@ describe("decayDelta (−15%)", () => {
     expect(decayDelta(0)).toBe(0);
   });
   it("понижение уровня после decay", () => {
-    const points = 520; // expert
+    const points = 520;
     expect(computeLevel(points).key).toBe("expert");
-    const after = points + decayDelta(points); // 520 - 78 = 442 → friend
+    const after = points + decayDelta(points);
     expect(computeLevel(after).key).toBe("friend");
   });
 });
@@ -92,11 +92,11 @@ describe("achievementProgress", () => {
   it("считает current/target/earned без вымышленных значений для нетрекаемых метрик", () => {
     const p = achievementProgress({ events_attended: 1, programs_completed: 1, referrals_count: 0, verified: 1, status_level: 1 });
     const by = (k: string) => p.find((x) => x.key === k)!;
-    expect(by("first_step").earned).toBe(true); // events 1 >= 1
+    expect(by("first_step").earned).toBe(true);
     expect(by("student_again").earned).toBe(true);
     expect(by("regular")).toMatchObject({ current: 1, target: 5, earned: false, star: true });
-    expect(by("office_seal").earned).toBe(true); // verified
-    expect(by("on_wave")).toMatchObject({ current: 0, target: 10, earned: false }); // Нет подтверждённых реакций.
+    expect(by("office_seal").earned).toBe(true);
+    expect(by("on_wave")).toMatchObject({ current: 0, target: 10, earned: false });
     expect(by("legend")).toMatchObject({ current: 1, target: 4, earned: false });
     expect(p).toHaveLength(16);
   });

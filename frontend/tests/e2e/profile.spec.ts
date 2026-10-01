@@ -29,7 +29,6 @@ const LEDGER = [
   { id: "l2", delta: -50, reason: "decay", ref: null, comment: null, created_at: "2026-03-01T10:00:00.000Z" },
 ];
 
-// SW отключён, чтобы WebKit передавал запросы в page.route().
 async function stubSession(page: Page) {
   await page.addInitScript(() => {
     localStorage.setItem("club_token", "e2e-stub-token");
@@ -56,21 +55,17 @@ test.describe("Профиль", () => {
     await mockProfile(page);
     await page.goto("/lk/profile");
 
-    // Удостоверение
     await expect(page.getByText("Кондратьев Сергей Андреевич")).toBeVisible();
     await expect(page.getByText("подтверждён")).toBeVisible();
     await expect(page.getByRole("button", { name: "загрузить фото", exact: true })).toBeVisible();
 
-    // Форма приходит заполненной с сервера, а не пустой
     await expect(page.getByLabel("фио")).toHaveValue("Кондратьев Сергей Андреевич");
     await expect(page.getByLabel("телефон")).toHaveValue("+7 916 000-00-00");
     await expect(page.getByLabel("telegram")).toHaveValue("@kondratev");
     await expect(page.getByLabel("почта")).toHaveValue("");
 
-    // Выбранный интерес отмечен
     await expect(page.getByRole("button", { name: "Корпоративное право" })).toHaveAttribute("aria-pressed", "true");
 
-    // История: начисление и списание с разными знаками
     await expect(page.getByText("Пройдена программа ДПО")).toBeVisible();
     await expect(page.getByText("+300")).toBeVisible();
     await expect(page.getByText("Списание за неактивность")).toBeVisible();
@@ -98,7 +93,6 @@ test.describe("Профиль", () => {
   });
 
   test("лимит интересов не даёт выбрать лишнее", async ({ page }) => {
-    // MAX_INTERESTS = 8: восемь уже выбрано, девятый должен быть недоступен
     const chosen = ["Корпоративное право", "M&A и сделки", "Гражданское право", "Публичное право",
       "Налоговое право", "Банкротство", "Разрешение споров", "Арбитраж и медиация"];
     await mockProfile(page, { me: { ...ME, alumni: { ...ME.alumni, interests: chosen } } });
@@ -119,7 +113,7 @@ test.describe("Профиль", () => {
     const del = page.getByRole("button", { name: "удалить навсегда" });
     await expect(del).toBeDisabled();
     await page.getByLabel(/Введите/).fill("удалить");
-    await expect(del).toBeDisabled(); // регистр важен
+    await expect(del).toBeDisabled();
     await page.getByLabel(/Введите/).fill("УДАЛИТЬ");
     await expect(del).toBeEnabled();
 

@@ -163,10 +163,7 @@ export default function Cart() {
 
   const items = cart.data?.items ?? [];
   const subtotal = cart.data?.subtotal ?? 0;
-  // Скидка выпускника – только на ДПО; мерч идёт по базовой цене.
   const dpoSubtotal = items.filter((i) => i.type === "dpo").reduce((s, i) => s + i.price * i.qty, 0);
-  // Доставлять физически нечего, если в корзине одни программы: выбор способа
-  // получения и обязательный адрес в этом случае только сбивают с толку.
   const hasShippable = items.some((i) => i.type === "merch");
   const discountAmount = Math.round((dpoSubtotal * discount) / 100);
   const total = subtotal - discountAmount;
@@ -184,7 +181,7 @@ export default function Cart() {
         address: hasShippable && form.fulfillment === "delivery" ? form.address || null : null,
         comment: form.comment || null,
         consent_pdn: form.consent,
-        website: form.website, // honeypot – живой человек оставит поле пустым
+        website: form.website,
       });
       setResult(res);
       qc.invalidateQueries({ queryKey: ["cart"] });

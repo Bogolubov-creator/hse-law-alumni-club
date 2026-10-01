@@ -22,7 +22,6 @@ export function orderNumber(year: number, count: number, attempt = 0): string {
   return `ALU-${year}-${String(count + 1 + attempt).padStart(6, "0")}`;
 }
 
-// Исчезнувшая позиция сохраняет снимок; доступность проверяется при оформлении.
 export function repriceItems<T extends { type: "dpo" | "merch"; ref_id: string; price: number; title: string }>(
   items: T[],
   lookup: (type: "dpo" | "merch", ref: string) => { title: string; price: number } | null | undefined,

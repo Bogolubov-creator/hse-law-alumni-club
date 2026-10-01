@@ -1,9 +1,5 @@
-# Один Caddyfile для локали и VPS – меняются только переменные окружения.
-# Локально WEB_DOMAIN=:80 / ADMIN_DOMAIN=:8081 → обычный HTTP (без TLS).
-# На VPS WEB_DOMAIN=club.example.ru / ADMIN_DOMAIN=admin.club.example.ru → Caddy сам берёт TLS.
 {
 	email {$ACME_EMAIL}
-	# Периметр против медленных/жадных запросов (Slowloris, гигантские тела).
 	servers {
 		timeouts {
 			read_body 300s
@@ -16,7 +12,6 @@
 
 {$WEB_DOMAIN} {
 	encode gzip
-	# Тело запроса к API ограничено (доп. к bodyLimit самого API).
 	@avatar_upload path /api/me/avatar
 	request_body @avatar_upload {
 		max_size 4MB
@@ -29,8 +24,6 @@
 	request_body @regular_request {
 		max_size 512kb
 	}
-	# Ловушка для ботов-сканеров: типовые «дыры» чужих CMS сразу 404,
-	# не доходя до приложения (handle-блоки матчатся по порядку – этот первый).
 	@bot_probe path /wp-admin* /wp-login.php /.env /.env.* /.git/* /xmlrpc.php /phpmyadmin* /vendor/* /.aws/* /config.php
 	handle @bot_probe {
 		respond 404
@@ -43,7 +36,6 @@
 	handle_path /api/* {
 		reverse_proxy api:3000
 	}
-	# Sitemap и robots собирает API (абсолютные URL из PUBLIC_URL)
 	handle /sitemap.xml {
 		rewrite * /sitemap.xml
 		reverse_proxy api:3000
@@ -57,11 +49,6 @@
 			Strict-Transport-Security "max-age=15552000; includeSubDomains"
 			X-Content-Type-Options "nosniff"
 			Referrer-Policy "strict-origin-when-cross-origin"
-			# X-Frame-Options намеренно нет: Mini App Telegram встраивает сайт;
-			# фреймы режет CSP frame-ancestors (см. deploy/web.Caddyfile).
-			# CSP: Vite 'self'; React style=; обложки https; RuTube frame;
-			# connect same-origin (/api: pageviews, auth). ЮKassa – top-level
-			# redirect, не iframe. Дублирует static-контейнер – одинаковые CSP OK.
 			Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' https: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-src https://rutube.ru https://www.rutube.ru; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'"
 			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 			-Server
@@ -70,7 +57,6 @@
 	}
 }
 
-# Прежний домен сохраняет ссылки на файлы; офис находится внутри сайта.
 {$ADMIN_DOMAIN} {
 	handle /assets/* {
 		uri replace /assets/ /media/

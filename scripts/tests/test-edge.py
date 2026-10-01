@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Проверка штатных Caddyfile и TLS в собственных контейнерах без рабочей БД."""
 
 import argparse
 import gzip
@@ -93,7 +92,6 @@ def run(args):
             ca = Path(directory) / 'root.crt'
             deadline = time.monotonic() + 60
             while True:
-                # docker cp не читает tmpfs; сертификат передаётся из namespace контейнера.
                 certificate = docker('exec', edge, 'cat', '/data/caddy/pki/authorities/local/root.crt', check=False)
                 if certificate.returncode == 0:
                     ca.write_text(certificate.stdout)
@@ -114,8 +112,6 @@ def run(args):
                 finally:
                     connection.close()
 
-            # CA проверяется стандартным TLS-клиентом; insecure-режима здесь нет.
-            # CA появляется раньше сертификата сайта; ждём завершения выдачи.
             while True:
                 try:
                     status, headers, html = request('/')
@@ -148,7 +144,6 @@ def run(args):
             status, _, body = request('/api/ready', headers={'X-Forwarded-For': '198.51.100.72', 'X-Forwarded-Proto': 'http'})
             forwarded = json.loads(body)
             check(status == 200 and '198.51.100.72' not in forwarded['forwardedFor'] and forwarded['forwardedProto'] == 'https', 'Доверие к поддельным proxy headers')
-            # kb/MB в штатном Caddyfile задают SI-байты; память Docker измеряется в MiB.
             for path, limit in [('/api/body', 512_000), ('/api/me/avatar', 4_000_000), ('/api/admin/media', 129_000_000)]:
                 status, _, body = request(path, b'x' * limit)
                 check(status == 200 and json.loads(body)['bytes'] == limit, f'Отклонён допустимый размер: {path}, HTTP {status}')
@@ -192,7 +187,7 @@ def run(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description='Проверка штатных Caddyfile и TLS в собственных контейнерах без рабочей БД.')
     parser.add_argument('--edge-image', required=True)
     parser.add_argument('--web-image', required=True)
     parser.add_argument('--api-image', required=True)

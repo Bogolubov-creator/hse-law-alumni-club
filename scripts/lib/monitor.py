@@ -1,4 +1,3 @@
-"""Пороговые проверки хоста/контейнеров; в отчёте нет тел запросов и секретов."""
 import datetime
 import json
 import os
@@ -28,7 +27,6 @@ for container in containers:
     if status.get('OOMKilled'): issues.append(f'{name}: OOM')
     if container['RestartCount'] >= 3: issues.append(f'{name}: не менее трёх перезапусков')
     if name == 'api':
-        # Логи обрабатываются внутри процесса; произвольный текст в итог не копируется.
         logs = subprocess.run(['docker','logs','--since','26h',container['Id']], capture_output=True, text=True, check=True)
         try:
             last_jobs = json.loads((state/'last-monitor.json').read_text()).get('metrics', {}).get('last_jobs', {})
@@ -81,7 +79,6 @@ try:
             with context.wrap_socket(connection, server_hostname=target.hostname) as tls:
                 days = (ssl.cert_time_to_seconds(tls.getpeercert()['notAfter'])-now)/86400
                 metrics['certificate_days_remaining'] = round(days,2)
-                # Caddy local CA выдаёт короткие сертификаты; для неё оператор задаёт 0.25 дня.
                 if days < float(os.getenv('MONITOR_CERT_MIN_DAYS',14)): issues.append('TLS: сертификат скоро истекает')
 except Exception: issues.append('HTTPS/readiness: соединение или проверка сертификата не прошли')
 report = {'checked_at':int(now),'status':'error' if issues else 'ok','issues':issues,'metrics':metrics,'notification_channel':'journald only'}

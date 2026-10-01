@@ -15,7 +15,6 @@ export async function collectDpoSyncCards(sources: { actual: string; all: string
   if (actual.length < 3) {
     throw new Error(`hse.ru: подозрительно мало актуальных карточек (${actual.length}) – обновление каталога отменено`);
   }
-  // Архивировать можно только при доступности полного каталога.
   const all = await collect(sources.all, fetchPage);
   if (all.length < actual.length) {
     throw new Error(
@@ -31,7 +30,6 @@ export async function collectDpoSyncCards(sources: { actual: string; all: string
       enrollment: actualIds.has(c.hseId) ? "actual" : "nonactual",
     });
   }
-  // На случай рассинхрона страниц: актуальные, которых нет в «полном», всё равно actual.
   for (const c of actual) {
     if (!byId.has(c.hseId)) byId.set(c.hseId, { ...c, enrollment: "actual" });
   }
@@ -69,7 +67,7 @@ export function planDpoSync(cards: TaggedCard[], existing: ExistingDpoProgram[])
         enrollment: c.enrollment,
         status: c.priceKop > 0 || match.price > 0 ? "published" : "draft",
       };
-      if (c.duration) patch.duration = c.duration; // нет на сайте – оставляем прежнюю
+      if (c.duration) patch.duration = c.duration;
       changes.push({ kind: "update", id: match.id, data: patch });
     } else if (!match) {
       let slug = slugifyRu(c.title.split(" / ")[0]!);
@@ -88,7 +86,6 @@ export function planDpoSync(cards: TaggedCard[], existing: ExistingDpoProgram[])
   }
 
   const managedIds = new Set([...byHseId.values()].map((row) => row.id));
-  // В архив – только управляемые импортом (source_url задан) и пропавшие из полного списка.
   for (const r of existing) {
     if (managedIds.has(r.id) && !matchedIds.has(r.id) && r.status !== "archived") {
       changes.push({ kind: "archive", id: r.id, data: { status: "archived" } });

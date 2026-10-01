@@ -24,7 +24,6 @@ vi.mock("../../../src/stores/cart.js", () => ({
     refetch: () => {},
   }),
 }));
-// Список событий и архив имеют разные контракты данных.
 vi.mock("@tanstack/react-query", () => ({
   useQuery: ({ queryKey }: { queryKey: readonly unknown[] }) => ({
     data: queryKey[0] === "events" && !state.eventsPending && !state.eventsError ? state.events : undefined,

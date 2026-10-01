@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Изолированная проверка сборки, PostgreSQL, API и настоящего браузера.
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_DIR"
@@ -50,7 +49,6 @@ JS
 }
 trap cleanup EXIT
 node scripts/tests/prepare-live-env.mjs "$LIVE_TEMP/runtime.env" "$LIVE_TEMP"
-# env сгенерирован этим процессом, а не взят из пользовательского файла.
 set -a
 source "$LIVE_TEMP/runtime.env"
 set +a
@@ -75,13 +73,11 @@ wait_ready() {
 wait_ready
 compose run --rm --no-deps api python - < scripts/tests/test-runtime-permissions.py
 E2E_LIVE_PHASE=write pnpm --filter @club/web exec playwright test -c playwright.live.config.ts
-# Полная копия проверяет утилиты uploads и возврат API на Docker runner.
 BACKUP_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
   ENV_FILE="$LIVE_TEMP/runtime.env" DEPLOY_COMPOSE_OVERRIDE="$REPO_DIR/deploy/compose.e2e.yml" \
   COMPOSE_PROJECT_NAME="$PROJECT" STATE_DIR="$LIVE_TEMP/operations" BACKUP_DIR="$LIVE_TEMP/backups" \
   bash scripts/backup.sh
 wait_ready
-# Настройки оператора и намеренно пустые блоки/фото не должны заполняться повторно.
 compose exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
 UPDATE club_settings SET value='{"project_name":"Оператор сохранил настройки"}' WHERE key='site';
 UPDATE pages SET title='Главная после редактирования',status='draft' WHERE slug='home';
@@ -89,7 +85,6 @@ DELETE FROM pages_blocks WHERE pages_id IN (SELECT id FROM pages WHERE slug='hom
 INSERT INTO products(slug,title,images,status) VALUES('hoodie-faculty','Без фото','[]','draft');
 SQL
 identity_fingerprint() {
-  # Хеши паролей и токены проходят только через stdin; в журнал попадает результат сравнения.
   compose exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' <<'SQL' | node --input-type=module -e '
     import { createHash } from "node:crypto";
     let input = "";
@@ -114,7 +109,6 @@ for attempt in 1 2; do
   [[ "$(identity_fingerprint)" = "$identities_before" ]] || { echo "Bootstrap изменил пароль, токен, роль или статус учётной записи" >&2; exit 1; }
   echo "Bootstrap $attempt: пароли, токены, роли, настройки и контент сохранены"
 done
-# Перезапускаются все постоянные сервисы. Тома и состояние браузерных проверок сохраняются.
 compose restart postgres api web caddy mailpit
 wait_ready
 E2E_LIVE_PHASE=read pnpm --filter @club/web exec playwright test -c playwright.live.config.ts

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Установка и обновление одним путём; откат данных выполняется отдельно.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/backup.sh"
 ops_init
@@ -21,7 +20,6 @@ if status == 'ok':
 PY
 }
 trap 'result=$?; if [[ "$result" != 0 ]]; then record failed; echo "Обновление прервано. Не удаляйте тома: проверьте runbook и compose ps." >&2; fi' EXIT
-# Старые образы остаются по ID; автоматическая очистка Docker здесь запрещена.
 "${compose[@]}" images --format json > "$STATE_DIR/pre-deploy-images.json"
 "${compose[@]}" build --build-arg "VCS_REF=$revision"
 "${compose[@]}" run --rm --no-deps api python -c '
@@ -33,14 +31,12 @@ if errors: raise SystemExit("\n".join(errors))
 '
 
 if [[ -n "$("${compose[@]}" ps -q postgres)" ]]; then backup_snapshot keep-stopped; fi
-# Локальный почтовый приёмник определён только в QA override.
 if "${compose[@]}" config --services | grep -qx mailpit; then "${compose[@]}" up -d --wait --no-deps mailpit; fi
 "${compose[@]}" up -d --wait --no-deps postgres
 "${compose[@]}" run --rm --no-deps migrate
 "${compose[@]}" run --rm --no-deps bootstrap
 "${compose[@]}" up -d --wait --no-deps api web caddy
 "${compose[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile
-# На первом локальном TLS-запуске CA создаётся Caddy. Экспорт разрешён только для localhost.
 if [[ -n "${HTTPS_CA_FILE:-}" && ! -f "$HTTPS_CA_FILE" ]]; then
   case "$(ops_value PUBLIC_URL)" in https://localhost:*|https://localhost)
     "${compose[@]}" cp caddy:/data/caddy/pki/authorities/local/root.crt "$HTTPS_CA_FILE";;

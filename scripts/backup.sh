@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Один снимок БД и файлов: на время чтения остановлен API.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 
@@ -35,7 +34,6 @@ backup_snapshot() (
   mkdir "$partial"
   resume_stopped() {
     local service container health attempt
-    # Возвращаем те же контейнеры: Compose start может повторно запустить bootstrap.
     for service in "${stopped[@]}"; do
       container="$("${compose[@]}" ps -aq "$service")"
       docker start "$container" >/dev/null || return 1
@@ -103,7 +101,6 @@ metadata={'application_revision':sys.argv[5],'database_bytes':db,'uploads_bytes'
 (dest/'metadata.json').write_text(json.dumps(metadata)+'\n')
 PY
   (cd "$partial" && sha256sum snapshot.tar.gz.enc metadata.json > SHA256SUMS)
-  # Чтение всего потока обнаруживает усечение до публикации снимка.
   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY -in "$partial/snapshot.tar.gz.enc" | tar -tzf - >/dev/null
   mv "$partial" "$output"
   if [[ -n "$remote" ]]; then
@@ -122,7 +119,6 @@ for path in pathlib.Path(backups).glob('snapshot-*'):
         shutil.rmtree(path)
 PY
   echo "Снимок создан: $output; offsite: $([[ -n "$remote" ]] && echo проверен || echo не_настроен)"
-  # Деплой продолжает окно обслуживания до миграций. При ошибке trap вернёт сервисы.
   if [[ "${1:-}" = keep-stopped ]]; then stopped=(); fi
 )
 

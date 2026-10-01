@@ -25,7 +25,6 @@ const subscribe = (notify: () => void) => {
 };
 export const useTelegramApp = () => useSyncExternalStore(subscribe, telegramApp);
 
-// Параметр запуска определяет маршрут и не подтверждает права.
 export function miniStartRoute(value: string | null | undefined): string | null {
   if (!value || value.length > 512) return null;
   const sections: Record<string, string> = { club: "/", dpo: "/dpo", events: "/events", news: "/news", podcasts: "/podcasts", merch: "/merch", lk: "/lk", support: "/support" };
@@ -45,7 +44,7 @@ export function leaveMiniPreview() {
 export async function prepareTelegram(): Promise<void> {
   const entry = location.pathname.replace(/\/$/, "") === publicUrl("tg").replace(/\/$/, "");
   const launched = new URLSearchParams(location.hash.slice(1)).has("tgWebAppData");
-  if (entry || launched) { try { sessionStorage.setItem(PREVIEW_KEY, "1"); } catch { /* storage недоступен */ } }
+  if (entry || launched) { try { sessionStorage.setItem(PREVIEW_KEY, "1"); } catch {} }
   if (!entry && !launched && !isMiniApp()) return;
   if (telegramApp()) return;
   await new Promise<void>((resolve) => {

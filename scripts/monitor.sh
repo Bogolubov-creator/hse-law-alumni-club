@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Локальная диагностика. Ненулевой выход виден systemd; внешняя доставка не подразумевается.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 ops_init

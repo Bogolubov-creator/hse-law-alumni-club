@@ -1,5 +1,4 @@
 BEGIN;
--- Агрегаты просмотров страниц (без IP/UA/user id): день UTC + нормализованный path.
 
 CREATE TABLE IF NOT EXISTS club_page_views (
   day date NOT NULL,

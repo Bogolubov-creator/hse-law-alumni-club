@@ -5,7 +5,6 @@ import { token } from "../../stores/cart.js";
 
 const RATES = [1, 1.25, 1.5, 2] as const;
 
-// После истечения аудиоссылки загружается новая с сохранением позиции.
 export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: string; src: string; v2?: boolean; expanded?: boolean }) {
   const ref = useRef<HTMLAudioElement>(null);
   const lastSave = useRef(0);
@@ -18,7 +17,7 @@ export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: s
   const posKey = `pod-pos-${id}`;
 
   const refreshSrc = async () => {
-    if (refreshing.current) return; // одна авто-попытка за раз
+    if (refreshing.current) return;
     refreshing.current = true;
     const el = ref.current;
     const pos = el?.currentTime || Number(localStorage.getItem(posKey) || 0);
@@ -29,7 +28,6 @@ export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: s
       if (!url) throw new Error("нет ссылки");
       setStale(null);
       setLiveSrc(url);
-      // После смены src аудио перезагрузится; вернём позицию и продолжим.
       requestAnimationFrame(() => {
         const a = ref.current;
         if (!a) return;
@@ -47,7 +45,6 @@ export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: s
   const restore = () => {
     const el = ref.current;
     const saved = Number(localStorage.getItem(posKey) || 0);
-    // Не восстанавливаем, если дослушано почти до конца – начинаем заново.
     if (el && saved > 5 && saved < (el.duration || Infinity) - 5) el.currentTime = saved;
     metadataReady.current = true;
   };
@@ -55,7 +52,7 @@ export function EpisodePlayer({ id, src, v2 = false, expanded = false }: { id: s
     const el = ref.current;
     if (!el || !metadataReady.current || el.readyState < 1) return;
     const now = Date.now();
-    if (now - lastSave.current < 5000) return; // пишем не чаще раза в 5 секунд
+    if (now - lastSave.current < 5000) return;
     lastSave.current = now;
     localStorage.setItem(posKey, String(Math.floor(el.currentTime)));
   };

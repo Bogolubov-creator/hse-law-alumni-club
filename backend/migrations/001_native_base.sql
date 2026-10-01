@@ -1,10 +1,7 @@
--- Нативная основа сохраняет типы, UUID и связи существующей базы Directus 11.
--- Применяется перед миграциями club_*; существующие строки не обновляются и не удаляются.
 BEGIN;
 SET LOCAL lock_timeout = '10s';
 SELECT pg_advisory_xact_lock(hashtextextended('club:native-schema:v1', 0));
 
--- Определения столбцов записаны один раз: они создают новую таблицу и дополняют старую.
 CREATE OR REPLACE FUNCTION pg_temp.club_ensure_table(table_name text, definitions text[])
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE definition text;
@@ -378,9 +375,6 @@ SELECT pg_temp.club_ensure_table('timeline_items', ARRAY[
   'status character varying(255) DEFAULT ''published''::character varying'
 ]);
 
--- Имена Directus сохранены только для совместимости пользователей, ролей и файлов.
--- На свежей базе folder остаётся nullable UUID без ссылки на CMS metadata;
--- существующий FK на directus_folders не удаляется.
 SELECT pg_temp.club_ensure_table('club_settings', ARRAY[
   'key text NOT NULL',
   'value jsonb NOT NULL',
@@ -466,8 +460,6 @@ SELECT pg_temp.club_ensure_constraint('referrals', 'referrals_invited_user_id_fo
 SELECT pg_temp.club_ensure_constraint('referrals', 'referrals_referrer_id_foreign', 'FOREIGN KEY (referrer_id) REFERENCES public.alumni(id) ON DELETE CASCADE');
 SELECT pg_temp.club_ensure_constraint('club_settings', 'club_settings_pkey', 'PRIMARY KEY (key)');
 
--- Ранее UUID и date-created заполнял Directus. Defaults действуют только на будущие INSERT.
--- Явно настроенный оператором default не заменяется.
 CREATE OR REPLACE FUNCTION pg_temp.club_ensure_default(table_name text, column_name text, expression text)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
@@ -522,10 +514,8 @@ SELECT pg_temp.club_ensure_default('points_ledger', 'created_at', 'now()');
 SELECT pg_temp.club_ensure_default('push_subs', 'created_at', 'now()');
 SELECT pg_temp.club_ensure_default('referrals', 'created_at', 'now()');
 
--- Расширение не обрезает существующие тексты, в отличие от обратного varchar(255).
 ALTER TABLE public.programs ALTER COLUMN tagline TYPE text;
 
--- Один аккаунт связан с одним профилем. Не выбираем и не удаляем legacy-дубликат автоматически.
 DO $$
 BEGIN
   IF EXISTS (
@@ -539,8 +529,6 @@ $$;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_alumni_user_id
   ON public.alumni(user_id) WHERE user_id IS NOT NULL;
 
--- Полный снимок legacy-настроек приватный: здесь могут быть ключи интеграций.
--- Повторная миграция не заменяет ни снимок, ни собственные настройки приложения.
 DO $$
 BEGIN
   IF to_regclass('public.directus_settings') IS NOT NULL THEN

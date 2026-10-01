@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
 
-export type VisScheme = "bw" | "wb" | "bb"; // чёрным по белому / белым по чёрному / синим по бежевому
+export type VisScheme = "bw" | "wb" | "bb";
 export interface VisionState {
   on: boolean;
   scheme: VisScheme;
-  zoom: number; // 1 | 1.4 | 1.8
+  zoom: number;
   spacing: boolean;
   images: boolean;
   serif: boolean;
@@ -40,13 +40,11 @@ export function setVision(patch: Partial<VisionState>): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
-    // Настройки применяются и при недоступном хранилище.
   }
   apply();
   listeners.forEach((l) => l());
 }
 
-// Применяем сохранённые настройки сразу при загрузке (переживает перезагрузку).
 apply();
 
 export function useVision(): VisionState {

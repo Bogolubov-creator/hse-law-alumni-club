@@ -1,4 +1,3 @@
-// Тонкий клиент к same-origin /api. Опциональная zod-валидация ответа (schema из @club/shared).
 import { ApiError, requestJson } from "./http.js";
 export { ApiError } from "./http.js";
 
@@ -8,16 +7,14 @@ export function isAuthError(err: unknown): boolean {
   return err instanceof ApiError && err.status === 401;
 }
 
-// Повторяются только сетевые ошибки и 5xx; повтор 4xx не изменит ответ.
 export function retryUnlessClientError(failureCount: number, error: unknown): boolean {
   if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
   return failureCount < 2;
 }
 
-// 401 отзывает только отправленную сессию, не анонимный запрос.
 function signalUnauthorized(status: number, hadToken: boolean): void {
   if (status === 401 && hadToken) {
-    try { window.dispatchEvent(new Event("club:unauthorized")); } catch { /* SSR/страховка */ }
+    try { window.dispatchEvent(new Event("club:unauthorized")); } catch {}
   }
 }
 
@@ -51,7 +48,6 @@ export async function apiDelete<T>(path: string, token?: string, schema?: Parser
   return schema ? schema.parse(data) : (data as T);
 }
 
-// Типы ответов – из @club/shared (z.infer от схем-источников).
 export type {
   NewsItem, HeroBlock, CtaBlock, PageHome, Program, ProgramFull, ProgramModule, ProgramTeacher, ProductVariant, Product,
   CartLine, CartSummary, LevelInfo, Achievement, ActivityPoint, AlumniBrief, Me, LoginResponse,

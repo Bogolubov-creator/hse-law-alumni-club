@@ -11,11 +11,9 @@ import { TELEGRAM_CHANNEL } from "../config/social.js";
 import "../styles/shell.css";
 import { CLUB_NAV as NAV } from "../config/navigation.js";
 
-// Определения – в styles/primitives.ts, здесь только точка входа для витрин.
 import { pageTitle, action, caps } from "../styles/primitives.js";
 export { mono, disp, pageTitle } from "../styles/primitives.js";
 
-// Пустая строка требует запасного текста; оператор ?? её сохраняет.
 export const text = (v: string | null | undefined, fallback: string): string => (v && v.trim() ? v : fallback);
 
 export function BlankField({ children, label }: { children: ReactNode; label: string }) {

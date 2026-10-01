@@ -61,14 +61,11 @@ test("главная отдаётся и содержит бренд клуба"
 test("витрина ДПО показывает программы с ценами", async ({ page }) => {
   await stubCatalog(page);
   await page.goto("/dpo", { waitUntil: "domcontentloaded" });
-  // Десктоп: «Программы по праву со скидкой выпускника»; мобила: «Программы ДПО».
   await expect(page.getByRole("heading", { name: /Программы (ДПО|по праву|дополнительного)/ }).first()).toBeVisible();
-  // Цены в рублях – признак того, что каталог реально загрузился из API.
   await expect(page.getByText(/₽/).first()).toBeVisible();
 });
 
 test("скидка выпускника не раскрывается гостю", async ({ page }) => {
-  // Правило клуба: −N% видит только верифицированный выпускник, гость – базовую цену.
   await stubCatalog(page);
   await page.goto("/dpo", { waitUntil: "domcontentloaded" });
   await expect(page.getByText(/₽/).first()).toBeVisible();

@@ -10,7 +10,6 @@ HASHER = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=1, hash_len=
 def password_slots():
     loop = asyncio.get_running_loop()
     if not hasattr(loop, "_club_password_slots"):
-        # Две проверки Argon2 ограничивают память хеширования до 128 МБ.
         loop._club_password_slots = asyncio.Semaphore(2)
     return loop._club_password_slots
 
@@ -25,7 +24,6 @@ async def password_work(function, *args, **kwargs):
     try:
         return await asyncio.shield(task)
     except asyncio.CancelledError:
-        # Отмена запроса не останавливает libargon2: слот освобождается после вычисления.
         await task
         raise
 
@@ -44,7 +42,6 @@ async def verify_password(encoded, password):
             or any(not value.isascii() or not value.isdigit() for value in parameters.values())
         ):
             return False
-        # Node сохранял параметры также в порядке m,p,t; libargon2 требует m,t,p.
         parts[index] = ",".join(f"{key}={parameters[key]}" for key in ("m", "t", "p"))
         encoded = "$".join(parts)
         async with password_slots():

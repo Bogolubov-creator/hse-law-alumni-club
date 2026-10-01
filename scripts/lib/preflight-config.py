@@ -1,4 +1,3 @@
-"""Проверка эффективного Compose без вывода секретов из stdin."""
 import json
 import socket
 import subprocess
@@ -28,7 +27,6 @@ for value, label in ((api.get("PUBLIC_URL", ""), "PUBLIC_URL"),):
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
         errors.append(f"{label} должен быть корневым HTTPS-адресом")
 
-# Занятые порты допустимы только у контейнеров именно этого проекта.
 owned = set()
 ids = subprocess.check_output(["docker", "ps", "-q", "--filter", f"label=com.docker.compose.project={config['name']}"], text=True).split()
 if ids:

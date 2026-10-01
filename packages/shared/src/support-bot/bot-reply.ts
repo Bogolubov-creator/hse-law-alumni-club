@@ -1,4 +1,3 @@
-// Источник: SergeyBuzanov/dpo-pravo-hse, js/bot-reply.js.
 import { parseQuery, sameStem, search, stem } from "./bot-match.js";
 import type {
   BotFaqAnswer,

@@ -85,7 +85,6 @@ function request(origin, endpoint, agent, timeoutMs, signal) {
       });
       response.on('error', () => done('RESPONSE_ERROR', false));
     });
-    // Это общий дедлайн, в том числе для DNS/TLS; socket timeout недостаточен.
     const timer = setTimeout(() => { done('TIMEOUT', false); req.destroy(); }, timeoutMs);
     req.on('error', error => done(/^[A-Z0-9_]+$/.test(error.code ?? '') ? error.code : 'NETWORK_ERROR', false));
   });
@@ -102,7 +101,6 @@ export async function measure(config, signal = new AbortController().signal) {
   let stopReason = 'duration', consecutiveFailures = 0, sent = 0;
   let started = performance.now();
   try {
-    // Проверяем маршрут и TLS до нагрузки; ошибки прогрева отдельно от квантилей.
     for (const endpoint of config.endpoints) {
       const sample = await request(config.origin, endpoint, agent, config.timeoutMs, signal);
       warmup.push(sample);
@@ -119,7 +117,6 @@ export async function measure(config, signal = new AbortController().signal) {
         if (signal.aborted || performance.now() >= deadline || stopReason !== 'duration') break;
         const endpoint = config.endpoints[sent % config.endpoints.length];
         sent++;
-        // Пропущенные интервалы не накапливаются в последующий всплеск запросов.
         nextAt = performance.now() + 1000 / config.requestsPerSecond;
         const work = request(config.origin, endpoint, agent, config.timeoutMs, signal).then(sample => {
           samples.push(sample);
@@ -155,7 +152,6 @@ async function main() {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     if (report.failed || ['warmup_failed', 'interrupted'].includes(report.stopReason)) process.exitCode = 1;
   } catch (error) {
-    // Никаких тел ответов, токенов или содержимого файла CA в журнале.
     const message = error.code ? `Не удалось подготовить замер: ${error.code}` : error.message;
     process.stderr.write(`${message}\n`); process.exitCode = 2;
   }

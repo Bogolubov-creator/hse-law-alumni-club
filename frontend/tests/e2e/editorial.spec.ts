@@ -11,7 +11,6 @@ for (const width of [320, 768, 1440]) test(`news list and article ${width}`, asy
   await page.evaluate(() => document.fonts.ready);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
   if (route === '/news' && width <= 700) {
-   // Карточка может не переполнять экран, но сжимать весь текст в узкую колонку.
    const card = page.locator('.club-news-row--featured');
    const heading = await card.getByRole('heading', { level: 2 }).boundingBox();
    const box = await card.boundingBox();

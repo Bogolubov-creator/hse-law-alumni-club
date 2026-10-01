@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# После vite build: SPA fallback для GitHub Pages + отключение Jekyll.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIST="$ROOT/dist"

@@ -1,4 +1,3 @@
-// Обычная сборка не должна содержать демо-перехватчик, токены и файлы разработки.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 const root = process.argv[2];

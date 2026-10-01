@@ -16,7 +16,7 @@ async function contrastFailures(page: Page) {
     type RGBA = { r: number; g: number; b: number; a: number };
     const parse = (c: string): RGBA => {
       const nums = (c.match(/-?\d*\.?\d+(e-?\d+)?/gi) ?? []).map(Number);
-      const scale = c.startsWith("color(") ? 255 : 1; // color() приходит в долях
+      const scale = c.startsWith("color(") ? 255 : 1;
       const [r = 0, g = 0, b = 0, a = 1] = nums;
       return { r: r * scale, g: g * scale, b: b * scale, a: c.startsWith("color(") ? (nums[3] ?? 1) : a };
     };
@@ -61,7 +61,6 @@ async function contrastFailures(page: Page) {
       if (cs.visibility === "hidden" || cs.display === "none" || !el.getClientRects().length || el.closest('[aria-hidden="true"]')) continue;
       const size = parseFloat(cs.fontSize);
       const weight = parseInt(cs.fontWeight) || 400;
-      // Крупный текст по WCAG: от 24px, либо от 18,66px при полужирном
       const need = size >= 24 || (size >= 18.66 && weight >= 700) ? 3 : 4.5;
       const r = ratio(cs.color, bgOf(el));
       if (r < need) bad.push({ text: text.slice(0, 40), size, ratio: Math.round(r * 100) / 100 });
@@ -80,7 +79,6 @@ test.describe("Название клуба", () => {
   test("в заголовке вкладки стоит ровно зафиксированное имя", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(new RegExp(NAME.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-    // Ни «НИУ ВШЭ», ни «Вышки» в кавычках – три варианта имени уже были
     expect(await page.title()).not.toContain("НИУ ВШЭ");
   });
 
@@ -122,7 +120,6 @@ test.describe("Иерархия титулов", () => {
     await page.goto("/dpo");
     const h1 = page.locator("h1").first();
     await expect(h1).toHaveCSS("font-family", /HSE Slab/);
-    // Плита есть только в 400 и 900: промежуточные веса браузер синтезирует
     await expect(h1).toHaveCSS("font-weight", /400|900/);
     const body = await page.locator("body").evaluate((e) => getComputedStyle(e).fontFamily);
     expect(body).toContain("HSE Sans");

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Общие настройки операций. Файл env читается как данные, никогда как shell-код.
 ops_value() {
   python3 - "$ENV_FILE" "$1" "${2:-}" <<'PY'
 import os, shlex, sys
@@ -44,8 +43,6 @@ ops_lock() {
 
 ops_helper_image() {
   local reference
-  # Docker с containerd хранит в container.Image digest конфигурации, который
-  # нельзя передать docker run. Закрепляем доступный образ утилит по его OCI ID.
   reference="$(docker inspect -f '{{.Config.Image}}' "$1")"
   docker image inspect -f '{{.Id}}' "$reference"
 }

@@ -1,5 +1,3 @@
-# Дополнение основного Compose только для scripts/tests/test-live.sh.
-# Выход контейнеров в интернет закрыт; SMTP заканчивается в Mailpit.
 services:
   api:
     environment:

@@ -36,7 +36,7 @@ export function VisionToggle({ compact = false, v2 = false }: { compact?: boolea
 
 export function VisionCorner() {
   const v = useVision();
-  if (v.on) return null; // когда режим включён, панель настроек уже видна сверху
+  if (v.on) return null;
   return (
     <div style={{ position: "fixed", top: import.meta.env.VITE_LOCAL_REVIEW === "true" ? 72 : 10, right: 10, zIndex: 60 }}>
       <VisionToggle compact v2={window.location.pathname.startsWith("/")} />

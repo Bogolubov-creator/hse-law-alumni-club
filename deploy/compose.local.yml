@@ -1,4 +1,3 @@
-# Локальная репетиция с production-проверками и внутренней CA Caddy.
 name: club-local
 services:
   caddy:

@@ -10,7 +10,6 @@ interface State {
   chunk: boolean;
 }
 
-// Инлайн-стили сохраняют экран восстановления при сбое загрузки CSS.
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   state: State = { error: null, chunk: false };
 

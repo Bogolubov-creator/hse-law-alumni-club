@@ -1,9 +1,6 @@
 version: 2
 
-# Еженедельная проверка стабильных обновлений. Новые версии проходят сборку,
-# тесты и ревью; обновления безопасности приходят отдельными PR.
 updates:
-  # Корневой lockfile покрывает workspace; поддержку его формата pnpm 12 ещё нужно подтвердить.
   - package-ecosystem: npm
     directory: "/"
     schedule:
@@ -13,7 +10,6 @@ updates:
       timezone: Europe/Moscow
     open-pull-requests-limit: 5
     groups:
-      # Патчи и минорные версии – одним PR, чтобы не забивать очередь ревью.
       minor-and-patch:
         update-types: [minor, patch]
     commit-message:
@@ -41,7 +37,6 @@ updates:
     commit-message:
       prefix: "chore(docker)"
 
-  # Зависимости пересобираемого Caddy проверяются отдельно от базового образа.
   - package-ecosystem: gomod
     directory: "/deploy/caddy"
     schedule:

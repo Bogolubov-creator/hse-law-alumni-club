@@ -9,13 +9,12 @@ export function adminToken(): string | null {
 export function setAdminToken(t: string) { localStorage.setItem(ADMIN_TOKEN, t); }
 export function clearAdminToken() { localStorage.removeItem(ADMIN_TOKEN); }
 
-// Локальный выход выполняется и при недоступном сервере.
 export async function adminLogout(): Promise<void> {
   const t = adminToken();
   if (t) {
     try {
       await fetch("/api/auth/admin-logout", { method: "POST", headers: { authorization: `Bearer ${t}` } });
-    } catch { /* офлайн – локальный выход всё равно выполняем */ }
+    } catch {}
   }
   clearAdminToken();
 }
@@ -25,7 +24,6 @@ export async function req<T>(method: string, path: string, body?: unknown): Prom
   const hasBody = body !== undefined;
   return requestJson<T>(path, {
     method,
-    // content-type только при наличии тела – иначе Fastify падает на пустом JSON
     headers: { accept: "application/json", ...(hasBody ? { "content-type": "application/json" } : {}), ...(t ? { authorization: `Bearer ${t}` } : {}) },
     body: hasBody ? JSON.stringify(body) : undefined,
   }, { errorMessage: (status, data) => data?.error || `API ${status}` });
@@ -181,7 +179,6 @@ export function useAuditLog() {
   return useQuery({ queryKey: ["adm", "audit"], queryFn: () => req<AuditEntry[]>("GET", "/admin/audit?limit=300"), retry: false, refetchInterval: 60_000 });
 }
 
-// CSV загружается запросом: обычная ссылка не передаёт Bearer-токен.
 export async function downloadOrdersCsv(): Promise<void> {
   const t = adminToken();
   const res = await fetch("/api/admin/orders/export.csv", { headers: t ? { authorization: `Bearer ${t}` } : {} });

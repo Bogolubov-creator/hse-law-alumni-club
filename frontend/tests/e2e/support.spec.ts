@@ -4,8 +4,6 @@ import {randomInt} from 'node:crypto';
 const vars=process.env.LOCAL_QA_ENV ? Object.fromEntries(readFileSync(process.env.LOCAL_QA_ENV,'utf8').split('\n').filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)])) : {};
 test('поддержка: посетитель, ответ администратора, повторный вход и удаление',async({page,context,request},info)=>{
  test.skip(!process.env.LOCAL_QA_ENV, 'Мутационный тест требует явно выделенного локального стенда');
- // Четыре браузера моделируют разных посетителей за локальным Vite-прокси.
- // Тест соблюдает лимит 3 обращения за 10 минут.
  if (process.env.E2E_TRUSTED_PROXY_SIMULATION === 'true') {
    const base = new URL(String(info.project.use.baseURL));
    if (!['127.0.0.1','localhost'].includes(base.hostname)) throw new Error('Proxy simulation is local-only');

@@ -9,7 +9,7 @@ import { type Section } from "./common.js";
 
 export function Overview({ onGo }: { onGo: (s: Section) => void }) {
   const ov = useOverview();
-  const orders = useAdminOrders({ limit: 5 }); // дашборду хватает пяти строк
+  const orders = useAdminOrders({ limit: 5 });
   const members = useMembers({ status: "pending", limit: 100 });
   const { patchMember } = useMemberMutations();
   const [sel, setSel] = useState<Member | null>(null);
@@ -19,7 +19,6 @@ export function Overview({ onGo }: { onGo: (s: Section) => void }) {
     { key: "orders", count: d?.new_orders ?? 0, title: "Новые заявки", hint: "разобрать статус и оплату", go: "orders" as Section },
     { key: "verify", count: d?.pending_verifications ?? 0, title: "На верификацию", hint: "подтвердить выпуск", go: "members" as Section },
   ].filter((x) => x.count > 0);
-  // Вся статистика сайта – одним экраном.
   const stats = [
     { label: "Новые заявки", value: d?.new_orders ?? 0, act: true },
     { label: "На верификацию", value: d?.pending_verifications ?? 0, act: true },

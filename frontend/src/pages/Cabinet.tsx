@@ -163,7 +163,6 @@ function Identity({ me }: { me: Me }) {
 function EventsFeed({ token }: { token: string }) {
   const [showAll, setShowAll] = useState(false);
   const events = useLkEvents(token);
-  // Входящие в друзья – в разделе «Сообщество»; здесь остальное.
   const list = (events.data ?? []).filter((e) => e.kind !== "friend_request");
   if (!list.length) return null;
 
@@ -596,7 +595,6 @@ export default function Cabinet() {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  // Разрешён только известный маршрут оформления, внешние адреса не принимаются.
   const returnTo = params.get("next") === "/podcasts#podcast-subscription"
     ? "/podcasts#podcast-subscription" : null;
   useEffect(() => {
@@ -604,7 +602,6 @@ export default function Cabinet() {
   }, [token, returnTo, navigate]);
 
   const onAuthed = (resp: LoginResponse) => {
-    // Токен сохраняем и для pending – нужен для загрузки фото профиля.
     localStorage.setItem(TOKEN_KEY, resp.token);
     setSessionExpired(false);
     if (resp.alumni.verification_status === "verified") {
