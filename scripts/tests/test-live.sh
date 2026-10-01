@@ -66,6 +66,7 @@ wait_ready() {
 }
 wait_ready
 compose run --rm --no-deps api python - < scripts/tests/test-runtime-permissions.py
+compose exec -T postgres sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < scripts/tests/live-fixtures.sql
 E2E_LIVE_PHASE=write uv run --directory frontend --frozen pytest -q tests/python/test_live.py --tb=short
 BACKUP_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
   ENV_FILE="$LIVE_TEMP/runtime.env" DEPLOY_COMPOSE_OVERRIDE="$REPO_DIR/deploy/compose.e2e.yml" \

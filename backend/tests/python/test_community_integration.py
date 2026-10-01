@@ -180,3 +180,55 @@ async def test_content_patch_keeps_defaults_and_canonical_server_price(database_
         assert (
             await client.patch(f"/admin/products/{id}", headers=editor_headers, json={"price": True})
         ).status_code == 400
+
+
+async def test_friend_requests_privacy_acceptance_and_removal(database_app):
+    app = database_app
+    first, first_headers = await account(app)
+    second, second_headers = await account(app)
+    pending, _ = await account(app, verified=False)
+    await app.state.store.update("alumni", {"contacts_json": {"email": "private@example.test"}}, id=second)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client:
+        assert (await client.post("/me/friends", headers=first_headers, json={"alumni_id": first})).status_code == 400
+        assert (await client.post("/me/friends", headers=first_headers, json={"alumni_id": pending})).status_code == 404
+        for _ in range(2):
+            assert (await client.post("/me/friends", headers=first_headers, json={"alumni_id": second})).json() == {
+                "status": "pending"
+            }
+        rows = (await client.get("/me/classmates", headers=first_headers)).json()
+        assert len(rows) == 1 and rows[0]["id"] == second and rows[0]["friend_status"] == "pending"
+        assert "private@example.test" not in str(rows) and "user_id" not in rows[0]
+        notices = (await client.get("/me/events", headers=second_headers)).json()
+        assert notices[0]["kind"] == "friend_request" and notices[0]["from_id"] == first
+        assert (await client.post("/me/friends", headers=second_headers, json={"alumni_id": first})).json() == {
+            "status": "accepted"
+        }
+        assert len(await app.state.store.read("alumni_friends", fields=("id",))) == 1
+        assert (await client.delete("/me/friends/" + second, headers=first_headers)).json() == {"status": "none"}
+        assert not await app.state.store.read("alumni_friends", fields=("id",))
+
+
+async def test_self_delete_and_admin_anonymize_revoke_access_and_remove_data(database_app):
+    app = database_app
+    member, headers = await account(app)
+    other, other_headers = await account(app)
+    _, admin_headers = await account(app, "admin")
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client:
+        uploaded = await client.post("/me/avatar", headers=headers, files={"file": ("photo.png", png(), "image/png")})
+        avatar = uploaded.json()["avatar"]
+        await client.post("/me/friends", headers=headers, json={"alumni_id": other})
+        await app.state.store.update("alumni", {"contacts_json": {"phone": "+7 000 0000000"}}, id=member)
+        exported = await client.get("/me/export", headers=headers)
+        assert exported.status_code == 200 and "password" not in exported.text
+        assert exported.json()["profile"]["contacts_json"]["phone"] == "+7 000 0000000"
+        assert (await client.post("/me/delete", headers=headers, json={"confirm": "удалить"})).status_code == 400
+        assert (await client.post("/me/delete", headers=headers, json={"confirm": "УДАЛИТЬ"})).status_code == 200
+        assert (await client.get("/me", headers=headers)).status_code == 401
+        assert (await client.get("/avatars/" + avatar)).status_code == 404
+        member_row = await app.state.store.one("alumni", member)
+        assert member_row["fio"] == "Удалённый участник"
+        assert member_row["contacts_json"] is None and member_row["user_id"] is None
+        assert not await app.state.store.read("alumni_friends", fields=("id",))
+        assert (await client.get("/me", headers=other_headers)).status_code == 200
+        assert (await client.post("/admin/members/" + other + "/anonymize", headers=admin_headers)).status_code == 200
+        assert (await client.get("/me", headers=other_headers)).status_code == 401
