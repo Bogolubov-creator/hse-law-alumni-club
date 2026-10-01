@@ -1,4 +1,3 @@
-// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseReading, toggleSaved, validItem } from "../../../../src/features/reading/reading-list.js";
 const item = { kind: "change" as const, id: "tg-9", title: "Правовая справка", path: "/changes/tg-9", at: 1000 };

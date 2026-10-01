@@ -137,7 +137,7 @@ async def assert_media_references(connection, table, data):
         ids.update(media_ids(data.get(name)))
     if not ids:
         return
-    await connection.execute(f'LOCK TABLE "{table}" IN ROW EXCLUSIVE MODE')  # noqa: S608
+    await connection.execute(f'LOCK TABLE "{table}" IN ROW EXCLUSIVE MODE')
     cursor = await connection.execute(
         "SELECT f.id,f.metadata->>'club_upload_kind' AS upload_kind,"
         "EXISTS(SELECT 1 FROM alumni a WHERE a.avatar=f.id::text) AS is_avatar "
@@ -169,7 +169,7 @@ class Store:
         projection = [*fields, "id"] if hidden_id else fields
         params = []
         where = predicate(table, filters, params)
-        query = f'SELECT {selection(table, projection)} FROM "{table}" WHERE {where}'  # noqa: S608
+        query = f'SELECT {selection(table, projection)} FROM "{table}" WHERE {where}'
         if sort:
             query += " ORDER BY " + ",".join(
                 field(table, name.removeprefix("-")) + (" DESC" if name.startswith("-") else " ASC") for name in sort
@@ -226,7 +226,7 @@ class Store:
         ]
         await assert_media_references(connection, table, data)
         insert = f"({','.join(names)}) VALUES ({','.join(['%s'] * len(names))})" if names else "DEFAULT VALUES"
-        cursor = await connection.execute(f'INSERT INTO "{table}" {insert} RETURNING {selection(table)}', values)  # noqa: S608
+        cursor = await connection.execute(f'INSERT INTO "{table}" {insert} RETURNING {selection(table)}', values)
         return normalize(await cursor.fetchone())
 
     async def update(self, table, data, *, id=None, filters=None, connection=None):
@@ -246,7 +246,7 @@ class Store:
         ]
         where = predicate(table, {"id": {"_eq": id}} if id else filters, params)
         await assert_media_references(connection, table, data)
-        query = f'UPDATE "{table}" SET {assignments} WHERE {where} RETURNING {selection(table)}'  # noqa: S608
+        query = f'UPDATE "{table}" SET {assignments} WHERE {where} RETURNING {selection(table)}'
         cursor = await connection.execute(query, params)
         rows = normalize(await cursor.fetchall())
         if id and not rows:
@@ -263,7 +263,7 @@ class Store:
                 return await self.delete(table, id=id, filters=filters, connection=conn)
         params = []
         where = predicate(table, {"id": {"_eq": id}} if id else filters, params)
-        await connection.execute(f'DELETE FROM "{table}" WHERE {where}', params)  # noqa: S608
+        await connection.execute(f'DELETE FROM "{table}" WHERE {where}', params)
 
     async def aggregate(self, table, *, filters=None, group=(), sum_field=None):
         if table not in DATA_COLUMNS:
@@ -276,7 +276,7 @@ class Store:
         else:
             expression = 'COUNT(*)::text AS "count"'
         where = predicate(table, filters, params)
-        query = f'SELECT {",".join([*columns, expression])} FROM "{table}" WHERE {where}'  # noqa: S608
+        query = f'SELECT {",".join([*columns, expression])} FROM "{table}" WHERE {where}'
         if columns:
             query += " GROUP BY " + ",".join(columns)
         return normalize(await self.database.rows(query, params))

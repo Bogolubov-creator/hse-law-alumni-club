@@ -36,7 +36,7 @@ class Telegram:
         self.state = state
         self.polling = None
 
-    async def api(self, method, body=None, *, timeout=10):  # noqa: ASYNC109
+    async def api(self, method, body=None, *, timeout=10):
         response = await self.state.client.post(
             f"https://api.telegram.org/bot{self.state.settings.secret('TELEGRAM_BOT_TOKEN')}/{method}",
             json=body or {},

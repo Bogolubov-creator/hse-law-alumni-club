@@ -10,7 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True, extra="ignore", env_file=None)
 
-    API_HOST: str = "0.0.0.0"  # noqa: S104
+    API_HOST: str = "0.0.0.0"
     API_PORT: int = Field(default=3000, ge=1, le=65535)
     APP_ENV: Literal["development", "production"] = "development"
     CHECKOUT_DATABASE_URL: SecretStr = SecretStr("")

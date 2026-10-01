@@ -164,7 +164,7 @@ class Media:
                 continue
             fields = [name for name in MEDIA_FIELDS[table] if name != "audio_url"]
             condition = " OR ".join(f"strpos(COALESCE(\"{field}\"::text,''),%s)>0" for field in fields)
-            query = f"SELECT id FROM \"{table}\" WHERE status='published' AND ({condition}) LIMIT 1"  # noqa: S608
+            query = f"SELECT id FROM \"{table}\" WHERE status='published' AND ({condition}) LIMIT 1"
             if await self.state.database.rows(query, [id] * len(fields)):
                 return True
         return False
@@ -173,10 +173,10 @@ class Media:
         pattern = "%" + re.sub(r"[\\%_]", lambda match: "\\" + match[0], search) + "%"
         where = "NOT EXISTS(SELECT 1 FROM alumni a WHERE a.avatar=f.id::text) AND COALESCE(f.metadata->>'club_upload_kind','')<>'avatar' AND (COALESCE(f.title,'') ILIKE %s OR f.filename_download ILIKE %s)"
         rows = await self.state.database.rows(
-            "SELECT f.* FROM directus_files f WHERE " + where + " ORDER BY f.created_on DESC,f.id LIMIT %s OFFSET %s",  # noqa: S608
+            "SELECT f.* FROM directus_files f WHERE " + where + " ORDER BY f.created_on DESC,f.id LIMIT %s OFFSET %s",
             (pattern, pattern, limit, (page - 1) * limit),
         )
-        count_sql = "SELECT count(*)::int AS count FROM directus_files f WHERE " + where  # noqa: S608
+        count_sql = "SELECT count(*)::int AS count FROM directus_files f WHERE " + where
         total = await self.state.database.rows(count_sql, (pattern, pattern))
         return {
             "items": [
@@ -246,7 +246,7 @@ class Media:
         id, path = guid(id), None
         async with self.state.database.transaction() as connection:
             tables = ",".join(f'"{table}"' for table in sorted(MEDIA_FIELDS))
-            await connection.execute(f"LOCK TABLE {tables} IN SHARE MODE")  # noqa: S608
+            await connection.execute(f"LOCK TABLE {tables} IN SHARE MODE")
             file = await (
                 await connection.execute("SELECT * FROM directus_files WHERE id=%s FOR UPDATE", (id,))
             ).fetchone()
@@ -262,7 +262,7 @@ class Media:
                 raise ApiError(409, "Файл связан с другой записью медиатеки")
             for table, fields in sorted(MEDIA_FIELDS.items()):
                 condition = " OR ".join(f"strpos(COALESCE(\"{field}\"::text,''),%s)>0" for field in fields)
-                query = f'SELECT id FROM "{table}" WHERE {condition} LIMIT 1'  # noqa: S608
+                query = f'SELECT id FROM "{table}" WHERE {condition} LIMIT 1'
                 if await (await connection.execute(query, [id] * len(fields))).fetchone():
                     raise ApiError(409, "Файл используется. Сначала уберите его из материалов или профиля.")
             if file["storage"] != "local":

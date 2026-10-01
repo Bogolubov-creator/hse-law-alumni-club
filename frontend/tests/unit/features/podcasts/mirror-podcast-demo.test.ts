@@ -1,4 +1,3 @@
-// @vitest-environment happy-dom
 import { expect, it, vi } from "vitest";
 vi.mock("../../../../src/lib/public-url.js", () => ({ isMirror: false }));
 import { mirrorPodcastDemo, setMirrorPodcastDemo } from "../../../../src/features/podcasts/mirror-podcast-demo.js";
