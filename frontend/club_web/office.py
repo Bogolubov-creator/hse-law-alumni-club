@@ -1,3 +1,67 @@
+GROUPS = [
+    ("Работа клуба", ("overview", "orders", "members", "subs", "support")),
+    ("Публикации", ("programs", "products", "news", "news-sources", "events", "podcasts", "timeline")),
+    ("Управление", ("analytics", "pages", "media", "audit")),
+]
+DESCRIPTIONS = {
+    "overview": "Заявки, проверка выпускников и состояние сервисов клуба.",
+    "analytics": "Участники, заявки и активность за выбранный период.",
+    "orders": "Заявки на программы, мерч и подписки.",
+    "members": "Профили выпускников, проверка статуса и возможности клуба.",
+    "subs": "Доступ к подкастам и прослушивания выпусков.",
+    "programs": "Каталог программ дополнительного образования.",
+    "products": "Товары клуба, варианты и остатки.",
+    "news": "Публикации на сайте и черновики.",
+    "news-sources": "Материалы источников для подготовки новостей клуба.",
+    "events": "Встречи клуба, запись и отметки об участии.",
+    "podcasts": "Выпуски, аудио и доступ по подписке.",
+    "timeline": "События и достижения в истории клуба.",
+    "pages": "Заголовки, тексты и кнопки главной страницы.",
+    "media": "Изображения, аудио и файлы публикаций.",
+    "audit": "Действия сотрудников и события системы.",
+    "support": "Обращения посетителей и работа бота клуба.",
+}
+ICONS = {
+    "overview": "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
+    "orders": "M8 3h8v4H8zM8 5H5v16h14V5h-3M8 12h8M8 16h5",
+    "members": "M15 21v-3a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v3M21 21v-3a4 4 0 0 0-3-4M18 3a4 4 0 0 1 0 8M12 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
+    "subs": "M3 5h18v14H3zM3 10h18M7 15h4",
+    "support": "M21 11a8 8 0 0 1-8 8H7l-4 3V7a4 4 0 0 1 4-4h6a8 8 0 0 1 8 8M7 8h10M7 12h7",
+    "programs": "m2 8 10-5 10 5-10 5-10-5M6 10v7c4 3 8 3 12 0v-7M22 8v8",
+    "products": "M5 7h14l1 14H4L5 7M8 7V5a4 4 0 0 1 8 0v2",
+    "news": "M4 3h16v18H4zM8 7h8M8 11h8M8 15h5",
+    "news-sources": "M4 4v3a13 13 0 0 1 13 13h3A16 16 0 0 0 4 4M4 11v3a6 6 0 0 1 6 6h3a9 9 0 0 0-9-9M4 18h2v2H4z",
+    "events": "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 18h2",
+    "podcasts": "M8 5a4 4 0 0 1 8 0v6a4 4 0 0 1-8 0V5M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8",
+    "timeline": "M3 12a9 9 0 1 0 3-7M3 3v6h6M12 7v5l3 2",
+    "analytics": "M4 3v18h17M8 17v-5M13 17V8M18 17V4",
+    "pages": "M4 3h16v18H4zM4 9h16M10 9v12",
+    "media": "M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5M14 7h2",
+    "audit": "M8 3h8v4H8zM8 5H5v16h14V5h-3M8 12h8M8 16h8",
+    "refresh": "M20 7V3h-4M20 7a9 9 0 1 0 1 8",
+    "menu": "M4 6h16M4 12h16M4 18h16",
+    "logout": "M9 3H4v18h5M9 12h12M17 8l4 4-4 4",
+    "arrow": "M7 17 17 7M7 7h10v10",
+}
+
+
+def filter_content(rows, params):
+    needle = params.get("q", "").strip().casefold().replace("ё", "е")
+    status = params.get("status", "")
+    return [
+        row
+        for row in rows
+        if (not status or row.get("status") == status)
+        and (
+            not needle
+            or needle
+            in " ".join(str(row.get(key) or "") for key in ("title", "direction", "category", "year"))
+            .casefold()
+            .replace("ё", "е")
+        )
+    ]
+
+
 FIELDS = {
     "programs": [
         ("title", "Название", "text"),
@@ -59,6 +123,10 @@ FIELDS = {
     ],
 }
 LABELS = {
+    "ok": "Работает",
+    "error": "Ошибка",
+    "unknown": "Не проверено",
+    "disabled": "Не подключено",
     "dpo": "Программы ДПО",
     "merch": "Мерч",
     "podcast": "Подписка на подкасты",

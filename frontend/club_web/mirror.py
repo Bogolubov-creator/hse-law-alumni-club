@@ -20,6 +20,8 @@ def fixtures(root):
     for name, records in data.items():
         for index, record in enumerate(records):
             record.setdefault("id", f"mirror-{name}-{index + 1}")
+            if name in ("programs", "products", "news", "events", "podcasts", "timeline_items"):
+                record.setdefault("status", "published")
     return data
 
 

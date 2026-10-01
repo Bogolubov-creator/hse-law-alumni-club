@@ -7,24 +7,28 @@
 {% endif %}
 {% if role in ('admin','Administrator') %}
 <h2>Переписка поддержки</h2>
+<div class="office-list">
 {% for ticket in rows %}
-<article class="site-panel">
+<article class="site-panel office-record">
+<div class="office-record-head">
 <h2>Обращение {{ ticket.id }}</h2>
-<p>{{ labels.get(ticket.status,ticket.status) }} · {{ ticket.topic }}</p>
+{{ status(ticket.status) }}</div><p class="office-meta">{{ ticket.topic }}</p>
+<div class="office-messages">
 {% for message in ticket.messages or [] %}
-<p>
-<strong>{{ 'Посетитель' if message.author=='visitor' else 'Поддержка' }}</strong> {{ message.text }}</p>
+<div class="office-message" data-author="{{ 'visitor' if message.author=='visitor' else 'office' }}"><strong>{{ 'Посетитель' if message.author=='visitor' else 'Поддержка' }}</strong><p>{{ message.text }}</p></div>
 {% endfor %}
-<form data-api="/admin/support/{{ ticket.id }}" data-method="PATCH">{{ field('message','Ответ',type='textarea',required=false) }}<label>Статус<select name="status" aria-label="Статус">
+</div>
+<form class="site-admin-form" data-api="/admin/support/{{ ticket.id }}" data-method="PATCH">{{ field('message','Ответ',type='textarea',required=false) }}<label>Статус<select name="status" aria-label="Статус">
 <option value="answered">Отвечено</option>
 <option value="closed">Закрыто</option>
 </select>
 </label>
-<button>Отправить</button>
+<button class="site-primary">Отправить</button>
 <p role="alert" data-error hidden>
 </p>
 </form>
 </article>
 {% else %}{{ empty('Открытых обращений нет.') }}{% endfor %}
+</div>
 
 {% else %}<p>Переписку поддержки обрабатывает администратор клуба.</p>{% endif %}

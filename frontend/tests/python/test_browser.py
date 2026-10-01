@@ -144,6 +144,84 @@ def test_all_sections_in_browser(page, width):
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), path
 
 
+@pytest.mark.parametrize("width", [320, 768, 1024, 1440])
+def test_office_navigation_keyboard_and_screen_sizes(page, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    page.add_init_script("localStorage.setItem('club_admin_token','admin-qa');")
+    page.goto("/admin/news")
+    navigation = page.get_by_role("navigation", name="Панель офиса", exact=True)
+    button = page.get_by_role("button", name="Разделы офиса", exact=True)
+    if width <= 900:
+        expect(navigation).to_be_hidden()
+        expect(page.get_by_role("heading", name="Новости", exact=True)).to_be_in_viewport()
+        button.focus()
+        page.keyboard.press("Enter")
+        expect(button).to_have_attribute("aria-expanded", "true")
+        expect(navigation).to_be_visible()
+        page.keyboard.press("Escape")
+        expect(navigation).to_be_hidden()
+        expect(button).to_be_focused()
+        button.click()
+    else:
+        expect(button).to_be_hidden()
+        expect(page.get_by_role("button", name="Выйти", exact=True)).to_be_in_viewport()
+    expect(navigation.locator("a[aria-current=page]")).to_have_text("Новости")
+    navigation.get_by_role("link", name="ДПО", exact=True).click()
+    expect(page.get_by_role("heading", name="ДПО", exact=True)).to_be_visible()
+    for key, _ in OFFICE_NAV:
+        page.goto("/admin" if key == "overview" else "/admin/" + key)
+        expect(page.locator(".office-page-header")).to_be_visible()
+        if width > 900:
+            expect(page.locator("#office-navigation a[aria-current]")).to_be_in_viewport()
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), key
+    if width <= 900:
+        page.get_by_role("button", name="Разделы офиса", exact=True).click()
+    page.get_by_role("button", name="Выйти", exact=True).click()
+    expect(page.get_by_role("button", name="Войти", exact=True)).to_be_visible()
+
+
+@pytest.mark.parametrize("width", [1440, 390])
+def test_office_content_filters_preserve_editing(page, site, width):
+    site[1]["/admin/programs"] = [
+        {**PROGRAM, "status": "published"},
+        {**PROGRAM, "id": "draft-program", "title": "Ёлка: учебный курс", "status": "draft"},
+    ]
+    page.set_viewport_size({"width": width, "height": 900})
+    page.add_init_script("localStorage.setItem('club_admin_token','admin-qa');")
+    page.goto("/admin/programs")
+    page.get_by_label("Поиск", exact=True).fill("ЕЛКА")
+    page.locator("form.site-filters").get_by_label("Статус", exact=True).select_option("draft")
+    page.get_by_role("button", name="Показать", exact=True).click()
+    expect(page.locator("[data-office-count]")).to_have_text("Показано: 1 из 2")
+    expect(page.get_by_role("heading", name=PROGRAM["title"], exact=True)).to_have_count(0)
+    row = page.locator("article.office-record")
+    row.get_by_text("Редактировать", exact=True).click()
+    row.get_by_label("Продолжительность", exact=True).fill("60 часов")
+
+    def slow_refresh(route):
+        time.sleep(0.15)
+        route.continue_()
+
+    page.route("**/views/admin/programs?**", slow_refresh)
+    row.get_by_role("button", name="Сохранить", exact=True).click()
+    expect(page.locator("#toast")).to_contain_text("Изменения сохранены")
+    expect(page.locator("[data-office-count]")).to_have_text("Показано: 1 из 2")
+    assert site[2][-1]["body"]["duration"] == "60 часов"
+    assert site[2][-1]["path"] == "/admin/programs/draft-program"
+    assert "status=draft" in page.url
+    page.get_by_label("Поиск", exact=True).fill("Нет такого курса")
+    page.get_by_role("button", name="Показать", exact=True).click()
+    expect(page.get_by_text("По выбранным фильтрам записей нет.", exact=True)).to_be_visible()
+    page.get_by_role("link", name="Сбросить", exact=True).click()
+    expect(page.locator("article.office-record")).to_have_count(2)
+    row = page.locator("article.office-record").last
+    row.get_by_text("Редактировать", exact=True).click()
+    page.route("**/views/admin/programs", lambda route: route.fulfill(status=503))
+    row.get_by_role("button", name="Сохранить", exact=True).click()
+    expect(page.locator("#toast")).to_contain_text("Не удалось обновить страницу")
+    expect(row.get_by_role("button", name="Сохранить", exact=True)).to_be_enabled()
+
+
 def test_catalog_filters_search_compare_and_cart(page, site):
     page.goto("/dpo?q=нет-такого")
     expect(page.get_by_text("По выбранным фильтрам ничего не найдено.")).to_be_visible()
@@ -316,12 +394,26 @@ def test_mirror_mobile_preview_navigation_and_exit(chromium, mirror_site, width)
         expect(page.locator("#main")).to_be_visible()
         expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), path
+    page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Панель офиса").click()
+    expect(page.locator(".office-page-header")).to_be_visible()
+    expect(page.locator("html")).not_to_have_class(re.compile("pwa-shell|telegram-mini"))
+    assert page.locator(".site-office").bounding_box()["width"] == width
+    page.get_by_role("link", name="На сайт", exact=True).click()
     page.reload()
     expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
     page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Обычный сайт").click()
     expect(page).to_have_url(mirror_site + "?site=1")
     expect(page.locator("html")).not_to_have_class(re.compile("pwa-shell|telegram-mini"))
     expect(page.locator(".home-hero")).to_be_visible()
+    page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Панель офиса").click()
+    expect(page.locator(".office-page-header")).to_be_visible()
+    assert (
+        page.locator(".office-brand-row").bounding_box()["y"] >= page.locator(".site-notice").bounding_box()["height"]
+    )
+    if width <= 900:
+        page.get_by_role("button", name="Разделы офиса", exact=True).click()
+    expect(page.get_by_role("button", name="Выйти", exact=True)).to_be_in_viewport()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
     assert not errors and not telegram and not writes
     context.close()
 
@@ -365,6 +457,18 @@ def test_mirror_preserves_filters_cart_calendar_and_subscription(chromium, mirro
     assert page.locator("audio").evaluate("audio => audio.paused")
     page.get_by_role("button", name="Выключить деморежим подписчика", exact=True).click()
     expect(page.locator(".site-player")).not_to_be_visible()
+    page.goto(mirror_site + "admin/programs/")
+    page.get_by_role("searchbox", name="Поиск", exact=True).fill("Цифровое право для бизнеса")
+    page.locator("form.site-filters").get_by_label("Статус", exact=True).select_option("published")
+    page.get_by_role("button", name="Показать", exact=True).click()
+    expect(page.locator("[data-office-row]:visible")).to_have_count(1)
+    page.get_by_role("button", name="Обновить", exact=True).click()
+    expect(page.locator("[data-office-count]")).to_contain_text("Показано: 1 из")
+    page.reload()
+    expect(page.locator("[data-office-row]:visible")).to_have_count(1)
+    page.get_by_role("searchbox", name="Поиск", exact=True).fill("Несуществующая программа")
+    page.get_by_role("button", name="Показать", exact=True).click()
+    expect(page.locator("[data-office-empty]")).to_be_visible()
     assert not errors and not writes
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
     context.close()

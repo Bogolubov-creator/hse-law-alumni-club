@@ -3,22 +3,25 @@
 </label>
 <button>Показать</button>
 </form>
-<form data-api="/admin/media" data-file>
+<form class="site-panel office-upload" data-api="/admin/media" data-file>
 <label class="site-field">Файл<input type="file" name="file" required>
 </label>
 <button class="site-primary">Загрузить</button>
 <p role="alert" data-error hidden>
 </p>
 </form>
+<div class="office-list">
 {% for file in rows %}
-<article class="site-panel">
+<article class="site-panel office-record">
 <h2>{{ file.title or file.filename_download }}</h2>
-<p>{{ file.id }} · {{ file.type }} · {{ file.filesize }} байт</p>
+<p class="office-meta">{{ file.type }} · {{ file.filesize }} байт</p><p class="office-media-id">{{ file.id }}</p>
 <label>Ссылка на файл<input readonly value="/api/media/{{ file.id }}">
 </label>
-<button data-action="media-preview" data-file-id="{{ file.id }}" data-file-type="{{ file.type }}" data-title="{{ file.title or file.filename_download }}">Предпросмотр</button>
+<div class="site-actions"><button data-action="media-preview" data-file-id="{{ file.id }}" data-file-type="{{ file.type }}" data-title="{{ file.title or file.filename_download }}">Предпросмотр</button>
 <button data-action="copy" data-value="{{ file.id }}">Скопировать ID</button>
 <button data-download="/admin/media/{{ file.id }}/content" data-filename="{{ file.filename_download }}">Скачать</button>
 <button class="site-danger" data-api="/admin/media/{{ file.id }}" data-method="DELETE" data-confirm="Удалить этот файл?">Удалить</button>
+</div>
 </article>
 {% else %}{{ empty('Файлов пока нет.') }}{% endfor %}
+</div>

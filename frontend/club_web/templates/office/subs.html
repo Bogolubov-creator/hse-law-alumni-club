@@ -6,15 +6,19 @@
 </article>
 {% endfor %}
 </div>
+<div class="office-list-heading"><h2>Выпуски</h2></div><div class="office-list">
 {% for episode in records.by_podcast or [] %}
-<article class="site-panel">
+<article class="site-panel office-record">
 <h2>{{ episode.title }}</h2>
 <p>Прослушиваний: {{ episode.plays }} · Слушателей: {{ episode.listeners }} · За 30 дней: {{ episode.plays_30d }}</p>
 </article>
-{% endfor %}
+{% else %}{{ empty('Прослушиваний пока нет.') }}{% endfor %}
+</div>
+<div class="office-list-heading"><h2>Подписчики</h2></div><div class="office-list">
 {% for subscriber in records['items'] or [] %}
-<article class="site-panel">
+<article class="site-panel office-record">
 <h2>{{ subscriber.fio }}</h2>
 <p>{{ subscriber.email }} · до {{ subscriber.until|date }} · {{ subscriber.days_left }} дней</p>
 </article>
-{% endfor %}
+{% else %}{{ empty('Подписчиков пока нет.') }}{% endfor %}
+</div>

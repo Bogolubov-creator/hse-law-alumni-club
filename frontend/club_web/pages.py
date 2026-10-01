@@ -8,7 +8,7 @@ from club_web.calendar import google_calendar, instant, month_view
 from club_web.changes import parse_changes, select_changes
 from club_web.client import ApiFailure
 from club_web.formatting import page_items
-from club_web.office import FIELDS, LABELS, METRICS
+from club_web.office import DESCRIPTIONS, FIELDS, GROUPS, ICONS, LABELS, METRICS, filter_content
 
 PUBLIC_PAGES = {
     "/": ("home.html", "Клуб выпускников факультета права"),
@@ -43,7 +43,7 @@ NAV = [
     ("/merch", "Мерч"),
 ]
 OFFICE_NAV = [
-    ("overview", "Дашборд"),
+    ("overview", "Обзор"),
     ("analytics", "Аналитика"),
     ("orders", "Заявки"),
     ("members", "Выпускники"),
@@ -114,6 +114,9 @@ async def context(api, path, params, authorized=False):
         "query": params,
         "nav": NAV,
         "office_nav": OFFICE_NAV,
+        "office_groups": GROUPS,
+        "office_descriptions": DESCRIPTIONS,
+        "office_icons": ICONS,
         "office_fields": FIELDS,
         "labels": LABELS,
         "metrics": METRICS,
@@ -343,6 +346,9 @@ async def context(api, path, params, authorized=False):
                 if params.get("id") and section == "events":
                     await load("roster", "/admin/events/" + quote(params["id"], safe="") + "/rsvps", [])
                 data["rows"] = page_items(data.get("records"))
+                if section in FIELDS:
+                    data["office_total"] = len(data["rows"])
+                    data["rows"] = filter_content(data["rows"], params)
                 records = data.get("records") or {}
                 current = int(params.get("page", "1")) if params.get("page", "1").isdigit() else 1
                 current = max(1, current)

@@ -150,7 +150,8 @@ async function refresh() {
     page.replaceWith(document.importNode(next, true));
     setupPage();
     void updateCartCount();
-  } catch (error) { notice(error.message); }
+    return true;
+  } catch (error) { notice(error.message); return false; }
 }
 
 async function updateCartCount() {
@@ -245,8 +246,10 @@ async function perform(target, body) {
       notice("Заявка на подписку сохранена: " + result.number + ". Учебный офис свяжется с вами.");
     } else {
       if (cart) store("club_checkout:" + cartSession(), null);
-      notice(cart ? "Корзина обновлена" : "Изменения сохранены");
-      if (cart && currentPath() !== "/cart") void updateCartCount(); else await refresh();
+      if (cart && currentPath() !== "/cart") {
+        void updateCartCount();
+        notice("Корзина обновлена");
+      } else if (await refresh()) notice(cart ? "Корзина обновлена" : "Изменения сохранены");
     }
   } finally {
     if (cart) pendingCart--;
@@ -295,7 +298,18 @@ function renderReading() {
   document.querySelectorAll("[data-reading-path]").forEach(article => { article.hidden = !!document.querySelector("[data-unread-filter]")?.checked && data.read.includes(article.dataset.readingPath); });
 }
 
+function alignOfficeNavigation() {
+  const navigation = document.querySelector("#office-navigation");
+  const active = navigation?.querySelector("[aria-current]");
+  if (!active || !navigation.clientHeight) return;
+  const container = navigation.getBoundingClientRect();
+  const item = active.getBoundingClientRect();
+  if (item.bottom > container.bottom) navigation.scrollTop += item.bottom - container.bottom + 8;
+  if (item.top < container.top) navigation.scrollTop += item.top - container.top - 8;
+}
+
 function setupPage() {
+  alignOfficeNavigation();
   const recent = document.querySelector("[data-reading-title]");
   if (recent) {
     try {
@@ -446,7 +460,12 @@ document.addEventListener("click", async event => {
     else if (action === "close-bot") document.querySelector("#support-bot").close();
     else if (action === "bot-hint") await queueBot(target.dataset.question);
     else if (action === "refresh") await refresh();
-    else if (action === "menu") {
+    else if (action === "office-menu") {
+      const open = target.getAttribute("aria-expanded") !== "true";
+      target.setAttribute("aria-expanded", String(open));
+      document.querySelector("#office-navigation").dataset.open = String(open);
+      if (open) alignOfficeNavigation();
+    } else if (action === "menu") {
       const on = target.getAttribute("aria-expanded") !== "true";
       target.setAttribute("aria-expanded", String(on));
       target.setAttribute("aria-label", on ? "Закрыть меню" : "Открыть меню");
@@ -570,6 +589,10 @@ document.addEventListener("change", event => {
   }
 });
 document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    const button = document.querySelector("[data-action='office-menu']");
+    if (button?.getAttribute("aria-expanded") === "true") { button.click(); button.focus(); }
+  }
   if (event.key === "Escape") { const button = document.querySelector("[data-action='menu']"); if (button?.getAttribute("aria-expanded") === "true") button.click(); }
 });
 window.addEventListener("storage", event => { if (event.key === readingKey) renderReading(); });
@@ -585,6 +608,11 @@ try {
 } catch {}
 document.querySelector("#cookies").hidden = ["all", "essential", "0", "1"].includes(stored("club_cookie_consent"));
 prepareMini(currentPath(), url);
+const mirrorNotice = document.querySelector(".site-notice");
+if (mirrorNotice) new ResizeObserver(() => {
+  document.body.style.setProperty("--office-notice-height", mirrorNotice.offsetHeight + "px");
+  alignOfficeNavigation();
+}).observe(mirrorNotice);
 if (navigator.serviceWorker && window.isSecureContext) void navigator.serviceWorker.register(url("sw.js"), { scope: base }).catch(() => {});
 setupPage();
 if ((token() && (currentPath().startsWith("/lk") || currentPath().startsWith("/admin") || currentPath().startsWith("/podcasts") || currentPath().startsWith("/events"))) || currentPath() === "/cart") void refresh();

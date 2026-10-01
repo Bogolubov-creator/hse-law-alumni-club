@@ -5,6 +5,7 @@ export function miniStartRoute(value) {
 }
 
 export function prepareMini(path, url) {
+  if (path === "/admin" || path.startsWith("/admin/")) return;
   const query = new URLSearchParams(location.search);
   const entry = path === "/tg";
   let preview = false;
