@@ -232,7 +232,7 @@ def test_telegram_preview_safe_start_and_return(page):
     page.get_by_role("navigation", name="Основные разделы").get_by_role("link", name="Клуб", exact=True).click()
     expect(page.get_by_text("Предпросмотр мини-приложения", exact=True)).to_be_visible()
     expect(page.get_by_role("button", name="Войти через Telegram", exact=True)).to_be_hidden()
-    page.get_by_role("button", name="Вернуться на сайт", exact=True).click()
+    page.get_by_role("link", name="Вернуться на сайт", exact=True).click()
     expect(page.locator(".home-hero")).to_be_visible()
     page.goto("/tg?startapp=admin")
     expect(page.locator(".mini-home")).to_be_visible()

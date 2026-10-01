@@ -18,6 +18,7 @@ def check(mode):
         ".jpg",
         ".jpeg",
         ".webp",
+        ".avif",
         ".ico",
         ".woff",
         ".woff2",

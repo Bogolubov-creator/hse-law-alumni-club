@@ -8,6 +8,11 @@
 {% endfor %}
 </select>
 </label>
+<label>Оплата<select aria-label="Оплата" name="payment">
+{% for value,title in [('', 'Все'),('succeeded','Оплачено'),('pending','Ожидает оплаты'),('canceled','Платёж отменён'),('none','Без платежа')] %}
+<option value="{{ value }}" {% if query.get('payment','')==value %}selected{% endif %}>{{ title }}</option>
+{% endfor %}
+</select></label>
 <button>Показать</button>
 </form>
 <button data-download="/admin/orders/export.csv" data-filename="orders.csv">Скачать CSV</button>

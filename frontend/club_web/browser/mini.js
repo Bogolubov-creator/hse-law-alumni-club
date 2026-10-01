@@ -9,6 +9,11 @@ export function prepareMini(path, url) {
   const entry = path === "/tg";
   let preview = false;
   try {
+    if (query.get("site") === "1") {
+      sessionStorage.removeItem("club_telegram_preview");
+      sessionStorage.removeItem("club_pwa");
+      if (!window.Telegram?.WebApp?.initData) return;
+    }
     if (query.get("pwa") === "1" || query.get("source") === "pwa" || matchMedia("(display-mode: standalone)").matches) sessionStorage.setItem("club_pwa", "1");
     if (sessionStorage.getItem("club_pwa") === "1") document.documentElement.classList.add("pwa-shell");
     if (entry || query.has("tgWebAppData") || new URLSearchParams(location.hash.slice(1)).has("tgWebAppData")) sessionStorage.setItem("club_telegram_preview", "1");
