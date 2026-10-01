@@ -71,7 +71,7 @@ sudo systemctl is-active docker
 На существующей VM используйте отдельный чистый checkout нужного SHA, сохраняя
 исходный. Для переноса данных [legacy snapshot](deploy-runbook.md#перенос-установки-directus)
 снимается прежним закреплённым инструментом, а не этим native-deploy.
-Node/pnpm на host для Compose не нужны; для запуска тестов вне Docker устанавливаются
+Для запуска тестов вне Docker устанавливаются
 версии из [testing.md](../development/testing.md) отдельно.
 
 ## Изолированная конфигурация

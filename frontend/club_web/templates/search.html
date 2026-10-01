@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<main id="main" class="site-article club-search">
+<h1>Поиск по клубу</h1>
+<form role="search">
+<label>Программа, новость или изменение в праве<input type="search" name="q" minlength="2" maxlength="200" value="{{ query.get('q','') }}" autofocus>
+</label>
+<button>Найти</button>
+</form>
+{% if query.get('q','')|length < 2 %}
+<p>Введите хотя бы две буквы.</p>
+{% elif not found and not errors %}
+<p role="status">Ничего не найдено. Попробуйте другое слово.</p>
+{% endif %}
+<nav aria-label="Разделы клуба">
+{% for href,label in sections %}
+<a class="site-reading-item" data-search-row href="{{ href }}">{{ label }}</a>
+{% endfor %}
+</nav>
+{% for group in groups if group['items'] %}
+<section>
+<h2>{{ group.label }}</h2>
+{% for item in group['items'] %}
+<a class="site-reading-item" data-search-row href="{{ item.path }}">{{ item.title }}</a>
+{% endfor %}
+</section>
+{% endfor %}
+</main>
+{% endblock %}

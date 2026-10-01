@@ -32,43 +32,39 @@
 Общие механизмы отделены от предметных модулей:
 
 - `club_api/db` – SQL-адаптер, модели, allowlist полей, агрегаты и транзакции checkout.
-- `club_api/core` – чтение и проверка окружения.
-- `club_api/core` – обработчик ошибок, idempotency и блокировки.
+- `club_api/core` – окружение, обработчик ошибок, idempotency и блокировки.
 - `club_api/jobs` – расписание задач и общая очистка по срокам хранения.
 - `club_api/observability` – аудит, безопасные журналы, Sentry и готовность сервисов.
 - `migrations` – последовательные SQL-миграции; `sql` – индексы и права роли API.
 
 Новый HTTP-маршрут добавляется в модуль своей функции и регистрируется в
-[main.py](../../backend/club_api/main.py). Справочники в JSON лежат в `packages/shared/src`. Python читает их из пакета;
-TypeScript импортирует тот же JSON. Серверные расчёты находятся в `club_api/domain.py`.
+[main.py](../../backend/club_api/main.py). Справочники JSON лежат в `data` и включаются в соответствующие Python-пакеты. Серверные расчёты находятся в `club_api/domain.py`.
 Окончательная проверка прав, цен и сумм выполняется сервером.
 
 ## Интерфейс
 
-`frontend/src/pages` содержит страницы, `admin` – панель офиса, `telegram` –
-мобильную оболочку Mini App. `features` собирает компоненты и логику отдельной
-функции: catalog, events, podcasts, reading, changes, cabinet, support, privacy
-и pwa. Повторно используемые элементы без привязки к функции находятся в
-`components`, общие оболочки – в `layouts`.
+`frontend/club_web/main.py` запускает отдельный FastAPI web. `pages.py` выбирает
+маршрут и получает данные через `client.py` из внутреннего API. Web не подключается
+к PostgreSQL и не принимает окончательных решений о правах, цене или скидке.
 
-HTTP-клиенты и запросы лежат в `api`, React-хуки – в `hooks`, состояние корзины –
-в `stores`. `lib` содержит общие преобразования, публичные URL, метаданные и
-доступность. Стили находятся в `styles`; CSS конкретного компонента может лежать
-рядом с ним. Изображения, шрифты и файлы PWA находятся в `public`.
+- `templates` – Jinja2-страницы, общая оболочка, формы и разделы офиса.
+- `browser` – обычные JavaScript-модули: действия пользователя, плеер, Telegram,
+  PWA, маскот и отдельный помощник зеркала.
+- `styles` – CSS и токены существующего дизайна.
+- `public` – изображения, шрифты, иконки и manifest.
+- `fixtures` – данные статического зеркала; они не входят в рабочий web-образ.
+- `tests/python` – шаблоны, браузер, дайджест, календарь и настоящий live-стенд.
 
-Маршруты определяет [App.tsx](../../frontend/src/App.tsx). Имена страниц описывают
-назначение: `Home`, `Cabinet`, `Profile`, `Cart`, `MembershipAuth`. Общая оболочка
-сайта – `SiteShell`, кабинета – `CabinetShell`. Пути `/v2/*` и `/legacy/*`
-перенаправляют старые закладки на действующие страницы.
+`build.py` готовит публичные файлы без Node. `mirror.py` экспортирует те же
+шаблоны в статические HTML с заданным базовым путём. `sync_changes.py` обновляет
+архив дайджеста с проверкой источника. В runtime эти три команды отсутствуют.
 
 ## Тесты
 
 | Каталог | Набор |
 |---|---|
 | `backend/tests/python` | pytest, HTTPX ASGI, настоящий PostgreSQL и конкурентные операции |
-| `frontend/tests/unit` | Модульные тесты интерфейса |
-| `frontend/tests/e2e` | Браузерные сценарии, включая настоящий live-стек |
-| `packages/*/tests` | Общие расчёты интерфейса |
+| `frontend/tests/python` | Шаблоны, браузерные сценарии, дайджест, календарь и live-стек |
 | `scripts/tests` | Операционные проверки и запуск изолированных SQL/live-наборов |
 
 Тесты и фикстуры находятся вне `src`. Команды и границы проверок описаны в
@@ -85,7 +81,7 @@ HTTP-клиенты и запросы лежат в `api`, React-хуки – в
 `deploy.sh`, `backup.sh`, `restore.sh`, `monitor.sh`, `migrate.sh` и
 `apply-indexes.sh`. Вспомогательные shell/Python-функции находятся в `lib`,
 проверки артефактов – в `checks`, измерения – в `diagnostics`, нативный bootstrap,
-управление сотрудниками и импорты – в `src`.
+управление сотрудниками и импорты – в `club_ops`.
 
 Runtime образы содержат скомпилированный код и рабочие зависимости. Docker-контекст
 исключает тесты, отчёты, секреты и локальные данные. Пути SQL и Docker-файлов
@@ -110,6 +106,6 @@ checkout и прежний путь к файлу прав runtime при его
 
 ## Источники
 
-- Поиск и ответы FAQ в `packages/shared/src/support-bot` и `backend/club_api/modules/telegram/faq.py` используют алгоритмы `js/bot-match.js` и `js/bot-reply.js` из [SergeyBuzanov/dpo-pravo-hse](https://github.com/SergeyBuzanov/dpo-pravo-hse).
+- Поиск и ответы FAQ в `backend/club_api/modules/telegram/faq.py` используют алгоритмы `js/bot-match.js` и `js/bot-reply.js` из [SergeyBuzanov/dpo-pravo-hse](https://github.com/SergeyBuzanov/dpo-pravo-hse).
 - Каталог ДПО импортируется из [itspecR/dpo-pravo-hse](https://github.com/itspecR/dpo-pravo-hse) и [каталога ВШЭ](https://www.hse.ru/edu/dpo/).
-- Реквизиты в `packages/shared/src/operator.ts` сверялись 10.09.2026 по [карточке организации](https://www.rusprofile.ru/id/1257700005551).
+- Реквизиты в `frontend/club_web/templates/legal/requisites.html` сверялись 10.09.2026 по [карточке организации](https://www.rusprofile.ru/id/1257700005551).

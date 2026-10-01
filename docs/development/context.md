@@ -17,8 +17,8 @@
 
 ## Что сохраняем при изменениях
 
-- React SPA в `frontend`, FastAPI API в `backend`, общие модели и расчёты в
-  `packages/shared`, серверные хеши в `backend/club_api/modules/auth`, контейнерный
+- FastAPI/Jinja2 web в `frontend`, FastAPI API в `backend`, общие справочники
+  в `data`, серверные расчёты в API, хеши в `backend/club_api/modules/auth`, контейнерный
   PostgreSQL и Caddy перед сервисами.
 - Серверную проверку прав, цены, скидки, суммы заявки и остатков.
 - Роли выпускника, редактора, администратора и отдельную SQL-роль API.
@@ -29,8 +29,8 @@
 - Нативные миграции и повторяемый bootstrap; приватный архив CMS-настроек не
   становится публичным API. Владелец БД выполняет управление сотрудниками.
 
-Маршруты определяет [App.tsx](../../frontend/src/App.tsx), страницы находятся в
-`frontend/src/pages`, общая оболочка – в `frontend/src/layouts`. Мобильная версия
+Маршруты определяет [pages.py](../../frontend/club_web/pages.py), страницы находятся в
+`frontend/club_web/templates`, общая оболочка – в `templates/base.html`. Мобильная версия
 использует те же страницы и серверные правила.
 
 ## История и примеры
@@ -40,4 +40,4 @@
 
 Сравнение с `itspecR/journal` используется для организации кода, документации и
 эксплуатации. Сервер Клуба перенесён на Python/FastAPI по отдельному поручению владельца.
-React, PostgreSQL и Caddy сохраняются; основание – [ADR FastAPI](../decisions/fastapi-migration.md).
+PostgreSQL, Caddy и дизайн сохраняются; основание – [ADR FastAPI](../decisions/fastapi-migration.md).

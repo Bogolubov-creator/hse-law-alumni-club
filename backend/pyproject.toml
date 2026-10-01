@@ -32,8 +32,8 @@ build-backend = "hatchling.build"
 packages = ["club_api"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"../packages/shared/src/domain-data.json" = "club_api/domain-data.json"
-"../packages/shared/src/faq-data.json" = "club_api/faq-data.json"
+"../data/domain-data.json" = "club_api/domain-data.json"
+"../data/faq-data.json" = "club_api/faq-data.json"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]

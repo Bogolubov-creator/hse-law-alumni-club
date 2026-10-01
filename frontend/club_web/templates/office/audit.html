@@ -1,0 +1,8 @@
+{% for entry in rows %}
+<article class="site-audit">
+<time>{{ entry.created_at|date(true) }}</time>
+<strong>{{ entry.event }}</strong>
+<p>{{ entry.actor or '' }} · {{ entry.subject or '' }}</p>
+<pre>{{ entry.detail|tojson }}</pre>
+</article>
+{% else %}{{ empty('Записей пока нет.') }}{% endfor %}

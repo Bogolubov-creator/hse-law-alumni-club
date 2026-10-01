@@ -1,0 +1,24 @@
+{% macro content_form(record={}) %}
+<form data-api="/admin/{{ section }}{{ '/'+record.id if record.id else '' }}" data-method="{{ 'PATCH' if record.id else 'POST' }}" class="site-admin-form">
+{% for name,label,kind in office_fields.get(section,[]) %}
+{% set value=(record.get('dates') or {}).get('start') if section=='programs' and name=='start' else record.get(name) %}
+<label class="site-field">{{ label }}{% if '|' in kind %}
+<select name="{{ name }}" aria-label="{{ label }}">
+{% for option in kind.split('|') %}
+<option value="{{ option }}" {% if value==option %}selected{% endif %}>{{ labels.get(option,option) }}</option>
+{% endfor %}
+</select>
+{% elif kind in ('textarea','json') %}
+<textarea name="{{ name }}" {% if kind=='json' %}data-json{% endif %}>{{ (value|tojson) if kind=='json' and value else value or '' }}</textarea>
+{% elif kind=='checkbox' %}
+<input type="checkbox" name="{{ name }}" {% if value %}checked{% endif %}>
+{% else %}
+<input name="{{ name }}" type="{{ kind }}" value="{{ value if value is not none else '0' if name in ('price','stock','sort') else '60' if name=='points' else '' }}">
+{% endif %}
+</label>
+{% endfor %}
+<button class="site-primary">{{ 'Сохранить' if record.id else 'Создать' }}</button>
+<p role="alert" data-error hidden>
+</p>
+</form>
+{% endmacro %}

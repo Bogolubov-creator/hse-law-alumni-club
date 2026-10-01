@@ -29,74 +29,44 @@ jobs:
           uv sync --directory backend --frozen
           uv sync --directory scripts --frozen
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
-        with:
-          version: 12.8.1
-
-      - name: Setup Node
-        uses: actions/setup-node@v7.0.0
-        with:
-          node-version: "24.21.0"
-          cache: pnpm
-
-      - name: Install (frozen lockfile)
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Check Python formatting
-        run: uv run --directory backend --frozen ruff format --check club_api tests/python ../scripts/club_ops
-
-      - name: Validate deployment configuration
+      - name: Install web dependencies and Chromium
         run: |
-          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d \( -name node_modules -o -name dist -o -name .venv \) -prune -o -type f -name '*.sh' -print0)
+          uv sync --directory frontend --frozen
+          uv run --directory frontend playwright install --with-deps chromium
+      - name: Check Python and browser source
+        run: |
+          uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
+          uv run --directory backend ruff format --check club_api tests/python ../scripts/club_ops
+          uv run --directory frontend ruff check club_web tests/python
+          uv run --directory frontend ruff format --check club_web tests/python
+          uv run --directory frontend python ../scripts/checks/check-comments.py
+      - name: Validate operator commands and deployment configuration
+        run: |
+          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d -name .venv -prune -o -type f -name '*.sh' -print0)
           python3 scripts/tests/test-ops.py
           python3 scripts/tests/test-install.py
-          node --test scripts/tests/measure-load.test.mjs
-          node --test scripts/tests/compiled-comments.test.mjs
+          uv run --directory backend python ../scripts/tests/test-measure-load.py
+          uv run --directory frontend python ../scripts/tests/test-comments.py
           docker compose --env-file .env.example config --quiet
-          docker compose --env-file .env.example config --format json | node -e '
-            let input = "";
-            process.stdin.on("data", chunk => input += chunk).on("end", () => {
-              const { services } = JSON.parse(input);
-              if (services.api.ports?.length) {
-                console.error("API must not publish a host port");
-                process.exitCode = 1;
-              }
-              if (services.api.environment.SEED_DEMO !== "false" ||
-                  services.bootstrap.environment.SEED_DEMO !== "false") {
-                console.error("SEED_DEMO must reach API and bootstrap as false in the example configuration");
-                process.exitCode = 1;
-              }
-              if (services.api.environment.APP_ENV !== services.bootstrap.environment.APP_ENV) {
-                console.error("API and bootstrap must use the same APP_ENV");
-                process.exitCode = 1;
-              }
-            });
-          '
-
-      - name: Build (typecheck + bundle всех пакетов)
-        run: pnpm -r build
-
-      - name: Check native web artifact
+          docker compose --env-file .env.example config --format json | python3 scripts/checks/check-compose.py
+      - name: Build and check native web files
         run: |
-          node scripts/checks/check-web-build.mjs frontend/dist
-          node scripts/checks/check-compiled-comments.mjs packages/shared/dist
-
-      - name: Test (vitest)
-        run: pnpm -r test
-
-      - name: Audit (прод-зависимости, порог high)
-        run: pnpm audit --prod --audit-level high
-      - name: Audit (инструменты разработки, порог high)
-        run: pnpm audit --audit-level high
-
-      - name: Audit Python dependencies
+          uv run --directory frontend python -m club_web.build --output /tmp/club-native-web
+          uv run --directory frontend python ../scripts/checks/check-web-build.py /tmp/club-native-web
+      - name: Test API, templates and browser flows
         run: |
-          uv export --directory backend --frozen --no-dev --no-emit-project --format requirements-txt --output-file /tmp/club-requirements.txt >/dev/null
-          uv run --directory backend --frozen pip-audit -r /tmp/club-requirements.txt --no-deps --disable-pip
+          uv run --directory backend pytest -q
+          uv run --directory frontend pytest -q
+      - name: Audit Python runtime and development dependencies
+        run: |
+          for project in backend frontend scripts; do
+            for scope in runtime development; do
+              flags=()
+              if [[ "$scope" == runtime ]]; then flags+=(--no-dev); fi
+              uv export --directory "$project" --frozen --no-emit-project --no-emit-local "${flags[@]}" --format requirements-txt --output-file "/tmp/club-$project-$scope.txt" >/dev/null
+              uv run --directory frontend pip-audit -r "/tmp/club-$project-$scope.txt" --no-deps --disable-pip
+            done
+          done
 
   postgres-integration:
     runs-on: ubuntu-24.04
@@ -121,18 +91,16 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-python@v7.0.0
         with:
-          version: 12.8.1
-      - uses: actions/setup-node@v7.0.0
+          python-version: "3.14.7"
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
-          node-version: "24.21.0"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Typecheck live browser tests
-        run: pnpm --filter @club/web exec tsc --ignoreConfig --noEmit --module ESNext --moduleResolution Bundler --target ES2022 --types node --skipLibCheck tests/e2e/live-stack.spec.ts playwright.live.config.ts
-      - name: Install Chromium and its Ubuntu libraries
-        run: pnpm --filter @club/web exec playwright install --with-deps chromium
+          version: "0.12.21"
+      - name: Install browser tests
+        run: |
+          uv sync --directory frontend --frozen
+          uv run --directory frontend playwright install --with-deps chromium
       - name: Build images and check real persistence in desktop and mobile browsers
         run: bash scripts/tests/test-live.sh
       - name: Check final runtime image contents

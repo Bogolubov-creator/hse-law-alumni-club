@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import login,field,empty %}
+{% from 'office/forms.html' import content_form with context %}
+{% block content %}
+{% if not session or access_error==401 %}
+<main id="main" class="site-container">{{ login(true) }}</main>
+{% else %}
+<div class="adm-grid site-office">
+<aside class="adm-aside club-dark">
+<a href="/" class="site-office-brand">Учебный офис<small>Клуб выпускников</small>
+</a>
+<nav aria-label="Панель офиса">
+{% for key,label in office_nav %}
+<a href="/admin{{ '/'+key if key!='overview' else '' }}" {% if section==key %}aria-current="page"{% endif %}>{{ label }}</a>
+{% endfor %}
+</nav>
+<button data-action="logout-office">Выйти</button>
+</aside>
+<main id="main" class="site-office-content">
+<header class="site-masthead">
+<h1>{{ title }}</h1>
+<p>{{ 'Администратор' if role in ('admin','Administrator') else 'Редактор' }}</p>
+</header>
+{% if access_error==403 %}
+<p role="alert">Этот раздел доступен администратору клуба.</p>
+{% else %}
+{% include office_template %}
+{% endif %}
+{% if office_previous or office_next %}
+<nav class="site-actions" aria-label="Страницы списка">
+{% if office_previous %}<a href="{{ office_previous }}">← Предыдущая страница</a>{% endif %}
+{% if office_next %}<a href="{{ office_next }}">Следующая страница →</a>{% endif %}
+</nav>
+{% endif %}
+</main>
+</div>
+{% endif %}
+{% endblock %}

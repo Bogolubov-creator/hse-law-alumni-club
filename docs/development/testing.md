@@ -1,73 +1,49 @@
-# Тестирование
+# Проверка проекта
 
-Результат относится к конкретному коммиту и окружению. Состояние локальных
-проверок и CI фиксируется в [журнале](../operations/project-state.md).
+Зависимости API, web и команд оператора закреплены в трёх `uv.lock`.
+Для разработки нужны Python 3.14 и uv; для SQL и полного приложения – Docker.
 
-## Окружение
-
-API и команды оператора: Python 3.14.7, uv и зависимости из двух `uv.lock`.
-Интерфейс: Node.js 24.21.0, pnpm 12.8.1, `pnpm-lock.yaml`.
-Для SQL, браузерных и установочных сценариев нужен Docker. Обслуживание через
-`backup.sh`, `restore.sh` и `deploy.sh` выполняется на Ubuntu с `flock`.
-
-Внешние платежи, Telegram, push и Sentry в тестовом стеке выключены. Почта
-поступает в Mailpit. Тесты создают синтетические аккаунты и собственные тома;
-проверки не разрешают подключаться к рабочей базе.
-
-## Что проверяет каждый набор
-
-| Набор | Что проверяется | Команда |
-|---|---|---|
-| Python и PostgreSQL | Контракты 117 маршрутов, auth, роли, транзакции, остатки, повторные платежи, поддержка, медиа, подписки, bootstrap | `bash scripts/tests/test-integration.sh` |
-| Интерфейс и общие функции | Формы, маршруты, расчёты, схемы данных и обработка ответов | `pnpm -r test` |
-| Shell/Python операции | Конфигурация, установка, копии и ограничения операций | `python3 scripts/tests/test-ops.py`, `python3 scripts/tests/test-install.py` |
-| Live stack | Реальные web/API/PostgreSQL/Caddy, почта, роли, запись и чтение после перезапуска | `bash scripts/tests/test-live.sh` |
-| Состав образов | Скомпилированный собственный Python, рабочие зависимости, отсутствие тестов, исходников и демоданных в API | `bash scripts/checks/check-runtime-images.sh API_IMAGE BOOTSTRAP_IMAGE WEB_IMAGE` |
-| TLS и периметр | Caddy, localhost CA, заголовки, ограничения и маршруты | `python3 scripts/tests/test-edge.py` |
-| Установка Ubuntu | Первый и повторный запуск, TLS, readiness, вход и сохранность конфигурации | `bash scripts/tests/test-install.sh` |
-| Зависимости и секреты | Известные уязвимости Python/npm/образов и случайно добавленные ключи | pip-audit, pnpm audit, Trivy, Gitleaks в CI |
-
-## Матрица пользовательских сценариев
-
-| Сценарий | Проверка |
-|---|---|
-| Регистрация и подтверждение | Согласие, серверная роль alumni, почтовая ссылка, повторная доставка |
-| Пароли и сессии | Legacy Argon2/JWT, одноразовый reset, отзыв admin JWT, текущая роль и provider/MFA |
-| Офис | Ограничения редактора, подтверждение выпуска, скидка, баллы, CSV |
-| Заявка | Серверная цена, скидка, UUID корзины, идемпотентность и последняя единица склада |
-| Платёж | IP, отдельный запрос провайдеру, сумма RUB, подделка, повтор и конкурентная доставка |
-| Мероприятия | RSVP, посещение, однократное начисление баллов и ICS |
-| Поддержка | Версия согласия, код доступа, повтор, закрытие и удаление обращения |
-| Медиа | Сигнатура, лимиты, ссылки на файл, Range, приватность аватара и symlink |
-| Подкасты | Повтор заявки без активации, подпись ссылки, текущая подписка и учёт прослушивания |
-| Импорт | Безопасный INITIAL_STATE, неполный каталог, сохранение редакторских полей и даты новостей |
-| Обслуживание | SQL-права runtime, повторный bootstrap, сохранность данных и доступ после рестарта |
-
-Исходники сценариев: [Python](../../backend/tests/python),
-[браузер](../../frontend/tests/e2e), [операции](../../scripts/tests).
-Подменённый ответ ЮKassa или Telegram не доказывает работу реального провайдера.
-
-## Установка и быстрые проверки
+## Быстрые проверки
 
 Из корня репозитория:
 
 ```bash
 uv sync --directory backend --frozen
+uv sync --directory frontend --frozen
 uv sync --directory scripts --frozen
-pnpm install --frozen-lockfile
-pnpm lint
-uv run --directory backend --frozen ruff format --check club_api tests/python ../scripts/club_ops
-pnpm -r build
-pnpm -r test
-pnpm audit --prod --audit-level high
+uv run --directory frontend playwright install chromium
+uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
+uv run --directory backend ruff format --check club_api tests/python ../scripts/club_ops
+uv run --directory frontend ruff check club_web tests/python
+uv run --directory frontend ruff format --check club_web tests/python
+uv run --directory frontend python ../scripts/checks/check-comments.py
+uv run --directory frontend python -m club_web.build --output /tmp/club-web
+uv run --directory frontend python ../scripts/checks/check-web-build.py /tmp/club-web
+uv run --directory backend pytest -q
+uv run --directory frontend pytest -q
+uv run --directory frontend python ../scripts/tests/test-comments.py
+uv run --directory backend python ../scripts/tests/test-measure-load.py
 python3 scripts/tests/test-ops.py
 python3 scripts/tests/test-install.py
-node scripts/checks/check-web-build.mjs frontend/dist
 ```
 
-Для Python-тестов без PostgreSQL можно выбрать файлы `test_domain.py`,
-`test_security.py` и `test_push.py`. Интеграционные проверки запускайте следующей
-командой: пропущенный из-за отсутствия БД тест не считается успешной проверкой SQL.
+Без тестовой БД SQL-сценарии пропускаются. Пропуск не означает успешной проверки
+сохранения данных. Live-сценарии выполняются отдельной командой ниже.
+
+## Что проверяют тесты
+
+| Область | Проверка |
+|---|---|
+| API и данные | Права ролей и SQL-роль, PHC/JWT, регистрация, платежные повторы, сумма и резерв |
+| Web и шаблоны | Публичные страницы, кабинет и офис, экранирование HTML, ссылки, ошибки API |
+| Браузер | Все разделы на 1440 и 390 px, поиск, сравнение, корзина, ошибки оформления, сохранённое, PWA, Telegram и плеер |
+| Дайджест | Разбор источника, даты, ссылки, объём, пагинация, обновление и сохранение архива при ошибке |
+| Операции | Конфигурация, установщик, копия, восстановление, нагрузочные ограничения и TLS |
+| Выпуск | Собственные скомпилированные модули, разрешённые шаблоны/статика, отсутствие исходников, тестов и демоданных |
+
+Источники: [API](../../backend/tests/python), [web](../../frontend/tests/python),
+[операции](../../scripts/tests). Подмена внешнего провайдера проверяет контракт,
+но не подтверждает доставку реальной почты, оплату или работу Telegram.
 
 ## Настоящий PostgreSQL
 
@@ -75,56 +51,52 @@ node scripts/checks/check-web-build.mjs frontend/dist
 bash scripts/tests/test-integration.sh
 ```
 
-Runner создаёт контейнер с tmpfs и случайным локальным портом, применяет миграции,
-индексы и ограниченную SQL-роль, затем запускает pytest. Контейнер удаляется в
-trap. Имя БД строго `fastapi_migration_test`; иной адрес fixture отклоняет.
-Приложение проверяется через HTTPX ASGI с настоящим lifespan.
+Команда создаёт отдельный контейнер с tmpfs и случайным локальным портом,
+применяет миграции, индексы и ограниченную SQL-роль, затем запускает pytest.
+Контейнер удаляется после теста. Фикстура принимает только БД
+`fastapi_migration_test`. Приложение проверяется через HTTPX с его lifespan.
 
-Фикстура [legacy-auth.json](../../backend/tests/python/legacy-auth.json) создана
-прежней Node-реализацией с синтетическим паролем и секретом. Она проверяет
-чтение сохранённых PHC/JWT после удаления TypeScript-сервера.
+Фикстура [legacy-auth.json](../../backend/tests/python/legacy-auth.json)
+проверяет совместимость с синтетическими PHC-хешами и JWT прежнего сервера.
 
 ## Браузер с настоящими сервисами
 
 ```bash
-pnpm --filter @club/web exec playwright install --with-deps chromium
+uv run --directory frontend playwright install --with-deps chromium
 bash scripts/tests/test-live.sh
 ```
 
-Ubuntu runner использует отдельный проект `club-ci-live`, локальные порты
-8180–8182 и Mailpit. Проверяются регистрация, подтверждение, вход, роль редактора,
-профиль, медиа, заявка, резервная копия, повторный bootstrap и чтение после
-перезапуска сервисов. Десктоп и телефон используют одну серверную реализацию.
-Стек и его тома удаляются после теста; существующий проект с этим именем
-runner отказывается использовать.
+Стенд использует отдельный проект `club-ci-live`, loopback-порты 8180–8182
+и Mailpit. Проверяются регистрация, письмо подтверждения, вход, роли, профиль,
+медиа, корзина и заявка, подписка, события, отзыв сессии и восстановление доступа.
+Затем создаётся зашифрованная копия, повторяются bootstrap и миграции,
+перезапускаются сервисы и проверяется чтение сохранённых данных.
 
-Для публичного сайта и Safari доступны сценарии из `frontend/tests/e2e`:
+Десктоп и телефон используют одну реализацию сервера. Контейнеры и тома стенда
+удаляются после теста. Команда отказывается использовать существующий проект
+с тем же именем.
 
-```bash
-pnpm --filter @club/web exec playwright install chromium webkit
-E2E_BASE_URL=http://localhost pnpm --filter @club/web e2e --project=desktop --project=mobile tests/e2e/public.spec.ts tests/e2e/auth-recovery.spec.ts tests/e2e/admin.spec.ts
-pnpm --filter @club/web e2e:safari
-```
-
-## Содержимое выпуска
+## Безопасность и содержимое образов
 
 ```bash
 bash scripts/checks/check-runtime-images.sh API_IMAGE BOOTSTRAP_IMAGE WEB_IMAGE
 ```
 
-Собственные Python-пакеты в финальном образе состоят из `.pyc` и нужных JSON.
-API не содержит пакета команд оператора, каталога bootstrap или демозаписей.
-Сторонние библиотеки поставляются со своими файлами и лицензиями. Node/pnpm/uv,
-pytest, линтеры и pip в рабочих Python-образах отсутствуют. UID приложения – 1000.
+Собственные Python-пакеты поставляются как `.pyc` и необходимые JSON; web
+добавляет Jinja2-шаблоны и публичные CSS, JavaScript, изображения и шрифты.
+API не содержит каталога bootstrap и демозаписей. Web не содержит экспортёра
+зеркала, его данных и браузерного помощника. Сторонние библиотеки и их лицензии
+сохраняются. Node, npm, pnpm, uv, pip, pytest и линтеры в runtime отсутствуют.
+UID приложения – 1000.
 
-Web содержит публичную статику без исходников, sourcemap и демоперехватчика.
-Комментарии собственной TypeScript-сборки проверяет
-`check-compiled-comments.mjs`; лицензионные комментарии допускаются.
+[CI](../../.github/workflows/ci.yml) проверяет зависимости каждого Python-пакета
+через pip-audit, пять образов через Trivy (High/Critical), Go-модули Caddy,
+текущие файлы через Gitleaks, а также установку и повторный запуск на Ubuntu.
+Лицензионные уведомления и shebang допускаются проверкой комментариев.
 
-## Как фиксировать доказательство
+## Как фиксировать результат
 
-Указывайте SHA, команду, exit code, окружение и фактический результат.
-Проверка exact head PR предшествует слиянию; после слияния проверяется CI `main`.
-Пароли, JWT, почтовые ссылки, тела поддержки и полный env в отчёт не копируются.
-Для обновления целевого сервера нужны копия, сверка после деплоя и путь отката
-из [runbook](../operations/deploy-runbook.md).
+Указывайте SHA, команду, код завершения и окружение. Результат PR относится
+к его проверенному коммиту; после слияния сверяется отдельный CI `main`.
+Пароли, JWT, ссылки подтверждения, переписку и полный env в отчёт не копируют.
+Команды выпуска и отката находятся в [runbook](../operations/deploy-runbook.md).

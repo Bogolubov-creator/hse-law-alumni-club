@@ -4,15 +4,13 @@
 
 [![Security & CI – main](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush)
 
-[![TypeScript 7](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/) [![Node.js 24 LTS](https://img.shields.io/badge/Node.js-24_LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/docs/latest-v24.x/api/) [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/) [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/) [![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.14/) [![FastAPI](https://img.shields.io/badge/FastAPI-0.142-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/docs/16/) [![Caddy 2](https://img.shields.io/badge/Caddy-2-1F88C0?logo=caddy&logoColor=white)](https://caddyserver.com/docs/) [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/) [![Ubuntu 24.04 LTS](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://documentation.ubuntu.com/server/)
-
 Сайт объединяет новости и мероприятия Клуба, каталог ДПО и мерча, личный кабинет
 выпускника и панель учебного офиса. Заявки сохраняются на сервере; онлайн-оплата
 включается отдельно при настройке ЮKassa.
 
-**Стек:** Python/FastAPI, PostgreSQL и React-панель офиса. Отдельная CMS-подписка
-не требуется. Сервер, bootstrap и команды импорта работают на Python; TypeScript
-используется в интерфейсе. Проверки выполняются в изолированном Docker-стеке и CI Ubuntu.
+**Стек:** Python/FastAPI, Jinja2 и PostgreSQL. Страницы сайта, кабинет и панель
+офиса формируются на сервере. Небольшие модули JavaScript обслуживают плеер,
+корзину, сохранённые материалы, PWA и Telegram. Отдельная CMS-подписка не требуется. Проверки выполняются в изолированном Docker-стеке и CI Ubuntu.
 Стенды используют синтетические данные.
 Публичный запуск не выполнен. Точная версия стенда, завершённые проверки и открытые
 вопросы ведутся в одном [журнале состояния](docs/operations/project-state.md).
@@ -63,7 +61,7 @@
 
 ## Быстрый старт
 
-На компьютере разработчика нужны Git, Python 3.14, uv, Node.js 24 и pnpm 12.8.1.
+На компьютере разработчика нужны Git, Python 3.14 и uv.
 Команды ниже устанавливают зависимости API, команд оператора и интерфейса,
 собирают интерфейс и запускают его модульные тесты. Выполняйте их обычным
 пользователем в новом каталоге. Запуск API описан в [локальном запуске](#локальный-запуск),
@@ -74,9 +72,10 @@ git clone https://github.com/Bogolubov-creator/hse-law-alumni-club.git club
 cd club
 uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
-pnpm install --frozen-lockfile
-pnpm -r build
-pnpm -r test
+uv sync --directory frontend --frozen
+uv run --directory frontend playwright install chromium
+uv run --directory frontend python -m club_web.build
+uv run --directory frontend pytest -q
 ```
 
 Команды используют основную ветку `main`. Проверенные ревизии, результаты CI
@@ -126,13 +125,13 @@ PostgreSQL, запускаются отдельно. Для работающег
 | Поддержка и сведения | `/support`, `/support/consent`, `/privacy`, `/confidential`, `/requisites` | Поддержка при включении и сведения об операторе |
 | Мобильный вход | `/tg`, главная в Mini App/PWA | Мобильная оболочка тех же серверных функций |
 
-Источник маршрутов – [App.tsx](frontend/src/App.tsx). Префиксы `/v2` и `/legacy`
+Источник маршрутов – [pages.py](frontend/club_web/pages.py). Префиксы `/v2` и `/legacy`
 обрабатываются переходами к каноническим адресам. Проверки сценариев перечислены в
 [журнале состояния](docs/operations/project-state.md).
 
 ## Технологии и назначение компонентов
 
-Версии закреплены в `backend/uv.lock`, `scripts/uv.lock`, `pnpm-lock.yaml`
+Версии закреплены в `backend/uv.lock`, `frontend/uv.lock`, `scripts/uv.lock`
 и Docker-файлах. Решение о переносе сервера – в [ADR FastAPI](docs/decisions/fastapi-migration.md).
 
 | Компонент | Версия | Назначение |
@@ -144,21 +143,17 @@ PostgreSQL, запускаются отдельно. Для работающег
 | HTTPX / Beautiful Soup | 0.28.1 / 4.15.0 | Проверяемые внешние запросы и разбор HTML |
 | aiosmtplib / pywebpush | 5.1.3 / 2.5.0 | SMTP и Web Push |
 | Sentry SDK | 2.71.0 | Только коды ошибок без запросов и персональных данных |
-| TypeScript / Node.js / pnpm | 7.0.2 / 24.21.0 / 12.8.1 | Интерфейс и его сборка; ESLint использует compiler API 6 |
-| React / Router / TanStack Query | 19.3.0 / 7.18.4 / 5.104.0 | Интерфейс, маршруты и серверное состояние |
-| Vite / Tailwind CSS | 8.3.1 / 4.3.3 | Статические файлы и стили |
 | pytest / Ruff | 9.1.1 / 0.16.9 | Проверки Python и PostgreSQL |
 | PostgreSQL | 16.15 | Постоянные данные и транзакции |
 | Caddy | 2.11.4 | HTTPS, прокси и выдача статических файлов |
-| Vitest / Playwright | 5.0.2 / 1.63.0 | Модульные, интеграционные и браузерные проверки |
+| Jinja2 / Playwright | 3.1.6 / 1.63.0 | Серверные HTML-шаблоны и браузерные проверки |
 | Docker Compose / Ubuntu | Проверяемые версии стенда – в журнале | Контейнеры и серверная ОС |
 | systemd / Bash / Python | Пакеты Ubuntu 24.04 | Таймеры, операции выпуска, проверки конфигурации и копий |
 | Git / GitHub Actions | [ci.yml](.github/workflows/ci.yml) | История версий и автоматические проверки коммитов и PR |
 
 Сроки поддержки и совместимость – в [архитектуре](docs/development/architecture.md#версии-и-совместимость).
-Сборка использует Vite 8 с Rolldown. React 19, Tailwind 4 и Zod 4 обновляются
-с проверкой прежних форм, PATCH-контрактов и стилей. Для ESLint подключён
-официальный compatibility API TypeScript 6; сборка выполняется компилятором 7.
+В браузере используются обычные JavaScript-модули и CSS. Node.js и сборщик
+интерфейса для разработки и развёртывания не требуются.
 Caddy собирается с актуальными CEL и automemlimit; официальные backport-правки
 и проверки описаны в [ADR сборки](docs/decisions/caddy-dependencies.md). Отказ от Directus
 согласован в [ADR выбора CMS](docs/decisions/cms-options.md); данные обслуживаются через SQL.
@@ -167,9 +162,10 @@ Caddy собирается с актуальными CEL и automemlimit; офи
 
 ```mermaid
 flowchart LR
-  B["Браузер: React SPA"] -->|"HTTP :80 / HTTPS :443"| C["Caddy"]
-  C -->|"HTTP web:80, статика"| W["web: Vite dist"]
+  B["Браузер: HTML и JavaScript"] -->|"HTTP :80 / HTTPS :443"| C["Caddy"]
+  C -->|"HTTP web:80, страницы"| W["web: FastAPI + Jinja2"]
   C -->|"HTTP api:3000, /api/*"| A["FastAPI API"]
+  W -->|"HTTP api:3000, чтение контента"| A
   A -->|"PostgreSQL postgres:5432"| P["PostgreSQL"]
   P --- V["pgdata"]
   A --- U["directus_uploads: совместимое имя тома"]
@@ -193,17 +189,14 @@ backend/
   sql/                индексы и права роли API
   tests/python/       pytest, SQL integration и фикстуры
 frontend/
-  src/pages/          публичные страницы и кабинет
-  src/admin/          панель офиса
-  src/features/       компоненты и логика функций сайта
-  src/api/            HTTP-клиенты и запросы
-  src/hooks/          общие React-хуки
-  src/stores/         состояние корзины
-  src/layouts/        оболочки, навигация и элементы кабинета
-  src/components/     общие компоненты
-  tests/unit/         модульные тесты интерфейса
-  tests/e2e/          сценарии Playwright
-packages/shared/      модели, схемы, расчёты, справочники и их тесты
+  club_web/           FastAPI web, клиент API и подготовка страниц
+    templates/        Jinja2: сайт, кабинет и разделы офиса
+    browser/          небольшие JavaScript-модули
+    styles/           CSS и токены дизайна
+  public/             изображения, шрифты, иконки и manifest
+  fixtures/           публичные данные статического зеркала
+  tests/python/       шаблоны, браузерные сценарии и live-проверки
+data/                 единые справочники, FAQ, каталог и архив дайджеста
 scripts/              команды установки, выпуска, копирования и восстановления
   club_ops/           bootstrap, управление сотрудниками и импорты
   lib/                общие shell/Python-функции операций
@@ -224,7 +217,7 @@ docs/                 development, operations, product, integrations, decisions
 
 | Контур | Известная конфигурация | Основание |
 |---|---|---|
-| Разработка | Node.js 24, pnpm 12.8.1, Docker для интеграционных проверок | Версии проекта |
+| Разработка | Python 3.14, uv, Docker для интеграционных проверок | Версии проекта |
 | Локальная Ubuntu-репетиция | Ubuntu 24.04 ARM64, 4 vCPU, 6 GiB RAM, диск 20 GiB | Исходный стенд; не оценка предельной нагрузки |
 | Рабочий сервер | Подбирается по объёму данных и нагрузке | [Расчёт ёмкости](docs/operations/capacity.md) |
 
@@ -273,7 +266,7 @@ docs/                 development, operations, product, integrations, decisions
 ## Локальный запуск
 
 Для сайта нужен весь стек: PostgreSQL, миграции, bootstrap, API, `web` и
-Caddy. Запуск одного Vite не проверяет сохранение данных или работу интеграций.
+Caddy. Запуск одного web-сервиса не проверяет сохранение данных или работу интеграций.
 
 Порядок подготовки изолированного контура – в [runbook](docs/operations/deploy-runbook.md).
 Для разработки допускается `APP_ENV=development`; синтетические демо-аккаунты
@@ -288,7 +281,7 @@ Caddy. Запуск одного Vite не проверяет сохранени
 Код размещается в новом `/opt/club`, секреты – в `/etc/club/runtime.env`.
 Выберите способ получения кода, затем запустите установщик.
 На сервере нужны Ubuntu 24.04, доступ по SSH, `sudo` и интернет к APT-источникам,
-Docker Hub и npm. Node.js и pnpm на хост для Compose-деплоя не устанавливаются.
+Docker Hub и PyPI. Python-зависимости устанавливаются внутри образов.
 
 ### Простая установка
 
@@ -306,7 +299,7 @@ sudo ./scripts/install.sh
 
 Установщик ставит системные зависимости и Docker, создаёт независимые случайные
 секреты и начального администратора, собирает приложение с версиями из lockfile,
-применяет миграции и проверяет сайт и `/api/ready`. Node.js, pnpm и библиотеки
+применяет миграции и проверяет сайт и `/api/ready`. Python и библиотеки
 приложения устанавливаются внутри Docker. Рабочий env и данные входа хранятся
 в `/etc/club`, с правами `0600`; пароль не попадает в вывод установщика.
 
@@ -632,7 +625,7 @@ Compose с новыми томами. Проверяются данные, фа�
 | Проверка | Критерий успешного завершения |
 |---|---|
 | Секреты | Gitleaks завершился без срабатываний правил репозитория |
-| npm-зависимости приложения и инструментов | Аудит прошёл с порогом HIGH/CRITICAL |
+| Python-зависимости API, web и команд оператора | pip-audit: рабочие и разработческие зависимости проверяются отдельно |
 | Go-зависимости Caddy | `govulncheck` не обнаружил достижимых известных уязвимостей |
 | Пять рабочих образов | Trivy не обнаружил HIGH/CRITICAL в API, bootstrap, web, Caddy и PostgreSQL |
 | Состав выпуска | В конечных образах нет собственных исходников, тестов, env, sourcemap и демо-кода |
@@ -660,24 +653,25 @@ API и PostgreSQL не имеют опубликованных портов. Cad
 
 ## Разработка и тестирование
 
-Команды выполняются обычным пользователем из корня клона после установки Node.js 24
-и pnpm 12.8.1. Docker Engine нужен для последней команды. Ожидаемый результат у
+Команды выполняются обычным пользователем из корня клона с Python 3.14 и uv. Docker Engine нужен для последней команды. Ожидаемый результат у
 каждой команды – код `0`; сценарий PostgreSQL создаёт отдельную тестовую БД.
 
 ```bash
 uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
-pnpm install --frozen-lockfile
-pnpm lint
-pnpm -r build
-pnpm -r test
-pnpm audit --prod --audit-level high
-node scripts/checks/check-web-build.mjs frontend/dist
+uv sync --directory frontend --frozen
+uv run --directory frontend playwright install chromium
+uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
+uv run --directory frontend ruff check club_web tests/python
+uv run --directory frontend python -m club_web.build --output /tmp/club-web
+uv run --directory frontend python ../scripts/checks/check-web-build.py /tmp/club-web
+uv run --directory frontend python ../scripts/checks/check-comments.py
+uv run --directory frontend pytest -q
 docker compose --env-file .env.example config --quiet
 bash scripts/tests/test-integration.sh
 ```
 
-Сборка интерфейса включает TypeScript; сервер и команды оператора используют Python. Часть тестов подменяет внешних
+Сайт, API и команды оператора используют Python. HTML создаётся из Jinja2-шаблонов. Часть тестов подменяет внешних
 провайдеров; они не доказывают сохранение в БД. PostgreSQL-интеграция использует
 настоящие миграции; браузерная цепочка запускается с собранными API, web и БД. Playwright запускают только против указанного тестового
 контура: некоторые сценарии изменяют данные. Команды и фактические прогоны – в

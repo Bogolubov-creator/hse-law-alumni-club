@@ -26,11 +26,18 @@ class Probe(BaseHTTPRequestHandler):
             if not chunk:
                 return
             received += len(chunk)
-        body = json.dumps({
-            'path': self.path, 'bytes': received,
-            'forwardedFor': self.headers.get('X-Forwarded-For'),
-            'forwardedProto': self.headers.get('X-Forwarded-Proto')
-        }).encode()
+        path = self.path.split('?')[0]
+        if path == '/pages/home':
+            payload = {'blocks': {}}
+        elif path in ('/news', '/programs', '/events', '/timeline'):
+            payload = []
+        else:
+            payload = {
+                'path': self.path, 'bytes': received,
+                'forwardedFor': self.headers.get('X-Forwarded-For'),
+                'forwardedProto': self.headers.get('X-Forwarded-Proto')
+            }
+        body = json.dumps(payload).encode()
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(body)))
@@ -126,14 +133,16 @@ def run(args):
             check('https://telegram.org' in headers.get('content-security-policy', ''), 'Потеряна CSP Telegram')
             check(headers.get('x-content-type-options') == 'nosniff' and 'server' not in headers, 'Потеряны защитные заголовки')
             check('max-age=' in headers.get('strict-transport-security', ''), 'Потерян HSTS')
-            check(headers.get('cache-control') == 'no-cache', 'SPA кэшируется')
+            check(headers.get('cache-control') == 'no-store', 'HTML кэшируется')
             check('x-frame-options' not in headers, 'Telegram embedding заблокирован')
             while request('/api/ready')[0] != 200:
                 check(time.monotonic() < deadline, 'HTTP-фикстура не стала готова за 60 секунд')
                 time.sleep(0.25)
-            for path in ['/admin', '/lk', '/v2/cart']:
+            for path in ['/admin', '/lk', '/cart', '/search']:
                 status, headers, body = request(path)
-                check(status == 200 and body == html and headers.get('cache-control') == 'no-cache', 'SPA route: ' + path)
+                check(status == 200 and b'<main' in body and headers.get('cache-control') == 'no-store', 'Серверная страница: ' + path)
+            status, redirect_headers, _ = request('/v2/cart')
+            check(status == 308 and redirect_headers.get('location') == '/cart', 'Потерян переход с прежнего маршрута')
             check(request('/not-a-club-route')[0] == 404, 'Потерян 404 неизвестной страницы')
             for path in ['/.env', '/.git/config', '/wp-login.php']:
                 check(request(path)[0] == 404, 'Запрос сканера прошёл: ' + path)
@@ -150,11 +159,11 @@ def run(args):
                 check(request(path, b'x' * (limit + 1))[0] == 413, 'Не соблюдён лимит тела: ' + path)
             check(request('/api/ready', headers={'X-Large': 'x' * (20 * 1024)})[0] == 431, 'Не соблюдён лимит заголовков')
             status, headers, body = request('/', headers={'Accept-Encoding': 'gzip'})
-            check(status == 200 and headers.get('content-encoding') == 'gzip' and gzip.decompress(body) == html, 'gzip не работает')
+            check(status == 200 and headers.get('content-encoding') == 'gzip' and b'<html' in gzip.decompress(body), 'gzip не работает')
             asset = re.search(rb'<script[^>]+src="([^"]+\.js)"', html)
             check(asset is not None, 'Не найден JS-артефакт')
             status, headers, _ = request(asset[1].decode())
-            check(status == 200 and 'immutable' in headers.get('cache-control', ''), 'Потерян кэш хешированной статики')
+            check(status == 200 and headers.get('cache-control') == 'no-cache', 'Браузер может сохранить прежний JavaScript')
             check('no-cache' in request('/sw.js')[1].get('cache-control', ''), 'Service worker кэшируется')
             status, headers, _ = request('/old-office', port='8081/tcp')
             check(status == 308 and headers.get('location') == 'https://localhost/admin', 'Потерян legacy redirect')

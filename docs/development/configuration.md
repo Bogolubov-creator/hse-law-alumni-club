@@ -2,7 +2,7 @@
 
 Источники настроек: [.env.example](../../.env.example),
 [config.py](../../backend/club_api/core/config.py), [Compose](../../docker-compose.yml),
-[Dockerfile web/Caddy](../../deploy/edge.Dockerfile), [Vite](../../frontend/vite.config.ts) и
+[Dockerfile web](../../deploy/web.Dockerfile), [Caddy](../../deploy/edge.Dockerfile) и
 операционные скрипты. Рабочее состояние конкретного контура – в
 [project-state.md](../operations/project-state.md), процедуры – в [deploy-runbook.md](../operations/deploy-runbook.md).
 
@@ -225,18 +225,8 @@ journald и возвращает код завершения; внешний к�
 
 | Переменная | Назначение | Обязательность | Секрет | Безопасный пример | Этап |
 |---|---|---|---|---|---|
-| `VITE_SITE_URL` | Абсолютные ссылки метаданных сайта | Docker берёт из `PUBLIC_URL` | Нет | `http://localhost` | Сборка web |
-| `VITE_MEDIA_URL` | Корневой адрес файлов API | Docker берёт из `PUBLIC_URL` | Нет | `http://localhost` | Сборка web |
-| `VITE_BASE` | Базовый путь статического зеркала | По умолчанию `/`; не runtime VPS | Нет | `/` | Сборка Vite |
-| `VITE_MIRROR` | Статическое демонстрационное зеркало | Только `build:mirror`, не серверный сайт | Нет | `false` | Сборка Vite |
-| `VITE_ENABLE_SW` | Дополнительное включение service worker в dev | Необязательно; production включает SW независимо, зеркало выключает | Нет | `true` только для проверки SW в dev | Сборка web |
-| `VITE_LOCAL_REVIEW` | Локальная пометка юридических страниц | Только локальная проверка; production Docker не передаёт | Нет | `true` только для локального просмотра | Сборка Vite |
-| `VITE_TELEGRAM_BOT_USERNAME` | Имя бота для клиентских ссылок | Необязательно; при смене бота сверить с API | Нет | `example_bot` | Сборка web |
-| `PORT` | Порт dev-сервера Vite | По умолчанию `5173` | Нет | `5173` | Запуск dev |
-| `API_PROXY_TARGET` | Адрес API для прокси Vite | По умолчанию `http://localhost:3000` | Нет | `http://127.0.0.1:3000` | Запуск dev |
 
-Docker передаёт только объявленные в нём build args, поэтому дополнительные
-`VITE_*` из рабочего env сами в образ не попадут. Vite dev, статическое зеркало и
+Web использует `API_INTERNAL_URL` для чтения API; статическое зеркало и
 полный серверный стенд – разные контуры проверки. Флаги интеграционных тестов
 `RUN_DATA_INTEGRATION`, `RUN_NATIVE_AUTH_INTEGRATION`,
 `RUN_CHECKOUT_INTEGRATION`, `RUN_SUPPORT_INTEGRATION`, `RUN_TELEGRAM_INTEGRATION`
@@ -276,3 +266,15 @@ monitor.sh из рабочих настроек; отдельно задават
 Mailpit, локальная копия, флаг включения и наличие ключа не заменяют эту проверку.
 Процедуры эксплуатации находятся в [runbook](../operations/deploy-runbook.md), выполненные
 проверки и оставшиеся условия запуска – в [журнале состояния](../operations/project-state.md).
+
+
+## Настройки web
+
+| Переменная | Назначение | По умолчанию |
+|---|---|---|
+| `API_INTERNAL_URL` | Внутренний адрес API; задаётся оператором, не браузером | `http://api:3000` в Compose, `http://127.0.0.1:3000` локально |
+| `WEB_HOST` | Адрес прослушивания web | `127.0.0.1` локально, `0.0.0.0` в образе |
+| `WEB_PORT` | Порт web | `5173` локально, `80` в образе |
+
+Базовый путь зеркала передаётся аргументом `--base` экспортёру; это не настройка
+рабочего сервера. Зеркало не читает рабочие секреты API.

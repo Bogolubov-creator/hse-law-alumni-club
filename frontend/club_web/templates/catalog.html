@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import empty,save,add_cart %}
+{% block content %}
+<main id="main" class="site-container">
+<header class="site-masthead">
+<h1>{{ title }}</h1>
+<p>{{ 'Программы факультета права. Цена выпускника доступна после подтверждения учебным офисом.' if kind == 'dpo' else 'Одежда и аксессуары с символикой клуба.' }}</p>
+</header>
+<form class="site-filters" method="get">
+<label>Поиск<input type="search" name="q" value="{{ query.get('q','') }}" placeholder="Название">
+</label>
+{% for name,values in filters.items() %}
+<label>{{ {'direction':'Направление','format':'Формат','enrollment':'Набор','category':'Категория'}[name] }}<select aria-label="{{ {'direction':'Направление','format':'Формат','enrollment':'Набор','category':'Категория'}[name] }}" name="{{ name }}">
+<option value="">Все</option>
+{% for value in values %}
+<option value="{{ value }}" {% if query.get(name)==value %}selected{% endif %}>{{ format_labels.get(value, {'actual':'Набор открыт','nonactual':'Набор закрыт'}.get(value,value)) }}</option>
+{% endfor %}
+</select>
+</label>
+{% endfor %}
+<label>Порядок<select aria-label="Порядок" name="sort">
+<option value="title">По названию</option>
+<option value="price" {% if query.get('sort')=='price' %}selected{% endif %}>Сначала дешевле</option>
+<option value="price-desc" {% if query.get('sort')=='price-desc' %}selected{% endif %}>Сначала дороже</option>
+</select>
+</label>
+<button>Показать</button>
+<a href="{{ path }}">Сбросить</a>
+</form>
+<p role="status">Найдено: {{ items|length }}</p>
+<div class="site-catalog">
+{% for item in items %}
+<article class="site-catalog-card" data-reveal data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","category":item.category or "","price":item.price}|tojson }}'>
+{% set image = item.cover if kind=='dpo' else (item.images or [])|first %}
+{% if image|media %}
+<a href="/{{ kind }}/{{ item.slug }}">
+<img src="{{ image|media }}" alt="{{ item.title }}" loading="lazy" width="560" height="380">
+</a>
+{% endif %}
+<div>
+<span class="club-caps">{{ item.direction if kind=='dpo' else item.category }}</span>
+<h2>
+<a href="/{{ kind }}/{{ item.slug }}">{{ item.title }}</a>
+</h2>
+{% if kind=='dpo' %}
+<p>{{ format_labels.get(item.format,item.format) }} · {{ item.duration }}</p>
+<p>{{ 'Набор закрыт' if item.enrollment=='nonactual' else 'Набор открыт' }}</p>
+{% endif %}
+<p class="site-price">{{ item.price|rub }}</p>
+<div class="site-actions">
+<a href="/{{ kind }}/{{ item.slug }}" class="site-primary">Подробнее</a>{{ save('/'+kind+'/'+item.slug,item.title,kind) }}{% if kind=='dpo' and not item.source_url and item.enrollment!='nonactual' %}{{ add_cart(item,kind) }}{% endif %}
+{% if kind=='dpo' %}
+<button data-action="compare" data-id="{{ item.id }}" aria-pressed="false">Сравнить</button>
+{% endif %}
+</div>
+</div>
+</article>
+{% else %}{{ empty('По выбранным фильтрам ничего не найдено.') }}{% endfor %}
+</div>
+{% if kind=='dpo' %}
+<div id="program-compare" hidden>
+<button data-action="show-compare">Сравнить выбранные программы</button>
+<button data-action="clear-compare">Очистить</button>
+</div>
+{% endif %}
+</main>
+{% endblock %}

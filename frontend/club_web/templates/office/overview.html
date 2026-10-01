@@ -1,0 +1,24 @@
+<div class="site-metrics">
+{% for key,label in metrics.items() if key in records %}
+<article>
+<strong>{{ records[key] }}</strong>
+<span>{{ label }}</span>
+</article>
+{% endfor %}
+</div>
+<section>
+<h2>Работа системы</h2>
+{% for check in health.checks or [] %}
+<p class="site-health" data-status="{{ check.status }}">
+<strong>{{ check.name }}</strong> · {{ labels.get(check.status,check.status) }} · {{ check.detail }}</p>
+{% endfor %}
+</section>
+{% if role in ('admin','Administrator') %}
+<details>
+<summary>Отправить уведомление участникам</summary>
+<form data-api="/admin/push/broadcast" data-confirm="Отправить уведомление всем подписчикам?">{{ field('title','Заголовок') }}{{ field('body','Текст') }}{{ field('url','Раздел сайта','/') }}<button>Отправить</button>
+<p role="alert" data-error hidden>
+</p>
+</form>
+</details>
+{% endif %}

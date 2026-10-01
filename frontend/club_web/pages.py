@@ -1,0 +1,357 @@
+import asyncio
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+from urllib.parse import quote, urlencode
+
+from club_web.calendar import google_calendar, instant, month_view
+from club_web.changes import parse_changes, select_changes
+from club_web.client import ApiFailure
+from club_web.formatting import page_items
+from club_web.office import FIELDS, LABELS, METRICS
+
+PUBLIC_PAGES = {
+    "/": ("home.html", "Клуб выпускников факультета права"),
+    "/tg": ("mini.html", "Клуб выпускников"),
+    "/dpo": ("catalog.html", "Программы ДПО"),
+    "/merch": ("catalog.html", "Мерч клуба"),
+    "/events": ("events.html", "События клуба"),
+    "/news": ("news.html", "Новости"),
+    "/podcasts": ("podcasts.html", "Подкасты клуба"),
+    "/changes": ("changes.html", "Изменения в праве"),
+    "/saved": ("saved.html", "Сохранённое"),
+    "/search": ("search.html", "Поиск по клубу"),
+    "/join": ("auth.html", "Вступить в клуб"),
+    "/forgot": ("auth.html", "Восстановить пароль"),
+    "/reset": ("auth.html", "Новый пароль"),
+    "/confirm": ("auth.html", "Подтвердить почту"),
+    "/privacy": ("legal/privacy.html", "Политика обработки персональных данных"),
+    "/confidential": ("legal/confidential.html", "Политика конфиденциальности"),
+    "/requisites": ("legal/requisites.html", "Реквизиты"),
+    "/support": ("support.html", "Поддержка клуба"),
+    "/support/consent": ("legal/support.html", "Согласие на обработку данных"),
+    "/cart": ("cart.html", "Корзина"),
+    "/lk": ("cabinet.html", "Личный кабинет"),
+    "/lk/profile": ("profile.html", "Профиль"),
+}
+NAV = [
+    ("/dpo", "ДПО"),
+    ("/events", "События"),
+    ("/news", "Новости"),
+    ("/podcasts", "Подкасты"),
+    ("/changes", "Изменения в праве"),
+    ("/merch", "Мерч"),
+]
+OFFICE_NAV = [
+    ("overview", "Дашборд"),
+    ("analytics", "Аналитика"),
+    ("orders", "Заявки"),
+    ("members", "Выпускники"),
+    ("subs", "Подписки"),
+    ("programs", "ДПО"),
+    ("products", "Мерч"),
+    ("news", "Новости"),
+    ("news-sources", "Источники новостей"),
+    ("events", "События"),
+    ("podcasts", "Подкасты"),
+    ("timeline", "История"),
+    ("pages", "Страницы"),
+    ("media", "Медиа"),
+    ("audit", "Журнал"),
+    ("support", "Поддержка"),
+]
+OFFICE_ENDPOINTS = {
+    "overview": "/admin/overview",
+    "analytics": "/admin/analytics",
+    "orders": "/admin/orders",
+    "members": "/admin/members",
+    "subs": "/admin/podcast-subs",
+    "programs": "/admin/programs",
+    "products": "/admin/products",
+    "news": "/admin/news",
+    "news-sources": "/admin/news-sources",
+    "events": "/admin/events",
+    "podcasts": "/admin/podcasts",
+    "timeline": "/admin/timeline",
+    "media": "/admin/media",
+    "audit": "/admin/audit",
+    "support": "/admin/support",
+}
+
+
+def resource(name):
+    path = Path(__file__).parent / "data" / name
+    if not path.is_file():
+        path = Path(__file__).resolve().parents[2] / "data" / name
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def select_page(path):
+    if path in PUBLIC_PAGES:
+        return PUBLIC_PAGES[path]
+    if path.startswith("/admin") and (path == "/admin" or path.removeprefix("/admin/") in dict(OFFICE_NAV)):
+        section = path.removeprefix("/admin/") if path != "/admin" else "overview"
+        return "office.html", dict(OFFICE_NAV)[section]
+    for prefix, template in (
+        ("/dpo/", "program.html"),
+        ("/merch/", "product.html"),
+        ("/news/", "article.html"),
+        ("/events/", "events.html"),
+        ("/podcasts/", "episode.html"),
+        ("/changes/", "changes.html"),
+    ):
+        if path.startswith(prefix) and "/" not in path[len(prefix) :] and path[len(prefix) :]:
+            return template, "Клуб выпускников"
+    return "not-found.html", "Страница не найдена"
+
+
+async def context(api, path, params, authorized=False):
+    template, title = select_page(path)
+    data = {
+        "template": template,
+        "title": title,
+        "path": path,
+        "query": params,
+        "nav": NAV,
+        "office_nav": OFFICE_NAV,
+        "office_fields": FIELDS,
+        "labels": LABELS,
+        "metrics": METRICS,
+        "errors": [],
+        "authorized": authorized,
+        "status": 404 if template == "not-found.html" else 200,
+        "domain": resource("domain-data.json"),
+    }
+    data["reason_labels"] = {
+        **{rule["reason"]: rule["description"] for rule in data["domain"]["point_rules"]},
+        "manual": "Начисление учебного офиса",
+    }
+
+    async def load(key, endpoint, default=None):
+        try:
+            data[key] = await api.get(endpoint)
+        except ApiFailure as error:
+            data[key] = default
+            data["errors"].append(error.message)
+            if error.status in (401, 403):
+                data["access_error"] = error.status
+            if key == "item" and error.status >= 500:
+                data.update(template="unavailable.html", title="Не удалось загрузить страницу", status=503)
+            if key == "item" and error.status == 404:
+                data.update(template="not-found.html", title="Страница не найдена", status=404)
+        return data[key]
+
+    if path == "/":
+        await asyncio.gather(
+            load("page", "/pages/home", {}),
+            load("news", "/news?limit=3", []),
+            load("programs", "/programs", []),
+            load("events", "/events", []),
+            load("timeline", "/timeline", []),
+        )
+        data["hero"] = (data["page"].get("blocks") or {}).get("hero") or {}
+        data["cta"] = (data["page"].get("blocks") or {}).get("cta") or {}
+        now = datetime.now(UTC)
+        data["upcoming"] = sorted(
+            [item for item in data["events"] if instant(item.get("starts_at")) >= now],
+            key=lambda item: instant(item["starts_at"]),
+        )[:2]
+        data["featured"] = [
+            item
+            for item in data["programs"]
+            if item.get("enrollment") != "nonactual"
+            and any(
+                "/" + identifier + "." in (item.get("cover") or "")
+                for identifier in (
+                    "472681893",
+                    "474599435",
+                    "474776084",
+                    "494685723",
+                    "589527758",
+                    "802031223",
+                    "905186485",
+                    "906651510",
+                )
+            )
+        ][:4]
+        snapshot = parse_changes(resource("changes.json"))
+        data["recent_changes"] = select_changes(
+            snapshot["items"], {"view": "digest" if snapshot["mode"] == "channel" else "all"}
+        )[:3]
+    elif path in ("/dpo", "/merch"):
+        kind = "dpo" if path == "/dpo" else "merch"
+        await load("items", "/programs" if kind == "dpo" else "/products", [])
+        data["kind"] = kind
+        fields = ("direction", "format", "enrollment") if kind == "dpo" else ("category",)
+        data["filters"] = {
+            field: sorted({str(item.get(field) or "") for item in data["items"]} - {""}) for field in fields
+        }
+        data["items"] = [
+            item
+            for item in data["items"]
+            if all(not params.get(field) or item.get(field) == params[field] for field in fields)
+            and params.get("q", "").casefold() in item.get("title", "").casefold()
+        ]
+        if params.get("sort", "title") == "title":
+            data["items"].sort(key=lambda item: item.get("title", "").casefold())
+        elif params.get("sort") == "price":
+            data["items"].sort(key=lambda item: item.get("price") or 0)
+        elif params.get("sort") == "price-desc":
+            data["items"].sort(key=lambda item: -(item.get("price") or 0))
+        if authorized:
+            await load("me", "/me", {})
+    elif path.startswith(("/dpo/", "/news/")):
+        endpoint = "/programs/" if path.startswith("/dpo/") else "/news/"
+        await load("item", endpoint + quote(path.rsplit("/", 1)[1], safe=""), {})
+        if data["item"]:
+            data["title"] = data["item"]["title"]
+    elif path.startswith("/merch/"):
+        await load("products", "/products", [])
+        data["item"] = next((item for item in data["products"] if item["slug"] == path.rsplit("/", 1)[1]), None)
+        if data["item"]:
+            data["title"] = data["item"]["title"]
+        else:
+            data.update(template="not-found.html", status=404)
+    elif path == "/search":
+        await asyncio.gather(
+            load("programs", "/programs", []), load("news", "/news", []), load("podcasts", "/podcasts", {"items": []})
+        )
+        needle = params.get("q", "").casefold().replace("ё", "е").strip()
+        groups = []
+        for prefix, label, records, fields, identifier in (
+            ("dpo", "Программы ДПО", data["programs"], ("title", "direction"), "slug"),
+            ("news", "Новости", data["news"], ("title", "excerpt"), "slug"),
+            ("podcasts", "Подкасты", page_items(data["podcasts"]), ("title",), "id"),
+        ):
+            matches = [
+                record
+                for record in records
+                if len(needle) >= 2
+                and needle in " ".join(str(record.get(field) or "") for field in fields).casefold().replace("ё", "е")
+            ][:6]
+            groups.append(
+                {
+                    "label": label,
+                    "items": [
+                        {"title": record["title"], "path": f"/{prefix}/{record[identifier]}"} for record in matches
+                    ],
+                }
+            )
+        found = (
+            select_changes(parse_changes(resource("changes.json"))["items"], {"q": needle, "view": "digest"})[:6]
+            if len(needle) >= 2
+            else []
+        )
+        groups.append(
+            {
+                "label": "Изменения в праве",
+                "items": [{"title": item["title"], "path": "/changes/" + item["id"]} for item in found],
+            }
+        )
+        data["groups"] = groups
+        data["sections"] = [
+            (href, label)
+            for href, label in NAV + [("/lk", "Личный кабинет"), ("/support", "Поддержка")]
+            if not needle or needle in label.casefold().replace("ё", "е")
+        ]
+        data["found"] = sum(len(group["items"]) for group in groups) + len(data["sections"])
+    elif path == "/news":
+        await load("items", "/news", [])
+    elif path == "/events" or path.startswith("/events/"):
+        await load("items", "/events", [])
+        for event in data["items"]:
+            event["calendar_url"] = google_calendar(event)
+            event["past"] = event.get("status") in ("done", "canceled") or instant(
+                event.get("starts_at")
+            ) < datetime.now(UTC)
+        data["calendar"] = month_view(data["items"], params.get("month"))
+        event_id = path.removeprefix("/events/") if path != "/events" else params.get("event")
+        data["item"] = next((item for item in data["items"] if item["id"] == event_id), None)
+        if event_id and not data["item"]:
+            data.update(template="not-found.html", status=404)
+    elif path == "/podcasts" or path.startswith("/podcasts/"):
+        await load("podcasts", "/podcasts", {"items": []})
+        data["items"] = page_items(data["podcasts"])
+        if path != "/podcasts":
+            data["item"] = next((item for item in data["items"] if item["id"] == path.rsplit("/", 1)[1]), None)
+            if data["item"]:
+                data["title"] = data["item"]["title"]
+            else:
+                data.update(template="not-found.html", status=404)
+    elif path == "/changes" or path.startswith("/changes/"):
+        snapshot = parse_changes(resource("changes.json"))
+        data["snapshot"] = snapshot
+        data["item"] = (
+            next((item for item in snapshot["items"] if item["id"] == path.rsplit("/", 1)[1]), None)
+            if path != "/changes"
+            else None
+        )
+        if path != "/changes" and not data["item"]:
+            data.update(template="not-found.html", status=404)
+        data["items"] = select_changes(snapshot["items"], {"view": "digest", **params})
+        data["total"] = len(data["items"])
+        page = max(1, min(10000, int(params.get("page", "1")) if params.get("page", "1").isdigit() else 1))
+        data["items"] = data["items"][(page - 1) * 20 : page * 20]
+        data["page_number"] = page
+        data["next_page"] = "/changes?" + urlencode({**params, "page": page + 1}) if data["total"] > page * 20 else ""
+        data["filters"] = {
+            key: sorted({item.get(key) or "" for item in snapshot["items"]} - {""}) for key in ("kind", "topic")
+        }
+    elif path in ("/lk", "/lk/profile") and authorized:
+        await load("me", "/me", {})
+        if path == "/lk" and data["me"].get("alumni", {}).get("verification_status") == "verified":
+            await asyncio.gather(
+                load("orders", "/me/orders", []),
+                load("ledger", "/me/ledger", []),
+                load("classmates", "/me/classmates", []),
+                load("notifications", "/me/events", []),
+                load("club_events", "/events", []),
+                load("club_news", "/news?limit=3", []),
+            )
+            now = datetime.now(UTC)
+            upcoming = sorted(
+                [item for item in data["club_events"] if instant(item.get("starts_at")) >= now],
+                key=lambda item: instant(item["starts_at"]),
+            )
+            data["next_event"] = upcoming[0] if upcoming else None
+    elif path == "/cart" and "x-cart-session" in api.headers:
+        await load("cart", "/cart", {"items": [], "subtotal": 0})
+    elif path == "/support":
+        await load("support", "/support/config", {"enabled": False})
+        data["faq"] = resource("faq-data.json")
+    elif path.startswith("/admin"):
+        section = path.removeprefix("/admin/") if path != "/admin" else "overview"
+        data["section"] = section
+        data["office_template"] = "office/" + ("content" if section in FIELDS else section) + ".html"
+        if authorized and template != "not-found.html":
+            await load("session", "/auth/admin-session", {})
+            if data["session"]:
+                data["role"] = data["session"]["role"]
+                if section == "support":
+                    await load("bot", "/admin/bot-status", {})
+                if section == "support" and data["role"] not in ("admin", "Administrator"):
+                    data["records"] = []
+                elif section == "pages":
+                    await load("record", "/admin/pages/home", {})
+                else:
+                    query = urlencode(
+                        {key: params[key] for key in ("q", "status", "payment", "page", "range") if key in params}
+                    )
+                    await load("records", OFFICE_ENDPOINTS[section] + ("?" + query if query else ""), [])
+                if section == "overview":
+                    await load("health", "/admin/system-health", {})
+                if params.get("id") and section == "events":
+                    await load("roster", "/admin/events/" + quote(params["id"], safe="") + "/rsvps", [])
+                data["rows"] = page_items(data.get("records"))
+                records = data.get("records") or {}
+                current = int(params.get("page", "1")) if params.get("page", "1").isdigit() else 1
+                current = max(1, current)
+                limit = (records.get("limit") or records.get("page_size") or 30) if isinstance(records, dict) else 30
+                total = records.get("total", 0) if isinstance(records, dict) else 0
+                data["office_previous"] = "?" + urlencode({**params, "page": current - 1}) if current > 1 else ""
+                data["office_next"] = (
+                    "?" + urlencode({**params, "page": current + 1})
+                    if total > current * limit or section == "support" and len(data["rows"]) == 30
+                    else ""
+                )
+    return data

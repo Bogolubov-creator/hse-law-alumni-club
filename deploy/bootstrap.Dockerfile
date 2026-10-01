@@ -3,7 +3,7 @@ RUN pip install --no-cache-dir uv==0.12.21
 WORKDIR /repo/scripts
 COPY backend/pyproject.toml /repo/backend/
 COPY backend/club_api /repo/backend/club_api
-COPY packages/shared/src/domain-data.json packages/shared/src/faq-data.json packages/shared/src/dpo-catalog.json /repo/packages/shared/src/
+COPY data/domain-data.json data/faq-data.json data/dpo-catalog.json /repo/data/
 COPY scripts/pyproject.toml scripts/uv.lock ./
 COPY scripts/club_ops ./club_ops
 RUN uv sync --frozen --no-dev --no-editable --python /usr/local/bin/python

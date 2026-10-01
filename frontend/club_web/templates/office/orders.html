@@ -1,0 +1,40 @@
+<form class="site-filters">
+<label>Поиск<input name="q" value="{{ query.get('q','') }}">
+</label>
+<label>Статус<select aria-label="Статус" name="status">
+<option value="">Все</option>
+{% for status in ['new','confirmed','in_progress','done','canceled','expired'] %}
+<option value="{{ status }}" {% if query.get('status')==status %}selected{% endif %}>{{ labels.get(status,status) }}</option>
+{% endfor %}
+</select>
+</label>
+<label>Оплата<select aria-label="Оплата" name="payment">
+{% for value,title in [('', 'Все'),('succeeded','Оплачено'),('pending','Ожидает оплаты'),('canceled','Платёж отменён'),('none','Без платежа')] %}
+<option value="{{ value }}" {% if query.get('payment','')==value %}selected{% endif %}>{{ title }}</option>
+{% endfor %}
+</select></label>
+<button>Показать</button>
+</form>
+<button data-download="/admin/orders/export.csv" data-filename="orders.csv">Скачать CSV</button>
+{% for order in rows %}
+<article class="site-panel">
+<h2>{{ order.number }} · {{ order.contact_fio }}</h2>
+<p>{{ order.contact_email }} · {{ order.contact_phone }}</p>
+<p>{{ order.total_estimate|rub }} · {{ labels.get(order.payment_status,order.payment_status) }}</p>
+<p>{{ order.address or 'Самовывоз' }} · {{ order.comment or '' }}</p>
+{% for line in order.items_json or [] %}
+<p>{{ line.title }} × {{ line.qty }} · {{ line.variant_sku or '' }}</p>
+{% endfor %}
+<form data-api="/admin/orders/{{ order.id }}" data-method="PATCH">
+<label>Статус<select aria-label="Статус" name="status">
+{% for status in ['new','confirmed','in_progress','done','canceled','expired'] %}
+<option value="{{ status }}" {% if order.status==status %}selected{% endif %}>{{ labels.get(status,status) }}</option>
+{% endfor %}
+</select>
+</label>
+<button>Сохранить</button>
+<p role="alert" data-error hidden>
+</p>
+</form>
+</article>
+{% else %}{{ empty('Заявок по выбранным фильтрам нет.') }}{% endfor %}

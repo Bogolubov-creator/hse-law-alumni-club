@@ -13,7 +13,7 @@ from club_api.modules.catalog.sync import ACTUAL_URL, ALL_URL, DOCUMENTS, collec
 from club_ops.bootstrap import OperatorError
 
 ROOT = Path(__file__).resolve().parents[2]
-CATALOG = ROOT / "packages/shared/src/dpo-catalog.json"
+CATALOG = ROOT / "data/dpo-catalog.json"
 
 
 def read_catalog():

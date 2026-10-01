@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import login,empty %}
+{% block content %}
+<main id="main" class="site-container">
+{% if not me or access_error %}{{ login() }}{% else %}
+<header class="site-masthead">
+<h1>{{ me.alumni.fio or 'Личный кабинет' }}</h1>
+<p>Выпуск {{ me.alumni.cohort }} · {{ me.alumni.edu_program or '' }}</p>
+<div class="site-actions">
+<a href="/lk/profile">Профиль</a>
+<button data-action="logout">Выйти</button>
+</div>
+</header>
+{% if me.alumni.verification_status != 'verified' %}
+<section class="site-panel">
+<h2>{{ 'Заявка отклонена' if me.alumni.verification_status=='rejected' else 'Заявка на проверке' }}</h2>
+<p>Учебный офис сверяет выпуск с реестром факультета. Кабинет и скидка откроются после подтверждения.</p>
+<a href="/lk/profile">Загрузить фото профиля</a>
+<a href="/support">Поддержка</a>
+</section>
+{% else %}
+<div class="site-two-col">
+<aside class="site-panel">
+<h2>Участие в клубе</h2>
+<dl>
+<dt>Уровень</dt>
+<dd>{{ me.level.level_title }}</dd>
+<dt>Баллы</dt>
+<dd>{{ me.level.points }}</dd>
+<dt>Скидка на ДПО</dt>
+<dd>{{ me.level.discount }}%</dd>
+{% if me.level.next_level %}
+<dt>До «{{ me.level.next_level }}»</dt>
+<dd>{{ me.level.to_next }} баллов</dd>
+{% endif %}
+<dt>Код приглашения</dt>
+<dd>{{ me.alumni.referral_code }}</dd>
+</dl>
+<p>По вашему приглашению: подтверждено {{ me.alumni.referrals_verified or 0 }}, на проверке {{ me.alumni.referrals_pending or 0 }}.</p>
+<button data-action="copy-invite" data-code="{{ me.alumni.referral_code }}">Скопировать приглашение</button>
+{% if me.activity %}
+<h3>Активность за полгода</h3>
+<div class="site-chart">
+{% for month in me.activity %}
+<p>{{ month.month }} <meter aria-label="Баллы за {{ month.month }}" value="{{ month.points }}" max="{{ (me.activity|map(attribute='points')|max) or 1 }}">{{ month.points }}</meter> {{ month.points }} баллов</p>
+{% endfor %}
+</div>
+{% endif %}
+{% if me.achievements %}
+<h3>Достижения</h3>
+{% for achievement in me.achievements %}
+<p>{{ '★' if achievement.earned else '○' }} {{ achievement.title }} · {{ achievement.current }}/{{ achievement.target }}</p>
+{% endfor %}
+{% endif %}
+<button data-action="push-subscribe">Включить уведомления</button>
+</aside>
+<div>
+<nav class="site-actions" aria-label="Разделы кабинета">
+<a href="#club-overview">Обзор</a><a href="#orders">Мои заявки</a><a href="#community">Сообщество</a><a href="#achievements">Достижения</a>
+</nav>
+<section id="club-overview">
+<h2>В клубе</h2>
+{% if not me.alumni.contacts %}
+<p>Добавьте контакт для связи, чтобы учебный офис мог связаться с вами по заявкам.</p>
+<a href="/lk/profile">Заполнить профиль</a>
+{% endif %}
+<h3>Ближайшая встреча</h3>
+{% if next_event %}
+<article class="site-panel">
+<h3><a href="/events/{{ next_event.id }}">{{ next_event.title }}</a></h3>
+<p>{{ next_event.starts_at|date }} · {{ next_event.location or format_labels.get(next_event.format,'') }}</p>
+<a href="/events/{{ next_event.id }}">{{ 'Вы записаны – детали встречи' if next_event.my_rsvp else 'Подробнее и запись' }}</a>
+</article>
+{% else %}{{ empty('Ближайших встреч пока нет.') }}{% endif %}
+<h3>Новости клуба</h3>
+{% for article in club_news or [] %}
+<p><a href="/news/{{ article.slug }}">{{ article.title }}</a> · {{ article.published_at|date }}</p>
+{% else %}{{ empty('Новостей пока нет.') }}{% endfor %}
+<div class="site-actions"><a href="/dpo">Программы ДПО</a><a href="/events">События</a><a href="/podcasts">Подкасты</a></div>
+</section>
+<section id="achievements">
+<h2>Достижения</h2>
+{% for achievement in me.achievements or [] %}
+<article class="site-panel"><h3>{{ '★' if achievement.earned else '○' }} {{ achievement.title }}</h3><p>{{ achievement.description or '' }}</p><progress aria-label="Прогресс достижения {{ achievement.title }}" value="{{ achievement.current }}" max="{{ achievement.target or 1 }}">{{ achievement.current }}/{{ achievement.target }}</progress><p>{{ achievement.current }}/{{ achievement.target }}</p></article>
+{% else %}{{ empty('Достижения появятся по мере участия в клубе.') }}{% endfor %}
+</section>
+<section id="orders">
+<h2>Мои заявки</h2>
+{% for order in orders %}
+<article class="site-panel">
+<h3>Заявка {{ order.number }}</h3>
+<p>{{ order.created_at|date }} · {{ {'new':'Новая','confirmed':'Подтверждена','in_progress':'В работе','done':'Исполнена','canceled':'Отменена','expired':'Резерв истёк'}.get(order.status,order.status) }}</p>
+<p>{{ order.total_estimate|rub }} · {{ 'Оплачено' if order.payment_status=='succeeded' else 'Не оплачено' }}</p>
+<p>До скидки: {{ order.subtotal|rub }} · скидка на ДПО: {{ order.member_discount or 0 }}% · {{ 'Доставка' if order.fulfillment=='delivery' else 'Самовывоз' }}.</p>
+{% for line in order.items_json or [] %}
+<p>{{ line.title }} × {{ line.qty }}</p>
+{% endfor %}
+{% if order.payment_url|payment_url %}
+<a href="{{ order.payment_url|payment_url }}">Оплатить через ЮKassa</a>
+{% endif %}
+{% if order.status not in ('done','canceled','expired') %}
+<button data-api="/orders/{{ order.number }}/pay" data-member-action>Получить ссылку оплаты</button>
+{% endif %}
+</article>
+{% else %}{{ empty('Вы ещё не оформляли заявки.') }}{% endfor %}
+</section>
+<section>
+<h2>Уведомления</h2>
+{% for notice in notifications or [] %}
+<article class="site-panel">
+{% if notice.kind=='friend_request' %}
+<p>{{ notice.from_fio or 'Выпускник' }} приглашает вас в друзья.</p>
+<button data-api="/me/friends" data-body='{{ {"alumni_id":notice.from_id}|tojson }}' data-member-action>Принять</button>
+<button data-api="/me/friends/{{ notice.from_id }}" data-method="DELETE" data-member-action>Отклонить</button>
+{% elif notice.kind=='friend_accepted' %}
+<p>{{ notice.by_fio or 'Выпускник' }} принял приглашение в друзья.</p>
+{% elif notice.kind=='order_status' %}
+<p>Заявка {{ notice.number }} · {{ labels.get(notice.status,notice.status) }}{% if notice.paid %} · Оплачено{% endif %}
+</p>
+{% elif notice.kind=='podcast_expiring' %}
+<p>Подписка на подкасты истекает через {{ notice.days_left }} дней.</p>
+<a href="/podcasts#podcast-subscription">Продлить подписку</a>
+{% endif %}
+</article>
+{% else %}{{ empty('Новых уведомлений нет.') }}{% endfor %}
+</section>
+<section id="community">
+<h2>Однокурсники</h2>
+{% for person in classmates or [] %}
+<article class="site-cart-row">
+<div>
+<h3>{{ person.fio }}</h3>
+<p>{{ person.cohort }} · {{ person.edu_program or '' }}</p>
+{% if person.interests %}<p>{{ person.interests|join(' · ') }}</p>{% endif %}
+</div>
+<button data-api="/me/friends{{ '/'+person.id if person.friend_status in ('accepted','pending') else '' }}" data-method="{{ 'DELETE' if person.friend_status in ('accepted','pending') else 'POST' }}" data-body='{{ {"alumni_id":person.id}|tojson }}' data-member-action>{{ 'Отменить приглашение' if person.friend_status=='pending' else 'Убрать из друзей' if person.friend_status=='accepted' else 'Принять приглашение' if person.friend_status=='incoming' else 'Добавить в друзья' }}</button>
+</article>
+{% else %}{{ empty('Однокурсники появятся после подтверждения их заявок.') }}{% endfor %}
+</section>
+<section>
+<h2>История баллов</h2>
+{% for entry in ledger or [] %}
+<p>{{ entry.created_at|date }} · {{ entry.delta }} · {{ entry.comment or reason_labels.get(entry.reason,entry.reason) }}</p>
+{% else %}{{ empty('Начислений пока нет.') }}{% endfor %}
+</section>
+</div>
+</div>
+{% endif %}
+{% endif %}
+</main>
+{% endblock %}

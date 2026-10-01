@@ -259,6 +259,81 @@ def duration_text(programs):
     return "\n".join(lines)
 
 
+async def site_reply(state, query):
+    tokens = tokenize(query)
+    duration = any(trigger_matches(trigger, tokens) for trigger in FAQ.get("duration", {}).get("triggers", []))
+    answer = find_trigger(tokens, FAQ["answers"]) if not duration else None
+    gap = find_trigger(tokens, FAQ["gaps"]) if not duration and not answer else None
+    if answer:
+        return {"text": answer["text"], "anchor": answer["anchor"], "programs": []}
+    if gap:
+        await log_faq(state, kind="gap", gap_id=gap["id"], channel="site")
+        return {
+            "text": "В материалах сайта нет ответа на этот вопрос. Обратитесь в поддержку.",
+            "anchor": "/support",
+            "programs": [],
+        }
+    programs = [
+        program_to_bot(row)
+        for row in await state.store.read(
+            "programs",
+            filters={"status": {"_eq": "published"}},
+            fields=(
+                "id",
+                "slug",
+                "title",
+                "direction",
+                "format",
+                "duration",
+                "price",
+                "document",
+                "dates",
+                "description",
+                "modules",
+            ),
+            limit=-1,
+        )
+    ]
+    if duration and (text := duration_text(programs)):
+        return {"text": text, "anchor": "/dpo", "programs": []}
+    if re.search(r"подобрать программ|выбрать программ", query, re.I):
+        return {
+            "text": "Выберите сферу или тип программы:",
+            "hints": sorted({program["sphere"] for program in programs}) + ["Повышение квалификации", "Переподготовка"],
+            "programs": [],
+        }
+    if re.search(r"сколько стоят программ|цены программ|диапазон цен", query, re.I):
+        prices = [program["price"] for program in programs if program["price"] is not None]
+        text = (
+            f"Программы стоят от {min(prices):,} до {max(prices):,} ₽. Можно отобрать по цене: «до 30000» или «от 50000».".replace(
+                ",", " "
+            )
+            if prices
+            else "Цены сейчас не в каталоге. Загляните в раздел ДПО."
+        )
+        return {"text": text, "anchor": "/dpo", "programs": []}
+    if re.search(r"ближайш.*старт|начал.*обучени", query, re.I):
+        selected = sorted([program for program in programs if program["start"]], key=lambda item: item["start"])[:5]
+        return {
+            "text": "Ближайшие старты:" if selected else "Дат старта в каталоге сейчас нет.",
+            "anchor": "/dpo",
+            "programs": selected,
+        }
+    found = search(query, programs)
+    if found["reason"] not in ("none", "empty"):
+        return {
+            "text": "Отобраны по вашим условиям:" if found["reason"] == "filter" else "Подходящие программы:",
+            "anchor": "/dpo",
+            "programs": found["programs"][:5],
+        }
+    await log_faq(state, kind="none", channel="site")
+    return {
+        "text": "Ответ не найден. Уточните вопрос или обратитесь в поддержку.",
+        "anchor": "/support",
+        "programs": found["programs"][:3],
+    }
+
+
 async def answer_faq(state, query):
     query = query.strip()
     if len(query) < 2:

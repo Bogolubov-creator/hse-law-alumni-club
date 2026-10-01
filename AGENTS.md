@@ -6,12 +6,12 @@
 
 ## Устройство проекта
 
-- `frontend` – React и Vite; `backend` – FastAPI; `packages/shared` – общие
-  модели и расчёты; `scripts` –
+- `frontend` – FastAPI web и Jinja2; `backend` – FastAPI API; `data` – общие
+  справочники; `scripts` –
   миграции, bootstrap, управление сотрудниками и резервные копии.
 - Серверные маршруты и логика области находятся в `backend/club_api/modules`;
-  общие SQL-механизмы – в `backend/club_api/db`. Компоненты функции интерфейса
-  находятся в `frontend/src/features`, общие элементы – в `components` и `layouts`.
+  общие SQL-механизмы – в `backend/club_api/db`. Подготовка страниц находится
+  в `frontend/club_web/pages.py`, шаблоны – в `templates`, браузерные модули – в `browser`.
 - Тесты и фикстуры находятся в `tests` соответствующего пакета, вне `src`.
   Docker-файлы собраны в `deploy`. В `scripts` остаются команды оператора;
   помощники, проверки и диагностика выделены в `lib`, `checks`, `diagnostics`.
@@ -61,7 +61,7 @@
   не содержат демоперехватчика и сидов.
 - Собственные пакеты поставляются в финальных образах как скомпилированный код
   с рабочими зависимостями. Исходники проекта, его тесты, sourcemap, отчёты, env
-  и кэши инструментов в них не добавляются. Файлы сторонних Python/npm-пакетов могут
+  и кэши инструментов в них не добавляются. Файлы сторонних Python-пакетов могут
   включать исходники, типы и map; их лицензии сохраняются.
 
 ## Проверки перед PR
@@ -71,13 +71,16 @@
 ```bash
 uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
-pnpm install --frozen-lockfile
-pnpm -r build
-pnpm -r test
-pnpm audit --prod --audit-level high
+uv sync --directory frontend --frozen
+uv run --directory frontend playwright install chromium
+uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
+uv run --directory frontend ruff check club_web tests/python
+uv run --directory frontend python -m club_web.build --output /tmp/club-web
+uv run --directory frontend python ../scripts/checks/check-web-build.py /tmp/club-web
+uv run --directory frontend python ../scripts/checks/check-comments.py
+uv run --directory frontend pytest -q
 uv export --directory backend --frozen --no-dev --no-emit-project --format requirements-txt --output-file /tmp/club-requirements.txt
 uv run --directory backend --frozen pip-audit -r /tmp/club-requirements.txt --no-deps --disable-pip
-node scripts/checks/check-web-build.mjs frontend/dist
 docker compose --env-file .env.example config --quiet
 bash scripts/tests/test-integration.sh
 ```

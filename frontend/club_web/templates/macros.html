@@ -1,0 +1,68 @@
+{% macro field(name,label,value='',type='text',required=true) %}
+<label class="site-field">{{ label }}{% if type == 'textarea' %}
+<textarea name="{{ name }}" {% if required %}required{% endif %}>{{ value or '' }}</textarea>
+{% else %}
+<input name="{{ name }}" type="{{ type }}" value="{{ value or '' }}" {% if required %}required{% endif %} {% if type == 'password' %}autocomplete="current-password"{% elif type == 'email' %}autocomplete="email"{% endif %}>
+{% endif %}
+</label>
+{% endmacro %}
+{% macro save(path,title,kind) %}
+<button type="button" class="save-material" data-action="save" data-href="{{ path }}" data-title="{{ title }}" data-kind="{{ kind }}" aria-pressed="false">Сохранить</button>
+{% endmacro %}
+{% macro empty(text) %}
+<p class="site-empty" role="status">{{ text }}</p>
+{% endmacro %}
+{% macro login(office=false) %}
+<div class="cabinet-gate">
+<aside class="cabinet-gate__intro club-dark">
+<a href="/">Клуб выпускников<small>факультета права Вышки</small>
+</a>
+<h2>Ваше место<br>в <em>клубе</em>
+</h2>
+<p>Знакомые лица, новые встречи и знания после выпуска.</p>
+<div class="cabinet-gate__benefits">
+<span>Программы ДПО с ценой выпускника</span>
+<span>События и подкасты клуба</span>
+<span>Ваши заявки и статус участия</span>
+</div>
+</aside>
+<form class="cabinet-gate__form" data-api="/auth/{{ 'admin-login' if office else 'login' }}" data-login="{{ 'office' if office else 'member' }}">
+<h1>{{ 'Панель учебного офиса' if office else 'Вход для выпускников' }}</h1>
+<p>{{ 'Служебный вход для редакторов и администраторов учебного офиса.' if office else 'Доступ открывается после верификации учебным офисом.' }}</p>{{ field('email','Почта',type='email') }}{{ field('password','Пароль',type='password') }}<p role="alert" data-error hidden>
+</p>
+<button class="site-primary">{{ 'Войти' if office else 'Войти в кабинет' }}</button>
+{% if not office %}
+<div class="site-actions">
+<a href="/join">Вступить в клуб</a>
+<a href="/forgot">Забыли пароль?</a>
+</div>
+{% endif %}
+</form>
+</div>
+{% endmacro %}
+{% macro consent() %}
+<label class="site-consent">
+<input type="checkbox" name="consent_pdn" required>Согласен на обработку персональных данных в соответствии с <a href="/privacy">политикой</a>
+</label>
+<input type="text" name="website" class="site-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+{% endmacro %}
+{% macro add_cart(item,kind) %}
+<form data-api="/cart" data-cart>
+<input type="hidden" name="type" value="{{ kind }}">
+<input type="hidden" name="ref_id" value="{{ item.slug }}">
+{% if item.variants_json %}
+<label class="site-field">Размер и цвет<select name="variant_sku" required>
+<option value="">Выберите вариант</option>
+{% for variant in item.variants_json %}
+<option value="{{ variant.sku }}" {% if variant.stock < 1 %}disabled{% endif %}>{{ variant.size or '' }} {{ variant.color or '' }} · {{ 'нет в наличии' if variant.stock < 1 else 'в наличии' }}</option>
+{% endfor %}
+</select>
+</label>
+{% endif %}
+<label class="site-field">Количество<input type="number" name="qty" value="1" min="1" max="99">
+</label>
+<button class="site-primary" {% if kind == 'merch' and not item.stock and not item.variants_json %}disabled{% endif %}>В корзину</button>
+<p role="alert" data-error hidden>
+</p>
+</form>
+{% endmacro %}

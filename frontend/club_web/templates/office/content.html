@@ -1,0 +1,28 @@
+<details class="site-panel">
+<summary>Создать запись</summary>{{ content_form() }}</details>
+{% if section=='programs' %}
+<button data-api="/admin/dpo-sync">Обновить каталог ДПО</button>
+{% endif %}
+{% for record in rows %}
+<article class="site-panel">
+<div class="site-actions">
+<h2>{{ record.title }}</h2>
+<span>{{ labels.get(record.status,record.status) }}</span>
+</div>
+<details>
+<summary>Редактировать</summary>{{ content_form(record) }}</details>
+{% if section=='events' %}
+<a href="/admin/events?id={{ record.id }}">Список участников · {{ record.rsvp_count or 0 }}</a>
+{% endif %}
+<button class="site-danger" data-api="/admin/{{ section }}/{{ record.id }}" data-method="DELETE" data-confirm="Удалить эту запись?">Удалить</button>
+</article>
+{% else %}{{ empty('Записей пока нет.') }}{% endfor %}
+{% if roster %}
+<h2>Участники события</h2>
+{% for participant in roster %}
+<p>{{ participant.fio }} · {{ 'Отмечен' if participant.attended else 'Не отмечен' }}{% if not participant.attended %}
+<button data-api="/admin/events/rsvp/{{ participant.id }}/attend">Отметить участие</button>
+{% endif %}
+</p>
+{% endfor %}
+{% endif %}
