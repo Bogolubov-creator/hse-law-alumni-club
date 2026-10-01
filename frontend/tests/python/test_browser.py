@@ -369,6 +369,41 @@ def mirror_site(tmp_path):
     server.server_close()
 
 
+@pytest.mark.parametrize("width", [1440, 390, 360])
+def test_mirror_mobile_preview_navigation_and_exit(chromium, mirror_site, width):
+    context = chromium.new_context(viewport={"width": width, "height": 844}, reduced_motion="reduce")
+    context.add_init_script(
+        "localStorage.setItem('club_cookie_consent','essential'); Object.defineProperty(navigator,'serviceWorker',{value:undefined});"
+    )
+    page = context.new_page()
+    errors, telegram, writes = [], [], []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on("request", lambda request: telegram.append(request.url) if "telegram.org" in request.url else None)
+    page.on("request", lambda request: writes.append(request.url) if request.method not in ("GET", "HEAD") else None)
+    page.goto(mirror_site)
+    page.get_by_role("navigation", name="Просмотр зеркала").get_by_role(
+        "link", name="Мобильный просмотр", exact=True
+    ).click()
+    expect(page).to_have_url(mirror_site + "tg/?pwa=1")
+    expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
+    expect(page.locator("[data-mini-preview]")).to_have_text("Мобильный просмотр")
+    assert page.locator("#site-stage").bounding_box()["width"] == min(width, 430)
+    for label, path in (("ДПО", "dpo"), ("Лента", "news"), ("Мерч", "merch"), ("Кабинет", "lk"), ("Клуб", "tg")):
+        page.get_by_role("navigation", name="Основные разделы").get_by_role("link", name=label, exact=True).click()
+        expect(page).to_have_url(re.compile(re.escape(mirror_site + path) + r"/?$"))
+        expect(page.locator("#main")).to_be_visible()
+        expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), path
+    page.reload()
+    expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
+    page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Обычный сайт").click()
+    expect(page).to_have_url(mirror_site + "?site=1")
+    expect(page.locator("html")).not_to_have_class(re.compile("pwa-shell|telegram-mini"))
+    expect(page.locator(".home-hero")).to_be_visible()
+    assert not errors and not telegram and not writes
+    context.close()
+
+
 def test_mirror_preserves_filters_cart_calendar_and_subscription(chromium, mirror_site):
     context = chromium.new_context(viewport={"width": 390, "height": 1000})
     context.add_init_script(

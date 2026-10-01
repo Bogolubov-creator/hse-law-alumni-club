@@ -27,7 +27,13 @@
 <body data-base="{{ base }}" data-mirror="{{ 'true' if mirror else 'false' }}">
 <a href="#main" class="skip">К содержанию страницы</a>
 {% if mirror %}
-<aside class="site-notice">Демоверсия · отправка заявок отключена · <a href="{{ base }}lk/">кабинет</a> · <a href="{{ base }}admin/">панель офиса</a>
+<aside class="site-notice">
+<span>Демоверсия · отправка заявок отключена</span>
+<nav aria-label="Просмотр зеркала">
+<a href="{{ base }}tg/?pwa=1" data-mobile-preview>Мобильный просмотр</a>
+<a href="{{ base }}lk/">Кабинет</a>
+<a href="{{ base }}admin/">Панель офиса</a>
+</nav>
 </aside>
 {% endif %}
 <div id="site-shell">
