@@ -81,7 +81,7 @@ LABELS = {
     "open": "Открыто",
     "answered": "Отвечено",
     "closed": "Закрыто",
-    "ignored": "Скрыто",
+    "dismissed": "Скрыто",
     "imported": "Импортировано",
 }
 METRICS = {

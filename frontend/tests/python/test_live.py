@@ -8,6 +8,20 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import pytest
+from live_features import (
+    content_forms,
+    event_actions,
+    friends_after_restart,
+    home_form,
+    member_points_discount,
+    member_verification,
+    news_sources,
+    office_exports,
+    order_form,
+    profile_tools,
+    section_walk,
+    support_conversation,
+)
 from playwright.sync_api import expect, sync_playwright
 
 pytestmark = pytest.mark.skipif(
@@ -192,6 +206,10 @@ def test_live_system(name, width, height):
             page.goto("/lk/profile")
             expect(page.get_by_label("ФИО", exact=True)).to_have_value(state["name"])
             page.screenshot(path=str(state_path.with_suffix(".profile.png")), full_page=True)
+            peer = json.loads(
+                (state_path.parent / ("mobile.json" if name == "desktop" else "desktop.json")).read_text()
+            )
+            friends_after_restart(page, name, peer["member"])
             assert not errors
             browser.close()
             return
@@ -225,13 +243,13 @@ def test_live_system(name, width, height):
         assert result(request.get("/api/auth/admin-session", headers=headers))["role"] in ("admin", "Administrator")
         assert request.get("/api/auth/admin-session", headers=auth(previous_token)).status == 401
         media(office, request, admin_token, name)
+        content_forms(office, request, headers, name)
+        news_sources(office, request, headers, name, state_path.parent)
+        home_form(office, name)
         members = result(request.get("/api/admin/members", headers=headers))["items"]
         member = next(member for member in members if member["email"] == email)
-        result(
-            request.patch(
-                "/api/admin/members/" + member["id"], headers=headers, data={"verification_status": "verified"}
-            )
-        )
+        member_verification(office, member["id"])
+        member_points_discount(office, request, headers, auth(previous_token), member["id"])
         updated_name = person + " Проверен"
         page.goto("/lk/profile")
         page.get_by_label("ФИО", exact=True).fill(updated_name)
@@ -242,6 +260,8 @@ def test_live_system(name, width, height):
         result(updated.value)
         page.reload()
         expect(page.get_by_label("ФИО", exact=True)).to_have_value(updated_name)
+        profile_tools(page, request, auth(previous_token), IMAGE)
+        support_conversation(page, office, request, headers, name)
         program = result(
             request.post(
                 "/api/admin/programs",
@@ -281,7 +301,8 @@ def test_live_system(name, width, height):
         expect(page.locator("#orders")).to_contain_text(order["number"])
         orders = result(request.get("/api/admin/orders", headers=headers))["items"]
         order_id = next(row["id"] for row in orders if row["number"] == order["number"])
-        result(request.patch("/api/admin/orders/" + order_id, headers=headers, data={"status": "in_progress"}))
+        order_form(office, order_id)
+        office_exports(office)
         event = result(
             request.post(
                 "/api/admin/events",
@@ -294,17 +315,25 @@ def test_live_system(name, width, height):
                 },
             )
         )
-        result(request.post(f"/api/events/{event['id']}/rsvp", headers=auth(previous_token), data={}))
+        event_actions(page, office, event["id"])
         roster = result(request.get(f"/api/admin/events/{event['id']}/rsvps", headers=headers))
         assert len(roster) == 1
         for _ in range(2):
             result(request.post(f"/api/admin/events/rsvp/{roster[0]['id']}/attend", headers=headers, data={}))
         ledger = result(request.get("/api/me/ledger", headers=auth(previous_token)))
         assert sum(row["reason"] == "event" for row in ledger) == 1
-        subscription = result(request.post("/api/podcasts/subscribe", headers=auth(previous_token), data={}))
+        page.goto("/podcasts")
+        with page.expect_response(lambda response: response.url.endswith("/api/podcasts/subscribe")) as subscribed:
+            page.get_by_role("button", name="Оформить подписку", exact=True).click()
+        subscription = result(subscribed.value)
         repeated = result(request.post("/api/podcasts/subscribe", headers=auth(previous_token), data={}))
         assert repeated["number"] == subscription["number"] and repeated["already"]
-        result(request.post(f"/api/admin/members/{member['id']}/podcast-sub", headers=headers, data={}))
+        office.goto("/admin/members")
+        with office.expect_response(
+            lambda response: response.url.endswith(f"/api/admin/members/{member['id']}/podcast-sub")
+        ) as granted:
+            office.locator(f'[data-api="/admin/members/{member["id"]}/podcast-sub"]').click()
+        result(granted.value)
         assert result(request.get("/api/podcasts", headers=auth(previous_token)))["subscribed"]
         editor = result(
             request.post(
@@ -321,6 +350,7 @@ def test_live_system(name, width, height):
             == 403
         )
         assert request.get("/api/admin/support", headers=auth(editor)).status == 403
+        section_walk(page, office)
         page.goto("/lk")
         page.get_by_role("button", name="Выйти", exact=True).click()
         expect(page.get_by_role("heading", name="Вход для выпускников", exact=True)).to_be_visible()
@@ -346,6 +376,7 @@ def test_live_system(name, width, height):
         expect(office.get_by_role("heading", name="Панель учебного офиса", exact=True)).to_be_visible()
         assert request.get("/api/admin/overview", headers=headers).status == 401
         state = {
+            "member": member["id"],
             "token": token,
             "previousToken": previous_token,
             "revokedAdmin": admin_token,
