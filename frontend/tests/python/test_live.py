@@ -372,9 +372,9 @@ def test_live_system(name, width, height):
         assert request.get("/api/me", headers=auth(previous_token)).status == 401
         token = login(page, email, value("E2E_LIVE_NEW_PASSWORD"))
         office.goto("/admin")
-        office_menu = office.get_by_role("button", name="Разделы офиса", exact=True)
-        if office_menu.is_visible():
-            office_menu.click()
+        expect(office.locator(".office-page-header")).to_be_visible()
+        if width <= 900:
+            office.get_by_role("button", name="Разделы офиса", exact=True).click()
         office.get_by_role("button", name="Выйти", exact=True).click()
         expect(office.get_by_role("heading", name="Панель учебного офиса", exact=True)).to_be_visible()
         assert request.get("/api/admin/overview", headers=headers).status == 401
