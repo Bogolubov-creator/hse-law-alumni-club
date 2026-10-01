@@ -96,7 +96,7 @@ Compose передаёт `PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD` мигр
 | `POINTS_SERVICE_TOKEN` | Ключ внешнего начисления баллов | Необязательно; пустой выключает такой доступ | Да | Пусто при отключении | Запуск API |
 | `AUTH_SECRET` | Подпись сессий выпускников | Да, не менее 32 символов | Да | `〈64 hex〉` | Запуск API |
 | `ADMIN_AUTH_SECRET` | Отдельная подпись административных сессий | Обязателен в production, отличен от `AUTH_SECRET` | Да | `〈другие 64 hex〉` | Запуск API |
-| `PUBLIC_URL` | Адрес сайта, ссылки писем/оплаты, sitemap | Production: корневой HTTPS URL | Нет | `https://club.example.org` | Запуск API + сборка web |
+| `PUBLIC_URL` | Адрес сайта и ссылки писем/оплаты | Production: корневой HTTPS URL | Нет | `https://club.example.org` | Запуск API |
 | `WEB_DOMAIN` | Адрес сайта в Caddy | Да | Нет | `club.example.org`; локально `:80` | Запуск Caddy |
 | `ADMIN_DOMAIN` | Прежний admin-домен: legacy assets и redirect в /admin | Да | Нет | `admin.club.example.org`; локально `:8081` | Запуск Caddy |
 | `ACME_EMAIL` | Служебный адрес оператора для ACME | Для рабочего выпуска сертификата | Не пароль; контакт оператора | `operator@example.com` | Запуск Caddy |
@@ -220,13 +220,8 @@ journald и возвращает код завершения; внешний к�
 
 ## Сборка интерфейса и локальная разработка
 
-Все `VITE_*` доступны собранному клиенту. Ни одна такая переменная не подходит для
-пароля, закрытого токена или SMTP-ключа.
-
-| Переменная | Назначение | Обязательность | Секрет | Безопасный пример | Этап |
-|---|---|---|---|---|---|
-
-Web использует `API_INTERNAL_URL` для чтения API; статическое зеркало и
+Настройки прежней сборки `VITE_*` не используются. Web использует
+[`API_INTERNAL_URL`](#настройки-web) для чтения API; статическое зеркало и
 полный серверный стенд – разные контуры проверки. Флаги интеграционных тестов
 `RUN_DATA_INTEGRATION`, `RUN_NATIVE_AUTH_INTEGRATION`,
 `RUN_CHECKOUT_INTEGRATION`, `RUN_SUPPORT_INTEGRATION`, `RUN_TELEGRAM_INTEGRATION`
