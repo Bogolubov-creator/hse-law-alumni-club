@@ -150,7 +150,8 @@ async function refresh() {
     page.replaceWith(document.importNode(next, true));
     setupPage();
     void updateCartCount();
-  } catch (error) { notice(error.message); }
+    return true;
+  } catch (error) { notice(error.message); return false; }
 }
 
 async function updateCartCount() {
@@ -245,8 +246,10 @@ async function perform(target, body) {
       notice("Заявка на подписку сохранена: " + result.number + ". Учебный офис свяжется с вами.");
     } else {
       if (cart) store("club_checkout:" + cartSession(), null);
-      notice(cart ? "Корзина обновлена" : "Изменения сохранены");
-      if (cart && currentPath() !== "/cart") void updateCartCount(); else await refresh();
+      if (cart && currentPath() !== "/cart") {
+        void updateCartCount();
+        notice("Корзина обновлена");
+      } else if (await refresh()) notice(cart ? "Корзина обновлена" : "Изменения сохранены");
     }
   } finally {
     if (cart) pendingCart--;

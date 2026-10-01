@@ -174,6 +174,10 @@ def test_office_navigation_keyboard_and_screen_sizes(page, width):
         if width > 900:
             expect(page.locator("#office-navigation a[aria-current]")).to_be_in_viewport()
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), key
+    if width <= 900:
+        page.get_by_role("button", name="Разделы офиса", exact=True).click()
+    page.get_by_role("button", name="Выйти", exact=True).click()
+    expect(page.get_by_role("button", name="Войти", exact=True)).to_be_visible()
 
 
 @pytest.mark.parametrize("width", [1440, 390])
@@ -193,6 +197,12 @@ def test_office_content_filters_preserve_editing(page, site, width):
     row = page.locator("article.office-record")
     row.get_by_text("Редактировать", exact=True).click()
     row.get_by_label("Продолжительность", exact=True).fill("60 часов")
+
+    def slow_refresh(route):
+        time.sleep(0.15)
+        route.continue_()
+
+    page.route("**/views/admin/programs?**", slow_refresh)
     row.get_by_role("button", name="Сохранить", exact=True).click()
     expect(page.locator("#toast")).to_contain_text("Изменения сохранены")
     expect(page.locator("[data-office-count]")).to_have_text("Показано: 1 из 2")
@@ -204,6 +214,12 @@ def test_office_content_filters_preserve_editing(page, site, width):
     expect(page.get_by_text("По выбранным фильтрам записей нет.", exact=True)).to_be_visible()
     page.get_by_role("link", name="Сбросить", exact=True).click()
     expect(page.locator("article.office-record")).to_have_count(2)
+    row = page.locator("article.office-record").last
+    row.get_by_text("Редактировать", exact=True).click()
+    page.route("**/views/admin/programs", lambda route: route.fulfill(status=503))
+    row.get_by_role("button", name="Сохранить", exact=True).click()
+    expect(page.locator("#toast")).to_contain_text("Не удалось обновить страницу")
+    expect(row.get_by_role("button", name="Сохранить", exact=True)).to_be_enabled()
 
 
 def test_catalog_filters_search_compare_and_cart(page, site):
