@@ -6,11 +6,15 @@ const query = new URLSearchParams(location.search);
 function apply() {
   calendar();
   for (const input of document.querySelectorAll("form[method='get'] [name],form[role='search'] [name]")) input.value = query.get(input.name) || input.tagName === "SELECT" && input.options[0].value || "";
-  const cards = [...document.querySelectorAll("[data-catalog-row],[data-change-row],[data-search-row]")];
+  const cards = [...document.querySelectorAll("[data-catalog-row],[data-change-row],[data-search-row],[data-office-row]")];
   let count = 0;
   for (const card of cards) {
-    const record = card.dataset.catalogRow ? JSON.parse(card.dataset.catalogRow) : card.dataset.changeRow ? JSON.parse(card.dataset.changeRow) : { title: card.textContent };
+    const record = card.dataset.catalogRow ? JSON.parse(card.dataset.catalogRow) : card.dataset.changeRow ? JSON.parse(card.dataset.changeRow) : card.dataset.officeRow ? JSON.parse(card.dataset.officeRow) : { title: card.textContent };
     let visible = [record.title,record.number,record.summary].some(value => normalized(value).includes(normalized(query.get("q"))));
+    if (card.dataset.officeRow) {
+      visible = normalized([record.title,record.direction,record.category,record.year].join(" ")).includes(normalized(query.get("q")).trim());
+      if (query.get("status") && record.status !== query.get("status")) visible = false;
+    }
     for (const name of ["direction","format","enrollment","category","kind","topic"]) if (query.get(name) && record[name] !== query.get(name)) visible = false;
     if (card.dataset.changeRow) {
       const view = query.get("view") || "digest";
@@ -30,6 +34,10 @@ function apply() {
   }
   const status = document.querySelector("#main > p[role='status']");
   if (status) status.textContent = "Найдено: " + count;
+  const officeCount = document.querySelector("[data-office-count]");
+  if (officeCount) officeCount.textContent = "Показано: " + count + " из " + cards.length;
+  const officeEmpty = document.querySelector("[data-office-empty]");
+  if (officeEmpty) officeEmpty.hidden = count !== 0;
   for (const group of document.querySelectorAll(".club-search section")) group.hidden = ![...group.querySelectorAll("[data-search-row]")].some(row => !row.hidden);
 }
 
@@ -42,6 +50,7 @@ document.addEventListener("submit", event => {
   apply();
 });
 window.addEventListener("popstate", () => { for (const name of [...query.keys()]) query.delete(name); for (const [key,value] of new URLSearchParams(location.search)) query.set(key,value); apply(); });
+document.addEventListener("club-page-ready", apply);
 apply();
 
 window.clubMirrorReply = async question => {

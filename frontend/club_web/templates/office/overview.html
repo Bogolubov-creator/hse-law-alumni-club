@@ -1,22 +1,37 @@
-<div class="site-metrics">
-{% for key,label in metrics.items() if key in records %}
-<article>
-<strong>{{ records[key] }}</strong>
-<span>{{ label }}</span>
-</article>
+{% set priority=['new_orders','pending_verifications','alumni_count','podcast_subscribers'] %}
+{% set destinations={'new_orders':'/admin/orders?status=new','pending_verifications':'/admin/members?status=pending','alumni_count':'/admin/members','podcast_subscribers':'/admin/subs'} %}
+<div class="site-metrics office-primary-metrics">
+{% for key in priority if key in records %}
+<article><a class="office-metric-link" href="{{ destinations[key] }}"><strong>{{ records[key] }}</strong><span>{{ metrics[key] }}</span></a></article>
 {% endfor %}
 </div>
-<section>
-<h2>Работа системы</h2>
-{% for check in health.checks or [] %}
-<p class="site-health" data-status="{{ check.status }}">
-<strong>{{ check.name }}</strong> · {{ labels.get(check.status,check.status) }} · {{ check.detail }}</p>
-{% endfor %}
+<div class="office-workspace">
+<div>
+<section class="site-panel"><h2>Требуют внимания</h2>
+{% for key,title,href in [('new_orders','Новые заявки','/admin/orders?status=new'),('pending_verifications','Выпускники на проверке','/admin/members?status=pending')] if key in records %}
+<a class="office-queue" href="{{ href }}"><span>{{ icon('orders' if key=='new_orders' else 'members') }}{{ title }}</span><strong>{{ records[key] }}</strong></a>
+{% else %}{{ empty('Сведения о заявках и проверке не получены.') }}{% endfor %}
 </section>
+<section class="site-panel"><h2>Перейти к работе</h2><div class="office-shortcuts">
+{% for key,title in [('news','Новости'),('events','События'),('programs','Программы ДПО'),('media','Загрузить файл')] %}<a href="/admin/{{ key }}">{{ icon(key) }}{{ title }}</a>{% endfor %}
+</div></section>
+</div>
+<section class="site-panel"><h2>Работа системы</h2>
+{% if mirror %}<p class="office-meta">Демоданные. Состояние сервера здесь не проверяется.</p>{% endif %}
+{% for check in health.checks or [] %}
+<div class="office-health-row"><div><strong>{{ check.name }}</strong><p>{{ check.detail }}</p></div>{{ status(check.status) }}</div>
+{% else %}{{ empty('Результаты проверки сервисов не получены.') }}{% endfor %}
+</section>
+</div>
+<details class="office-metric-details"><summary>Показатели клуба</summary><div class="site-metrics">
+{% for key,label in metrics.items() if key in records and key not in priority %}
+<article><strong>{{ records[key] }}</strong><span>{{ label }}</span></article>
+{% else %}{{ empty('Дополнительных показателей нет.') }}{% endfor %}
+</div></details>
 {% if role in ('admin','Administrator') %}
-<details>
+<details class="office-create">
 <summary>Отправить уведомление участникам</summary>
-<form data-api="/admin/push/broadcast" data-confirm="Отправить уведомление всем подписчикам?">{{ field('title','Заголовок') }}{{ field('body','Текст') }}{{ field('url','Раздел сайта','/') }}<button>Отправить</button>
+<form class="site-admin-form" data-api="/admin/push/broadcast" data-confirm="Отправить уведомление всем подписчикам?">{{ field('title','Заголовок') }}{{ field('body','Текст') }}{{ field('url','Раздел сайта','/') }}<button class="site-primary">Отправить</button>
 <p role="alert" data-error hidden>
 </p>
 </form>

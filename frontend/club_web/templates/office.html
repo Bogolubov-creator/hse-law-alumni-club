@@ -1,33 +1,42 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import login,field,empty %}
 {% from 'office/forms.html' import content_form with context %}
+{% from 'office/components.html' import icon,status with context %}
 {% block content %}
 {% if not session or access_error==401 %}
 <main id="main" class="site-container">{{ login(true) }}</main>
 {% else %}
-<div class="adm-grid site-office">
-<aside class="adm-aside club-dark">
-<a href="/" class="site-office-brand">Учебный офис<small>Клуб выпускников</small>
-</a>
-<nav aria-label="Панель офиса">
-{% for key,label in office_nav %}
-<a href="/admin{{ '/'+key if key!='overview' else '' }}" {% if section==key %}aria-current="page"{% endif %}>{{ label }}</a>
+<div class="site-office">
+<aside class="office-sidebar">
+<div class="office-brand-row">
+<a href="/" class="office-brand"><img src="{{ base }}icon-192.png" width="36" height="36" alt=""><span>Клуб выпускников<small>факультета права Вышки</small></span></a>
+<button class="office-menu-toggle" data-action="office-menu" aria-expanded="false" aria-controls="office-navigation" aria-label="Разделы офиса">{{ icon('menu') }}</button>
+</div>
+<nav id="office-navigation" class="office-navigation" aria-label="Панель офиса" data-open="false">
+{% set names=dict(office_nav) %}
+{% for group,keys in office_groups %}
+<div class="office-nav-group"><p>{{ group }}</p>
+{% for key in keys %}
+<a href="/admin{{ '/'+key if key!='overview' else '' }}" {% if section==key %}aria-current="page"{% endif %}>{{ icon(key) }}<span>{{ names[key] }}</span></a>
+{% endfor %}
+<hr></div>
 {% endfor %}
 </nav>
-<button data-action="logout-office">Выйти</button>
+<div class="office-account"><span class="office-account-mark" aria-hidden="true">УО</span><div><strong>Учебный офис</strong><small>{{ 'Администратор' if role in ('admin','Administrator') else 'Редактор' }}</small></div><button data-action="logout-office" aria-label="Выйти">{{ icon('logout') }}</button></div>
 </aside>
 <main id="main" class="site-office-content">
-<header class="site-masthead">
-<h1>{{ title }}</h1>
-<p>{{ 'Администратор' if role in ('admin','Administrator') else 'Редактор' }}</p>
+<div class="office-topbar"><nav aria-label="Путь к разделу"><a href="/admin">Учебный офис</a><span aria-hidden="true">/</span><span>{{ title }}</span></nav><a href="/" class="office-site-link">На сайт {{ icon('arrow') }}</a></div>
+<header class="office-page-header">
+<div><h1>{{ title }}</h1><p>{{ office_descriptions.get(section,'') }}</p></div>
+<button data-action="refresh" class="office-refresh">{{ icon('refresh') }}Обновить</button>
 </header>
 {% if access_error==403 %}
-<p role="alert">Этот раздел доступен администратору клуба.</p>
+<div class="office-access" role="alert"><h2>Нужен доступ администратора</h2><p>Этот раздел доступен администратору клуба.</p><a href="/admin">К обзору офиса</a></div>
 {% else %}
 {% include office_template %}
 {% endif %}
 {% if office_previous or office_next %}
-<nav class="site-actions" aria-label="Страницы списка">
+<nav class="site-actions office-pagination" aria-label="Страницы списка">
 {% if office_previous %}<a href="{{ office_previous }}">← Предыдущая страница</a>{% endif %}
 {% if office_next %}<a href="{{ office_next }}">Следующая страница →</a>{% endif %}
 </nav>

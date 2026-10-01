@@ -1,24 +1,30 @@
-<p>Автоматическое обновление: {{ 'включено' if records.automatic else 'выключено' }}</p>
+<div class="office-toolbar"><p>Автоматическое обновление: {{ 'включено' if records.automatic else 'выключено' }}</p></div>
+<div class="office-list">
 {% for source in records.sources or [] %}
-<article class="site-panel">
+<article class="site-panel office-record">
 <h2>{{ source.title or source.name or source.id }}</h2>
-<p>{{ source.error or '' }}</p>
+{% if source.error %}<p class="office-source-error">{{ source.error }}</p>{% endif %}
 <button data-api="/admin/news-sources/{{ source.id }}/refresh">Обновить источник</button>
 </article>
 {% endfor %}
+</div>
+<div class="office-list-heading"><h2>Материалы источников</h2><p>На странице: {{ rows|length }}</p></div>
+<div class="office-list">
 {% for item in rows %}
-<article class="site-panel">
+<article class="site-panel office-record">
+<div class="office-record-head">
 <h2>{{ item.title }}</h2>
-<p>{{ item.published_at|date }} · {{ labels.get(item.state,item.state) }}</p>
+{{ status(item.state) }}</div><p class="office-meta">{{ item.published_at|date }}</p>
 {% if item.source_url|safe_url %}
 <a href="{{ item.source_url|safe_url }}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
 {% endif %}
 {% if item.state=='new' %}
-<form data-api="/admin/news-sources/{{ item.id }}/import">{{ field('title','Заголовок',item.title) }}{{ field('excerpt','Краткое описание',item.excerpt,required=false) }}<button>Добавить в новости</button>
+<form class="site-admin-form" data-api="/admin/news-sources/{{ item.id }}/import">{{ field('title','Заголовок',item.title) }}{{ field('excerpt','Краткое описание',item.excerpt,required=false) }}<button class="site-primary">Добавить в новости</button>
 <p role="alert" data-error hidden>
 </p>
 </form>
 <button data-api="/admin/news-sources/{{ item.id }}" data-method="PATCH" data-body='{"state":"dismissed"}'>Скрыть</button>
 {% endif %}
 </article>
-{% endfor %}
+{% else %}{{ empty('Материалов источников пока нет.') }}{% endfor %}
+</div>

@@ -15,17 +15,20 @@
 </select></label>
 <button>Показать</button>
 </form>
-<button data-download="/admin/orders/export.csv" data-filename="orders.csv">Скачать CSV</button>
+<div class="office-toolbar"><p>Заявок на странице: {{ rows|length }}</p><button data-download="/admin/orders/export.csv" data-filename="orders.csv">Скачать CSV</button></div>
+<div class="office-list">
 {% for order in rows %}
-<article class="site-panel">
+<article class="site-panel office-record">
+<div class="office-record-head">
 <h2>{{ order.number }} · {{ order.contact_fio }}</h2>
-<p>{{ order.contact_email }} · {{ order.contact_phone }}</p>
-<p>{{ order.total_estimate|rub }} · {{ labels.get(order.payment_status,order.payment_status) }}</p>
-<p>{{ order.address or 'Самовывоз' }} · {{ order.comment or '' }}</p>
+{{ status(order.status) }}</div>
+<div class="office-order-details"><div><p>{{ order.contact_email }}</p><p>{{ order.contact_phone }}</p><p class="office-meta">{{ order.address or 'Самовывоз' }}</p>{% if order.comment %}<p class="office-meta">{{ order.comment }}</p>{% endif %}</div><div><p class="office-order-total">{{ order.total_estimate|rub }}</p>{{ status(order.payment_status,true) }}</div></div>
+<div class="office-order-items">
 {% for line in order.items_json or [] %}
 <p>{{ line.title }} × {{ line.qty }} · {{ line.variant_sku or '' }}</p>
 {% endfor %}
-<form data-api="/admin/orders/{{ order.id }}" data-method="PATCH">
+</div>
+<form class="office-edit-grid" data-api="/admin/orders/{{ order.id }}" data-method="PATCH">
 <label>Статус<select aria-label="Статус" name="status">
 {% for status in ['new','confirmed','in_progress','done','canceled','expired'] %}
 <option value="{{ status }}" {% if order.status==status %}selected{% endif %}>{{ labels.get(status,status) }}</option>
@@ -38,3 +41,4 @@
 </form>
 </article>
 {% else %}{{ empty('Заявок по выбранным фильтрам нет.') }}{% endfor %}
+</div>

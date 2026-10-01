@@ -10,13 +10,17 @@
 </label>
 <button>Показать</button>
 </form>
+<div class="office-toolbar"><p>Выпускников на странице: {{ rows|length }}</p></div>
+<div class="office-list">
 {% for member in rows %}
-<article class="site-panel">
+<article class="site-panel office-record">
+<div class="office-record-head">
 <h2>{{ member.fio }}</h2>
-<p>{{ member.email or '' }} · {{ member.cohort }} · {{ member.edu_program or '' }}</p>
-<p>{{ member.points_cached }} баллов · {{ labels.get(member.verification_status,member.verification_status) }}</p>
+{{ status(member.verification_status) }}</div>
+<p class="office-meta">{{ member.email or '' }} · {{ member.cohort }} · {{ member.edu_program or '' }}</p>
+<p>{{ member.points_cached }} баллов</p>
 {% if role in ('admin','Administrator') %}
-<form data-api="/admin/members/{{ member.id }}" data-method="PATCH">
+<form class="office-edit-grid" data-api="/admin/members/{{ member.id }}" data-method="PATCH">
 <label>Проверка<select aria-label="Проверка" name="verification_status">
 {% for status in ['pending','verified','rejected'] %}
 <option value="{{ status }}" {% if member.verification_status==status %}selected{% endif %}>{{ labels.get(status,status) }}</option>
@@ -44,3 +48,4 @@
 {% endif %}
 </article>
 {% else %}{{ empty('Выпускников по выбранным фильтрам нет.') }}{% endfor %}
+</div>

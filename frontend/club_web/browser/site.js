@@ -295,7 +295,18 @@ function renderReading() {
   document.querySelectorAll("[data-reading-path]").forEach(article => { article.hidden = !!document.querySelector("[data-unread-filter]")?.checked && data.read.includes(article.dataset.readingPath); });
 }
 
+function alignOfficeNavigation() {
+  const navigation = document.querySelector("#office-navigation");
+  const active = navigation?.querySelector("[aria-current]");
+  if (!active || !navigation.clientHeight) return;
+  const container = navigation.getBoundingClientRect();
+  const item = active.getBoundingClientRect();
+  if (item.bottom > container.bottom) navigation.scrollTop += item.bottom - container.bottom + 8;
+  if (item.top < container.top) navigation.scrollTop += item.top - container.top - 8;
+}
+
 function setupPage() {
+  alignOfficeNavigation();
   const recent = document.querySelector("[data-reading-title]");
   if (recent) {
     try {
@@ -446,7 +457,12 @@ document.addEventListener("click", async event => {
     else if (action === "close-bot") document.querySelector("#support-bot").close();
     else if (action === "bot-hint") await queueBot(target.dataset.question);
     else if (action === "refresh") await refresh();
-    else if (action === "menu") {
+    else if (action === "office-menu") {
+      const open = target.getAttribute("aria-expanded") !== "true";
+      target.setAttribute("aria-expanded", String(open));
+      document.querySelector("#office-navigation").dataset.open = String(open);
+      if (open) alignOfficeNavigation();
+    } else if (action === "menu") {
       const on = target.getAttribute("aria-expanded") !== "true";
       target.setAttribute("aria-expanded", String(on));
       target.setAttribute("aria-label", on ? "Закрыть меню" : "Открыть меню");
@@ -570,6 +586,10 @@ document.addEventListener("change", event => {
   }
 });
 document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    const button = document.querySelector("[data-action='office-menu']");
+    if (button?.getAttribute("aria-expanded") === "true") { button.click(); button.focus(); }
+  }
   if (event.key === "Escape") { const button = document.querySelector("[data-action='menu']"); if (button?.getAttribute("aria-expanded") === "true") button.click(); }
 });
 window.addEventListener("storage", event => { if (event.key === readingKey) renderReading(); });
