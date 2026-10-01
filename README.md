@@ -9,11 +9,16 @@
 включается отдельно при настройке ЮKassa.
 
 **Стек:** Python/FastAPI, Jinja2 и PostgreSQL. Страницы сайта, кабинет и панель
-офиса формируются на сервере. Небольшие модули JavaScript обслуживают плеер,
-корзину, сохранённые материалы, PWA и Telegram. Отдельная CMS-подписка не требуется. Проверки выполняются в изолированном Docker-стеке и CI Ubuntu.
-Стенды используют синтетические данные.
-Публичный запуск не выполнен. Точная версия стенда, завершённые проверки и открытые
-вопросы ведутся в одном [журнале состояния](docs/operations/project-state.md).
+офиса формируются на сервере. React и TypeScript удалены; Node.js, npm и pnpm
+для установки, сборки и запуска не нужны. JavaScript обслуживает браузерные
+действия, плеер, PWA и Telegram. Отдельная CMS-подписка не требуется.
+
+**Посмотреть сайт:** [демонстрационное зеркало](https://bogolubov-creator.github.io/club-pravo-hse-mirror/).
+Оно собрано из тех же шаблонов и показывает синтетические данные. Отправка заявок,
+регистрация, оплата и сохранение серверных правок в зеркале отключены.
+Работающее приложение проверено локально на Ubuntu; публичный API-сервер
+пока не развёрнут. Версии и результаты – в [журнале состояния](docs/operations/project-state.md).
+
 Бейдж `Security & CI` показывает результат проверок ветки `main`;
 состав проверок и пороги – в [разделе «Безопасность»](#безопасность).
 
@@ -26,6 +31,7 @@
 ## Оглавление
 
 1. [Быстрый старт](#быстрый-старт)
+    - [Проверенная версия](#проверенная-версия)
 2. [Что делает Клуб](#что-делает-клуб)
 3. [Пользователи, роли и права](#пользователи-роли-и-права)
 4. [Основные разделы и сценарии](#основные-разделы-и-сценарии)
@@ -36,6 +42,7 @@
 9. [Сеть, домены и порты](#сеть-домены-и-порты)
 10. [Конфигурация и секреты](#конфигурация-и-секреты)
 11. [Локальный запуск](#локальный-запуск)
+    - [Посмотреть зеркало локально](#посмотреть-зеркало-локально)
 12. [Установка на Ubuntu](#установка-на-ubuntu)
     - [Простая установка](#простая-установка)
     - [Вариант А: ключ развёртывания](#вариант-а-ключ-развёртывания)
@@ -74,7 +81,8 @@ uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
 uv sync --directory frontend --frozen
 uv run --directory frontend playwright install chromium
-uv run --directory frontend python -m club_web.build
+uv run --directory frontend python -m club_web.build --output /tmp/club-web
+uv run --directory frontend python ../scripts/checks/check-web-build.py /tmp/club-web
 uv run --directory frontend pytest -q
 ```
 
@@ -84,6 +92,25 @@ uv run --directory frontend pytest -q
 PostgreSQL, запускаются отдельно. Для работающего сайта продолжите по
 [локальному запуску](#локальный-запуск), для серверной репетиции – по
 [инструкции Ubuntu](docs/operations/deploy-runbook.md). Рабочие секреты в репозиторий не входят.
+
+### Проверенная версия
+
+Перенос сайта, кабинета и офиса завершён в [PR 69](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/69).
+Версия кода `2f19ee5` от 1 октября 2026 года прошла
+[все четыре задания CI](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/runs/36852313065)
+и установлена на локальном Ubuntu-стенде.
+
+| Проверка | Результат этой версии |
+|---|---|
+| Шаблоны и браузерные сценарии | 106 тестов прошли; live-сценарии запускались отдельно |
+| API и операции с PostgreSQL | 92 теста прошли |
+| Собственный код | Проверены 226 файлов: комментариев и docstring нет; обязательные лицензии и shebang сохранены |
+| Ubuntu после обновления | Через доверенный TLS проверены 22 раздела сайта, 16 разделов офиса и права четырёх ролей |
+| Публикация зеркала | 165 страниц из тех же Jinja2-шаблонов; версия источника указана в `version.json` |
+
+Это результаты указанной ревизии. Проверки следующих изменений доступны в CI
+по бейджу выше; команды и условия публичного запуска – в
+[журнале состояния](docs/operations/project-state.md).
 
 ## Что делает Клуб
 
@@ -136,8 +163,9 @@ PostgreSQL, запускаются отдельно. Для работающег
 
 | Компонент | Версия | Назначение |
 |---|---|---|
-| Python / uv | 3.14.7 / 0.12.21 в сборке и CI | API, bootstrap и команды оператора; зависимости закреплены в uv.lock |
-| FastAPI / Uvicorn / Pydantic | 0.142.2 / 0.54.0 / 2.13.5 | HTTP API, ASGI-сервер и проверка запросов |
+| Python / uv | 3.14.7 / 0.12.21 в сборке и CI | Сайт, API, команды оператора и экспорт зеркала; зависимости закреплены в uv.lock |
+| FastAPI / Uvicorn / Pydantic | 0.142.2 / 0.54.0 / 2.13.5 | Web и HTTP API, ASGI-сервер и проверка запросов |
+| Jinja2 | 3.1.6 | Серверные HTML-шаблоны сайта, кабинета и офиса |
 | Psycopg / Argon2 / PyJWT | 3.3.6 / 25.1.0 / 2.15.1 | SQL-транзакции, прежние PHC-хеши и JWT-сессии |
 | Pillow / python-multipart | 12.3.0 / 0.0.32 | Приём медиа и аватары 256×256 |
 | HTTPX / Beautiful Soup | 0.28.1 / 4.15.0 | Проверяемые внешние запросы и разбор HTML |
@@ -146,7 +174,7 @@ PostgreSQL, запускаются отдельно. Для работающег
 | pytest / Ruff | 9.1.1 / 0.16.9 | Проверки Python и PostgreSQL |
 | PostgreSQL | 16.15 | Постоянные данные и транзакции |
 | Caddy | 2.11.4 | HTTPS, прокси и выдача статических файлов |
-| Jinja2 / Playwright | 3.1.6 / 1.63.0 | Серверные HTML-шаблоны и браузерные проверки |
+| Playwright | 1.63.0 | Браузерные проверки на компьютере и ширине телефона; в рабочий образ не входит |
 | Docker Compose / Ubuntu | Проверяемые версии стенда – в журнале | Контейнеры и серверная ОС |
 | systemd / Bash / Python | Пакеты Ubuntu 24.04 | Таймеры, операции выпуска, проверки конфигурации и копий |
 | Git / GitHub Actions | [ci.yml](.github/workflows/ci.yml) | История версий и автоматические проверки коммитов и PR |
@@ -182,30 +210,37 @@ PostgreSQL остаётся контейнером. Внутри Docker серв
 backend/
   club_api/modules/        маршруты и логика по предметным областям
   club_api/db/             SQL-адаптер, схемы данных и транзакции
-  club_api/core/         проверка конфигурации приложения
+  club_api/core/           проверка конфигурации приложения
   club_api/jobs/           расписание и хранение данных
   club_api/observability/  аудит, журналы и проверки готовности
-  migrations/         SQL-миграции приложения
-  sql/                индексы и права роли API
-  tests/python/       pytest, SQL integration и фикстуры
+  migrations/             SQL-миграции приложения
+  sql/                    индексы и права роли API
+  tests/python/           pytest, SQL-проверки и фикстуры
+  pyproject.toml          зависимости и настройки Python-пакета
+  uv.lock                 закреплённые версии зависимостей
 frontend/
-  club_web/           FastAPI web, клиент API и подготовка страниц
-    templates/        Jinja2: сайт, кабинет и разделы офиса
-    browser/          небольшие JavaScript-модули
-    styles/           CSS и токены дизайна
-  public/             изображения, шрифты, иконки и manifest
-  fixtures/           публичные данные статического зеркала
-  tests/python/       шаблоны, браузерные сценарии и live-проверки
-data/                 единые справочники, FAQ, каталог и архив дайджеста
-scripts/              команды установки, выпуска, копирования и восстановления
-  club_ops/           bootstrap, управление сотрудниками и импорты
-  lib/                общие shell/Python-функции операций
-  checks/             проверка сборок и финальных образов
-  diagnostics/        диагностика, ресурсы и нагрузка
-  tests/              тесты операций, SQL и live-стек
-deploy/               Docker-файлы, Caddy, Compose override и systemd
-.github/workflows/    CI
-docs/                 development, operations, product, integrations, decisions
+  club_web/               FastAPI web, клиент API и подготовка страниц
+    templates/            Jinja2: сайт, кабинет и разделы офиса
+    browser/              JavaScript-модули браузерных действий
+    styles/               CSS и токены дизайна
+  public/                 изображения, шрифты, иконки и manifest
+  fixtures/               публичные данные статического зеркала
+  tests/python/           шаблоны, браузерные сценарии и live-проверки
+  pyproject.toml          зависимости и настройки Python-пакета
+  uv.lock                 закреплённые версии зависимостей
+data/                     единые справочники, FAQ, каталог и архив дайджеста
+scripts/                  команды установки, выпуска, копирования и восстановления
+  club_ops/               bootstrap, управление сотрудниками и импорты
+  lib/                    общие shell/Python-функции операций
+  checks/                 проверка сборок и финальных образов
+  diagnostics/            диагностика, ресурсы и нагрузка
+  tests/                  тесты операций, SQL и live-стек
+  pyproject.toml          зависимости команд оператора
+  uv.lock                 закреплённые версии зависимостей
+deploy/                   Docker-файлы, Caddy, Compose override и systemd
+.github/workflows/        CI
+docs/                     development, operations, product, integrations, decisions
+docker-compose.yml        сервисы и постоянные хранилища приложения
 ```
 
 [AGENTS.md](AGENTS.md) задаёт правила изменений, [DESIGN.md](DESIGN.md) – решения
@@ -249,7 +284,7 @@ docs/                 development, operations, product, integrations, decisions
 | Переменная | Назначение | Обязательность | Секрет | Пример | Применение |
 |---|---|---|---|---|---|
 | `APP_ENV` / `SEED_DEMO` | Рабочий режим без демоданных | Для выпуска | Нет | `production` / `false` | Запуск |
-| `PUBLIC_URL` / `WEB_DOMAIN` | Адрес сайта и имя для Caddy | Да | Нет | `https://club.example.com` / `club.example.com` | Сборка web и запуск |
+| `PUBLIC_URL` / `WEB_DOMAIN` | Адрес сайта и имя для Caddy | Да | Нет | `https://club.example.com` / `club.example.com` | Запуск API и Caddy |
 | `ADMIN_DOMAIN` | Прежний адрес файлов и переход в офис | Да | Нет | `office.example.com` | Запуск Caddy |
 | `POSTGRES_PASSWORD` | Пароль владельца БД | Да | Да | Отдельное случайное значение | PostgreSQL, миграции, bootstrap |
 | `CHECKOUT_DB_PASSWORD` | Пароль ограниченной SQL-роли API | Да | Да | Другое случайное значение | Запуск API |
@@ -257,11 +292,13 @@ docs/                 development, operations, product, integrations, decisions
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Начальный администратор | Для bootstrap | Пароль | `admin@example.com` / отдельный пароль | Первый bootstrap |
 | `SMTP_HOST` / `SMTP_FROM` | Почта и разрешённый отправитель | Для production | Нет; `SMTP_PASS` секретен | `mailpit` / `club@example.com` только в QA | Запуск API |
 | `BACKUP_ENCRYPTION_KEY` | Шифрование копий | Для операций | Да | Отдельные 64 hex-символа | Backup и restore |
-| `VITE_*` | Публичные настройки интерфейса | По выбранному режиму | Секреты запрещены | `VITE_SITE_URL=https://club.example.com` | Сборка web |
+| `API_INTERNAL_URL` | Внутренний адрес API для web | Задан в Compose | Нет | `http://api:3000` | Запуск web |
 
 Полная таблица с ограничениями и необязательными интеграциями находится в
-[справочнике переменных](docs/development/configuration.md). Изменение публичных адресов требует
-пересборки `web`. Примеры с `example.com` и Mailpit предназначены для тестового контура.
+[справочнике переменных](docs/development/configuration.md). Настройки прежней сборки
+`VITE_*` больше не используются. Адреса применяются при запуске сервисов;
+после изменения конфигурации выполните deploy. Примеры с `example.com` и Mailpit
+предназначены для тестового контура.
 
 ## Локальный запуск
 
@@ -275,6 +312,22 @@ Caddy. Запуск одного web-сервиса не проверяет со
 отключают. Существующий сценарий виртуальной машины описан в
 [ubuntu-vm-rehearsal.md](docs/operations/ubuntu-vm-rehearsal.md); актуальная проверенная версия
 всегда указана в [журнале состояния](docs/operations/project-state.md).
+
+### Посмотреть зеркало локально
+
+После клонирования можно открыть интерфейс с синтетическими данными без БД:
+
+```bash
+uv sync --directory frontend --frozen
+uv run --directory frontend python -m club_web.mirror --output /tmp/club-mirror --base /
+uv run --directory frontend python -m http.server 4173 --bind 127.0.0.1 --directory /tmp/club-mirror
+```
+
+Откройте `http://127.0.0.1:4173/`. Поиск, фильтры, локальная корзина и просмотр
+разделов работают в браузере. Отправка заявок и серверные изменения отключены.
+Для проверки входа, прав и сохранения данных нужен полный стек.
+Публикация на GitHub Pages и базовый путь описаны в
+[инструкции зеркала](docs/integrations/pages-mirror.md).
 
 ## Установка на Ubuntu
 
@@ -562,7 +615,7 @@ Compose добавляет к именам томов имя проекта. П�
 
 ## Фоновые задачи
 
-При одном экземпляре API `планировщик asyncio` обслуживает баллы, импорты, напоминания,
+При одном экземпляре API планировщик `asyncio` обслуживает баллы, импорты, напоминания,
 очистку по сроку хранения, истечение резервов и почтовую очередь. Расписания заданы
 в часовом поясе `Europe/Moscow`; общий выключатель – `JOBS_ENABLED=false`.
 
@@ -653,8 +706,10 @@ API и PostgreSQL не имеют опубликованных портов. Cad
 
 ## Разработка и тестирование
 
-Команды выполняются обычным пользователем из корня клона с Python 3.14 и uv. Docker Engine нужен для последней команды. Ожидаемый результат у
-каждой команды – код `0`; сценарий PostgreSQL создаёт отдельную тестовую БД.
+Команды выполняются обычным пользователем из корня клона с Python 3.14 и uv.
+Docker Engine нужен для проверки Compose и интеграционного сценария.
+Ожидаемый результат каждой команды – код `0`; сценарий PostgreSQL создаёт
+отдельную тестовую БД.
 
 ```bash
 uv sync --directory backend --frozen
@@ -662,28 +717,32 @@ uv sync --directory scripts --frozen
 uv sync --directory frontend --frozen
 uv run --directory frontend playwright install chromium
 uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
+uv run --directory backend ruff format --check club_api tests/python ../scripts/club_ops
 uv run --directory frontend ruff check club_web tests/python
+uv run --directory frontend ruff format --check club_web tests/python
 uv run --directory frontend python -m club_web.build --output /tmp/club-web
 uv run --directory frontend python ../scripts/checks/check-web-build.py /tmp/club-web
 uv run --directory frontend python ../scripts/checks/check-comments.py
+uv run --directory backend pytest -q
 uv run --directory frontend pytest -q
 docker compose --env-file .env.example config --quiet
 bash scripts/tests/test-integration.sh
 ```
 
-Сайт, API и команды оператора используют Python. HTML создаётся из Jinja2-шаблонов. Часть тестов подменяет внешних
-провайдеров; они не доказывают сохранение в БД. PostgreSQL-интеграция использует
-настоящие миграции; браузерная цепочка запускается с собранными API, web и БД. Playwright запускают только против указанного тестового
-контура: некоторые сценарии изменяют данные. Команды и фактические прогоны – в
+Сайт, API и команды оператора используют Python. HTML создаётся из Jinja2-шаблонов.
+Часть тестов подменяет внешних провайдеров; они не доказывают сохранение в БД.
+PostgreSQL-интеграция использует настоящие миграции; браузерная цепочка запускается
+с собранными API, web и БД. Playwright запускают только против указанного
+тестового контура: некоторые сценарии изменяют данные. Команды и фактические прогоны – в
 [журнале состояния](docs/operations/project-state.md) и [runbook](docs/operations/deploy-runbook.md).
-Отдельные проверки обычного web-бандла и содержимого финальных контейнеров
-описаны в [testing.md](docs/development/testing.md#содержимое-выпуска).
+Проверки сборки web и содержимого финальных контейнеров описаны в
+[testing.md](docs/development/testing.md#безопасность-и-содержимое-образов).
 
 ## GitHub, CI и выпуск версий
 
 Изменения готовятся в небольших ветках `codex/...` и PR. Основной workflow –
 [Security & CI](.github/workflows/ci.yml); результаты всегда сверяются с SHA проверяемого коммита.
-В workflow включены установка по lockfile, линтер, типы, сборка, модульные тесты,
+В workflow включены установка по lockfile, Ruff, проверка комментариев, сборка и модульные тесты,
 аудит, PostgreSQL-интеграция и сборка контейнеров с настоящей браузерной цепочкой.
 Наличие шага не подтверждает его успешный запуск: результат берётся из CI нужного SHA.
 Защита `main` и обязательные проверки описаны в [журнале состояния](docs/operations/project-state.md).
