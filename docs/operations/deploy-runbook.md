@@ -1,6 +1,6 @@
 # Эксплуатация Клуба на Ubuntu
 
-Рабочий стек: PostgreSQL → миграции → нативный bootstrap → Fastify API, web и Caddy.
+Рабочий стек: PostgreSQL → миграции → нативный bootstrap → FastAPI API, web и Caddy.
 Отдельного сервера Directus нет. Сохранены совместимые имена таблиц пользователей,
 ролей и файлов, а также том `directus_uploads`. Основание – [ADR](../decisions/cms-options.md).
 
@@ -20,7 +20,7 @@ Ubuntu и открытые вопросы находятся только в [pr
 | Docker volumes | `pgdata`, `directus_uploads`, `caddy_data`, `caddy_config` | Имена получают префикс Compose-проекта |
 
 Docker socket даёт полномочия root. Операции ниже выполняются через `sudo`, API и
-bootstrap в контейнерах работают как `node`. Полный env, `docker inspect` и вывод
+bootstrap в контейнерах работают как `club` (UID 1000). Полный env, `docker inspect` и вывод
 `compose config` не публикуются. [Справочник настроек](../development/configuration.md) различает
 секреты, сборку, запуск и операторские команды.
 
@@ -157,7 +157,7 @@ sudo install -m 0600 /dev/null /etc/club/staff-password
 sudoedit /etc/club/staff-password
 sudo sh -c 'docker compose --env-file /etc/club/runtime.env -f /opt/club/docker-compose.yml \
   run --rm --no-deps -T -e STAFF_ACTION=create -e STAFF_ROLE=editor \
-  -e STAFF_EMAIL=editor@example.com bootstrap node dist/manage-staff.js \
+  -e STAFF_EMAIL=editor@example.com bootstrap python -m club_ops.cli manage-staff \
   < /etc/club/staff-password'
 sudo rm /etc/club/staff-password
 ```

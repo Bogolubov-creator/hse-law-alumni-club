@@ -2,20 +2,20 @@
   "name": "club-pravo-hse",
   "version": "0.0.0",
   "private": true,
-  "description": "Клуб выпускников факультета права НИУ ВШЭ – React, Fastify и PostgreSQL",
+  "description": "Клуб выпускников факультета права НИУ ВШЭ – React, FastAPI и PostgreSQL",
   "packageManager": "pnpm@12.8.1",
   "engines": {
     "node": ">=24 <25"
   },
   "scripts": {
     "build": "pnpm -r build",
-    "dev:api": "pnpm --filter @club/api dev",
+    "dev:api": "uv run --directory backend python -m club_api.main",
     "dev:web": "pnpm --filter @club/web dev",
-    "bootstrap": "pnpm --filter @club/scripts bootstrap",
+    "bootstrap": "uv run --directory scripts club-ops bootstrap",
     "up": "docker compose up -d --build",
     "down": "docker compose down",
     "logs": "docker compose logs -f",
-    "lint": "eslint backend/src backend/tests frontend/src frontend/tests/unit packages scripts/src scripts/tests/unit"
+    "lint": "eslint frontend/src frontend/tests/unit packages && uv run --directory backend ruff check club_api tests/python ../scripts/club_ops"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

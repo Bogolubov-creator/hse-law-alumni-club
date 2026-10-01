@@ -13,6 +13,7 @@
 | [Контекст](development/context.md) | Короткий порядок знакомства с кодом и решениями |
 | [Выбор CMS](decisions/cms-options.md) | Решение владельца и исследование от 29 сентября 2026 года |
 | [Сборка Caddy](decisions/caddy-dependencies.md) | Актуальные Go-модули, официальные backport-правки и проверки TLS |
+| [Переход на FastAPI](decisions/fastapi-migration.md) | Python, совместимость API и данных, обновление и откат |
 | [Конфигурация](development/configuration.md) | Переменные, секреты и этапы применения |
 | [Безопасность](development/security.md) | Реализованные ограничения и границы проверки |
 | [Тестирование](development/testing.md) | Команды, сценарии и ограничения тестов |

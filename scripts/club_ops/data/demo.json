@@ -1,0 +1,226 @@
+{
+  "products": [
+    {
+      "slug": "hoodie-faculty",
+      "title": "Худи с логотипом факультета",
+      "category": "Одежда",
+      "price": 420000,
+      "stock": 18,
+      "images": [
+        "/assets/merch-hoodie.jpg"
+      ],
+      "variants_json": [
+        {
+          "sku": "hoodie-graphite-M",
+          "size": "M",
+          "color": "графит",
+          "stock": 6
+        },
+        {
+          "sku": "hoodie-graphite-L",
+          "size": "L",
+          "color": "графит",
+          "stock": 7
+        },
+        {
+          "sku": "hoodie-graphite-XL",
+          "size": "XL",
+          "color": "графит",
+          "stock": 5
+        }
+      ],
+      "status": "published"
+    },
+    {
+      "slug": "shopper-themis",
+      "title": "Шоппер с Фемидой",
+      "category": "Аксессуары",
+      "price": 120000,
+      "stock": 30,
+      "images": [
+        "/assets/themis.jpeg"
+      ],
+      "variants_json": [
+        {
+          "sku": "shopper-kost",
+          "color": "кост",
+          "stock": 30
+        }
+      ],
+      "status": "published"
+    },
+    {
+      "slug": "graduate-robe",
+      "title": "Мантия выпускника",
+      "category": "Одежда",
+      "price": 690000,
+      "stock": 6,
+      "variants_json": [
+        {
+          "sku": "robe-M",
+          "size": "M",
+          "stock": 3
+        },
+        {
+          "sku": "robe-L",
+          "size": "L",
+          "stock": 3
+        }
+      ],
+      "status": "published"
+    }
+  ],
+  "news": [
+    {
+      "slug": "hse-alumni-meeting-2026",
+      "title": "Состоялась встреча выпускников факультета права НИУ ВШЭ",
+      "excerpt": "27 февраля выпускники разных лет обсудили развитие клуба и встретились с преподавателями факультета.",
+      "body": "На встрече прошла стратегическая сессия: участники предложили идеи для развития сообщества на ближайшие годы и выбрали лучшие общим голосованием.\n\nПрограмму дополнили викторина, аукцион и архивные студенческие фотографии. Подробный репортаж и ссылки на фотографии опубликованы на сайте факультета.",
+      "published_at": "2026-03-02T09:00:00.000Z",
+      "source_url": "https://pravo.hse.ru/news/1133936920.html",
+      "status": "published"
+    },
+    {
+      "slug": "hse-salugina-sorokovaya-interview",
+      "title": "Екатерина Салугина-Сороковая: «Вышка в моей жизни сыграла огромную роль»",
+      "excerpt": "Выпускница юридического факультета 2006 года рассказала об учёбе в Вышке, профессиональном пути и качествах, важных для молодых специалистов.",
+      "body": "Анна Концерева и Николай Линдер из проектной группы «Право для всех» поговорили с Екатериной Салугиной-Сороковой о выборе профессии и роли университетского образования.\n\nВ интервью обсуждаются готовность постоянно учиться, ответственность и самостоятельность мышления. Полный разговор опубликован на сайте факультета права.",
+      "published_at": "2024-02-06T09:00:00.000Z",
+      "source_url": "https://pravo.hse.ru/news/894336073.html",
+      "status": "published"
+    }
+  ],
+  "timeline_items": [
+    {
+      "year": "2024",
+      "title": "Клуб основан",
+      "text": "Первый выпуск и запуск личного кабинета.",
+      "metric": "1-й выпуск · ~40 участников",
+      "sort": 1,
+      "status": "published"
+    },
+    {
+      "year": "2024",
+      "title": "Витрина ДПО",
+      "text": "Каталог программ доп. образования и цена выпускника после проверки.",
+      "metric": "каталог ВШЭ · скидка выпускника",
+      "sort": 2,
+      "status": "published"
+    },
+    {
+      "year": "2025",
+      "title": "Уровни и баллы",
+      "text": "Уровни статуса, баллы и достижения за участие в жизни клуба.",
+      "metric": "4 уровня · 16 достижений",
+      "sort": 3,
+      "status": "published"
+    },
+    {
+      "year": "2025",
+      "title": "Мерч и партнёры",
+      "text": "Второй выпуск, мерч клуба и первые партнёрские предложения.",
+      "metric": "2-й выпуск · мерч",
+      "sort": 4,
+      "status": "published"
+    },
+    {
+      "year": "2026",
+      "title": "Сейчас",
+      "text": "Предрелизная версия портала: витрины, кабинет и афиша в работе.",
+      "metric": "предрелиз",
+      "sort": 5,
+      "status": "published"
+    }
+  ],
+  "events": [
+    {
+      "title": "Встреча выпуска 2026: нетворкинг в Milutin Hall",
+      "description": "Неформальная встреча свежего выпуска: знакомство с клубом, столы по интересам, лёгкий фуршет.",
+      "starts_at": "2026-09-18T18:30:00+03:00",
+      "location": "Милютинский пер., 13",
+      "format": "offline",
+      "points": 60,
+      "status": "published"
+    },
+    {
+      "title": "Открытая лекция: карьера юриста в 2027",
+      "description": "Партнёры и инхаус-руководители о том, куда движется рынок юридических услуг.",
+      "starts_at": "2026-10-02T19:00:00+03:00",
+      "location": "Онлайн (ссылка придёт участникам)",
+      "format": "online",
+      "points": 60,
+      "status": "published"
+    }
+  ],
+  "podcasts": [
+    {
+      "title": "Право и карьера: первые шаги после выпуска",
+      "description": "Разговор с выпускниками о старте карьеры юриста: фирмы, инхаус, госслужба.",
+      "cover": "/assets/dpo-hero.jpg",
+      "audio_url": "https://download.samplelib.com/mp3/sample-15s.mp3",
+      "duration": "42 мин",
+      "sort": 1,
+      "status": "draft",
+      "is_free": true
+    },
+    {
+      "title": "M&A изнутри: как проходят большие сделки",
+      "description": "Партнёр корпоративной практики о кухне сделок слияний и поглощений.",
+      "cover": "/assets/themis.jpeg",
+      "audio_url": "https://download.samplelib.com/mp3/sample-12s.mp3",
+      "duration": "51 мин",
+      "sort": 2,
+      "status": "draft"
+    }
+  ],
+  "alumni": [
+    {
+      "fio": "Алина Ветрова",
+      "cohort": "2026",
+      "edu_program": "Публичное право",
+      "edu_level": "магистратура",
+      "interests_json": [
+        "Публичное право",
+        "GR и публичная политика"
+      ],
+      "referral_code": "ALINA2026",
+      "status": "active",
+      "verification_status": "verified",
+      "points_cached": 80,
+      "level_cached": "graduate",
+      "personal_discount": 0
+    },
+    {
+      "fio": "Максим Столяров",
+      "cohort": "2026",
+      "edu_program": "Публичное право",
+      "edu_level": "магистратура",
+      "interests_json": [
+        "Налоговое право",
+        "Комплаенс и антикоррупция"
+      ],
+      "referral_code": "MAKSIM2026",
+      "status": "active",
+      "verification_status": "verified",
+      "points_cached": 80,
+      "level_cached": "graduate",
+      "personal_discount": 0
+    },
+    {
+      "fio": "Дарья Ким",
+      "cohort": "2026",
+      "edu_program": "Цифровое право",
+      "edu_level": "магистратура",
+      "interests_json": [
+        "Цифровое право и IT",
+        "LegalTech"
+      ],
+      "referral_code": "DARIA2026",
+      "status": "active",
+      "verification_status": "verified",
+      "points_cached": 80,
+      "level_cached": "graduate",
+      "personal_discount": 0
+    }
+  ]
+}

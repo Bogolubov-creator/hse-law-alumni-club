@@ -1,30 +1,24 @@
-# Контекст сборки – корень монорепо. Одноразовый прогон bootstrap'а.
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
-RUN npm install --global corepack@0.36.0 && corepack enable
-WORKDIR /repo
-COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml* ./
-COPY packages/shared/package.json packages/shared/
-COPY packages/server-auth/package.json packages/server-auth/
-COPY scripts/package.json scripts/
-COPY backend/package.json backend/
-COPY frontend/package.json frontend/
-RUN pnpm --filter @club/scripts... --filter club-pravo-hse install --frozen-lockfile
-COPY packages/shared packages/shared
-COPY packages/server-auth packages/server-auth
-COPY scripts scripts
-RUN pnpm --filter @club/shared build && pnpm --filter @club/server-auth build && pnpm --filter @club/scripts build
-RUN pnpm --filter @club/scripts deploy --prod /app
-RUN rm /app/pnpm-lock.yaml /app/pnpm-workspace.yaml \
-    /app/node_modules/.modules.yaml /app/node_modules/.pnpm-workspace-state-v1.json \
-    /app/node_modules/.pnpm/lock.yaml
+FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS build
+RUN pip install --no-cache-dir uv==0.12.21
+WORKDIR /repo/scripts
+COPY backend/pyproject.toml /repo/backend/
+COPY backend/club_api /repo/backend/club_api
+COPY packages/shared/src/domain-data.json packages/shared/src/faq-data.json packages/shared/src/dpo-catalog.json /repo/packages/shared/src/
+COPY scripts/pyproject.toml scripts/uv.lock ./
+COPY scripts/club_ops ./club_ops
+RUN uv sync --frozen --no-dev --no-editable --python /usr/local/bin/python
+RUN .venv/bin/python -m compileall -q -b -s /repo -p /app .venv/lib/python3.14/site-packages/club_api .venv/lib/python3.14/site-packages/club_ops \
+    && find .venv/lib/python3.14/site-packages/club_api .venv/lib/python3.14/site-packages/club_ops -type f -name '*.py' -delete \
+    && find .venv/lib/python3.14/site-packages/club_api .venv/lib/python3.14/site-packages/club_ops -type d -name __pycache__ -exec rm -rf {} + \
+    && rm .venv/lib/python3.14/site-packages/club_api-0.1.0.dist-info/direct_url.json .venv/lib/python3.14/site-packages/club_ops-0.1.0.dist-info/direct_url.json
 
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
-ENV NODE_ENV=production
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
-    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH=/opt/venv/bin:$PATH
+RUN addgroup -g 1000 club && adduser -D -H -u 1000 -G club club \
+    && rm -rf /usr/local/lib/python3.14/site-packages/pip* /usr/local/bin/pip*
 WORKDIR /app
-COPY --from=build /app .
-USER node
-CMD ["node", "dist/native-bootstrap.js"]
+COPY --from=build /repo/scripts/.venv /opt/venv
+USER club
+CMD ["python", "-m", "club_ops.cli", "bootstrap"]

@@ -1,60 +1,35 @@
 #!/usr/bin/env bash
-# Проверяется содержимое финальных образов, без сети, записи и запуска приложения.
 set -euo pipefail
 [[ "$#" == 3 ]] || { echo 'Использование: checks/check-runtime-images.sh API_IMAGE BOOTSTRAP_IMAGE WEB_IMAGE' >&2; exit 1; }
 for image in "$1" "$2"; do
   mode=bootstrap
   if [[ "$image" == "$1" ]]; then mode=api; fi
   docker run --rm -i --network none --read-only --cap-drop ALL \
-    --security-opt no-new-privileges --entrypoint node "$image" --input-type=module - "$mode" <<'JS'
-import { readdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-const roots = ['/app', '/app/node_modules/@club/shared', '/app/node_modules/@club/server-auth'];
-function checkDist(path) {
-  for (const entry of readdirSync(path, { withFileTypes: true })) {
-    const file = join(path, entry.name);
-    if (entry.isDirectory()) { checkDist(file); continue; }
-    if (!/\.(?:js|d\.ts)$/.test(entry.name) || /\.(?:test|spec)\./.test(entry.name)) throw new Error(`Лишний runtime-файл: ${file}`);
-  }
-}
-for (const root of roots) {
-  for (const entry of readdirSync(root)) {
-    if (!['dist', 'node_modules', 'package.json', 'LICENSE', 'LICENSE.md', 'README.md'].includes(entry)) throw new Error(`Лишний файл пакета: ${root}/${entry}`);
-  }
-  checkDist(join(root, 'dist'));
-}
-if (process.argv[2] === 'api') {
-  for (const file of ['seeds.js', 'dpo-mirror-catalog.generated.js']) {
-    if (existsSync(`/app/node_modules/@club/shared/dist/${file}`)) throw new Error(`Каталог деморежима в API: ${file}`);
-  }
-}
-const store = '/app/node_modules/.pnpm';
-for (const metadata of ['/app/node_modules/.modules.yaml', '/app/node_modules/.pnpm-workspace-state-v1.json', `${store}/lock.yaml`]) {
-  if (existsSync(metadata)) throw new Error(`Метаданные установки в runtime: ${metadata}`);
-}
-if (existsSync(store)) {
-  for (const name of readdirSync(store)) {
-    if (/^(?:vitest@|@vitest\+|typescript@|tsx@|eslint@|@eslint\+|@playwright\+|@directus\+sdk@)/.test(name)) throw new Error(`Dev/CMS dependency: ${name}`);
-  }
-}
-for (const binary of ['/usr/local/bin/npm', '/usr/local/bin/corepack', '/usr/local/bin/yarn']) {
-  if (existsSync(binary)) throw new Error(`Менеджер пакетов в runtime: ${binary}`);
-}
-console.log('Node runtime: только скомпилированные собственные модули и рабочие зависимости');
-JS
-  docker run --rm -i --network none --read-only --cap-drop ALL \
-    --security-opt no-new-privileges --entrypoint node "$image" --input-type=module <<'JS' | node scripts/checks/check-compiled-comments.mjs --stdin
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-function output(directory) {
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    const file = join(directory, entry.name);
-    if (entry.isDirectory()) output(file);
-    else process.stdout.write(JSON.stringify({ file, text: readFileSync(file, 'utf8') }) + '\n');
-  }
-}
-for (const root of ['/app/dist', '/app/node_modules/@club/shared/dist', '/app/node_modules/@club/server-auth/dist']) output(root);
-JS
+    --security-opt no-new-privileges --entrypoint python "$image" - "$mode" <<'PYTHON'
+import importlib.util
+import pathlib
+import sys
+root = pathlib.Path('/opt/venv/lib/python3.14/site-packages')
+packages = ['club_api'] if sys.argv[1] == 'api' else ['club_api', 'club_ops']
+for name in packages:
+    package = root / name
+    assert (package / '__init__.pyc').is_file(), name
+    for path in package.rglob('*'):
+        if path.is_file():
+            assert path.suffix in ('.pyc', '.json'), str(path)
+            assert not any(part in ('tests', '__pycache__', '.venv') for part in path.parts), str(path)
+if sys.argv[1] == 'api':
+    assert not (root / 'club_ops').exists()
+    assert not list((root / 'club_api').rglob('*catalog*.json'))
+    assert not list((root / 'club_api').rglob('*demo*.json'))
+for module in ('pytest', 'ruff', 'pip_audit'):
+    assert importlib.util.find_spec(module) is None, module
+for binary in ('node', 'npm', 'pnpm', 'uv', 'pip', 'pip3'):
+    import shutil
+    assert shutil.which(binary) is None, binary
+assert not list(pathlib.Path('/app').rglob('*'))
+print('Python runtime: собственные модули скомпилированы; тестов, исходников и инструментов сборки нет')
+PYTHON
  done
  docker run --rm --network none --read-only --cap-drop ALL \
    --security-opt no-new-privileges --entrypoint sh "$3" -euc '

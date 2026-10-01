@@ -1,5 +1,5 @@
 #!/bin/sh
-# Overlay задаёт граф импортов для vendor; проверенный module cache остаётся целым.
+# Патч применяется к отдельной копии проверенного upstream-модуля.
 set -eu
 
 test "$PWD" = /caddy

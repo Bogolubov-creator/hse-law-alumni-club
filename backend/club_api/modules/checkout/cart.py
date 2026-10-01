@@ -1,0 +1,150 @@
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from typing import Literal
+from uuid import UUID
+
+from fastapi import APIRouter, Request
+from pydantic import Field
+
+from club_api.core.errors import ApiError
+from club_api.domain import MAX_CART_LINES, MAX_LINE_QTY, same_line, summarize_cart
+from club_api.modules.auth.routes import Body
+from club_api.modules.catalog.lookup import lookup_catalog
+
+router = APIRouter()
+ROUTE_LIMITS = {("POST", "/cart"): 40}
+
+
+class CartItem(Body):
+    type: Literal["dpo", "merch"]
+    ref_id: str = Field(min_length=1)
+    variant_sku: str | None = None
+    qty: int = Field(default=1, ge=1, le=MAX_LINE_QTY)
+
+
+class ChangeQty(Body):
+    ref_id: str
+    variant_sku: str | None = None
+    qty: int = Field(ge=0, le=MAX_LINE_QTY)
+
+
+def cart_session(request):
+    value = request.headers.get("x-cart-session", "")
+    try:
+        if len(value) != 36 or str(UUID(value)) != value.lower():
+            raise ValueError
+    except ValueError as error:
+        raise ApiError(400, "Нет сессии корзины") from error
+    return value
+
+
+@asynccontextmanager
+async def locked_cart(state, token):
+    async with state.database.transaction() as connection:
+        await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("cart:" + token,))
+        yield connection
+
+
+async def load_cart(store, token, connection=None):
+    rows = await store.read(
+        "carts", filters={"session_token": {"_eq": token}}, fields=("id", "items_json"), limit=1, connection=connection
+    )
+    return {"id": rows[0]["id"], "items": rows[0]["items_json"] or []} if rows else None
+
+
+async def save_cart(store, token, items, connection):
+    existing = await load_cart(store, token, connection)
+    data = {"items_json": items, "updated_at": datetime.now(UTC)}
+    if existing:
+        await store.update("carts", data, id=existing["id"], connection=connection)
+    else:
+        await store.create("carts", {"session_token": token, **data}, connection=connection)
+
+
+def exceeds_stock(info, sku, qty):
+    available = (
+        next((value.get("stock") for value in info["variants"] if value.get("sku") == sku), None)
+        if info["variants"]
+        else info["stock"]
+    )
+    return isinstance(available, int | float) and qty > available
+
+
+@router.get("/cart")
+async def cart(request: Request):
+    existing = await load_cart(request.app.state.store, cart_session(request))
+    return summarize_cart(existing["items"] if existing else [])
+
+
+@router.post("/cart")
+async def add_cart(request: Request, body: CartItem):
+    state, token = request.app.state, cart_session(request)
+    info = (await lookup_catalog(state.store, [body.model_dump()])).get(body.type + ":" + body.ref_id)
+    if not info:
+        raise ApiError(404, "Позиция не найдена")
+    if body.type == "dpo":
+        if info["enrollment"] == "nonactual":
+            raise ApiError(400, "Набор на эту программу закрыт")
+        if info["source_url"]:
+            raise ApiError(400, "Запись на эту программу – на hse.ru")
+    elif info["variants"]:
+        if not body.variant_sku:
+            raise ApiError(400, "Выберите вариант товара")
+        if not any(value["sku"] == body.variant_sku for value in info["variants"]):
+            raise ApiError(400, "Такого варианта товара нет")
+    elif body.variant_sku:
+        raise ApiError(400, "У этого товара нет вариантов")
+    async with locked_cart(state, token) as connection:
+        existing = await load_cart(state.store, token, connection)
+        items = existing["items"] if existing else []
+        match = next((item for item in items if same_line(item, body.type, body.ref_id, body.variant_sku)), None)
+        if not match and len(items) >= MAX_CART_LINES:
+            raise ApiError(409, f"В корзине уже {MAX_CART_LINES} позиций – оформите заявку или удалите лишнее")
+        if match and body.type == "merch":
+            match["qty"] = min(MAX_LINE_QTY, match["qty"] + body.qty)
+        elif not match:
+            match = {
+                **body.model_dump(),
+                "qty": 1 if body.type == "dpo" else body.qty,
+                "price": info["price"],
+                "title": info["title"],
+            }
+            items.append(match)
+        if body.type == "merch" and exceeds_stock(info, body.variant_sku, match["qty"]):
+            raise ApiError(409, "Недостаточно товара в наличии.")
+        await save_cart(state.store, token, items, connection)
+        return summarize_cart(items)
+
+
+@router.patch("/cart")
+async def change_qty(request: Request, body: ChangeQty):
+    state, token = request.app.state, cart_session(request)
+    async with locked_cart(state, token) as connection:
+        existing = await load_cart(state.store, token, connection)
+        items = existing["items"] if existing else []
+        match = next(
+            (item for item in items if item["ref_id"] == body.ref_id and item.get("variant_sku") == body.variant_sku),
+            None,
+        )
+        if match and match["type"] == "merch" and body.qty > match["qty"]:
+            info = (await lookup_catalog(state.store, [match], connection)).get("merch:" + body.ref_id)
+            if not info:
+                raise ApiError(404, "Позиция не найдена")
+            if info["variants"] and not any(value["sku"] == body.variant_sku for value in info["variants"]):
+                raise ApiError(400, "Такого варианта товара нет")
+            if exceeds_stock(info, body.variant_sku, body.qty):
+                raise ApiError(409, "Недостаточно товара в наличии.")
+        for item in items:
+            if item["ref_id"] == body.ref_id and item.get("variant_sku") == body.variant_sku:
+                item["qty"] = 1 if item["type"] == "dpo" and body.qty else body.qty
+        items = [item for item in items if item["qty"] > 0]
+        await save_cart(state.store, token, items, connection)
+        return summarize_cart(items)
+
+
+@router.delete("/cart")
+async def clear_cart(request: Request):
+    state, token = request.app.state, cart_session(request)
+    async with locked_cart(state, token) as connection:
+        await save_cart(state.store, token, [], connection)
+    return summarize_cart([])

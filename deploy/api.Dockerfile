@@ -1,40 +1,24 @@
-# Контекст сборки – корень монорепо (см. docker-compose.yml).
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
-RUN npm install --global corepack@0.36.0 && corepack enable
-WORKDIR /repo
-COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml* ./
-COPY packages/shared/package.json packages/shared/
-COPY packages/server-auth/package.json packages/server-auth/
-COPY backend/package.json backend/
-COPY frontend/package.json frontend/
-COPY scripts/package.json scripts/
-# Воспроизводимая установка: точно по pnpm-lock.yaml (дрейф лок-файла = ошибка сборки).
-RUN pnpm --filter @club/api... --filter club-pravo-hse install --frozen-lockfile
-COPY packages/shared packages/shared
-COPY packages/server-auth packages/server-auth
-COPY backend backend
-RUN pnpm --filter @club/shared build && pnpm --filter @club/server-auth build && pnpm --filter @club/api build
-RUN pnpm --filter @club/api deploy --prod /app
-# pnpm 12 добавляет deploy-lockfile; runtime не устанавливает зависимости.
-RUN rm /app/pnpm-lock.yaml /app/pnpm-workspace.yaml \
-    /app/node_modules/.modules.yaml /app/node_modules/.pnpm-workspace-state-v1.json \
-    /app/node_modules/.pnpm/lock.yaml
-# Каталог зеркала и демонстрационные записи нужны явному импорту/bootstrap, не API.
-RUN rm /app/node_modules/@club/shared/dist/seeds.js /app/node_modules/@club/shared/dist/seeds.d.ts \
-    /app/node_modules/@club/shared/dist/dpo-mirror-catalog.generated.js \
-    /app/node_modules/@club/shared/dist/dpo-mirror-catalog.generated.d.ts
+FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS build
+RUN pip install --no-cache-dir uv==0.12.21
+WORKDIR /repo/backend
+COPY backend/pyproject.toml backend/uv.lock ./
+COPY packages/shared/src/domain-data.json packages/shared/src/faq-data.json /repo/packages/shared/src/
+COPY backend/club_api ./club_api
+RUN uv sync --frozen --no-dev --no-editable --python /usr/local/bin/python
+RUN .venv/bin/python -m compileall -q -b -s /repo -p /app .venv/lib/python3.14/site-packages/club_api \
+    && find .venv/lib/python3.14/site-packages/club_api -type f -name '*.py' -delete \
+    && find .venv/lib/python3.14/site-packages/club_api -type d -name __pycache__ -exec rm -rf {} + \
+    && rm .venv/lib/python3.14/site-packages/club_api-0.1.0.dist-info/direct_url.json
 
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS runtime
+FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS runtime
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
-ENV NODE_ENV=production
-# В рабочем образе запускается только Node; менеджеры пакетов нужны на этапе сборки.
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
-    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH=/opt/venv/bin:$PATH
+RUN addgroup -g 1000 club && adduser -D -H -u 1000 -G club club \
+    && mkdir -p /data/uploads && chown club:club /data/uploads \
+    && rm -rf /usr/local/lib/python3.14/site-packages/pip* /usr/local/bin/pip*
 WORKDIR /app
-RUN mkdir -p /data/uploads && chown node:node /data/uploads
-COPY --from=build /app .
-# Не root: процесс работает под встроенным непривилегированным пользователем node.
-USER node
+COPY --from=build /repo/backend/.venv /opt/venv
+USER club
 EXPOSE 3000
-CMD ["node", "dist/server.js"]
+CMD ["python", "-m", "club_api.main"]

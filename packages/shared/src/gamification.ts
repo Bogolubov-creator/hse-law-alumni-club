@@ -1,3 +1,5 @@
+import domain from "./domain-data.json" with { type: "json" };
+
 export type LevelKey = "graduate" | "friend" | "expert" | "ambassador";
 
 export interface LevelDef {
@@ -8,12 +10,7 @@ export interface LevelDef {
   sort: number;
 }
 
-export const LEVELS: readonly LevelDef[] = [
-  { key: "graduate", title: "Выпускник", min_points: 0, discount_percent: 5, sort: 1 },
-  { key: "friend", title: "Друг клуба", min_points: 200, discount_percent: 10, sort: 2 },
-  { key: "expert", title: "Знаток", min_points: 500, discount_percent: 15, sort: 3 },
-  { key: "ambassador", title: "Амбассадор", min_points: 1000, discount_percent: 20, sort: 4 },
-];
+export const LEVELS: readonly LevelDef[] = domain.levels as readonly LevelDef[];
 
 export type PointReason =
   | "program"
@@ -31,12 +28,7 @@ export interface PointRuleDef {
   description: string;
 }
 
-export const POINT_RULES: readonly PointRuleDef[] = [
-  { reason: "program", points: 100, description: "Завершение программы ДПО" },
-  { reason: "event", points: 60, description: "Участие в событии клуба" },
-  { reason: "referral", points: 80, description: "Приглашённый выпускник верифицирован" },
-  { reason: "mentorship", points: 120, description: "Менторство младшего потока" },
-];
+export const POINT_RULES: readonly PointRuleDef[] = domain.point_rules as readonly PointRuleDef[];
 
 export interface AchievementDef {
   key: string;
@@ -49,24 +41,7 @@ export interface AchievementDef {
   star?: boolean; // «следующее» достижение – оранжевая подсветка
 }
 
-export const ACHIEVEMENTS: readonly AchievementDef[] = [
-  { key: "first_step", title: "Первый шаг", description: "Посетите своё первое мероприятие клуба – встречу, лекцию или нетворкинг.", icon: "1", kind: "мероприятия", rule_json: { type: "events_attended", gte: 1 }, sort: 1 },
-  { key: "office_seal", title: "Печать офиса", description: "Пройдите верификацию профиля у учебного офиса и подтвердите свой выпуск.", icon: "✓", kind: "статус", rule_json: { type: "verified", gte: 1 }, sort: 2 },
-  { key: "activist", title: "Активист", description: "Посетите три мероприятия клуба – встречи, лекции или нетворкинг.", icon: "3", kind: "мероприятия", rule_json: { type: "events_attended", gte: 3 }, sort: 3 },
-  { key: "on_radar", title: "На радаре", description: "Подпишитесь на @AlumniLawHSE и привяжите Telegram в профиле. Подписка проверяется при открытии кабинета.", icon: "@", kind: "подписка", rule_json: { type: "telegram_subscribed", gte: 1 }, sort: 4 },
-  { key: "on_wave", title: "На волне", description: "Поставьте реакции на 10 разных сообщений в подключённом чате клуба после привязки Telegram. Анонимные реакции канала не учитываются.", icon: "♥", kind: "сообщения с реакцией", rule_json: { type: "telegram_reactions", gte: 10 }, sort: 5 },
-  { key: "club_voice", title: "Голос клуба", description: "Автоматический учёт комментариев пока не подключён. Прогресс появится после подключения источника.", icon: "✎", kind: "комментарии за месяц", rule_json: { type: "comments_month", gte: 10 }, sort: 6 },
-  { key: "regular", title: "Завсегдатай", description: "Посетите 5 мероприятий клуба. Вы уже на полпути – продолжайте!", icon: "5", kind: "мероприятия", rule_json: { type: "events_attended", gte: 5 }, sort: 7, star: true },
-  { key: "student_again", title: "Снова студент", description: "Завершите первую программу ДПО со скидкой выпускника.", icon: "С", kind: "программы ДПО", rule_json: { type: "programs_completed", gte: 1 }, sort: 8 },
-  { key: "eternal_student", title: "Вечный студент", description: "Пройдите 3 программы ДПО со скидкой выпускника.", icon: "Д", kind: "программы ДПО", rule_json: { type: "programs_completed", gte: 3 }, sort: 9 },
-  { key: "scholar5", title: "Эрудит", description: "Пройдите пять программ ДПО со скидкой выпускника.", icon: "Э", kind: "программы ДПО", rule_json: { type: "programs_completed", gte: 5 }, sort: 10 },
-  { key: "insider", title: "Свой человек", description: "Посетите 10 мероприятий клуба и станьте его постоянным лицом.", icon: "10", kind: "мероприятия", rule_json: { type: "events_attended", gte: 10 }, sort: 11 },
-  { key: "first_order", title: "С атрибутикой", description: "Оформите первый заказ мерча клуба.", icon: "М", kind: "заказы мерча", rule_json: { type: "orders_count", gte: 1 }, sort: 12 },
-  { key: "mentor", title: "Наставник", description: "Станьте наставником младшего потока выпускников.", icon: "Н", kind: "менторство", rule_json: { type: "mentorship_count", gte: 1 }, sort: 13 },
-  { key: "connector", title: "Проводник", description: "Пригласите 3 выпускников вступить в клуб по вашей рекомендации.", icon: "+", kind: "приглашения", rule_json: { type: "referrals_count", gte: 3 }, sort: 14 },
-  { key: "patron", title: "Опора клуба", description: "Наберите 500 клубных баллов активности.", icon: "П", kind: "баллы", rule_json: { type: "points", gte: 500 }, sort: 15 },
-  { key: "legend", title: "Легенда выпуска", description: "Достигните высшего уровня статуса – «Амбассадор».", icon: "★", kind: "уровень статуса", rule_json: { type: "status_level", gte: 4 }, sort: 16 },
-];
+export const ACHIEVEMENTS: readonly AchievementDef[] = domain.achievements as readonly AchievementDef[];
 
 export interface AchievementProgressItem {
   key: string; title: string; description: string; icon: string; kind: string;
@@ -93,8 +68,8 @@ export function computeLevel(points: number): LevelDef {
   return current;
 }
 
-export const PERSONAL_DISCOUNT_MAX = 10; // офис ставит 0–10%
-export const MEMBER_DISCOUNT_CAP = 25; // потолок итоговой справочной скидки (решение 3.1)
+export const PERSONAL_DISCOUNT_MAX = domain.limits.personal_discount_max;
+export const MEMBER_DISCOUNT_CAP = domain.limits.member_discount_cap;
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
@@ -104,7 +79,7 @@ export function computeMemberDiscount(points: number, personalDiscount = 0): num
   return clamp(base + personal, 0, MEMBER_DISCOUNT_CAP);
 }
 
-export const DECAY_RATE = 0.15; // −15% за месяц неактивности
+export const DECAY_RATE = domain.limits.decay_rate;
 
 export function decayDelta(points: number): number {
   return -Math.round(Math.max(0, points) * DECAY_RATE) || 0; // || 0 убирает -0

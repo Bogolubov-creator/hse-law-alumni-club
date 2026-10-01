@@ -1,0 +1,470 @@
+[
+  {
+    "method": "GET",
+    "path": "/admin/analytics"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/analytics/export.csv"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/audit"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/bot-status"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/dpo-sync"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/events"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/events"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/events/rsvp/{rsvpId}/attend"
+  },
+  {
+    "method": "DELETE",
+    "path": "/admin/events/{id}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/events/{id}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/events/{id}/rsvps"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/media"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/media"
+  },
+  {
+    "method": "DELETE",
+    "path": "/admin/media/{fileId}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/media/{fileId}/content"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/members"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/members/{id}"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/members/{id}/anonymize"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/members/{id}/podcast-sub"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/members/{id}/points"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/news"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/news"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/news-sources"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/news-sources/{id}"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/news-sources/{id}/import"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/news-sources/{source}/refresh"
+  },
+  {
+    "method": "DELETE",
+    "path": "/admin/news/{id}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/news/{id}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/orders/export.csv"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/orders/{id}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/pages/{slug}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/pages/{slug}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/podcast-subs"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/podcasts"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/podcasts"
+  },
+  {
+    "method": "DELETE",
+    "path": "/admin/podcasts/{id}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/podcasts/{id}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/products"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/products"
+  },
+  {
+    "method": "DELETE",
+    "path": "/admin/products/{id}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/products/{id}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/programs"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/programs"
+  },
+  {
+    "method": "DELETE",
+    "path": "/admin/programs/{id}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/programs/{id}"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/push/broadcast"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/support"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/support/{id}"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/system-health"
+  },
+  {
+    "method": "GET",
+    "path": "/admin/timeline"
+  },
+  {
+    "method": "POST",
+    "path": "/admin/timeline"
+  },
+  {
+    "method": "DELETE",
+    "path": "/admin/timeline/{id}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/timeline/{id}"
+  },
+  {
+    "method": "POST",
+    "path": "/analytics/pageview"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/admin-login"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/admin-logout"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/confirm"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/forgot"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/register"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/resend-confirmation"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/reset"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/telegram"
+  },
+  {
+    "method": "GET",
+    "path": "/avatars/{fileId}"
+  },
+  {
+    "method": "DELETE",
+    "path": "/cart"
+  },
+  {
+    "method": "GET",
+    "path": "/cart"
+  },
+  {
+    "method": "PATCH",
+    "path": "/cart"
+  },
+  {
+    "method": "POST",
+    "path": "/cart"
+  },
+  {
+    "method": "POST",
+    "path": "/decay/run"
+  },
+  {
+    "method": "GET",
+    "path": "/events"
+  },
+  {
+    "method": "GET",
+    "path": "/events/{id}.ics"
+  },
+  {
+    "method": "POST",
+    "path": "/events/{id}/rsvp"
+  },
+  {
+    "method": "GET",
+    "path": "/health"
+  },
+  {
+    "method": "GET",
+    "path": "/me"
+  },
+  {
+    "method": "POST",
+    "path": "/me/avatar"
+  },
+  {
+    "method": "GET",
+    "path": "/me/classmates"
+  },
+  {
+    "method": "POST",
+    "path": "/me/delete"
+  },
+  {
+    "method": "GET",
+    "path": "/me/events"
+  },
+  {
+    "method": "GET",
+    "path": "/me/export"
+  },
+  {
+    "method": "POST",
+    "path": "/me/friends"
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/friends/{alumniId}"
+  },
+  {
+    "method": "GET",
+    "path": "/me/ledger"
+  },
+  {
+    "method": "GET",
+    "path": "/me/orders"
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/profile"
+  },
+  {
+    "method": "POST",
+    "path": "/me/push/subscribe"
+  },
+  {
+    "method": "POST",
+    "path": "/me/push/unsubscribe"
+  },
+  {
+    "method": "GET",
+    "path": "/me/tg-link"
+  },
+  {
+    "method": "GET",
+    "path": "/media/{fileId}"
+  },
+  {
+    "method": "GET",
+    "path": "/news"
+  },
+  {
+    "method": "GET",
+    "path": "/news/{slug}"
+  },
+  {
+    "method": "POST",
+    "path": "/orders"
+  },
+  {
+    "method": "POST",
+    "path": "/orders/{number}/pay"
+  },
+  {
+    "method": "GET",
+    "path": "/pages/{slug}"
+  },
+  {
+    "method": "GET",
+    "path": "/payments/config"
+  },
+  {
+    "method": "POST",
+    "path": "/payments/yookassa/webhook"
+  },
+  {
+    "method": "GET",
+    "path": "/podcasts"
+  },
+  {
+    "method": "POST",
+    "path": "/podcasts/subscribe"
+  },
+  {
+    "method": "GET",
+    "path": "/podcasts/{id}/audio"
+  },
+  {
+    "method": "POST",
+    "path": "/points"
+  },
+  {
+    "method": "GET",
+    "path": "/products"
+  },
+  {
+    "method": "GET",
+    "path": "/programs"
+  },
+  {
+    "method": "GET",
+    "path": "/programs/{slug}"
+  },
+  {
+    "method": "GET",
+    "path": "/push/vapid"
+  },
+  {
+    "method": "GET",
+    "path": "/ready"
+  },
+  {
+    "method": "GET",
+    "path": "/robots.txt"
+  },
+  {
+    "method": "GET",
+    "path": "/sitemap.xml"
+  },
+  {
+    "method": "GET",
+    "path": "/stats"
+  },
+  {
+    "method": "POST",
+    "path": "/support"
+  },
+  {
+    "method": "GET",
+    "path": "/support/config"
+  },
+  {
+    "method": "POST",
+    "path": "/support/faq-event"
+  },
+  {
+    "method": "DELETE",
+    "path": "/support/{id}"
+  },
+  {
+    "method": "GET",
+    "path": "/support/{id}"
+  },
+  {
+    "method": "POST",
+    "path": "/support/{id}/messages"
+  },
+  {
+    "method": "POST",
+    "path": "/telegram/webhook"
+  },
+  {
+    "method": "GET",
+    "path": "/timeline"
+  }
+]

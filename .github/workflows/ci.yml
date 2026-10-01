@@ -1,8 +1,5 @@
 name: Security & CI
 
-# Проверка на каждый push в main и на каждый PR: воспроизводимая установка
-# (frozen-lockfile ловит дрейф pnpm-lock.yaml), сборка всех пакетов (= typecheck
-# shared/api + tsc/vite web), прогон vitest и проверка Compose-конфигурации.
 on:
   push:
     branches: [main]
@@ -21,6 +18,16 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.14.7"
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.12.21"
+      - name: Install Python dependencies
+        run: |
+          uv sync --directory backend --frozen
+          uv sync --directory scripts --frozen
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.1.0
@@ -39,9 +46,12 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Check Python formatting
+        run: uv run --directory backend --frozen ruff format --check club_api tests/python ../scripts/club_ops
+
       - name: Validate deployment configuration
         run: |
-          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d \( -name node_modules -o -name dist \) -prune -o -type f -name '*.sh' -print0)
+          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d \( -name node_modules -o -name dist -o -name .venv \) -prune -o -type f -name '*.sh' -print0)
           python3 scripts/tests/test-ops.py
           python3 scripts/tests/test-install.py
           node --test scripts/tests/measure-load.test.mjs
@@ -73,33 +83,37 @@ jobs:
       - name: Check native web artifact
         run: |
           node scripts/checks/check-web-build.mjs frontend/dist
-          node scripts/checks/check-compiled-comments.mjs backend/dist scripts/dist packages/shared/dist packages/server-auth/dist
+          node scripts/checks/check-compiled-comments.mjs packages/shared/dist
 
       - name: Test (vitest)
         run: pnpm -r test
 
-      # Уязвимости в прод-зависимостях. Порог high: сборка падает на high/critical,
-      # moderate показываются в отчёте (см. docs/operations/deploy-runbook.md).
       - name: Audit (прод-зависимости, порог high)
         run: pnpm audit --prod --audit-level high
       - name: Audit (инструменты разработки, порог high)
         run: pnpm audit --audit-level high
+
+      - name: Audit Python dependencies
+        run: |
+          uv export --directory backend --frozen --no-dev --no-emit-project --format requirements-txt --output-file /tmp/club-requirements.txt >/dev/null
+          uv run --directory backend --frozen pip-audit -r /tmp/club-requirements.txt --no-deps --disable-pip
 
   postgres-integration:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-python@v7.0.0
         with:
-          version: 12.8.1
-      - uses: actions/setup-node@v7.0.0
+          python-version: "3.14.7"
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
-          node-version: "24.21.0"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @club/shared build && pnpm --filter @club/server-auth build
-      - name: Checkout and support against disposable PostgreSQL
+          version: "0.12.21"
+      - name: Install Python dependencies
+        run: |
+          uv sync --directory backend --frozen
+          uv sync --directory scripts --frozen
+      - name: Python API against disposable PostgreSQL
         run: bash scripts/tests/test-integration.sh
 
   live-stack:

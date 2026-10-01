@@ -61,7 +61,7 @@ compose up -d --wait --no-deps postgres mailpit
 compose run --rm --no-deps migrate
 compose run --rm --no-deps bootstrap
 STAFF_ACTION=create STAFF_ROLE=editor STAFF_EMAIL="$TEST_EDITOR_EMAIL" STAFF_PASSWORD="$TEST_EDITOR_PASSWORD" \
-  compose run --rm --no-deps -e STAFF_ACTION -e STAFF_ROLE -e STAFF_EMAIL -e STAFF_PASSWORD bootstrap node dist/manage-staff.js
+  compose run --rm --no-deps -e STAFF_ACTION -e STAFF_ROLE -e STAFF_EMAIL -e STAFF_PASSWORD bootstrap python -m club_ops.cli manage-staff
 compose up --no-start --no-deps api
 compose up -d --wait --wait-timeout 300 --no-deps api web caddy
 wait_ready() {
@@ -73,7 +73,7 @@ wait_ready() {
   return 1
 }
 wait_ready
-compose run --rm --no-deps api node --input-type=module < scripts/tests/test-runtime-permissions.mjs
+compose run --rm --no-deps api python - < scripts/tests/test-runtime-permissions.py
 E2E_LIVE_PHASE=write pnpm --filter @club/web exec playwright test -c playwright.live.config.ts
 # Полная копия проверяет утилиты uploads и возврат API на Docker runner.
 BACKUP_ENCRYPTION_KEY="$(openssl rand -hex 32)" \

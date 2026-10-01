@@ -6,17 +6,17 @@
 
 ## Устройство проекта
 
-- `frontend` – React и Vite; `backend` – Fastify; `packages/shared` – общие
-  модели и расчёты; `packages/server-auth` – серверные Argon2-хеши; `scripts` –
+- `frontend` – React и Vite; `backend` – FastAPI; `packages/shared` – общие
+  модели и расчёты; `scripts` –
   миграции, bootstrap, управление сотрудниками и резервные копии.
-- Серверные маршруты и логика области находятся в `backend/src/modules`;
-  общие SQL-механизмы – в `backend/src/db`. Компоненты функции интерфейса
+- Серверные маршруты и логика области находятся в `backend/club_api/modules`;
+  общие SQL-механизмы – в `backend/club_api/db`. Компоненты функции интерфейса
   находятся в `frontend/src/features`, общие элементы – в `components` и `layouts`.
 - Тесты и фикстуры находятся в `tests` соответствующего пакета, вне `src`.
   Docker-файлы собраны в `deploy`. В `scripts` остаются команды оператора;
   помощники, проверки и диагностика выделены в `lib`, `checks`, `diagnostics`.
   Полная карта – `docs/development/repository-structure.md`.
-- Продакшен собирается через Docker Compose с PostgreSQL, Fastify и Caddy.
+- Продакшен собирается через Docker Compose с PostgreSQL, FastAPI и Caddy.
   Directus исключён по решению владельца; основание – `docs/decisions/cms-options.md`.
   Источник операционных команд и порядка отката – `docs/operations/deploy-runbook.md`.
 - Порт API не публикуется на хосте: входящие запросы и проверка IP проходят
@@ -52,13 +52,13 @@
   общий слой данных исключает секретные поля. Сотрудниками управляет оператор.
 - Повторный bootstrap не заменяет пароли, роли, настройки или контент. Старые
   SSO/MFA-аккаунты нельзя незаметно переводить на вход по одному паролю.
-- Bootstrap загружает `@club/shared/seeds` только при `APP_ENV=development` и
+- Bootstrap загружает `club_ops/data/demo.json` и отдельный каталог только при `APP_ENV=development` и
   `SEED_DEMO=true`. Статическое зеркало импортирует сиды отдельно. Рабочая выдача
   контента не подставляет сиды вместо пустых полей. Обычная web-сборка и API-образ
   не содержат демоперехватчика и сидов.
 - Собственные пакеты поставляются в финальных образах как скомпилированный код
   с рабочими зависимостями. Исходники проекта, его тесты, sourcemap, отчёты, env
-  и кэши инструментов в них не добавляются. Файлы сторонних npm-пакетов могут
+  и кэши инструментов в них не добавляются. Файлы сторонних Python/npm-пакетов могут
   включать исходники, типы и map; их лицензии сохраняются.
 
 ## Проверки перед PR
@@ -66,10 +66,14 @@
 Запусти относящиеся к изменению тесты. Для изменения выпуска и зависимостей:
 
 ```bash
+uv sync --directory backend --frozen
+uv sync --directory scripts --frozen
 pnpm install --frozen-lockfile
 pnpm -r build
 pnpm -r test
 pnpm audit --prod --audit-level high
+uv export --directory backend --frozen --no-dev --no-emit-project --format requirements-txt --output-file /tmp/club-requirements.txt
+uv run --directory backend --frozen pip-audit -r /tmp/club-requirements.txt --no-deps --disable-pip
 node scripts/checks/check-web-build.mjs frontend/dist
 docker compose --env-file .env.example config --quiet
 bash scripts/tests/test-integration.sh

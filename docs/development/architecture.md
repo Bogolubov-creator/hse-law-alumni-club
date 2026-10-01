@@ -10,11 +10,11 @@
 |---|---|---|
 | `frontend/src/pages`, `admin`, `layouts`, `components` | Страницы, оболочки, формы и навигация | Серверных секретов и окончательного решения о цене/правах |
 | `frontend/src/features`, `api`, `hooks`, `stores`, `lib` | Функции сайта, HTTP-клиенты, состояние и общие преобразования | Прямого доступа к SQL, хешей и серверных ключей |
-| `backend/src/modules` | Маршруты, схемы запросов, права и логика предметных областей | Независимых копий правил расчёта |
-| `backend/src/db`, `common`, `jobs`, `observability`, `config` | Данные, общие механизмы, расписание, аудит и настройки | Неявного доверия цене и роли из браузера |
+| `backend/club_api/modules` | Маршруты, схемы запросов, права и логика предметных областей | Независимых копий правил расчёта |
+| `backend/club_api/db`, `core`, `jobs`, `observability` | Данные, общие механизмы, расписание, аудит и настройки | Неявного доверия цене и роли из браузера |
 | `packages/shared/src` | Модели, Zod-схемы, расчёты, справочники | Запросов с серверными ключами из общего браузерного кода |
-| `packages/server-auth` | Создание и проверка Argon2-хешей только на сервере | Импорта из клиентского приложения |
-| `scripts/src` | Нативный bootstrap, управление сотрудниками и импорты | Сброса контента или паролей пользователя при повторном запуске |
+| `backend/club_api/modules/auth` | Создание и проверка Argon2-хешей только на сервере | Импорта из клиентского приложения |
+| `scripts/club_ops` | Нативный bootstrap, управление сотрудниками и импорты | Сброса контента или паролей пользователя при повторном запуске |
 | `backend/migrations`, `backend/sql` | SQL-структура, ограничения, индексы и права роли API | Автоматического удаления рабочих данных ради запуска |
 | `scripts/*.sh`, `deploy/systemd` | Установка, обновление, копии, восстановление, мониторинг | Второго несогласованного способа обслуживания |
 
@@ -34,7 +34,7 @@
 flowchart TB
   Browser["Браузер: React SPA"] -->|"HTTP :80 или HTTPS :443"| Caddy["caddy: прокси"]
   Caddy -->|"HTTP web:80 /"| Web["web: статические файлы"]
-  Caddy -->|"HTTP api:3000 /api/*"| API["api: Fastify + node-cron"]
+  Caddy -->|"HTTP api:3000 /api/*"| API["api: FastAPI + планировщик asyncio"]
   Caddy -->|"HTTP directus:8055, домен Studio"| Directus["directus"]
   API -->|"HTTP directus:8055 + токен"| Directus
   API -->|"PostgreSQL postgres:5432, club_api"| PG["postgres"]
@@ -54,7 +54,7 @@ flowchart TB
 ## Схема обслуживания после изменений
 
 По [решению владельца](../decisions/cms-options.md) Directus исключён из runtime. Существующие
-Fastify, PostgreSQL и React-панель берут на себя auth, контент и файлы. Имена legacy
+FastAPI, PostgreSQL и React-панель берут на себя auth, контент и файлы. Имена legacy
 таблиц и тома сохранены для совместимости. Успешный запуск этой схемы в конкретном
 контуре подтверждается отдельно в журнале состояния.
 
@@ -66,11 +66,11 @@ flowchart TB
   subgraph Host["Ubuntu: /opt/club"]
     Config["/etc/club/runtime.env, root 0600"]
     Source["Исходники и pnpm-lock.yaml"]
-    Build["Node 24 / pnpm / Go: Docker build"]
+    Build["Python / Node / uv / pnpm / Go: Docker build"]
     subgraph Network["Внутренняя Docker bridge-сеть"]
       Caddy["caddy: TLS, маршруты, legacy redirect"]
       Web["web: статические файлы /srv"]
-      API["api: Fastify, один экземпляр"]
+      API["api: FastAPI, один экземпляр"]
       PG["postgres: PostgreSQL 16"]
       Migrate["migrate: схема, индексы, SQL-права"]
       Bootstrap["bootstrap: отсутствующие роли и начальные данные"]
@@ -125,13 +125,13 @@ flowchart TB
 | Компонент | Технология | Размещение и адрес | Внешний доступ | Постоянные данные | Проверка готовности |
 |---|---|---|---|---|---|
 | Браузер | React, Router, Query | Устройство пользователя, HTTPS сайта | К Caddy | Локальное состояние; не основная БД | Сценарий и console |
-| Сборка | Node, pnpm, Vite, TypeScript; Go для инфраструктуры | Docker build stages, реестры по HTTPS | Исходящий при сборке | Кэш и готовые образы | Код `0`, типы, тесты, скан образа |
+| Сборка | Python, uv, Node, pnpm, Vite, TypeScript; Go для инфраструктуры | Docker build stages, реестры по HTTPS | Исходящий при сборке | Кэш и готовые образы | Код `0`, типы, тесты, скан образа |
 | Прокси | Caddy | `caddy`; host `:80`, `:443`, loopback `:8081` | Сайт; прежний admin-домен перенаправляет в `/admin` | `caddy_data`, `caddy_config` | Внутренний `127.0.0.1:2019`, затем HTTPS |
 | Статика | Caddy | `web:80`, файлы `/srv` | Через прокси | Включена в образ | Внутренний HTTP `/` |
-| API | Fastify | `api:3000`, один экземпляр | Через Caddy | БД и uploads | `/health` – процесс; `/ready` – PostgreSQL и схема |
+| API | FastAPI | `api:3000`, один экземпляр | Через Caddy | БД и uploads | `/health` – процесс; `/ready` – PostgreSQL и схема |
 | База | PostgreSQL 16 | `postgres:5432` | Порта хоста нет | `pgdata` | `pg_isready`, затем `/ready` API |
 | Миграции | psql и shell | Одноразовый `migrate` | Нет входящего порта | Схема, индексы, права `club_api` | Завершение с кодом `0` |
-| Bootstrap | TypeScript и pg | Одноразовый `bootstrap` | Нет входящего порта | Отсутствующие роли, администратор, справочники, home | Завершение с кодом `0` |
+| Bootstrap | Python и Psycopg | Одноразовый `bootstrap` | Нет входящего порта | Отсутствующие роли, администратор, справочники, home | Завершение с кодом `0` |
 | Операции | Bash/Python, Docker CLI, systemd | Ubuntu host | Исходящий HTTPS, Docker socket | `/var/backups/club`, `/var/lib/club-ops` | Exit status, journal, успешная копия |
 
 Порядок: `postgres healthy → migrate completed → bootstrap completed → API`.
@@ -143,10 +143,10 @@ flowchart TB
 
 | Домен | Хранилище и владелец записи | Инвариант |
 |---|---|---|
-| Контент, каталог, страницы | Бизнес-таблицы; внутренний [data.ts](../../backend/src/db/data.ts) | Разрешённые таблицы/поля, параметры SQL, серверный фильтр публикации |
+| Контент, каталог, страницы | Бизнес-таблицы; внутренний [store.py](../../backend/club_api/db/store.py) | Разрешённые таблицы/поля, параметры SQL, серверный фильтр публикации |
 | M2A | `pages`, `pages_blocks`, `block_hero`, `block_cta` | Раскрытие только известных типов блоков, порядок sort; не универсальный CMS query engine |
-| Пользователи | `directus_users`, `directus_roles`; [native-auth.ts](../../backend/src/modules/auth/native-auth.ts) | Прежние UUID и PHC-хеши; актуальные status/роль; нет выдачи секретных полей |
-| Пароли | Серверный пакет `@club/server-auth` | Argon2 создаёт новый хеш и проверяет параметры legacy PHC; браузер пакет не импортирует |
+| Пользователи | `directus_users`, `directus_roles`; [service.py](../../backend/club_api/modules/auth/service.py) | Прежние UUID и PHC-хеши; актуальные status/роль; нет выдачи секретных полей |
+| Пароли | Серверный пакет `club_api.modules.auth.passwords` | Argon2 создаёт новый хеш и проверяет параметры legacy PHC; браузер пакет не импортирует |
 | Настройки | `club_settings` | `site` – публичный whitelist; `legacy_directus:<id>` – полный приватный архив. Runtime SQL-роль не читает всю таблицу |
 | Файлы | `directus_files` + `directus_uploads`, путь API `/data/uploads` | Сохранение UUID и bytes, валидация загрузки, отсутствие общей открытой директории |
 | Заявки и склад | `orders`, `club_checkout_*`, каталог; checkout-store | Цена пересчитывается сервером; резерв и запись атомарны |
@@ -214,7 +214,7 @@ origins, но не заменяет авторизацию. `POINTS_SERVICE_TOKE
 
 ## Фоновые задачи
 
-Источник расписаний API – [jobs.ts](../../backend/src/jobs/jobs.ts). Все указанные
+Источник расписаний API – [runner.py](../../backend/club_api/jobs/runner.py). Все указанные
 часы относятся к `Europe/Moscow`. `JOBS_ENABLED=false` останавливает этот набор,
 включая запуск polling и регистрацию команд бота при старте. При включённом наборе
 каждая задача пропускает новый тик, если её предыдущий запуск ещё выполняется.
@@ -236,7 +236,7 @@ origins, но не заменяет авторизацию. `POINTS_SERVICE_TOKE
 
 Планировщик API пишет идентификатор задачи, статус и длительность. Он не хранит
 устойчивую очередь всех календарных запусков: пропущенный при выключенном API
-момент не воспроизводится самим `node-cron`. Для критических задач потребуются
+момент не воспроизводится самим `планировщик asyncio`. Для критических задач потребуются
 дополнительные сверки после простоя. Systemd `Persistent=true` даёт такую семантику
 таймеру копий, но не распространяется на API.
 
@@ -263,24 +263,22 @@ origins, но не заменяет авторизацию. `POINTS_SERVICE_TOKE
 
 ## Версии и совместимость
 
-Сверка выполнена 30.09.2026 по manifest, `pnpm-lock.yaml`, npm registry, Dockerfile
-и официальным источникам. Результаты прогонов – в [журнале состояния](../operations/project-state.md).
+API и команды оператора используют Python 3.14.7 и зависимости из `uv.lock`.
+Интерфейс сохраняет React/TypeScript. Версии и назначение компонентов перечислены
+в [README](../../README.md#технологии-и-назначение-компонентов); основание переноса –
+[ADR FastAPI](../decisions/fastapi-migration.md).
 
-| Связка | Вывод |
+| Компонент | Совместимость |
 |---|---|
-| Node.js 24.21.0 + pnpm 12.8.1 | Node 24.21.0 – актуальный patch линии LTS, выбранной для сервера. Node 26 остаётся Current. pnpm 12.8.1 закреплён в packageManager и CI; Docker обновляет Corepack до 0.36.0. [Node](https://nodejs.org/en/about/previous-releases), [pnpm](https://pnpm.io/installation) |
-| TypeScript 7.0.2 + compatibility API 6.0.3 | Компилятор `tsc` работает на 7.0.2. Корневой alias `typescript` указывает на официальный `@typescript/typescript6` 6.0.2 для ESLint; он предоставляет API 6.0.3 и отдельный `tsc6`. Такой режим рекомендован [Microsoft](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). |
-| React 19.3.0 + Router 7.18.4 + Query 5.104.0 | Актуальные стабильные версии registry; peer requirements совместимы. `useRef` задаёт начальное значение, тесты используют DOM events вместо удалённого Simulate. [React upgrade](https://react.dev/blog/2024/04/25/react-19-upgrade-guide), [Query](https://tanstack.com/query/latest/docs/framework/react/installation) |
-| Vite 8.3.1 + plugin-react 6.1.1 + Vitest 5.0.2 | Vite использует Rolldown; старый object manualChunks удалён. Peer requirements Vitest допускают Vite 8 и Node 24. [Vite migration](https://vite.dev/guide/migration), [Vitest](https://vitest.dev/guide/) |
-| Tailwind CSS 4.3.3 | Конфигурация перенесена в CSS theme, сборка подключена через `@tailwindcss/vite`. Сохранены палитра, шрифты и прежние параметры форм. Минимум: Safari 16.4, Chrome 111, Firefox 128. [Upgrade guide](https://tailwindcss.com/docs/upgrade-guide) |
-| Fastify 5.12.5 + Node 24 | Линия 5 поддерживается; политика тестирования включает поддерживаемые LTS Node. Проверять плагины и точную patch-версию при обновлении. [LTS policy](https://fastify.dev/docs/latest/Reference/LTS/) |
-| Zod 4.6.5 | Сохранены прежние форматы идентификаторов, согласия и email. PATCH использует канонические валидаторы без defaults отсутствующих полей. [Zod migration](https://zod.dev/v4/changelog) |
-| node-cron 4.6.0 / Sentry 11.1.0 | Callback возвращает Promise задачи, destroy ожидается при остановке. Sentry исключает тела, cookies, заголовки и параметры URL; сообщения маскируются. [cron migration](https://www.nodecron.com/migrating-from-v3.html), [Sentry migration](https://github.com/getsentry/sentry-javascript/blob/11.1.0/MIGRATION.md) |
-| pg 8.23.0 + Argon2 0.45.1 | SQL-адаптер и серверные хеши заменяют Directus SDK/runtime. Совместимость legacy-данных и хешей проверяется реальными PostgreSQL-наборами; основание выбора – [ADR](../decisions/cms-options.md). |
-| PostgreSQL 16.15 | Линия 16 поддерживается до 09.11.2028. Патч 16.15 содержит исправления безопасности, включая инструменты dump/restore; версия обновлена с 16.14 без смены major. [Versioning](https://www.postgresql.org/support/versioning/), [16.15](https://www.postgresql.org/docs/16/release-16-15.html) |
-| Playwright 1.63 | Node 24 и Ubuntu 24.04 amd64/arm64 входят в системные требования. Браузерные бинарники и системные библиотеки устанавливаются отдельно. [Requirements](https://playwright.dev/docs/intro#system-requirements) |
-| Caddy 2.11.4 / Compose 5.5.1 | Версии соответствуют последним релизам источников на дату сверки; установленный Compose подтверждается на хосте. [Caddy](https://github.com/caddyserver/caddy/releases/tag/v2.11.4), [Compose](https://github.com/docker/compose/releases/tag/v5.5.1) |
-| GitHub Actions checkout 7.0.1 / setup-node 7.0.0 / pnpm action 6.1.0 | Runtime действий использует Node 24; self-hosted runner должен соответствовать минимуму действия. CI Клуба использует hosted `ubuntu-24.04`. [checkout](https://github.com/actions/checkout/tree/v7.0.1), [setup-node](https://github.com/actions/setup-node/tree/v7.0.0), [pnpm action](https://github.com/pnpm/action-setup/tree/v6.1.0) |
+| Python / FastAPI / Uvicorn | Один ASGI-процесс; HTTP-документация и автоматическая телеметрия отключены |
+| Psycopg 3 | Async pool, параметризованные значения, прежняя схема PostgreSQL 16 |
+| Pydantic 2 | Строгие запросы; PATCH различает пропущенное поле и null |
+| Argon2 / PyJWT | Прежние PHC/JWT сохранены; роль и поколение читаются из БД |
+| Pillow | Аватар PNG 256×256, ограничение пикселей и памяти, удаление метаданных |
+| HTTPX / aiohttp | Таймауты, запрет редиректов, ограничение HTML; DNS Web Push отклоняет приватные адреса |
+| Sentry | Только фиксированные коды ошибок; нет тел, заголовков, пользователя, SQL и stack locals |
+| React 19 / Vite 8 / Tailwind 4 | Сохранены страницы, формы и стили; проверяются сборкой и браузером |
+| GitHub Actions | Ubuntu 24.04; Python и npm проверяются отдельно, затем финальные образы и установщик |
 
 Caddy 2.11.4 пересобирается из закреплённых исходников Go 1.27.1 с обновлёнными
 модулями в [deploy/caddy](../../deploy/caddy). PostgreSQL сохраняет официальный 16.15;
@@ -307,23 +305,22 @@ CI выполняет `govulncheck` по тем же исправленным ve
 
 Прямые npm-зависимости закреплены на стабильных версиях. Проверка
 `pnpm outdated -r` сверяет их с registry; обновление подтверждают строгая установка,
-тесты и сборка. Для точных версий Argon2/esbuild разрешены необходимые build scripts.
+тесты и сборка. Для точной версии esbuild разрешён необходимый build script.
 Общий срок выдержки свежих npm-выпусков сохранён; три точечных исключения из уже
 проверенного lockfile перечислены в [pnpm-workspace.yaml](../../pnpm-workspace.yaml).
 Dependabot настроен, но обработка нового pnpm 12 lockfile им ещё не подтверждена:
 обновления вручную проверяются той же командой и проходят CI.
 
-Типы Node выровнены на актуальные `@types/node` 26.6.3 во всех пакетах. Runtime
-остаётся Node 24 LTS; новые API Node 26 в приложение не добавлялись.
+Типы Node выровнены на актуальные `@types/node` 26.6.3 во всех пакетах. Node 24 LTS используется для инструментов интерфейса; API исполняется Python.
 Результаты сборки, тестов и репетиции каждой правки
 фиксируются в журнале состояния. Устаревшая версия не доказывает конкретную
 эксплуатируемость; вывод об уязвимости требует версии, пути выполнения и условий.
 
 ## Решения и применимость внешнего примера
 
-Сохраняются PostgreSQL в контейнере, Fastify для бизнес-операций, один API и Caddy
+Сохраняются PostgreSQL в контейнере, FastAPI для бизнес-операций, один API и Caddy
 на входе. Directus заменён собственными auth/data/media по согласованному ADR. Перенос БД на хост,
-добавление другого прокси и смена фреймворка не требуются для описанной эксплуатации.
+Смена сервера на FastAPI выполнена по отдельному поручению владельца.
 Переход на несколько API потребует устойчивых блокировок, очередей и анализа
 идемпотентности; смена сборочного стека – собственного PR с проверками.
 

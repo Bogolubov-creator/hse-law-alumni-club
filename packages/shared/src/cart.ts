@@ -1,3 +1,5 @@
+import domain from "./domain-data.json" with { type: "json" };
+
 export interface StoredCartItem {
   type: "dpo" | "merch";
   ref_id: string;
@@ -11,8 +13,8 @@ export const sameLine = (a: StoredCartItem, type: string, ref: string, sku?: str
   a.type === type && a.ref_id === ref && (a.variant_sku ?? null) === (sku ?? null);
 
 // Лимит применяется к накопленному количеству, а не только к одному запросу.
-export const MAX_LINE_QTY = 99;
-export const MAX_CART_LINES = 30;
+export const MAX_LINE_QTY = domain.limits.max_line_qty;
+export const MAX_CART_LINES = domain.limits.max_cart_lines;
 
 export function addLine(items: StoredCartItem[], line: StoredCartItem): StoredCartItem[] {
   const ex = items.find((i) => sameLine(i, line.type, line.ref_id, line.variant_sku));

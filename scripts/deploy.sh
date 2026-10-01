@@ -24,12 +24,14 @@ trap 'result=$?; if [[ "$result" != 0 ]]; then record failed; echo "Обновл
 # Старые образы остаются по ID; автоматическая очистка Docker здесь запрещена.
 "${compose[@]}" images --format json > "$STATE_DIR/pre-deploy-images.json"
 "${compose[@]}" build --build-arg "VCS_REF=$revision"
-"${compose[@]}" run --rm --no-deps api node --input-type=module -e '
-  const { env, assertProdConfig } = await import("./dist/config/env.js");
-  const errors = assertProdConfig();
-  if (env.APP_ENV !== "production") errors.push("Деплой требует APP_ENV=production");
-  if (errors.length) { console.error(errors.join("\n")); process.exit(1); }
+"${compose[@]}" run --rm --no-deps api python -c '
+from club_api.core.config import load_settings
+settings = load_settings()
+errors = settings.production_errors()
+if settings.APP_ENV != "production": errors.append("Деплой требует APP_ENV=production")
+if errors: raise SystemExit("\n".join(errors))
 '
+
 if [[ -n "$("${compose[@]}" ps -q postgres)" ]]; then backup_snapshot keep-stopped; fi
 # Локальный почтовый приёмник определён только в QA override.
 if "${compose[@]}" config --services | grep -qx mailpit; then "${compose[@]}" up -d --wait --no-deps mailpit; fi

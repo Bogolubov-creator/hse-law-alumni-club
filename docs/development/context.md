@@ -17,8 +17,8 @@
 
 ## Что сохраняем при изменениях
 
-- React SPA в `frontend`, Fastify API в `backend`, общие модели и расчёты в
-  `packages/shared`, серверные хеши в `packages/server-auth`, контейнерный
+- React SPA в `frontend`, FastAPI API в `backend`, общие модели и расчёты в
+  `packages/shared`, серверные хеши в `backend/club_api/modules/auth`, контейнерный
   PostgreSQL и Caddy перед сервисами.
 - Серверную проверку прав, цены, скидки, суммы заявки и остатков.
 - Роли выпускника, редактора, администратора и отдельную SQL-роль API.
@@ -39,5 +39,5 @@
 используйте актуальный runbook, внешний env и конкретный проверенный SHA.
 
 Сравнение с `itspecR/journal` используется для организации кода, документации и
-эксплуатации. Его Python/Vue/MariaDB/nginx, сеть хоста и правила учебного журнала
-не являются требованиями к Клубу.
+эксплуатации. Сервер Клуба перенесён на Python/FastAPI по отдельному поручению владельца.
+React, PostgreSQL и Caddy сохраняются; основание – [ADR FastAPI](../decisions/fastapi-migration.md).
