@@ -203,7 +203,7 @@ def main():
         else:
             from mariadb_native import install as install_mariadb
             install_mariadb(args.config_dir, args.local)
-    except (ValueError, OSError, EOFError, KeyboardInterrupt, subprocess.CalledProcessError) as error:
+    except (ValueError, OSError, KeyError, EOFError, KeyboardInterrupt, subprocess.CalledProcessError) as error:
         message = str(error) if isinstance(error, ValueError) else 'Установка прервана; проверьте предыдущий этап и повторите команду'
         print(message, file=sys.stderr)
         return 1

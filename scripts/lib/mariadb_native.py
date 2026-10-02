@@ -21,7 +21,7 @@ from mariadb_install import prepare_restore
 
 def preflight(context):
     revision()
-    configuration = json.loads(context.capture("config", "--format", "json"))
+    configuration = json.loads(context.capture("--profile", "operator", "config", "--format", "json"))
     for name in ("api", "web", "operator"):
         if configuration["services"][name].get("ports"):
             raise ValueError("Порты API, web и оператора не должны публиковаться")
