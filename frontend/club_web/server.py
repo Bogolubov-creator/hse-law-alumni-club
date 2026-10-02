@@ -20,6 +20,7 @@ class Server(BaseApplication):
             "accesslog": None,
             "graceful_timeout": 30,
             "timeout": 60,
+            "keepalive": 0,
         }.items():
             self.cfg.set(name, value)
 
