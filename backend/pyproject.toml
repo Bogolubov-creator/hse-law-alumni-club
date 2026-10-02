@@ -54,6 +54,9 @@ pythonpath = ["../scripts"]
 target-version = "py314"
 line-length = 120
 
+[tool.ruff.per-file-target-version]
+"../scripts/lib/mariadb_*.py" = "py312"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "S"]
 ignore = ["E501", "S101"]
