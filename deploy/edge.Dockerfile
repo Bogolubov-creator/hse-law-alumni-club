@@ -41,13 +41,13 @@ LABEL org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.version="v2.11.6" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV CADDY_VERSION=v2.11.6 XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
-RUN apk add --no-cache ca-certificates curl libcap mailcap && \
+RUN apk add --no-cache ca-certificates curl mailcap && \
     mkdir -p /config/caddy /data/caddy /etc/caddy /usr/share/caddy && \
     chmod 1777 /config/caddy /data/caddy
 COPY --from=edge-build /usr/bin/caddy /usr/bin/caddy
 COPY deploy/caddy/LICENSE /usr/share/licenses/club-caddy/LICENSE
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
-RUN setcap cap_net_bind_service=+ep /usr/bin/caddy && caddy version
+RUN caddy version
 EXPOSE 80 443 443/udp 2019
 WORKDIR /srv
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
