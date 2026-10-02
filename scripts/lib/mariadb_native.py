@@ -49,6 +49,18 @@ def deploy(context):
     if os.geteuid() != 0:
         raise ValueError("Обслуживание нативной MariaDB выполняется через sudo")
     preflight(context)
+    previous = context.state / "last-deploy.json"
+    if previous.exists():
+        deployed = json.loads(previous.read_text())
+        output(
+            [
+                "docker",
+                "image",
+                "tag",
+                deployed["operator_image"],
+                context.project + "-operator:retained-" + deployed["commit"],
+            ]
+        )
     context.execute("--profile", "operator", "build", "--build-arg", "VCS_REF=" + commit, "api", "web", "operator")
     context.execute(
         "run",
@@ -76,6 +88,7 @@ def deploy(context):
         context.execute("up", "-d", "--wait", "--force-recreate", "nginx")
         context.verify_http()
         operator_image = output(["docker", "image", "inspect", "-f", "{{.Id}}", context.values["CLUB_OPERATOR_IMAGE"]])
+        output(["docker", "image", "tag", operator_image, context.project + "-operator:retained-" + commit])
         record(
             context,
             "last-deploy",

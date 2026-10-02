@@ -80,7 +80,7 @@ def run(args):
                 ('web', [args.web_image]),
             ]:
                 container = docker('run', '--detach', '--network', networks[0], '--network-alias', suffix,
-                                   '--read-only', '--tmpfs', '/data', '--tmpfs', '/config',
+                                   '--read-only', '--tmpfs', '/data', '--tmpfs', '/config', '--tmpfs', '/tmp',
                                    '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
                                    '--name', name + '-' + suffix, *options).stdout.strip()
                 containers.append(container)
@@ -179,8 +179,8 @@ def run(args):
             check(any(0 < value <= 128 * MIB for value in memory), 'CLI не применил cgroup memory limit')
             print('Edge: доверенный TLS/CA, reload, маршруты, статика, CSP, gzip, client IP, 3 body limits, header limit и cgroup memory – успешно')
         except Exception:
-            if containers:
-                output = docker('logs', containers[-1], check=False)
+            for container in containers:
+                output = docker('logs', container, check=False)
                 print((output.stdout + output.stderr)[-6000:])
             raise
         finally:

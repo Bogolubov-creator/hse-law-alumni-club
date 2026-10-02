@@ -158,6 +158,10 @@ jobs:
               aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
               image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "club-ci-live-$service"
           done
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
+            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
+            image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+            nginx:1.30.5-alpine@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94
       - name: Install, repeat and restore MariaDB on Ubuntu with local TLS
         run: bash scripts/tests/test-install.sh
 
