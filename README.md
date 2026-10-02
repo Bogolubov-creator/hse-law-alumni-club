@@ -2,6 +2,16 @@
 
 **Сообщество выпускников · Мероприятия · Личный кабинет**
 
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](#технологии-и-назначение-компонентов)
+[![Django](https://img.shields.io/badge/Django-092E20?logo=django&logoColor=white)](#технологии-и-назначение-компонентов)
+[![Django Ninja](https://img.shields.io/badge/Django_Ninja-006B5E)](#технологии-и-назначение-компонентов)
+[![Gunicorn](https://img.shields.io/badge/Gunicorn-499848?logo=gunicorn&logoColor=white)](#технологии-и-назначение-компонентов)
+[![Jinja2](https://img.shields.io/badge/Jinja2-B41717?logo=jinja&logoColor=white)](#технологии-и-назначение-компонентов)
+[![MariaDB](https://img.shields.io/badge/MariaDB-003545?logo=mariadb&logoColor=white)](#технологии-и-назначение-компонентов)
+[![nginx](https://img.shields.io/badge/nginx-009639?logo=nginx&logoColor=white)](#технологии-и-назначение-компонентов)
+[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](#технологии-и-назначение-компонентов)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=ubuntu&logoColor=white)](#технологии-и-назначение-компонентов)
+
 [![Security & CI – main](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush)
 
 Сайт объединяет новости и мероприятия Клуба, каталог ДПО и мерча, личный кабинет
