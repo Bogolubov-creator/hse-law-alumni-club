@@ -232,7 +232,9 @@ async def test_disconnected_request_is_not_logged_as_server_error(caplog):
         sent.append(message)
 
     caplog.set_level(logging.INFO, logger="club.http")
-    middleware = SecurityMiddleware(application, Settings(AUTH_SECRET="synthetic-disconnect-session-secret-for-tests-only"), {})
+    middleware = SecurityMiddleware(
+        application, Settings(AUTH_SECRET="synthetic-disconnect-session-secret-for-tests-only"), {}
+    )
     await middleware(
         {"type": "http", "method": "GET", "path": "/me", "headers": [], "client": ("127.0.0.1", 1)}, receive, send
     )
