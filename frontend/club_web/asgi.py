@@ -53,7 +53,13 @@ class Application:
             return message
 
         try:
-            await self.handler(scope, bounded_receive, send)
+
+            async def response_send(message):
+                if message["type"] == "http.response.start" and scope.get("http_version") in ("1.0", "1.1"):
+                    message = {**message, "headers": [*message.get("headers", []), (b"connection", b"close")]}
+                await send(message)
+
+            await self.handler(scope, bounded_receive, response_send)
         except BodyTooLarge:
             response = JsonResponse({"error": "Запрос превышает допустимый размер"}, status=413)
             await send(
