@@ -15,6 +15,19 @@ maintenance = importlib.import_module('mariadb_native')
 
 
 class NativeDatabaseGuards(unittest.TestCase):
+    def test_resume_waits_for_existing_container_without_compose_version_specific_flags(self):
+        from unittest.mock import Mock
+
+        context = object.__new__(common.Context)
+        context.execute = Mock()
+        context.capture = Mock(return_value='original-container-id')
+        with patch.object(common, 'output', side_effect=['starting', 'healthy']) as inspect, patch.object(common.time, 'sleep'):
+            context.resume()
+        context.execute.assert_called_once_with('start', 'api')
+        self.assertEqual(inspect.call_count, 2)
+        for call in inspect.call_args_list:
+            self.assertEqual(call.args[0][-1], 'original-container-id')
+
     def test_database_identifiers_and_credentials_are_not_sql(self):
         for value in ('club;DROP', 'postgres', 'club_`', 'club_a\n', 'club_' + 'a' * 64):
             with self.subTest(value=value), self.assertRaises(ValueError):

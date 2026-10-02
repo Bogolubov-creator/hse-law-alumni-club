@@ -175,7 +175,17 @@ class Context:
         return running
 
     def resume(self):
-        self.execute("start", "--wait", "api")
+        self.execute("start", "api")
+        container = self.capture("ps", "-q", "api")
+        if not container:
+            raise ValueError("Не удалось запустить существующий API")
+        for attempt in range(30):
+            status = output(["docker", "inspect", "-f", "{{.State.Health.Status}}", container])
+            if status == "healthy":
+                return
+            if status == "unhealthy" or attempt == 29:
+                raise ValueError("API не стал готов после копирования")
+            time.sleep(2)
 
     def verify_http(self):
         context = ssl.create_default_context(cafile=self.values.get("HTTPS_CA_FILE") or None)
