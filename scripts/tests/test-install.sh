@@ -61,6 +61,17 @@ print('Установка: доверенный TLS, readiness и вход ад�
 PY
 }
 verify first
+if [[ "${CLUB_NATIVE_BROWSER:-false}" == true ]]; then
+  sudo python3 "$temp/repo/scripts/tests/prepare-native-live.py" prepare "$config" "$temp/browser"
+  native_browser() {
+    sudo env PATH="$PATH" PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}" \
+      bash -c 'set -euo pipefail; set -a; source "$1"; set +a; export E2E_LIVE_PHASE="$2"; uv run --directory "$3/frontend" --frozen pytest -q tests/python/test_live.py --tb=short' \
+      native-browser "$temp/browser/browser.env" "$1" "$temp/repo"
+  }
+  native_browser write
+  sudo python3 "$temp/repo/scripts/tests/prepare-native-live.py" restart "$config"
+  native_browser read
+fi
 sudo "$temp/repo/scripts/install.sh" --local --config-dir "$config"
 verify repeated
 echo 'Повторная установка сохранила конфигурацию и доступ администратора'

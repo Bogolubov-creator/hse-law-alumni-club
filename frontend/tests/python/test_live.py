@@ -176,7 +176,9 @@ def media(office, request, token, name):
 def test_live_system(name, width, height):
     state_path = Path(value("E2E_STATE_DIR")) / (name + ".json")
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        pin = os.environ.get("E2E_TLS_SPKI", "")
+        assert not pin or re.fullmatch(r"[A-Za-z0-9+/]{43}=", pin)
+        browser = playwright.chromium.launch(args=["--ignore-certificate-errors-spki-list=" + pin] if pin else [])
         context = browser.new_context(
             base_url=value("E2E_BASE_URL"), viewport={"width": width, "height": height}, reduced_motion="reduce"
         )

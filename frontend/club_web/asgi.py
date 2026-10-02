@@ -62,14 +62,14 @@ class Application:
             await self.handler(scope, bounded_receive, response_send)
         except BodyTooLarge:
             response = JsonResponse({"error": "Запрос превышает допустимый размер"}, status=413)
-            await send(
+            await response_send(
                 {
                     "type": "http.response.start",
                     "status": 413,
                     "headers": [(key.lower().encode(), value.encode()) for key, value in response.headers.items()],
                 }
             )
-            await send({"type": "http.response.body", "body": response.content})
+            await response_send({"type": "http.response.body", "body": response.content})
 
     async def serve_lifespan(self, receive, send):
         await receive()
