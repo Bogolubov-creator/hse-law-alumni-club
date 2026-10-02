@@ -1,5 +1,5 @@
 FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS build
-RUN pip install --no-cache-dir uv==0.12.21
+RUN pip install --no-cache-dir uv==0.12.22
 WORKDIR /repo
 COPY frontend/pyproject.toml frontend/uv.lock frontend/
 COPY frontend/club_web frontend/club_web

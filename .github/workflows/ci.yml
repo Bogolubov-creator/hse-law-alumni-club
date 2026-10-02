@@ -23,7 +23,7 @@ jobs:
           python-version: "3.14.7"
       - uses: astral-sh/setup-uv@v10.2.0
         with:
-          version: "0.12.21"
+          version: "0.12.22"
       - name: Install Python dependencies
         run: |
           sudo apt-get update
@@ -85,7 +85,7 @@ jobs:
           python-version: "3.14.7"
       - uses: astral-sh/setup-uv@v10.2.0
         with:
-          version: "0.12.21"
+          version: "0.12.22"
       - name: Install Python dependencies
         run: |
           sudo apt-get update
@@ -105,7 +105,7 @@ jobs:
           python-version: "3.14.7"
       - uses: astral-sh/setup-uv@v10.2.0
         with:
-          version: "0.12.21"
+          version: "0.12.22"
       - name: Install MariaDB from Ubuntu and Python dependencies
         run: |
           sudo apt-get update
@@ -136,7 +136,7 @@ jobs:
           python-version: "3.14.7"
       - uses: astral-sh/setup-uv@v10.2.0
         with:
-          version: "0.12.21"
+          version: "0.12.22"
       - name: Install browser tests
         run: |
           uv sync --directory frontend --frozen
@@ -145,7 +145,7 @@ jobs:
         run: bash scripts/tests/test-live.sh
       - name: Check final runtime image contents
         run: bash scripts/checks/check-runtime-images.sh club-ci-live-api club-ci-live-bootstrap club-ci-live-web
-      - name: Check Caddy backports and reachable Go vulnerabilities
+      - name: Check Caddy and reachable Go vulnerabilities
         run: docker build --file deploy/edge.Dockerfile --target edge-check --tag club-ci-edge-check .
       - name: Check Caddy TLS and perimeter with final images
         run: python3 scripts/tests/test-edge.py --edge-image club-ci-live-caddy --web-image club-ci-live-web --api-image club-ci-live-api
