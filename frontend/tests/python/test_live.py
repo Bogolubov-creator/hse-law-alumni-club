@@ -417,10 +417,14 @@ def test_live_offline_reading(width):
         browser = launch_browser(playwright)
         context = browser.new_context(base_url=value("E2E_BASE_URL"), viewport={"width": width, "height": 1000})
         context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")
-        news = result(context.request.get("/api/news?limit=1"))
-        assert news, "Для офлайн-проверки нужна опубликованная тестовая новость"
-        item = news[0]
-        path = "/news/" + item["slug"]
+        items = result(context.request.get("/api/news?limit=1"))
+        prefix = "/news/"
+        if not items:
+            items = result(context.request.get("/api/programs"))
+            prefix = "/dpo/"
+        assert items, "Для офлайн-проверки нужен опубликованный материал"
+        item = items[0]
+        path = prefix + item["slug"]
         page = context.new_page()
         page.goto(path)
         page.evaluate("navigator.serviceWorker.ready")

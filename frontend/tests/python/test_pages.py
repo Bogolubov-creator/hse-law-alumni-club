@@ -167,6 +167,7 @@ async def test_public_pages_render(browser_client, path):
     [
         ("/news/news-one", False, True),
         ("/saved", False, True),
+        ("/changes/tg-18", False, True),
         ("/dpo", False, True),
         pytest.param("/?source=pwa", False, False, id="failed-home-data-is-not-saved"),
         ("/tg?pwa=1", False, True),
