@@ -200,7 +200,7 @@ class Context:
                     finally:
                         connection.close()
                 return
-            except OSError, ValueError, http.client.HTTPException:
+            except (OSError, ValueError, http.client.HTTPException):
                 if attempt == 19:
                     raise ValueError("Не удалось проверить TLS, сайт и готовность API") from None
                 time.sleep(2)

@@ -122,7 +122,7 @@ def main():
                 prepare_restore(context, args.config_dir, args.port, args.mail_port)
             else:
                 restore(context, args.snapshot, args.target_env)
-    except ValueError, OSError, KeyError, subprocess.CalledProcessError:
+    except (ValueError, OSError, KeyError, subprocess.CalledProcessError):
         print(
             "Операция не завершена; проверьте закрытую конфигурацию, права и журнал предыдущего этапа", file=sys.stderr
         )
