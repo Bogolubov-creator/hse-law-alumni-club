@@ -80,7 +80,9 @@ async def orders(request: HttpRequest):
     store = request.services.store
     page, limit = query_page(request)
     status = query_choice(request, "status", STATUS_LABELS)
-    payment = query_choice(request, "payment", ("succeeded", "pending", "canceled", "none"))
+    payment = query_choice(
+        request, "payment", ("succeeded", "pending", "canceled", "none", "review", "waiting_for_capture")
+    )
     search, filters = (query_search(request), [])
     if status:
         filters.append({"status": {"_eq": status}})
@@ -169,7 +171,7 @@ async def export_orders(request: HttpRequest):
             f"{item['title']}{(' (' + item['variant_sku'] + ')' if item.get('variant_sku') else '')} ×{item['qty']}"
             for item in order["items_json"] or []
         )
-        payment = {"succeeded": "Оплачено", "canceled": "Отменена", "review": "ТРЕБУЕТ ПРОВЕРКИ: сумма не совпала"}.get(
+        payment = {"succeeded": "Оплачено", "canceled": "Отменена", "review": "ТРЕБУЕТ СВЕРКИ ПЛАТЕЖА"}.get(
             order["payment_status"], ""
         )
 

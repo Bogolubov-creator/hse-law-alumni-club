@@ -19,6 +19,7 @@ from club_api.observability.audit import audit
 ROUTE_LIMITS = {("POST", "/admin/dpo-sync"): 3}
 ACTUAL_URL = "https://www.hse.ru/edu/dpo/?orgUnit=22753"
 ALL_URL = "https://www.hse.ru/edu/dpo/?onlyActual=0&orgUnit=22753"
+DPO_PAGE_LIMIT = 20
 MONTHS = (
     "января",
     "февраля",
@@ -104,15 +105,15 @@ def parse_initial_state(html):
         raise ApiError(502, "Разметка каталога изменилась. Обновление отменено")
     try:
         state = state_json(match[1])
-        items = state.get("items", [])
-        if not isinstance(items, list):
-            items = []
+        items, total, page_size = state["items"], state["total"], state["pageSize"]
+        if not isinstance(items, list) or type(total) is not int or type(page_size) is not int:
+            raise ValueError
         return {
             "items": items,
-            "total": int(state.get("total") or len(items)),
-            "page_size": int(state.get("pageSize") or len(items) or 20),
+            "total": total,
+            "page_size": page_size,
         }
-    except ValueError, TypeError, AttributeError, RecursionError:
+    except ValueError, TypeError, KeyError, AttributeError, RecursionError:
         raise ApiError(502, "Не удалось прочитать каталог. Обновление отменено") from None
 
 
@@ -189,15 +190,23 @@ async def collect(state, base):
         return await asyncio.to_thread(parse_initial_state, html)
 
     first = await fetch(1)
-    if first["page_size"] <= 0 or first["total"] < 0 or first["total"] > first["page_size"] * 20:
+    if first["page_size"] <= 0 or first["total"] < 0 or first["total"] > first["page_size"] * DPO_PAGE_LIMIT:
         raise ApiError(502, "Каталог превышает предел страниц. Обновление отменено")
     cards = {}
     for page in range(1, max(1, math.ceil(first["total"] / first["page_size"])) + 1):
         current = first if page == 1 else await fetch(page)
+        expected = min(first["page_size"], first["total"] - (page - 1) * first["page_size"])
+        if (
+            current["total"] != first["total"]
+            or current["page_size"] != first["page_size"]
+            or len(current["items"]) != expected
+        ):
+            raise ApiError(502, "Источник вернул неполный каталог. Обновление отменено")
         for item in current["items"]:
             card = map_item(item)
-            if card:
-                cards[card["hseId"]] = card
+            if not card or card["hseId"] in cards:
+                raise ApiError(502, "Источник вернул неполный каталог. Обновление отменено")
+            cards[card["hseId"]] = card
     return list(cards.values())
 
 
@@ -273,6 +282,8 @@ async def sync_catalog(state):
     if len(actual) < 3 or len(all_cards) < len(actual):
         raise ApiError(502, "Источник вернул неполный каталог. Обновление отменено")
     actual_ids = {card["hseId"] for card in actual}
+    if not actual_ids.issubset({card["hseId"] for card in all_cards}):
+        raise ApiError(502, "Списки программ в источнике не совпадают. Обновление отменено")
     cards = {
         card["hseId"]: {**card, "enrollment": "actual" if card["hseId"] in actual_ids else "nonactual"}
         for card in all_cards

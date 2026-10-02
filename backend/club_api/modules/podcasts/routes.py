@@ -141,9 +141,9 @@ async def audio(request: HttpRequest, id: str):
         if holder == "free":
             raise ApiError(403, "Подписка неактивна")
         profiles = await state.store.read(
-            "alumni", filters={"id": {"_eq": guid(holder)}}, fields=("podcast_sub_until",), limit=1
+            "alumni", filters={"id": {"_eq": guid(holder)}}, fields=("podcast_sub_until", "status"), limit=1
         )
-        if not profiles or not sub_active(profiles[0]["podcast_sub_until"]):
+        if not profiles or profiles[0]["status"] == "alumni_left" or not sub_active(profiles[0]["podcast_sub_until"]):
             raise ApiError(403, "Подписка неактивна")
     if not request.headers.get("range") or request.headers["range"].startswith("bytes=0-"):
         await record_play(state, id, holder)
@@ -164,8 +164,6 @@ async def audio(request: HttpRequest, id: str):
 async def subscribe(request: HttpRequest):
     alumni = await verified_alumni(request)
     state = request.services
-    if sub_active(alumni.get("podcast_sub_until")):
-        raise ApiError(400, "Подписка уже активна")
     async with locked_cart(state, "podcast:" + alumni["id"]) as connection:
         previous = await state.store.read(
             "orders",

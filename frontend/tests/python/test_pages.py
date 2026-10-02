@@ -245,6 +245,22 @@ async def test_unknown_and_legacy_paths(browser_client):
     assert response.headers["location"] == "/news?q=hello"
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/v2/%2fevil.example",
+        "/legacy/%2fevil.example",
+        "/v2/%5cevil.example",
+        "/%2fevil.example/",
+        "/v2/%2f%2fevil.example",
+    ],
+)
+async def test_legacy_redirect_rejects_external_destination(browser_client, path):
+    response = await browser_client.get(path)
+    assert response.status_code == 400
+    assert "location" not in response.headers
+
+
 @pytest.mark.parametrize("path", ["/merch/bag-one", "/events/event-1", "/podcasts/episode-1"])
 async def test_detail_api_failure_remains_retryable(path):
     async def upstream(request):
@@ -382,3 +398,17 @@ def test_web_forwards_ip_only_from_trusted_proxy(peer, supplied, expected):
 
     request = Request({"type": "http", "client": (peer, 1234), "headers": [(b"x-forwarded-for", supplied.encode())]})
     assert forwarded_headers(request).get("x-forwarded-for") == expected
+
+
+async def test_root_fragment_can_refresh_home_and_remains_uncacheable(browser_client):
+    response = await browser_client.get("/views/")
+    assert response.status_code == 200
+    assert 'id="page"' in response.text and 'id="main"' in response.text
+    assert "no-store" in response.headers["cache-control"]
+    assert "x-club-offline" not in response.headers
+
+
+async def test_cart_forms_send_catalog_type(browser_client):
+    response = await browser_client.get("/views/cart", headers={"x-cart-session": "test-session"})
+    assert '<input type="hidden" name="type" value="merch">' in response.text
+    assert '"type": "merch"' in response.text

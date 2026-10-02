@@ -97,6 +97,8 @@ def site():
             return httpx.Response(404, json={"error": "Новость удалена"})
         if path == "/events" and records.get("unavailable_events"):
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
+        if path == "/pages/home" and records.get("unavailable_home"):
+            return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         return httpx.Response(200, json=records.get(path, []))
 
     build_public(PUBLIC)
@@ -907,3 +909,76 @@ def test_search_escape_from_nonempty_field_returns_to_trigger(page, width):
     field.press("Escape")
     expect(dialog).not_to_be_visible()
     expect(trigger).to_be_focused()
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_home_retry_recovers_after_api_failure(page, site, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    records = site[1]
+    records["unavailable_home"] = True
+    page.goto("/")
+    expect(page.get_by_role("button", name="Повторить", exact=True)).to_be_visible()
+    records["unavailable_home"] = False
+    with page.expect_response(lambda response: response.url.endswith("/views/")) as refreshed:
+        page.get_by_role("button", name="Повторить", exact=True).click()
+    assert refreshed.value.status == 200
+    expect(page.get_by_role("button", name="Повторить", exact=True)).not_to_be_visible()
+    expect(page.locator("#main")).to_be_visible()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_active_subscriber_can_request_renewal(page, site, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    records, writes = site[1:]
+    records["/podcasts"].update(subscribed=True, sub_until="2099-01-01T00:00:00Z")
+    page.add_init_script("localStorage.setItem('club_token','member-qa');")
+    page.goto("/podcasts")
+    expect(page.get_by_text("Продление добавит 12 месяцев к текущему сроку подписки.", exact=True)).to_be_visible()
+    with page.expect_response("**/api/podcasts/subscribe") as renewed:
+        page.get_by_role("button", name="Продлить на год", exact=True).click()
+    assert renewed.value.status == 200
+    assert any(write["path"] == "/podcasts/subscribe" and write["headers"].get("authorization") for write in writes)
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_cart_changes_include_type_when_slugs_match(page, site, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    records, writes = site[1:]
+    items = [
+        {"type": kind, "ref_id": PROGRAM["slug"], "title": title, "price": 10000, "qty": 1}
+        for kind, title in [("dpo", PROGRAM["title"]), ("merch", PRODUCT["title"])]
+    ]
+    records["/cart"] = {"items": items, "subtotal": 20000, "count": 2}
+    page.goto("/cart")
+    row = page.locator(".site-cart-row").filter(has=page.get_by_role("heading", name=PRODUCT["title"], exact=True))
+    row.get_by_role("spinbutton", name="Количество").fill("3")
+    with page.expect_response("**/api/cart"):
+        row.get_by_role("button", name="Обновить", exact=True).click()
+    assert writes[-1]["body"] == {"type": "merch", "ref_id": PROGRAM["slug"], "variant_sku": None, "qty": 3}
+    records["/cart"] = {"items": items, "subtotal": 20000, "count": 2}
+    page.goto("/cart")
+    with page.expect_response("**/api/cart"):
+        row.get_by_role("button", name="Удалить", exact=True).click()
+    assert writes[-1]["body"] == {"type": "merch", "ref_id": PROGRAM["slug"], "variant_sku": None, "qty": 0}
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_product_editor_retains_gallery_during_title_edit(page, site, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    records, writes = site[1:]
+    images = ["https://example.test/first.jpg", "https://example.test/second.jpg"]
+    records["/admin/products"] = [{**PRODUCT, "images": images, "stock": 5, "variants_json": []}]
+    page.add_init_script("localStorage.setItem('club_admin_token','admin-qa');")
+    page.goto("/admin/products")
+    row = page.locator(".office-record").filter(has=page.get_by_role("heading", name=PRODUCT["title"], exact=True))
+    row.get_by_text("Редактировать", exact=True).click()
+    gallery = row.get_by_label("Ссылки на фотографии, JSON", exact=True)
+    assert json.loads(gallery.input_value()) == images
+    row.get_by_label("Название", exact=True).fill("Новое название товара")
+    with page.expect_response("**/api/admin/products/" + PRODUCT["id"]):
+        row.get_by_role("button", name="Сохранить", exact=True).click()
+    assert writes[-1]["body"]["images"] == images
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")

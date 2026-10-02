@@ -38,7 +38,7 @@ def query_page(request, *, default_limit=50):
 
 
 def query_choice(request, name, choices):
-    value = request.GET.get(name)
+    value = request.GET.get(name) or None
     if value is not None and value not in choices:
         raise ApiError(400, "Некорректный фильтр")
     return value

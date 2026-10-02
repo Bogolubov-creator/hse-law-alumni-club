@@ -36,6 +36,8 @@ async def test_cart_uses_current_catalog_prices_and_server_discount(database_app
         await app.state.store.update("programs", {"price": 200000}, id=course["id"])
         estimate = (await client.get("/cart", headers=headers)).json()
         assert estimate["member_discount"] == discount
+        assert estimate["subtotal"] == 250000
+        assert next(item for item in estimate["items"] if item["type"] == "dpo")["price"] == 200000
         assert estimate["estimated_total"] == 200000 * (100 - discount) // 100 + 50000
         guest = (await client.get("/cart", headers={"x-cart-session": headers["x-cart-session"]})).json()
         assert guest["member_discount"] == 0 and guest["estimated_total"] == 250000

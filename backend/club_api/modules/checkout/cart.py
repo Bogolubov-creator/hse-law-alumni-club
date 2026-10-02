@@ -24,6 +24,7 @@ class CartItem(Body):
 
 
 class ChangeQty(Body):
+    type: Literal["dpo", "merch"] | None = None
     ref_id: str
     variant_sku: str | None = None
     qty: int = Field(ge=0, le=MAX_LINE_QTY)
@@ -88,7 +89,7 @@ async def cart(request: HttpRequest):
         for item in items
     ]
     return {
-        **summarize_cart(items),
+        **summarize_cart(priced),
         "estimated_total": order_totals(priced, discount)["total"],
         "member_discount": discount,
     }
@@ -142,10 +143,15 @@ async def change_qty(request: HttpRequest):
     async with locked_cart(state, token) as connection:
         existing = await load_cart(state.store, token, connection)
         items = existing["items"] if existing else []
-        match = next(
-            (item for item in items if item["ref_id"] == body.ref_id and item.get("variant_sku") == body.variant_sku),
-            None,
-        )
+        types = {
+            item["type"]
+            for item in items
+            if item["ref_id"] == body.ref_id and item.get("variant_sku") == body.variant_sku
+        }
+        if body.type is None and len(types) > 1:
+            raise ApiError(409, "Укажите тип позиции корзины")
+        kind = body.type or next(iter(types), None)
+        match = next((item for item in items if same_line(item, kind, body.ref_id, body.variant_sku)), None)
         if match and match["type"] == "merch" and (body.qty > match["qty"]):
             info = (await lookup_catalog(state.store, [match], connection)).get("merch:" + body.ref_id)
             if not info:
@@ -155,7 +161,7 @@ async def change_qty(request: HttpRequest):
             if exceeds_stock(info, body.variant_sku, body.qty):
                 raise ApiError(409, "Недостаточно товара в наличии.")
         for item in items:
-            if item["ref_id"] == body.ref_id and item.get("variant_sku") == body.variant_sku:
+            if same_line(item, kind, body.ref_id, body.variant_sku):
                 item["qty"] = 1 if item["type"] == "dpo" and body.qty else body.qty
         items = [item for item in items if item["qty"] > 0]
         await save_cart(state.store, token, items, connection)

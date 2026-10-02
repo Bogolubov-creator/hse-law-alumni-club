@@ -6,6 +6,7 @@ from urllib.parse import quote, urlsplit
 from django.http import HttpRequest, JsonResponse
 
 from club_api.core.errors import ApiError
+from club_api.core.models import parse_date
 from club_api.core.security import client_ip, trust_proxy, yookassa_ip
 from club_api.core.views import api_view, json_body
 from club_api.db.store import normalize
@@ -16,6 +17,8 @@ from club_api.observability.audit import audit
 logger = logging.getLogger("club.payments")
 ROUTE_LIMITS = {"/orders/{number}/pay": 10, "/payments/yookassa/webhook": 60}
 SAFE_INTEGER_MAX = 9007199254740991
+PAYMENT_LOOKUP_PAGE_LIMIT = 20
+PAYMENT_LOOKUP_PAGE_SIZE = 100
 
 
 def secure_payment_url(value):
@@ -54,10 +57,10 @@ def payment_outcome(order, payment):
         ):
             return "review"
         return "succeeded"
-    if order["payment_status"] == "review" or order["status"] in ("canceled", "expired"):
+    if (order["payment_status"] == "review" and order["payment_id"]) or order["status"] in ("canceled", "expired"):
         return "ignored"
     if payment["status"] == "canceled":
-        return "canceled"
+        return "review" if order["status"] == "done" else "canceled"
     if order["payment_status"] == "canceled":
         return "ignored"
     return "pending"
@@ -107,6 +110,66 @@ class Payments:
         if payment["id"] != id:
             raise ApiError(502, "Не удалось проверить платёж")
         return payment
+
+    async def find_order_payment(self, order):
+        settings = self.state.settings
+        params = {
+            "created_at.gte": parse_date(order["created_at"]).isoformat(),
+            "created_at.lte": datetime.now(UTC).isoformat(),
+            "limit": PAYMENT_LOOKUP_PAGE_SIZE,
+        }
+        matches, cursors = {}, set()
+        try:
+            for _ in range(PAYMENT_LOOKUP_PAGE_LIMIT):
+                response = await self.state.client.get(
+                    "https://api.yookassa.ru/v3/payments",
+                    params=params,
+                    auth=(settings.YOOKASSA_SHOP_ID, settings.secret("YOOKASSA_SECRET_KEY")),
+                )
+                page = response.json()
+                if not response.is_success or page.get("type") != "list" or not isinstance(page.get("items"), list):
+                    raise ValueError
+                for payment in page["items"]:
+                    if payment.get("metadata", {}).get("order_number") == order["number"]:
+                        if not isinstance(payment.get("id"), str) or payment.get("status") not in (
+                            "pending",
+                            "waiting_for_capture",
+                            "succeeded",
+                            "canceled",
+                        ):
+                            raise ValueError
+                        matches[payment["id"]] = payment
+                cursor = page.get("next_cursor")
+                if not cursor:
+                    if len(matches) > 1:
+                        raise ValueError
+                    return next(iter(matches.values()), None)
+                if not isinstance(cursor, str) or cursor in cursors:
+                    raise ValueError
+                cursors.add(cursor)
+                params["cursor"] = cursor
+            raise ValueError
+        except Exception as error:
+            raise ApiError(502, "Не удалось сверить платёж заявки") from error
+
+    async def flag_missing_payment(self, number):
+        async with self.state.database.transaction() as connection:
+            order = await (
+                await connection.execute(
+                    "SELECT id,status,payment_id,payment_status FROM orders WHERE number=%s FOR UPDATE", (number,)
+                )
+            ).fetchone()
+            if (
+                not order
+                or order["status"] != "new"
+                or order["payment_id"]
+                or order["payment_status"] not in ("pending", "waiting_for_capture")
+            ):
+                return
+            await connection.execute("UPDATE orders SET payment_status='review' WHERE id=%s", (order["id"],))
+        await self.state.notifications.office_text(
+            f"Заявка {number}: идентификатор платежа не сохранён. Проверьте платёж в ЮKassa. Резерв сохранён до сверки."
+        )
 
     async def create(self, number, amount, description, email=None):
         if type(amount) is not int or not 0 < amount <= SAFE_INTEGER_MAX:
@@ -201,7 +264,13 @@ class Payments:
                     "UPDATE orders SET payment_id=%s,payment_status='succeeded',paid_at=now(),status=CASE WHEN status='new' THEN 'confirmed' ELSE status END WHERE id=%s",
                     (payment["id"], order["id"]),
                 )
-            elif outcome in ("review", "canceled", "pending"):
+            elif outcome == "canceled":
+                await self.state.checkout.release(connection, order["id"])
+                await connection.execute(
+                    "UPDATE orders SET payment_id=%s,payment_status='canceled',status='canceled' WHERE id=%s",
+                    (payment["id"], order["id"]),
+                )
+            elif outcome in ("review", "pending"):
                 await connection.execute(
                     "UPDATE orders SET payment_id=%s,payment_status=%s WHERE id=%s",
                     (payment["id"], payment["status"] if outcome == "pending" else outcome, order["id"]),
