@@ -124,6 +124,8 @@ def backup(context):
                 + ".tar.gz.enc"
             )
             partial = final.with_suffix(".partial")
+            descriptor = os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            os.close(descriptor)
             try:
                 run(
                     [
