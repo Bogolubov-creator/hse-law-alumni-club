@@ -31,7 +31,7 @@ def prepare(config, destination):
     values = {
         "E2E_LIVE_AUTHORIZED": "club-ci-live",
         "E2E_BASE_URL": context.runtime["PUBLIC_URL"],
-        "E2E_MAIL_URL": "http://localhost:" + context.values["CLUB_MAIL_PORT"],
+        "E2E_MAIL_URL": "http://localhost:" + context.values.get("CLUB_MAIL_PORT", "8025"),
         "E2E_STATE_DIR": str(destination),
         "ADMIN_EMAIL": credentials["Email"],
         "ADMIN_PASSWORD": credentials["Password"],
