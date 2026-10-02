@@ -6,6 +6,8 @@ from uuid import uuid4
 
 from psycopg.types.json import Jsonb
 
+from club_api.db.operator import is_operator
+from club_api.db.queries import Query, acquire_lock
 from club_api.db.store import Store
 from club_api.domain import DOMAIN
 from club_api.modules.auth.passwords import hash_password
@@ -93,7 +95,11 @@ class BootstrapConfig:
 async def ensure_role(connection, name, aliases=()):
     rows = await (
         await connection.execute(
-            "SELECT id FROM directus_roles WHERE name=ANY(%s::text[]) ORDER BY name", ([name, *aliases],)
+            Query(
+                "SELECT id FROM directus_roles WHERE name=ANY(%s::text[]) ORDER BY name",
+                "SELECT id FROM directus_roles WHERE name IN (SELECT value FROM JSON_TABLE(%s,'$[*]' COLUMNS(value VARCHAR(255) PATH '$')) names) ORDER BY name",
+            ),
+            ([name, *aliases],),
         )
     ).fetchall()
     if len(rows) > 1:
@@ -141,7 +147,7 @@ async def seed_missing(connection, store, table, key, rows):
 async def ensure_site(connection, public_url):
     rows = await (
         await connection.execute(
-            "SELECT value FROM club_settings WHERE key LIKE 'legacy_directus:%%' ORDER BY key LIMIT 1"
+            'SELECT value FROM club_settings WHERE "key" LIKE \'legacy_directus:%%\' ORDER BY "key" LIMIT 1'
         )
     ).fetchall()
     old = rows[0]["value"] if rows else {}
@@ -164,23 +170,23 @@ async def ensure_site(connection, public_url):
         "favicon": existing("public_favicon"),
     }
     await connection.execute(
-        "INSERT INTO club_settings(key,value) VALUES('site',%s) ON CONFLICT(key) DO NOTHING", (Jsonb(site),)
+        Query(
+            'INSERT INTO club_settings("key",value) VALUES(\'site\',%s) ON CONFLICT("key") DO NOTHING',
+            "INSERT INTO club_settings(`key`,value) VALUES('site',%s) ON DUPLICATE KEY UPDATE `key`=`key`",
+        ),
+        (Jsonb(site),),
     )
 
 
 async def bootstrap(connection, config):
     config.validate()
-    store = Store(None)
+    store = Store(connection) if getattr(connection, "vendor", None) == "mysql" else Store(None)
     async with connection.transaction():
-        owner = await (
-            await connection.execute(
-                "SELECT pg_has_role(current_user,relowner,'USAGE') AS allowed FROM pg_class WHERE oid='public.directus_users'::regclass"
-            )
-        ).fetchone()
-        if not owner or not owner["allowed"]:
+        if not await is_operator(connection):
             raise OperatorError("Bootstrap доступен только владельцу базы данных")
-        await connection.execute("SET LOCAL lock_timeout='30s'")
-        await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended('club:native-bootstrap:v1',0))")
+        if getattr(connection, "vendor", None) != "mysql":
+            await connection.execute("SET LOCAL lock_timeout='30s'")
+        await acquire_lock(connection, "club:native-bootstrap:v1")
         admin_role = await ensure_role(connection, "admin", ("Administrator",))
         alumni_role, editor_role = await ensure_role(connection, "alumni"), await ensure_role(connection, "editor")
         _, created = await ensure_user(

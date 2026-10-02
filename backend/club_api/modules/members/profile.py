@@ -64,7 +64,7 @@ async def telegram_link(request: HttpRequest):
     }
 
 
-@api_view
+@api_view(permission=require_alumni)
 async def me(request: HttpRequest):
     alumni = await require_alumni(request)
     state = request.services
@@ -107,7 +107,7 @@ async def me(request: HttpRequest):
     return result
 
 
-@api_view
+@api_view(body=ProfileBody)
 async def profile(request: HttpRequest):
     alumni = await verified_alumni(request)
     body = parse_body(request, ProfileBody)
@@ -126,7 +126,7 @@ async def profile(request: HttpRequest):
     return {"ok": True}
 
 
-@api_view
+@api_view(permission=require_alumni)
 async def export(request: HttpRequest):
     response = JsonResponse({}, safe=False)
     alumni = await require_alumni(request)
@@ -204,7 +204,7 @@ async def export(request: HttpRequest):
     return response
 
 
-@api_view
+@api_view(body=DeleteBody, permission=require_alumni)
 async def delete_me(request: HttpRequest):
     parse_body(request, DeleteBody)
     alumni = await require_alumni(request)

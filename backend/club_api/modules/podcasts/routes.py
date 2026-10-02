@@ -15,6 +15,7 @@ from pydantic import Field, field_validator
 from club_api.core.errors import ApiError
 from club_api.core.models import guid, parse_date, sub_active
 from club_api.core.views import api_view
+from club_api.db.queries import Query, acquire_lock
 from club_api.domain import DOMAIN
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
@@ -65,12 +66,13 @@ def rutube_embed(value):
 async def record_play(state, id, holder):
     try:
         async with state.database.transaction() as connection:
-            await connection.execute(
-                "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("play:" + id + ":" + holder,)
-            )
+            await acquire_lock(connection, "play:" + id + ":" + holder)
             alumni_id = None if holder == "free" else guid(holder)
             cursor = await connection.execute(
-                "SELECT id FROM podcast_plays WHERE podcast_id=%s AND alumni_id IS NOT DISTINCT FROM %s::uuid AND created_at>now()-interval '6 hours' LIMIT 1",
+                Query(
+                    "SELECT id FROM podcast_plays WHERE podcast_id=%s AND alumni_id IS NOT DISTINCT FROM %s::uuid AND created_at>now()-interval '6 hours' LIMIT 1",
+                    "SELECT id FROM podcast_plays WHERE podcast_id=%s AND alumni_id <=> %s AND created_at>now()-INTERVAL 6 HOUR LIMIT 1",
+                ),
                 (id, alumni_id),
             )
             if not await cursor.fetchone():
@@ -181,10 +183,13 @@ async def subscribe(request: HttpRequest):
         if previous:
             order = previous[0]
         else:
-            await connection.execute("SELECT pg_advisory_xact_lock(81920260908)")
+            await acquire_lock(connection, "order.sequence")
             year = datetime.now(ZoneInfo("Europe/Moscow")).year
             cursor = await connection.execute(
-                "SELECT COALESCE(MAX(CAST(split_part(number,'-',3) AS integer)),0)+1 AS seq FROM orders WHERE number ~ %s",
+                Query(
+                    "SELECT COALESCE(MAX(CAST(split_part(number,'-',3) AS integer)),0)+1 AS seq FROM orders WHERE number ~ %s",
+                    "SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(number,'-',-1) AS integer)),0)+1 AS seq FROM orders WHERE number REGEXP %s",
+                ),
                 (f"^ALU-{year}-[0-9]+$",),
             )
             number = f"ALU-{year}-{(await cursor.fetchone())['seq']:06d}"
@@ -289,7 +294,7 @@ urlpatterns = content_crud(
 )
 
 
-@api_view
+@api_view(permission=require_admin)
 async def subscribers(request: HttpRequest):
     await require_admin(request)
     store = request.services.store

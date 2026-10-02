@@ -1,5 +1,5 @@
 from asgiref.sync import markcoroutinefunction
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 
 class CorsMiddleware:
@@ -31,6 +31,16 @@ class CorsMiddleware:
                 response.headers["Access-Control-Allow-Headers"] = headers
         else:
             response = await self.get_response(request)
+        if response.status_code == 405:
+            allowed_methods = ", ".join(
+                sorted(
+                    method.strip()
+                    for method in response.headers.get("Allow", "").split(",")
+                    if method.strip() and method.strip() != "HEAD"
+                )
+            )
+            response = JsonResponse({"error": "Метод не поддерживается"}, status=405)
+            response.headers["Allow"] = allowed_methods
         if origin in allowed:
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Vary"] = "Origin"

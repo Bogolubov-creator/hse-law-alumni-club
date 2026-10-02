@@ -5,6 +5,7 @@ from uuid import UUID
 
 import psycopg
 from django.core.exceptions import SuspiciousOperation
+from django.db import DatabaseError
 from django.http import HttpResponseBase, JsonResponse
 from pydantic import ValidationError
 
@@ -23,6 +24,8 @@ def json_body(request):
 
 
 def parse_body(request, model):
+    if getattr(request, "validated_body_model", None) is model:
+        return request.validated_body
     try:
         return model.model_validate(json_body(request))
     except ValidationError:
@@ -52,7 +55,10 @@ def defer(request, function, *args, **kwargs):
     request.background_tasks.append((function, args, kwargs))
 
 
-def api_view(function):
+def api_view(function=None, *, body=None, permission=None):
+    if function is None:
+        return lambda target: api_view(target, body=body, permission=permission)
+
     @wraps(function)
     async def view(request, *args, **kwargs):
         try:
@@ -64,12 +70,13 @@ def api_view(function):
         except SuspiciousOperation:
             request.background_tasks.clear()
             return JsonResponse({"error": "Некорректный запрос"}, status=400)
-        except psycopg.Error as error:
+        except (psycopg.Error, DatabaseError) as error:
             request.background_tasks.clear()
-            logger.error("Ошибка запроса к базе данных: %s", error.sqlstate or "connection")
-            if error.sqlstate in ("23505", "23503"):
+            code = getattr(error, "sqlstate", None) or (error.args[0] if error.args else "connection")
+            logger.error("Ошибка запроса к базе данных: %s", code)
+            if code in ("23505", "23503", 1062, 1451, 1452):
                 message = (
-                    "Такая запись уже существует" if error.sqlstate == "23505" else "Запись связана с другими данными"
+                    "Такая запись уже существует" if code in ("23505", 1062) else "Запись связана с другими данными"
                 )
                 return JsonResponse({"error": message}, status=409)
             from club_api.observability.errors import capture
@@ -84,6 +91,8 @@ def api_view(function):
             logger.error("Не удалось обработать запрос")
             return JsonResponse({"error": "Внутренняя ошибка"}, status=500)
 
+    view.body_model = body
+    view.permission = permission
     return view
 
 
@@ -97,6 +106,7 @@ def endpoint(methods):
         return await methods[method](request, **kwargs)
 
     view.methods = tuple(methods)
+    view.handlers = methods
     return view
 
 

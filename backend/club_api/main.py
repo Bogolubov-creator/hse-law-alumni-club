@@ -104,7 +104,7 @@ def create_app(settings=None):
 
 
 def run():
-    import uvicorn
+    from club_api.server import Server
 
     settings = load_settings()
     from club_api.observability.errors import initialize
@@ -113,14 +113,7 @@ def run():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
-    uvicorn.run(
-        create_app(settings),
-        host=settings.API_HOST,
-        port=settings.API_PORT,
-        workers=1,
-        proxy_headers=False,
-        access_log=False,
-    )
+    Server(lambda: create_app(settings), settings.API_HOST, settings.API_PORT).run()
 
 
 if __name__ == "__main__":

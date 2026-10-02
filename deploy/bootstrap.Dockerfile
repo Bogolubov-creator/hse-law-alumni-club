@@ -1,4 +1,5 @@
 FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS build
+RUN apk add --no-cache build-base mariadb-connector-c-dev pkgconf
 RUN pip install --no-cache-dir uv==0.12.21
 WORKDIR /repo/scripts
 COPY backend/pyproject.toml /repo/backend/
@@ -16,6 +17,7 @@ FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH=/opt/venv/bin:$PATH
+RUN apk upgrade --no-cache && apk add --no-cache mariadb-connector-c
 RUN addgroup -g 1000 club && adduser -D -H -u 1000 -G club club \
     && rm -rf /usr/local/lib/python3.14/site-packages/pip* /usr/local/bin/pip*
 WORKDIR /app

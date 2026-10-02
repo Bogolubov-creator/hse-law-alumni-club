@@ -2,6 +2,9 @@
 
 Зависимости API, web и команд оператора закреплены в трёх `uv.lock`.
 Для разработки нужны Python 3.14 и uv; для SQL и полного приложения – Docker.
+Для mysqlclient установите `libmariadb-dev pkg-config` на Ubuntu или
+`mariadb-connector-c pkgconf` на macOS. На macOS при первой сборке укажите
+`PKG_CONFIG_PATH=/opt/homebrew/opt/mariadb-connector-c/lib/pkgconfig`.
 
 ## Быстрые проверки
 
@@ -58,6 +61,23 @@ bash scripts/tests/test-integration.sh
 
 Фикстура [legacy-auth.json](../../backend/tests/python/legacy-auth.json)
 проверяет совместимость с синтетическими PHC-хешами и JWT прежнего сервера.
+
+## Настоящая MariaDB
+
+Для отдельной локальной пустой базы `django_migration_test`:
+
+```bash
+CLUB_TEST_DATABASE_URL='<подключение к локальной тестовой MariaDB>' bash scripts/tests/test-mariadb-integration.sh
+```
+
+Подготовьте оператора с правами миграций, управления выделенным тестовым аккаунтом
+и выдачи разрешений. Команда применяет миграции Django, ограничивает права
+`club_api` и запускает весь серверный набор. Фикстуры очищают таблицы после
+каждого сценария. Рабочая база для этой команды не подходит.
+
+Дополнительно проверяются полный импорт, циклические ссылки, JSON, даты,
+приватные поля, откат ошибочного переноса, права API и поиск на кириллице.
+PostgreSQL-прогон проверяет экспорт и совместимость прежнего контура.
 
 ## Браузер с настоящими сервисами
 

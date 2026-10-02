@@ -17,6 +17,7 @@ from psycopg.types.json import Jsonb
 
 from club_api.core.errors import ApiError
 from club_api.core.models import guid
+from club_api.db.queries import Query
 from club_api.db.store import MEDIA_FIELDS, normalize
 
 THUMBNAIL_WORKERS = 1
@@ -164,6 +165,8 @@ class Media:
                 continue
             fields = [name for name in MEDIA_FIELDS[table] if name != "audio_url"]
             condition = " OR ".join(f'''strpos(COALESCE("{field}"::text,''),%s)>0''' for field in fields)
+            if self.state.database.vendor == "mysql":
+                condition = " OR ".join(f'''LOCATE(%s,COALESCE(CAST("{field}" AS CHAR),''))>0''' for field in fields)
             query = f'''SELECT id FROM "{table}" WHERE status='published' AND ({condition}) LIMIT 1'''
             if await self.state.database.rows(query, [id] * len(fields)):
                 return True
@@ -172,11 +175,19 @@ class Media:
     async def list(self, page, limit, search):
         pattern = "%" + re.sub("[\\\\%_]", lambda match: "\\" + match[0], search) + "%"
         where = "NOT EXISTS(SELECT 1 FROM alumni a WHERE a.avatar=f.id::text) AND COALESCE(f.metadata->>'club_upload_kind','')<>'avatar' AND (COALESCE(f.title,'') ILIKE %s OR f.filename_download ILIKE %s)"
+        if self.state.database.vendor == "mysql":
+            where = "NOT EXISTS(SELECT 1 FROM alumni a WHERE a.avatar=CAST(f.id AS CHAR(36))) AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(f.metadata,'$.club_upload_kind')),'')<>'avatar' AND (LOWER(COALESCE(f.title,'')) LIKE LOWER(%s) OR LOWER(f.filename_download) LIKE LOWER(%s))"
         rows = await self.state.database.rows(
             "SELECT f.* FROM directus_files f WHERE " + where + " ORDER BY f.created_on DESC,f.id LIMIT %s OFFSET %s",
             (pattern, pattern, limit, (page - 1) * limit),
         )
-        count_sql = "SELECT count(*)::int AS count FROM directus_files f WHERE " + where
+        count_sql = (
+            Query(
+                "SELECT count(*)::int AS count FROM directus_files f WHERE ",
+                "SELECT count(*) AS count FROM directus_files f WHERE ",
+            )
+            + where
+        )
         total = await self.state.database.rows(count_sql, (pattern, pattern))
         return {
             "items": [
@@ -246,7 +257,10 @@ class Media:
         id, path = (guid(id), None)
         async with self.state.database.transaction() as connection:
             tables = ",".join(f'"{table}"' for table in sorted(MEDIA_FIELDS))
-            await connection.execute(f"LOCK TABLE {tables} IN SHARE MODE")
+            if self.state.database.vendor == "mysql":
+                await connection.lock("media.references")
+            else:
+                await connection.execute(f"LOCK TABLE {tables} IN SHARE MODE")
             file = await (
                 await connection.execute("SELECT * FROM directus_files WHERE id=%s FOR UPDATE", (id,))
             ).fetchone()
@@ -254,7 +268,10 @@ class Media:
                 return
             shared = await (
                 await connection.execute(
-                    "SELECT id FROM directus_files WHERE storage=%s AND filename_disk=%s AND id<>%s FOR SHARE",
+                    Query(
+                        "SELECT id FROM directus_files WHERE storage=%s AND filename_disk=%s AND id<>%s FOR SHARE",
+                        "SELECT id FROM directus_files WHERE storage=%s AND filename_disk=%s AND id<>%s LOCK IN SHARE MODE",
+                    ),
                     (file["storage"], file["filename_disk"], id),
                 )
             ).fetchone()
@@ -262,6 +279,10 @@ class Media:
                 raise ApiError(409, "Файл связан с другой записью медиатеки")
             for table, fields in sorted(MEDIA_FIELDS.items()):
                 condition = " OR ".join(f'''strpos(COALESCE("{field}"::text,''),%s)>0''' for field in fields)
+                if self.state.database.vendor == "mysql":
+                    condition = " OR ".join(
+                        f'''LOCATE(%s,COALESCE(CAST("{field}" AS CHAR),''))>0''' for field in fields
+                    )
                 query = f'SELECT id FROM "{table}" WHERE {condition} LIMIT 1'
                 if await (await connection.execute(query, [id] * len(fields))).fetchone():
                     raise ApiError(409, "Файл используется. Сначала уберите его из материалов или профиля.")

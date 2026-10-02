@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "API Клуба выпускников факультета права НИУ ВШЭ"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-  "uvicorn==0.54.0",
   "pydantic-settings==2.15.0",
   "psycopg[binary]==3.3.6",
   "psycopg-pool==3.3.3",
@@ -18,10 +17,20 @@ dependencies = [
   "aiosmtplib==5.1.3",
   "sentry-sdk==2.71.0",
   "django==6.1.1",
+  "django-ninja==1.7.1",
+  "gunicorn==26.2.0",
+  "mysqlclient==2.3.0",
+  "bcrypt==5.0.0",
 ]
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "ruff==0.16.9", "pip-audit==2.10.1"]
+dev = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "ruff==0.16.9",
+    "pip-audit==2.10.1",
+    "pytest-django==4.14.0",
+]
 
 [build-system]
 requires = ["hatchling==1.32.4"]
@@ -35,6 +44,7 @@ packages = ["club_api"]
 "../data/faq-data.json" = "club_api/faq-data.json"
 
 [tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "club_api.django_settings"
 testpaths = ["tests/python"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -49,6 +59,7 @@ select = ["E", "F", "I", "UP", "B", "ASYNC", "S"]
 ignore = ["E501", "S101"]
 
 [tool.ruff.lint.per-file-ignores]
+"../scripts/tests/test-nginx.py" = ["S603", "S108"]
 "tests/**" = ["S105", "S106"]
 "club_api/core/config.py" = ["S104"]
 "club_api/db/store.py" = ["S608"]

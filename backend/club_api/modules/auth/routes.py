@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from club_api.core.errors import ApiError
 from club_api.core.security import client_ip
 from club_api.core.views import api_view, parse_body
+from club_api.db.queries import Query
 from club_api.domain import MAX_INTERESTS
 from club_api.modules.auth.service import auth_service, require_admin
 from club_api.modules.notifications.mail import EMAIL_CONFIRMATION_KIND
@@ -135,19 +136,19 @@ async def login(request, body, scope):
     }
 
 
-@api_view
+@api_view(body=LoginBody)
 async def alumni_login(request: HttpRequest):
     body = parse_body(request, LoginBody)
     return await login(request, body, "alumni")
 
 
-@api_view
+@api_view(body=LoginBody)
 async def admin_login(request: HttpRequest):
     body = parse_body(request, LoginBody)
     return await login(request, body, "admin")
 
 
-@api_view
+@api_view(permission=require_admin)
 async def admin_logout(request: HttpRequest):
     admin = await require_admin(request)
     if admin.get("jti"):
@@ -156,13 +157,13 @@ async def admin_logout(request: HttpRequest):
     return {"ok": True}
 
 
-@api_view
+@api_view(permission=require_admin)
 async def admin_session(request: HttpRequest):
     admin = await require_admin(request)
     return {"role": admin["role"]}
 
 
-@api_view
+@api_view(body=RegisterBody)
 async def register(request: HttpRequest):
     body = parse_body(request, RegisterBody)
     service = auth_service(request)
@@ -215,7 +216,7 @@ async def register(request: HttpRequest):
     return {"ok": True, "pending": True, "confirm_required": False}
 
 
-@api_view
+@api_view(body=EmailBody)
 async def resend_confirmation(request: HttpRequest):
     body = parse_body(request, EmailBody)
     if not request.services.notifications.mail_enabled:
@@ -234,7 +235,10 @@ async def resend_confirmation(request: HttpRequest):
     entries[email] = now + RESEND_COOLDOWN_SECONDS
     try:
         recent = await service.database.rows(
-            "SELECT id FROM club_mail_outbox WHERE kind=%s AND to_addr=%s AND created_at > now() - interval '10 minutes' LIMIT 1",
+            Query(
+                "SELECT id FROM club_mail_outbox WHERE kind=%s AND to_addr=%s AND created_at > now() - interval '10 minutes' LIMIT 1",
+                "SELECT id FROM club_mail_outbox WHERE kind=%s AND to_addr=%s AND created_at > now() - INTERVAL 10 MINUTE LIMIT 1",
+            ),
             (EMAIL_CONFIRMATION_KIND, email),
         )
         if recent:
@@ -248,7 +252,7 @@ async def resend_confirmation(request: HttpRequest):
     return {"ok": True}
 
 
-@api_view
+@api_view(body=TokenBody)
 async def confirm(request: HttpRequest):
     body = parse_body(request, TokenBody)
     service = auth_service(request)
@@ -269,7 +273,7 @@ async def confirm(request: HttpRequest):
     return {"ok": True}
 
 
-@api_view
+@api_view(body=ForgotBody)
 async def forgot(request: HttpRequest):
     body = parse_body(request, ForgotBody)
     service = auth_service(request)
@@ -296,7 +300,7 @@ async def forgot(request: HttpRequest):
     return {"ok": True}
 
 
-@api_view
+@api_view(body=ResetBody)
 async def reset(request: HttpRequest):
     body = parse_body(request, ResetBody)
     service = auth_service(request)
@@ -319,7 +323,7 @@ async def reset(request: HttpRequest):
     return {"ok": True}
 
 
-@api_view
+@api_view(body=TelegramBody)
 async def telegram_login(request: HttpRequest):
     body = parse_body(request, TelegramBody)
     service = auth_service(request)

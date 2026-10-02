@@ -21,12 +21,13 @@ import club_api.modules.office.routes as office_routes
 import club_api.modules.podcasts.routes as podcasts_routes
 import club_api.modules.support.routes as support_routes
 import club_api.modules.telegram.routes as telegram_routes
+from club_api.core.api import build_api
 from club_api.core.views import endpoint, not_found
 from club_api.observability import endpoints
 
 handler404 = not_found
 
-urlpatterns = (
+routes = (
     [
         path("health", endpoint({"GET": endpoints.health}), name="health"),
         path("ready", endpoint({"GET": endpoints.ready}), name="ready"),
@@ -136,4 +137,6 @@ urlpatterns = (
     + content_admin.urlpatterns
     + podcasts_routes.urlpatterns
 )
-urlpatterns.sort(key=lambda route: str(route.pattern).count("<"))
+routes.sort(key=lambda route: str(route.pattern).count("<"))
+api = build_api(routes)
+urlpatterns = [path("", api.urls)]

@@ -9,6 +9,15 @@ from club_api.core.errors import ApiError
 
 
 class Database:
+    vendor = "postgresql"
+
+    def __new__(cls, settings):
+        if settings.secret("CHECKOUT_DATABASE_URL").startswith(("mariadb://", "mysql://")):
+            from club_api.db.mysql import MariaDatabase
+
+            return MariaDatabase(settings)
+        return super().__new__(cls)
+
     def __init__(self, settings: Settings):
         url = settings.secret("CHECKOUT_DATABASE_URL")
         self.pool = (

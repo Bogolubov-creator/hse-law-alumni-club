@@ -6,6 +6,7 @@ from pydantic import Field, field_validator
 
 from club_api.core.errors import ApiError
 from club_api.core.views import api_view, parse_body
+from club_api.db.queries import Query
 from club_api.db.store import normalize
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
@@ -35,14 +36,17 @@ def candidate_id(value):
     return value
 
 
-@api_view
+@api_view(permission=require_admin)
 async def sources(request: HttpRequest):
     await require_admin(request)
     state = request.services
     runs = await state.database.rows("SELECT * FROM club_news_source_runs")
     by_source = {row["source"]: row for row in runs}
     items = await state.database.rows(
-        "SELECT * FROM club_news_inbox ORDER BY published_at DESC NULLS LAST,discovered_at DESC LIMIT 200"
+        Query(
+            "SELECT * FROM club_news_inbox ORDER BY published_at DESC NULLS LAST,discovered_at DESC LIMIT 200",
+            "SELECT * FROM club_news_inbox ORDER BY published_at DESC,discovered_at DESC LIMIT 200",
+        )
     )
     return normalize(
         {
@@ -53,7 +57,7 @@ async def sources(request: HttpRequest):
     )
 
 
-@api_view
+@api_view(permission=require_admin)
 async def refresh(request: HttpRequest, source: str):
     admin = await require_admin(request)
     result = await refresh_source(request.services, source)
@@ -61,7 +65,7 @@ async def refresh(request: HttpRequest, source: str):
     return result
 
 
-@api_view
+@api_view(body=ImportBody, permission=require_admin)
 async def import_news(request: HttpRequest, id: str):
     admin = await require_admin(request)
     body = parse_body(request, ImportBody)
@@ -70,7 +74,7 @@ async def import_news(request: HttpRequest, id: str):
     return result
 
 
-@api_view
+@api_view(body=StateBody, permission=require_admin)
 async def patch(request: HttpRequest, id: str):
     await require_admin(request)
     body = parse_body(request, StateBody)

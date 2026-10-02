@@ -44,7 +44,7 @@ class UpdateBody(Body):
     message_reaction: Reaction = None
 
 
-@api_view
+@api_view(body=UpdateBody)
 async def webhook(request: HttpRequest):
     body = parse_body(request, UpdateBody)
     state = request.services

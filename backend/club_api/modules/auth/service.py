@@ -9,6 +9,7 @@ from psycopg.types.json import Jsonb
 
 from club_api.core.errors import ApiError
 from club_api.core.security import LoginAttempts, constant_equal
+from club_api.db.queries import Query, acquire_lock
 from club_api.db.store import Store
 from club_api.modules.auth.passwords import hash_password, verify_password
 
@@ -79,7 +80,7 @@ async def find_user(connection, *, id=None, email=None, lock=False):
     query += "u.id=%s" if id is not None else "lower(u.email)=%s"
     query += " LIMIT 2"
     if lock:
-        query += " FOR UPDATE OF u"
+        query += " FOR UPDATE" if getattr(connection, "vendor", None) == "mysql" else " FOR UPDATE OF u"
     cursor = await connection.execute(query, (id if id is not None else email.lower().strip(),))
     rows = await cursor.fetchall()
     return rows[0] if len(rows) == 1 else None
@@ -204,14 +205,17 @@ class AuthService:
 
     async def revoke_admin(self, jti):
         await self.database.execute(
-            "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + interval '12 hours') ON CONFLICT(token_key) DO UPDATE SET expires_at=EXCLUDED.expires_at",
+            Query(
+                "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + interval '12 hours') ON CONFLICT(token_key) DO UPDATE SET expires_at=EXCLUDED.expires_at",
+                "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + INTERVAL 12 HOUR) ON DUPLICATE KEY UPDATE expires_at=VALUES(expires_at)",
+            ),
             ("admin:" + jti,),
         )
 
     async def register(self, *, email, password, first_name, last_name, status, profile):
         hashed = await hash_password(password)
         async with self.database.transaction() as connection:
-            await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("auth-email:" + email,))
+            await acquire_lock(connection, "auth-email:" + email)
             if await find_user(connection, email=email, lock=True):
                 raise ApiError(409, "Аккаунт с этой почтой уже есть – войдите или восстановите пароль")
             cursor = await connection.execute("SELECT id FROM directus_roles WHERE name='alumni' LIMIT 2")
@@ -268,12 +272,21 @@ class AuthService:
             profile = profiles[0]
             if version is not None and version != (profile["token_version"] or 0):
                 return "used"
-            cursor = await connection.execute(
-                "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + interval '24 hours') ON CONFLICT DO NOTHING",
+            await acquire_lock(connection, "reset:" + jti)
+            previous = await (
+                await connection.execute(
+                    "SELECT token_key FROM club_auth_revocations WHERE token_key=%s", ("reset:" + jti,)
+                )
+            ).fetchone()
+            if previous:
+                return "used"
+            await connection.execute(
+                Query(
+                    "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + interval '24 hours')",
+                    "INSERT INTO club_auth_revocations(token_key,expires_at) VALUES(%s,now() + INTERVAL 24 HOUR)",
+                ),
                 ("reset:" + jti,),
             )
-            if cursor.rowcount == 0:
-                return "used"
             await connection.execute("UPDATE directus_users SET password=%s WHERE id=%s", (hashed, user_id))
             await connection.execute(
                 "UPDATE alumni SET token_version=COALESCE(token_version,0)+1 WHERE id=%s", (profile["id"],)

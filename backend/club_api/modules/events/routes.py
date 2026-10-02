@@ -9,6 +9,7 @@ from pydantic import Field, field_validator
 from club_api.core.errors import ApiError
 from club_api.core.models import count, group_count, guid, parse_date, partial, query_page
 from club_api.core.views import api_view, defer, parse_body
+from club_api.db.queries import acquire_lock
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
 from club_api.modules.events.notifications import announce
@@ -189,9 +190,7 @@ async def rsvp(request: HttpRequest, id: str):
     alumni = await verified_alumni(request)
     state, id = (request.services, guid(id))
     async with state.database.transaction() as connection:
-        await connection.execute(
-            "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("rsvp:" + id + ":" + alumni["id"],)
-        )
+        await acquire_lock(connection, "rsvp:" + id + ":" + alumni["id"])
         rows = await state.store.read(
             "events",
             filters={"id": {"_eq": id}, "status": {"_eq": "published"}},
@@ -220,7 +219,7 @@ async def rsvp(request: HttpRequest, id: str):
     return {"going": True}
 
 
-@api_view
+@api_view(permission=require_admin)
 async def admin_events(request: HttpRequest):
     await require_admin(request)
     store = request.services.store
@@ -260,7 +259,7 @@ async def admin_events(request: HttpRequest):
     ]
 
 
-@api_view
+@api_view(permission=require_admin)
 async def admin_roster(request: HttpRequest, id: str):
     await require_admin(request)
     await request.services.store.one("events", guid(id), fields=("id",))
@@ -270,7 +269,7 @@ async def admin_roster(request: HttpRequest, id: str):
     ]
 
 
-@api_view
+@api_view(body=EventBody, permission=require_admin)
 async def create_event(request: HttpRequest):
     admin = await require_admin(request)
     body = parse_body(request, EventBody)
@@ -287,7 +286,7 @@ async def create_event(request: HttpRequest):
     return {"ok": True, "id": row["id"]}
 
 
-@api_view
+@api_view(body=EventPatch, permission=require_admin)
 async def patch_event(request: HttpRequest, id: str):
     admin = await require_admin(request)
     body = parse_body(request, EventPatch)
@@ -297,7 +296,7 @@ async def patch_event(request: HttpRequest, id: str):
     return {"ok": True}
 
 
-@api_view
+@api_view(permission=require_admin)
 async def delete_event(request: HttpRequest, id: str):
     admin = await require_admin(request)
     await request.services.store.delete("events", id=guid(id))
@@ -305,7 +304,7 @@ async def delete_event(request: HttpRequest, id: str):
     return {"ok": True}
 
 
-@api_view
+@api_view(permission=require_admin)
 async def attend(request: HttpRequest, rsvpId: str):
     admin = await require_admin(request)
     state = request.services

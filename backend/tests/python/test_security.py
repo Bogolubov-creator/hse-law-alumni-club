@@ -112,9 +112,9 @@ def test_filter_values_are_parameters_and_like_escaped():
 
 
 @pytest.mark.asyncio
-async def test_argon2_settings_and_failure():
+async def test_bcrypt_sha256_settings_and_failure():
     hashed = await hash_password("synthetic-account-password")
-    assert hashed.startswith("$argon2id$v=19$m=65536,t=3,p=1$")
+    assert hashed.startswith("bcrypt_sha256$$2b$12$")
     assert await verify_password(hashed, "synthetic-account-password")
     assert not await verify_password(hashed, "incorrect")
     assert not await verify_password("$argon2id$broken", "incorrect")
