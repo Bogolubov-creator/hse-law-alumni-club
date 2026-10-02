@@ -38,7 +38,7 @@ class SecurityMiddleware:
         )
         path, method = scope["path"], scope["method"]
         ip = client_ip(request)
-        status = 500
+        status = None
         response_started = False
 
         async def secure_send(message):
@@ -144,4 +144,4 @@ class SecurityMiddleware:
                 raise RuntimeError("Ошибка после начала ответа") from None
             await error(500, "Внутренняя ошибка")
         finally:
-            logger.info("%s %s %s", method, path, status)
+            logger.info("%s %s %s", method, path, status if response_started else "disconnected")

@@ -211,3 +211,31 @@ def test_explicit_boolean_consent(consent):
     }
     with pytest.raises(ValidationError):
         RegisterBody.model_validate(body)
+
+
+@pytest.mark.asyncio
+async def test_disconnected_request_is_not_logged_as_server_error(caplog):
+    from club_api.core.http import SecurityMiddleware
+
+    async def application(scope, receive, send):
+        assert (await receive())["type"] == "http.request"
+        assert (await receive())["type"] == "http.disconnect"
+
+    messages = iter([{"type": "http.request", "body": b""}, {"type": "http.disconnect"}])
+
+    async def receive():
+        return next(messages)
+
+    sent = []
+
+    async def send(message):
+        sent.append(message)
+
+    caplog.set_level(logging.INFO, logger="club.http")
+    middleware = SecurityMiddleware(application, Settings(AUTH_SECRET="synthetic-disconnect-test-only"), {})
+    await middleware(
+        {"type": "http", "method": "GET", "path": "/me", "headers": [], "client": ("127.0.0.1", 1)}, receive, send
+    )
+    assert not sent
+    assert "GET /me disconnected" in caplog.text
+    assert "GET /me 500" not in caplog.text
