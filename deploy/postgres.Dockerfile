@@ -5,7 +5,7 @@ RUN tar -xzf /tmp/gosu.tar.gz -C /tmp
 WORKDIR /tmp/gosu-1.19
 RUN go build -mod=readonly -trimpath -ldflags='-s -w' -o /usr/local/bin/gosu .
 
-FROM postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+FROM postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
 COPY --from=gosu /usr/local/bin/gosu /usr/local/bin/gosu
 COPY --from=gosu /tmp/gosu-1.19/LICENSE /usr/share/licenses/club-gosu/LICENSE
 RUN gosu nobody true
