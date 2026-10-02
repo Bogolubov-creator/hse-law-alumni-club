@@ -15,6 +15,28 @@ maintenance = importlib.import_module('mariadb_native')
 
 
 class NativeDatabaseGuards(unittest.TestCase):
+    def test_low_docker_disk_space_stops_before_build_backup_or_writes(self):
+        from unittest.mock import Mock
+
+        context = Mock()
+        context.runtime = {'APP_ENV': 'production', 'SEED_DEMO': 'false'}
+        context.capture.return_value = json.dumps({'services': {'api': {}, 'web': {}, 'operator': {}}})
+        with tempfile.TemporaryDirectory() as storage:
+            usage = type('Usage', (), {'free': maintenance.MIN_BUILD_FREE_BYTES - 1})()
+            with patch.object(maintenance.os, 'geteuid', return_value=0), patch.object(maintenance, 'revision'), patch.object(maintenance, 'output', return_value=storage), patch.object(maintenance.shutil, 'disk_usage', return_value=usage), patch.object(maintenance, 'sql') as query, patch.object(maintenance, 'backup') as backup:
+                with self.assertRaisesRegex(ValueError, '5 GiB'):
+                    maintenance.deploy(context)
+                context.execute.assert_not_called()
+                query.assert_not_called()
+                backup.assert_not_called()
+
+    def test_build_space_accepts_exact_threshold(self):
+        with tempfile.TemporaryDirectory() as storage:
+            usage = type('Usage', (), {'free': maintenance.MIN_BUILD_FREE_BYTES})()
+            with patch.object(maintenance, 'output', return_value=storage), patch.object(maintenance.shutil, 'disk_usage', return_value=usage) as measured:
+                maintenance.verify_build_space()
+                measured.assert_called_once_with(pathlib.Path(storage).resolve())
+
     def test_resume_waits_for_existing_container_without_compose_version_specific_flags(self):
         from unittest.mock import Mock
 
