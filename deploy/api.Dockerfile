@@ -1,4 +1,4 @@
-FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS build
+FROM python:3.14.8-alpine@sha256:8acac70227ce3b34da9453120c375cc5b66cd0b062d4dc6bc74286f81a3819e1 AS build
 RUN apk add --no-cache build-base mariadb-connector-c-dev pkgconf
 RUN pip install --no-cache-dir uv==0.12.22
 WORKDIR /repo/backend
@@ -11,7 +11,7 @@ RUN .venv/bin/python -m compileall -q -b -s /repo -p /app .venv/lib/python3.14/s
     && find .venv/lib/python3.14/site-packages/club_api -type d -name __pycache__ -exec rm -rf {} + \
     && rm .venv/lib/python3.14/site-packages/club_api-0.1.0.dist-info/direct_url.json
 
-FROM python:3.14.7-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS runtime
+FROM python:3.14.8-alpine@sha256:8acac70227ce3b34da9453120c375cc5b66cd0b062d4dc6bc74286f81a3819e1 AS runtime
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH=/opt/venv/bin:$PATH
