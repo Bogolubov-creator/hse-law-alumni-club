@@ -8,13 +8,15 @@
 </header>
 <section>
 <h2>Сохранённые материалы</h2>
+<div class="site-filters"><label>Поиск в сохранённом<input type="search" data-reading-search maxlength="200"></label>
 <label>Тип материала<select aria-label="Тип материала" data-reading-kind>
 <option value="">Все</option>
 {% for key,label in [("program","ДПО"),("news","Новости"),("change","Изменения в праве"),("podcast","Подкасты"),("event","События"),("merch","Мерч")] %}
 <option value="{{ key }}">{{ label }}</option>
 {% endfor %}
 </select>
-</label>
+</label></div>
+<div class="site-panel site-actions" data-reading-undo hidden role="status"><span></span><button data-action="undo-reading">Отменить удаление</button></div>
 <div data-reading-list="saved">
 </div>
 </section>

@@ -2,21 +2,23 @@ const base = document.body.dataset.base;
 const normalized = value => String(value || "").toLocaleLowerCase("ru").replace(/ё/g, "е");
 const path = document.querySelector("#page").dataset.path;
 const query = new URLSearchParams(location.search);
+let readPaths = new Set();
 
 function apply() {
   calendar();
   for (const input of document.querySelectorAll("form[method='get'] [name],form[role='search'] [name]")) input.value = query.get(input.name) || input.tagName === "SELECT" && input.options[0].value || "";
-  const cards = [...document.querySelectorAll("[data-catalog-row],[data-change-row],[data-search-row],[data-office-row]")];
+  const cards = [...document.querySelectorAll("#main [data-catalog-row],#main [data-change-row],#main [data-search-row],#main [data-office-row]")];
   let count = 0;
   for (const card of cards) {
-    const record = card.dataset.catalogRow ? JSON.parse(card.dataset.catalogRow) : card.dataset.changeRow ? JSON.parse(card.dataset.changeRow) : card.dataset.officeRow ? JSON.parse(card.dataset.officeRow) : { title: card.textContent };
-    let visible = [record.title,record.number,record.summary].some(value => normalized(value).includes(normalized(query.get("q"))));
+    const record = card.dataset.catalogRow ? JSON.parse(card.dataset.catalogRow) : card.dataset.changeRow ? JSON.parse(card.dataset.changeRow) : card.dataset.officeRow ? JSON.parse(card.dataset.officeRow) : { title: card.dataset.searchText || card.textContent };
+    let visible = normalized(query.get("q")).split(/\s+/).every(word => normalized([record.title,record.number,record.summary,record.text].join(" ")).includes(word));
     if (card.dataset.officeRow) {
       visible = normalized([record.title,record.direction,record.category,record.year].join(" ")).includes(normalized(query.get("q")).trim());
       if (query.get("status") && record.status !== query.get("status")) visible = false;
     }
     for (const name of ["direction","format","enrollment","category","kind","topic"]) if (query.get(name) && record[name] !== query.get(name)) visible = false;
     if (card.dataset.changeRow) {
+      if (document.querySelector("[data-unread-filter]")?.checked && readPaths.has(card.dataset.readingPath)) visible = false;
       const view = query.get("view") || "digest";
       if (view !== "all" && record.entryType !== view) visible = false;
       if (query.get("from") && record.date.slice(0,10) < query.get("from")) visible = false;
@@ -26,13 +28,39 @@ function apply() {
     card.hidden = !visible;
     if (visible) count++;
   }
-  const sort = query.get("sort");
+  if (path === "/search") {
+    for (const group of document.querySelectorAll("#main .club-search section,#main[data-search-groups] section,#main [data-search-groups] section")) {
+      const visible = [...group.querySelectorAll("[data-search-row]")].filter(row => !row.hidden);
+      visible.slice(6).forEach(row => { row.hidden = true; count--; });
+    }
+  }
+  const sort = query.get("sort") || (path.startsWith("/changes") ? "newest" : "");
   if (cards.length && ["title","price","price-desc","oldest","newest"].includes(sort)) {
     const data = card => JSON.parse(card.dataset.catalogRow || card.dataset.changeRow);
-    cards.sort((left,right) => sort === "title" ? normalized(data(left).title).localeCompare(normalized(data(right).title), "ru") : sort.startsWith("price") ? (data(left).price-data(right).price)*(sort === "price" ? 1 : -1) : (data(left).date.localeCompare(data(right).date))*(sort === "oldest" ? 1 : -1));
+    cards.sort((left,right) => sort === "title" ? normalized(data(left).title).localeCompare(normalized(data(right).title), "ru") : sort.startsWith("price") ? (data(left).price-data(right).price)*(sort === "price" ? 1 : -1) : (data(left).date.localeCompare(data(right).date) || String(data(left).id).localeCompare(String(data(right).id), "ru", { numeric: true }))*(sort === "oldest" ? 1 : -1));
     cards.forEach(card => card.parentNode.append(card));
   }
-  const status = document.querySelector("#main > p[role='status']");
+  if (path.startsWith("/changes")) {
+    const visible = cards.filter(card => card.hasAttribute("data-change-row") && !card.hidden);
+    const page = Math.min(10000, Math.max(1, Number.parseInt(query.get("page"), 10) || 1));
+    visible.forEach((card, index) => { card.hidden = index < (page - 1) * 20 || index >= page * 20; });
+    document.querySelectorAll("[data-change-open]").forEach(link => {
+      const id = link.dataset.changeOpen;
+      link.href = base + "changes/" + id + (query.size ? "?" + query : "");
+    });
+    const navigation = document.querySelector("[data-changes-pagination]");
+    if (navigation) {
+      navigation.replaceChildren();
+      for (const [label, target] of [["← Предыдущая", page - 1], ["Страница " + page, 0], ["Следующая страница →", page + 1]]) {
+        if (target && (target < 1 || target > page && visible.length <= page * 20)) continue;
+        const node = document.createElement(target ? "a" : "span");
+        node.textContent = label;
+        if (target) { const next = new URLSearchParams(query); next.set("page", target); node.href = base + "changes?" + next; }
+        navigation.append(node);
+      }
+    }
+  }
+  const status = document.querySelector("[data-changes-count],#main > p[role='status']");
   if (status) status.textContent = "Найдено: " + count;
   const officeCount = document.querySelector("[data-office-count]");
   if (officeCount) officeCount.textContent = "Показано: " + count + " из " + cards.length;
@@ -42,15 +70,17 @@ function apply() {
 }
 
 document.addEventListener("submit", event => {
-  if (!event.target.matches("form[method='get'],form[role='search']")) return;
+  if (!event.target.matches("form[method='get'],form[role='search']") || event.target.closest("#search-dialog")) return;
   event.preventDefault();
   for (const name of [...query.keys()]) query.delete(name);
   for (const [key,value] of new FormData(event.target)) if (value) query.set(key,value);
-  history.pushState(null,"",base + path.slice(1) + (query.size ? "?" + query : ""));
+  history.pushState(null,"",base + (event.target.hasAttribute("data-changes-form") ? "changes" : path.slice(1)) + (query.size ? "?" + query : ""));
   apply();
 });
 window.addEventListener("popstate", () => { for (const name of [...query.keys()]) query.delete(name); for (const [key,value] of new URLSearchParams(location.search)) query.set(key,value); apply(); });
 document.addEventListener("club-page-ready", apply);
+document.addEventListener("club-reading-updated", event => { readPaths = new Set(event.detail.read); apply(); });
+document.dispatchEvent(new Event("club-reading-refresh"));
 apply();
 
 window.clubMirrorReply = async question => {

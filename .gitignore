@@ -41,3 +41,5 @@ frontend/public/assets/mirror.js
 frontend/public/assets/offline.js
 
 frontend/public/sw.js
+
+frontend/public/assets/discovery.js

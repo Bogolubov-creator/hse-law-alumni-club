@@ -210,7 +210,7 @@ def select_changes(items, params):
     selected = []
     for item in items:
         paragraphs = " ".join(segment["text"] for block in item.get("blocks", []) for segment in block["segments"])
-        text = f"{item['title']} {item['number']} {paragraphs}".casefold().replace("ё", "е")
+        text = f"{item['title']} {item['number']} {item['summary']} {paragraphs}".casefold().replace("ё", "е")
         if (
             all(word in text for word in words)
             and (not params.get("view") or params["view"] == "all" or item["entryType"] == params["view"])

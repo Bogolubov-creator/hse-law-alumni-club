@@ -12,6 +12,7 @@ from club_web.calendar import calendar_file
 from club_web.client import Api
 from club_web.pages import OFFICE_NAV, PUBLIC_PAGES, context, resource
 from club_web.rendering import templates
+from club_web.search import search_groups
 
 
 def fixtures(root):
@@ -86,7 +87,7 @@ def relocate(html, base):
         url = match[2]
         return match[1] + (url if url.startswith(base) else base + url.lstrip("/"))
 
-    return re.sub(r'((?:href|src|action)=["\'])(/(?!/)[^"\']*)', replace, html)
+    return re.sub(r'(?<![\w-])((?:href|src|action)=["\'])(/(?!/)[^"\']*)', replace, html)
 
 
 async def export(destination, base, data):
@@ -140,23 +141,13 @@ async def export(destination, base, data):
             page = await context(
                 Api(client, {"authorization": "Bearer demo", "x-cart-session": "demo"}), path, {}, True
             )
-            if path == "/changes":
+            if path == "/changes" or path.startswith("/changes/"):
                 page["items"] = changes["items"]
                 page["next_page"] = ""
             if path == "/search":
-                page["groups"] = [
-                    {
-                        "label": label,
-                        "items": [{"title": item["title"], "path": f"/{prefix}/{item[key]}"} for item in records],
-                    }
-                    for prefix, label, records, key in (
-                        ("dpo", "Программы ДПО", data["programs"], "slug"),
-                        ("news", "Новости", data["news"], "slug"),
-                        ("events", "События", data["events"], "id"),
-                        ("podcasts", "Подкасты", data["podcasts"], "id"),
-                        ("changes", "Изменения в праве", changes["items"], "id"),
-                    )
-                ]
+                page["groups"] = search_groups(
+                    data["programs"], data["news"], data["events"], data["podcasts"], changes["items"]
+                )
             page.update(base=base, mirror=True, request=None)
             target = destination / path.lstrip("/") / "index.html" if path != "/404" else destination / "404.html"
             target.parent.mkdir(parents=True, exist_ok=True)

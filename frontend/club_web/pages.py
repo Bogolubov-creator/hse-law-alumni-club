@@ -9,6 +9,7 @@ from club_web.changes import parse_changes, select_changes
 from club_web.client import ApiFailure
 from club_web.formatting import page_items
 from club_web.office import DESCRIPTIONS, FIELDS, GROUPS, ICONS, LABELS, METRICS, filter_content
+from club_web.search import search_groups
 
 PUBLIC_PAGES = {
     "/": ("home.html", "Клуб выпускников факультета права"),
@@ -234,37 +235,13 @@ async def context(api, path, params, authorized=False):
             load("podcasts", "/podcasts", {"items": []}),
         )
         needle = params.get("q", "").casefold().replace("ё", "е").strip()
-        groups = []
-        for prefix, label, records, fields, identifier in (
-            ("dpo", "Программы ДПО", data["programs"], ("title", "direction"), "slug"),
-            ("news", "Новости", data["news"], ("title", "excerpt"), "slug"),
-            ("events", "События", data["events"], ("title", "description", "location"), "id"),
-            ("podcasts", "Подкасты", page_items(data["podcasts"]), ("title",), "id"),
-        ):
-            matches = [
-                record
-                for record in records
-                if len(needle) >= 2
-                and needle in " ".join(str(record.get(field) or "") for field in fields).casefold().replace("ё", "е")
-            ][:6]
-            groups.append(
-                {
-                    "label": label,
-                    "items": [
-                        {"title": record["title"], "path": f"/{prefix}/{record[identifier]}"} for record in matches
-                    ],
-                }
-            )
-        found = (
-            select_changes(parse_changes(resource("changes.json"))["items"], {"q": needle, "view": "all"})[:6]
-            if len(needle) >= 2
-            else []
-        )
-        groups.append(
-            {
-                "label": "Изменения в праве",
-                "items": [{"title": item["title"], "path": "/changes/" + item["id"]} for item in found],
-            }
+        groups = search_groups(
+            data["programs"],
+            data["news"],
+            data["events"],
+            page_items(data["podcasts"]),
+            parse_changes(resource("changes.json"))["items"],
+            params.get("q", ""),
         )
         data["groups"] = groups
         data["sections"] = [
@@ -313,6 +290,8 @@ async def context(api, path, params, authorized=False):
             if path != "/changes"
             else None
         )
+        if data["item"]:
+            data["title"] = data["item"]["title"]
         if path != "/changes" and not data["item"]:
             data.update(template="not-found.html", status=404)
         data["items"] = select_changes(snapshot["items"], {"view": "digest", **params})
@@ -320,6 +299,15 @@ async def context(api, path, params, authorized=False):
         page = pagination_page(params.get("page", "1"))
         data["items"] = data["items"][(page - 1) * 20 : page * 20]
         data["page_number"] = page
+        retained = {
+            key: value
+            for key, value in params.items()
+            if key in ("q", "view", "kind", "topic", "from", "to", "sort", "page")
+        }
+        suffix = "?" + urlencode(retained) if retained else ""
+        data["changes_suffix"] = suffix
+        data["changes_back"] = "/changes" + suffix
+        data["previous_page"] = "/changes?" + urlencode({**retained, "page": page - 1}) if page > 1 else ""
         data["next_page"] = "/changes?" + urlencode({**params, "page": page + 1}) if data["total"] > page * 20 else ""
         data["filters"] = {
             key: sorted({item.get(key) or "" for item in snapshot["items"]} - {""}) for key in ("kind", "topic")

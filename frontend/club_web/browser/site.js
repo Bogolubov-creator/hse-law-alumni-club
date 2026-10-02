@@ -1,5 +1,6 @@
 import { crowMascotApi } from "./crow-mascot.js";
 import { prepareMini } from "./mini.js";
+import { prepareDiscovery } from "./discovery.js";
 
 const base = document.body.dataset.base || "/";
 const mirror = document.body.dataset.mirror === "true";
@@ -12,6 +13,7 @@ let installPrompt = null;
 let mirrorApi = null;
 let botQueue = Promise.resolve();
 let readingPageSaved = false;
+let removedReading = null;
 const compare = new Set();
 
 function stored(key, fallback = null) {
@@ -302,8 +304,9 @@ function renderReading() {
   document.querySelectorAll("[data-reading-list]").forEach(list => {
     list.replaceChildren();
     const kind = document.querySelector("[data-reading-kind]")?.value;
-    const items = data[list.dataset.readingList].filter(item => list.dataset.readingList !== "saved" || !kind || item.kind === kind);
-    if (!items.length) list.append(element("p", "Материалов пока нет.", { role: "status" }));
+    const query = (document.querySelector("[data-reading-search]")?.value || "").toLocaleLowerCase("ru").replace(/ё/g, "е").trim();
+    const items = list.dataset.readingList === "recent" ? data.recent.slice(0, 4) : data.saved.filter(item => (!kind || item.kind === kind) && item.title.toLocaleLowerCase("ru").replace(/ё/g, "е").includes(query));
+    if (!items.length) list.append(element("p", list.dataset.readingList === "saved" && data.saved.length ? "По выбранным условиям ничего не найдено." : "Материалов пока нет.", { role: "status" }));
     for (const item of items) {
       const row = element("div", undefined, { class: "site-actions" });
       row.append(element("a", item.title, { href: url(item.path), class: "site-reading-item" }));
@@ -311,7 +314,8 @@ function renderReading() {
       list.append(row);
     }
   });
-  document.querySelectorAll("[data-reading-path]").forEach(article => { article.hidden = !!document.querySelector("[data-unread-filter]")?.checked && data.read.includes(article.dataset.readingPath); });
+  if (mirror) document.dispatchEvent(new CustomEvent("club-reading-updated", { detail: { read: data.read } }));
+  else document.querySelectorAll("[data-reading-path]").forEach(article => { article.hidden = !!document.querySelector("[data-unread-filter]")?.checked && data.read.includes(article.dataset.readingPath); });
 }
 
 function alignOfficeNavigation() {
@@ -325,6 +329,7 @@ function alignOfficeNavigation() {
 }
 
 function setupPage() {
+  prepareDiscovery(url, mirror);
   alignOfficeNavigation();
   const recent = document.querySelector("[data-reading-title]");
   if (recent) {
@@ -515,7 +520,27 @@ document.addEventListener("click", async event => {
         data.saved.unshift({ path, title: target.dataset.title, kind, id: path.split("/").pop(), at: Date.now() });
       }
       writeReading(data);
-    } else if (action === "remove-saved") { const data = reading(true); data.saved = data.saved.filter(item => item.path !== target.dataset.href); writeReading(data); }
+    } else if (action === "remove-saved") {
+      const data = reading(true);
+      const removed = data.saved.find(item => item.path === target.dataset.href);
+      if (!removed) { renderReading(); return; }
+      data.saved = data.saved.filter(item => item.path !== target.dataset.href);
+      if (!store(readingKey, JSON.stringify(data))) return;
+      removedReading = removed;
+      renderReading();
+      const box = document.querySelector("[data-reading-undo]");
+      if (box) { box.hidden = false; box.querySelector("span").textContent = "Удалено: «" + removed.title + "»."; box.querySelector("button").focus(); }
+    } else if (action === "undo-reading") {
+      const data = reading(true);
+      if (!removedReading) return;
+      if (data.saved.length >= 200 && !data.saved.some(item => item.path === removedReading.path)) throw new Error("Уже сохранено 200 материалов. Освободите место, чтобы отменить удаление.");
+      if (!data.saved.some(item => item.path === removedReading.path)) data.saved.unshift(removedReading);
+      if (!store(readingKey, JSON.stringify(data))) return;
+      removedReading = null;
+      renderReading();
+      document.querySelector("[data-reading-search]")?.focus();
+      document.querySelector("[data-reading-undo]").hidden = true;
+    }
     else if (action === "mark-read") {
       const data = reading(true);
       const path = target.dataset.href;
@@ -603,6 +628,7 @@ async function subscribePush() {
   await request("/me/push/subscribe", "POST", subscription.toJSON()); notice("Уведомления включены");
 }
 
+document.addEventListener("input", event => { if (event.target.matches("[data-reading-search]")) renderReading(); });
 document.addEventListener("change", event => {
   if (event.target.matches("[data-audio-rate]")) event.target.closest(".site-player").querySelector("audio").playbackRate = Number(event.target.value);
   if (event.target.matches("[data-unread-filter],[data-reading-kind]")) renderReading();
@@ -618,6 +644,7 @@ document.addEventListener("keydown", event => {
   }
   if (event.key === "Escape") { const button = document.querySelector("[data-action='menu']"); if (button?.getAttribute("aria-expanded") === "true") button.click(); }
 });
+document.addEventListener("club-reading-refresh", renderReading);
 window.addEventListener("storage", event => { if (event.key === readingKey) renderReading(); });
 window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); installPrompt = event; document.querySelector("#install-app").hidden = false; });
 

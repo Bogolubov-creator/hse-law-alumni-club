@@ -758,3 +758,135 @@ def test_pwa_can_start_without_connection(chromium, site):
     assert page.locator("#offline-notice").bounding_box()["width"] <= 430
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
     context.close()
+
+
+def test_search_dialog_keyboard_and_retry(page):
+    page.goto("/news")
+    trigger = page.get_by_role("link", name="Поиск", exact=True).first
+    trigger.click()
+    dialog = page.locator("#search-dialog")
+    expect(dialog).to_be_visible()
+    field = dialog.get_by_role("searchbox")
+    expect(field).to_be_focused()
+    field.fill("правовая")
+    expect(dialog.locator("[data-search-results]")).to_contain_text(PROGRAM["title"])
+    field.press("Enter")
+    expect(page).to_have_url(re.compile(r"/news$"))
+    field.press("ArrowDown")
+    expect(dialog.locator("[data-search-row]").first).to_be_focused()
+    page.keyboard.press("Escape")
+    expect(dialog).not_to_be_visible()
+    expect(trigger).to_be_focused()
+    page.route("**/views/search?*", lambda route: route.abort())
+    trigger.click()
+    field.fill("встреча")
+    expect(dialog.locator("[data-search-status]")).to_contain_text("Не удалось выполнить поиск")
+    page.unroute("**/views/search?*")
+    dialog.get_by_role("button", name="Найти", exact=True).click()
+    expect(dialog.locator("[data-search-results]")).to_contain_text(EVENT["title"])
+
+
+def test_saved_search_undo_and_recent_limit(page):
+    page.goto("/news/news-one")
+    page.get_by_role("button", name="Сохранить", exact=True).click()
+    page.goto("/dpo/course-one")
+    page.get_by_role("button", name="Сохранить", exact=True).click()
+    page.goto("/saved")
+    search = page.get_by_role("searchbox", name="Поиск в сохранённом")
+    search.fill(PROGRAM["title"])
+    saved = page.locator("[data-reading-list=saved]")
+    expect(saved.get_by_role("link")).to_have_count(1)
+    saved.get_by_role("button", name=re.compile("Удалить")).click()
+    expect(saved).to_contain_text("ничего не найдено")
+    page.get_by_role("button", name="Отменить удаление").click()
+    expect(saved).to_contain_text(PROGRAM["title"])
+    search.fill("")
+    expect(saved.get_by_role("link")).to_have_count(2)
+    page.evaluate("""() => {
+        const data=JSON.parse(localStorage.getItem('club-reading-v1'));
+        data.recent=Array.from({length:8},(_,i)=>({kind:'news',id:'n'+i,title:'Новость '+i,path:'/news/n'+i,at:Date.now()}));
+        localStorage.setItem('club-reading-v1',JSON.stringify(data));
+    }""")
+    page.reload()
+    expect(page.locator("[data-reading-list=recent] a")).to_have_count(4)
+
+
+@pytest.mark.parametrize("width", [360, 390, 768, 1280, 1440])
+def test_changes_filters_reader_back_and_copy_fallback(page, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto("/changes?view=all&sort=oldest")
+    if width < 768:
+        page.get_by_role("button", name="Поиск и фильтры").click()
+        dialog = page.locator("[data-changes-filters]")
+        dialog.get_by_role("searchbox").fill("отменить")
+        dialog.get_by_role("button", name="Отмена", exact=True).click()
+        expect(page.locator("[data-changes-form] input[name=q]")).to_have_value("")
+        expect(page.get_by_role("button", name="Поиск и фильтры")).to_be_focused()
+    link = page.locator("[data-change-open]").first
+    target = link.get_attribute("data-change-open")
+    link.click()
+    expect(page).to_have_url(re.compile(r"/changes/.*\?view=all&sort=oldest"))
+    expect(page.locator(".changes-reader")).to_be_visible()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+    page.evaluate("Object.defineProperty(navigator,'clipboard',{value:undefined,configurable:true})")
+    page.get_by_role("button", name="Копировать текст").click()
+    expect(page.get_by_role("textbox", name="Текст для ручного копирования")).to_be_visible()
+    page.get_by_role("link", name="← Все материалы", exact=True).click()
+    expect(page).to_have_url(re.compile(r"/changes\?view=all&sort=oldest$"))
+    expect(page.locator('[data-change-open="' + target + '"]')).to_be_focused()
+
+
+def test_mirror_changes_search_reading_and_dialog_are_independent(chromium, mirror_site):
+    context = chromium.new_context(viewport={"width": 1440, "height": 1000})
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(mirror_site + "changes/?view=all")
+    expect(page.locator("[data-change-row]:visible")).to_have_count(20)
+    page.get_by_role("link", name="Поиск", exact=True).first.click()
+    dialog = page.locator("#search-dialog")
+    dialog.get_by_role("searchbox").fill("коллекторов")
+    expect(dialog.locator("[data-search-results]")).to_contain_text("Готовится / изменяется")
+    dialog.get_by_role("button", name="Закрыть поиск").click()
+    page.get_by_role("button", name="Показать", exact=True).click()
+    expect(page.locator("[data-change-row]:visible")).to_have_count(20)
+    page.locator("[data-change-row]:visible").first.get_by_role("button", name="Сохранить", exact=True).click()
+    expect(page.locator("[data-change-row]:visible")).to_have_count(20)
+    page.locator("[data-change-row]:visible").first.get_by_role(
+        "button", name="Отметить прочитанным", exact=True
+    ).click()
+    read = page.locator("[data-change-row]:visible").first.get_attribute("data-reading-path")
+    page.get_by_role("checkbox", name="Только непрочитанные в этом браузере").check()
+    expect(page.locator('[data-reading-path="' + read + '"]')).not_to_be_visible()
+    expect(page.locator("[data-change-row]:visible")).to_have_count(20)
+    page.get_by_role("searchbox", name="Название, номер или ключевые слова").fill("коллекторов")
+    page.get_by_role("button", name="Показать", exact=True).click()
+    expect(page.locator("[data-changes-count]")).to_have_text("Найдено: 0")
+    page.get_by_role("checkbox", name="Только непрочитанные в этом браузере").uncheck()
+    expect(page.locator("[data-change-row]:visible")).to_have_count(1)
+    assert not errors
+    context.close()
+
+
+def test_changes_reader_navigation_preserves_list_return(page):
+    page.goto("/changes?view=all")
+    page.locator("[data-change-open]").first.click()
+    second = page.locator("[data-change-open]").nth(1)
+    identifier = second.get_attribute("data-change-open")
+    second.click()
+    page.get_by_role("link", name="← Все материалы", exact=True).click()
+    expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
+
+
+def test_mirror_reader_back_restores_focus(chromium, mirror_site):
+    context = chromium.new_context(viewport={"width": 1440, "height": 1000})
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+    page = context.new_page()
+    page.goto(mirror_site + "changes/?view=all&sort=oldest")
+    link = page.locator("[data-change-open]:visible").first
+    identifier = link.get_attribute("data-change-open")
+    link.click()
+    page.get_by_role("link", name="← Все материалы", exact=True).click()
+    expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
+    context.close()

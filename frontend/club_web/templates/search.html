@@ -12,6 +12,7 @@
 {% elif not found and not errors %}
 <p role="status">Ничего не найдено. Попробуйте другое слово.</p>
 {% endif %}
+<div data-search-groups>
 <nav aria-label="Разделы клуба">
 {% for href,label in sections %}
 <a class="site-reading-item" data-search-row href="{{ href }}">{{ label }}</a>
@@ -21,9 +22,10 @@
 <section>
 <h2>{{ group.label }}</h2>
 {% for item in group['items'] %}
-<a class="site-reading-item" data-search-row href="{{ item.path }}">{{ item.title }}</a>
+<a class="site-reading-item" data-search-row data-search-text="{{ item.text }}" href="{{ item.path }}">{{ item.title }}</a>
 {% endfor %}
 </section>
 {% endfor %}
+</div>
 </main>
 {% endblock %}
