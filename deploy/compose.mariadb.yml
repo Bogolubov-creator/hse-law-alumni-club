@@ -86,7 +86,10 @@ services:
 
   nginx:
     logging: *logging
-    image: nginx:1.30.5-alpine@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94
+    image: ${CLUB_NGINX_IMAGE:-club-nginx:local}
+    build:
+      context: ..
+      dockerfile: deploy/nginx.Dockerfile
     user: "101:101"
     environment:
       PUBLIC_URL: ${PUBLIC_URL:?Нужен HTTPS-адрес сайта}

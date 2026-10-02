@@ -150,18 +150,16 @@ jobs:
       - name: Check Caddy TLS and perimeter with final images
         run: python3 scripts/tests/test-edge.py --edge-image club-ci-live-caddy --web-image club-ci-live-web --api-image club-ci-live-api
       - name: Check nginx TLS, request limits and proxy headers
-        run: python3 scripts/tests/test-nginx.py --application-image club-ci-live-api
+        run: |
+          docker build --file deploy/nginx.Dockerfile --build-arg "VCS_REF=$(git rev-parse HEAD)" --tag club-ci-live-nginx .
+          python3 scripts/tests/test-nginx.py --application-image club-ci-live-api --edge-image club-ci-live-nginx
       - name: Scan application images (HIGH and CRITICAL)
         run: |
-          for service in api bootstrap web caddy postgres; do
+          for service in api bootstrap web caddy postgres nginx; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
               aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
               image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "club-ci-live-$service"
           done
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
-            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
-            image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
-            nginx:1.30.5-alpine@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94
       - name: Install, repeat and restore MariaDB on Ubuntu with local TLS
         run: CLUB_NATIVE_BROWSER=true bash scripts/tests/test-install.sh
 

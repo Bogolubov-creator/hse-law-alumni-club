@@ -146,7 +146,7 @@ API не содержит каталога bootstrap и демозаписей. 
 UID приложения – 1000.
 
 [CI](../../.github/workflows/ci.yml) проверяет зависимости каждого Python-пакета
-через pip-audit, пять образов через Trivy (High/Critical), Go-модули Caddy,
+через pip-audit, шесть образов через Trivy (High/Critical), Go-модули Caddy,
 текущие файлы через Gitleaks, а также установку и повторный запуск на Ubuntu.
 Лицензионные уведомления и shebang допускаются проверкой комментариев.
 

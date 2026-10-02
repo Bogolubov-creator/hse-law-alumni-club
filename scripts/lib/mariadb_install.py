@@ -140,6 +140,7 @@ def install(config, local):
             "CLUB_API_IMAGE": project + "-api:local",
             "CLUB_WEB_IMAGE": project + "-web:local",
             "CLUB_OPERATOR_IMAGE": project + "-operator:local",
+            "CLUB_NGINX_IMAGE": project + "-nginx:local",
             "PUBLIC_URL": values["PUBLIC_URL"],
             "CLUB_BIND_ADDRESS": "127.0.0.1" if local else "0.0.0.0",
             "CLUB_HTTP_PORT": "9080" if local else "80",

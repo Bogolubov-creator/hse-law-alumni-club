@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
-IMAGE = "nginx:1.30.5-alpine@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94"
 UPSTREAM = """import json
 from http.server import BaseHTTPRequestHandler,HTTPServer
 class Handler(BaseHTTPRequestHandler):
@@ -37,6 +36,7 @@ def command(*arguments, input=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--application-image", required=True)
+    parser.add_argument("--edge-image", default="club-nginx:local")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     name = "club-nginx-test-" + uuid4().hex[:12]
@@ -129,7 +129,7 @@ def main():
                 f"{work / 'privkey.pem'}:/etc/club/tls/privkey.pem:ro",
                 "--entrypoint",
                 "nginx",
-                IMAGE,
+                args.edge_image,
                 "-c",
                 "/etc/club/nginx.conf",
                 "-g",

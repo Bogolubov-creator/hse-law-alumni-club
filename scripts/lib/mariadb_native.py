@@ -61,7 +61,9 @@ def deploy(context):
                 context.project + "-operator:retained-" + deployed["commit"],
             ]
         )
-    context.execute("--profile", "operator", "build", "--build-arg", "VCS_REF=" + commit, "api", "web", "operator")
+    context.execute(
+        "--profile", "operator", "build", "--build-arg", "VCS_REF=" + commit, "api", "web", "operator", "nginx"
+    )
     context.execute(
         "run",
         "--rm",

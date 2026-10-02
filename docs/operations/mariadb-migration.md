@@ -77,9 +77,13 @@ Ubuntu – `libmariadb-dev pkg-config`, macOS – `mariadb-connector-c pkgconf`.
 | `CLUB_UPLOADS_DIR` | Отдельная копия uploads, владелец UID 1000 |
 | `CLUB_TLS_DIR` | Каталог `fullchain.pem` и `privkey.pem` |
 | `PUBLIC_URL` | Корневой HTTPS-адрес |
-| `CLUB_API_IMAGE`, `CLUB_WEB_IMAGE`, `CLUB_OPERATOR_IMAGE` | Образы одной ревизии |
+| `CLUB_API_IMAGE`, `CLUB_WEB_IMAGE`, `CLUB_OPERATOR_IMAGE`, `CLUB_NGINX_IMAGE` | Образы одной ревизии |
 | `CLUB_BIND_ADDRESS` | По умолчанию `127.0.0.1`; внешний адрес выбирается при публичном выпуске |
 | `CLUB_HTTP_PORT`, `CLUB_HTTPS_PORT` | По умолчанию 8080 и 8443 |
+
+nginx собирается через `deploy/nginx.Dockerfile` из закреплённого официального
+образа. Системные пакеты обновляются при сборке; libexpat требуется не ниже
+2.8.5-r0, pcre2 – не ниже 10.49-r0. Итоговый образ проходит Trivy.
 
 nginx запускается с UID/GID 101. Каталог TLS должен разрешать чтение этому GID,
 ключ – иметь владельца `root:101` и права 0640. Для локальной репетиции можно

@@ -22,6 +22,7 @@
 !deploy/web.Dockerfile
 !deploy/edge.Dockerfile
 !deploy/postgres.Dockerfile
+!deploy/nginx.Dockerfile
 !deploy/caddy/
 !deploy/caddy/**
 **/*.test.*
