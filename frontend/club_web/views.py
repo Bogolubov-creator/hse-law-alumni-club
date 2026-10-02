@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, Stream
 from django.views.decorators.http import require_safe
 
 from club_web.client import Api, forwarded_headers
+from club_web.offline import can_save_page
 from club_web.pages import context
 from club_web.rendering import ROOT, templates
 
@@ -99,7 +100,13 @@ async def render_page(request, path, *, fragment):
     if fragment and data.get("access_error") == 401:
         return JsonResponse({"error": "Сессия завершилась. Войдите снова."}, status=401)
     data.update(request=request, fragment=fragment, base="/", mirror=False)
-    return HttpResponse(templates().get_template(data["template"]).render(data), status=data["status"])
+    data["offline_reading"] = can_save_page(
+        "/" + path, request.GET, data, fragment=fragment, authorized="authorization" in supplied
+    )
+    response = HttpResponse(templates().get_template(data["template"]).render(data), status=data["status"])
+    if data["offline_reading"]:
+        response.headers["X-Club-Offline"] = "public"
+    return response
 
 
 @require_safe

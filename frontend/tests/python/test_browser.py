@@ -93,6 +93,8 @@ def site():
             if path.endswith("login"):
                 return httpx.Response(200, json={"token": "member-qa"})
             return httpx.Response(200, json={"ok": True})
+        if path == "/news/news-one" and records.get("deleted_news"):
+            return httpx.Response(404, json={"error": "Новость удалена"})
         return httpx.Response(200, json=records.get(path, []))
 
     build_public(PUBLIC)
@@ -494,4 +496,149 @@ def test_service_worker_does_not_cache_private_pages_or_api(chromium, site):
     context.set_offline(True)
     page.goto("/news")
     expect(page.get_by_role("heading", name="Нет подключения")).to_be_visible()
+    context.close()
+
+
+def wait_for_offline_page(page, path):
+    page.wait_for_function(
+        """async path => {
+            const keys = (await caches.keys()).filter(key => key.endsWith('-pages'));
+            for (const key of keys) {
+                const response = await (await caches.open(key)).match(new URL(path, location.origin));
+                if (response?.headers.get('X-Club-Saved-At')) return true;
+            }
+            return false;
+        }""",
+        arg=path,
+    )
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_public_reading_works_offline_and_refreshes_online(chromium, site, width):
+    context = chromium.new_context(base_url=site[0], viewport={"width": width, "height": 1000})
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto("/news/news-one")
+    page.evaluate("navigator.serviceWorker.ready")
+    wait_for_offline_page(page, "/news/news-one")
+    wait_for_offline_page(page, "/saved")
+    page.get_by_role("button", name="Сохранить", exact=True).click()
+    context.set_offline(True)
+    page.reload()
+    expect(page.get_by_role("heading", name=NEWS["title"], exact=True)).to_be_visible()
+    expect(page.locator("#offline-notice")).to_contain_text("Сохранённая копия от")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+    page.goto("/saved")
+    saved = page.locator("[data-reading-list='saved']").get_by_role("link", name=NEWS["title"], exact=True)
+    expect(saved).to_be_visible()
+    saved.click()
+    expect(page.get_by_role("heading", name=NEWS["title"], exact=True)).to_be_visible()
+    page.goto("/dpo")
+    expect(page.get_by_role("heading", name="Нет подключения", exact=True)).to_be_visible()
+    assert not errors
+    context.set_offline(False)
+    site[1]["/news/news-one"] = {**NEWS, "title": "Обновлённая новость"}
+    page.goto("/news/news-one")
+    expect(page.get_by_role("heading", name="Обновлённая новость", exact=True)).to_be_visible()
+    expect(page.locator("#offline-notice")).to_be_hidden()
+    context.set_offline(True)
+    page.reload()
+    expect(page.get_by_role("heading", name="Обновлённая новость", exact=True)).to_be_visible()
+    context.close()
+
+
+def test_expired_offline_copy_is_removed(chromium, site):
+    context = chromium.new_context(base_url=site[0])
+    page = context.new_page()
+    page.goto("/news/news-one")
+    page.evaluate("navigator.serviceWorker.ready")
+    wait_for_offline_page(page, "/news/news-one")
+    page.evaluate(
+        """async () => {
+            const key = (await caches.keys()).find(key => key.endsWith('-pages'));
+            const cache = await caches.open(key);
+            const request = new Request(location.href);
+            const response = await cache.match(request);
+            const headers = new Headers(response.headers);
+            headers.set('X-Club-Saved-At', String(Date.now() - 8*24*60*60*1000));
+            await cache.put(request, new Response(await response.text(), {headers}));
+        }"""
+    )
+    context.set_offline(True)
+    page.reload()
+    expect(page.get_by_role("heading", name="Нет подключения", exact=True)).to_be_visible()
+    context.close()
+
+
+def test_offline_catalog_cannot_send_cart_changes(chromium, site):
+    context = chromium.new_context(base_url=site[0])
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")
+    page = context.new_page()
+    page.goto("/dpo/course-one")
+    page.evaluate("navigator.serviceWorker.ready")
+    wait_for_offline_page(page, "/dpo/course-one")
+    context.set_offline(True)
+    page.reload()
+    page.get_by_role("button", name="В корзину", exact=True).click()
+    expect(page.locator("[data-cart] [data-error]")).to_contain_text("Для отправки данных нужен интернет")
+    assert not [write for write in site[2] if write["path"] == "/cart"]
+    context.close()
+
+
+def test_removed_news_is_not_kept_for_offline_reading(chromium, site):
+    context = chromium.new_context(base_url=site[0])
+    page = context.new_page()
+    page.goto("/news/news-one")
+    page.evaluate("navigator.serviceWorker.ready")
+    wait_for_offline_page(page, "/news/news-one")
+    site[1]["deleted_news"] = True
+    page.reload()
+    assert page.locator("h1").inner_text() != NEWS["title"]
+    context.set_offline(True)
+    page.reload()
+    expect(page.get_by_role("heading", name="Нет подключения", exact=True)).to_be_visible()
+    context.close()
+
+
+def test_offline_page_cache_is_bounded(chromium, site):
+    context = chromium.new_context(base_url=site[0])
+    page = context.new_page()
+    page.goto("/news/news-one")
+    page.evaluate("navigator.serviceWorker.ready")
+    wait_for_offline_page(page, "/news/news-one")
+    for index in range(61):
+        site[1]["/news/page-" + str(index)] = {**NEWS, "slug": "page-" + str(index)}
+    paths = page.evaluate(
+        """async () => {
+            for (let index = 0; index < 61; index++) {
+                await fetch('/news/page-' + index, {headers: {'x-club-save-page': '1'}});
+            }
+            const key = (await caches.keys()).find(key => key.endsWith('-pages'));
+            return (await (await caches.open(key)).keys()).map(request => new URL(request.url).pathname);
+        }"""
+    )
+    assert len(paths) == 60
+    assert "/news/news-one" not in paths
+    assert "/news/page-60" in paths
+    assert "/" in paths
+    assert "/saved" in paths
+    context.close()
+
+
+def test_pwa_can_start_without_connection(chromium, site):
+    context = chromium.new_context(base_url=site[0], viewport={"width": 390, "height": 844})
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")
+    page = context.new_page()
+    page.goto("/?source=pwa")
+    page.evaluate("navigator.serviceWorker.ready")
+    wait_for_offline_page(page, "/")
+    context.set_offline(True)
+    page.goto("/?source=pwa")
+    expect(page.locator("#main")).to_be_visible()
+    expect(page.locator("#offline-notice")).to_be_visible()
+    assert page.evaluate("document.documentElement.classList.contains('pwa-shell')")
+    assert page.locator("#offline-notice").bounding_box()["width"] <= 430
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
     context.close()

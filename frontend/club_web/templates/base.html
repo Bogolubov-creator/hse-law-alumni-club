@@ -24,7 +24,7 @@
 </script>
 {% endif %}
 </head>
-<body data-base="{{ base }}" data-mirror="{{ 'true' if mirror else 'false' }}">
+<body data-base="{{ base }}" data-mirror="{{ 'true' if mirror else 'false' }}" data-offline-reading="{{ 'true' if offline_reading else 'false' }}">
 <a href="#main" class="skip">К содержанию страницы</a>
 {% if mirror %}
 <aside class="site-notice">
@@ -38,6 +38,10 @@
 {% endif %}
 <div id="site-shell">
 <div id="site-stage">
+<aside id="offline-notice" class="offline-notice" role="status" hidden>
+<span data-offline-message>Нет подключения. Отправка заявок и вход требуют интернета.</span>
+<button type="button" data-action="reload-online" hidden>Обновить</button>
+</aside>
 <div class="vis-bar" id="vision" hidden>
 <strong>Версия для слабовидящих</strong>
 <button data-action="vision-size">Размер текста</button>
