@@ -788,6 +788,40 @@ def test_search_dialog_keyboard_and_retry(page):
     expect(dialog.locator("[data-search-results]")).to_contain_text(EVENT["title"])
 
 
+@pytest.mark.parametrize("width", [390, 1440])
+@pytest.mark.parametrize("direction", ["ArrowDown", "ArrowUp"])
+@pytest.mark.parametrize("move_away", [False, True])
+def test_search_keyboard_waits_for_submitted_results(page, width, direction, move_away):
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto("/news")
+    if width < 768:
+        page.get_by_role("button", name="Открыть меню", exact=True).click()
+    page.get_by_role("link", name="Поиск по клубу" if width < 768 else "Поиск", exact=True).first.click()
+    dialog = page.locator("#search-dialog")
+    field = dialog.get_by_role("searchbox")
+    field.fill("правовая")
+    expect(dialog.locator("[data-search-results]")).to_contain_text(PROGRAM["title"])
+    pending = []
+    page.route("**/views/search?*", lambda route: pending.append(route))
+    with page.expect_request("**/views/search?*"):
+        field.press("Enter")
+    expect(dialog.locator("[data-search-results]")).to_have_attribute("aria-busy", "true")
+    field.press(direction)
+    if move_away:
+        page.keyboard.press("Tab")
+        expect(dialog.get_by_role("button", name="Найти", exact=True)).to_be_focused()
+    assert len(pending) == 1
+    pending[0].continue_()
+    expect(dialog.locator("[data-search-results]")).not_to_have_attribute("aria-busy", "true")
+    if move_away:
+        expect(dialog.get_by_role("button", name="Найти", exact=True)).to_be_focused()
+    else:
+        links = dialog.locator("[data-search-row]")
+        expect(links.first if direction == "ArrowDown" else links.last).to_be_focused()
+    page.keyboard.press("Escape")
+    expect(dialog).not_to_be_visible()
+
+
 def test_saved_search_undo_and_recent_limit(page):
     page.goto("/news/news-one")
     page.get_by_role("button", name="Сохранить", exact=True).click()

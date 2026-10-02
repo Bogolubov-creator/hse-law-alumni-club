@@ -12,10 +12,19 @@ function prepareSearch(url, mirror) {
   let controller;
   let timer;
   let trigger;
+  let pendingDirection;
   let sequence = 0;
+  function focusResult(direction) {
+    const links = [...results.querySelectorAll("[data-search-row]")].filter(link => !link.hidden && link.getClientRects().length);
+    if (!links.length) return false;
+    const index = links.indexOf(document.activeElement);
+    links[index < 0 ? (direction === "ArrowDown" ? 0 : links.length - 1) : (index + (direction === "ArrowDown" ? 1 : -1) + links.length) % links.length].focus();
+    return true;
+  }
   async function search() {
     clearTimeout(timer);
     controller?.abort();
+    pendingDirection = null;
     const turn = ++sequence;
     const q = input.value.trim();
     results.replaceChildren();
@@ -38,9 +47,10 @@ function prepareSearch(url, mirror) {
       }
       const count = [...results.querySelectorAll("[data-search-row]")].filter(row => !row.hidden).length;
       status.textContent = count ? "Найдено: " + count : "Ничего не найдено. Попробуйте другое слово.";
+      if (pendingDirection && document.activeElement === input) focusResult(pendingDirection);
     } catch (error) {
       if (error.name !== "AbortError" && turn === sequence) status.textContent = "Не удалось выполнить поиск. Проверьте подключение и нажмите «Найти» снова.";
-    } finally { if (turn === sequence) results.removeAttribute("aria-busy"); }
+    } finally { if (turn === sequence) { results.removeAttribute("aria-busy"); pendingDirection = null; } }
   }
   document.addEventListener("click", event => {
     const anchor = event.target.closest("a[href]");
@@ -53,17 +63,18 @@ function prepareSearch(url, mirror) {
     input.focus();
   });
   form.addEventListener("submit", event => { event.preventDefault(); event.stopPropagation(); void search(); });
-  input.addEventListener("input", () => { controller?.abort(); sequence++; clearTimeout(timer); timer = setTimeout(search, 220); });
+  input.addEventListener("input", () => { controller?.abort(); pendingDirection = null; sequence++; clearTimeout(timer); timer = setTimeout(search, 220); });
   dialog.querySelector("[data-search-close]").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => { clearTimeout(timer); controller?.abort(); sequence++; trigger?.focus(); });
+  dialog.addEventListener("close", () => { clearTimeout(timer); controller?.abort(); pendingDirection = null; sequence++; trigger?.focus(); });
   dialog.addEventListener("keydown", event => {
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); dialog.close(); return; }
     if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
-    const links = [...results.querySelectorAll("[data-search-row]")].filter(link => !link.hidden && link.getClientRects().length);
-    if (!links.length) return;
-    event.preventDefault();
-    const index = links.indexOf(document.activeElement);
-    links[index < 0 ? (event.key === "ArrowDown" ? 0 : links.length - 1) : (index + (event.key === "ArrowDown" ? 1 : -1) + links.length) % links.length].focus();
+    if (results.hasAttribute("aria-busy") && document.activeElement === input) {
+      event.preventDefault();
+      pendingDirection = event.key;
+      return;
+    }
+    if (focusResult(event.key)) event.preventDefault();
   });
 }
 
