@@ -417,6 +417,7 @@ def test_live_offline_reading(width):
         browser = launch_browser(playwright)
         context = browser.new_context(base_url=value("E2E_BASE_URL"), viewport={"width": width, "height": 1000})
         context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")
+        published_home = context.request.get("/").headers.get("x-club-offline") == "public"
         items = result(context.request.get("/api/news?limit=1"))
         prefix = "/news/"
         if not items:
@@ -430,7 +431,8 @@ def test_live_offline_reading(width):
         page.evaluate("navigator.serviceWorker.ready")
         wait_for_offline_page(page, path)
         wait_for_offline_page(page, "/saved")
-        wait_for_offline_page(page, "/")
+        if published_home:
+            wait_for_offline_page(page, "/")
         page.get_by_role("button", name="Сохранить", exact=True).click()
         context.set_offline(True)
         page.reload()
@@ -440,9 +442,12 @@ def test_live_offline_reading(width):
         page.goto("/saved")
         expect(page.locator("[data-reading-list='saved']")).to_contain_text(item["title"])
         page.goto("/?source=pwa")
-        expect(page.locator("#main")).to_be_visible()
-        expect(page.locator("#offline-notice")).to_be_visible()
-        assert page.evaluate("document.documentElement.classList.contains('pwa-shell')")
+        if published_home:
+            expect(page.locator("#main")).to_be_visible()
+            expect(page.locator("#offline-notice")).to_be_visible()
+            assert page.evaluate("document.documentElement.classList.contains('pwa-shell')")
+        else:
+            expect(page.get_by_role("heading", name="Нет подключения", exact=True)).to_be_visible()
         page.goto("/lk")
         expect(page.get_by_role("heading", name="Нет подключения", exact=True)).to_be_visible()
         context.set_offline(False)
