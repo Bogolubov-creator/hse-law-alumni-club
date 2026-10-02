@@ -10,6 +10,8 @@ from club_api.db.queries import Query, acquire_lock
 from club_api.domain import effective_discount
 from club_api.modules.checkout.cart import locked_cart
 
+RESERVATION_BATCH_SIZE = 50
+
 
 def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
@@ -169,12 +171,14 @@ class Checkout:
                 )
         await connection.execute("UPDATE club_checkout_commits SET released=true WHERE order_id=%s", (order_id,))
 
-    async def change_status(self, id, status):
+    async def change_status(self, id, status, *, expected_status=None):
         async with self.state.database.transaction() as connection:
             cursor = await connection.execute("SELECT status,payment_status FROM orders WHERE id=%s FOR UPDATE", (id,))
             order = await cursor.fetchone()
             if not order:
                 raise ApiError(404, "Заявка не найдена")
+            if expected_status is not None and order["status"] != expected_status:
+                return False
             if order["status"] == status:
                 return False
             if order["status"] in ("done", "canceled", "expired"):
@@ -190,17 +194,37 @@ class Checkout:
         ttl = self.state.settings.RESERVE_TTL_HOURS
         if ttl <= 0 or not self.state.database.pool:
             return 0
-        rows = await self.state.database.rows(
-            Query(
-                "SELECT o.id FROM orders o JOIN club_checkout_commits c ON c.order_id=o.id WHERE o.status='new' AND (o.payment_status IS NULL OR o.payment_status IN ('','none')) AND c.released=false AND jsonb_array_length(c.reservations)>0 AND o.created_at < %s LIMIT 50",
-                "SELECT o.id FROM orders o JOIN club_checkout_commits c ON c.order_id=o.id WHERE o.status='new' AND (o.payment_status IS NULL OR o.payment_status IN ('','none')) AND c.released=false AND JSON_LENGTH(c.reservations)>0 AND o.created_at < %s LIMIT 50",
-            ),
-            (datetime.now(UTC) - timedelta(hours=ttl),),
-        )
-        count = 0
-        for row in rows:
-            try:
-                count += bool(await self.change_status(str(row["id"]), "expired"))
-            except ApiError:
-                pass
+        cutoff = datetime.now(UTC) - timedelta(hours=ttl)
+        count, after = 0, None
+        while True:
+            rows = await self.state.database.rows(
+                Query(
+                    "SELECT o.id,o.number,o.created_at,o.payment_id,o.payment_status FROM orders o JOIN club_checkout_commits c ON c.order_id=o.id WHERE o.status='new' AND (o.payment_status IS NULL OR o.payment_status IN ('','none','canceled','pending','waiting_for_capture') OR (o.payment_status='review' AND o.payment_id IS NULL)) AND c.released=false AND jsonb_array_length(c.reservations)>0 AND o.created_at < %s AND (CAST(%s AS uuid) IS NULL OR o.id>CAST(%s AS uuid)) ORDER BY o.id LIMIT %s",
+                    "SELECT o.id,o.number,o.created_at,o.payment_id,o.payment_status FROM orders o JOIN club_checkout_commits c ON c.order_id=o.id WHERE o.status='new' AND (o.payment_status IS NULL OR o.payment_status IN ('','none','canceled','pending','waiting_for_capture') OR (o.payment_status='review' AND o.payment_id IS NULL)) AND c.released=false AND JSON_LENGTH(c.reservations)>0 AND o.created_at < %s AND (%s IS NULL OR o.id>%s) ORDER BY o.id LIMIT %s",
+                ),
+                (cutoff, after, after, RESERVATION_BATCH_SIZE),
+            )
+            if not rows:
+                break
+            for row in rows:
+                try:
+                    if row["payment_status"] in ("pending", "waiting_for_capture", "review"):
+                        payment = None
+                        if self.state.payments.enabled:
+                            payment = (
+                                await self.state.payments.fetch(row["payment_id"])
+                                if row["payment_id"]
+                                else await self.state.payments.find_order_payment(row)
+                            )
+                        if payment:
+                            result = await self.state.payments.record(row["number"], payment)
+                            count += result["outcome"] == "canceled"
+                        elif not row["payment_id"]:
+                            await self.state.payments.flag_missing_payment(row["number"])
+                        continue
+                    count += bool(await self.change_status(str(row["id"]), "expired", expected_status="new"))
+                except ApiError:
+                    if not row["payment_id"]:
+                        await self.state.payments.flag_missing_payment(row["number"])
+            after = rows[-1]["id"]
         return count

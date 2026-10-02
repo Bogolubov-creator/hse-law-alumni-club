@@ -3,6 +3,7 @@ import mimetypes
 
 import httpx
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, StreamingHttpResponse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_safe
 
 from club_web.client import Api, forwarded_headers
@@ -135,10 +136,15 @@ async def page(request, path=""):
         return HttpResponse(status=405)
     query = request.META.get("QUERY_STRING", "")
     suffix = "?" + query if query else ""
+    target = None
     if path.endswith("/") and path:
-        return HttpResponseRedirect("/" + path.rstrip("/") + suffix, status=308)
-    if path.startswith(("v2/", "legacy/")) or path in ("v2", "legacy"):
-        return HttpResponseRedirect("/" + path.partition("/")[2] + suffix, status=308)
+        target = "/" + path.rstrip("/") + suffix
+    elif path.startswith(("v2/", "legacy/")) or path in ("v2", "legacy"):
+        target = "/" + path.partition("/")[2] + suffix
+    if target is not None:
+        if not url_has_allowed_host_and_scheme(target, allowed_hosts=set()):
+            return HttpResponse("Некорректный адрес страницы", status=400)
+        return HttpResponseRedirect(target, status=308)
     if path in STATIC_FILES:
         return await static_file(request, path)
     return await render_page(request, path, fragment=False)

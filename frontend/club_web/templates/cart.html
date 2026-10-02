@@ -16,6 +16,7 @@
 <p>{{ item.variant_sku or '' }} · {{ item.price|rub }}</p>
 </div>
 <form data-api="/cart" data-method="PATCH" data-cart>
+<input type="hidden" name="type" value="{{ item.type }}">
 <input type="hidden" name="ref_id" value="{{ item.ref_id }}">
 <input type="hidden" name="variant_sku" value="{{ item.variant_sku or '' }}">
 <label>Количество<input type="number" name="qty" min="0" max="99" value="{{ item.qty }}">
@@ -24,7 +25,7 @@
 <p role="alert" data-error hidden>
 </p>
 </form>
-<button data-api="/cart" data-method="PATCH" data-body='{{ {"ref_id":item.ref_id,"variant_sku":item.get("variant_sku"),"qty":0}|tojson }}' data-cart>Удалить</button>
+<button data-api="/cart" data-method="PATCH" data-body='{{ {"type":item.type,"ref_id":item.ref_id,"variant_sku":item.get("variant_sku"),"qty":0}|tojson }}' data-cart>Удалить</button>
 </article>
 {% endfor %}
 <button data-api="/cart" data-method="DELETE" data-cart>Очистить корзину</button>

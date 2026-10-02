@@ -65,23 +65,24 @@ class Notifications:
     async def enqueue_mail(self, to, subject, body, *, kind="office", owner_user_id=None):
         if kind == EMAIL_CONFIRMATION_KIND:
             return await self.enqueue_confirmation(to, subject, body, owner_user_id)
-        id = None
+        id, sent = None, None
         if self.database.pool:
             try:
-                rows = await self.database.rows(
-                    "INSERT INTO club_mail_outbox(kind,to_addr,subject,body) VALUES(%s,%s,%s,%s) RETURNING id",
-                    (kind, to, subject, body),
-                )
-                id = rows[0]["id"]
-            except Exception:
-                logger.error("Не удалось добавить письмо в очередь")
-        sent = await self.send_email(to, subject, body)
-        if id is not None:
-            try:
                 async with self.database.transaction() as connection:
+                    row = await (
+                        await connection.execute(
+                            "INSERT INTO club_mail_outbox(kind,to_addr,subject,body) VALUES(%s,%s,%s,%s) RETURNING id",
+                            (kind, to, subject, body),
+                        )
+                    ).fetchone()
+                    id = row["id"]
+                    sent = await self.send_email(to, subject, body)
                     await self.record_delivery(connection, {"id": id, "attempts": 0}, sent)
             except Exception:
-                logger.error("Не удалось записать статус доставки в очередь")
+                id = None
+                logger.error("Не удалось сохранить письмо или статус доставки в очередь")
+        if sent is None:
+            sent = await self.send_email(to, subject, body)
         return {"id": id, "sent": sent, "blocked": not self.mail_enabled}
 
     async def enqueue_confirmation(self, to, subject, body, owner_user_id):

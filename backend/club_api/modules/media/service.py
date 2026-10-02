@@ -167,7 +167,8 @@ class Media:
             condition = " OR ".join(f'''strpos(COALESCE("{field}"::text,''),%s)>0''' for field in fields)
             if self.state.database.vendor == "mysql":
                 condition = " OR ".join(f'''LOCATE(%s,COALESCE(CAST("{field}" AS CHAR),''))>0''' for field in fields)
-            query = f'''SELECT id FROM "{table}" WHERE status='published' AND ({condition}) LIMIT 1'''
+            status = "status IN ('published','done')" if table == "events" else "status='published'"
+            query = f'''SELECT id FROM "{table}" WHERE {status} AND ({condition}) LIMIT 1'''
             if await self.state.database.rows(query, [id] * len(fields)):
                 return True
         return False

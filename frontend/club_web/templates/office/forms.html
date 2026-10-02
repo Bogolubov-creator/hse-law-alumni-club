@@ -9,7 +9,7 @@
 {% endfor %}
 </select>
 {% elif kind in ('textarea','json') %}
-<textarea name="{{ name }}" {% if kind=='json' %}data-json{% endif %}>{{ (value|tojson) if kind=='json' and value else value or '' }}</textarea>
+<textarea name="{{ name }}" aria-label="{{ label }}" {% if kind=='json' %}data-json{% endif %}>{{ (value|tojson) if kind=='json' and value else value or '' }}</textarea>
 {% elif kind=='checkbox' %}
 <input type="checkbox" name="{{ name }}" {% if value %}checked{% endif %}>
 {% else %}

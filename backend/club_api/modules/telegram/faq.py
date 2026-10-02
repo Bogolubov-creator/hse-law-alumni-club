@@ -110,7 +110,7 @@ def parse_query(query):
         (r"онлайн|дистанц|удал", "online"),
         (r"очн|офлайн|аудитор", "offline"),
         (r"смешан", "mixed"),
-        (r"гибрид", "hybrid"),
+        (r"гибрид", "mixed"),
     ):
         match = re.search(pattern, remaining)
         if match:
@@ -156,7 +156,7 @@ def program_to_bot(program):
         "online"
         if re.search(r"онлайн|online|дистанц", raw_format)
         else "mixed"
-        if re.search(r"смешан|mixed|гибрид", raw_format)
+        if re.search(r"смешан|mixed|blended|гибрид", raw_format)
         else "offline"
         if re.search(r"очн|offline|офлайн", raw_format)
         else raw_format or "offline"

@@ -217,7 +217,7 @@ urlpatterns += content_crud(
     "products",
     ProductBody,
     sort=("title",),
-    fields=("id", "slug", "title", "category", "price", "stock", "status", "variants_json", "description"),
+    fields=("id", "slug", "title", "category", "price", "stock", "status", "variants_json", "description", "images"),
     subject="product",
 )
 

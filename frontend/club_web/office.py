@@ -144,6 +144,8 @@ LABELS = {
     "expired": "Истёк резерв",
     "succeeded": "Оплачено",
     "pending": "На проверке",
+    "waiting_for_capture": "Ожидает подтверждения",
+    "review": "Требует сверки",
     "verified": "Подтверждено",
     "rejected": "Отклонено",
     "open": "Открыто",

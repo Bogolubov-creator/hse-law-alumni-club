@@ -9,7 +9,7 @@
 </select>
 </label>
 <label>Оплата<select aria-label="Оплата" name="payment">
-{% for value,title in [('', 'Все'),('succeeded','Оплачено'),('pending','Ожидает оплаты'),('canceled','Платёж отменён'),('none','Без платежа')] %}
+{% for value,title in [('', 'Все'),('succeeded','Оплачено'),('pending','Ожидает оплаты'),('waiting_for_capture','Ожидает подтверждения'),('review','Требует сверки'),('canceled','Платёж отменён'),('none','Без платежа')] %}
 <option value="{{ value }}" {% if query.get('payment','')==value %}selected{% endif %}>{{ title }}</option>
 {% endfor %}
 </select></label>
