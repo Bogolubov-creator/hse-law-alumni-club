@@ -890,3 +890,20 @@ def test_mirror_reader_back_restores_focus(chromium, mirror_site):
     page.get_by_role("link", name="← Все материалы", exact=True).click()
     expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
     context.close()
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_search_escape_from_nonempty_field_returns_to_trigger(page, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto("/saved")
+    if width < 768:
+        page.get_by_role("button", name="Открыть меню", exact=True).click()
+    trigger = page.get_by_role("link", name="Поиск по клубу" if width < 768 else "Поиск", exact=True)
+    trigger.click()
+    dialog = page.locator("#search-dialog")
+    field = dialog.get_by_role("searchbox")
+    field.fill("правовая")
+    expect(dialog.locator("[data-search-results]")).to_contain_text(PROGRAM["title"])
+    field.press("Escape")
+    expect(dialog).not_to_be_visible()
+    expect(trigger).to_be_focused()

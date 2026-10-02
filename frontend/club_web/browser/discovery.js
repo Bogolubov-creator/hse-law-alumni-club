@@ -57,6 +57,7 @@ function prepareSearch(url, mirror) {
   dialog.querySelector("[data-search-close]").addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => { clearTimeout(timer); controller?.abort(); sequence++; trigger?.focus(); });
   dialog.addEventListener("keydown", event => {
+    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); dialog.close(); return; }
     if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
     const links = [...results.querySelectorAll("[data-search-row]")].filter(link => !link.hidden && link.getClientRects().length);
     if (!links.length) return;
