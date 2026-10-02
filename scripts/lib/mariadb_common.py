@@ -191,14 +191,17 @@ class Context:
         context = ssl.create_default_context(cafile=self.values.get("HTTPS_CA_FILE") or None)
         base = urlsplit(self.runtime["PUBLIC_URL"])
         for attempt in range(20):
+            route, status = "/api/ready", None
             try:
                 for route in ("/api/ready", "/"):
+                    status = None
                     connection = http.client.HTTPSConnection(
                         base.hostname, base.port or 443, context=context, timeout=10
                     )
                     try:
                         connection.request("GET", route)
                         response = connection.getresponse()
+                        status = response.status
                         if response.status != 200:
                             raise ValueError("Не удалось открыть сайт или API")
                         body = response.read()
@@ -210,9 +213,12 @@ class Context:
                     finally:
                         connection.close()
                 return
-            except (OSError, ValueError, http.client.HTTPException):
+            except (OSError, ValueError, http.client.HTTPException) as error:
                 if attempt == 19:
-                    raise ValueError("Не удалось проверить TLS, сайт и готовность API") from None
+                    detail = "HTTP " + str(status) if status is not None else type(error).__name__
+                    raise ValueError(
+                        "Не удалось проверить TLS, сайт и готовность API: " + route + ", " + detail
+                    ) from None
                 time.sleep(2)
 
 
