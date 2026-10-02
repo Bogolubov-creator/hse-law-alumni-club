@@ -141,7 +141,7 @@ services:
       - "127.0.0.1:9445:443"
       - "127.0.0.1:9446:443"
   mailpit:
-    image: axllent/mailpit@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    image: axllent/mailpit:v1.31.3@sha256:ed9b00c609e77e99c79b93f1178255ebc271868920f2c69a8d166bd5634ed10d
     networks: [default, browser]
     ports:
       - "127.0.0.1:9126:8025"
