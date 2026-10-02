@@ -110,7 +110,7 @@ def parse_query(query):
         (r"онлайн|дистанц|удал", "online"),
         (r"очн|офлайн|аудитор", "offline"),
         (r"смешан", "mixed"),
-        (r"гибрид", "hybrid"),
+        (r"гибрид", "mixed"),
     ):
         match = re.search(pattern, remaining)
         if match:

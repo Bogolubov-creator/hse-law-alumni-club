@@ -206,6 +206,15 @@ async def test_bot_finds_canonical_blended_program(database_app):
     assert [item["url"] for item in found["programs"]] == ["/dpo/blended"]
 
 
+@pytest.mark.parametrize("query", ["смешанный", "гибридный"])
+def test_bot_format_aliases_filter_canonical_catalog(query):
+    programs = [
+        program_to_bot({"id": kind, "slug": kind, "title": "Программа права", "format": kind, "price": 10000})
+        for kind in ("blended", "online")
+    ]
+    assert [item["url"] for item in search(query, programs)["programs"]] == ["/dpo/blended"]
+
+
 @pytest.mark.parametrize("role", ["admin", "editor"])
 async def test_product_editor_keeps_existing_images(database_app, role):
     state = database_app.state
