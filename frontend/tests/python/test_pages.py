@@ -157,7 +157,39 @@ async def test_public_pages_render(browser_client, path):
     assert '<html lang="ru">' in response.text
     assert 'id="main"' in response.text
     assert "React" not in response.text
-    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["cache-control"] == (
+        "no-cache" if response.headers.get("X-Club-Offline") == "public" else "no-store"
+    )
+
+
+@pytest.mark.parametrize(
+    "path,authorized,offline",
+    [
+        ("/news/news-one", False, True),
+        ("/saved", False, True),
+        ("/changes/tg-18", False, True),
+        ("/dpo", False, True),
+        pytest.param("/?source=pwa", False, False, id="failed-home-data-is-not-saved"),
+        ("/tg?pwa=1", False, True),
+        ("/news?source=other", False, False),
+        ("/dpo", True, False),
+        ("/news/news-one", True, False),
+        ("/news/missing", False, False),
+        ("/news?token=private-link", False, False),
+        ("/cart", False, False),
+        ("/lk/profile", True, False),
+        ("/admin", True, False),
+        ("/views/news", False, False),
+        ("/api/me", True, False),
+        ("/reset?token=private-link", False, False),
+        ("/podcasts/episode-1", False, False),
+    ],
+)
+async def test_offline_permission_is_only_given_to_anonymous_public_pages(browser_client, path, authorized, offline):
+    headers = {"authorization": "Bearer member-test"} if authorized else {}
+    response = await browser_client.get(path, headers=headers)
+    assert response.headers.get("X-Club-Offline") == ("public" if offline else None)
+    assert response.headers["cache-control"] == ("no-cache" if offline else "no-store")
 
 
 @pytest.mark.parametrize("section", [key for key, _ in OFFICE_NAV])

@@ -19,7 +19,9 @@ class HeadersMiddleware:
         response.headers.setdefault(
             "Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
         )
-        if request.path == "/sw.js" or request.path.endswith((".js", ".css")):
+        if response.headers.get("X-Club-Offline") == "public":
+            response.headers["Cache-Control"] = "no-cache"
+        elif request.path == "/sw.js" or request.path.endswith((".js", ".css")):
             response.headers["Cache-Control"] = "no-cache"
         elif request.path.startswith(("/assets/", "/fonts/")):
             response.headers["Cache-Control"] = "public, max-age=300"

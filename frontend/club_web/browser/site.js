@@ -10,6 +10,7 @@ let pendingCart = 0;
 let installPrompt = null;
 let mirrorApi = null;
 let botQueue = Promise.resolve();
+let readingPageSaved = false;
 const compare = new Set();
 
 function stored(key, fallback = null) {
@@ -58,6 +59,7 @@ function safeLink(value, payment = false) {
 }
 
 async function request(path, method = "GET", body, extra = {}) {
+  if (!navigator.onLine && method !== "GET") throw new Error("Для отправки данных нужен интернет. Подключитесь и повторите действие.");
   if (mirror) {
     if (path === "/cart" && window.clubMirrorCart) return window.clubMirrorCart(method, body);
     if (method !== "GET") throw new Error("В демоверсии отправка и изменение данных отключены.");
@@ -130,6 +132,7 @@ function formError(form, message) {
 }
 
 async function refresh() {
+  if (!navigator.onLine || document.documentElement.dataset.offlineCopy) return;
   const page = document.querySelector("#page");
   if (!page) return;
   const path = currentPath();
@@ -155,6 +158,7 @@ async function refresh() {
 }
 
 async function updateCartCount() {
+  if (!navigator.onLine || document.documentElement.dataset.offlineCopy) return;
   if (!stored("club_cart")) return;
   try {
     const cart = await request("/cart");
@@ -613,7 +617,32 @@ if (mirrorNotice) new ResizeObserver(() => {
   document.body.style.setProperty("--office-notice-height", mirrorNotice.offsetHeight + "px");
   alignOfficeNavigation();
 }).observe(mirrorNotice);
-if (navigator.serviceWorker && window.isSecureContext) void navigator.serviceWorker.register(url("sw.js"), { scope: base }).catch(() => {});
+function offlineNotice() {
+  const box = document.querySelector("#offline-notice");
+  if (!box) return;
+  const timestamp = Number(document.documentElement.dataset.offlineCopy);
+  box.hidden = navigator.onLine && !timestamp;
+  const message = box.querySelector("[data-offline-message]");
+  message.textContent = timestamp
+    ? "Сохранённая копия от " + new Date(timestamp).toLocaleString("ru-RU") + ". Для актуальных данных подключитесь к интернету и обновите страницу."
+    : "Нет подключения. Можно читать сохранённые страницы. Вход и отправка заявок требуют интернета.";
+  box.querySelector("button").hidden = !navigator.onLine;
+}
+
+function saveReadingPage() {
+  if (readingPageSaved || !navigator.onLine || document.documentElement.dataset.offlineCopy || document.body.dataset.offlineReading !== "true" || !navigator.serviceWorker.controller) return;
+  readingPageSaved = true;
+  void fetch(location.href, { credentials: "omit", headers: { "x-club-save-page": "1" } }).catch(() => { readingPageSaved = false; });
+}
+
+document.querySelector("[data-action='reload-online']")?.addEventListener("click", () => location.reload());
+window.addEventListener("offline", offlineNotice);
+window.addEventListener("online", () => { offlineNotice(); saveReadingPage(); });
+offlineNotice();
+if (navigator.serviceWorker && window.isSecureContext) {
+  navigator.serviceWorker.addEventListener("controllerchange", saveReadingPage);
+  void navigator.serviceWorker.register(url("sw.js"), { scope: base }).then(() => navigator.serviceWorker.ready).then(saveReadingPage).catch(() => {});
+}
 setupPage();
 if ((token() && (currentPath().startsWith("/lk") || currentPath().startsWith("/admin") || currentPath().startsWith("/podcasts") || currentPath().startsWith("/events"))) || currentPath() === "/cart") void refresh();
 void updateCartCount();

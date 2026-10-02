@@ -24,6 +24,7 @@ from live_features import (
 )
 from playwright.sync_api import TimeoutError as BrowserTimeout
 from playwright.sync_api import expect, sync_playwright
+from test_browser import wait_for_offline_page
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("E2E_LIVE_AUTHORIZED") != "club-ci-live", reason="Требуется отдельный live-стенд"
@@ -38,6 +39,12 @@ def value(name):
 
 def auth(token):
     return {"authorization": "Bearer " + token}
+
+
+def launch_browser(playwright):
+    pin = os.environ.get("E2E_TLS_SPKI", "")
+    assert not pin or re.fullmatch(r"[A-Za-z0-9+/]{43}=", pin)
+    return playwright.chromium.launch(args=["--ignore-certificate-errors-spki-list=" + pin] if pin else [])
 
 
 def result(response, status=200):
@@ -176,9 +183,7 @@ def media(office, request, token, name):
 def test_live_system(name, width, height):
     state_path = Path(value("E2E_STATE_DIR")) / (name + ".json")
     with sync_playwright() as playwright:
-        pin = os.environ.get("E2E_TLS_SPKI", "")
-        assert not pin or re.fullmatch(r"[A-Za-z0-9+/]{43}=", pin)
-        browser = playwright.chromium.launch(args=["--ignore-certificate-errors-spki-list=" + pin] if pin else [])
+        browser = launch_browser(playwright)
         context = browser.new_context(
             base_url=value("E2E_BASE_URL"), viewport={"width": width, "height": height}, reduced_motion="reduce"
         )
@@ -403,4 +408,49 @@ def test_live_system(name, width, height):
             json.dump(state, output)
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
         assert not errors
+        browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_live_offline_reading(width):
+    with sync_playwright() as playwright:
+        browser = launch_browser(playwright)
+        context = browser.new_context(base_url=value("E2E_BASE_URL"), viewport={"width": width, "height": 1000})
+        context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")
+        published_home = context.request.get("/").headers.get("x-club-offline") == "public"
+        items = result(context.request.get("/api/news?limit=1"))
+        prefix = "/news/"
+        if not items:
+            items = result(context.request.get("/api/programs"))
+            prefix = "/dpo/"
+        assert items, "Для офлайн-проверки нужен опубликованный материал"
+        item = items[0]
+        path = prefix + item["slug"]
+        page = context.new_page()
+        page.goto(path)
+        page.evaluate("navigator.serviceWorker.ready")
+        wait_for_offline_page(page, path)
+        wait_for_offline_page(page, "/saved")
+        if published_home:
+            wait_for_offline_page(page, "/")
+        page.get_by_role("button", name="Сохранить", exact=True).click()
+        context.set_offline(True)
+        page.reload()
+        expect(page.get_by_role("heading", name=item["title"], exact=True)).to_be_visible()
+        expect(page.locator("#offline-notice")).to_be_visible()
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+        page.goto("/saved")
+        expect(page.locator("[data-reading-list='saved']")).to_contain_text(item["title"])
+        page.goto("/?source=pwa")
+        if published_home:
+            expect(page.locator("#main")).to_be_visible()
+            expect(page.locator("#offline-notice")).to_be_visible()
+            assert page.evaluate("document.documentElement.classList.contains('pwa-shell')")
+        else:
+            expect(page.get_by_role("heading", name="Нет подключения", exact=True)).to_be_visible()
+        page.goto("/lk")
+        expect(page.get_by_role("heading", name="Нет подключения", exact=True)).to_be_visible()
+        context.set_offline(False)
+        page.goto(path)
+        expect(page.locator("#offline-notice")).to_be_hidden()
         browser.close()

@@ -133,7 +133,8 @@ def run(args):
             check('https://telegram.org' in headers.get('content-security-policy', ''), 'Потеряна CSP Telegram')
             check(headers.get('x-content-type-options') == 'nosniff' and 'server' not in headers, 'Потеряны защитные заголовки')
             check('max-age=' in headers.get('strict-transport-security', ''), 'Потерян HSTS')
-            check(headers.get('cache-control') == 'no-store', 'HTML кэшируется')
+            check(headers.get('cache-control') == 'no-cache' and headers.get('x-club-offline') == 'public',
+                  'Публичная главная не разрешена для офлайн-чтения')
             check('x-frame-options' not in headers, 'Telegram embedding заблокирован')
             while request('/api/ready')[0] != 200:
                 check(time.monotonic() < deadline, 'HTTP-фикстура не стала готова за 60 секунд')
@@ -141,6 +142,10 @@ def run(args):
             for path in ['/admin', '/lk', '/cart', '/search']:
                 status, headers, body = request(path)
                 check(status == 200 and b'<main' in body and headers.get('cache-control') == 'no-store', 'Серверная страница: ' + path)
+                check('x-club-offline' not in headers, 'Приватная страница разрешена для офлайн-чтения: ' + path)
+            status, headers, _ = request('/', headers={'Authorization': 'Bearer edge-test'})
+            check(status == 200 and headers.get('cache-control') == 'no-store' and 'x-club-offline' not in headers,
+                  'Страница с авторизацией разрешена для офлайн-чтения')
             status, redirect_headers, _ = request('/v2/cart')
             check(status == 308 and redirect_headers.get('location') == '/cart', 'Потерян переход с прежнего маршрута')
             check(request('/not-a-club-route')[0] == 404, 'Потерян 404 неизвестной страницы')

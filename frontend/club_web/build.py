@@ -1,8 +1,11 @@
 import argparse
 import hashlib
+import json
 import re
 import shutil
 from pathlib import Path
+
+from club_web.offline import PWA_PARAMS
 
 ROOT = Path(__file__).parent
 
@@ -54,7 +57,15 @@ def build_public(destination, *, mirror=False):
             continue
         shutil.copyfile(browser_file, assets / browser_file.name)
     worker = (ROOT / "browser/service-worker.js").read_text(encoding="utf-8")
+    files = ["./assets/" + path.name for path in sorted(assets.glob("*.js"))]
+    files += [
+        "./assets/site.css",
+        *["./fonts/" + path.name for path in sorted((destination / "fonts").glob("*.woff2"))],
+    ]
+    worker = worker.replace("const BUILT_ASSETS = [];", "const BUILT_ASSETS = " + json.dumps(files) + ";")
+    worker = worker.replace("const PWA_PARAMS = {};", "const PWA_PARAMS = " + json.dumps(PWA_PARAMS) + ";")
     digest = hashlib.sha256(worker.encode() + (assets / "site.css").read_bytes())
+    digest.update((destination / "offline.html").read_bytes())
     for browser_file in sorted((ROOT / "browser").glob("*.js")):
         digest.update(browser_file.read_bytes())
     worker = re.sub(

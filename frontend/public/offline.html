@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#EC5A13" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Нет сети – Клуб выпускников</title>
+    <script src="./assets/offline.js" defer></script>
     <style>
       :root { color-scheme: light; }
       * { box-sizing: border-box; }
@@ -71,8 +72,10 @@
         <img src="./icon-192.png" alt="" width="36" height="36" />
       </div>
       <h1>Нет подключения</h1>
-      <p>Для каталога и кабинета нужен интернет. Проверьте подключение и нажмите «Обновить», чтобы вернуться на страницу.</p>
-      <button type="button" onclick="location.reload()">Обновить</button>
+      <p>Эта страница не сохранена для чтения без интернета. Ранее открытые новости, программы, товары и события доступны в течение семи дней.</p>
+      <p><a href="./saved">Сохранённые материалы и история чтения</a></p>
+      <p>Для входа, заявок и оплаты нужен интернет.</p>
+      <button type="button" id="offline-reload">Обновить</button>
     </main>
   </body>
 </html>
