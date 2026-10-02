@@ -57,6 +57,16 @@ async def database_command(command, values):
             await connection.run(configure_runtime_role, values)
             print("Роль MariaDB настроена; права ограничены таблицами и полями API")
             return
+        if command == "database-fingerprints":
+            import json
+
+            from club_ops.database_transfer import fingerprint, model_tables, table_rows
+
+            def fingerprints():
+                return {name: fingerprint(table_rows(model)) for name, model in model_tables().items()}
+
+            print(json.dumps(await connection.run(fingerprints), sort_keys=True))
+            return
         if command == "bootstrap":
             result = await bootstrap(connection, BootstrapConfig.from_env(values))
             print(
@@ -124,7 +134,7 @@ async def main(args):
         else:
             tables = (await asyncio.to_thread(import_snapshot, args.snapshot))["tables"]
         print(f"{args.command}: таблиц {len(tables)}, записей {sum(table['rows'] for table in tables.values())}")
-    elif args.command in ("bootstrap", "manage-staff", "migrate", "configure-mariadb-role"):
+    elif args.command in ("bootstrap", "manage-staff", "migrate", "configure-mariadb-role", "database-fingerprints"):
         await database_command(args.command, values)
     elif args.command == "setup-telegram-webhook":
         await setup_webhook(values)
@@ -154,6 +164,7 @@ def run():
         "manage-staff",
         "migrate",
         "configure-mariadb-role",
+        "database-fingerprints",
         "sync-dpo",
         "setup-telegram-webhook",
         "import-dpo",

@@ -16,9 +16,10 @@
   Docker-файлы собраны в `deploy`. В `scripts` остаются команды оператора;
   помощники, проверки и диагностика выделены в `lib`, `checks`, `diagnostics`.
   Полная карта – `docs/development/repository-structure.md`.
-- Продакшен собирается через Docker Compose с PostgreSQL, Django и Caddy.
-  Отдельный контур MariaDB/nginx описан в `docs/operations/mariadb-migration.md`;
-  его Compose-файл – `deploy/compose.mariadb.yml`. Основной установщик ещё не переключён.
+- Новые установки используют нативную MariaDB Ubuntu, Django и nginx через
+  `deploy/compose.mariadb.yml`. Установщик и обслуживание описаны в
+  `docs/operations/mariadb-migration.md`. Существующие установки версии 1
+  сохраняют PostgreSQL/Caddy; автоматическая смена базы запрещена.
   Directus исключён по решению владельца; основание – `docs/decisions/cms-options.md`.
   Источник операционных команд и порядка отката – `docs/operations/deploy-runbook.md`.
 - Порт API не публикуется на хосте: входящие запросы и проверка IP проходят

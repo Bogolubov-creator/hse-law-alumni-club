@@ -1,5 +1,9 @@
 # Эксплуатация Клуба на Ubuntu
 
+> Этот runbook сохраняет обслуживание существующего PostgreSQL/Caddy-контура.
+> Новые установки MariaDB/nginx используют [отдельную инструкцию](mariadb-migration.md)
+> и `compose.env`. Установщик распознаёт прежнюю конфигурацию версии 1.
+
 Рабочий стек: PostgreSQL → миграции → нативный bootstrap → Django API, web и Caddy.
 Отдельного сервера Directus нет. Сохранены совместимые имена таблиц пользователей,
 ролей и файлов, а также том `directus_uploads`. Основание – [ADR](../decisions/cms-options.md).

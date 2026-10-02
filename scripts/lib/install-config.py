@@ -197,7 +197,12 @@ def main():
     args = parser.parse_args()
     os.umask(0o077)
     try:
-        install(args.config_dir, args.local)
+        previous = args.config_dir / 'install.json'
+        if previous.is_file() and json.loads(previous.read_text()).get('version') == 1:
+            install(args.config_dir, args.local)
+        else:
+            from mariadb_native import install as install_mariadb
+            install_mariadb(args.config_dir, args.local)
     except (ValueError, OSError, EOFError, KeyboardInterrupt, subprocess.CalledProcessError) as error:
         message = str(error) if isinstance(error, ValueError) else 'Установка прервана; проверьте предыдущий этап и повторите команду'
         print(message, file=sys.stderr)

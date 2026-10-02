@@ -1,10 +1,20 @@
-name: club-mariadb
+name: ${CLUB_PROJECT:-club-mariadb}
 
 x-logging: &logging
   driver: json-file
   options: {max-size: "10m", max-file: "3"}
 
 services:
+  mailpit:
+    profiles: [local]
+    logging: *logging
+    image: axllent/mailpit@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    ports:
+      - 127.0.0.1:${CLUB_MAIL_PORT:-8025}:8025
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+
   operator:
     logging: *logging
     profiles: [operator]

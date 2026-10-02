@@ -41,6 +41,8 @@ jobs:
           uv run --directory frontend python manage.py check
           uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
           uv run --directory backend ruff format --check club_api tests/python ../scripts/club_ops
+          uv run --directory backend ruff check ../scripts/lib/mariadb_common.py ../scripts/lib/mariadb_install.py ../scripts/lib/mariadb_backup.py ../scripts/lib/mariadb_native.py
+          uv run --directory backend ruff format --check ../scripts/lib/mariadb_common.py ../scripts/lib/mariadb_install.py ../scripts/lib/mariadb_backup.py ../scripts/lib/mariadb_native.py
           uv run --directory frontend ruff check club_web tests/python
           uv run --directory frontend ruff format --check club_web tests/python
           uv run --directory frontend python ../scripts/checks/check-comments.py
@@ -49,6 +51,7 @@ jobs:
           while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d -name .venv -prune -o -type f -name '*.sh' -print0)
           python3 scripts/tests/test-ops.py
           python3 scripts/tests/test-install.py
+          python3 scripts/tests/test-mariadb-ops.py
           uv run --directory backend python ../scripts/tests/test-measure-load.py
           uv run --directory frontend python ../scripts/tests/test-comments.py
           docker compose --env-file .env.example config --quiet
@@ -155,7 +158,7 @@ jobs:
               aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
               image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "club-ci-live-$service"
           done
-      - name: Install and repeat on Ubuntu with local TLS
+      - name: Install, repeat and restore MariaDB on Ubuntu with local TLS
         run: bash scripts/tests/test-install.sh
 
   secrets:
