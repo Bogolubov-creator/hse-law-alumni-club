@@ -27,7 +27,7 @@ cleanup() {
   if [[ "$LIVE_OWNED" == true ]]; then
     compose ps -a || true
     if [[ "$result" != 0 ]]; then
-      compose logs --no-color --tail 500 api bootstrap migrate 2>&1 | python3 -c '
+      compose logs --no-color --tail 500 api web caddy bootstrap migrate 2>&1 | python3 -c '
 import os,sys
 text=sys.stdin.read()
 for key,value in os.environ.items():

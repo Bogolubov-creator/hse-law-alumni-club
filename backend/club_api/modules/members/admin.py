@@ -44,7 +44,7 @@ class PointsBody(Body):
     comment: str = None
 
 
-@api_view
+@api_view(permission=require_admin)
 async def members(request: HttpRequest):
     await require_admin(request)
     store = request.services.store
@@ -117,7 +117,7 @@ async def members(request: HttpRequest):
     }
 
 
-@api_view
+@api_view(permission=require_full_admin)
 async def grant_subscription(request: HttpRequest, id: str):
     admin = await require_full_admin(request)
     until = await request.services.payments.extend_subscription(guid(id))
@@ -144,7 +144,7 @@ async def notify_verification(state, id, status):
     await state.notifications.send_email(email, subject, text)
 
 
-@api_view
+@api_view(body=MemberPatch, permission=require_full_admin)
 async def patch_member(request: HttpRequest, id: str):
     admin = await require_full_admin(request)
     body = parse_body(request, MemberPatch)
@@ -168,7 +168,7 @@ async def patch_member(request: HttpRequest, id: str):
     return {"ok": True}
 
 
-@api_view
+@api_view(body=PointsBody, permission=require_full_admin)
 async def points(request: HttpRequest, id: str):
     admin = await require_full_admin(request)
     body = parse_body(request, PointsBody)
@@ -181,7 +181,7 @@ async def points(request: HttpRequest, id: str):
     return {"ok": True, **result}
 
 
-@api_view
+@api_view(permission=require_full_admin)
 async def erase(request: HttpRequest, id: str):
     admin = await require_full_admin(request)
     if not await anonymize(request.services, guid(id)):

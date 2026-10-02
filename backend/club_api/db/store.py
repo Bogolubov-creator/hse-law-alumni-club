@@ -154,6 +154,13 @@ async def assert_media_references(connection, table, data):
 
 
 class Store:
+    def __new__(cls, database):
+        if cls is Store and getattr(database, "vendor", None) == "mysql":
+            from club_api.db.orm_store import ORMStore
+
+            return super().__new__(ORMStore)
+        return super().__new__(cls)
+
     def __init__(self, database: Database):
         self.database = database
 

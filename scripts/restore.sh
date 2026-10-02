@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+native="$(dirname "${BASH_SOURCE[0]}")/lib/mariadb_native.py"
+if python3 "$native" detect; then
+  exec python3 "$native" restore --snapshot "${SNAPSHOT_FILE:?Укажите зашифрованный снимок}" --target-env "${RESTORE_ENV_FILE:?Укажите Compose env отдельного пустого контура}"
+fi
 source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 ops_init
 ops_lock

@@ -208,7 +208,7 @@ async def payment_config(request: HttpRequest):
     return {"enabled": request.services.payments.enabled}
 
 
-@api_view
+@api_view(permission=require_alumni)
 async def pay(request: HttpRequest, number: str):
     payments = request.services.payments
     if not payments.enabled:

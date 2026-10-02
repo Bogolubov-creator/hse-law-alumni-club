@@ -8,6 +8,7 @@ from pydantic import Field
 from club_api.core.errors import ApiError
 from club_api.core.models import guid, partial, unique_slug
 from club_api.core.views import api_view, endpoint, parse_body
+from club_api.db.queries import Query
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin
 from club_api.observability.audit import audit
@@ -91,7 +92,10 @@ async def product_reservations(connection, id):
         raise ApiError(404, "Товар не найден")
     active = await (
         await connection.execute(
-            "SELECT c.order_id FROM club_checkout_commits c JOIN orders o ON o.id=c.order_id WHERE c.released=false AND o.status NOT IN ('done','canceled','expired') AND EXISTS(SELECT 1 FROM jsonb_array_elements(c.reservations::jsonb) r WHERE r->>'id'=%s) LIMIT 1",
+            Query(
+                "SELECT c.order_id FROM club_checkout_commits c JOIN orders o ON o.id=c.order_id WHERE c.released=false AND o.status NOT IN ('done','canceled','expired') AND EXISTS(SELECT 1 FROM jsonb_array_elements(c.reservations::jsonb) r WHERE r->>'id'=%s) LIMIT 1",
+                "SELECT c.order_id FROM club_checkout_commits c JOIN orders o ON o.id=c.order_id WHERE c.released=false AND o.status NOT IN ('done','canceled','expired') AND JSON_CONTAINS(c.reservations,JSON_OBJECT('id',%s)) LIMIT 1",
+            ),
             (id,),
         )
     ).fetchone()
@@ -102,12 +106,12 @@ async def product_reservations(connection, id):
 def content_crud(route, table, model, *, sort, fields, subject, notify=None):
     patch_model = partial(model)
 
-    @api_view
+    @api_view(permission=require_admin)
     async def listing(request: HttpRequest):
         await require_admin(request)
         return await request.services.store.read(table, sort=sort, fields=fields, limit=-1)
 
-    @api_view
+    @api_view(body=model, permission=require_admin)
     async def create(request: HttpRequest):
         admin = await require_admin(request)
         body = parse_body(request, model)
@@ -137,7 +141,7 @@ def content_crud(route, table, model, *, sort, fields, subject, notify=None):
             )
         return {"ok": True, "id": row["id"], **({"slug": row["slug"]} if table in ("programs", "products") else {})}
 
-    @api_view
+    @api_view(body=patch_model, permission=require_admin)
     async def patch(request: HttpRequest, id: str):
         admin = await require_admin(request)
         body = parse_body(request, patch_model)
@@ -148,7 +152,7 @@ def content_crud(route, table, model, *, sort, fields, subject, notify=None):
         )
         return {"ok": True}
 
-    @api_view
+    @api_view(permission=require_admin)
     async def delete(request: HttpRequest, id: str):
         admin = await require_admin(request)
         state, id = (request.services, guid(id))
@@ -255,7 +259,7 @@ async def page(store, slug, *, connection=None):
     return rows[0]
 
 
-@api_view
+@api_view(permission=require_admin)
 async def admin_page(request: HttpRequest, slug: str):
     await require_admin(request)
     row = await page(request.services.store, slug)
@@ -270,7 +274,7 @@ async def admin_page(request: HttpRequest, slug: str):
     }
 
 
-@api_view
+@api_view(body=PageBody, permission=require_admin)
 async def patch_page(request: HttpRequest, slug: str):
     admin = await require_admin(request)
     body = parse_body(request, PageBody)

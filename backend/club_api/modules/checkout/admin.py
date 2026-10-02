@@ -74,7 +74,7 @@ def csv_response(rows, name):
     )
 
 
-@api_view
+@api_view(permission=require_admin)
 async def orders(request: HttpRequest):
     await require_admin(request)
     store = request.services.store
@@ -123,7 +123,7 @@ async def notify_status(state, id, status):
         )
 
 
-@api_view
+@api_view(body=StatusBody, permission=require_admin)
 async def patch_order(request: HttpRequest, id: str):
     admin = await require_admin(request)
     body = parse_body(request, StatusBody)
@@ -140,7 +140,7 @@ async def patch_order(request: HttpRequest, id: str):
     return {"ok": True, "status": body.status}
 
 
-@api_view
+@api_view(permission=require_full_admin)
 async def export_orders(request: HttpRequest):
     admin = await require_full_admin(request)
     orders = await request.services.store.read("orders", sort=("-created_at",), limit=-1)

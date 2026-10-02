@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from psycopg.types.json import Jsonb
 
 from club_api.core.errors import ApiError
+from club_api.db.queries import Query, acquire_lock
 from club_api.domain import effective_discount
 from club_api.modules.checkout.cart import locked_cart
 
@@ -49,7 +50,10 @@ class Checkout:
                 raise ApiError(409, "Корзина изменилась. Обновите её перед оформлением.")
             if base["alumni_id"]:
                 cursor = await connection.execute(
-                    "SELECT verification_status,points_cached,personal_discount FROM alumni WHERE id=%s FOR SHARE",
+                    Query(
+                        "SELECT verification_status,points_cached,personal_discount FROM alumni WHERE id=%s FOR SHARE",
+                        "SELECT verification_status,points_cached,personal_discount FROM alumni WHERE id=%s LOCK IN SHARE MODE",
+                    ),
                     (base["alumni_id"],),
                 )
                 alumni = await cursor.fetchone()
@@ -100,10 +104,13 @@ class Checkout:
                             "UPDATE products SET stock=stock-%s WHERE id=%s", (item["qty"], product["id"])
                         )
                     reservations.append({"id": str(product["id"]), "sku": item.get("variant_sku"), "qty": item["qty"]})
-            await connection.execute("SELECT pg_advisory_xact_lock(81920260908)")
+            await acquire_lock(connection, "order.sequence")
             year = datetime.now(ZoneInfo("Europe/Moscow")).year
             cursor = await connection.execute(
-                "SELECT COALESCE(MAX(CAST(split_part(number,'-',3) AS integer)),0)+1 AS seq FROM orders WHERE number ~ %s",
+                Query(
+                    "SELECT COALESCE(MAX(CAST(split_part(number,'-',3) AS integer)),0)+1 AS seq FROM orders WHERE number ~ %s",
+                    "SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(number,'-',-1) AS integer)),0)+1 AS seq FROM orders WHERE number REGEXP %s",
+                ),
                 (f"^ALU-{year}-[0-9]+$",),
             )
             number = f"ALU-{year}-{(await cursor.fetchone())['seq']:06d}"
@@ -124,7 +131,13 @@ class Checkout:
                 "INSERT INTO club_checkout_commits(key_hash,request_hash,order_id,reservations,receipt) VALUES(%s,%s,%s,%s,%s)",
                 (key, request_hash, order["id"], Jsonb(reservations), Jsonb(receipt)),
             )
-            await connection.execute("UPDATE carts SET items_json='[]'::json,updated_at=now() WHERE id=%s", (cart_id,))
+            await connection.execute(
+                Query(
+                    "UPDATE carts SET items_json='[]'::json,updated_at=now() WHERE id=%s",
+                    "UPDATE carts SET items_json='[]',updated_at=now() WHERE id=%s",
+                ),
+                (cart_id,),
+            )
             return {"number": number, "replay": None}
 
     async def release(self, connection, order_id):
@@ -178,9 +191,10 @@ class Checkout:
         if ttl <= 0 or not self.state.database.pool:
             return 0
         rows = await self.state.database.rows(
-            "SELECT o.id FROM orders o JOIN club_checkout_commits c ON c.order_id=o.id WHERE o.status='new' "
-            "AND (o.payment_status IS NULL OR o.payment_status IN ('','none')) AND c.released=false "
-            "AND jsonb_array_length(c.reservations)>0 AND o.created_at < %s LIMIT 50",
+            Query(
+                "SELECT o.id FROM orders o JOIN club_checkout_commits c ON c.order_id=o.id WHERE o.status='new' AND (o.payment_status IS NULL OR o.payment_status IN ('','none')) AND c.released=false AND jsonb_array_length(c.reservations)>0 AND o.created_at < %s LIMIT 50",
+                "SELECT o.id FROM orders o JOIN club_checkout_commits c ON c.order_id=o.id WHERE o.status='new' AND (o.payment_status IS NULL OR o.payment_status IN ('','none')) AND c.released=false AND JSON_LENGTH(c.reservations)>0 AND o.created_at < %s LIMIT 50",
+            ),
             (datetime.now(UTC) - timedelta(hours=ttl),),
         )
         count = 0

@@ -2,6 +2,7 @@ import logging
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
+from club_api.db.queries import Query, acquire_lock
 from club_api.db.store import normalize
 from club_api.domain import ACHIEVEMENTS, DOMAIN, LEVELS, compute_level, decay_delta
 
@@ -30,7 +31,11 @@ class Gamification:
 
     async def recompute(self, connection, alumni_id):
         cursor = await connection.execute(
-            "SELECT COALESCE(sum(delta),0)::int AS points FROM points_ledger WHERE alumni_id=%s", (alumni_id,)
+            Query(
+                "SELECT COALESCE(sum(delta),0)::int AS points FROM points_ledger WHERE alumni_id=%s",
+                "SELECT COALESCE(sum(delta),0) AS points FROM points_ledger WHERE alumni_id=%s",
+            ),
+            (alumni_id,),
         )
         points = (await cursor.fetchone())["points"]
         level = compute_level(points)["key"]
@@ -45,9 +50,7 @@ class Gamification:
         async with self.state.database.transaction() as connection:
             await connection.execute("SELECT id FROM alumni WHERE id=%s FOR UPDATE", (alumni_id,))
             if idempotency_key:
-                await connection.execute(
-                    "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("points:" + idempotency_key,)
-                )
+                await acquire_lock(connection, "points:" + idempotency_key)
                 cursor = await connection.execute(
                     "SELECT id FROM points_ledger WHERE idempotency_key=%s LIMIT 1", (idempotency_key,)
                 )

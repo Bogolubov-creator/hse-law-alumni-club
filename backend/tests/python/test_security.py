@@ -112,9 +112,9 @@ def test_filter_values_are_parameters_and_like_escaped():
 
 
 @pytest.mark.asyncio
-async def test_argon2_settings_and_failure():
+async def test_bcrypt_sha256_settings_and_failure():
     hashed = await hash_password("synthetic-account-password")
-    assert hashed.startswith("$argon2id$v=19$m=65536,t=3,p=1$")
+    assert hashed.startswith("bcrypt_sha256$$2b$12$")
     assert await verify_password(hashed, "synthetic-account-password")
     assert not await verify_password(hashed, "incorrect")
     assert not await verify_password("$argon2id$broken", "incorrect")
@@ -211,3 +211,33 @@ def test_explicit_boolean_consent(consent):
     }
     with pytest.raises(ValidationError):
         RegisterBody.model_validate(body)
+
+
+@pytest.mark.asyncio
+async def test_disconnected_request_is_not_logged_as_server_error(caplog):
+    from club_api.core.http import SecurityMiddleware
+
+    async def application(scope, receive, send):
+        assert (await receive())["type"] == "http.request"
+        assert (await receive())["type"] == "http.disconnect"
+
+    messages = iter([{"type": "http.request", "body": b""}, {"type": "http.disconnect"}])
+
+    async def receive():
+        return next(messages)
+
+    sent = []
+
+    async def send(message):
+        sent.append(message)
+
+    caplog.set_level(logging.INFO, logger="club.http")
+    middleware = SecurityMiddleware(
+        application, Settings(AUTH_SECRET="synthetic-disconnect-session-secret-for-tests-only"), {}
+    )
+    await middleware(
+        {"type": "http", "method": "GET", "path": "/me", "headers": [], "client": ("127.0.0.1", 1)}, receive, send
+    )
+    assert not sent
+    assert "GET /me disconnected" in caplog.text
+    assert "GET /me 500" not in caplog.text

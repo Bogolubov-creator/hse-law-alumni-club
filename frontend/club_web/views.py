@@ -115,17 +115,10 @@ async def static_file(request, path, prefix=""):
     if not file.is_relative_to(root) or not file.is_file():
         return HttpResponse(status=404)
 
-    async def chunks():
-        source = await asyncio.to_thread(file.open, "rb")
-        try:
-            while chunk := await asyncio.to_thread(source.read, 65536):
-                yield chunk
-        finally:
-            await asyncio.to_thread(source.close)
-
-    return StreamingHttpResponse(
-        chunks(),
-        headers={"Content-Length": str(file.stat().st_size)},
+    body = await asyncio.to_thread(file.read_bytes)
+    return HttpResponse(
+        body,
+        headers={"Content-Length": str(len(body))},
         content_type=mimetypes.guess_type(file.name)[0] or "application/octet-stream",
     )
 

@@ -51,7 +51,7 @@ URLconf. Обработчики получают `HttpRequest`, явно про�
 маршруты, `views.py` обрабатывает страницы и фрагменты, `rendering.py` настраивает
 штатный Django-движок Jinja2. `pages.py` выбирает
 маршрут и получает данные через `client.py` из внутреннего API. Web не подключается
-к PostgreSQL и не принимает окончательных решений о правах, цене или скидке.
+к базе и не принимает окончательных решений о правах, цене или скидке.
 
 - `templates` – Jinja2-страницы, общая оболочка, формы и разделы офиса.
 - `browser` – обычные JavaScript-модули: действия пользователя, плеер, Telegram,
@@ -81,7 +81,10 @@ URLconf. Обработчики получают `HttpRequest`, явно про�
 
 В `deploy` собраны Docker-файлы API, bootstrap, Caddy/web и PostgreSQL,
 конфигурация Caddy, Compose override изолированного стенда и systemd units.
-Корневой `docker-compose.yml` остаётся основной точкой сборки стека.
+Новые установки используют `compose.mariadb.yml`; корневой `docker-compose.yml`
+сохраняет PostgreSQL/Caddy для переноса и отката. `mariadb_common.py` проверяет
+контур, `mariadb_install.py` создаёт конфигурацию, `mariadb_backup.py` обслуживает
+копии, `mariadb_native.py` запускает проверяемое обновление.
 
 В корне `scripts` остаются команды оператора: `install.sh`, `setup-ubuntu.sh`, `preflight.sh`,
 `deploy.sh`, `backup.sh`, `restore.sh`, `monitor.sh`, `migrate.sh` и

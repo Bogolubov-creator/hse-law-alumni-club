@@ -1,11 +1,16 @@
 import logging
 
+from club_api.db.queries import Query
+
 logger = logging.getLogger("club.members")
 
 
 async def alumni_email(state, id):
     rows = await state.database.rows(
-        "SELECT u.email,a.contacts_json->>'email' AS contact_email FROM alumni a LEFT JOIN directus_users u ON u.id=a.user_id WHERE a.id=%s",
+        Query(
+            "SELECT u.email,a.contacts_json->>'email' AS contact_email FROM alumni a LEFT JOIN directus_users u ON u.id=a.user_id WHERE a.id=%s",
+            "SELECT u.email,JSON_UNQUOTE(JSON_EXTRACT(a.contacts_json,'$.email')) AS contact_email FROM alumni a LEFT JOIN directus_users u ON u.id=a.user_id WHERE a.id=%s",
+        ),
         (id,),
     )
     return (rows[0]["email"] or rows[0]["contact_email"]) if rows else None

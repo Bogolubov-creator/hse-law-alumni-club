@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from club_api.core.errors import ApiError
 from club_api.core.models import parse_date
 from club_api.core.outgoing import get_html
+from club_api.db.queries import Query, acquire_lock, release_lock
 from club_api.db.store import normalize
 from club_api.modules.catalog.sync import MONTHS
 from club_api.modules.checkout.store import digest
@@ -113,13 +114,15 @@ async def refresh_source(state, source):
         raise ApiError(400, "Неизвестный источник")
     async with state.database.connection() as connection:
         lock_key = "news-source:" + source
-        cursor = await connection.execute("SELECT pg_try_advisory_lock(hashtextextended(%s,0)) AS locked", (lock_key,))
-        if not (await cursor.fetchone())["locked"]:
+        if not await acquire_lock(connection, lock_key, wait=0):
             return {"busy": True, "found": 0}
         try:
             recent = await (
                 await connection.execute(
-                    "SELECT source FROM club_news_source_runs WHERE source=%s AND checked_at>now()-interval '1 minute'",
+                    Query(
+                        "SELECT source FROM club_news_source_runs WHERE source=%s AND checked_at>now()-interval '1 minute'",
+                        "SELECT source FROM club_news_source_runs WHERE source=%s AND checked_at>now()-INTERVAL 1 MINUTE",
+                    ),
                     (source,),
                 )
             ).fetchone()
@@ -137,26 +140,46 @@ async def refresh_source(state, source):
                             item["published_at"] = await asyncio.to_thread(article_date, page)
                         except Exception:
                             logger.warning("Дата публикации не получена")
-                    await connection.execute(
-                        "INSERT INTO club_news_inbox(id,source_url,sources,title,published_at) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(source_url) DO UPDATE SET sources=ARRAY(SELECT DISTINCT unnest(club_news_inbox.sources||EXCLUDED.sources)),published_at=COALESCE(club_news_inbox.published_at,EXCLUDED.published_at)",
-                        (digest(item["source_url"]), item["source_url"], [source], item["title"], item["published_at"]),
-                    )
+                    if state.database.vendor == "mysql":
+                        from club_api.modules.news.storage import merge_candidate
+
+                        await connection.run(merge_candidate, source, item)
+                    else:
+                        await connection.execute(
+                            "INSERT INTO club_news_inbox(id,source_url,sources,title,published_at) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(source_url) DO UPDATE SET sources=ARRAY(SELECT DISTINCT unnest(club_news_inbox.sources||EXCLUDED.sources)),published_at=COALESCE(club_news_inbox.published_at,EXCLUDED.published_at)",
+                            (
+                                digest(item["source_url"]),
+                                item["source_url"],
+                                [source],
+                                item["title"],
+                                item["published_at"],
+                            ),
+                        )
                 await connection.execute(
-                    "UPDATE club_news_inbox i SET state='imported',news_id=n.id FROM news n WHERE n.source_url=i.source_url AND i.state='new'"
+                    Query(
+                        "UPDATE club_news_inbox i SET state='imported',news_id=n.id FROM news n WHERE n.source_url=i.source_url AND i.state='new'",
+                        "UPDATE club_news_inbox i JOIN news n ON n.source_url=i.source_url SET i.state='imported',i.news_id=n.id WHERE i.state='new'",
+                    )
                 )
                 await connection.execute(
-                    "INSERT INTO club_news_source_runs(source,found) VALUES(%s,%s) ON CONFLICT(source) DO UPDATE SET checked_at=now(),found=EXCLUDED.found,error=NULL",
+                    Query(
+                        "INSERT INTO club_news_source_runs(source,found) VALUES(%s,%s) ON CONFLICT(source) DO UPDATE SET checked_at=now(),found=EXCLUDED.found,error=NULL",
+                        "INSERT INTO club_news_source_runs(source,found) VALUES(%s,%s) ON DUPLICATE KEY UPDATE checked_at=now(),found=VALUES(found),error=NULL",
+                    ),
                     (source, len(items)),
                 )
                 return {"found": len(items), "busy": False}
             except Exception:
                 await connection.execute(
-                    "INSERT INTO club_news_source_runs(source,error) VALUES(%s,%s) ON CONFLICT(source) DO UPDATE SET checked_at=now(),error=EXCLUDED.error",
+                    Query(
+                        "INSERT INTO club_news_source_runs(source,error) VALUES(%s,%s) ON CONFLICT(source) DO UPDATE SET checked_at=now(),error=EXCLUDED.error",
+                        "INSERT INTO club_news_source_runs(source,error) VALUES(%s,%s) ON DUPLICATE KEY UPDATE checked_at=now(),error=VALUES(error)",
+                    ),
                     (source, "Не удалось обновить источник. Повторите позже."),
                 )
                 raise ApiError(502, "Не удалось обновить источник. Сохранённые материалы доступны.") from None
         finally:
-            await connection.execute("SELECT pg_advisory_unlock(hashtextextended(%s,0))", (lock_key,))
+            await release_lock(connection, lock_key)
 
 
 async def import_candidate(state, id, title, excerpt):

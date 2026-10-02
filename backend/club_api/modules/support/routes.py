@@ -10,6 +10,7 @@ from pydantic import ConfigDict, Field, field_validator, model_validator
 from club_api.core.errors import ApiError
 from club_api.core.models import guid, query_page
 from club_api.core.views import api_view, parse_body
+from club_api.db.queries import Query
 from club_api.db.store import normalize
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_admin, require_full_admin
@@ -98,14 +99,14 @@ async def config(request: HttpRequest):
     return support_config(request.services.settings)
 
 
-@api_view
+@api_view(body=FaqBody)
 async def faq_event(request: HttpRequest):
     body = parse_body(request, FaqBody)
     await log_faq(request.services, kind=body.kind, gap_id=body.gapId, channel=body.channel)
     return {"ok": True}
 
 
-@api_view
+@api_view(body=QuestionBody)
 async def ask(request: HttpRequest):
     body = parse_body(request, QuestionBody)
     from club_api.modules.telegram.faq import site_reply
@@ -113,7 +114,7 @@ async def ask(request: HttpRequest):
     return await site_reply(request.services, body.question)
 
 
-@api_view
+@api_view(body=TicketBody)
 async def create_ticket(request: HttpRequest):
     body = parse_body(request, TicketBody)
     state = request.services
@@ -125,19 +126,29 @@ async def create_ticket(request: HttpRequest):
     request_hash = digest(
         json.dumps([body.topic, body.message, body.consentVersion], ensure_ascii=False, separators=(",", ":"))
     )
-    rows = await state.database.rows(
-        "INSERT INTO club_support_tickets(id,key_hash,request_hash,topic,messages,consent_version,consent_text,expires_at) VALUES(%s,%s,%s,%s,%s,%s,%s,now()+%s*interval '1 day') ON CONFLICT(id) DO NOTHING RETURNING id",
-        (
-            body.id,
-            digest(body.key),
-            request_hash,
-            body.topic,
-            addition(body.message, "visitor"),
-            cfg["version"],
-            cfg["consent"],
-            cfg["retentionDays"],
-        ),
-    )
+    if state.database.vendor == "mysql":
+        from club_api.modules.support.storage import create_ticket as store_ticket
+
+        rows = await store_ticket(
+            state.database, body, cfg, digest(body.key), request_hash, addition(body.message, "visitor").obj
+        )
+    else:
+        rows = await state.database.rows(
+            Query(
+                "INSERT INTO club_support_tickets(id,key_hash,request_hash,topic,messages,consent_version,consent_text,expires_at) VALUES(%s,%s,%s,%s,%s,%s,%s,now()+%s*interval '1 day') ON CONFLICT(id) DO NOTHING RETURNING id",
+                "INSERT INTO club_support_tickets(id,key_hash,request_hash,topic,messages,consent_version,consent_text,expires_at) VALUES(%s,%s,%s,%s,%s,%s,%s,now()+INTERVAL %s DAY) ON CONFLICT(id) DO NOTHING RETURNING id",
+            ),
+            (
+                body.id,
+                digest(body.key),
+                request_hash,
+                body.topic,
+                addition(body.message, "visitor"),
+                cfg["version"],
+                cfg["consent"],
+                cfg["retentionDays"],
+            ),
+        )
     if not rows:
         prior = await state.database.rows(
             "SELECT id FROM club_support_tickets WHERE id=%s AND key_hash=%s AND request_hash=%s AND expires_at>now()",
@@ -159,14 +170,28 @@ async def ticket(request: HttpRequest, id: str):
     return normalize(rows[0])
 
 
-@api_view
+@api_view(body=MessageBody)
 async def message(request: HttpRequest, id: str):
     body = parse_body(request, MessageBody)
     state = request.services
-    rows = await state.database.rows(
-        "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status='open',updated_at=now(),expires_at=now()+%s*interval '1 day' WHERE id=%s AND key_hash=%s AND expires_at>now() AND status<>'closed' AND jsonb_array_length(messages)<50 RETURNING id",
-        (addition(body.message, "visitor"), state.settings.SUPPORT_RETENTION_DAYS, guid(id), support_key(request)),
-    )
+    if state.database.vendor == "mysql":
+        from club_api.modules.support.storage import change_ticket
+
+        rows = await change_ticket(
+            state.database,
+            guid(id),
+            key_hash=support_key(request),
+            messages=addition(body.message, "visitor").obj,
+            days=state.settings.SUPPORT_RETENTION_DAYS,
+        )
+    else:
+        rows = await state.database.rows(
+            Query(
+                "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status='open',updated_at=now(),expires_at=now()+%s*interval '1 day' WHERE id=%s AND key_hash=%s AND expires_at>now() AND status<>'closed' AND jsonb_array_length(messages)<50 RETURNING id",
+                "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status='open',updated_at=now(),expires_at=now()+INTERVAL %s DAY WHERE id=%s AND key_hash=%s AND expires_at>now() AND status<>'closed' AND JSON_LENGTH(messages)<50 RETURNING id",
+            ),
+            (addition(body.message, "visitor"), state.settings.SUPPORT_RETENTION_DAYS, guid(id), support_key(request)),
+        )
     if not rows:
         raise ApiError(409, "Обращение недоступно, закрыто или достигнут лимит сообщений")
     return {"ok": True}
@@ -174,15 +199,21 @@ async def message(request: HttpRequest, id: str):
 
 @api_view
 async def delete_ticket(request: HttpRequest, id: str):
-    rows = await request.services.database.rows(
-        "DELETE FROM club_support_tickets WHERE id=%s AND key_hash=%s RETURNING id", (guid(id), support_key(request))
-    )
+    if request.services.database.vendor == "mysql":
+        from club_api.modules.support.storage import change_ticket
+
+        rows = await change_ticket(request.services.database, guid(id), key_hash=support_key(request), delete=True)
+    else:
+        rows = await request.services.database.rows(
+            "DELETE FROM club_support_tickets WHERE id=%s AND key_hash=%s RETURNING id",
+            (guid(id), support_key(request)),
+        )
     if not rows:
         raise ApiError(404, "Обращение не найдено")
     return {"ok": True}
 
 
-@api_view
+@api_view(permission=require_full_admin)
 async def admin_tickets(request: HttpRequest):
     admin = await require_full_admin(request)
     page, _ = query_page(request, default_limit=30)
@@ -194,27 +225,41 @@ async def admin_tickets(request: HttpRequest):
     return normalize(rows)
 
 
-@api_view
+@api_view(body=ReplyBody, permission=require_full_admin)
 async def answer_ticket(request: HttpRequest, id: str):
     admin = await require_full_admin(request)
     body = parse_body(request, ReplyBody)
     state = request.services
-    rows = await state.database.rows(
-        "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status=%s,updated_at=now(),expires_at=now()+%s*interval '1 day' WHERE id=%s AND expires_at>now() AND jsonb_array_length(messages)<50 RETURNING id",
-        (
-            addition(body.message, "support") if body.message else Jsonb([]),
-            body.status,
-            state.settings.SUPPORT_RETENTION_DAYS,
+    if state.database.vendor == "mysql":
+        from club_api.modules.support.storage import change_ticket
+
+        rows = await change_ticket(
+            state.database,
             guid(id),
-        ),
-    )
+            messages=addition(body.message, "support").obj if body.message else [],
+            status=body.status,
+            days=state.settings.SUPPORT_RETENTION_DAYS,
+        )
+    else:
+        rows = await state.database.rows(
+            Query(
+                "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status=%s,updated_at=now(),expires_at=now()+%s*interval '1 day' WHERE id=%s AND expires_at>now() AND jsonb_array_length(messages)<50 RETURNING id",
+                "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status=%s,updated_at=now(),expires_at=now()+INTERVAL %s DAY WHERE id=%s AND expires_at>now() AND JSON_LENGTH(messages)<50 RETURNING id",
+            ),
+            (
+                addition(body.message, "support") if body.message else Jsonb([]),
+                body.status,
+                state.settings.SUPPORT_RETENTION_DAYS,
+                guid(id),
+            ),
+        )
     if not rows:
         raise ApiError(404, "Обращение недоступно")
     await audit(request, "support.update", actor="admin:" + admin["userId"], subject=id, detail={"status": body.status})
     return {"ok": True}
 
 
-@api_view
+@api_view(permission=require_admin)
 async def bot_status(request: HttpRequest):
     await require_admin(request)
     state = request.services
@@ -222,7 +267,10 @@ async def bot_status(request: HttpRequest):
     open_count = None
     if state.database.pool:
         rows = await state.database.rows(
-            "SELECT count(*)::int AS count FROM club_support_tickets WHERE expires_at>now() AND status='open'"
+            Query(
+                "SELECT count(*)::int AS count FROM club_support_tickets WHERE expires_at>now() AND status='open'",
+                "SELECT count(*) AS count FROM club_support_tickets WHERE expires_at>now() AND status='open'",
+            )
         )
         open_count = rows[0]["count"]
     cfg = support_config(state.settings)

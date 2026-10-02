@@ -26,6 +26,8 @@ jobs:
           version: "0.12.21"
       - name: Install Python dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libmariadb-dev pkg-config
           uv sync --directory backend --frozen
           uv sync --directory scripts --frozen
 
@@ -39,6 +41,8 @@ jobs:
           uv run --directory frontend python manage.py check
           uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
           uv run --directory backend ruff format --check club_api tests/python ../scripts/club_ops
+          uv run --directory backend ruff check ../scripts/lib/mariadb_common.py ../scripts/lib/mariadb_install.py ../scripts/lib/mariadb_backup.py ../scripts/lib/mariadb_native.py
+          uv run --directory backend ruff format --check ../scripts/lib/mariadb_common.py ../scripts/lib/mariadb_install.py ../scripts/lib/mariadb_backup.py ../scripts/lib/mariadb_native.py
           uv run --directory frontend ruff check club_web tests/python
           uv run --directory frontend ruff format --check club_web tests/python
           uv run --directory frontend python ../scripts/checks/check-comments.py
@@ -47,6 +51,7 @@ jobs:
           while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts -type d -name .venv -prune -o -type f -name '*.sh' -print0)
           python3 scripts/tests/test-ops.py
           python3 scripts/tests/test-install.py
+          python3 scripts/tests/test-mariadb-ops.py
           uv run --directory backend python ../scripts/tests/test-measure-load.py
           uv run --directory frontend python ../scripts/tests/test-comments.py
           docker compose --env-file .env.example config --quiet
@@ -83,10 +88,43 @@ jobs:
           version: "0.12.21"
       - name: Install Python dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libmariadb-dev pkg-config
           uv sync --directory backend --frozen
           uv sync --directory scripts --frozen
       - name: Python API against disposable PostgreSQL
         run: bash scripts/tests/test-integration.sh
+
+  mariadb-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.14.7"
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.12.21"
+      - name: Install MariaDB from Ubuntu and Python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mariadb-server libmariadb-dev pkg-config
+          sudo systemctl start mariadb
+          uv sync --directory backend --frozen
+          uv sync --directory scripts --frozen
+      - name: Prepare a disposable database
+        run: |
+          sudo mariadb <<'SQL'
+          CREATE DATABASE django_migration_test CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+          CREATE USER 'club_test_operator'@'localhost' IDENTIFIED BY 'synthetic-mariadb-operator-test-only';
+          GRANT ALL PRIVILEGES ON django_migration_test.* TO 'club_test_operator'@'localhost' WITH GRANT OPTION;
+          GRANT CREATE USER ON *.* TO 'club_test_operator'@'localhost';
+          SQL
+      - name: Check Django migrations, restricted API role and application behavior
+        env:
+          CLUB_TEST_DATABASE_URL: mariadb://club_test_operator:synthetic-mariadb-operator-test-only@127.0.0.1:3306/django_migration_test
+        run: bash scripts/tests/test-mariadb-integration.sh
 
   live-stack:
     runs-on: ubuntu-24.04
@@ -111,15 +149,19 @@ jobs:
         run: docker build --file deploy/edge.Dockerfile --target edge-check --tag club-ci-edge-check .
       - name: Check Caddy TLS and perimeter with final images
         run: python3 scripts/tests/test-edge.py --edge-image club-ci-live-caddy --web-image club-ci-live-web --api-image club-ci-live-api
+      - name: Check nginx TLS, request limits and proxy headers
+        run: |
+          docker build --file deploy/nginx.Dockerfile --build-arg "VCS_REF=$(git rev-parse HEAD)" --tag club-ci-live-nginx .
+          python3 scripts/tests/test-nginx.py --application-image club-ci-live-api --edge-image club-ci-live-nginx
       - name: Scan application images (HIGH and CRITICAL)
         run: |
-          for service in api bootstrap web caddy postgres; do
+          for service in api bootstrap web caddy postgres nginx; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
               aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
               image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "club-ci-live-$service"
           done
-      - name: Install and repeat on Ubuntu with local TLS
-        run: bash scripts/tests/test-install.sh
+      - name: Install, repeat and restore MariaDB on Ubuntu with local TLS
+        run: CLUB_NATIVE_BROWSER=true bash scripts/tests/test-install.sh
 
   secrets:
     runs-on: ubuntu-24.04

@@ -1,6 +1,5 @@
 import asyncio
 import json
-import re
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -27,12 +26,14 @@ from club_api.observability.errors import scrub_event
 
 def test_all_legacy_routes_are_present():
     create_app(Settings(AUTH_SECRET="synthetic-session-secret-for-tests-only"))
-    from club_api.urls import urlpatterns
+    from club_api.urls import api
 
     actual = {
-        (method, "/" + re.sub(r"<str:(\w+)>", r"{\1}", str(route.pattern)))
-        for route in urlpatterns
-        for method in route.callback.methods
+        (method, "/" + route)
+        for route, operations in api.default_router.path_operations.items()
+        for operation in operations.operations
+        for method in operation.methods
+        if method != "HEAD"
     }
     old = json.loads(Path(__file__).with_name("legacy-routes.json").read_text())
     expected = {(row["method"], row["path"]) for row in old}
@@ -124,16 +125,12 @@ async def test_bootstrap_preserves_accounts_settings_and_empty_home(database_app
         await connection.execute("UPDATE directus_users SET provider='existing-sso',tfa_secret='synthetic-mfa'")
         await connection.execute("UPDATE club_settings SET value='{}'")
         await connection.execute("DELETE FROM pages_blocks")
-        before = await (
-            await connection.execute("SELECT row_to_json(u) AS value FROM directus_users u ORDER BY id")
-        ).fetchall()
+        before = await (await connection.execute("SELECT * FROM directus_users ORDER BY id")).fetchall()
         repeated = await bootstrap(connection, config)
-        after = await (
-            await connection.execute("SELECT row_to_json(u) AS value FROM directus_users u ORDER BY id")
-        ).fetchall()
+        after = await (await connection.execute("SELECT * FROM directus_users ORDER BY id")).fetchall()
         assert before == after and repeated["createdUsers"] == 0
         assert await (await connection.execute("SELECT id FROM pages_blocks")).fetchall() == []
-        assert (await (await connection.execute("SELECT value FROM club_settings WHERE key='site'")).fetchone())[
+        assert (await (await connection.execute("SELECT value FROM club_settings WHERE \"key\"='site'")).fetchone())[
             "value"
         ] == {}
         with pytest.raises(OperatorError):
@@ -228,6 +225,30 @@ async def test_telegram_secret_and_updates(database_app, monkeypatch):
 async def test_runtime_sql_role_cannot_change_roles_or_read_settings(database_app):
     app = database_app
     url = urlsplit(app.state.settings.secret("CHECKOUT_DATABASE_URL"))
+    if app.state.database.vendor == "mysql":
+        from django.db import DatabaseError
+
+        from club_api.db.pool import Database
+
+        database = Database(
+            Settings(
+                AUTH_SECRET="synthetic-session-secret-for-tests-only",
+                CHECKOUT_DATABASE_URL=f"mariadb://club_api:synthetic-restricted-mariadb-test-only@{url.hostname}:{url.port}{url.path}",
+            )
+        )
+        async with database.connection() as connection:
+            for query in (
+                "SELECT value FROM club_settings",
+                "UPDATE directus_users SET role=NULL",
+                "SELECT token FROM directus_users",
+                "UPDATE directus_roles SET name='admin'",
+            ):
+                with pytest.raises(DatabaseError):
+                    await connection.execute(query)
+            assert (
+                await (await connection.execute("SELECT id,email,password,role FROM directus_users")).fetchall() == []
+            )
+        return
     async with await AsyncConnection.connect(
         f"postgres://club_api:restricted-test-only@{url.hostname}:{url.port}{url.path}",
         row_factory=dict_row,

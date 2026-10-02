@@ -34,7 +34,13 @@ class Application:
             return await self.serve_lifespan(receive, send)
         tasks = []
         scope = {**scope, "club.services": self.state, "club.background_tasks": tasks}
-        await self.handler(scope, receive, send)
+
+        async def response_send(message):
+            if message["type"] == "http.response.start" and scope.get("http_version") in ("1.0", "1.1"):
+                message = {**message, "headers": [*message.get("headers", []), (b"connection", b"close")]}
+            await send(message)
+
+        await self.handler(scope, receive, response_send)
         for function, args, kwargs in tasks:
             try:
                 await function(*args, **kwargs)

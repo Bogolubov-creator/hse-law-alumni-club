@@ -22,6 +22,7 @@ from live_features import (
     section_walk,
     support_conversation,
 )
+from playwright.sync_api import TimeoutError as BrowserTimeout
 from playwright.sync_api import expect, sync_playwright
 
 pytestmark = pytest.mark.skipif(
@@ -175,7 +176,9 @@ def media(office, request, token, name):
 def test_live_system(name, width, height):
     state_path = Path(value("E2E_STATE_DIR")) / (name + ".json")
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        pin = os.environ.get("E2E_TLS_SPKI", "")
+        assert not pin or re.fullmatch(r"[A-Za-z0-9+/]{43}=", pin)
+        browser = playwright.chromium.launch(args=["--ignore-certificate-errors-spki-list=" + pin] if pin else [])
         context = browser.new_context(
             base_url=value("E2E_BASE_URL"), viewport={"width": width, "height": height}, reduced_motion="reduce"
         )
@@ -185,6 +188,10 @@ def test_live_system(name, width, height):
         page = context.new_page()
         request = context.request
         errors = []
+        pending_requests = set()
+        page.on("request", lambda request: pending_requests.add(urlsplit(request.url).path))
+        page.on("requestfinished", lambda request: pending_requests.discard(urlsplit(request.url).path))
+        page.on("requestfailed", lambda request: pending_requests.discard(urlsplit(request.url).path))
         page.on("pageerror", lambda error: errors.append(str(error)))
         assert request.get("/api/ready").status == 200
         assert result(request.get("/api/payments/config"))["enabled"] is False
@@ -216,7 +223,10 @@ def test_live_system(name, width, height):
         assert value("E2E_LIVE_PHASE") == "write"
         email = f"graduate-{name}@live.example.com"
         person = "Тест Выпускник " + name
-        page.goto("/join")
+        try:
+            page.goto("/join")
+        except BrowserTimeout:
+            pytest.fail("Не завершена загрузка страницы вступления: " + ", ".join(sorted(pending_requests)))
         page.get_by_label("ФИО", exact=True).fill(person)
         page.get_by_label("Почта", exact=True).fill(email)
         page.get_by_label("Год выпуска", exact=True).fill("2020")

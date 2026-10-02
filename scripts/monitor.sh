@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+native="$(dirname "${BASH_SOURCE[0]}")/lib/mariadb_native.py"
+if python3 "$native" detect; then exec python3 "$native" monitor; fi
 source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 ops_init
 export MONITOR_URL="$(ops_value PUBLIC_URL)"

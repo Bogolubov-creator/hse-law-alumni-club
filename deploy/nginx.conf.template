@@ -1,0 +1,68 @@
+worker_processes auto;
+pid /tmp/nginx.pid;
+error_log /dev/stderr warn;
+events { worker_connections 1024; }
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    server_tokens off;
+    access_log off;
+    client_body_temp_path /tmp/client-body;
+    proxy_temp_path /tmp/proxy;
+    fastcgi_temp_path /tmp/fastcgi;
+    uwsgi_temp_path /tmp/uwsgi;
+    scgi_temp_path /tmp/scgi;
+    client_max_body_size 512k;
+    client_header_timeout 5s;
+    client_body_timeout 300s;
+    keepalive_timeout 60s;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 60s;
+    limit_req_zone $binary_remote_addr zone=login:1m rate=10r/m;
+    limit_req_status 429;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Forwarded "";
+    proxy_hide_header Server;
+    server {
+        listen 8080;
+        location = /health { return 200 'ok'; }
+        location / { return 308 ${PUBLIC_URL}$request_uri; }
+    }
+    server {
+        listen 8443 ssl;
+        ssl_certificate /etc/club/tls/fullchain.pem;
+        ssl_certificate_key /etc/club/tls/privkey.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache shared:TLS:1m;
+        add_header Strict-Transport-Security "max-age=15552000; includeSubDomains" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' https: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-src https://rutube.ru https://www.rutube.ru; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org 'self'" always;
+        location ~* ^/(?:wp-admin|wp-login\.php|\.env|\.git|xmlrpc\.php|phpmyadmin|vendor|\.aws|config\.php) { return 404; }
+        location = /api/me/avatar {
+            client_max_body_size 4m;
+            proxy_pass http://api:3000/me/avatar;
+        }
+        location = /api/admin/media {
+            client_max_body_size 129m;
+            proxy_pass http://api:3000/admin/media;
+        }
+        location ~ ^/api/auth/(?:admin-login|login|register|forgot|reset)$ {
+            limit_req zone=login burst=10 nodelay;
+            rewrite ^/api/(.*)$ /$1 break;
+            proxy_pass http://api:3000;
+        }
+        location /api/ { proxy_pass http://api:3000/; }
+        location ~ "^/assets/([0-9a-fA-F-]{36})(/.*)?$" {
+            rewrite ^/assets/(.*)$ /media/$1 break;
+            proxy_pass http://api:3000;
+        }
+        location = /sitemap.xml { proxy_pass http://api:3000; }
+        location = /robots.txt { proxy_pass http://api:3000; }
+        location / { proxy_pass http://web:80; }
+    }
+}

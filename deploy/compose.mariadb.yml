@@ -1,0 +1,121 @@
+name: ${CLUB_PROJECT:-club-mariadb}
+
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "3"}
+
+services:
+  mailpit:
+    profiles: [local]
+    logging: *logging
+    image: axllent/mailpit@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    ports:
+      - 127.0.0.1:${CLUB_MAIL_PORT:-8025}:8025
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+
+  operator:
+    logging: *logging
+    profiles: [operator]
+    image: ${CLUB_OPERATOR_IMAGE:-club-reference-bootstrap:local}
+    build:
+      context: ..
+      dockerfile: deploy/bootstrap.Dockerfile
+    env_file: ${CLUB_OPERATOR_ENV:?Нужен закрытый файл настроек оператора}
+    volumes:
+      - ${CLUB_MARIADB_SOCKET_DIR:-/run/mysqld}:/run/mysqld:ro
+      - ${CLUB_TRANSFER_DIR:?Нужен закрытый каталог переноса}:/transfer
+    command: [python, -m, club_ops.cli, migrate]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+
+  api:
+    logging: *logging
+    image: ${CLUB_API_IMAGE:-club-reference-api:local}
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    env_file: ${CLUB_RUNTIME_ENV:?Нужен закрытый файл настроек API}
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: "3000"
+      UPLOADS_PATH: /data/uploads
+    volumes:
+      - ${CLUB_MARIADB_SOCKET_DIR:-/run/mysqld}:/run/mysqld:ro
+      - ${CLUB_UPLOADS_DIR:?Нужен отдельный каталог файлов}:/data/uploads
+    expose: ["3000"]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 512m
+    stop_grace_period: 30s
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    logging: *logging
+    image: ${CLUB_WEB_IMAGE:-club-reference-web:local}
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      API_INTERNAL_URL: http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy
+    expose: ["80"]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 256m
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  nginx:
+    logging: *logging
+    image: ${CLUB_NGINX_IMAGE:-club-nginx:local}
+    build:
+      context: ..
+      dockerfile: deploy/nginx.Dockerfile
+    user: "101:101"
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:?Нужен HTTPS-адрес сайта}
+    entrypoint: [/bin/sh, -c]
+    command: ["envsubst '$$PUBLIC_URL' < /etc/club/nginx.conf.template > /tmp/nginx.conf && exec nginx -c /tmp/nginx.conf -g 'daemon off;'"]
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - ${CLUB_BIND_ADDRESS:-127.0.0.1}:${CLUB_HTTP_PORT:-8080}:8080
+      - ${CLUB_BIND_ADDRESS:-127.0.0.1}:${CLUB_HTTPS_PORT:-8443}:8443
+    volumes:
+      - ./nginx.conf.template:/etc/club/nginx.conf.template:ro
+      - ${CLUB_TLS_DIR:?Нужен каталог TLS}:/etc/club/tls:ro
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 128m
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/health]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  default:
+    name: ${CLUB_NETWORK:-club-mariadb}

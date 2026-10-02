@@ -3,6 +3,8 @@ from email.message import EmailMessage
 
 import aiosmtplib
 
+from club_api.db.queries import Query
+
 logger = logging.getLogger("club.mail")
 EMAIL_CONFIRMATION_KIND = "email_confirmation"
 
@@ -64,9 +66,10 @@ class Notifications:
                 else:
                     maximum = self.settings.MAIL_OUTBOX_MAX_ATTEMPTS
                     await self.database.execute(
-                        "UPDATE club_mail_outbox SET attempts=1,next_attempt_at=now() + interval '5 minutes',last_error=%s,"
-                        "status=CASE WHEN 1 >= %s THEN 'failed' ELSE 'pending' END,"
-                        "body=CASE WHEN 1 >= %s AND kind=%s THEN '' ELSE body END WHERE id=%s",
+                        Query(
+                            "UPDATE club_mail_outbox SET attempts=1,next_attempt_at=now() + interval '5 minutes',last_error=%s,status=CASE WHEN 1 >= %s THEN 'failed' ELSE 'pending' END,body=CASE WHEN 1 >= %s AND kind=%s THEN '' ELSE body END WHERE id=%s",
+                            "UPDATE club_mail_outbox SET attempts=1,next_attempt_at=now() + INTERVAL 5 MINUTE,last_error=%s,status=CASE WHEN 1 >= %s THEN 'failed' ELSE 'pending' END,body=CASE WHEN 1 >= %s AND kind=%s THEN '' ELSE body END WHERE id=%s",
+                        ),
                         (
                             "smtp_fail" if self.mail_enabled else "smtp_missing",
                             maximum,
@@ -107,7 +110,10 @@ class Notifications:
                 result["failed"] += 1
             else:
                 await self.database.execute(
-                    "UPDATE club_mail_outbox SET attempts=%s,next_attempt_at=now() + (%s * interval '1 minute'),last_error='smtp_fail' WHERE id=%s",
+                    Query(
+                        "UPDATE club_mail_outbox SET attempts=%s,next_attempt_at=now() + (%s * interval '1 minute'),last_error='smtp_fail' WHERE id=%s",
+                        "UPDATE club_mail_outbox SET attempts=%s,next_attempt_at=now() + INTERVAL %s MINUTE,last_error='smtp_fail' WHERE id=%s",
+                    ),
                     (attempts, min(60, 5 * attempts), row["id"]),
                 )
                 result["skipped"] += 1

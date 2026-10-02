@@ -12,6 +12,7 @@ from club_api.core.errors import ApiError
 from club_api.core.models import slugify
 from club_api.core.outgoing import get_html
 from club_api.core.views import api_view
+from club_api.db.queries import acquire_lock
 from club_api.modules.auth.service import require_admin
 from club_api.observability.audit import audit
 
@@ -288,7 +289,7 @@ async def sync_catalog(state):
         "sources": {"actual": actual_url, "all": all_url},
     }
     async with state.database.transaction() as connection:
-        await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended('dpo-sync',0))")
+        await acquire_lock(connection, "dpo-sync")
         existing = await state.store.read(
             "programs",
             fields=("id", "slug", "title", "status", "source_url", "duration", "price", "hse_id"),
@@ -304,7 +305,7 @@ async def sync_catalog(state):
     return result
 
 
-@api_view
+@api_view(permission=require_admin)
 async def sync(request: HttpRequest):
     admin = await require_admin(request)
     result = await sync_catalog(request.services)

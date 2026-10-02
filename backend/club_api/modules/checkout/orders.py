@@ -46,7 +46,7 @@ def json_string(value):
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
-@api_view
+@api_view(body=OrderBody)
 async def create_order(request: HttpRequest):
     body = parse_body(request, OrderBody)
     state, session = (request.services, cart_session(request))
@@ -168,7 +168,7 @@ async def create_order(request: HttpRequest):
     return receipt
 
 
-@api_view
+@api_view(permission=require_alumni)
 async def my_orders(request: HttpRequest):
     alumni = await require_alumni(request)
     return await request.services.store.read(

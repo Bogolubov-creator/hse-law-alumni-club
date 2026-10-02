@@ -20,25 +20,25 @@ class BroadcastBody(Body):
     url: str = Field(default="/", max_length=200, pattern="^/[a-zA-Z0-9/-]*$")
 
 
-@api_view
+@api_view(permission=require_admin)
 async def health(request: HttpRequest):
     await require_admin(request)
     return await build_health(request.services)
 
 
-@api_view
+@api_view(permission=require_admin)
 async def summary(request: HttpRequest):
     await require_admin(request)
     return await overview(request.services)
 
 
-@api_view
+@api_view(permission=require_admin)
 async def report(request: HttpRequest):
     await require_admin(request)
     return await analytics(request.services, query_choice(request, "range", ("7d", "30d", "90d")) or "30d")
 
 
-@api_view
+@api_view(permission=require_admin)
 async def export(request: HttpRequest):
     admin = await require_admin(request)
     range = query_choice(request, "range", ("7d", "30d", "90d")) or "30d"
@@ -47,7 +47,7 @@ async def export(request: HttpRequest):
     return csv_response(analytics_rows(data), "analytics-" + range)
 
 
-@api_view
+@api_view(body=BroadcastBody, permission=require_full_admin)
 async def broadcast(request: HttpRequest):
     admin = await require_full_admin(request)
     body = parse_body(request, BroadcastBody)
@@ -59,7 +59,7 @@ async def broadcast(request: HttpRequest):
     return {"ok": True, "subscribers": subscribers}
 
 
-@api_view
+@api_view(permission=require_admin)
 async def audit_rows(request: HttpRequest):
     await require_admin(request)
     try:

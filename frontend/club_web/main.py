@@ -26,15 +26,9 @@ def create_app(client=None):
 
 
 def run():
-    import uvicorn
+    from club_web.server import Server
 
-    uvicorn.run(
-        create_app(),
-        host=os.environ.get("WEB_HOST", "127.0.0.1"),
-        port=int(os.environ.get("WEB_PORT", "5173")),
-        proxy_headers=False,
-        access_log=False,
-    )
+    Server(create_app, os.environ.get("WEB_HOST", "127.0.0.1"), int(os.environ.get("WEB_PORT", "5173"))).run()
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ from django.http import HttpRequest
 
 from club_api.core.errors import ApiError
 from club_api.core.views import api_view, parse_body, parse_uuid
+from club_api.db.queries import acquire_lock
 from club_api.db.store import normalize
 from club_api.domain import compute_level
 from club_api.modules.auth.routes import Body
@@ -145,7 +146,7 @@ async def notifications(request: HttpRequest):
     return events
 
 
-@api_view
+@api_view(body=FriendBody)
 async def friend(request: HttpRequest):
     me = await verified_alumni(request)
     body = parse_body(request, FriendBody)
@@ -161,7 +162,7 @@ async def friend(request: HttpRequest):
         raise ApiError(404, "Выпускник не найден")
     async with state.database.transaction() as connection:
         key = "friends:" + ":".join(sorted((me["id"], body.alumni_id)))
-        await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (key,))
+        await acquire_lock(connection, key)
         links = await state.store.read(
             "alumni_friends",
             filters=pair_filter(me["id"], body.alumni_id),

@@ -1,5 +1,7 @@
 import logging
 
+from club_api.db.queries import Query
+
 logger = logging.getLogger("club.social")
 
 
@@ -14,7 +16,10 @@ async def social_progress(state, alumni_id, telegram_id=None):
         return stats
     try:
         rows = await state.database.rows(
-            "SELECT subscribed FROM club_social_membership WHERE alumni_id=%s AND telegram_id=%s AND checked_at > now() - interval '5 minutes'",
+            Query(
+                "SELECT subscribed FROM club_social_membership WHERE alumni_id=%s AND telegram_id=%s AND checked_at > now() - interval '5 minutes'",
+                "SELECT subscribed FROM club_social_membership WHERE alumni_id=%s AND telegram_id=%s AND checked_at > now() - INTERVAL 5 MINUTE",
+            ),
             (alumni_id, telegram_id),
         )
         checked = bool(rows)
@@ -36,14 +41,20 @@ async def social_progress(state, alumni_id, telegram_id=None):
                     checked = True
                     stats["telegram_subscribed"] = int(subscribed)
                     await state.database.execute(
-                        "INSERT INTO club_social_membership(alumni_id,telegram_id,subscribed) VALUES(%s,%s,%s) ON CONFLICT(alumni_id) DO UPDATE SET telegram_id=EXCLUDED.telegram_id,subscribed=EXCLUDED.subscribed,checked_at=now()",
+                        Query(
+                            "INSERT INTO club_social_membership(alumni_id,telegram_id,subscribed) VALUES(%s,%s,%s) ON CONFLICT(alumni_id) DO UPDATE SET telegram_id=EXCLUDED.telegram_id,subscribed=EXCLUDED.subscribed,checked_at=now()",
+                            "INSERT INTO club_social_membership(alumni_id,telegram_id,subscribed) VALUES(%s,%s,%s) ON DUPLICATE KEY UPDATE telegram_id=VALUES(telegram_id),subscribed=VALUES(subscribed),checked_at=now()",
+                        ),
                         (alumni_id, telegram_id, subscribed),
                     )
             except Exception:
                 logger.warning("Не удалось проверить подписку Telegram")
         if state.settings.TELEGRAM_REACTIONS_CHAT_ID:
             rows = await state.database.rows(
-                "SELECT count(*)::int AS count FROM club_social_reactions WHERE alumni_id=%s AND chat_id=%s AND active=true",
+                Query(
+                    "SELECT count(*)::int AS count FROM club_social_reactions WHERE alumni_id=%s AND chat_id=%s AND active=true",
+                    "SELECT count(*) AS count FROM club_social_reactions WHERE alumni_id=%s AND chat_id=%s AND active=true",
+                ),
                 (alumni_id, state.settings.TELEGRAM_REACTIONS_CHAT_ID),
             )
             stats["telegram_reactions"] = rows[0]["count"]
@@ -57,6 +68,33 @@ async def social_progress(state, alumni_id, telegram_id=None):
 async def record_reaction(state, update, update_id=0):
     user, chat = update.get("user", {}), str(update.get("chat", {}).get("id", ""))
     if chat != state.settings.TELEGRAM_REACTIONS_CHAT_ID or not user.get("id") or user.get("is_bot"):
+        return
+    if state.database.vendor == "mysql":
+        from club_api.db.models import Alumnus, SocialReactions
+
+        async with state.database.transaction() as connection:
+            await connection.lock(f"reaction:{chat}:{update['message_id']}:{user['id']}")
+
+            def record():
+                owner = (
+                    Alumnus.objects.filter(telegram_id=str(user["id"]), verification_status="verified")
+                    .select_for_update()
+                    .first()
+                )
+                if not owner:
+                    return
+                reaction = SocialReactions.objects.filter(
+                    alumni=owner, chat_id=chat, message_id=update["message_id"]
+                ).first()
+                values = {"active": bool(update["new_reaction"]), "event_at": update["date"], "update_id": update_id}
+                if not reaction:
+                    SocialReactions.objects.create(
+                        alumni=owner, chat_id=chat, message_id=update["message_id"], **values
+                    )
+                elif (reaction.event_at, reaction.update_id) < (update["date"], update_id):
+                    SocialReactions.objects.filter(pk=reaction.pk).update(**values)
+
+            await connection.run(record)
         return
     await state.database.execute(
         "INSERT INTO club_social_reactions(alumni_id,chat_id,message_id,active,event_at,update_id) "

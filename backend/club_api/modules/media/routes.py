@@ -32,7 +32,7 @@ async def public_media(request: HttpRequest, fileId: str):
     return await media.stream(id, kind="image", range=request.headers.get("range"), cache="public, max-age=300")
 
 
-@api_view
+@api_view(permission=require_admin)
 async def media_list(request: HttpRequest):
     await require_admin(request)
     page, limit = query_page(request, default_limit=20)
@@ -42,7 +42,7 @@ async def media_list(request: HttpRequest):
     return await request.services.media.list(page, limit, search)
 
 
-@api_view
+@api_view(permission=require_admin)
 async def upload_office(request: HttpRequest):
     admin = await require_admin(request)
     upload = await upload_form(request)
@@ -71,7 +71,7 @@ async def office_file(media, id):
     return file
 
 
-@api_view
+@api_view(permission=require_admin)
 async def office_content(request: HttpRequest, fileId: str):
     await require_admin(request)
     media, id = (request.services.media, guid(fileId))
@@ -81,7 +81,7 @@ async def office_content(request: HttpRequest, fileId: str):
     )
 
 
-@api_view
+@api_view(permission=require_admin)
 async def delete_media(request: HttpRequest, fileId: str):
     admin = await require_admin(request)
     media, id = (request.services.media, guid(fileId))
@@ -91,7 +91,7 @@ async def delete_media(request: HttpRequest, fileId: str):
     return {"ok": True}
 
 
-@api_view
+@api_view(permission=require_alumni)
 async def upload_avatar(request: HttpRequest):
     alumni = await require_alumni(request)
     if alumni["verification_status"] == "rejected":

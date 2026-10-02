@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+  native="$(dirname "${BASH_SOURCE[0]}")/lib/mariadb_native.py"
+  if python3 "$native" detect; then exec python3 "$native" backup; fi
+fi
 source "$(dirname "${BASH_SOURCE[0]}")/lib/ops-common.sh"
 
 backup_snapshot() (

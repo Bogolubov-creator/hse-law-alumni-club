@@ -2,7 +2,9 @@ import argparse
 import asyncio
 import logging
 import os
+import secrets
 import sys
+from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
 import httpx
@@ -15,12 +17,56 @@ from club_ops.podcasts import import_podcasts
 from club_ops.staff import manage_staff
 
 
+@asynccontextmanager
+async def operator_connection(values):
+    url = values.get("DATABASE_URL", "")
+    if url.startswith(("mariadb://", "mysql://")):
+        from club_api.asgi import initialize_django
+        from club_api.core.config import Settings
+        from club_api.db.pool import Database
+
+        os.environ["CHECKOUT_DATABASE_URL"] = url
+        initialize_django()
+        database = Database(
+            Settings(AUTH_SECRET=values.get("AUTH_SECRET") or secrets.token_urlsafe(48), CHECKOUT_DATABASE_URL=url)
+        )
+        async with database.connection() as connection:
+            yield connection
+    else:
+        async with await AsyncConnection.connect(url, row_factory=dict_row, connect_timeout=10) as connection:
+            yield connection
+
+
 async def database_command(command, values):
     if command == "manage-staff" and not values.get("STAFF_PASSWORD") and not sys.stdin.isatty():
         values["STAFF_PASSWORD"] = sys.stdin.read(102).removesuffix("\n").removesuffix("\r")
-    async with await AsyncConnection.connect(
-        values.get("DATABASE_URL", ""), row_factory=dict_row, connect_timeout=10
-    ) as connection:
+    async with operator_connection(values) as connection:
+        if command == "migrate":
+            if getattr(connection, "vendor", None) != "mysql":
+                raise OperatorError("Миграции Django здесь применяются только к новой MariaDB")
+            from django.core.management import call_command
+
+            await connection.run(call_command, "check", databases=["default"])
+            await connection.run(call_command, "migrate", interactive=False)
+            return
+        if command == "configure-mariadb-role":
+            if getattr(connection, "vendor", None) != "mysql":
+                raise OperatorError("Команда предназначена для MariaDB")
+            from club_ops.mariadb_roles import configure_runtime_role
+
+            await connection.run(configure_runtime_role, values)
+            print("Роль MariaDB настроена; права ограничены таблицами и полями API")
+            return
+        if command == "database-fingerprints":
+            import json
+
+            from club_ops.database_transfer import fingerprint, model_tables, table_rows
+
+            def fingerprints():
+                return {name: fingerprint(table_rows(model)) for name, model in model_tables().items()}
+
+            print(json.dumps(await connection.run(fingerprints), sort_keys=True))
+            return
         if command == "bootstrap":
             result = await bootstrap(connection, BootstrapConfig.from_env(values))
             print(
@@ -73,7 +119,22 @@ async def setup_webhook(values):
 
 async def main(args):
     values = dict(os.environ)
-    if args.command in ("bootstrap", "manage-staff"):
+    if args.command in ("export-postgres", "import-postgres"):
+        from club_api.asgi import initialize_django
+        from club_ops.database_transfer import export_snapshot, import_snapshot
+
+        os.environ["CHECKOUT_DATABASE_URL"] = (
+            ""
+            if args.command == "export-postgres"
+            else values.get("DATABASE_URL", values.get("CHECKOUT_DATABASE_URL", ""))
+        )
+        initialize_django()
+        if args.command == "export-postgres":
+            tables = await asyncio.to_thread(export_snapshot, args.snapshot, values.get("SOURCE_DATABASE_URL", ""))
+        else:
+            tables = (await asyncio.to_thread(import_snapshot, args.snapshot))["tables"]
+        print(f"{args.command}: таблиц {len(tables)}, записей {sum(table['rows'] for table in tables.values())}")
+    elif args.command in ("bootstrap", "manage-staff", "migrate", "configure-mariadb-role", "database-fingerprints"):
         await database_command(args.command, values)
     elif args.command == "setup-telegram-webhook":
         await setup_webhook(values)
@@ -101,6 +162,9 @@ def run():
     for name in (
         "bootstrap",
         "manage-staff",
+        "migrate",
+        "configure-mariadb-role",
+        "database-fingerprints",
         "sync-dpo",
         "setup-telegram-webhook",
         "import-dpo",
@@ -108,6 +172,8 @@ def run():
     ):
         sub.add_parser(name)
     sub.add_parser("import-podcasts").add_argument("manifest")
+    for name in ("export-postgres", "import-postgres"):
+        sub.add_parser(name).add_argument("snapshot")
     args = parser.parse_args()
     logging.basicConfig(level=logging.WARNING, format="%(message)s")
     try:

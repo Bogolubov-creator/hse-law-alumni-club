@@ -8,6 +8,7 @@ from pydantic import Field
 
 from club_api.core.errors import ApiError
 from club_api.core.views import api_view, parse_body
+from club_api.db.queries import acquire_lock
 from club_api.domain import MAX_CART_LINES, MAX_LINE_QTY, effective_discount, order_totals, same_line, summarize_cart
 from club_api.modules.auth.routes import Body
 from club_api.modules.catalog.lookup import lookup_catalog
@@ -41,7 +42,7 @@ def cart_session(request):
 @asynccontextmanager
 async def locked_cart(state, token):
     async with state.database.transaction() as connection:
-        await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("cart:" + token,))
+        await acquire_lock(connection, "cart:" + token)
         yield connection
 
 
@@ -93,7 +94,7 @@ async def cart(request: HttpRequest):
     }
 
 
-@api_view
+@api_view(body=CartItem)
 async def add_cart(request: HttpRequest):
     body = parse_body(request, CartItem)
     state, token = (request.services, cart_session(request))
@@ -134,7 +135,7 @@ async def add_cart(request: HttpRequest):
         return summarize_cart(items)
 
 
-@api_view
+@api_view(body=ChangeQty)
 async def change_qty(request: HttpRequest):
     body = parse_body(request, ChangeQty)
     state, token = (request.services, cart_session(request))

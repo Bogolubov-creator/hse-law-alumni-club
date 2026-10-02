@@ -12,6 +12,7 @@ from pydantic import Field, field_validator
 from pywebpush import WebPushException, webpush_async
 
 from club_api.core.views import api_view, parse_body
+from club_api.db.queries import acquire_lock
 from club_api.modules.auth.routes import Body
 from club_api.modules.auth.service import require_alumni
 from club_api.modules.gamification.routes import verified_alumni
@@ -134,14 +135,14 @@ async def vapid(request: HttpRequest):
     return {"enabled": request.services.push.enabled, "key": request.services.settings.VAPID_PUBLIC_KEY or None}
 
 
-@api_view
+@api_view(body=SubscribeBody)
 async def subscribe(request: HttpRequest):
     alumni = await verified_alumni(request)
     body = parse_body(request, SubscribeBody)
     state = request.services
     previous = None
     async with state.database.transaction() as connection:
-        await connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", ("push:" + body.endpoint,))
+        await acquire_lock(connection, "push:" + body.endpoint)
         rows = await state.store.read(
             "push_subs",
             filters={"endpoint": {"_eq": body.endpoint}},
@@ -160,7 +161,7 @@ async def subscribe(request: HttpRequest):
     return {"ok": True}
 
 
-@api_view
+@api_view(body=EndpointBody, permission=require_alumni)
 async def unsubscribe(request: HttpRequest):
     alumni = await require_alumni(request)
     body = parse_body(request, EndpointBody)
