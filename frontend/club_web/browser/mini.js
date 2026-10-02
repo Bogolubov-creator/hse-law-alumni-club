@@ -49,7 +49,13 @@ export function prepareMini(path, url) {
     document.querySelectorAll("[data-mini-preview]").forEach(node => { node.hidden = true; });
     document.querySelectorAll("[data-action='telegram-login']").forEach(node => { node.hidden = false; });
     if (entry) app.BackButton?.hide?.(); else app.BackButton?.show?.();
-    const back = () => { location.href = url("tg"); };
+    const back = () => {
+      let previous;
+      try { previous = new URL(document.referrer); } catch {}
+      const root = new URL(url(""), location.origin);
+      if (history.length > 1 && previous?.origin === root.origin && previous.pathname.startsWith(root.pathname)) history.back();
+      else location.href = url("tg");
+    };
     app.BackButton?.onClick?.(back);
     window.addEventListener("pagehide", () => { app.BackButton?.offClick?.(back); app.offEvent?.("safeAreaChanged", applyInsets); app.offEvent?.("contentSafeAreaChanged", applyInsets); }, { once: true });
     const sdkStart = miniStartRoute(app.initDataUnsafe?.start_param);

@@ -40,7 +40,7 @@ async def change_ticket(database, id, *, key_hash=None, messages=None, status=No
                 if key_hash:
                     query = query.exclude(status="closed")
             obj = query.select_for_update().first()
-            if not obj or (not delete and len(obj.messages) >= 50):
+            if not obj or (not delete and messages and len(obj.messages) >= 50):
                 return []
             if delete:
                 obj.delete()

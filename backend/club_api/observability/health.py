@@ -4,7 +4,7 @@ import time
 from datetime import UTC, datetime
 
 DATABASE_READY_SQL = (
-    "SELECT c.key_hash,s.id,p.path,o.status,f.kind,t.token_hash,r.token_key,a.id,u.password,l.id,m.filename_disk "
+    "SELECT c.key_hash,s.id,p.path,o.status,o.owner_user_id,f.kind,t.token_hash,r.token_key,a.id,u.password,l.id,m.filename_disk "
     "FROM club_checkout_commits c,club_support_tickets s,club_page_views p,club_mail_outbox o,club_faq_events f,"
     "club_telegram_links t,club_auth_revocations r,alumni a,directus_users u,levels l,directus_files m LIMIT 0"
 )

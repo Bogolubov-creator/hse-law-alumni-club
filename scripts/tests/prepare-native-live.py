@@ -129,7 +129,9 @@ def restart(config):
         after = sql("SELECT id,email,password,token,role,status FROM directus_users ORDER BY id", context.database)
         if before != after:
             raise ValueError("Bootstrap изменил учётные записи")
-    context.execute("restart", "api", "web", "nginx", "mailpit")
+    context.execute("restart", "api", "web", "mailpit")
+    context.execute("up", "-d", "--wait", "api", "web", "mailpit")
+    context.execute("restart", "nginx")
     context.verify_http()
     print("Bootstrap сохранил пароли, роли и сессии; рестарт завершён")
 

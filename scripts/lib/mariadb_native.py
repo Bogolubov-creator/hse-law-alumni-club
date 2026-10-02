@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import time
@@ -18,6 +19,14 @@ from mariadb_common import (
 from mariadb_install import install as install
 from mariadb_install import prepare_restore
 
+MIN_BUILD_FREE_BYTES = 5 * 1024**3
+
+
+def verify_build_space():
+    storage = pathlib.Path(output(["docker", "info", "--format", "{{.DockerRootDir}}"])).resolve(strict=True)
+    if shutil.disk_usage(storage).free < MIN_BUILD_FREE_BYTES:
+        raise ValueError("Для сборки требуется не менее 5 GiB свободного места на диске Docker")
+
 
 def preflight(context):
     revision()
@@ -27,6 +36,7 @@ def preflight(context):
             raise ValueError("Порты API, web и оператора не должны публиковаться")
     if context.runtime.get("APP_ENV") != "production" or context.runtime.get("SEED_DEMO") != "false":
         raise ValueError("Нужны APP_ENV=production и SEED_DEMO=false")
+    verify_build_space()
     output(["systemctl", "is-active", "mariadb"])
     sql("SELECT 1", context.database)
     print("Preflight: закрытая конфигурация, локальная база и чистый checkout проверены")

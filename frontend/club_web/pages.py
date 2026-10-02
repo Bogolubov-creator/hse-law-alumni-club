@@ -105,6 +105,13 @@ def select_page(path):
     return "not-found.html", "Страница не найдена"
 
 
+def pagination_page(value):
+    try:
+        return max(1, min(10000, int(value)))
+    except TypeError, ValueError:
+        return 1
+
+
 async def context(api, path, params, authorized=False):
     template, title = select_page(path)
     data = {
@@ -121,6 +128,7 @@ async def context(api, path, params, authorized=False):
         "labels": LABELS,
         "metrics": METRICS,
         "errors": [],
+        "load_errors": {},
         "authorized": authorized,
         "status": 404 if template == "not-found.html" else 200,
         "domain": resource("domain-data.json"),
@@ -135,6 +143,7 @@ async def context(api, path, params, authorized=False):
             data[key] = await api.get(endpoint)
         except ApiFailure as error:
             data[key] = default
+            data["load_errors"][key] = error.status
             data["errors"].append(error.message)
             if error.status in (401, 403):
                 data["access_error"] = error.status
@@ -213,17 +222,23 @@ async def context(api, path, params, authorized=False):
         data["item"] = next((item for item in data["products"] if item["slug"] == path.rsplit("/", 1)[1]), None)
         if data["item"]:
             data["title"] = data["item"]["title"]
+        elif "products" in data["load_errors"]:
+            data.update(template="unavailable.html", title="Не удалось загрузить страницу", status=503)
         else:
             data.update(template="not-found.html", status=404)
     elif path == "/search":
         await asyncio.gather(
-            load("programs", "/programs", []), load("news", "/news", []), load("podcasts", "/podcasts", {"items": []})
+            load("programs", "/programs", []),
+            load("news", "/news", []),
+            load("events", "/events", []),
+            load("podcasts", "/podcasts", {"items": []}),
         )
         needle = params.get("q", "").casefold().replace("ё", "е").strip()
         groups = []
         for prefix, label, records, fields, identifier in (
             ("dpo", "Программы ДПО", data["programs"], ("title", "direction"), "slug"),
             ("news", "Новости", data["news"], ("title", "excerpt"), "slug"),
+            ("events", "События", data["events"], ("title", "description", "location"), "id"),
             ("podcasts", "Подкасты", page_items(data["podcasts"]), ("title",), "id"),
         ):
             matches = [
@@ -241,7 +256,7 @@ async def context(api, path, params, authorized=False):
                 }
             )
         found = (
-            select_changes(parse_changes(resource("changes.json"))["items"], {"q": needle, "view": "digest"})[:6]
+            select_changes(parse_changes(resource("changes.json"))["items"], {"q": needle, "view": "all"})[:6]
             if len(needle) >= 2
             else []
         )
@@ -261,16 +276,23 @@ async def context(api, path, params, authorized=False):
     elif path == "/news":
         await load("items", "/news", [])
     elif path == "/events" or path.startswith("/events/"):
-        await load("items", "/events", [])
+        event_id = path.removeprefix("/events/") if path != "/events" else params.get("event")
+        endpoint = "/events"
+        if event_id:
+            endpoint += "?id=" + quote(event_id, safe="")
+        elif params.get("month"):
+            endpoint += "?month=" + month_view([], params["month"])["selected"]
+        await load("items", endpoint, [])
         for event in data["items"]:
             event["calendar_url"] = google_calendar(event)
             event["past"] = event.get("status") in ("done", "canceled") or instant(
                 event.get("starts_at")
             ) < datetime.now(UTC)
         data["calendar"] = month_view(data["items"], params.get("month"))
-        event_id = path.removeprefix("/events/") if path != "/events" else params.get("event")
         data["item"] = next((item for item in data["items"] if item["id"] == event_id), None)
-        if event_id and not data["item"]:
+        if event_id and "items" in data["load_errors"]:
+            data.update(template="unavailable.html", title="Не удалось загрузить страницу", status=503)
+        elif event_id and not data["item"]:
             data.update(template="not-found.html", status=404)
     elif path == "/podcasts" or path.startswith("/podcasts/"):
         await load("podcasts", "/podcasts", {"items": []})
@@ -279,6 +301,8 @@ async def context(api, path, params, authorized=False):
             data["item"] = next((item for item in data["items"] if item["id"] == path.rsplit("/", 1)[1]), None)
             if data["item"]:
                 data["title"] = data["item"]["title"]
+            elif "podcasts" in data["load_errors"]:
+                data.update(template="unavailable.html", title="Не удалось загрузить страницу", status=503)
             else:
                 data.update(template="not-found.html", status=404)
     elif path == "/changes" or path.startswith("/changes/"):
@@ -293,7 +317,7 @@ async def context(api, path, params, authorized=False):
             data.update(template="not-found.html", status=404)
         data["items"] = select_changes(snapshot["items"], {"view": "digest", **params})
         data["total"] = len(data["items"])
-        page = max(1, min(10000, int(params.get("page", "1")) if params.get("page", "1").isdigit() else 1))
+        page = pagination_page(params.get("page", "1"))
         data["items"] = data["items"][(page - 1) * 20 : page * 20]
         data["page_number"] = page
         data["next_page"] = "/changes?" + urlencode({**params, "page": page + 1}) if data["total"] > page * 20 else ""
@@ -350,8 +374,7 @@ async def context(api, path, params, authorized=False):
                     data["office_total"] = len(data["rows"])
                     data["rows"] = filter_content(data["rows"], params)
                 records = data.get("records") or {}
-                current = int(params.get("page", "1")) if params.get("page", "1").isdigit() else 1
-                current = max(1, current)
+                current = pagination_page(params.get("page", "1"))
                 limit = (records.get("limit") or records.get("page_size") or 30) if isinstance(records, dict) else 30
                 total = records.get("total", 0) if isinstance(records, dict) else 0
                 data["office_previous"] = "?" + urlencode({**params, "page": current - 1}) if current > 1 else ""

@@ -175,6 +175,15 @@ class Payments:
                 await connection.execute("UPDATE orders SET payment_status='pending' WHERE id=%s", (order["id"],))
             return order
 
+    async def creation_failed(self, number):
+        async with self.state.database.transaction() as connection:
+            cursor = await connection.execute(
+                "SELECT id,payment_id,payment_status FROM orders WHERE number=%s FOR UPDATE", (number,)
+            )
+            order = await cursor.fetchone()
+            if order and not order["payment_id"] and order["payment_status"] == "pending":
+                await connection.execute("UPDATE orders SET payment_status=NULL WHERE id=%s", (order["id"],))
+
     async def apply(self, payment):
         number = payment.get("metadata", {}).get("order_number")
         if not number:
@@ -228,13 +237,17 @@ async def pay(request: HttpRequest, number: str):
             if existing["status"] == "canceled"
             else "Платёж уже обрабатывается. Проверьте статус заявки позже.",
         )
-    payment = await payments.create(
-        number,
-        order["total_estimate"],
-        f"Заявка {number} · Клуб выпускников факультета права Вышки",
-        order["contact_email"],
-    )
-    await payments.record(number, payment)
+    try:
+        payment = await payments.create(
+            number,
+            order["total_estimate"],
+            f"Заявка {number} · Клуб выпускников факультета права Вышки",
+            order["contact_email"],
+        )
+        await payments.record(number, payment)
+    except ApiError:
+        await payments.creation_failed(number)
+        raise
     url = secure_payment_url(payment.get("confirmation", {}).get("confirmation_url"))
     if not url:
         raise ApiError(502, "ЮKassa не вернула защищённую ссылку на оплату")

@@ -2,6 +2,7 @@ import logging
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
+from club_api.core.models import parse_date
 from club_api.db.queries import Query, acquire_lock
 from club_api.db.store import normalize
 from club_api.domain import ACHIEVEMENTS, DOMAIN, LEVELS, compute_level, decay_delta
@@ -29,6 +30,17 @@ class Gamification:
     def __init__(self, state):
         self.state = state
 
+    async def stats(self, alumni, ledger, connection=None):
+        if connection is None:
+            async with self.state.database.connection() as connection:
+                return await self.stats(alumni, ledger, connection)
+        cursor = await connection.execute(
+            "SELECT count(*) AS count FROM orders WHERE alumni_id=%s AND type IN ('merch','mixed')", (alumni["id"],)
+        )
+        result = stats_from_ledger(alumni, ledger)
+        result["orders_count"] = max(result["orders_count"], (await cursor.fetchone())["count"])
+        return result
+
     async def recompute(self, connection, alumni_id):
         cursor = await connection.execute(
             Query(
@@ -45,37 +57,53 @@ class Gamification:
         return {"points": points, "level": level}
 
     async def add(self, alumni_id, *, reason, delta=None, ref=None, comment=None, idempotency_key=None):
+        async with self.state.database.transaction() as connection:
+            result = await self.add_in_transaction(
+                connection,
+                alumni_id,
+                reason=reason,
+                delta=delta,
+                ref=ref,
+                comment=comment,
+                idempotency_key=idempotency_key,
+            )
+        await self.refresh_achievements(alumni_id)
+        return result
+
+    async def add_in_transaction(
+        self, connection, alumni_id, *, reason, delta=None, ref=None, comment=None, idempotency_key=None
+    ):
         if delta is None:
             delta = next((rule["points"] for rule in DOMAIN["point_rules"] if rule["reason"] == reason), 0)
-        async with self.state.database.transaction() as connection:
-            await connection.execute("SELECT id FROM alumni WHERE id=%s FOR UPDATE", (alumni_id,))
-            if idempotency_key:
-                await acquire_lock(connection, "points:" + idempotency_key)
-                cursor = await connection.execute(
-                    "SELECT id FROM points_ledger WHERE idempotency_key=%s LIMIT 1", (idempotency_key,)
-                )
-                if await cursor.fetchone():
-                    return await self.recompute(connection, alumni_id)
-            await self.state.store.create(
-                "points_ledger",
-                {
-                    "alumni_id": alumni_id,
-                    "delta": delta,
-                    "reason": reason,
-                    "ref": ref,
-                    "comment": comment,
-                    "idempotency_key": idempotency_key,
-                },
-                connection=connection,
+        await connection.execute("SELECT id FROM alumni WHERE id=%s FOR UPDATE", (alumni_id,))
+        if idempotency_key:
+            await acquire_lock(connection, "points:" + idempotency_key)
+            cursor = await connection.execute(
+                "SELECT id FROM points_ledger WHERE idempotency_key=%s LIMIT 1", (idempotency_key,)
             )
-            if reason != "decay":
-                await connection.execute("UPDATE alumni SET last_activity_at=now() WHERE id=%s", (alumni_id,))
-            result = await self.recompute(connection, alumni_id)
+            if await cursor.fetchone():
+                return await self.recompute(connection, alumni_id)
+        await self.state.store.create(
+            "points_ledger",
+            {
+                "alumni_id": alumni_id,
+                "delta": delta,
+                "reason": reason,
+                "ref": ref,
+                "comment": comment,
+                "idempotency_key": idempotency_key,
+            },
+            connection=connection,
+        )
+        if reason != "decay":
+            await connection.execute("UPDATE alumni SET last_activity_at=now() WHERE id=%s", (alumni_id,))
+        return await self.recompute(connection, alumni_id)
+
+    async def refresh_achievements(self, alumni_id):
         try:
             await self.grant_achievements(alumni_id)
         except Exception:
             logger.error("Не удалось обновить достижения")
-        return result
 
     async def grant_achievements(self, alumni_id):
         async with self.state.database.transaction() as connection:
@@ -92,7 +120,7 @@ class Gamification:
                 limit=-1,
                 connection=connection,
             )
-            stats = stats_from_ledger(alumni, ledger)
+            stats = await self.stats(alumni, ledger, connection)
             keys = [
                 item["key"]
                 for item in ACHIEVEMENTS
@@ -135,28 +163,40 @@ class Gamification:
         )
         for row in rows:
             try:
-                ledger = await self.state.store.read(
-                    "points_ledger",
-                    filters={"alumni_id": {"_eq": row["id"]}},
-                    fields=("delta", "reason", "created_at"),
-                    limit=-1,
-                )
-                last = max(
-                    (item["created_at"] for item in ledger if item["reason"] == "decay" and item["created_at"]),
-                    default=None,
-                )
-                if last and now - datetime.fromisoformat(last.replace("Z", "+00:00")) < timedelta(days=27):
-                    continue
-                delta = decay_delta(sum(item["delta"] or 0 for item in ledger))
-                if delta >= 0:
-                    continue
-                await self.add(
-                    row["id"],
-                    reason="decay",
-                    delta=delta,
-                    idempotency_key=f"decay-{row['id']}-{month}",
-                    comment="Списание за месяц неактивности",
-                )
+                async with self.state.database.transaction() as connection:
+                    cursor = await connection.execute(
+                        "SELECT last_activity_at FROM alumni WHERE id=%s FOR UPDATE", (row["id"],)
+                    )
+                    alumni = await cursor.fetchone()
+                    if not alumni or (
+                        alumni["last_activity_at"] and parse_date(alumni["last_activity_at"]) > now - timedelta(days=30)
+                    ):
+                        continue
+                    ledger = await self.state.store.read(
+                        "points_ledger",
+                        filters={"alumni_id": {"_eq": row["id"]}},
+                        fields=("delta", "reason", "created_at"),
+                        limit=-1,
+                        connection=connection,
+                    )
+                    last = max(
+                        (item["created_at"] for item in ledger if item["reason"] == "decay" and item["created_at"]),
+                        default=None,
+                    )
+                    if last and now - parse_date(last) < timedelta(days=27):
+                        continue
+                    delta = decay_delta(sum(item["delta"] or 0 for item in ledger))
+                    if delta >= 0:
+                        continue
+                    await self.add_in_transaction(
+                        connection,
+                        row["id"],
+                        reason="decay",
+                        delta=delta,
+                        idempotency_key=f"decay-{row['id']}-{month}",
+                        comment="Списание за месяц неактивности",
+                    )
+                await self.refresh_achievements(row["id"])
                 affected += 1
             except Exception:
                 logger.error("Не удалось обработать списание баллов")

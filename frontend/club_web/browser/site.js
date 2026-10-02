@@ -7,6 +7,7 @@ const memberKey = "club_token";
 const officeKey = "club_admin_token";
 const readingKey = "club-reading-v1";
 let pendingCart = 0;
+let pendingCheckout = false;
 let installPrompt = null;
 let mirrorApi = null;
 let botQueue = Promise.resolve();
@@ -150,7 +151,12 @@ async function refresh() {
     const parsed = new DOMParser().parseFromString(await response.text(), "text/html");
     const next = parsed.querySelector("#page");
     if (!next) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
+    const contacts = path === "/cart" ? [...page.querySelectorAll("form[data-checkout] [name]")].map(input => ({ name: input.name, value: input.value, checked: input.checked })) : [];
     page.replaceWith(document.importNode(next, true));
+    for (const saved of contacts) {
+      const input = document.querySelector("form[data-checkout]")?.elements.namedItem(saved.name);
+      if (input) { input.value = saved.value; if (input.type === "checkbox") input.checked = saved.checked; }
+    }
     setupPage();
     void updateCartCount();
     return true;
@@ -190,15 +196,19 @@ async function perform(target, body) {
   const cart = target.hasAttribute("data-cart");
   const checkout = target.hasAttribute("data-checkout");
   if (checkout && pendingCart) throw new Error("Дождитесь обновления корзины.");
+  if (cart && pendingCheckout) throw new Error("Дождитесь отправки заявки.");
   const buttons = target.tagName === "FORM" ? [...target.querySelectorAll("button[type='submit'],button:not([type])")] : [target];
   if (buttons.some(button => button.disabled)) return;
   buttons.forEach(button => { button.disabled = true; });
   const oldText = buttons.map(button => button.textContent);
   buttons.forEach(button => { button.textContent = "Подождите…"; });
+  const fields = checkout ? [...target.querySelectorAll("input,select,textarea")].map(input => ({ input, disabled: input.disabled })) : [];
+  fields.forEach(({ input }) => { input.disabled = true; });
   let headers = {};
   try {
     if (cart) pendingCart++;
     if (checkout) {
+      pendingCheckout = true;
       const key = "club_checkout:" + cartSession();
       const id = stored(key) || crypto.randomUUID();
       store(key, id);
@@ -256,6 +266,8 @@ async function perform(target, body) {
       } else if (await refresh()) notice(cart ? "Корзина обновлена" : "Изменения сохранены");
     }
   } finally {
+    if (checkout) pendingCheckout = false;
+    fields.forEach(({ input, disabled }) => { input.disabled = disabled; });
     if (cart) pendingCart--;
     buttons.forEach((button, index) => { button.disabled = false; button.textContent = oldText[index]; });
   }
@@ -324,7 +336,12 @@ function setupPage() {
     } catch (error) { notice(error.message); }
   }
   renderReading();
-  document.querySelectorAll("[data-member-link]").forEach(link => { if (token(false)) { link.href = url("lk"); link.textContent = "Мой кабинет"; } });
+  document.querySelectorAll("[data-member-link]").forEach(link => {
+    link.dataset.guestLabel ||= link.textContent;
+    link.dataset.guestHref ||= link.getAttribute("href");
+    link.href = token(false) ? url("lk") : link.dataset.guestHref;
+    link.textContent = token(false) ? "Мой кабинет" : link.dataset.guestLabel;
+  });
   document.querySelectorAll("[data-reveal]").forEach(node => { node.setAttribute("data-revealed", "true"); node.classList.add("is-visible", "is-in"); });
   document.querySelectorAll("audio").forEach(audio => {
     const id = audio.closest("[data-episode]")?.dataset.episode;
@@ -475,11 +492,13 @@ document.addEventListener("click", async event => {
       target.setAttribute("aria-label", on ? "Закрыть меню" : "Открыть меню");
       document.querySelector("#club-menu").dataset.open = String(on);
     } else if (action === "logout" || action === "logout-office") {
+      let failure;
       try { if (action === "logout-office" && token(true)) await request("/auth/admin-logout", "POST", {}); }
+      catch (error) { failure = error; }
       finally { store(action === "logout-office" ? officeKey : memberKey, null); }
-      store(action === "logout-office" ? officeKey : memberKey, null);
       if (action === "logout") store("club_cart", null);
       await refresh();
+      if (failure) throw failure;
     } else if (action === "cookies") document.querySelector("#cookies").hidden = false;
     else if (action.startsWith("cookies-")) {
       store("club_cookie_consent", action === "cookies-all" ? "all" : "essential");
@@ -612,6 +631,17 @@ try {
 } catch {}
 document.querySelector("#cookies").hidden = ["all", "essential", "0", "1"].includes(stored("club_cookie_consent"));
 prepareMini(currentPath(), url);
+const chromeSizes = [[".mobile-tabs", "--tabs-h", 0], ["#cookies", "--cookie-h", 32], ["#install-app", "--install-h", 32]];
+const measureChrome = () => {
+  for (const [selector, property, gap] of chromeSizes) {
+    const node = document.querySelector(selector);
+    document.documentElement.style.setProperty(property, (node?.getClientRects().length ? node.getBoundingClientRect().height + gap : 0) + "px");
+  }
+};
+const chromeObserver = new ResizeObserver(measureChrome);
+for (const [selector] of chromeSizes) { const node = document.querySelector(selector); if (node) chromeObserver.observe(node); }
+window.addEventListener("resize", measureChrome);
+measureChrome();
 const mirrorNotice = document.querySelector(".site-notice");
 if (mirrorNotice) new ResizeObserver(() => {
   document.body.style.setProperty("--office-notice-height", mirrorNotice.offsetHeight + "px");
@@ -655,6 +685,7 @@ if (!currentPath().startsWith("/admin") && !currentPath().startsWith("/support")
   const hit = element("button", undefined, { class: "club-crow-hit foc", "aria-label": "Открыть бота поддержки", "data-action": "support" });
   hit.style.width = compact ? "56px" : "96px"; hit.style.height = compact ? "59px" : "100px";
   document.body.append(hit);
+  document.body.append(element("button", "Поддержка клуба", { class: "club-crow-vi", "data-action": "support" }));
   const crow = crowMascotApi.mount({ assetPath: url("assets/crow/"), anchor: "bottom-right", width: compact ? 56 : 96, zIndex: 40, idleSeconds: 0, followCursor: false, idleAnim: "askQ", solo: true, onClick: openBot });
   crow.play("idle"); crow.host.classList.add("club-crow-corner");
   hit.addEventListener("click", openBot);

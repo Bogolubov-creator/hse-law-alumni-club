@@ -95,6 +95,8 @@ def site():
             return httpx.Response(200, json={"ok": True})
         if path == "/news/news-one" and records.get("deleted_news"):
             return httpx.Response(404, json={"error": "Новость удалена"})
+        if path == "/events" and records.get("unavailable_events"):
+            return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         return httpx.Response(200, json=records.get(path, []))
 
     build_public(PUBLIC)
@@ -261,6 +263,89 @@ def test_checkout_error_keeps_contacts_and_replay_key(page, site):
     assert len(orders) == 2 and orders[0]["headers"]["idempotency-key"] == orders[1]["headers"]["idempotency-key"]
 
 
+@pytest.mark.parametrize("width", [1440, 390])
+def test_cart_update_preserves_checkout_draft(page, site, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    page.goto("/dpo/course-one")
+    page.get_by_role("button", name="В корзину", exact=True).click()
+    page.goto("/cart")
+    form = page.locator("form[data-checkout]")
+    form.get_by_label("ФИО", exact=True).fill("Тестовое имя")
+    form.get_by_label("Почта", exact=True).fill("test@example.test")
+    form.locator("[name=consent_pdn]").check()
+    page.locator("form[data-cart] [name=qty]").fill("2")
+    page.locator("form[data-cart] button").click()
+    expect(page.locator("#toast")).to_contain_text("Корзина обновлена")
+    expect(form.get_by_label("ФИО", exact=True)).to_have_value("Тестовое имя")
+    expect(form.get_by_label("Почта", exact=True)).to_have_value("test@example.test")
+    expect(form.locator("[name=consent_pdn]")).to_be_checked()
+
+
+@pytest.mark.parametrize("width", [1440, 390])
+def test_office_logout_failure_clears_private_view(page, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    page.add_init_script("localStorage.setItem('club_admin_token','admin-qa');")
+    page.goto("/admin")
+    expect(page.locator(".site-office")).to_be_visible()
+    if width == 390:
+        page.get_by_role("button", name="Разделы офиса", exact=True).click()
+    page.route(
+        "**/api/auth/admin-logout",
+        lambda route: route.fulfill(status=503, json={"error": "Сервис временно недоступен"}),
+    )
+    page.get_by_role("button", name="Выйти", exact=True).click()
+    expect(page.get_by_role("button", name="Войти", exact=True)).to_be_visible()
+    assert page.evaluate("localStorage.getItem('club_admin_token')") is None
+
+
+def test_checkout_blocks_cart_mutation_and_restores_fields_on_error(page, site):
+    page.goto("/dpo/course-one")
+    page.get_by_role("button", name="В корзину", exact=True).click()
+    page.goto("/cart")
+    form = page.locator("form[data-checkout]")
+    form.get_by_label("ФИО", exact=True).fill("Тестовое имя")
+    form.get_by_label("Телефон", exact=True).fill("+7 000 000-00-00")
+    form.get_by_label("Почта", exact=True).fill("test@example.test")
+    form.locator("[name=consent_pdn]").check()
+    pending = []
+    page.route("**/api/orders", lambda route: pending.append(route))
+    form.get_by_role("button", name="Отправить заявку", exact=True).click()
+    expect(form.get_by_label("ФИО", exact=True)).to_be_disabled()
+    page.locator("form[data-cart] button").click()
+    expect(page.locator("form[data-cart] [data-error]")).to_contain_text("Дождитесь отправки заявки")
+    assert len([write for write in site[2] if write["path"] == "/cart"]) == 1
+    assert len(pending) == 1
+    pending[0].fulfill(status=503, json={"error": "Сервис временно недоступен"})
+    expect(form.get_by_label("ФИО", exact=True)).to_be_enabled()
+    expect(form.get_by_label("ФИО", exact=True)).to_have_value("Тестовое имя")
+
+
+@pytest.mark.parametrize("width,pwa", [(1440, False), (390, False), (1440, True)])
+def test_support_launcher_clears_bottom_navigation_and_banners(page, width, pwa):
+    page.set_viewport_size({"width": width, "height": 900})
+    page.goto("/news" + ("?pwa=1" if pwa else ""))
+    if width == 390 or pwa:
+        page.wait_for_function(
+            "() => document.querySelector('.club-crow-hit').getBoundingClientRect().bottom <= document.querySelector('.mobile-tabs').getBoundingClientRect().top"
+        )
+    page.evaluate("document.querySelector('#cookies').hidden=false")
+    launcher = page.get_by_role("button", name="Открыть бота поддержки", exact=True)
+    expect(launcher).to_be_visible()
+    expect(page.locator("#cookies")).to_be_visible()
+    page.wait_for_function(
+        "() => document.querySelector('.club-crow-hit').getBoundingClientRect().bottom <= document.querySelector('#cookies').getBoundingClientRect().top"
+    )
+    launcher.click()
+    expect(page.locator("#support-bot")).to_be_visible()
+
+
+def test_accessibility_mode_keeps_support_launcher(page):
+    page.goto("/news")
+    page.get_by_role("button", name="Версия для слабовидящих", exact=True).first.click()
+    page.get_by_role("button", name="Поддержка клуба", exact=True).click()
+    expect(page.locator("#support-bot")).to_be_visible()
+
+
 def test_reading_storage_survives_navigation_and_rejects_external_path(page):
     page.add_init_script(
         "if(!localStorage.getItem('club-reading-v1')) localStorage.setItem('club-reading-v1',JSON.stringify({saved:[{kind:'news',id:'evil',title:'Внешняя ссылка',path:'https://evil.test',at:100}],recent:[],read:[]}));"
@@ -328,6 +413,19 @@ def test_bot_dialog_uses_server_response_and_keyboard(page):
     expect(dialog.locator(".club-bot-log")).to_contain_text("Подайте заявку на сайте.")
     page.keyboard.press("Escape")
     expect(dialog).to_be_hidden()
+
+
+def test_telegram_back_returns_to_previous_catalog(page):
+    page.add_init_script(
+        "window.Telegram={WebApp:{initData:'test',BackButton:{onClick:callback=>window.telegramBack=callback}}};"
+    )
+    page.goto("/dpo?q=Правовая")
+    page.get_by_role("link", name=PROGRAM["title"], exact=True).click()
+    expect(page).to_have_url(re.compile("/dpo/course-one$"))
+    page.wait_for_function("() => typeof window.telegramBack==='function'")
+    page.evaluate("window.telegramBack()")
+    expect(page).to_have_url(re.compile("/dpo\\?q="))
+    expect(page.get_by_role("searchbox", name="Поиск", exact=True)).to_have_value("Правовая")
 
 
 def test_corrupt_reading_data_is_not_overwritten(page):
@@ -626,6 +724,22 @@ def test_offline_page_cache_is_bounded(chromium, site):
     assert "/news/page-60" in paths
     assert "/" in paths
     assert "/saved" in paths
+    context.close()
+
+
+def test_event_api_outage_keeps_offline_copy(chromium, site):
+    context = chromium.new_context(base_url=site[0])
+    page = context.new_page()
+    page.goto("/events/event-1")
+    page.evaluate("navigator.serviceWorker.ready")
+    wait_for_offline_page(page, "/events/event-1")
+    site[1]["unavailable_events"] = True
+    assert page.reload().status == 503
+    expect(page.get_by_role("heading", name="Не удалось загрузить страницу", exact=True)).to_be_visible()
+    context.set_offline(True)
+    page.reload()
+    expect(page.get_by_role("heading", name=EVENT["title"], exact=True, level=1)).to_be_visible()
+    expect(page.locator("#offline-notice")).to_contain_text("Сохранённая копия от")
     context.close()
 
 

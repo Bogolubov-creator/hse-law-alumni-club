@@ -110,7 +110,11 @@ def run():
     from club_api.observability.errors import initialize
 
     initialize(settings)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    from club_api.observability.logging import JsonFormatter
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(JsonFormatter())
+    logging.basicConfig(level=logging.INFO, handlers=[handler])
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     Server(lambda: create_app(settings), settings.API_HOST, settings.API_PORT).run()

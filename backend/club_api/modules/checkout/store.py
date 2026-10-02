@@ -177,7 +177,7 @@ class Checkout:
                 raise ApiError(404, "Заявка не найдена")
             if order["status"] == status:
                 return False
-            if order["status"] in ("canceled", "expired"):
+            if order["status"] in ("done", "canceled", "expired"):
                 raise ApiError(409, "Закрытую заявку нельзя открыть повторно. Создайте новую.")
             if status in ("canceled", "expired"):
                 if order["payment_status"] in ("succeeded", "pending", "waiting_for_capture", "review"):

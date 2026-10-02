@@ -122,6 +122,8 @@ async def create_order(request: HttpRequest):
     )
     if result["replay"]:
         return result["replay"]
+    if alumni and order_type in ("merch", "mixed"):
+        await state.gamification.refresh_achievements(alumni["id"])
     number = result["number"]
     summary = "; ".join(
         item["title"] + (f" ({item['variant_sku']})" if item.get("variant_sku") else "") + f" ×{item['qty']}"
@@ -153,6 +155,7 @@ async def create_order(request: HttpRequest):
             if url := secure_payment_url(payment.get("confirmation", {}).get("confirmation_url")):
                 receipt["payment_url"] = url
         except Exception:
+            await state.payments.creation_failed(number)
             logger.error("Не удалось создать платёж по заявке")
     await audit(
         request,

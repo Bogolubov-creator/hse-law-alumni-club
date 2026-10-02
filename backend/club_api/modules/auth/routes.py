@@ -95,7 +95,11 @@ async def queue_confirmation(request, user_id, email):
     token = service.token({"sub": user_id, "purpose": "email-confirm"}, 86400)
     body = f"Здравствуйте!\n\nВы подали заявку на вступление в клуб выпускников факультета права Вышки.\nПодтвердите, что почта ваша – ссылка действует 24 часа:\n{service.settings.PUBLIC_URL}/confirm?token={quote(token)}\n\nПосле подтверждения заявку проверит учебный офис.\n\nЕсли заявку подавали не вы – просто проигнорируйте письмо, аккаунт останется неактивным."
     return await request.services.notifications.enqueue_mail(
-        email, "Подтвердите почту – Клуб выпускников факультета права", body, kind=EMAIL_CONFIRMATION_KIND
+        email,
+        "Подтвердите почту – Клуб выпускников факультета права",
+        body,
+        kind=EMAIL_CONFIRMATION_KIND,
+        owner_user_id=user_id,
     )
 
 

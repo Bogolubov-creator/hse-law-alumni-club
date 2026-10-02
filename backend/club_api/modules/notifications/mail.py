@@ -3,10 +3,29 @@ from email.message import EmailMessage
 
 import aiosmtplib
 
-from club_api.db.queries import Query
+from club_api.db.queries import Query, acquire_lock
 
 logger = logging.getLogger("club.mail")
 EMAIL_CONFIRMATION_KIND = "email_confirmation"
+
+
+def mail_user_lock(user_id):
+    return "mail-user:" + str(user_id)
+
+
+async def confirmation_owner(connection, *, user_id=None, email=None):
+    query = (
+        "SELECT u.id,u.email FROM directus_users u JOIN directus_roles r ON r.id=u.role WHERE r.name='alumni' AND u.status IN ('active','unverified') AND u.id=%s LIMIT 2"
+        if user_id is not None
+        else "SELECT u.id,u.email FROM directus_users u JOIN directus_roles r ON r.id=u.role WHERE r.name='alumni' AND u.status IN ('active','unverified') AND lower(u.email)=%s LIMIT 2"
+    )
+    rows = await (
+        await connection.execute(
+            query,
+            (user_id if user_id is not None else email.lower().strip(),),
+        )
+    ).fetchall()
+    return rows[0] if len(rows) == 1 else None
 
 
 class Notifications:
@@ -43,7 +62,9 @@ class Notifications:
             logger.error("Ошибка доставки письма; содержимое и адрес скрыты")
             return False
 
-    async def enqueue_mail(self, to, subject, body, *, kind="office"):
+    async def enqueue_mail(self, to, subject, body, *, kind="office", owner_user_id=None):
+        if kind == EMAIL_CONFIRMATION_KIND:
+            return await self.enqueue_confirmation(to, subject, body, owner_user_id)
         id = None
         if self.database.pool:
             try:
@@ -57,66 +78,91 @@ class Notifications:
         sent = await self.send_email(to, subject, body)
         if id is not None:
             try:
-                if sent:
-                    await self.database.execute(
-                        "UPDATE club_mail_outbox SET status='sent',attempts=1,sent_at=now(),"
-                        "body=CASE WHEN kind=%s THEN '' ELSE body END WHERE id=%s",
-                        (EMAIL_CONFIRMATION_KIND, id),
-                    )
-                else:
-                    maximum = self.settings.MAIL_OUTBOX_MAX_ATTEMPTS
-                    await self.database.execute(
-                        Query(
-                            "UPDATE club_mail_outbox SET attempts=1,next_attempt_at=now() + interval '5 minutes',last_error=%s,status=CASE WHEN 1 >= %s THEN 'failed' ELSE 'pending' END,body=CASE WHEN 1 >= %s AND kind=%s THEN '' ELSE body END WHERE id=%s",
-                            "UPDATE club_mail_outbox SET attempts=1,next_attempt_at=now() + INTERVAL 5 MINUTE,last_error=%s,status=CASE WHEN 1 >= %s THEN 'failed' ELSE 'pending' END,body=CASE WHEN 1 >= %s AND kind=%s THEN '' ELSE body END WHERE id=%s",
-                        ),
-                        (
-                            "smtp_fail" if self.mail_enabled else "smtp_missing",
-                            maximum,
-                            maximum,
-                            EMAIL_CONFIRMATION_KIND,
-                            id,
-                        ),
-                    )
+                async with self.database.transaction() as connection:
+                    await self.record_delivery(connection, {"id": id, "attempts": 0}, sent)
             except Exception:
                 logger.error("Не удалось записать статус доставки в очередь")
         return {"id": id, "sent": sent, "blocked": not self.mail_enabled}
+
+    async def enqueue_confirmation(self, to, subject, body, owner_user_id):
+        if not owner_user_id or not self.database.pool:
+            return {"id": None, "sent": False, "blocked": True}
+        async with self.database.transaction() as connection:
+            await acquire_lock(connection, mail_user_lock(owner_user_id))
+            owner = await confirmation_owner(connection, user_id=owner_user_id)
+            if not owner or owner["email"].lower() != to.lower().strip():
+                return {"id": None, "sent": False, "blocked": True}
+            row = await (
+                await connection.execute(
+                    "INSERT INTO club_mail_outbox(kind,to_addr,subject,body,owner_user_id) "
+                    "VALUES(%s,%s,%s,%s,%s) RETURNING id",
+                    (EMAIL_CONFIRMATION_KIND, owner["email"], subject, body, owner_user_id),
+                )
+            ).fetchone()
+            sent = await self.send_email(owner["email"], subject, body)
+            await self.record_delivery(connection, {"id": row["id"], "attempts": 0}, sent)
+            return {"id": row["id"], "sent": sent, "blocked": not self.mail_enabled}
+
+    async def record_delivery(self, connection, row, sent):
+        attempts = row["attempts"] + 1
+        if sent:
+            await connection.execute(
+                "UPDATE club_mail_outbox SET status='sent',attempts=%s,sent_at=now(),last_error=NULL,"
+                "body=CASE WHEN kind=%s THEN '' ELSE body END WHERE id=%s",
+                (attempts, EMAIL_CONFIRMATION_KIND, row["id"]),
+            )
+            return "sent"
+        if attempts >= self.settings.MAIL_OUTBOX_MAX_ATTEMPTS:
+            await connection.execute(
+                "UPDATE club_mail_outbox SET status='failed',attempts=%s,last_error='max_attempts',"
+                "body=CASE WHEN kind=%s THEN '' ELSE body END WHERE id=%s",
+                (attempts, EMAIL_CONFIRMATION_KIND, row["id"]),
+            )
+            return "failed"
+        await connection.execute(
+            Query(
+                "UPDATE club_mail_outbox SET attempts=%s,next_attempt_at=now() + (%s * interval '1 minute'),last_error=%s WHERE id=%s",
+                "UPDATE club_mail_outbox SET attempts=%s,next_attempt_at=now() + INTERVAL %s MINUTE,last_error=%s WHERE id=%s",
+            ),
+            (attempts, min(60, 5 * attempts), "smtp_fail" if self.mail_enabled else "smtp_missing", row["id"]),
+        )
+        return "skipped"
 
     async def drain_mail(self, limit=20):
         result = {"sent": 0, "failed": 0, "skipped": 0}
         if not self.database.pool:
             return result
         rows = await self.database.rows(
-            "SELECT id,to_addr,subject,body,attempts FROM club_mail_outbox "
+            "SELECT id,kind,to_addr,owner_user_id FROM club_mail_outbox "
             "WHERE status='pending' AND next_attempt_at <= now() ORDER BY id LIMIT %s",
             (limit,),
         )
         for row in rows:
-            sent = await self.send_email(row["to_addr"], row["subject"], row["body"])
-            attempts = row["attempts"] + 1
-            if sent:
-                await self.database.execute(
-                    "UPDATE club_mail_outbox SET status='sent',attempts=%s,sent_at=now(),last_error=NULL,"
-                    "body=CASE WHEN kind=%s THEN '' ELSE body END WHERE id=%s",
-                    (attempts, EMAIL_CONFIRMATION_KIND, row["id"]),
-                )
-                result["sent"] += 1
-            elif attempts >= self.settings.MAIL_OUTBOX_MAX_ATTEMPTS:
-                await self.database.execute(
-                    "UPDATE club_mail_outbox SET status='failed',attempts=%s,last_error='max_attempts',"
-                    "body=CASE WHEN kind=%s THEN '' ELSE body END WHERE id=%s",
-                    (attempts, EMAIL_CONFIRMATION_KIND, row["id"]),
-                )
-                result["failed"] += 1
-            else:
-                await self.database.execute(
-                    Query(
-                        "UPDATE club_mail_outbox SET attempts=%s,next_attempt_at=now() + (%s * interval '1 minute'),last_error='smtp_fail' WHERE id=%s",
-                        "UPDATE club_mail_outbox SET attempts=%s,next_attempt_at=now() + INTERVAL %s MINUTE,last_error='smtp_fail' WHERE id=%s",
-                    ),
-                    (attempts, min(60, 5 * attempts), row["id"]),
-                )
-                result["skipped"] += 1
+            owner_id = row["owner_user_id"]
+            if row["kind"] == EMAIL_CONFIRMATION_KIND and not owner_id:
+                async with self.database.connection() as connection:
+                    owner = await confirmation_owner(connection, email=row["to_addr"])
+                    owner_id = owner["id"] if owner else None
+            async with self.database.transaction() as connection:
+                if row["kind"] == EMAIL_CONFIRMATION_KIND and owner_id:
+                    await acquire_lock(connection, mail_user_lock(owner_id))
+                current = await (
+                    await connection.execute(
+                        "SELECT id,kind,to_addr,subject,body,attempts FROM club_mail_outbox "
+                        "WHERE id=%s AND status='pending' AND next_attempt_at<=now() FOR UPDATE",
+                        (row["id"],),
+                    )
+                ).fetchone()
+                if not current:
+                    continue
+                if current["kind"] == EMAIL_CONFIRMATION_KIND:
+                    owner = await confirmation_owner(connection, user_id=owner_id) if owner_id else None
+                    if not owner or owner["email"].lower() != current["to_addr"].lower().strip():
+                        await connection.execute("DELETE FROM club_mail_outbox WHERE id=%s", (current["id"],))
+                        result["skipped"] += 1
+                        continue
+                sent = await self.send_email(current["to_addr"], current["subject"], current["body"])
+                result[await self.record_delivery(connection, current, sent)] += 1
         return result
 
     async def telegram_office(self, text):

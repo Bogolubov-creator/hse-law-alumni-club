@@ -246,6 +246,7 @@ async def subscribe(request: HttpRequest):
             await state.payments.record(order["number"], payment)
             payment_url = secure_payment_url(payment.get("confirmation", {}).get("confirmation_url"))
         except ApiError:
+            await state.payments.creation_failed(order["number"])
             logger.warning("Не удалось создать платёж подписки")
     await audit(
         request,

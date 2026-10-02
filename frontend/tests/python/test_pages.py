@@ -245,6 +245,95 @@ async def test_unknown_and_legacy_paths(browser_client):
     assert response.headers["location"] == "/news?q=hello"
 
 
+@pytest.mark.parametrize("path", ["/merch/bag-one", "/events/event-1", "/podcasts/episode-1"])
+async def test_detail_api_failure_remains_retryable(path):
+    async def upstream(request):
+        return httpx.Response(503, json={"error": "Сервис временно недоступен"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(upstream), base_url="http://api.test") as api:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=create_app(api)), base_url="http://web.test"
+        ) as client:
+            response = await client.get(path)
+    assert response.status_code == 503
+    assert "Не удалось загрузить страницу" in response.text
+    assert "Страница не найдена" not in response.text
+
+
+async def test_office_page_failure_does_not_render_empty_edit_form():
+    async def upstream(request):
+        return (
+            httpx.Response(200, json={"role": "admin"})
+            if request.url.path == "/auth/admin-session"
+            else httpx.Response(503, json={"error": "Сервис временно недоступен"})
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(upstream), base_url="http://api.test") as api:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=create_app(api)), base_url="http://web.test"
+        ) as client:
+            response = await client.get("/views/admin/pages", headers={"authorization": "Bearer test"})
+    assert response.status_code == 200
+    assert "Сервис временно недоступен" in response.text
+    assert 'data-api="/admin/pages/home"' not in response.text
+
+
+@pytest.mark.parametrize("value", ["²", "9" * 5000, "-1", "0", "invalid"])
+async def test_invalid_pagination_does_not_crash(browser_client, value):
+    response = await browser_client.get("/changes", params={"page": value})
+    assert response.status_code == 200
+    response = await browser_client.get(
+        "/views/admin/orders", params={"page": value}, headers={"authorization": "Bearer test"}
+    )
+    assert response.status_code == 200
+
+
+async def test_subscription_return_survives_password_recovery(browser_client):
+    continuation = "/podcasts#podcast-subscription"
+    response = await browser_client.get("/lk", params={"next": continuation})
+    assert 'href="/forgot?next=/podcasts%23podcast-subscription"' in response.text
+    response = await browser_client.get("/reset", params={"next": continuation, "token": "test"})
+    assert 'href="/lk?next=/podcasts%23podcast-subscription"' in response.text
+    response = await browser_client.get("/lk", params={"next": "https://external.test"})
+    assert 'href="/forgot"' in response.text
+
+
+async def test_unavailable_changes_source_keeps_saved_materials_and_status(browser_client, monkeypatch):
+    from club_web import pages
+
+    original = pages.resource
+    snapshot = {**original("changes.json"), "syncStatus": "unavailable"}
+    monkeypatch.setattr(pages, "resource", lambda name: snapshot if name == "changes.json" else original(name))
+    for path in ("/changes", "/changes/tg-18"):
+        response = await browser_client.get(path)
+        assert response.status_code == 200
+        assert "Источник временно недоступен. Показаны сохранённые материалы." in response.text
+        assert "Последнее успешное обновление" in response.text
+
+
+async def test_global_search_includes_events_and_archived_acts(browser_client):
+    response = await browser_client.get("/search", params={"q": "Встреча клуба"})
+    assert 'href="/events/event-1"' in response.text
+    response = await browser_client.get("/search", params={"q": "237-ФЗ"})
+    assert 'href="/changes/0001202607040026"' in response.text
+
+
+async def test_event_month_and_detail_query_upstream_explicitly():
+    requests = []
+
+    async def upstream(request):
+        requests.append(str(request.url))
+        return httpx.Response(200, json=[EVENT])
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(upstream), base_url="http://api.test") as api:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=create_app(api)), base_url="http://web.test"
+        ) as client:
+            assert (await client.get("/events?month=2026-11")).status_code == 200
+            assert (await client.get("/events/event-1")).status_code == 200
+    assert requests == ["http://api.test/events?month=2026-11", "http://api.test/events?id=event-1"]
+
+
 @pytest.mark.parametrize(
     "value",
     [
