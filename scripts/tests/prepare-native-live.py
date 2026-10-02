@@ -10,7 +10,7 @@ import sys
 from urllib.parse import urlsplit
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "lib"))
-from mariadb_common import Context, output, sql
+from mariadb_common import HELPERS, Context, output, sql
 
 
 def prepare(config, destination):
@@ -52,6 +52,19 @@ def prepare(config, destination):
     ).stdout
     values["E2E_TLS_SPKI"] = base64.b64encode(hashlib.sha256(key).digest()).decode()
     values["NODE_EXTRA_CA_CERTS"] = str(certificate)
+    runtime = {
+        **context.runtime,
+        "SUPPORT_ENABLED": "true",
+        "SUPPORT_OPERATOR_NAME": "Локальный тестовый оператор",
+        "SUPPORT_OPERATOR_ADDRESS": "Локальный стенд без реального адреса",
+        "SUPPORT_OPERATOR_CONTACT": "test@live.example.com",
+    }
+    runtime_path = pathlib.Path(context.values["CLUB_RUNTIME_ENV"])
+    runtime_path.write_text(HELPERS["dotenv"](runtime))
+    runtime_path.chmod(0o600)
+    context.execute("up", "-d", "--wait", "--force-recreate", "api")
+    context.execute("up", "-d", "--wait", "--force-recreate", "nginx")
+    context.verify_http()
     staff = {
         **context.env,
         "STAFF_ACTION": "create",

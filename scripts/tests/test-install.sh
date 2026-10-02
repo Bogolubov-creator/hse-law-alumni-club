@@ -63,6 +63,7 @@ PY
 verify first
 if [[ "${CLUB_NATIVE_BROWSER:-false}" == true ]]; then
   sudo python3 "$temp/repo/scripts/tests/prepare-native-live.py" prepare "$config" "$temp/browser"
+  verify first
   native_browser() {
     sudo env PATH="$PATH" PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}" \
       bash -c 'set -euo pipefail; set -a; source "$1"; set +a; export E2E_LIVE_PHASE="$2"; uv run --directory "$3/frontend" --frozen pytest -q tests/python/test_live.py --tb=short' \
