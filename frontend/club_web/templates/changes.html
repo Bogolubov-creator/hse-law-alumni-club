@@ -6,6 +6,9 @@
 <h1>{{ item.title if item else 'Изменения в праве' }}</h1>
 <p>Справки, обзоры и опубликованные правовые акты.</p>
 </header>
+{% if snapshot.syncStatus=='unavailable' %}
+<p class="site-panel" role="status">Источник временно недоступен. Показаны сохранённые материалы.{% if snapshot.lastSuccessAt %} Последнее успешное обновление: {{ snapshot.lastSuccessAt|date(true) }}.{% endif %}</p>
+{% endif %}
 {% if item %}
 <article class="site-article" data-reading-title="{{ item.title }}" data-reading-kind="change">
 <p>{{ item.kind }} · {{ item.topic }} · {{ (item.sourcePublishedAt or item.published)|date }}</p>
@@ -34,7 +37,7 @@
 <a href="/changes">← Все материалы</a>
 </article>
 {% else %}
-<p class="changes-muted">Проверено: {{ snapshot.checkedAt|date(true) }}. Период: {{ snapshot.periodFrom|date }} – {{ snapshot.periodTo|date }}.</p>
+<p class="changes-muted">{{ 'Попытка обновления' if snapshot.syncStatus=='unavailable' else 'Проверено' }}: {{ snapshot.checkedAt|date(true) }}. Период: {{ snapshot.periodFrom|date }} – {{ snapshot.periodTo|date }}.</p>
 <form method="get" class="site-filters">
 <label>Материалы<select aria-label="Материалы" name="view">
 <option value="digest">Справки и обзоры</option>

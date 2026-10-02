@@ -51,10 +51,17 @@ class Telegram:
         rows = await self.state.store.read(
             "alumni",
             filters={"telegram_id": {"_eq": telegram_id}},
-            fields=("id", "fio", "verification_status", "points_cached", "personal_discount"),
+            fields=("id", "user_id", "fio", "verification_status", "points_cached", "personal_discount"),
             limit=1,
         )
-        return rows[0] if rows else None
+        alumni = rows[0] if rows else None
+        if (
+            alumni
+            and alumni["user_id"]
+            and not await self.state.auth.user(id=alumni["user_id"], alumni=True, active=True)
+        ):
+            return None
+        return alumni
 
     def link(self, path, label):
         return f'<a href="{html.escape(self.state.settings.PUBLIC_URL.rstrip("/") + path)}">{html.escape(label)}</a>'

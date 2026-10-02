@@ -1,6 +1,8 @@
 import logging
 
-from club_api.db.queries import Query
+from club_api.core.errors import ApiError
+from club_api.db.queries import Query, acquire_lock
+from club_api.modules.notifications.mail import EMAIL_CONFIRMATION_KIND, mail_user_lock
 
 logger = logging.getLogger("club.members")
 
@@ -17,11 +19,39 @@ async def alumni_email(state, id):
 
 
 async def anonymize(state, alumni_id):
+    profiles = await state.database.rows("SELECT user_id FROM alumni WHERE id=%s", (alumni_id,))
+    if not profiles:
+        return False
+    user_id = profiles[0]["user_id"]
     async with state.database.transaction() as connection:
+        user = None
+        if user_id:
+            await acquire_lock(connection, mail_user_lock(user_id))
+            user = await (
+                await connection.execute(
+                    Query(
+                        "SELECT u.email,r.name AS role_name FROM directus_users u LEFT JOIN directus_roles r ON r.id=u.role WHERE u.id=%s FOR UPDATE OF u",
+                        "SELECT u.email,r.name AS role_name FROM directus_users u LEFT JOIN directus_roles r ON r.id=u.role WHERE u.id=%s FOR UPDATE",
+                    ),
+                    (user_id,),
+                )
+            ).fetchone()
         cursor = await connection.execute("SELECT id,user_id,avatar FROM alumni WHERE id=%s FOR UPDATE", (alumni_id,))
         alumni = await cursor.fetchone()
         if not alumni:
             return False
+        if alumni["user_id"] != user_id:
+            raise ApiError(503, "Данные сейчас изменяются. Повторите действие позже")
+        if user_id:
+            await connection.execute(
+                "DELETE FROM club_mail_outbox WHERE kind=%s AND owner_user_id=%s",
+                (EMAIL_CONFIRMATION_KIND, user_id),
+            )
+            if user and user["role_name"] == "alumni" and user["email"]:
+                await connection.execute(
+                    "DELETE FROM club_mail_outbox WHERE kind=%s AND owner_user_id IS NULL AND lower(to_addr)=%s",
+                    (EMAIL_CONFIRMATION_KIND, user["email"].lower().strip()),
+                )
         await connection.execute("DELETE FROM club_social_reactions WHERE alumni_id=%s", (alumni_id,))
         await connection.execute("DELETE FROM club_social_membership WHERE alumni_id=%s", (alumni_id,))
         await connection.execute(

@@ -63,7 +63,7 @@ def order_totals(items, discount_percent):
     subtotal = sum(item["price"] * item["qty"] for item in items)
     base = sum(item["price"] * item["qty"] for item in items if item["type"] == "dpo")
     discount = max(0, min(100, discount_percent))
-    amount = math.floor(base * discount / 100 + 0.5)
+    amount = (base * discount + 50) // 100
     return {"subtotal": subtotal, "discount": discount, "discountAmount": amount, "total": max(0, subtotal - amount)}
 
 

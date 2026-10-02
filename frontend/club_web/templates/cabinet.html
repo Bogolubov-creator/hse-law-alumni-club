@@ -2,7 +2,7 @@
 {% from 'macros.html' import login,empty %}
 {% block content %}
 <main id="main" class="site-container">
-{% if not me or access_error %}{{ login() }}{% else %}
+{% if not me or access_error %}{{ login(next=query.get('next','')) }}{% else %}
 <header class="site-masthead">
 <h1>{{ me.alumni.fio or 'Личный кабинет' }}</h1>
 <p>Выпуск {{ me.alumni.cohort }} · {{ me.alumni.edu_program or '' }}</p>

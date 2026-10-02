@@ -152,6 +152,7 @@ async def export(destination, base, data):
                     for prefix, label, records, key in (
                         ("dpo", "Программы ДПО", data["programs"], "slug"),
                         ("news", "Новости", data["news"], "slug"),
+                        ("events", "События", data["events"], "id"),
                         ("podcasts", "Подкасты", data["podcasts"], "id"),
                         ("changes", "Изменения в праве", changes["items"], "id"),
                     )

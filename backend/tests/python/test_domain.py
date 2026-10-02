@@ -32,3 +32,12 @@ def test_discount_applies_to_training_only_and_rounds_half_up():
     items = [{"type": "dpo", "price": 10, "qty": 1}, {"type": "merch", "price": 5000, "qty": 2}]
     assert order_totals(items, 5) == {"subtotal": 10010, "discount": 5, "discountAmount": 1, "total": 10009}
     assert level_info(-10)["next_level"] == "Друг клуба"
+
+
+@pytest.mark.parametrize("discount", [5, 10, 15, 20, 25])
+def test_discount_preserves_integer_precision_at_safe_money_limit(discount):
+    amount = 9007199254740991
+    totals = order_totals([{"type": "dpo", "price": amount, "qty": 1}], discount)
+    expected = (amount * discount + 50) // 100
+    assert type(totals["discountAmount"]) is int and totals["discountAmount"] == expected
+    assert type(totals["total"]) is int and totals["total"] == amount - expected

@@ -1,7 +1,9 @@
+import re
 import time
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 from django.http import HttpRequest, HttpResponse
 from pydantic import Field, field_validator
@@ -93,9 +95,45 @@ async def stats(request: HttpRequest):
 async def events(request: HttpRequest):
     state = request.services
     alumni = await state.auth.resolve_alumni(request)
-    rows = await state.store.read(
-        "events", filters={"status": {"_in": ["published", "done"]}}, sort=("starts_at",), fields=EVENT_FIELDS, limit=50
-    )
+    filters = {"status": {"_in": ["published", "done"]}}
+    month = request.GET.get("month")
+    id = request.GET.get("id")
+    if month is not None:
+        try:
+            if not re.fullmatch(r"[0-9]{4}-[0-9]{2}", month):
+                raise ValueError
+            start = datetime.strptime(month, "%Y-%m").replace(tzinfo=ZoneInfo("Europe/Moscow"))
+            end = (
+                start.replace(year=start.year + 1, month=1)
+                if start.month == 12
+                else start.replace(month=start.month + 1)
+            )
+        except ValueError:
+            raise ApiError(400, "Некорректный месяц") from None
+        filters["starts_at"] = {"_gte": start, "_lt": end}
+    if id is not None:
+        filters["id"] = {"_eq": guid(id)}
+    if month is not None or id is not None:
+        rows = await state.store.read(
+            "events", filters=filters, sort=("starts_at", "id"), fields=EVENT_FIELDS, limit=50
+        )
+    else:
+        now = datetime.now(UTC)
+        upcoming = await state.store.read(
+            "events",
+            filters={**filters, "starts_at": {"_gte": now}},
+            sort=("starts_at", "id"),
+            fields=EVENT_FIELDS,
+            limit=50,
+        )
+        past = await state.store.read(
+            "events",
+            filters={**filters, "starts_at": {"_lt": now}},
+            sort=("-starts_at", "id"),
+            fields=EVENT_FIELDS,
+            limit=50,
+        )
+        rows = sorted([*past, *upcoming], key=lambda row: (row["starts_at"], row["id"]))
     ids = [row["id"] for row in rows]
     groups = await group_count(state.store, "event_rsvps", ("event_id",), {"event_id": {"_in": ids}}) if ids else []
     counts = {row["event_id"]: row["count"] for row in groups}
@@ -311,18 +349,26 @@ async def attend(request: HttpRequest, rsvpId: str):
     row = await state.store.one("event_rsvps", guid(rsvpId))
     if not row:
         raise ApiError(404, "RSVP не найден")
-    if row["attended"]:
-        return {"ok": True, "already": True}
-    event = await state.store.one("events", row["event_id"])
-    await state.gamification.add(
-        row["alumni_id"],
-        reason="event",
-        delta=event.get("points", 60) if event else 60,
-        ref=row["event_id"],
-        comment="Участие: " + (event["title"] if event else "событие клуба"),
-        idempotency_key=f"event-{row['event_id']}-{row['alumni_id']}",
-    )
-    await state.store.update("event_rsvps", {"attended": True}, id=row["id"])
+    async with state.database.transaction() as connection:
+        await acquire_lock(connection, "rsvp:" + row["event_id"] + ":" + row["alumni_id"])
+        cursor = await connection.execute("SELECT attended FROM event_rsvps WHERE id=%s FOR UPDATE", (row["id"],))
+        current = await cursor.fetchone()
+        if not current:
+            raise ApiError(404, "RSVP не найден")
+        if current["attended"]:
+            return {"ok": True, "already": True}
+        event = await state.store.one("events", row["event_id"], connection=connection)
+        await state.gamification.add_in_transaction(
+            connection,
+            row["alumni_id"],
+            reason="event",
+            delta=event.get("points", 60) if event else 60,
+            ref=row["event_id"],
+            comment="Участие: " + (event["title"] if event else "событие клуба"),
+            idempotency_key=f"event-{row['event_id']}-{row['alumni_id']}",
+        )
+        await state.store.update("event_rsvps", {"attended": True}, id=row["id"], connection=connection)
+    await state.gamification.refresh_achievements(row["alumni_id"])
     await audit(
         request,
         "event.attended",

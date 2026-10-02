@@ -58,7 +58,7 @@
 </form>
 {% endif %}
 <div class="site-actions">
-<a href="/lk">Войти в кабинет</a>
+<a href="/lk{{ '?next='+query.get('next')|urlencode if query.get('next')=='/podcasts#podcast-subscription' else '' }}">Войти в кабинет</a>
 <a href="/">На главную</a>
 </div>
 <details>

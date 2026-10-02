@@ -64,10 +64,15 @@ def build_public(destination, *, mirror=False):
     ]
     worker = worker.replace("const BUILT_ASSETS = [];", "const BUILT_ASSETS = " + json.dumps(files) + ";")
     worker = worker.replace("const PWA_PARAMS = {};", "const PWA_PARAMS = " + json.dumps(PWA_PARAMS) + ";")
-    digest = hashlib.sha256(worker.encode() + (assets / "site.css").read_bytes())
-    digest.update((destination / "offline.html").read_bytes())
-    for browser_file in sorted((ROOT / "browser").glob("*.js")):
-        digest.update(browser_file.read_bytes())
+    digest = hashlib.sha256(worker.encode())
+    static_files = [path for path in destination.iterdir() if path.is_file() and path.name != "sw.js"]
+    for directory in (assets, destination / "fonts"):
+        static_files.extend(path for path in directory.rglob("*") if path.is_file())
+    for path in sorted(static_files, key=lambda path: path.relative_to(destination).as_posix()):
+        content = path.read_bytes()
+        digest.update(path.relative_to(destination).as_posix().encode() + b"\0")
+        digest.update(len(content).to_bytes(8, "big"))
+        digest.update(content)
     worker = re.sub(
         r"const CACHE = `\$\{CACHE_PREFIX\}[^`]*`;",
         "const CACHE = `${CACHE_PREFIX}" + digest.hexdigest()[:16] + "`;",

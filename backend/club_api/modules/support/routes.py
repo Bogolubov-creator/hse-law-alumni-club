@@ -242,15 +242,13 @@ async def answer_ticket(request: HttpRequest, id: str):
         )
     else:
         rows = await state.database.rows(
-            Query(
-                "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status=%s,updated_at=now(),expires_at=now()+%s*interval '1 day' WHERE id=%s AND expires_at>now() AND jsonb_array_length(messages)<50 RETURNING id",
-                "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status=%s,updated_at=now(),expires_at=now()+INTERVAL %s DAY WHERE id=%s AND expires_at>now() AND JSON_LENGTH(messages)<50 RETURNING id",
-            ),
+            "UPDATE club_support_tickets SET messages=messages||%s::jsonb,status=%s,updated_at=now(),expires_at=now()+%s*interval '1 day' WHERE id=%s AND expires_at>now() AND (%s OR jsonb_array_length(messages)<50) RETURNING id",
             (
                 addition(body.message, "support") if body.message else Jsonb([]),
                 body.status,
                 state.settings.SUPPORT_RETENTION_DAYS,
                 guid(id),
+                not bool(body.message),
             ),
         )
     if not rows:

@@ -12,7 +12,7 @@
 {% macro empty(text) %}
 <p class="site-empty" role="status">{{ text }}</p>
 {% endmacro %}
-{% macro login(office=false) %}
+{% macro login(office=false,next='') %}
 <div class="cabinet-gate">
 <aside class="cabinet-gate__intro club-dark">
 <a href="/">Клуб выпускников<small>факультета права Вышки</small>
@@ -32,7 +32,7 @@
 {% if not office %}
 <div class="site-actions">
 <a href="/join">Вступить в клуб</a>
-<a href="/forgot">Забыли пароль?</a>
+<a href="/forgot{{ '?next='+next|urlencode if next=='/podcasts#podcast-subscription' else '' }}">Забыли пароль?</a>
 </div>
 {% endif %}
 </form>

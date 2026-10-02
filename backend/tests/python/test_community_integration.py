@@ -4,8 +4,10 @@ from uuid import uuid4
 
 import httpx
 from PIL import Image
+from psycopg.types.json import Jsonb
 
 from club_api.modules.auth.passwords import hash_password
+from club_api.modules.support.routes import addition
 
 
 async def account(app, role="alumni", *, verified=True):
@@ -104,6 +106,20 @@ async def test_support_idempotency_access_consent_and_message_limit(database_app
         assert (
             await client.patch(f"/admin/support/{id}", headers=admin_headers, json={"status": "answered"})
         ).status_code == 400
+        await app.state.database.execute(
+            "UPDATE club_support_tickets SET messages=%s WHERE id=%s",
+            (Jsonb(addition("Сообщение до лимита", "visitor").obj * 50), id),
+        )
+        assert (
+            await client.post(f"/support/{id}/messages", headers=headers, json={"message": "За лимитом"})
+        ).status_code == 409
+        assert (
+            await client.patch(
+                f"/admin/support/{id}",
+                headers=admin_headers,
+                json={"status": "answered", "message": "Ответ за лимитом"},
+            )
+        ).status_code == 404
         assert (
             await client.patch(f"/admin/support/{id}", headers=admin_headers, json={"status": "closed"})
         ).status_code == 200

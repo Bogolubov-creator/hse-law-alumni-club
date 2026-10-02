@@ -23,14 +23,20 @@ class Jobs:
             started = time.monotonic()
             try:
                 await operation()
-                logger.info("Задание %s выполнено за %d мс", id, (time.monotonic() - started) * 1000)
+                duration = round((time.monotonic() - started) * 1000)
+                logger.info(
+                    "Задание %s выполнено за %d мс",
+                    id,
+                    duration,
+                    extra={"job": id, "status": "ok", "duration_ms": duration},
+                )
             except asyncio.CancelledError:
                 raise
             except Exception:
                 from club_api.observability.errors import capture
 
                 capture("job_failed")
-                logger.error("Задание %s завершилось с ошибкой", id)
+                logger.error("Задание %s завершилось с ошибкой", id, extra={"job": id, "status": "failed"})
             finally:
                 self.running.pop(id, None)
 
