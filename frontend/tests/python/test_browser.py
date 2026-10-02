@@ -402,6 +402,8 @@ def test_mirror_mobile_preview_navigation_and_exit(chromium, mirror_site, width)
     expect(page.locator("html")).not_to_have_class(re.compile("pwa-shell|telegram-mini"))
     assert page.locator(".site-office").bounding_box()["width"] == width
     page.get_by_role("link", name="На сайт", exact=True).click()
+    expect(page).to_have_url(mirror_site)
+    page.wait_for_load_state("load")
     page.reload()
     expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
     page.get_by_role("navigation", name="Просмотр зеркала").get_by_role("link", name="Обычный сайт").click()

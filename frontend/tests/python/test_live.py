@@ -430,6 +430,7 @@ def test_live_offline_reading(width):
         page.evaluate("navigator.serviceWorker.ready")
         wait_for_offline_page(page, path)
         wait_for_offline_page(page, "/saved")
+        wait_for_offline_page(page, "/")
         page.get_by_role("button", name="Сохранить", exact=True).click()
         context.set_offline(True)
         page.reload()
