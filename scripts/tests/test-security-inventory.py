@@ -86,6 +86,76 @@ class SecurityEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit.blocking_findings({"ArtifactName": "synthetic"})
 
+    def caddy_report(self):
+        return {
+            "ArtifactName": "synthetic-caddy",
+            "Metadata": {"ImageID": "sha256:" + "a" * 64},
+            "Results": [
+                {
+                    "Target": "usr/bin/caddy",
+                    "Vulnerabilities": [
+                        {
+                            "Severity": "UNKNOWN",
+                            "VulnerabilityID": "GO-2026-5932",
+                            "PkgName": "golang.org/x/crypto",
+                            "InstalledVersion": "v0.57.0",
+                        },
+                        {
+                            "Severity": "HIGH",
+                            "VulnerabilityID": "synthetic-other",
+                            "PkgName": "golang.org/x/crypto",
+                            "InstalledVersion": "v0.57.0",
+                        },
+                    ],
+                }
+            ],
+        }
+
+    def test_openpgp_exception_requires_same_image_and_exact_package_evidence(self):
+        report = self.caddy_report()
+        inspected = subprocess.CompletedProcess([], 0, report["Metadata"]["ImageID"] + "\n", "")
+        packages = "github.com/caddyserver/caddy/v2/cmd\ngolang.org/x/crypto/acme\n"
+        dependencies = subprocess.CompletedProcess([], 0, packages, "")
+        with patch.object(audit.subprocess, "run", side_effect=[inspected, dependencies]) as run:
+            exclusions, evidence = audit.caddy_applicability(report, "synthetic-caddy")
+        self.assertEqual(
+            audit.blocking_findings(report, exclusions),
+            [{"id": "synthetic-other", "package": "golang.org/x/crypto", "severity": "HIGH"}],
+        )
+        self.assertEqual(evidence[0]["ImageID"], report["Metadata"]["ImageID"])
+        self.assertEqual(evidence[0]["DependencyPackages"], packages.splitlines())
+        self.assertIn(report["Metadata"]["ImageID"], run.call_args.args[0])
+        self.assertEqual(len(report["Results"][0]["Vulnerabilities"]), 2)
+
+    def test_missing_or_mismatched_image_proof_never_exempts_unknown(self):
+        report = self.caddy_report()
+        self.assertEqual(audit.caddy_applicability(report, None), ((), []))
+        self.assertEqual(len(audit.blocking_findings(report)), 2)
+        result = subprocess.CompletedProcess([], 0, "sha256:" + "b" * 64, "")
+        with patch.object(audit.subprocess, "run", return_value=result) as run:
+            with self.assertRaisesRegex(ValueError, "Digest"):
+                audit.caddy_applicability(report, "synthetic-caddy")
+        self.assertEqual(run.call_count, 1)
+
+    def test_openpgp_import_blocks_exception(self):
+        report = self.caddy_report()
+        inspected = subprocess.CompletedProcess([], 0, report["Metadata"]["ImageID"], "")
+        dependencies = subprocess.CompletedProcess(
+            [], 0, "github.com/caddyserver/caddy/v2/cmd\ngolang.org/x/crypto/openpgp/packet\n", ""
+        )
+        with patch.object(audit.subprocess, "run", side_effect=[inspected, dependencies]):
+            with self.assertRaisesRegex(ValueError, "OpenPGP"):
+                audit.caddy_applicability(report, "synthetic-caddy")
+
+    def test_new_crypto_version_requires_new_applicability_review(self):
+        report = self.caddy_report()
+        report["Results"][0]["Vulnerabilities"][0]["InstalledVersion"] = "v0.58.0"
+        with patch.object(audit.subprocess, "run") as run:
+            exclusions, evidence = audit.caddy_applicability(report, "synthetic-caddy")
+            run.assert_not_called()
+        self.assertEqual((exclusions, evidence), ((), []))
+        self.assertEqual(len(audit.blocking_findings(report, exclusions)), 2)
+
     def test_image_evidence_excludes_environment_and_config(self):
         report = {
             "ArtifactName": "synthetic",

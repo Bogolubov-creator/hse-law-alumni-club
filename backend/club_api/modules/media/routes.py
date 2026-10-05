@@ -119,13 +119,29 @@ async def upload_avatar(request: HttpRequest):
     finally:
         upload.close()
     try:
-        await state.store.update("alumni", {"avatar": file["id"]}, id=alumni["id"])
+        async with state.database.transaction() as connection:
+            current = await (
+                await connection.execute(
+                    "SELECT avatar,user_id,telegram_id,token_version,verification_status FROM alumni WHERE id=%s FOR UPDATE",
+                    (alumni["id"],),
+                )
+            ).fetchone()
+            if (
+                not current
+                or current["verification_status"] not in ("pending", "verified")
+                or str(current["user_id"] or "") != str(alumni["user_id"] or "")
+                or current["telegram_id"] != alumni["telegram_id"]
+                or (current["token_version"] or 0) != (alumni["token_version"] or 0)
+            ):
+                raise ApiError(409, "Профиль изменился. Обновите страницу перед загрузкой фото")
+            previous_avatar = current["avatar"]
+            await connection.execute("UPDATE alumni SET avatar=%s WHERE id=%s", (file["id"], alumni["id"]))
     except BaseException:
         await state.media.delete(file["id"])
         raise
-    if alumni.get("avatar") and alumni["avatar"] != file["id"]:
+    if previous_avatar and str(previous_avatar) != file["id"]:
         try:
-            await state.media.delete(alumni["avatar"])
+            await state.media.delete(str(previous_avatar))
         except Exception:
             logger.warning("Не удалось удалить прежний аватар")
     await audit(
