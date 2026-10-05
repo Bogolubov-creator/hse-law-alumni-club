@@ -52,6 +52,9 @@ jobs:
           python3 scripts/tests/test-ops.py
           python3 scripts/tests/test-install.py
           python3 scripts/tests/test-mariadb-ops.py
+          python3 scripts/tests/test-security-inventory.py
+          uv run --directory frontend ruff check ../scripts/diagnostics/security-inventory.py ../scripts/checks/check-image-audit.py ../scripts/tests/test-security-inventory.py
+          uv run --directory frontend ruff format --check ../scripts/diagnostics/security-inventory.py ../scripts/checks/check-image-audit.py ../scripts/tests/test-security-inventory.py
           uv run --directory backend python ../scripts/tests/test-measure-load.py
           uv run --directory frontend python ../scripts/tests/test-comments.py
           docker compose --env-file .env.example config --quiet
@@ -65,15 +68,15 @@ jobs:
           uv run --directory backend pytest -q
           uv run --directory frontend pytest -q
       - name: Audit Python runtime and development dependencies
-        run: |
-          for project in backend frontend scripts; do
-            for scope in runtime development; do
-              flags=()
-              if [[ "$scope" == runtime ]]; then flags+=(--no-dev); fi
-              uv export --directory "$project" --frozen --no-emit-project --no-emit-local "${flags[@]}" --format requirements-txt --output-file "/tmp/club-$project-$scope.txt" >/dev/null
-              uv run --directory frontend pip-audit -r "/tmp/club-$project-$scope.txt" --no-deps --disable-pip
-            done
-          done
+        run: bash scripts/checks/audit-dependencies.sh security-reports
+      - name: Save dependency evidence for this commit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: python-security-${{ github.sha }}
+          path: security-reports/
+          retention-days: 7
+          if-no-files-found: warn
 
   postgres-integration:
     runs-on: ubuntu-24.04
@@ -153,13 +156,31 @@ jobs:
         run: |
           docker build --file deploy/nginx.Dockerfile --build-arg "VCS_REF=$(git rev-parse HEAD)" --tag club-ci-live-nginx .
           python3 scripts/tests/test-nginx.py --application-image club-ci-live-api --edge-image club-ci-live-nginx
-      - name: Scan application images (HIGH and CRITICAL)
+      - name: Scan application images and retain every severity
         run: |
+          mkdir -m 0700 security-reports
+          mkdir -m 0700 /tmp/club-image-raw
+          status=0
           for service in api bootstrap web caddy postgres nginx; do
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
+            report="trivy-$service.json"
+            if ! docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
+              -v /tmp/club-image-raw:/reports \
               aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
-              image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "club-ci-live-$service"
+              image --scanners vuln --list-all-pkgs --format json --output "/reports/$report" --exit-code 0 "club-ci-live-$service"; then
+              status=1
+              continue
+            fi
+            if ! python3 scripts/checks/check-image-audit.py "/tmp/club-image-raw/$report" --output "security-reports/$report"; then status=1; fi
           done
+          exit "$status"
+      - name: Save image evidence for this commit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: image-security-${{ github.sha }}
+          path: security-reports/
+          retention-days: 7
+          if-no-files-found: warn
       - name: Install, repeat and restore MariaDB on Ubuntu with local TLS
         run: CLUB_NATIVE_BROWSER=true bash scripts/tests/test-install.sh
 

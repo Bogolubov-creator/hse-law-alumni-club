@@ -87,6 +87,8 @@ uv run --directory frontend python ../scripts/checks/check-comments.py
 uv run --directory frontend pytest -q
 uv export --directory backend --frozen --no-dev --no-emit-project --format requirements-txt --output-file /tmp/club-requirements.txt
 uv run --directory backend --frozen pip-audit -r /tmp/club-requirements.txt --no-deps --disable-pip
+bash scripts/checks/audit-dependencies.sh security-reports
+uv run --directory frontend python ../scripts/tests/test-security-inventory.py
 docker compose --env-file .env.example config --quiet
 bash scripts/tests/test-integration.sh
 ```
