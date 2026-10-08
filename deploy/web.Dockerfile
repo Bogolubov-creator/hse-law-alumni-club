@@ -1,4 +1,4 @@
-FROM python:3.14.8-alpine@sha256:8acac70227ce3b34da9453120c375cc5b66cd0b062d4dc6bc74286f81a3819e1 AS build
+FROM python:3.14.8-alpine@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72 AS build
 RUN pip install --no-cache-dir uv==0.12.22
 WORKDIR /repo
 COPY frontend/pyproject.toml frontend/uv.lock frontend/
@@ -15,7 +15,7 @@ RUN uv sync --project frontend --frozen --no-dev --no-editable && \
     rm -rf /opt/venv/lib/python3.14/site-packages/club_web/browser /opt/venv/lib/python3.14/site-packages/club_web/styles && \
     find /opt/venv -name direct_url.json -delete
 
-FROM python:3.14.8-alpine@sha256:8acac70227ce3b34da9453120c375cc5b66cd0b062d4dc6bc74286f81a3819e1
+FROM python:3.14.8-alpine@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 RUN apk upgrade --no-cache && apk add --no-cache ca-certificates && \
