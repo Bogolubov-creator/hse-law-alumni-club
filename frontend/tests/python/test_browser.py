@@ -523,6 +523,21 @@ def test_mirror_mobile_preview_navigation_and_exit(chromium, mirror_site, width)
     context.close()
 
 
+@pytest.mark.parametrize("width", [1440, 390])
+def test_mirror_office_sections_have_no_loading_errors(chromium, mirror_site, width):
+    context = chromium.new_context(viewport={"width": width, "height": 1000})
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")
+    page = context.new_page()
+    for key, _ in OFFICE_NAV:
+        path = "admin/" if key == "overview" else "admin/" + key + "/"
+        assert page.goto(mirror_site + path).status == 200
+        expect(page.locator(".office-page-header")).to_be_visible()
+        expect(page.locator(".site-errors")).to_have_count(0)
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), path
+    expect(page.locator("#main")).to_contain_text("Статистика обращений доступна в рабочей панели офиса")
+    context.close()
+
+
 def test_mirror_preserves_filters_cart_calendar_and_subscription(chromium, mirror_site):
     context = chromium.new_context(viewport={"width": 390, "height": 1000})
     context.add_init_script(
