@@ -1,5 +1,20 @@
 # Состояние работ по Клубу
 
+## Объединение обновлений – 10.10.2026
+
+По поручению владельца объединяются обновления [PR 89](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/89)
+и исправления [PR 90](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/90).
+README отражает Python 3.14.8, Django 6.1.2, uv 0.13.0, Ruff 0.17.0,
+Go 1.27.2 и Caddy 2.11.7. Версии Actions закреплены SHA, gosu собирается с
+x/sys 0.49.0. Роли, схема данных и выбранный контур установки сохраняются.
+
+До объединения `b9c3d45` прошёл [все пять заданий CI](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/runs/38050222249);
+исправления безопасности `92e5c82` – [все пять заданий CI](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/runs/37348033751).
+Общая версия проверяется заново в PR, затем по точному SHA `main` в
+[Security & CI](https://github.com/Bogolubov-creator/hse-law-alumni-club/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush).
+Эта операция обновляет репозиторий; локальная Ubuntu и публичный сервер ею
+не развёртываются. Дальше приведены датированные результаты прежних проверок.
+
 ## Дополнительная защита SQL – 05.10.2026
 
 Для PostgreSQL и MariaDB закреплён один список разрешённых таблиц `DATA_COLUMNS`,
