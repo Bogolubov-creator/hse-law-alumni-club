@@ -28,6 +28,7 @@ def fixtures(root):
 
 
 def snapshot(data):
+    faq = resource("faq-data.json")
     alumni = data["alumni"][0]
     profile = {
         "alumni": {
@@ -71,6 +72,13 @@ def snapshot(data):
         "/admin/pages/home": {"blocks": {}},
         "/admin/media": [],
         "/admin/audit": [],
+        "/admin/bot-status": {
+            "siteFaq": {
+                "answers": len(faq["answers"]),
+                "gaps": len(faq["gaps"]),
+                "note": "В демоверсии показан справочник FAQ. Статистика обращений доступна в рабочей панели офиса.",
+            },
+        },
         "/admin/support": [],
     }
     for name in ("programs", "products", "news", "events", "podcasts"):
@@ -141,6 +149,8 @@ async def export(destination, base, data):
             page = await context(
                 Api(client, {"authorization": "Bearer demo", "x-cart-session": "demo"}), path, {}, True
             )
+            if page["errors"]:
+                raise ValueError(f"Не удалось собрать страницу {path}: {'; '.join(page['errors'])}")
             if path == "/changes" or path.startswith("/changes/"):
                 page["items"] = changes["items"]
                 page["next_page"] = ""
