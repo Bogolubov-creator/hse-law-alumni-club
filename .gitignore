@@ -18,6 +18,7 @@ design-export/
 .env.backup*
 backups/
 test-results/
+security-reports/
 playwright-report/
 docs/report-assets/
 docs/Отчёт по дизайну*

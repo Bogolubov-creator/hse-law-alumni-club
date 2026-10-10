@@ -1,5 +1,6 @@
 import logging
 from email.message import EmailMessage
+from urllib.parse import urlsplit
 
 import aiosmtplib
 
@@ -48,13 +49,23 @@ class Notifications:
             message["To"] = to
             message["Subject"] = subject
             message.set_content(text)
+            implicit_tls = self.settings.SMTP_PORT == 465
+            local_mailpit = (
+                self.settings.SMTP_HOST == "mailpit"
+                and self.settings.SMTP_PORT == 1025
+                and not self.settings.SMTP_USER
+                and not self.settings.secret("SMTP_PASS")
+                and urlsplit(self.settings.PUBLIC_URL).hostname in {"localhost", "127.0.0.1", "::1"}
+            )
             await aiosmtplib.send(
                 message,
                 hostname=self.settings.SMTP_HOST,
                 port=self.settings.SMTP_PORT,
                 username=self.settings.SMTP_USER or None,
                 password=self.settings.secret("SMTP_PASS") or None,
-                use_tls=self.settings.SMTP_PORT == 465,
+                use_tls=implicit_tls,
+                start_tls=not implicit_tls and not local_mailpit,
+                validate_certs=True,
                 timeout=15,
             )
             return True

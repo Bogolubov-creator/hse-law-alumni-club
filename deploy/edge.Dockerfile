@@ -19,6 +19,8 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     cmp go.mod locked/go.mod && cmp go.sum locked/go.sum && \
     go mod vendor && \
     test ! -d vendor/github.com/google/cel-go && \
+    go list -mod=vendor -deps . > /caddy/dependencies.txt && \
+    ! grep -E '^golang.org/x/crypto/openpgp(/|$)' /caddy/dependencies.txt && \
     go build -mod=vendor -p 2 -trimpath -ldflags='-s -w' -o /usr/bin/caddy . && \
     go version -m /usr/bin/caddy > /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+github.com/caddyserver/caddy/v2[[:space:]]+v2.11.7[[:space:]]' /caddy/build-info.txt && \
@@ -41,10 +43,11 @@ LABEL org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.version="v2.11.7" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV CADDY_VERSION=v2.11.7 XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
-RUN apk add --no-cache ca-certificates curl mailcap && \
+RUN apk add --no-cache ca-certificates curl mailcap 'zlib>=1.3.2-r1' && \
     mkdir -p /config/caddy /data/caddy /etc/caddy /usr/share/caddy && \
     chmod 1777 /config/caddy /data/caddy
 COPY --from=edge-build /usr/bin/caddy /usr/bin/caddy
+COPY --from=edge-build /caddy/dependencies.txt /usr/share/caddy/dependencies.txt
 COPY deploy/caddy/LICENSE /usr/share/licenses/club-caddy/LICENSE
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
 RUN caddy version

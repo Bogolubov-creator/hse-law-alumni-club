@@ -4,6 +4,7 @@ import pathlib
 import re
 import secrets
 import shutil
+import stat
 import subprocess
 import tarfile
 import tempfile
@@ -22,6 +23,65 @@ from mariadb_common import (
     run,
     sql,
 )
+
+MAX_SNAPSHOT_BYTES = 512 * 1024**3
+RESTORE_RESERVE_BYTES = 1024**3
+RESTORE_CHUNK_BYTES = 64 * 1024
+
+
+def snapshot_budget(size, directory):
+    if not 0 < size <= MAX_SNAPSHOT_BYTES:
+        raise ValueError("Размер снимка должен быть от 1 байта до 512 GiB")
+    if shutil.disk_usage(directory).free < size + RESTORE_RESERVE_BYTES:
+        raise ValueError("Недостаточно места для расшифровки снимка с резервом 1 GiB")
+
+
+def decrypt_snapshot(snapshot, destination, key):
+    descriptor = os.open(snapshot, os.O_RDONLY | os.O_NOFOLLOW)
+    with os.fdopen(descriptor, "rb") as ciphertext:
+        info = os.fstat(ciphertext.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            raise ValueError("Снимок должен быть закрытым обычным файлом текущего оператора")
+        snapshot_budget(info.st_size, destination.parent)
+        descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        try:
+            with os.fdopen(descriptor, "wb") as plaintext:
+                with subprocess.Popen(
+                    [
+                        shutil.which("openssl") or "openssl",
+                        "enc",
+                        "-d",
+                        "-aes-256-cbc",
+                        "-pbkdf2",
+                        "-iter",
+                        "200000",
+                        "-pass",
+                        "env:BACKUP_ENCRYPTION_KEY",
+                    ],
+                    stdin=ciphertext,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    env={"PATH": os.environ["PATH"], "BACKUP_ENCRYPTION_KEY": key},
+                ) as process:
+                    try:
+                        written = 0
+                        while chunk := process.stdout.read(RESTORE_CHUNK_BYTES):
+                            written += len(chunk)
+                            if written > info.st_size:
+                                raise ValueError("Расшифрованный снимок превысил исходный размер")
+                            if shutil.disk_usage(destination.parent).free < RESTORE_RESERVE_BYTES + len(chunk):
+                                raise ValueError("Исчерпан резерв места для восстановления")
+                            plaintext.write(chunk)
+                        if process.wait() != 0:
+                            raise ValueError("Не удалось расшифровать снимок")
+                    except BaseException:
+                        process.kill()
+                        raise
+                    finally:
+                        process.stdout.close()
+        except BaseException:
+            destination.unlink(missing_ok=True)
+            raise
 
 
 def backup(context):
@@ -174,6 +234,7 @@ def restore(context, snapshot, target):
     if snapshot is None or target is None:
         raise ValueError("Нужны --snapshot и --target-env отдельного пустого контура")
     HELPERS["private_file"](snapshot)
+    snapshot_budget(snapshot.stat().st_size, context.backups)
     target = Context(target)
     if target.database == context.database or target.project == context.project:
         raise ValueError("Восстановление разрешено только в отдельную новую базу и Compose-проект")
@@ -197,26 +258,10 @@ def restore(context, snapshot, target):
     key = context.values.get("BACKUP_ENCRYPTION_KEY", "")
     with target.lock(), tempfile.TemporaryDirectory(prefix=".restore-", dir=context.backups) as temporary:
         work = pathlib.Path(temporary)
-        run(
-            [
-                "openssl",
-                "enc",
-                "-d",
-                "-aes-256-cbc",
-                "-pbkdf2",
-                "-iter",
-                "200000",
-                "-pass",
-                "env:BACKUP_ENCRYPTION_KEY",
-                "-in",
-                str(snapshot),
-                "-out",
-                str(work / "snapshot.tar.gz"),
-            ],
-            env={"PATH": os.environ["PATH"], "BACKUP_ENCRYPTION_KEY": key},
-        )
+        decrypt_snapshot(snapshot, work / "snapshot.tar.gz", key)
         allowed = {"database.sql.gz", "tables.json", "uploads.tar.gz", "files.json", "metadata.json", "checksums.json"}
-        extract_archive(work / "snapshot.tar.gz", work, allowed)
+        archive_budget = min(MAX_SNAPSHOT_BYTES, max(0, shutil.disk_usage(work).free - RESTORE_RESERVE_BYTES))
+        extract_archive(work / "snapshot.tar.gz", work, allowed, maximum=archive_budget)
         for name, digest in json.loads((work / "checksums.json").read_text()).items():
             if name not in allowed - {"checksums.json"} or file_hashes_for_file(work / name) != digest:
                 raise ValueError("Контрольная сумма снимка не совпала")
@@ -225,7 +270,12 @@ def restore(context, snapshot, target):
         metadata = json.loads((work / "metadata.json").read_text())
         if metadata.get("format") != "club-mariadb-backup-v1" or metadata.get("revision") != revision():
             raise ValueError("Для восстановления нужен чистый checkout ревизии приложения из снимка")
-        needed = 3 * (metadata["database_bytes"] + metadata["uploads_bytes"]) + 268435456
+        if any(
+            type(metadata.get(name)) is not int or not 0 <= metadata[name] <= MAX_SNAPSHOT_BYTES
+            for name in ("database_bytes", "uploads_bytes")
+        ):
+            raise ValueError("Некорректный размер данных в метаданных снимка")
+        needed = 3 * (metadata["database_bytes"] + metadata["uploads_bytes"]) + RESTORE_RESERVE_BYTES
         if shutil.disk_usage(uploads).free < needed:
             raise ValueError("Недостаточно места для восстановления")
         with subprocess.Popen(

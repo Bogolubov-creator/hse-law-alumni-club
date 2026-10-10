@@ -24,8 +24,14 @@ def invalid():
     return ValueError("Недопустимый внутренний запрос данных")
 
 
+def columns(table):
+    if not isinstance(table, str) or table not in DATA_COLUMNS:
+        raise invalid()
+    return DATA_COLUMNS[table]
+
+
 def field(table, name):
-    if table not in DATA_COLUMNS or name not in DATA_COLUMNS[table]:
+    if name not in columns(table):
         raise invalid()
     return f'"{name}"'
 
@@ -45,6 +51,7 @@ def normalize(value):
 
 
 def predicate(table, filters, params, depth=0):
+    columns(table)
     if filters is None:
         return "TRUE"
     if not isinstance(filters, dict) or depth > 12:
@@ -99,6 +106,7 @@ def predicate(table, filters, params, depth=0):
 
 
 def selection(table, fields=None):
+    allowed = columns(table)
     fields = ["*"] if fields is None else fields
     if not fields:
         raise invalid()
@@ -106,7 +114,7 @@ def selection(table, fields=None):
     for name in fields:
         if table == "pages" and name in BLOCK_FIELDS:
             continue
-        names.extend([field(table, value) for value in DATA_COLUMNS[table]] if name == "*" else [field(table, name)])
+        names.extend([field(table, value) for value in allowed] if name == "*" else [field(table, name)])
     return ",".join(dict.fromkeys(names)) or field(table, "id")
 
 
@@ -165,8 +173,7 @@ class Store:
         self.database = database
 
     async def read(self, table, *, filters=None, fields=None, sort=(), limit=100, offset=0, page=None, connection=None):
-        if table not in DATA_COLUMNS:
-            raise invalid()
+        columns(table)
         if page is not None:
             offset = (page - 1) * (0 if limit == -1 else limit)
         if type(limit) is not int or limit < -1 or type(offset) is not int or offset < 0:
@@ -221,69 +228,71 @@ class Store:
         return rows[0]
 
     async def create(self, table, data, *, connection=None):
-        if table not in DATA_COLUMNS or table.startswith("directus_") or not isinstance(data, dict):
+        columns(table)
+        if table.startswith("directus_") or not isinstance(data, dict):
             raise invalid()
-        if connection is None:
-            async with self.database.transaction() as conn:
-                return await self.create(table, data, connection=conn)
         names = [field(table, key) for key in data]
         values = [
             Jsonb(value) if key in JSON_COLUMNS.get(table, ()) and value is not None else value
             for key, value in data.items()
         ]
+        if connection is None:
+            async with self.database.transaction() as conn:
+                return await self.create(table, data, connection=conn)
         await assert_media_references(connection, table, data)
         insert = f"({','.join(names)}) VALUES ({','.join(['%s'] * len(names))})" if names else "DEFAULT VALUES"
         cursor = await connection.execute(f'INSERT INTO "{table}" {insert} RETURNING {selection(table)}', values)
         return normalize(await cursor.fetchone())
 
     async def update(self, table, data, *, id=None, filters=None, connection=None):
-        if table not in DATA_COLUMNS or table.startswith("directus_") or not isinstance(data, dict) or "id" in data:
+        columns(table)
+        if table.startswith("directus_") or not isinstance(data, dict) or "id" in data:
             raise invalid()
         if id is None and (not isinstance(filters, dict) or not filters):
             raise invalid()
-        if connection is None:
-            async with self.database.transaction() as conn:
-                return await self.update(table, data, id=id, filters=filters, connection=conn)
-        if not data:
-            return await self.one(table, id, connection=connection) if id else []
         assignments = ",".join(f"{field(table, key)}=%s" for key in data)
         params = [
             Jsonb(value) if key in JSON_COLUMNS.get(table, ()) and value is not None else value
             for key, value in data.items()
         ]
-        where = predicate(table, {"id": {"_eq": id}} if id else filters, params)
+        where = predicate(table, {"id": {"_eq": id}} if id is not None else filters, params)
+        if connection is None:
+            async with self.database.transaction() as conn:
+                return await self.update(table, data, id=id, filters=filters, connection=conn)
+        if not data:
+            return await self.one(table, id, connection=connection) if id is not None else []
         await assert_media_references(connection, table, data)
         query = f'UPDATE "{table}" SET {assignments} WHERE {where} RETURNING {selection(table)}'
         cursor = await connection.execute(query, params)
         rows = normalize(await cursor.fetchall())
-        if id and not rows:
+        if id is not None and not rows:
             raise ApiError(404, "Запись не найдена")
-        return rows[0] if id else rows
+        return rows[0] if id is not None else rows
 
     async def delete(self, table, *, id=None, filters=None, connection=None):
-        if table not in DATA_COLUMNS or table.startswith("directus_"):
+        columns(table)
+        if table.startswith("directus_"):
             raise invalid()
         if id is None and (not isinstance(filters, dict) or not filters):
             raise invalid()
+        params = []
+        where = predicate(table, {"id": {"_eq": id}} if id is not None else filters, params)
         if connection is None:
             async with self.database.transaction() as conn:
                 return await self.delete(table, id=id, filters=filters, connection=conn)
-        params = []
-        where = predicate(table, {"id": {"_eq": id}} if id else filters, params)
         await connection.execute(f'DELETE FROM "{table}" WHERE {where}', params)
 
     async def aggregate(self, table, *, filters=None, group=(), sum_field=None):
-        if table not in DATA_COLUMNS:
-            raise invalid()
+        columns(table)
         params = []
-        columns = [field(table, name) for name in group]
+        group_columns = [field(table, name) for name in group]
         if sum_field:
             expression = f'json_build_object(%s::text,SUM({field(table, sum_field)})::text) AS "sum"'
             params.append(sum_field)
         else:
             expression = 'COUNT(*)::text AS "count"'
         where = predicate(table, filters, params)
-        query = f'SELECT {",".join([*columns, expression])} FROM "{table}" WHERE {where}'
-        if columns:
-            query += " GROUP BY " + ",".join(columns)
+        query = f'SELECT {",".join([*group_columns, expression])} FROM "{table}" WHERE {where}'
+        if group_columns:
+            query += " GROUP BY " + ",".join(group_columns)
         return normalize(await self.database.rows(query, params))

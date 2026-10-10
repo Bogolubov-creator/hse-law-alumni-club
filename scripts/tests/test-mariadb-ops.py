@@ -2,16 +2,19 @@ import importlib
 import io
 import json
 import pathlib
+import os
+import subprocess
 import sys
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'lib'))
 common = importlib.import_module('mariadb_common')
 installer = importlib.import_module('mariadb_install')
 maintenance = importlib.import_module('mariadb_native')
+backup = importlib.import_module('mariadb_backup')
 
 
 class NativeDatabaseGuards(unittest.TestCase):
@@ -116,6 +119,70 @@ class NativeDatabaseGuards(unittest.TestCase):
                 installer.install(config, True)
                 deploy.assert_called_once_with(context)
             self.assertEqual(before, {name: (config / name).read_bytes() for name in installer.FILES})
+
+
+class RestoreResourceGuards(unittest.TestCase):
+    def test_no_space_rejects_restore_before_context_sql_and_decryption(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = pathlib.Path(temp)
+            snapshot = directory / 'snapshot.enc'
+            snapshot.write_bytes(b'x' * 32)
+            snapshot.chmod(0o600)
+            usage = type('Usage', (), {'free': backup.RESTORE_RESERVE_BYTES + 31})()
+            with patch.object(backup.shutil, 'disk_usage', return_value=usage), patch.object(backup, 'Context') as target, patch.object(backup, 'sql') as query, patch.object(backup.subprocess, 'Popen') as decrypt:
+                with self.assertRaisesRegex(ValueError, 'Недостаточно места'):
+                    backup.restore(Mock(backups=directory), snapshot, directory / 'target.env')
+                target.assert_not_called()
+                query.assert_not_called()
+                decrypt.assert_not_called()
+
+    def test_oversized_ciphertext_rejected_without_starting_process(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = pathlib.Path(temp)
+            snapshot = directory / 'snapshot.enc'
+            snapshot.write_bytes(b'x' * 32)
+            snapshot.chmod(0o600)
+            destination = directory / 'plaintext'
+            with patch.object(backup, 'MAX_SNAPSHOT_BYTES', 31), patch.object(backup.subprocess, 'Popen') as decrypt:
+                with self.assertRaisesRegex(ValueError, 'Размер снимка'):
+                    backup.decrypt_snapshot(snapshot, destination, 'a' * 64)
+                decrypt.assert_not_called()
+            self.assertFalse(destination.exists())
+
+    def test_ciphertext_growth_cannot_write_beyond_initial_budget(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = pathlib.Path(temp)
+            snapshot = directory / 'snapshot.enc'
+            snapshot.write_bytes(b'x' * 32)
+            snapshot.chmod(0o600)
+            destination = directory / 'plaintext'
+            process = Mock(stdout=io.BytesIO(b'p' * 33))
+            manager = Mock()
+            manager.__enter__ = Mock(return_value=process)
+            manager.__exit__ = Mock(return_value=False)
+            with patch.object(backup.subprocess, 'Popen', return_value=manager):
+                with self.assertRaisesRegex(ValueError, 'превысил исходный размер'):
+                    backup.decrypt_snapshot(snapshot, destination, 'a' * 64)
+            process.kill.assert_called_once()
+            self.assertFalse(destination.exists())
+
+    def test_real_decryption_roundtrip_and_bad_padding_remove_plaintext(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = pathlib.Path(temp)
+            original, snapshot = directory / 'source', directory / 'snapshot.enc'
+            original.write_bytes(b'synthetic backup payload' * 100)
+            key = 'a' * 64
+            subprocess.run(['openssl', 'enc', '-aes-256-cbc', '-pbkdf2', '-iter', '200000', '-pass', 'env:BACKUP_ENCRYPTION_KEY', '-in', str(original), '-out', str(snapshot)], env={'PATH': os.environ['PATH'], 'BACKUP_ENCRYPTION_KEY': key}, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            snapshot.chmod(0o600)
+            destination = directory / 'plaintext'
+            backup.decrypt_snapshot(snapshot, destination, key)
+            self.assertEqual(destination.read_bytes(), original.read_bytes())
+            self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
+            snapshot.write_bytes(snapshot.read_bytes()[:-1])
+            rejected = directory / 'rejected'
+            with self.assertRaisesRegex(ValueError, 'расшифровать'):
+                backup.decrypt_snapshot(snapshot, rejected, key)
+            self.assertFalse(rejected.exists())
 
 
 if __name__ == '__main__':

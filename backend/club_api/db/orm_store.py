@@ -6,6 +6,7 @@ from club_api.db.store import (
     BLOCK_FIELDS,
     MEDIA_FIELDS,
     Store,
+    columns,
     field,
     invalid,
     media_ids,
@@ -26,6 +27,7 @@ class InsensitiveContains(Lookup):
 
 
 def model_for(table):
+    columns(table)
     if table not in apps.all_models["club_data"]:
         for model in apps.get_app_config("club_data").get_models():
             if model._meta.db_table == table:
@@ -174,6 +176,7 @@ class ORMStore(Store):
         return await connection.run(read_rows)
 
     async def create(self, table, data, *, connection=None):
+        columns(table)
         if table.startswith("directus_") or not isinstance(data, dict):
             raise invalid()
         for key in data:
@@ -192,43 +195,49 @@ class ORMStore(Store):
         return await connection.run(create_row)
 
     async def update(self, table, data, *, id=None, filters=None, connection=None):
+        columns(table)
         if table.startswith("directus_") or not isinstance(data, dict) or "id" in data:
             raise invalid()
         if id is None and (not isinstance(filters, dict) or not filters):
             raise invalid()
         for key in data:
             field(table, key)
-        predicate(table, {"id": {"_eq": id}} if id else filters, [])
+        predicate(table, {"id": {"_eq": id}} if id is not None else filters, [])
         if connection is None:
             async with self.database.transaction() as conn:
                 return await self.update(table, data, id=id, filters=filters, connection=conn)
         if not data:
-            return await self.one(table, id, connection=connection) if id else []
+            return await self.one(table, id, connection=connection) if id is not None else []
         await media_references(connection, table, data)
 
         def update_rows():
             model = model_for(table)
             mapping = attributes(model)
-            query = model.objects.filter(condition(table, {"id": {"_eq": id}} if id else filters))
+            query = model.objects.filter(condition(table, {"id": {"_eq": id}} if id is not None else filters))
             ids = list(query.select_for_update().values_list("pk", flat=True))
             query = model.objects.filter(pk__in=ids)
             query.update(**{mapping[key]: value for key, value in data.items()})
             rows = normalize(records(table, query))
-            if id and not rows:
+            if id is not None and not rows:
                 raise ApiError(404, "Запись не найдена")
-            return rows[0] if id else rows
+            return rows[0] if id is not None else rows
 
         return await connection.run(update_rows)
 
     async def delete(self, table, *, id=None, filters=None, connection=None):
+        columns(table)
         if table.startswith("directus_") or (id is None and (not isinstance(filters, dict) or not filters)):
             raise invalid()
-        predicate(table, {"id": {"_eq": id}} if id else filters, [])
+        predicate(table, {"id": {"_eq": id}} if id is not None else filters, [])
         if connection is None:
             async with self.database.transaction() as conn:
                 return await self.delete(table, id=id, filters=filters, connection=conn)
         await connection.run(
-            lambda: model_for(table).objects.filter(condition(table, {"id": {"_eq": id}} if id else filters)).delete()
+            lambda: (
+                model_for(table)
+                .objects.filter(condition(table, {"id": {"_eq": id}} if id is not None else filters))
+                .delete()
+            )
         )
 
     async def aggregate(self, table, *, filters=None, group=(), sum_field=None):
