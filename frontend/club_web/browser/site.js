@@ -100,6 +100,22 @@ function element(tag, text, attributes = {}) {
   return node;
 }
 
+async function copyText(text, trigger) {
+  try {
+    await navigator.clipboard.writeText(text);
+    notice("Скопировано");
+  } catch {
+    const dialog = document.querySelector("#site-dialog");
+    const content = document.querySelector("#dialog-content");
+    const field = element("input", undefined, { type: "text", value: text, readonly: "", "aria-label": "Текст для копирования" });
+    content.replaceChildren(element("h2", "Копирование"), element("p", "Браузер запретил автоматическое копирование. Скопируйте выделенный текст вручную."), field);
+    dialog.addEventListener("close", () => { content.replaceChildren(); trigger.focus(); }, { once: true });
+    dialog.showModal();
+    field.focus();
+    field.select();
+  }
+}
+
 function formBody(form) {
   const body = {};
   for (const input of form.elements) {
@@ -181,7 +197,7 @@ function checkoutReceipt(result) {
   if (!result.notified?.ok) section.append(element("p", "Заявка сохранена, но уведомление офиса не прошло. Сообщите номер заявки в поддержку.", { role: "alert" }));
   const payment = safeLink(result.payment_url, true);
   if (payment) section.append(element("a", "Оплатить через ЮKassa", { href: payment, class: "site-primary" }));
-  section.append(element("a", token() ? "К моим заявкам" : "Войти в кабинет", { href: url("lk?section=orders") }));
+  section.append(element("a", token() ? "К моим заявкам" : "Войти в кабинет", { href: url("lk#orders") }));
   document.querySelector("#page").replaceChildren(section);
   heading.focus();
   window.scrollTo(0, 0);
@@ -328,9 +344,22 @@ function alignOfficeNavigation() {
   if (item.top < container.top) navigation.scrollTop += item.top - container.top - 8;
 }
 
+let cabinetSectionOpened = false;
+
+function openCabinetSection() {
+  if (cabinetSectionOpened || currentPath() !== "/lk") return;
+  const section = location.hash.slice(1) || new URLSearchParams(location.search).get("section");
+  if (!["club-overview", "orders", "community", "achievements"].includes(section)) return;
+  const target = document.getElementById(section);
+  if (!target) return;
+  target.scrollIntoView({ block: "start", behavior: "instant" });
+  cabinetSectionOpened = true;
+}
+
 function setupPage() {
   prepareDiscovery(url, mirror);
   alignOfficeNavigation();
+  openCabinetSection();
   const recent = document.querySelector("[data-reading-title]");
   if (recent) {
     try {
@@ -549,8 +578,7 @@ document.addEventListener("click", async event => {
     } else if (action === "clear-reading") {
       const data = reading(true); data.recent = []; writeReading(data);
     } else if (action === "copy" || action === "copy-invite") {
-      await navigator.clipboard.writeText(action === "copy" ? target.dataset.value : location.origin + url("join?ref=" + encodeURIComponent(target.dataset.code)));
-      notice("Скопировано");
+      await copyText(action === "copy" ? target.dataset.value : location.origin + url("join?ref=" + encodeURIComponent(target.dataset.code)), target);
     } else if (action === "compare") {
       const id = target.dataset.id;
       if (compare.has(id)) compare.delete(id); else { if (compare.size >= 3) throw new Error("Можно сравнить до трёх программ."); compare.add(id); }

@@ -992,6 +992,37 @@ def test_active_subscriber_can_request_renewal(page, site, width):
 
 
 @pytest.mark.parametrize("width", [390, 1440])
+@pytest.mark.parametrize("destination", ["?section=orders", "?section=community", "#achievements", "#orders"])
+def test_cabinet_deep_link_opens_requested_section_after_authorized_refresh(page, width, destination):
+    page.set_viewport_size({"width": width, "height": 800})
+    page.add_init_script("localStorage.setItem('club_token','member-qa');")
+    page.goto("/lk" + destination)
+    expect(page.locator("#main")).to_contain_text("Тестовый выпускник")
+    identifier = destination.removeprefix("?section=").removeprefix("#")
+    expect(page.locator("#" + identifier + " > h2")).to_be_in_viewport(timeout=3000)
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+@pytest.mark.parametrize("clipboard", ["undefined", "{writeText:async()=>{throw new Error('Permission denied')}}"])
+def test_invitation_can_be_copied_manually_when_clipboard_is_unavailable(page, site, width, clipboard):
+    page.set_viewport_size({"width": width, "height": 800})
+    page.add_init_script("localStorage.setItem('club_token','member-qa');")
+    page.goto("/lk")
+    page.evaluate("Object.defineProperty(navigator,'clipboard',{value:" + clipboard + ",configurable:true})")
+    button = page.get_by_role("button", name="Скопировать приглашение", exact=True)
+    button.click()
+    field = page.get_by_role("textbox", name="Текст для копирования", exact=True)
+    expect(field).to_be_visible(timeout=3000)
+    expect(field).to_have_value(site[0] + "/join?ref=TEST")
+    expect(field).to_be_focused()
+    assert field.evaluate("node => node.selectionEnd - node.selectionStart") == len(field.input_value())
+    page.keyboard.press("Escape")
+    expect(page.locator("#site-dialog")).not_to_be_visible()
+    expect(button).to_be_focused()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
 def test_cart_changes_include_type_when_slugs_match(page, site, width):
     page.set_viewport_size({"width": width, "height": 1000})
     records, writes = site[1:]
