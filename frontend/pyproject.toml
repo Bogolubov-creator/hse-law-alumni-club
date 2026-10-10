@@ -14,7 +14,7 @@ dependencies = [
 dev = [
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
-    "ruff==0.16.10",
+    "ruff==0.17.0",
     "playwright==1.63.0",
     "pip-audit==2.10.1",
     "tree-sitter==0.26.0",
