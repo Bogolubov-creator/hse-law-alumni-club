@@ -1,4 +1,4 @@
-FROM golang:1.27.1-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS edge-source
+FROM golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS edge-source
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOMAXPROCS=2
 WORKDIR /caddy
 COPY deploy/caddy/go.mod deploy/caddy/go.sum ./locked/
@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     test ! -d vendor/github.com/google/cel-go && \
     go build -mod=vendor -p 2 -trimpath -ldflags='-s -w' -o /usr/bin/caddy . && \
     go version -m /usr/bin/caddy > /caddy/build-info.txt && \
-    grep -E 'dep[[:space:]]+github.com/caddyserver/caddy/v2[[:space:]]+v2.11.6[[:space:]]' /caddy/build-info.txt && \
+    grep -E 'dep[[:space:]]+github.com/caddyserver/caddy/v2[[:space:]]+v2.11.7[[:space:]]' /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+cel.dev/cel-go[[:space:]]+v0.32.0[[:space:]]' /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+github.com/KimMachineGun/automemlimit[[:space:]]+v1.0.0[[:space:]]' /caddy/build-info.txt && \
     ! grep -F 'github.com/google/cel-go' /caddy/build-info.txt
@@ -38,9 +38,9 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS caddy
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF \
-      org.opencontainers.image.version="v2.11.6" \
+      org.opencontainers.image.version="v2.11.7" \
       org.opencontainers.image.licenses="Apache-2.0"
-ENV CADDY_VERSION=v2.11.6 XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
+ENV CADDY_VERSION=v2.11.7 XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
 RUN apk add --no-cache ca-certificates curl mailcap && \
     mkdir -p /config/caddy /data/caddy /etc/caddy /usr/share/caddy && \
     chmod 1777 /config/caddy /data/caddy
