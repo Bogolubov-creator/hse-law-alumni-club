@@ -43,7 +43,7 @@ LABEL org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.version="v2.11.7" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV CADDY_VERSION=v2.11.7 XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
-RUN apk add --no-cache ca-certificates curl mailcap && \
+RUN apk add --no-cache ca-certificates curl mailcap 'zlib>=1.3.2-r1' && \
     mkdir -p /config/caddy /data/caddy /etc/caddy /usr/share/caddy && \
     chmod 1777 /config/caddy /data/caddy
 COPY --from=edge-build /usr/bin/caddy /usr/bin/caddy

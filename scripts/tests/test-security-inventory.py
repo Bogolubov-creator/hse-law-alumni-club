@@ -98,13 +98,13 @@ class SecurityEvidenceTests(unittest.TestCase):
                             "Severity": "UNKNOWN",
                             "VulnerabilityID": "GO-2026-5932",
                             "PkgName": "golang.org/x/crypto",
-                            "InstalledVersion": "v0.57.0",
+                            "InstalledVersion": "v0.58.0",
                         },
                         {
                             "Severity": "HIGH",
                             "VulnerabilityID": "synthetic-other",
                             "PkgName": "golang.org/x/crypto",
-                            "InstalledVersion": "v0.57.0",
+                            "InstalledVersion": "v0.58.0",
                         },
                     ],
                 }
@@ -149,7 +149,7 @@ class SecurityEvidenceTests(unittest.TestCase):
 
     def test_new_crypto_version_requires_new_applicability_review(self):
         report = self.caddy_report()
-        report["Results"][0]["Vulnerabilities"][0]["InstalledVersion"] = "v0.58.0"
+        report["Results"][0]["Vulnerabilities"][0]["InstalledVersion"] = "v0.59.0"
         with patch.object(audit.subprocess, "run") as run:
             exclusions, evidence = audit.caddy_applicability(report, "synthetic-caddy")
             run.assert_not_called()

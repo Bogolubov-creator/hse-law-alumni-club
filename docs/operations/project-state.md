@@ -1,5 +1,26 @@
 # Состояние работ по Клубу
 
+## Повторная проверка образов – 10.10.2026
+
+Общий CI `30cb546` прошёл SQL, модульные и браузерные тесты, Go-аудит и TLS,
+но остановился на скане Caddy: доказательство GO-2026-5932 было закреплено
+за x/crypto 0.57.0, а обновление использует 0.58.0. Бюллетень
+[Go](https://pkg.go.dev/vuln/GO-2026-5932) по-прежнему затрагивает только OpenPGP;
+[изменения 0.58.0](https://github.com/golang/crypto/compare/v0.57.0...v0.58.0)
+не меняют эти пакеты. Проверка обновлена только для 0.58.0; другая версия,
+иной image ID, отсутствие списка или импорт OpenPGP блокируют проверку.
+
+Отчёты всех уровней также выявили CVE-2026-85091 в zlib 1.3.2-r0 и
+CVE-2026-61801 в github.com/moby/sys/user 0.1.0, встроенном в gosu.
+Задан исправленный Alpine-пакет zlib не ниже 1.3.2-r1 в Caddy/PostgreSQL;
+gosu собирается с sys/user 0.4.1. Источники:
+[NVD zlib](https://nvd.nist.gov/vuln/detail/CVE-2026-85091),
+[NVD sys/user](https://nvd.nist.gov/vuln/detail/CVE-2026-61801),
+[бюллетень поставщика](https://github.com/moby/sys/security/advisories/GHSA-mjcv-p78q-w5fw)
+и [исправления Alpine](https://secdb.alpinelinux.org/v3.24/main.json).
+Изменение не меняет версию PostgreSQL, схему или данные; результат повторной
+сборки и полного CI проверяется по SHA PR и main.
+
 ## Объединение обновлений – 10.10.2026
 
 По поручению владельца объединяются обновления [PR 89](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/89)

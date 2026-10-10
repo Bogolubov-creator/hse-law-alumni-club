@@ -32,7 +32,7 @@ def blocking_findings(report, non_applicable=()):
 
 
 def caddy_applicability(report, image):
-    candidate = ("usr/bin/caddy", "GO-2026-5932", "golang.org/x/crypto", "v0.57.0")
+    candidate = ("usr/bin/caddy", "GO-2026-5932", "golang.org/x/crypto", "v0.58.0")
     found = any(
         (result.get("Target"), item.get("VulnerabilityID"), item.get("PkgName"), item.get("InstalledVersion"))
         == candidate
