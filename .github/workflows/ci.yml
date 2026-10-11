@@ -71,7 +71,7 @@ jobs:
         run: bash scripts/checks/audit-dependencies.sh security-reports
       - name: Save dependency evidence for this commit
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: python-security-${{ github.sha }}
           path: security-reports/
@@ -175,7 +175,7 @@ jobs:
           exit "$status"
       - name: Save image evidence for this commit
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: image-security-${{ github.sha }}
           path: security-reports/
