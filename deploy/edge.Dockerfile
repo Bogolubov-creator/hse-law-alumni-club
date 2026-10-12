@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     go test -mod=vendor -p 2 -v ./...
 FROM edge-test AS edge-check
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    go install -p 2 golang.org/x/vuln/cmd/govulncheck@v1.8.0 && \
+    go install -p 2 golang.org/x/vuln/cmd/govulncheck@v1.9.0 && \
     GOMEMLIMIT=2GiB GOFLAGS=-mod=vendor \
     /go/bin/govulncheck -show verbose,traces ./...
 
