@@ -2,11 +2,15 @@ package edge_test
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/go-chi/chi/v5/middleware"
+	jose "github.com/go-jose/go-jose/v4"
 	"github.com/klauspost/compress/zstd"
 )
 
@@ -63,4 +67,27 @@ func TestZstdTwoBlockFrameDoesNotPanic(t *testing.T) {
 		}
 	}()
 	_, _ = decoder.DecodeAll(frame, make([]byte, 0, 100*1024))
+}
+
+func TestJOSERejectsOversizedRSAJWK(t *testing.T) {
+	for _, bits := range []int{4096, 4097} {
+		modulus := new(big.Int).Lsh(big.NewInt(1), uint(bits-1))
+		modulus.SetBit(modulus, 0, 1)
+		payload, err := json.Marshal(map[string]string{
+			"kty": "RSA",
+			"n":   base64.RawURLEncoding.EncodeToString(modulus.Bytes()),
+			"e":   "AQAB",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var key jose.JSONWebKey
+		err = json.Unmarshal(payload, &key)
+		if bits == 4096 && err != nil {
+			t.Fatalf("4096-bit public key rejected: %v", err)
+		}
+		if bits == 4097 && err == nil {
+			t.Fatal("oversized RSA public key accepted")
+		}
+	}
 }
