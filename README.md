@@ -202,6 +202,7 @@ CI проверяет обе базы, браузерные сценарии н�
 | bcrypt / Argon2 / PyJWT | 5.0.0 / 25.1.0 / 2.15.1 | BCryptSHA256 для новых паролей, прежние PHC-хеши и JWT-сессии |
 | Pillow | 13.0.0 | Проверка медиа и аватары 256×256; multipart принимает Django |
 | HTTPX / Beautiful Soup | 0.28.1 / 4.15.0 | Проверяемые внешние запросы и разбор HTML |
+| certifi | 2026.10.18 | Корневые сертификаты для HTTPS-клиентов; закреплены во всех трёх uv.lock |
 | aiosmtplib / pywebpush | 5.1.3 / 2.5.0 | SMTP и Web Push |
 | Sentry SDK | 2.72.0 | Только коды ошибок без запросов и персональных данных |
 | pytest / Ruff | 9.1.1 / 0.17.1 | Проверки Python, MariaDB и PostgreSQL |
