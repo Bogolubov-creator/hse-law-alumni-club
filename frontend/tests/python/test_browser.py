@@ -940,6 +940,8 @@ def test_mirror_reader_back_restores_focus(chromium, mirror_site):
     link.click()
     page.get_by_role("link", name="← Все материалы", exact=True).click()
     expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
+    page.evaluate("document.dispatchEvent(new CustomEvent('club-reading-updated', {detail:{read:[]}}))")
+    expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
     context.close()
 
 
