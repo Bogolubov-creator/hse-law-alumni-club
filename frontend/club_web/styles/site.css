@@ -111,9 +111,9 @@ html.pwa-shell .club-header__inner { padding-inline:16px; }
 
 @media(max-width:640px){.home-history{grid-template-columns:1fr}}
 
-.site-card-media { display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-lg); background: var(--c-bg-sunken); }
+.site-card-media { display: block; position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-lg); background: var(--c-bg-sunken); }
 .site-card-media--product { aspect-ratio: 1; }
-.site-card-media img { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
+.site-card-media img { display: block; position: absolute; inset: 0; margin: auto; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
 .site-program-cover { display: block; width: auto; height: auto; max-width: 100%; margin-inline: auto; object-fit: contain; }
 .site-teacher-photo { display: block; width: auto; height: auto; max-width: min(100%, 200px); max-height: 240px; border-radius: var(--r-md); }
 .site-product-photo { display: grid; place-items: center; padding: 24px; min-height: 320px; border-radius: var(--r-lg); background: var(--c-bg-sunken); }
