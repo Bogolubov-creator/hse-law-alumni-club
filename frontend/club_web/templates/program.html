@@ -11,7 +11,7 @@
 <div class="site-two-col">
 <div>
 {% if item.cover|media %}
-<img class="site-cover" src="{{ item.cover|media }}" alt="{{ item.title }}" width="900" height="600">
+<img class="site-cover site-program-cover" src="{{ item.cover|media }}" alt="{{ item.title }}" width="900" height="600">
 {% endif %}
 {% for key,label in [('audience','Для кого'),('results','Результаты обучения'),('advantages','Преимущества')] %}
 {% if item[key] %}
@@ -53,7 +53,7 @@
 <h2>Преподаватели</h2>
 {% for teacher in item.teachers %}
 <article>
-{% if teacher.photo|media %}<img src="{{ teacher.photo|media }}" alt="{{ teacher.name or teacher.fio }}" width="200" height="200" loading="lazy">{% endif %}
+{% if teacher.photo|media %}<img class="site-teacher-photo" src="{{ teacher.photo|media }}" alt="{{ teacher.name or teacher.fio }}" width="200" height="200" loading="lazy">{% endif %}
 <h3>{{ teacher if teacher is string else teacher.name or teacher.fio }}</h3>
 <p>{{ teacher.bio or teacher.role or teacher.position or '' }}</p>
 </article>

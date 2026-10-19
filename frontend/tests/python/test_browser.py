@@ -1062,3 +1062,73 @@ def test_product_editor_retains_gallery_during_title_edit(page, site, width):
         row.get_by_role("button", name="Сохранить", exact=True).click()
     assert writes[-1]["body"]["images"] == images
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
+@pytest.mark.parametrize(
+    "width,pwa", [(320, False), (390, False), (768, False), (1024, False), (1440, False), (1440, True)]
+)
+def test_home_photos_keep_people_in_frame(page, width, pwa):
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto("/?pwa=1" if pwa else "/")
+    hero = page.locator(".home-hero__photo img")
+    expect(hero).to_be_visible()
+    hero.evaluate("image => image.decode()")
+    assert hero.evaluate("image => image.currentSrc.endsWith('.avif')")
+    for selector in (".home-agenda__photo", ".home-meeting__photo", ".home-voice__photo"):
+        for frame in page.locator(selector).all():
+            frame.scroll_into_view_if_needed()
+            image = frame.locator("img")
+            image.evaluate("image => image.decode()")
+            geometry = image.evaluate(
+                "image => ({width:image.clientWidth,height:image.clientHeight,naturalWidth:image.naturalWidth,naturalHeight:image.naturalHeight})"
+            )
+            assert geometry["width"] > 0 and geometry["height"] > 0
+            assert geometry["width"] <= geometry["naturalWidth"] + 1
+            assert geometry["width"] / geometry["height"] == pytest.approx(
+                geometry["naturalWidth"] / geometry["naturalHeight"], rel=0.01
+            )
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
+@pytest.mark.parametrize("width", [320, 768, 1440])
+@pytest.mark.parametrize(
+    "teacher_photo",
+    ["/assets/teachers/byteva-alisa-vladislavovna.jpg", "/assets/teachers/avakyan-elena-georgievna.jpg"],
+)
+def test_catalog_and_detail_photos_keep_shape_without_enlargement(page, site, width, teacher_photo):
+    records = site[1]
+    cover = "/assets/programs/472681893.jpg"
+    page.route(
+        "**" + cover,
+        lambda route: route.fulfill(path=Path(__file__).resolve().parents[2] / "public" / teacher_photo.lstrip("/")),
+    )
+    teacher = {"name": "Преподаватель", "photo": teacher_photo}
+    program = {**PROGRAM, "cover": cover, "teachers": [teacher]}
+    records["/programs"] = [program]
+    records["/programs/course-one"] = program
+    records["/products"] = [{**PRODUCT, "images": ["/assets/merch-hoodie.webp"]}]
+    page.set_viewport_size({"width": width, "height": 1000})
+    for path, selector in (
+        ("/", ".site-card-media img"),
+        ("/dpo", ".site-card-media img"),
+        ("/merch", ".site-card-media img"),
+        ("/dpo/course-one", ".site-program-cover, .site-teacher-photo"),
+        ("/merch/bag-one", ".site-product-photo img"),
+    ):
+        page.goto(path)
+        images = page.locator(selector)
+        assert images.count() > 0
+        for image in images.all():
+            image.scroll_into_view_if_needed()
+            image.evaluate("image => image.decode()")
+            assert image.evaluate("image => image.clientWidth > 0 && image.clientHeight > 0")
+            assert image.evaluate("image => image.clientWidth <= image.naturalWidth + 1")
+            assert image.evaluate("image => image.clientHeight <= image.naturalHeight + 1")
+            if path in ("/", "/dpo", "/merch"):
+                assert image.evaluate(
+                    "image => image.clientWidth <= image.parentElement.clientWidth + 1 && image.clientHeight <= image.parentElement.clientHeight + 1"
+                )
+            assert image.evaluate(
+                "image => Math.abs(image.clientWidth / image.clientHeight - image.naturalWidth / image.naturalHeight) < .02"
+            )
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), path

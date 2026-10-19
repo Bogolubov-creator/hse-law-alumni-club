@@ -33,8 +33,8 @@
 <article class="site-catalog-card" data-reveal data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","category":item.category or "","price":item.price}|tojson }}'>
 {% set image = item.cover if kind=='dpo' else (item.images or [])|first %}
 {% if image|media %}
-<a href="/{{ kind }}/{{ item.slug }}">
-<img src="{{ image|media }}" alt="{{ item.title }}" loading="lazy" width="560" height="380">
+<a href="/{{ kind }}/{{ item.slug }}" class="site-card-media site-card-media--{{ 'program' if kind=='dpo' else 'product' }}">
+<img src="{{ image|media }}" alt="{{ item.title }}" loading="lazy" decoding="async" width="560" height="380">
 </a>
 {% endif %}
 <div>

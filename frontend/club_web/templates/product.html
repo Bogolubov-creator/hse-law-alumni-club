@@ -11,7 +11,7 @@
 <div class="site-gallery">
 {% for image in item.images or [] %}
 {% if image|media %}
-<img src="{{ image|media }}" alt="{{ item.title }}" width="800" height="800" loading="lazy">
+<div class="site-product-photo"><img src="{{ image|media }}" alt="{{ item.title }}" width="800" height="800" loading="lazy" decoding="async"></div>
 {% endif %}
 {% endfor %}
 </div>
