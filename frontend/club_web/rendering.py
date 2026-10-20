@@ -3,7 +3,17 @@ from pathlib import Path
 from django.template import engines
 from jinja2 import Environment
 
-from club_web.formatting import FORMAT_LABELS, date, media, page_items, payment_url, rub, safe_url
+from club_web.formatting import (
+    FORMAT_LABELS,
+    ORGANIZER_LABELS,
+    date,
+    media,
+    page_items,
+    payment_url,
+    program_organizer,
+    rub,
+    safe_url,
+)
 
 ROOT = Path(__file__).parent
 
@@ -14,7 +24,9 @@ def environment(**options):
     renderer.filters.update(
         rub=rub, date=date, safe_url=safe_url, payment_url=payment_url, media=media, page_items=page_items
     )
-    renderer.globals.update(format_labels=FORMAT_LABELS)
+    renderer.globals.update(
+        format_labels=FORMAT_LABELS, organizer_labels=ORGANIZER_LABELS, program_organizer=program_organizer
+    )
     return renderer
 
 

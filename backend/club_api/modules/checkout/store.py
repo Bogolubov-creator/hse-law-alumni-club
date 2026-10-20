@@ -8,6 +8,7 @@ from psycopg.types.json import Jsonb
 from club_api.core.errors import ApiError
 from club_api.db.queries import Query, acquire_lock
 from club_api.domain import effective_discount
+from club_api.modules.catalog.lookup import external_enrollment
 from club_api.modules.checkout.cart import locked_cart
 
 RESERVATION_BATCH_SIZE = 50
@@ -83,7 +84,9 @@ class Checkout:
                     not product
                     or product["status"] != "published"
                     or product["price"] != item["price"]
-                    or (item["type"] == "dpo" and (product["source_url"] or product["enrollment"] == "nonactual"))
+                    or (
+                        item["type"] == "dpo" and (external_enrollment(product) or product["enrollment"] == "nonactual")
+                    )
                 ):
                     raise ApiError(409, "Цена или доступность позиции изменились. Обновите корзину.")
                 if type(item["qty"]) is not int or not 1 <= item["qty"] <= 99:

@@ -9,7 +9,7 @@
 </div>
 <div class="dpo-filter-groups">
 {% for name,values in filters.items() %}<details><summary>{{ filter_labels[name] }} <span data-filter-selected="{{ name }}">{{ catalog_selected[name]|length or '' }}</span></summary>
-<fieldset><legend>{{ filter_labels[name] }}</legend>{% for value in values %}<label><input type="checkbox" name="{{ name }}" value="{{ value }}" {% if value in catalog_selected[name] %}checked{% endif %}><span>{{ format_labels.get(value, {'actual':'Набор открыт','nonactual':'Набор закрыт'}.get(value,value)) }}</span></label>{% endfor %}</fieldset>
+<fieldset><legend>{{ filter_labels[name] }}</legend>{% for value in values %}<label><input type="checkbox" name="{{ name }}" value="{{ value }}" {% if value in catalog_selected[name] %}checked{% endif %}><span>{{ organizer_labels.get(value, format_labels.get(value, {'actual':'Набор открыт','nonactual':'Набор закрыт'}.get(value,value))) }}</span></label>{% endfor %}</fieldset>
 </details>{% endfor %}
 </div>
 <div class="dpo-filter-footer">

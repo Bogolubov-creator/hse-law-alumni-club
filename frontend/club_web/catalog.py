@@ -3,10 +3,10 @@ from datetime import UTC, date, datetime
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
-from club_web.formatting import FORMAT_LABELS, MONTHS, rub
+from club_web.formatting import FORMAT_LABELS, MONTHS, ORGANIZER_LABELS, program_organizer, rub
 
 UPCOMING_LIMIT = 6
-FILTER_FIELDS = ("direction", "format", "document", "enrollment")
+FILTER_FIELDS = ("direction", "format", "document", "enrollment", "organizer")
 MONTH_NAMES = (
     "Январь",
     "Февраль",
@@ -92,6 +92,8 @@ def prepare_catalog(items, params, today=None):
         programs.append(
             {
                 **item,
+                "organizer": program_organizer(item),
+                "organizer_label": ORGANIZER_LABELS[program_organizer(item)],
                 "id": str(item.get("id") or item["slug"]),
                 "document": item.get("document") or "",
                 "price": item.get("price"),
@@ -177,8 +179,10 @@ def prepare_catalog(items, params, today=None):
         "audience_labels",
         "search_terms",
         "title_order",
+        "organizer",
+        "organizer_label",
     )
-    labels = {"actual": "Набор открыт", "nonactual": "Набор закрыт", **FORMAT_LABELS}
+    labels = {"actual": "Набор открыт", "nonactual": "Набор закрыт", **FORMAT_LABELS, **ORGANIZER_LABELS}
     chips = [
         {"name": name, "value": value, "label": labels.get(value, value), "href": catalog_link(params, name, value)}
         for name, values in choices.items()
@@ -190,7 +194,12 @@ def prepare_catalog(items, params, today=None):
         )
     return {
         "items": selected,
-        "filters": {field: sorted({str(item.get(field) or "") for item in programs} - {""}) for field in FILTER_FIELDS},
+        "filters": {
+            field: list(ORGANIZER_LABELS)
+            if field == "organizer"
+            else sorted({str(item.get(field) or "") for item in programs} - {""})
+            for field in FILTER_FIELDS
+        },
         "catalog_selected": choices,
         "catalog_chips": chips,
         "catalog_reset": catalog_link(

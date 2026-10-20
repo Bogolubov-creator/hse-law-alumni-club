@@ -205,6 +205,7 @@ urlpatterns += content_crud(
         "status",
         "enrollment",
         "source_url",
+        "hse_id",
         "dates",
         "document",
         "description",

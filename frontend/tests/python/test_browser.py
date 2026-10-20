@@ -1370,3 +1370,64 @@ def test_catalog_and_detail_photos_keep_shape_without_enlargement(page, site, wi
                 "image => Math.abs(image.clientWidth / image.clientHeight - image.naturalWidth / image.naturalHeight) < .02"
             )
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), path
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_program_organizers_and_enrollment_destinations(page, site, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    faculty = {
+        **PROGRAM,
+        "id": "faculty",
+        "slug": "faculty-course",
+        "title": "Программа факультета",
+        "hse_id": "123",
+        "source_url": "https://www.hse.ru/edu/dpo/123",
+    }
+    site[1]["/programs"] = [PROGRAM, faculty]
+    site[1]["/programs/faculty-course"] = faculty
+    page.goto("/dpo")
+    club = page.locator("[data-program-id='program-1']")
+    hse = page.locator("[data-program-id='faculty']")
+    expect(club.locator("[data-organizer='club']")).to_have_text("Клуб выпускников")
+    expect(club.get_by_role("button", name="В корзину", exact=True)).to_be_visible()
+    expect(hse.locator("[data-organizer='hse']")).to_have_text("Факультет права НИУ ВШЭ")
+    expect(hse.locator("[data-cart]")).to_have_count(0)
+    if width < 700:
+        page.locator("[data-dpo-filter-open]").click()
+    form = page.locator("[data-dpo-filters]")
+    form.locator("details").filter(has=page.locator("input[name='organizer']")).locator("summary").click()
+    form.locator("input[name='organizer'][value='hse']").check()
+    form.locator("[data-dpo-filter-apply]").click()
+    expect(page.locator("[data-catalog-count]")).to_have_text("Найдено: 1 из 2")
+    expect(page.locator("[data-program-id='faculty']")).to_be_visible()
+    expect(page.locator("[data-program-id='program-1']")).to_have_count(0)
+    page.goto("/dpo/faculty-course")
+    expect(page.get_by_role("link", name="Записаться на сайте ВШЭ ↗")).to_have_attribute("href", faculty["source_url"])
+    expect(page.locator("[data-cart]")).to_have_count(0)
+    expect(page.locator("#main")).to_contain_text("скидка Клуба здесь не применяется")
+    site[1]["/programs/faculty-course"] = {**faculty, "source_url": None}
+    page.reload()
+    expect(page.locator("[data-cart]")).to_have_count(0)
+    expect(page.get_by_text("Ссылка на запись уточняется у факультета.")).to_be_visible()
+    page.goto("/dpo/course-one")
+    expect(page.get_by_role("button", name="В корзину", exact=True)).to_be_visible()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_mirror_organizer_filter_and_picker_preserve_selection(chromium, mirror_site, width):
+    context = chromium.new_context(viewport={"width": width, "height": 900}, service_workers="block")
+    page = context.new_page()
+    page.add_init_script("localStorage.setItem('club_cookie_consent','accepted');")
+    page.goto(mirror_site + "dpo/?organizer=club")
+    expect(page.locator("[data-program-id]:visible")).to_have_count(0)
+    expect(page.locator("[data-catalog-empty]")).to_be_visible()
+    page.goto(mirror_site + "dpo/?organizer=hse")
+    expect(page.locator("[data-program-id]:visible")).to_have_count(31)
+    expect(page.locator("[data-program-id] [data-cart]")).to_have_count(0)
+    page.locator(".dpo-picker > summary").click()
+    page.locator("[data-dpo-picker] button").click()
+    assert "organizer=hse" in page.url
+    expect(page.locator("[data-program-id]:visible")).to_have_count(31)
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    context.close()

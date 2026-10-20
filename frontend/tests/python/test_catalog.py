@@ -111,3 +111,17 @@ def test_catalog_filters_and_upcoming_do_not_invent_dates():
     assert data["filters"]["document"] == ["Диплом"]
     assert data["program_data"][1]["price_label"] == "100 ₽"
     assert not any("dates" in row for row in data["program_data"])
+
+
+def test_organizer_filter_preserves_external_identity_without_a_source_link():
+    rows = [
+        {"slug": "club", "title": "Клуб"},
+        {"slug": "hse-link", "title": "Факультет", "source_url": "https://www.hse.ru/edu/dpo/1"},
+        {"slug": "hse-id", "title": "Факультет без ссылки", "hse_id": "2"},
+    ]
+    data = prepare_catalog(rows, {"organizer": ["hse"]})
+    assert {row["slug"] for row in data["items"]} == {"hse-link", "hse-id"}
+    assert data["catalog_chips"][0]["label"] == "Факультет права НИУ ВШЭ"
+    assert data["filters"]["organizer"] == ["club", "hse"]
+    assert prepare_catalog(rows, {"organizer": ["club"]})["items"][0]["slug"] == "club"
+    assert len(prepare_catalog(rows, {"organizer": ["club", "hse"]})["items"]) == 3
