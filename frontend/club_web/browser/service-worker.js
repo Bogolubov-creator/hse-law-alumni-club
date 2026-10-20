@@ -83,7 +83,7 @@ self.addEventListener("install", (e) => {
   e.waitUntil(
     caches.open(CACHE).then(async (c) => {
       await Promise.all(
-        PRECACHE.map((u) => c.add(u).catch(() => {})),
+        PRECACHE.map((u) => c.add(new Request(u, { cache: "reload" })).catch(() => {})),
       );
       await Promise.all(["./", "./saved"].map(async path => {
         const request = new Request(scoped(path), { credentials: "omit" });
@@ -128,7 +128,7 @@ self.addEventListener("fetch", (e) => {
       caches.open(CACHE).then((cache) => cache.match(e.request)).then(
         (hit) =>
           hit
-          || fetch(e.request).then((res) => {
+          || fetch(new Request(e.request, { cache: "reload" })).then((res) => {
             if (res.ok) {
               const copy = res.clone();
               e.waitUntil(caches.open(CACHE).then((c) => put(c, e.request, copy, MAX_ASSETS)).catch(() => {}));
