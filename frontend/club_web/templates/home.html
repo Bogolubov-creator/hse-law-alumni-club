@@ -48,7 +48,7 @@
 <div class="home-dpo__head">
 <h2>Продолжить <em>учиться</em>
 </h2>
-<p>Программы дополнительного профессионального образования факультета права.</p>
+<p>Программы Клуба выпускников и факультета права НИУ ВШЭ.</p>
 </div>
 <div class="home-dpo__grid">
 {% for program in featured %}
@@ -57,6 +57,7 @@
 {% if program.cover|media %}
 <span class="site-card-media site-card-media--program"><img src="{{ program.cover|media }}" alt="{{ program.title }}" width="560" height="380" loading="lazy" decoding="async"></span>
 {% endif %}
+<span class="dpo-organizer">{{ organizer_labels[program_organizer(program)] }}</span>
 <h3>{{ program.title }}</h3>
 </a>
 <p>{{ program.duration }} · {{ format_labels.get(program.format,program.format) }}</p>
@@ -121,7 +122,7 @@
 <div class="site-catalog">
 <article>
 <h3>Обучение</h3>
-<p>Программы ДПО с ценой выпускника после подтверждения учебным офисом.</p>
+<p>Программы Клуба оформляются здесь, программы факультета – на сайте ВШЭ.</p>
 <a href="/dpo">Выбрать программу →</a>
 </article>
 <article>
@@ -164,7 +165,7 @@
 </li>
 <li>
 <strong>Кабинет</strong>
-<span>Откроются цена выпускника на ДПО, запись на встречи и разделы клуба.</span>
+<span>Откроются скидка на программы Клуба, запись на встречи и разделы клуба.</span>
 </li>
 </ol>
 <a href="/join" class="foc home-btn" data-member-link>{{ cta.button or 'Подать заявку' }} →</a>

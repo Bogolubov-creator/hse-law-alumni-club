@@ -21,7 +21,7 @@
 </h2>
 <p>{{ 'Работа с выпускниками и материалами сайта.' if office else 'Знакомые лица, новые встречи и знания после выпуска.' }}</p>
 <div class="cabinet-gate__benefits">
-{% if office %}<span>Заявки и проверка выпускников</span><span>Программы, события и публикации</span><span>Поддержка и показатели клуба</span>{% else %}<span>Программы ДПО с ценой выпускника</span><span>События и подкасты клуба</span><span>Ваши заявки и статус участия</span>{% endif %}
+{% if office %}<span>Заявки и проверка выпускников</span><span>Программы, события и публикации</span><span>Поддержка и показатели клуба</span>{% else %}<span>Программы Клуба со скидкой выпускника</span><span>События и подкасты клуба</span><span>Ваши заявки и статус участия</span>{% endif %}
 </div>
 </aside>
 <form class="cabinet-gate__form" data-api="/auth/{{ 'admin-login' if office else 'login' }}" data-login="{{ 'office' if office else 'member' }}">
