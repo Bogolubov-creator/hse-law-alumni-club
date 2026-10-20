@@ -1,16 +1,45 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import empty,save,add_cart %}
 {% block content %}
+{% set filter_labels={'direction':'Направление','format':'Формат','document':'Документ','enrollment':'Набор','category':'Категория'} %}
 <main id="main" class="site-container">
 <header class="site-masthead">
 <h1>{{ title }}</h1>
 <p>{{ 'Программы факультета права. Цена выпускника доступна после подтверждения учебным офисом.' if kind == 'dpo' else 'Одежда и аксессуары с символикой клуба.' }}</p>
 </header>
-<form class="site-filters" method="get">
+{% if kind=='dpo' %}
+<details class="dpo-picker site-panel">
+<summary>Подобрать программу за три вопроса</summary>
+<form method="get" action="/dpo#program-list" data-dpo-picker>
+<input type="hidden" name="compare" value="{{ query.get('compare','') }}">
+{% for name,question in [('direction','1. Какая область права вас интересует?'),('document','2. Какой документ об обучении нужен?'),('format','3. Как вам удобно учиться?')] %}
+<label>{{ question }}<select name="{{ name }}"><option value="">Пока не определился</option>
+{% for value in filters[name] %}<option value="{{ value }}" {% if query.get(name)==value %}selected{% endif %}>{{ format_labels.get(value,value) }}</option>{% endfor %}
+</select></label>
+{% endfor %}
+<button class="site-primary">Показать подходящие программы</button>
+</form>
+</details>
+<section class="dpo-starts" aria-labelledby="dpo-starts-title">
+<h2 id="dpo-starts-title">Ближайшие старты</h2>
+<p>Программы с открытым набором и указанной датой начала.</p>
+<div class="dpo-starts-grid">
+{% for item in upcoming %}<article data-program-start="{{ item.start_day }}">
+<time datetime="{{ item.start_day }}">{{ item.start_label|date }}</time>
+<h3><a href="/dpo/{{ item.slug }}">{{ item.title }}</a></h3>
+<p>{{ item.price_label }}</p>
+</article>{% endfor %}
+</div>
+<p data-starts-empty {% if upcoming %}hidden{% endif %}>Ближайшие даты пока не объявлены. Программы с открытым набором можно найти в каталоге.</p>
+</section>
+<script type="application/json" id="program-data">{{ program_data|tojson }}</script>
+{% endif %}
+<form class="site-filters" method="get" id="program-list">
+{% if kind=='dpo' %}<input type="hidden" name="compare" value="{{ query.get('compare','') }}">{% endif %}
 <label>Поиск<input type="search" name="q" value="{{ query.get('q','') }}" placeholder="Название">
 </label>
 {% for name,values in filters.items() %}
-<label>{{ {'direction':'Направление','format':'Формат','enrollment':'Набор','category':'Категория'}[name] }}<select aria-label="{{ {'direction':'Направление','format':'Формат','enrollment':'Набор','category':'Категория'}[name] }}" name="{{ name }}">
+<label>{{ filter_labels[name] }}<select aria-label="{{ filter_labels[name] }}" name="{{ name }}">
 <option value="">Все</option>
 {% for value in values %}
 <option value="{{ value }}" {% if query.get(name)==value %}selected{% endif %}>{{ format_labels.get(value, {'actual':'Набор открыт','nonactual':'Набор закрыт'}.get(value,value)) }}</option>
@@ -30,7 +59,7 @@
 <p role="status">Найдено: {{ items|length }}</p>
 <div class="site-catalog">
 {% for item in items %}
-<article class="site-catalog-card" data-reveal data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","category":item.category or "","price":item.price}|tojson }}'>
+<article class="site-catalog-card" data-reveal data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","category":item.category or "","price":item.price,"document":item.document or ""}|tojson }}'>
 {% set image = item.cover if kind=='dpo' else (item.images or [])|first %}
 {% if image|media %}
 <a href="/{{ kind }}/{{ item.slug }}" class="site-card-media site-card-media--{{ 'program' if kind=='dpo' else 'product' }}">

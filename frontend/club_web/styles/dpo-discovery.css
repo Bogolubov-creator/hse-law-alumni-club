@@ -1,0 +1,15 @@
+.dpo-picker{margin:0 0 32px}
+.dpo-picker summary{cursor:pointer;font-size:20px;font-weight:600;min-height:44px;align-content:center}
+.dpo-picker form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding-top:24px}
+.dpo-picker label{min-width:0}
+.dpo-picker select{width:100%;margin-top:10px}
+.dpo-picker form>button{justify-self:start;grid-column:1/-1}
+.dpo-starts{margin:32px 0 40px}
+.dpo-starts-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.dpo-starts-grid article{min-width:0;border-top:2px solid var(--c-accent);padding:16px 0}
+.dpo-starts-grid time{font-weight:600;color:var(--c-accent-text)}
+.dpo-starts-grid h3{font-size:20px;line-height:1.4;margin:12px 0}
+.dpo-starts-grid p{font-weight:600;margin-bottom:0}
+#program-list{scroll-margin-top:140px}
+@media(max-width:900px){.dpo-picker form{grid-template-columns:1fr}.dpo-starts-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.dpo-starts-grid{grid-template-columns:1fr}.dpo-picker summary{font-size:18px}}
