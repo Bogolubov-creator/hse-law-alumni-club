@@ -111,6 +111,10 @@ async def test_legacy_node_hash_and_jwt_compatibility(database_app):
 @pytest.mark.asyncio
 async def test_registration_confirmation_and_secret_projection(database_app):
     app = database_app
+    _, previous_alumni_id = await fixture(app)
+    await app.state.database.execute(
+        "UPDATE alumni SET consent_version='2026-07-02' WHERE id=%s", (previous_alumni_id,)
+    )
     role_id = str(uuid4())
     await app.state.database.execute("INSERT INTO directus_roles(id,name) VALUES(%s,'alumni')", (role_id,))
     body = {
@@ -128,6 +132,15 @@ async def test_registration_confirmation_and_secret_projection(database_app):
         login = await client.post("/auth/login", json={"email": body["email"].upper(), "password": body["password"]})
         assert login.status_code == 200
         user = await app.state.auth.user(email=body["email"])
+        consents = await app.state.database.rows(
+            "SELECT consent_version,consent_at FROM alumni WHERE user_id=%s", (user["id"],)
+        )
+        assert consents[0]["consent_version"] == "2026-10-20"
+        assert consents[0]["consent_at"]
+        previous = await app.state.database.rows(
+            "SELECT consent_version FROM alumni WHERE id=%s", (previous_alumni_id,)
+        )
+        assert previous[0]["consent_version"] == "2026-07-02"
         users = await app.state.store.read("directus_users", filters={"id": {"_eq": user["id"]}})
         assert set(users[0]) == {"id", "email", "first_name", "last_name", "status", "role"}
         assert (await client.get("/ready")).status_code == 200

@@ -418,12 +418,12 @@ def test_support_launcher_clears_bottom_navigation_and_banners(page, width, pwa)
         page.wait_for_function(
             "() => document.querySelector('.club-crow-hit').getBoundingClientRect().bottom <= document.querySelector('.mobile-tabs').getBoundingClientRect().top"
         )
-    page.evaluate("document.querySelector('#cookies').hidden=false")
+    page.evaluate("document.querySelector('#cookie-banner').hidden=false")
     launcher = page.get_by_role("button", name="Открыть бота поддержки", exact=True)
     expect(launcher).to_be_visible()
-    expect(page.locator("#cookies")).to_be_visible()
+    expect(page.locator("#cookie-banner")).to_be_visible()
     page.wait_for_function(
-        "() => document.querySelector('.club-crow-hit').getBoundingClientRect().bottom <= document.querySelector('#cookies').getBoundingClientRect().top"
+        "() => document.querySelector('.club-crow-hit').getBoundingClientRect().bottom <= document.querySelector('#cookie-banner').getBoundingClientRect().top"
     )
     launcher.click()
     expect(page.locator("#support-bot")).to_be_visible()
@@ -558,6 +558,57 @@ def mirror_site(tmp_path):
     server.shutdown()
     thread.join(timeout=5)
     server.server_close()
+
+
+@pytest.mark.parametrize("width", [1440, 390])
+def test_legal_pages_and_separate_form_consent(page, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    for path in ("/terms", "/privacy", "/consent", "/confidential", "/requisites"):
+        assert page.goto(path).status == 200
+        expect(page.locator("main h1")).to_be_visible()
+        expect(page.locator("main")).to_contain_text("20 октября 2026 года")
+        expect(page.get_by_role("navigation", name="Правовые документы")).to_be_visible()
+        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+    page.goto("/privacy#cookies")
+    expect(page.locator("h2#cookies")).to_be_visible()
+    page.get_by_role("button", name="Cookies", exact=True).click()
+    expect(page.get_by_role("dialog", name="Согласие на использование cookies")).to_be_visible()
+    page.get_by_role("button", name="Только необходимые", exact=True).click()
+    expect(page.get_by_role("dialog", name="Согласие на использование cookies")).not_to_be_visible()
+    expect(page.locator("h2#cookies")).to_be_visible()
+    page.goto("/join")
+    checkbox = page.locator("input[name=consent_pdn]")
+    expect(checkbox).not_to_be_checked()
+    expect(page.locator(".site-consent a").first).to_have_attribute("href", "/consent#registration")
+    expect(page.locator(".site-consent")).not_to_contain_text("соглашение")
+    page.locator(".site-consent a").first.click()
+    expect(page.locator("#registration")).to_be_in_viewport()
+    page.goto("/dpo")
+    page.get_by_role("button", name="В корзину", exact=True).click()
+    page.goto("/cart")
+    expect(page.locator("input[name=consent_pdn]")).not_to_be_checked()
+    expect(page.locator(".site-consent a").first).to_have_attribute("href", "/consent#order")
+
+
+@pytest.mark.parametrize("width", [1440, 390])
+def test_mirror_legal_links_keep_base_and_consent_anchor(chromium, mirror_site, width):
+    context = chromium.new_context(viewport={"width": width, "height": 900}, reduced_motion="reduce")
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    assert page.goto(mirror_site + "join/").status == 200
+    page.locator(".site-consent a").first.click()
+    expect(page).to_have_url(mirror_site + "consent/#registration")
+    expect(page.locator("#registration")).to_be_in_viewport()
+    page.get_by_role("navigation", name="Правовые документы").get_by_role(
+        "link", name="Пользовательское соглашение"
+    ).click()
+    expect(page).to_have_url(mirror_site + "terms/")
+    expect(page.locator("main")).to_contain_text("Демонстрационное зеркало")
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+    assert not errors
+    context.close()
 
 
 @pytest.mark.parametrize("width", [1440, 390, 360])

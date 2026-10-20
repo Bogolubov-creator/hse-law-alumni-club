@@ -17,8 +17,9 @@ from club_api.modules.auth.service import auth_service, require_admin
 from club_api.modules.notifications.mail import EMAIL_CONFIRMATION_KIND
 from club_api.modules.telegram.signature import validate_init_data
 from club_api.observability.audit import audit
+from club_api.resources import shared_data
 
-PDN_POLICY_VERSION = "2026-07-02"
+PDN_POLICY_VERSION = shared_data("legal-data.json")["version"]
 RESEND_COOLDOWN_SECONDS = 600
 RESEND_CACHE_LIMIT = 10000
 ROUTE_LIMITS = {

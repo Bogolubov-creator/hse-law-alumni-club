@@ -28,6 +28,8 @@ PUBLIC_PAGES = {
     "/reset": ("auth.html", "Новый пароль"),
     "/confirm": ("auth.html", "Подтвердить почту"),
     "/privacy": ("legal/privacy.html", "Политика обработки персональных данных"),
+    "/terms": ("legal/terms.html", "Пользовательское соглашение"),
+    "/consent": ("legal/consent.html", "Согласие на обработку персональных данных"),
     "/confidential": ("legal/confidential.html", "Политика конфиденциальности"),
     "/requisites": ("legal/requisites.html", "Реквизиты"),
     "/support": ("support.html", "Поддержка клуба"),
@@ -134,6 +136,7 @@ async def context(api, path, params, authorized=False):
         "authorized": authorized,
         "status": 404 if template == "not-found.html" else 200,
         "domain": resource("domain-data.json"),
+        "legal": resource("legal-data.json"),
     }
     data["reason_labels"] = {
         **{rule["reason"]: rule["description"] for rule in data["domain"]["point_rules"]},
