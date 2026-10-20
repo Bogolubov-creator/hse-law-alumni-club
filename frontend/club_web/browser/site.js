@@ -1,6 +1,7 @@
 import { crowMascotApi } from "./crow-mascot.js";
 import { prepareMini } from "./mini.js";
 import { prepareDiscovery } from "./discovery.js";
+import { prepareCatalog } from "./catalog.js";
 
 const base = document.body.dataset.base || "/";
 const mirror = document.body.dataset.mirror === "true";
@@ -14,7 +15,6 @@ let mirrorApi = null;
 let botQueue = Promise.resolve();
 let readingPageSaved = false;
 let removedReading = null;
-const compare = new Set();
 
 function stored(key, fallback = null) {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -358,6 +358,7 @@ function openCabinetSection() {
 
 function setupPage() {
   prepareDiscovery(url, mirror);
+  prepareCatalog(url, notice);
   alignOfficeNavigation();
   openCabinetSection();
   const recent = document.querySelector("[data-reading-title]");
@@ -579,22 +580,6 @@ document.addEventListener("click", async event => {
       const data = reading(true); data.recent = []; writeReading(data);
     } else if (action === "copy" || action === "copy-invite") {
       await copyText(action === "copy" ? target.dataset.value : location.origin + url("join?ref=" + encodeURIComponent(target.dataset.code)), target);
-    } else if (action === "compare") {
-      const id = target.dataset.id;
-      if (compare.has(id)) compare.delete(id); else { if (compare.size >= 3) throw new Error("Можно сравнить до трёх программ."); compare.add(id); }
-      target.setAttribute("aria-pressed", String(compare.has(id)));
-      document.querySelector("#program-compare").hidden = !compare.size;
-    } else if (action === "clear-compare") {
-      compare.clear(); document.querySelectorAll("[data-action='compare']").forEach(button => button.setAttribute("aria-pressed", "false")); document.querySelector("#program-compare").hidden = true;
-    } else if (action === "show-compare") {
-      const programs = (await request("/programs")).filter(item => compare.has(item.id));
-      const container = document.querySelector("#dialog-content"); container.replaceChildren(element("h2", "Сравнение программ"));
-      for (const program of programs) {
-        const article = element("article", undefined, { class: "site-panel" });
-        article.append(element("h3", program.title), element("p", program.duration + " · " + program.format), element("p", new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB" }).format(program.price / 100)), element("a", "Подробнее", { href: url("dpo/" + program.slug) }));
-        container.append(article);
-      }
-      document.querySelector("#site-dialog").showModal();
     } else if (action === "media-preview") {
       const response = await fetch(url("api/admin/media/" + target.dataset.fileId + "/content"), { headers: { authorization: `Bearer ${token(true)}` } });
       if (!response.ok) throw new Error("Не удалось открыть файл. Проверьте доступ и повторите.");

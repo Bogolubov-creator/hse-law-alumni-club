@@ -6,6 +6,7 @@ import socket
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -235,8 +236,8 @@ def test_catalog_filters_search_compare_and_cart(page, site):
     page.goto("/dpo")
     page.get_by_role("button", name="Сравнить", exact=True).click()
     page.get_by_role("button", name="Сравнить выбранные программы", exact=True).click()
-    expect(page.locator("#site-dialog")).to_contain_text(PROGRAM["title"])
-    page.get_by_role("button", name="Закрыть окно", exact=True).click()
+    expect(page.get_by_role("dialog", name="Сравнение программ")).to_contain_text(PROGRAM["title"])
+    page.get_by_role("button", name="Закрыть сравнение", exact=True).click()
     page.get_by_role("button", name="В корзину", exact=True).click()
     expect(page.locator("[data-cart-count]").first).to_have_text("1")
     page.goto("/cart")
@@ -244,6 +245,89 @@ def test_catalog_filters_search_compare_and_cart(page, site):
     assert next(write for write in site[2] if write["path"] == "/cart")["body"]["ref_id"] == PROGRAM["slug"]
     page.goto("/search?q=правовая")
     expect(page.locator("#main")).to_contain_text(PROGRAM["title"])
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_dpo_finder_starts_and_shareable_comparison(page, site, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    rows = [
+        {
+            **PROGRAM,
+            "id": f"p-{i}",
+            "slug": f"program-{i}",
+            "title": f"Программа {i}",
+            "document": "Диплом" if i % 2 else "Удостоверение",
+            "dates": {"start": "24 октября 2099"},
+            "format": "online" if i % 2 else "offline",
+        }
+        for i in range(4)
+    ]
+    rows[0]["dates"] = {"start": "19 октября 2000"}
+    rows[2]["enrollment"] = "nonactual"
+    site[1]["/programs"] = rows
+    page.goto("/dpo")
+    expect(page.locator("[data-program-start]")).to_have_count(2)
+    page.locator(".dpo-picker summary").click()
+    picker = page.locator("[data-dpo-picker]")
+    picker.get_by_label("2. Какой документ об обучении нужен?").select_option("Диплом")
+    picker.get_by_label("3. Как вам удобно учиться?").select_option("online")
+    picker.get_by_role("button").click()
+    expect(page.locator("[data-catalog-row]")).to_have_count(2)
+    page.locator("[data-action='compare']").first.click()
+    expect(page).to_have_url(re.compile("compare=program-1"))
+    page.reload()
+    expect(page.locator("[data-action='compare']").first).to_have_attribute("aria-pressed", "true")
+    page.locator("[data-action='compare']").nth(1).click()
+    page.locator("[data-action='show-compare']").click()
+    dialog = page.get_by_role("dialog", name="Сравнение программ")
+    expect(dialog.get_by_role("cell", name="Диплом", exact=True)).to_have_count(2)
+    expect(dialog.get_by_role("cell", name="онлайн", exact=True)).to_have_count(2)
+    page.evaluate("() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denied')); }")
+    dialog.get_by_role("button", name="Скопировать ссылку на сравнение").click()
+    share = dialog.get_by_label("Ссылка для копирования").input_value()
+    assert "compare=program-1%2Cprogram-3" in share
+    page.keyboard.press("Escape")
+    expect(page.locator("[data-action='show-compare']")).to_be_focused()
+    page.goto(share)
+    expect(page.locator("[data-action='compare'][aria-pressed='true']")).to_have_count(2)
+    page.locator("[data-action='compare']").first.click()
+    page.locator("[data-action='compare']").nth(2).click()
+    expect(page.locator("#toast")).to_contain_text("до трёх программ")
+    expect(page.locator("[data-action='compare'][aria-pressed='true']")).to_have_count(3)
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+def test_dpo_mirror_picker_compare_and_stale_dates(chromium, mirror_site):
+    page = chromium.new_page(viewport={"width": 390, "height": 844})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(mirror_site + "dpo/?compare=invalid,invalid")
+    expect(page.locator("#program-compare")).to_be_hidden()
+    page.locator(".dpo-picker summary").click()
+    picker = page.locator("[data-dpo-picker]")
+    document = picker.locator("select[name='document'] option").nth(1).get_attribute("value")
+    picker.locator("select[name='document']").select_option(document)
+    picker.get_by_role("button").click()
+    visible = page.locator("[data-catalog-row]:visible")
+    assert visible.count() > 0
+    assert all(json.loads(row.get_attribute("data-catalog-row"))["document"] == document for row in visible.all())
+    picker.locator("select[name='direction']").select_option("Право")
+    picker.get_by_role("button").click()
+    expect(page.locator("[data-catalog-empty]")).to_be_visible()
+    picker.locator("select[name='direction']").select_option("")
+    picker.get_by_role("button").click()
+    visible.first.locator("[data-action='compare']").click()
+    page.reload()
+    expect(page.locator("[data-action='compare'][aria-pressed='true']")).to_have_count(1)
+    page.locator("[data-action='show-compare']").click()
+    expect(page.get_by_role("dialog", name="Сравнение программ")).to_contain_text(document)
+    page.keyboard.press("Escape")
+    page.clock.install(time=datetime(2100, 1, 1))
+    page.reload()
+    expect(page.locator("[data-program-start]:visible")).to_have_count(0)
+    expect(page.locator("[data-starts-empty]")).to_be_visible()
+    assert not errors
+    page.close()
 
 
 def test_checkout_error_keeps_contacts_and_replay_key(page, site):

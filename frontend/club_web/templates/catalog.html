@@ -13,7 +13,7 @@
 <form method="get" action="/dpo#program-list" data-dpo-picker>
 <input type="hidden" name="compare" value="{{ query.get('compare','') }}">
 {% for name,question in [('direction','1. Какая область права вас интересует?'),('document','2. Какой документ об обучении нужен?'),('format','3. Как вам удобно учиться?')] %}
-<label>{{ question }}<select name="{{ name }}"><option value="">Пока не определился</option>
+<label>{{ question }}<select name="{{ name }}" aria-label="{{ question }}"><option value="">Пока не определился</option>
 {% for value in filters[name] %}<option value="{{ value }}" {% if query.get(name)==value %}selected{% endif %}>{{ format_labels.get(value,value) }}</option>{% endfor %}
 </select></label>
 {% endfor %}
@@ -56,6 +56,11 @@
 <button>Показать</button>
 <a href="{{ path }}">Сбросить</a>
 </form>
+{% if kind=='dpo' %}<aside id="program-compare" class="dpo-compare-bar site-panel" aria-label="Выбранные программы" hidden>
+<p data-compare-count role="status"></p><div data-compare-selected></div>
+<button data-action="show-compare">Сравнить выбранные программы</button>
+<button data-action="clear-compare">Очистить</button>
+</aside>{% endif %}
 <p role="status">Найдено: {{ items|length }}</p>
 <div class="site-catalog">
 {% for item in items %}
@@ -84,13 +89,20 @@
 </div>
 </div>
 </article>
-{% else %}{{ empty('По выбранным фильтрам ничего не найдено.') }}{% endfor %}
+{% endfor %}
+<div data-catalog-empty {% if items %}hidden{% endif %}><p>По выбранным фильтрам ничего не найдено.</p><a href="{{ path }}">Сбросить фильтры</a></div>
 </div>
 {% if kind=='dpo' %}
-<div id="program-compare" hidden>
-<button data-action="show-compare">Сравнить выбранные программы</button>
-<button data-action="clear-compare">Очистить</button>
-</div>
+
+<dialog id="program-compare-dialog" aria-labelledby="program-compare-title">
+<header><h2 id="program-compare-title">Сравнение программ</h2><button type="button" data-compare-close aria-label="Закрыть сравнение">×</button></header>
+<p>Стоимость указана без персональной скидки. Условия уточняются при оформлении.</p>
+<p class="dpo-compare-hint">Таблицу можно прокручивать вправо и влево.</p>
+<div class="dpo-compare-scroll" tabindex="0" role="region" aria-label="Параметры программ"><table><caption>Сравнение выбранных программ</caption><thead></thead><tbody></tbody></table></div>
+<button type="button" data-compare-copy>Скопировать ссылку на сравнение</button>
+<label data-compare-fallback hidden>Ссылка для копирования<input readonly type="text"></label>
+<p data-compare-message role="status"></p>
+</dialog>
 {% endif %}
 </main>
 {% endblock %}
