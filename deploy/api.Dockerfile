@@ -3,7 +3,7 @@ RUN apk add --no-cache build-base mariadb-connector-c-dev pkgconf
 RUN pip install --no-cache-dir uv==0.13.0
 WORKDIR /repo/backend
 COPY backend/pyproject.toml backend/uv.lock ./
-COPY data/domain-data.json data/faq-data.json /repo/data/
+COPY data/domain-data.json data/faq-data.json data/legal-data.json /repo/data/
 COPY backend/club_api ./club_api
 RUN uv sync --frozen --no-dev --no-editable --python /usr/local/bin/python
 RUN .venv/bin/python -m compileall -q -b -s /repo -p /app .venv/lib/python3.14/site-packages/club_api \

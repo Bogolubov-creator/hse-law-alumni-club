@@ -38,9 +38,9 @@
 </form>
 </div>
 {% endmacro %}
-{% macro consent() %}
+{% macro consent(purpose='registration') %}
 <label class="site-consent">
-<input type="checkbox" name="consent_pdn" required>Согласен на обработку персональных данных в соответствии с <a href="/privacy">политикой</a>
+<input type="checkbox" name="consent_pdn" required>Даю <a href="/consent#{{ purpose }}">согласие на обработку персональных данных</a>. <a href="/privacy">Политика обработки данных</a>
 </label>
 <input type="text" name="website" class="site-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
 {% endmacro %}

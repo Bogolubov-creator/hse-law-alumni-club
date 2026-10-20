@@ -150,6 +150,9 @@
 <a href="/privacy">Политика обработки персональных данных</a>
 </li>
 <li>
+<a href="/terms">Пользовательское соглашение</a>
+</li>
+<li>
 <a href="/confidential">Конфиденциальность</a>
 </li>
 <li>
@@ -162,7 +165,7 @@
 </div>
 <div class="club-footer__legal">
 <span>© 2026 Клуб выпускников факультета права Вышки</span>
-<p>АНО «Клуб выпускников факультета права НИУ ВШЭ» · ОГРН 1257700005551 · ИНН 9707041865</p>
+<p>{{ legal.operator.short_name }} · ОГРН {{ legal.operator.ogrn }} · ИНН {{ legal.operator.inn }}</p>
 </div>
 </div>
 </footer>
@@ -208,7 +211,7 @@
 <div id="dialog-content">
 </div>
 </dialog>
-<aside class="club-cookie-banner" id="cookies" role="dialog" aria-label="Согласие на использование cookies" hidden>
+<aside class="club-cookie-banner" id="cookie-banner" role="dialog" aria-label="Согласие на использование cookies" hidden>
 <p class="club-cookie-banner__text">Необходимое хранилище обеспечивает вход и работу корзины. С вашего согласия учитываем обезличенные просмотры страниц. <a href="/privacy#cookies">Подробнее</a>
 </p>
 <div class="club-cookie-banner__actions">

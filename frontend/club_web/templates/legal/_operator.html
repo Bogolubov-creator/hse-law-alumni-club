@@ -1,0 +1,4 @@
+<p>{{ legal.operator.name }} ({{ legal.operator.short_name }}), ОГРН {{ legal.operator.ogrn }}, ИНН {{ legal.operator.inn }}, КПП {{ legal.operator.kpp }}.</p>
+<p>Адрес для корреспонденции: {{ legal.operator.address }}.</p>
+{% if legal.operator.email %}<p>Электронная почта для обращений: <a href="mailto:{{ legal.operator.email }}">{{ legal.operator.email }}</a>.</p>{% endif %}
+<p>Если форма обращений включена, можно также воспользоваться <a href="/support">поддержкой сайта</a>. Для запросов о данных укажите тему «Персональные данные».</p>

@@ -534,10 +534,10 @@ document.addEventListener("click", async event => {
       if (action === "logout") store("club_cart", null);
       await refresh();
       if (failure) throw failure;
-    } else if (action === "cookies") document.querySelector("#cookies").hidden = false;
+    } else if (action === "cookies") document.querySelector("#cookie-banner").hidden = false;
     else if (action.startsWith("cookies-")) {
       store("club_cookie_consent", action === "cookies-all" ? "all" : "essential");
-      document.querySelector("#cookies").hidden = true;
+      document.querySelector("#cookie-banner").hidden = true;
       if (action === "cookies-all") void pageview();
     } else if (action.startsWith("vision")) vision(action);
     else if (action === "save") {
@@ -669,9 +669,9 @@ try {
   for (const [key, css] of [["images", "vis-noimg"], ["serif", "vis-serif"], ["spacing", "vis-spacing"]]) html.classList.toggle(css, key === "images" ? settings.images === false : !!settings[key]);
   document.querySelector("#vision").hidden = !settings.on;
 } catch {}
-document.querySelector("#cookies").hidden = ["all", "essential", "0", "1"].includes(stored("club_cookie_consent"));
+document.querySelector("#cookie-banner").hidden = ["all", "essential", "0", "1"].includes(stored("club_cookie_consent"));
 prepareMini(currentPath(), url);
-const chromeSizes = [[".mobile-tabs", "--tabs-h", 0], ["#cookies", "--cookie-h", 32], ["#install-app", "--install-h", 32]];
+const chromeSizes = [[".mobile-tabs", "--tabs-h", 0], ["#cookie-banner", "--cookie-h", 32], ["#install-app", "--install-h", 32]];
 const measureChrome = () => {
   for (const [selector, property, gap] of chromeSizes) {
     const node = document.querySelector(selector);

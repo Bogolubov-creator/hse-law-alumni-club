@@ -42,7 +42,7 @@
 </select>
 </label>{{ field('address','Адрес доставки',required=false) }}{% else %}
 <input type="hidden" name="fulfillment" value="pickup">
-{% endif %}{{ field('comment','Комментарий',type='textarea',required=false) }}{{ consent() }}<button class="site-primary">Отправить заявку</button>
+{% endif %}{{ field('comment','Комментарий',type='textarea',required=false) }}{{ consent('order') }}<button class="site-primary">Отправить заявку</button>
 <p role="alert" data-error hidden>
 </p>
 </form>
