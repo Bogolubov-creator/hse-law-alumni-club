@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, Stream
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_safe
 
+from club_web.catalog import FILTER_FIELDS
 from club_web.client import Api, forwarded_headers
 from club_web.offline import can_save_page
 from club_web.pages import context
@@ -95,9 +96,10 @@ async def api_proxy(request, path):
 
 async def render_page(request, path, *, fragment):
     supplied = forwarded_headers(request)
-    data = await context(
-        Api(request.services.client, supplied), "/" + path, request.GET.dict(), "authorization" in supplied
-    )
+    params = request.GET.dict()
+    if path.strip("/") == "dpo":
+        params.update({name: request.GET.getlist(name) for name in FILTER_FIELDS if name in request.GET})
+    data = await context(Api(request.services.client, supplied), "/" + path, params, "authorization" in supplied)
     if fragment and data.get("access_error") == 401:
         return JsonResponse({"error": "Сессия завершилась. Войдите снова."}, status=401)
     data.update(request=request, fragment=fragment, base="/", mirror=False)

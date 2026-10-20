@@ -14,7 +14,7 @@
 <input type="hidden" name="compare" value="{{ query.get('compare','') }}">
 {% for name,question in [('direction','1. Какая область права вас интересует?'),('document','2. Какой документ об обучении нужен?'),('format','3. Как вам удобно учиться?')] %}
 <label>{{ question }}<select name="{{ name }}" aria-label="{{ question }}"><option value="">Пока не определился</option>
-{% for value in filters[name] %}<option value="{{ value }}" {% if query.get(name)==value %}selected{% endif %}>{{ format_labels.get(value,value) }}</option>{% endfor %}
+{% for value in filters[name] %}<option value="{{ value }}" {% if value in catalog_selected[name] %}selected{% endif %}>{{ format_labels.get(value,value) }}</option>{% endfor %}
 </select></label>
 {% endfor %}
 <button class="site-primary">Показать подходящие программы</button>
@@ -31,9 +31,19 @@
 </article>{% endfor %}
 </div>
 <p data-starts-empty {% if upcoming %}hidden{% endif %}>Ближайшие даты пока не объявлены. Программы с открытым набором можно найти в каталоге.</p>
+{% if start_months %}
+<details class="dpo-calendar"><summary>Все даты начала по месяцам</summary>
+<nav aria-label="Месяцы начала обучения" class="dpo-months">{% for month in start_months %}<a href="#starts-{{ month.key }}" data-start-month-link="{{ month.key }}">{{ month.label }}</a>{% endfor %}</nav>
+{% for month in start_months %}<section id="starts-{{ month.key }}" data-start-month="{{ month.key }}" aria-labelledby="month-{{ month.key }}"><h3 id="month-{{ month.key }}">{{ month.label }}</h3>
+<div class="dpo-month-grid">{% for item in month['items'] %}<a href="/dpo/{{ item.slug }}" data-calendar-start="{{ item.start_day }}"><time datetime="{{ item.start_day }}">{{ item.start_label|date }}</time><strong>{{ item.title }}</strong><span>{{ item.direction }}</span><span>{{ item.format_label }} · {{ item.price_label }}</span></a>{% endfor %}</div>
+</section>{% endfor %}
+</details>{% endif %}
 </section>
-<script type="application/json" id="program-data">{{ program_data|tojson }}</script>
+<script type="application/json" id="program-data" data-search-endings="{{ catalog_search_endings }}">{{ program_data|tojson }}</script>
 {% endif %}
+{% if kind=='dpo' %}
+{% include 'catalog-filters.html' %}
+{% else %}
 <form class="site-filters" method="get" id="program-list">
 {% if kind=='dpo' %}<input type="hidden" name="compare" value="{{ query.get('compare','') }}">{% endif %}
 <label>Поиск<input type="search" name="q" value="{{ query.get('q','') }}" placeholder="Название">
@@ -56,15 +66,16 @@
 <button>Показать</button>
 <a href="{{ path }}">Сбросить</a>
 </form>
+{% endif %}
 {% if kind=='dpo' %}<aside id="program-compare" class="dpo-compare-bar site-panel" aria-label="Выбранные программы" hidden>
 <p data-compare-count role="status"></p><div data-compare-selected></div>
 <button data-action="show-compare">Сравнить выбранные программы</button>
 <button data-action="clear-compare">Очистить</button>
 </aside>{% endif %}
-<p role="status">Найдено: {{ items|length }}</p>
+<p role="status" {% if kind=='dpo' %}data-catalog-count{% endif %}>Найдено: {{ items|length }}{% if kind=='dpo' %} из {{ catalog_total }}{% endif %}</p>
 <div class="site-catalog">
 {% for item in items %}
-<article class="site-catalog-card" data-reveal data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","category":item.category or "","price":item.price,"document":item.document or ""}|tojson }}'>
+<article class="site-catalog-card" data-reveal {% if kind=='dpo' %}data-program-id="{{ item.id }}"{% endif %} data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","category":item.category or "","price":item.price,"document":item.document or ""}|tojson }}'>
 {% set image = item.cover if kind=='dpo' else (item.images or [])|first %}
 {% if image|media %}
 <a href="/{{ kind }}/{{ item.slug }}" class="site-card-media site-card-media--{{ 'program' if kind=='dpo' else 'product' }}">
@@ -80,7 +91,8 @@
 <p>{{ format_labels.get(item.format,item.format) }} · {{ item.duration }}</p>
 <p>{{ 'Набор закрыт' if item.enrollment=='nonactual' else 'Набор открыт' }}</p>
 {% endif %}
-<p class="site-price">{{ item.price|rub }}</p>
+{% if kind=='dpo' and item.start_label %}<p class="dpo-card-start">Начало: {{ item.start_label|date }}</p>{% endif %}
+<p class="site-price">{{ item.price_label if kind=='dpo' else item.price|rub }}</p>
 <div class="site-actions">
 <a href="/{{ kind }}/{{ item.slug }}" class="site-primary">Подробнее</a>{{ save('/'+kind+'/'+item.slug,item.title,kind) }}{% if kind=='dpo' and not item.source_url and item.enrollment!='nonactual' %}{{ add_cart(item,kind) }}{% endif %}
 {% if kind=='dpo' %}
@@ -97,6 +109,7 @@
 <dialog id="program-compare-dialog" aria-labelledby="program-compare-title">
 <header><h2 id="program-compare-title">Сравнение программ</h2><button type="button" data-compare-close aria-label="Закрыть сравнение">×</button></header>
 <p>Стоимость указана без персональной скидки. Условия уточняются при оформлении.</p>
+<p>Различающиеся параметры отмечены подписью «Различается».</p>
 <p class="dpo-compare-hint">Таблицу можно прокручивать вправо и влево.</p>
 <div class="dpo-compare-scroll" tabindex="0" role="region" aria-label="Параметры программ"><table><caption>Сравнение выбранных программ</caption><thead></thead><tbody></tbody></table></div>
 <button type="button" data-compare-copy>Скопировать ссылку на сравнение</button>

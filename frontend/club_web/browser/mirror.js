@@ -7,8 +7,8 @@ let readPaths = new Set();
 function apply() {
   const focus = document.activeElement;
   calendar();
-  for (const input of document.querySelectorAll("form[method='get'] [name],form[role='search'] [name]")) input.value = query.get(input.name) || input.tagName === "SELECT" && input.options[0].value || "";
-  const cards = [...document.querySelectorAll("#main [data-catalog-row],#main [data-change-row],#main [data-search-row],#main [data-office-row]")];
+  for (const input of document.querySelectorAll("form[method='get'] [name],form[role='search'] [name]")) if (!input.closest("[data-dpo-filters],[data-dpo-picker]")) input.value = query.get(input.name) || input.tagName === "SELECT" && input.options[0].value || "";
+  const cards = [...document.querySelectorAll("#main [data-catalog-row],#main [data-change-row],#main [data-search-row],#main [data-office-row]")].filter(card => !card.hasAttribute("data-program-id"));
   let count = 0;
   for (const card of cards) {
     const record = card.dataset.catalogRow ? JSON.parse(card.dataset.catalogRow) : card.dataset.changeRow ? JSON.parse(card.dataset.changeRow) : card.dataset.officeRow ? JSON.parse(card.dataset.officeRow) : { title: card.dataset.searchText || card.textContent };
@@ -61,10 +61,10 @@ function apply() {
       }
     }
   }
-  const status = document.querySelector("[data-changes-count],#main > p[role='status']");
+  const status = document.querySelector("[data-changes-count],#main > p[role='status']:not([data-catalog-count])");
   if (status) status.textContent = "Найдено: " + count;
   const catalogEmpty = document.querySelector("[data-catalog-empty]");
-  if (catalogEmpty) catalogEmpty.hidden = count !== 0;
+  if (catalogEmpty && path !== "/dpo") catalogEmpty.hidden = count !== 0;
   const officeCount = document.querySelector("[data-office-count]");
   if (officeCount) officeCount.textContent = "Показано: " + count + " из " + cards.length;
   const officeEmpty = document.querySelector("[data-office-empty]");
@@ -74,6 +74,7 @@ function apply() {
 }
 
 document.addEventListener("submit", event => {
+  if (event.target.matches("[data-dpo-filters],[data-dpo-picker]")) return;
   if (!event.target.matches("form[method='get'],form[role='search']") || event.target.closest("#search-dialog")) return;
   event.preventDefault();
   for (const name of [...query.keys()]) query.delete(name);

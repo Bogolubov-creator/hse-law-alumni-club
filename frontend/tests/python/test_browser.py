@@ -301,6 +301,96 @@ def test_dpo_finder_starts_and_shareable_comparison(page, site, width):
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
+@pytest.mark.parametrize("width", [320, 768, 1440])
+def test_dpo_multiple_filters_search_and_mobile_cancel(page, site, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    site[1]["/programs"] = [
+        {
+            **PROGRAM,
+            "id": f"multi-{i}",
+            "slug": f"multi-{i}",
+            "title": f"Курс {i}",
+            "format": format,
+            "document": "Диплом",
+            "modules": [{"title": "Налоговые проверки"}],
+            "teachers": [{"name": "Анна Семёнова"}],
+            "audience": ["Руководителям"],
+        }
+        for i, format in enumerate(("online", "offline", "blended"))
+    ]
+    page.goto("/dpo?format=online&format=offline&document=Диплом&q=налог+проверка&compare=multi-0,multi-1")
+    expect(page.locator("[data-catalog-row]")).to_have_count(2)
+    expect(page.locator("[data-catalog-count]")).to_have_text("Найдено: 2 из 3")
+    form = page.locator("[data-dpo-filters]")
+    launch = page.locator("[data-dpo-filter-open]")
+    if width == 320:
+        launch.click()
+        expect(page.get_by_role("dialog", name="Подбор программы")).to_be_visible()
+        form.get_by_role("searchbox").fill("несуществующее")
+        expect(form.locator("[data-dpo-filter-preview]")).to_have_text("Подходит программ: 0")
+        page.keyboard.press("Escape")
+        expect(launch).to_be_focused()
+        launch.click()
+        expect(form.get_by_role("searchbox")).to_have_value("налог проверка")
+    form.locator("summary").filter(has_text="Формат").click()
+    form.get_by_role("checkbox", name="смешанный", exact=True).check()
+    form.get_by_role("searchbox").fill("семенова")
+    form.get_by_role("button", name="Показать", exact=True).click()
+    expect(page.locator("[data-catalog-row]")).to_have_count(3)
+    assert len(page.url.split("format=")) == 4
+    page.locator("[data-action='show-compare']").click()
+    comparison = page.get_by_role("dialog", name="Сравнение программ")
+    expect(comparison.get_by_role("cell", name="Анна Семёнова", exact=True)).to_have_count(2)
+    expect(comparison.get_by_role("cell", name="Налоговые проверки", exact=True)).to_have_count(2)
+    expect(comparison.locator(".dpo-compare-different")).to_have_count(1)
+    page.keyboard.press("Escape")
+    page.get_by_role("link", name="Убрать фильтр: онлайн", exact=True).click()
+    expect(page.locator("[data-catalog-row]")).to_have_count(2)
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_dpo_mirror_multi_selection_search_and_history(chromium, mirror_site, width):
+    page = chromium.new_page(viewport={"width": width, "height": 1000})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(mirror_site + "dpo/?format=online&format=offline&q=право")
+    form = page.locator("[data-dpo-filters]")
+    if width == 390:
+        page.locator("[data-dpo-filter-open]").click()
+    form.locator("summary").filter(has_text="Формат").click()
+    expect(form.get_by_role("checkbox", name="онлайн", exact=True)).to_be_checked()
+    expect(form.get_by_role("checkbox", name="очно", exact=True)).to_be_checked()
+    form.get_by_role("checkbox", name="смешанный", exact=True).check()
+    form.get_by_role("searchbox").fill("будник")
+    form.get_by_role("button", name="Показать", exact=True).click()
+    visible = page.locator("[data-program-id]:visible")
+    expect(visible).not_to_have_count(0)
+    for card in visible.all():
+        record = json.loads(card.get_attribute("data-catalog-row"))
+        assert record["format"] in ("online", "offline", "blended")
+    expect(page.locator("[data-dpo-chips]")).to_contain_text("Поиск: будник")
+    page.reload()
+    expect(visible).not_to_have_count(0)
+    page.get_by_role("link", name="Убрать фильтр: онлайн", exact=True).click()
+    expect(page.get_by_role("link", name="Убрать фильтр: онлайн", exact=True)).to_have_count(0)
+    page.go_back()
+    expect(page.get_by_role("link", name="Убрать фильтр: онлайн", exact=True)).to_be_visible()
+    page.locator(".dpo-calendar>summary").click()
+    expect(page.locator("[data-calendar-start]:visible").first).to_be_visible()
+    if width == 1440:
+        page.goto(mirror_site + "dpo/?pwa=1")
+        page.locator("[data-dpo-filter-open]").click()
+        dialog = page.get_by_role("dialog", name="Подбор программы")
+        expect(dialog).to_be_visible()
+        assert dialog.bounding_box()["width"] <= 430
+        page.keyboard.press("Escape")
+        expect(page.locator("[data-dpo-filter-open]")).to_be_focused()
+    assert not errors
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    page.close()
+
+
 def test_dpo_mirror_picker_compare_and_stale_dates(chromium, mirror_site):
     page = chromium.new_page(viewport={"width": 390, "height": 844})
     errors = []
@@ -688,9 +778,11 @@ def test_mirror_preserves_filters_cart_calendar_and_subscription(chromium, mirro
     page.on("request", lambda request: writes.append(request.url) if request.method not in ("GET", "HEAD") else None)
     page.route("https://telegram.org/**", lambda route: route.abort())
     page.goto(mirror_site + "dpo/")
+    page.get_by_role("button", name=re.compile("Фильтры и поиск")).click()
     page.get_by_role("searchbox", name="Поиск", exact=True).fill("несуществующая программа")
     page.get_by_role("button", name="Показать", exact=True).click()
     expect(page.locator("[data-catalog-row]:visible")).to_have_count(0)
+    page.get_by_role("button", name=re.compile("Фильтры и поиск")).click()
     page.get_by_role("searchbox", name="Поиск", exact=True).fill("")
     page.get_by_role("button", name="Показать", exact=True).click()
     page.goto(mirror_site + "merch/hoodie-faculty/")
