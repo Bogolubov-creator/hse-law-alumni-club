@@ -352,6 +352,7 @@ def test_dpo_multiple_filters_search_and_mobile_cancel(page, site, width):
 @pytest.mark.parametrize("width", [390, 1440])
 def test_dpo_mirror_multi_selection_search_and_history(chromium, mirror_site, width):
     page = chromium.new_page(viewport={"width": width, "height": 1000})
+    page.clock.install(time=datetime(2026, 10, 20, 12))
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(mirror_site + "dpo/?format=online&format=offline&q=право")
