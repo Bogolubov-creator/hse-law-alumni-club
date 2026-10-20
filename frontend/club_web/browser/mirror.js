@@ -5,6 +5,7 @@ const query = new URLSearchParams(location.search);
 let readPaths = new Set();
 
 function apply() {
+  const focus = document.activeElement;
   calendar();
   for (const input of document.querySelectorAll("form[method='get'] [name],form[role='search'] [name]")) input.value = query.get(input.name) || input.tagName === "SELECT" && input.options[0].value || "";
   const cards = [...document.querySelectorAll("#main [data-catalog-row],#main [data-change-row],#main [data-search-row],#main [data-office-row]")];
@@ -67,6 +68,7 @@ function apply() {
   const officeEmpty = document.querySelector("[data-office-empty]");
   if (officeEmpty) officeEmpty.hidden = count !== 0;
   for (const group of document.querySelectorAll(".club-search section")) group.hidden = ![...group.querySelectorAll("[data-search-row]")].some(row => !row.hidden);
+  if (focus instanceof HTMLElement && focus.isConnected && focus.getClientRects().length && document.activeElement !== focus) focus.focus({ preventScroll: true });
 }
 
 document.addEventListener("submit", event => {

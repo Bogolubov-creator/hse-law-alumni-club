@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
+{% from 'macros.html' import photo %}
 {% block content %}
 <main id="main" class="home">
 <section class="home-hero" aria-label="Клуб выпускников факультета права">
 <div class="home-hero__photo">
-<img src="{{ base }}assets/photos/themis-facade-full.jpg" alt="Фемида с весами у входа в здание Высшей школы экономики" width="2226" height="1298" fetchpriority="high">
+<picture>
+<source type="image/avif" srcset="{{ base }}assets/photos/themis-facade.avif 1024w, {{ base }}assets/photos/themis-facade-full.avif 2226w" sizes="(max-width: 900px) 100vw, max(60vw, 1240px)">
+<source type="image/webp" srcset="{{ base }}assets/photos/themis-facade.webp 1024w, {{ base }}assets/photos/themis-facade-full.webp 2226w" sizes="(max-width: 900px) 100vw, max(60vw, 1240px)">
+<img src="{{ base }}assets/photos/themis-facade-full.jpg" srcset="{{ base }}assets/photos/themis-facade.jpg 1024w, {{ base }}assets/photos/themis-facade-full.jpg 2226w" sizes="(max-width: 900px) 100vw, max(60vw, 1240px)" alt="Фемида с весами у входа в здание Высшей школы экономики" width="2226" height="1298" fetchpriority="high" decoding="async">
+</picture>
 </div>
 <div class="home-hero__panel club-dark">
 <h1>{{ hero.title_pre or 'Встречи, знания и связи' }} <em>{{ hero.title_accent or 'после выпуска' }}</em>
@@ -36,7 +41,7 @@
 <a href="/events" class="foc home-btn home-btn--ghost">Все события →</a>
 </div>
 <div class="home-agenda__photo">
-<img src="{{ base }}assets/photos/alumni-meeting.jpg" alt="Встреча выпускников факультета права" width="1100" height="330" loading="lazy">
+<img src="{{ base }}assets/photos/alumni-meeting-full.jpg" alt="Встреча выпускников факультета права" width="1083" height="722" loading="lazy" decoding="async">
 </div>
 </section>
 <section class="home-dpo" data-reveal>
@@ -50,7 +55,7 @@
 <article>
 <a href="/dpo/{{ program.slug }}">
 {% if program.cover|media %}
-<img src="{{ program.cover|media }}" alt="{{ program.title }}" width="560" height="380" loading="lazy">
+<span class="site-card-media site-card-media--program"><img src="{{ program.cover|media }}" alt="{{ program.title }}" width="560" height="380" loading="lazy" decoding="async"></span>
 {% endif %}
 <h3>{{ program.title }}</h3>
 </a>
@@ -102,7 +107,7 @@
 </section>
 <section class="home-voice" data-reveal>
 <div class="home-voice__photo">
-<img src="{{ base }}assets/photos/alumni-voice.jpg" alt="Екатерина Салугина-Сорокова, выпускница факультета права 2006 года" width="1083" height="720" loading="lazy">
+{{ photo(base,'alumni-voice','Екатерина Салугина-Сорокова, выпускница факультета права 2006 года',1083,720) }}
 </div>
 <div class="home-voice__copy">
 <h2>Екатерина Салугина-Сорокова, <em>выпуск 2006</em>
@@ -165,7 +170,7 @@
 <a href="/join" class="foc home-btn" data-member-link>{{ cta.button or 'Подать заявку' }} →</a>
 </div>
 <div class="home-join__art">
-<img src="{{ base }}assets/photos/themis-club.jpg" alt="Фемида – знак клуба выпускников факультета права" width="576" height="575" loading="lazy">
+{{ photo(base,'themis-club','Фемида – знак клуба выпускников факультета права',576,575) }}
 </div>
 </section>
 {% if news %}
