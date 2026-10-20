@@ -255,7 +255,7 @@ def test_dpo_finder_starts_and_shareable_comparison(page, site, width):
             **PROGRAM,
             "id": f"p-{i}",
             "slug": f"program-{i}",
-            "title": f"Программа {i}",
+            "title": f"Программа {i}: актуальные вопросы корпоративного и договорного права",
             "document": "Диплом" if i % 2 else "Удостоверение",
             "dates": {"start": "24 октября 2099"},
             "format": "online" if i % 2 else "offline",
@@ -294,6 +294,10 @@ def test_dpo_finder_starts_and_shareable_comparison(page, site, width):
     page.locator("[data-action='compare']").nth(2).click()
     expect(page.locator("#toast")).to_contain_text("до трёх программ")
     expect(page.locator("[data-action='compare'][aria-pressed='true']")).to_have_count(3)
+    if width == 390:
+        assert page.locator("#program-compare").bounding_box()["height"] <= 220
+        chips = page.locator("[data-compare-selected] button").all()
+        assert len({round(chip.bounding_box()["y"]) for chip in chips}) == 1
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
