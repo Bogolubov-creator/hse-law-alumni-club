@@ -17,7 +17,7 @@ function apply() {
       visible = normalized([record.title,record.direction,record.category,record.year].join(" ")).includes(normalized(query.get("q")).trim());
       if (query.get("status") && record.status !== query.get("status")) visible = false;
     }
-    for (const name of ["direction","format","enrollment","category","kind","topic"]) if (query.get(name) && record[name] !== query.get(name)) visible = false;
+    for (const name of ["direction","format","document","enrollment","category","kind","topic"]) if (query.get(name) && record[name] !== query.get(name)) visible = false;
     if (card.dataset.changeRow) {
       if (document.querySelector("[data-unread-filter]")?.checked && readPaths.has(card.dataset.readingPath)) visible = false;
       const view = query.get("view") || "digest";
@@ -63,6 +63,8 @@ function apply() {
   }
   const status = document.querySelector("[data-changes-count],#main > p[role='status']");
   if (status) status.textContent = "Найдено: " + count;
+  const catalogEmpty = document.querySelector("[data-catalog-empty]");
+  if (catalogEmpty) catalogEmpty.hidden = count !== 0;
   const officeCount = document.querySelector("[data-office-count]");
   if (officeCount) officeCount.textContent = "Показано: " + count + " из " + cards.length;
   const officeEmpty = document.querySelector("[data-office-empty]");

@@ -44,3 +44,4 @@ frontend/public/assets/offline.js
 frontend/public/sw.js
 
 frontend/public/assets/discovery.js
+frontend/public/assets/catalog.js

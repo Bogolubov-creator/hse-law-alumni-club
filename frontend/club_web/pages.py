@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import quote, urlencode
 
 from club_web.calendar import google_calendar, instant, month_view
+from club_web.catalog import prepare_catalog
 from club_web.changes import parse_changes, select_changes
 from club_web.client import ApiFailure
 from club_web.formatting import page_items
@@ -195,22 +196,25 @@ async def context(api, path, params, authorized=False):
         kind = "dpo" if path == "/dpo" else "merch"
         await load("items", "/programs" if kind == "dpo" else "/products", [])
         data["kind"] = kind
-        fields = ("direction", "format", "enrollment") if kind == "dpo" else ("category",)
-        data["filters"] = {
-            field: sorted({str(item.get(field) or "") for item in data["items"]} - {""}) for field in fields
-        }
-        data["items"] = [
-            item
-            for item in data["items"]
-            if all(not params.get(field) or item.get(field) == params[field] for field in fields)
-            and params.get("q", "").casefold() in item.get("title", "").casefold()
-        ]
-        if params.get("sort", "title") == "title":
-            data["items"].sort(key=lambda item: item.get("title", "").casefold())
-        elif params.get("sort") == "price":
-            data["items"].sort(key=lambda item: item.get("price") or 0)
-        elif params.get("sort") == "price-desc":
-            data["items"].sort(key=lambda item: -(item.get("price") or 0))
+        if kind == "dpo":
+            data.update(prepare_catalog(data["items"], params))
+        else:
+            fields = ("category",)
+            data["filters"] = {
+                field: sorted({str(item.get(field) or "") for item in data["items"]} - {""}) for field in fields
+            }
+            data["items"] = [
+                item
+                for item in data["items"]
+                if all(not params.get(field) or item.get(field) == params[field] for field in fields)
+                and params.get("q", "").casefold() in item.get("title", "").casefold()
+            ]
+            if params.get("sort", "title") == "title":
+                data["items"].sort(key=lambda item: item.get("title", "").casefold())
+            elif params.get("sort") == "price":
+                data["items"].sort(key=lambda item: item.get("price") or 0)
+            elif params.get("sort") == "price-desc":
+                data["items"].sort(key=lambda item: -(item.get("price") or 0))
         if authorized:
             await load("me", "/me", {})
     elif path.startswith(("/dpo/", "/news/")):
