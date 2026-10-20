@@ -26,7 +26,17 @@ export function prepareCatalog(url, notice) {
   let selected = new Set();
   let trigger = null;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  root.querySelectorAll("[data-program-start]").forEach(row => { row.hidden = row.dataset.programStart < today; });
+  const starts = root.querySelector(".dpo-starts-grid");
+  const upcoming = programs.filter(program => program.start_day >= today && program.enrollment === "actual").sort((a, b) => a.start_day.localeCompare(b.start_day) || a.title_order - b.title_order).slice(0, Number(starts.dataset.upcomingLimit));
+  starts.replaceChildren();
+  for (const program of upcoming) {
+    const row = node("article", undefined, { "data-program-start": program.start_day });
+    const date = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Moscow" }).format(new Date(program.start_day + "T12:00:00Z"));
+    const heading = node("h3");
+    heading.append(node("a", program.title, { href: url("dpo/" + program.slug) }));
+    row.append(node("time", date, { datetime: program.start_day }), heading, node("p", program.price_label));
+    starts.append(row);
+  }
   root.querySelectorAll("[data-calendar-start]").forEach(row => { row.hidden = row.dataset.calendarStart < today; });
   root.querySelectorAll("[data-start-month]").forEach(group => {
     group.hidden = !group.querySelector("[data-calendar-start]:not([hidden])");

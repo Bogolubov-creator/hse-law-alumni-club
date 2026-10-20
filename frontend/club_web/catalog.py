@@ -150,7 +150,7 @@ def prepare_catalog(items, params, today=None):
     )
     upcoming = sorted(
         (item for item in programs if item["start_day"] >= today.isoformat() and item.get("enrollment") == "actual"),
-        key=lambda item: (item["start_day"], item["title"].casefold()),
+        key=lambda item: (item["start_day"], item["title_order"]),
     )
     months = {}
     for item in upcoming:
@@ -199,6 +199,7 @@ def prepare_catalog(items, params, today=None):
         "catalog_total": len(programs),
         "catalog_search_endings": SEARCH_ENDINGS,
         "upcoming": upcoming[:UPCOMING_LIMIT],
+        "upcoming_limit": UPCOMING_LIMIT,
         "start_months": list(months.values()),
         "program_data": [{key: item.get(key, "") for key in public_fields} for item in programs],
     }

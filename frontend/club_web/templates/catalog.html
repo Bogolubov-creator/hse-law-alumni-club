@@ -23,7 +23,7 @@
 <section class="dpo-starts" aria-labelledby="dpo-starts-title">
 <h2 id="dpo-starts-title">Ближайшие старты</h2>
 <p>Программы с открытым набором и указанной датой начала.</p>
-<div class="dpo-starts-grid">
+<div class="dpo-starts-grid" data-upcoming-limit="{{ upcoming_limit }}">
 {% for item in upcoming %}<article data-program-start="{{ item.start_day }}">
 <time datetime="{{ item.start_day }}">{{ item.start_label|date }}</time>
 <h3><a href="/dpo/{{ item.slug }}">{{ item.title }}</a></h3>
