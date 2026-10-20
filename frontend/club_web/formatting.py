@@ -18,6 +18,11 @@ MONTHS = (
     "декабря",
 )
 FORMAT_LABELS = {"online": "онлайн", "offline": "очно", "blended": "смешанный"}
+ORGANIZER_LABELS = {"club": "Клуб выпускников", "hse": "Факультет права НИУ ВШЭ"}
+
+
+def program_organizer(item):
+    return "hse" if item.get("source_url") or item.get("hse_id") else "club"
 
 
 def rub(value):

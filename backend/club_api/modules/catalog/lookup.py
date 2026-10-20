@@ -1,7 +1,11 @@
+def external_enrollment(program):
+    return bool(program.get("source_url") or program.get("hse_id"))
+
+
 async def lookup_catalog(store, items, connection=None):
     result = {}
     for type, table, extra in (
-        ("dpo", "programs", ("enrollment", "source_url")),
+        ("dpo", "programs", ("enrollment", "source_url", "hse_id")),
         ("merch", "products", ("stock", "variants_json")),
     ):
         slugs = list(dict.fromkeys(item["ref_id"] for item in items if item["type"] == type))
@@ -20,6 +24,7 @@ async def lookup_catalog(store, items, connection=None):
                 "price": row["price"] or 0,
                 "enrollment": row.get("enrollment"),
                 "source_url": row.get("source_url"),
+                "external_enrollment": external_enrollment(row),
                 "stock": row.get("stock"),
                 "variants": row.get("variants_json") if isinstance(row.get("variants_json"), list) else [],
             }

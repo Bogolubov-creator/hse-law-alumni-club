@@ -34,7 +34,7 @@ export function prepareCatalog(url, notice) {
     const date = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Moscow" }).format(new Date(program.start_day + "T12:00:00Z"));
     const heading = node("h3");
     heading.append(node("a", program.title, { href: url("dpo/" + program.slug) }));
-    row.append(node("time", date, { datetime: program.start_day }), heading, node("p", program.price_label));
+    row.append(node("time", date, { datetime: program.start_day }), node("span", program.organizer_label, { class: "dpo-organizer" }), heading, node("p", program.price_label));
     starts.append(row);
   }
   root.querySelectorAll("[data-calendar-start]").forEach(row => { row.hidden = row.dataset.calendarStart < today; });
@@ -89,7 +89,7 @@ export function prepareCatalog(url, notice) {
     dialog.querySelector("thead").replaceChildren(head);
     const body = dialog.querySelector("tbody");
     body.replaceChildren();
-    for (const [key, label] of [["direction", "Направление"], ["document", "Документ"], ["format_label", "Формат"], ["duration", "Длительность"], ["start_label", "Дата старта"], ["price_label", "Стоимость"], ["enrollment", "Набор"], ["module_labels", "Модули"], ["teacher_labels", "Преподаватели"], ["audience_labels", "Для кого"]]) {
+    for (const [key, label] of [["organizer_label", "Организатор"], ["direction", "Направление"], ["document", "Документ"], ["format_label", "Формат"], ["duration", "Длительность"], ["start_label", "Дата старта"], ["price_label", "Стоимость"], ["enrollment", "Набор"], ["module_labels", "Модули"], ["teacher_labels", "Преподаватели"], ["audience_labels", "Для кого"]]) {
       const row = node("tr");
       const heading = node("th", label, { scope: "row" });
       const different = new Set(rows.map(program => JSON.stringify(program[key] || ""))).size > 1;

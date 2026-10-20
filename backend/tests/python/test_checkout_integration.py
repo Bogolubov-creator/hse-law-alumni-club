@@ -180,3 +180,39 @@ def test_mismatched_payment_requires_review(value, paid, currency):
         )
         == "review"
     )
+
+
+@pytest.mark.parametrize("identity", [{"source_url": "https://www.hse.ru/edu/dpo/1"}, {"hse_id": "1"}])
+async def test_faculty_program_cannot_enter_club_cart_or_checkout(database_app, identity):
+    app = database_app
+    row = await app.state.store.create(
+        "programs",
+        {
+            "slug": str(uuid4()),
+            "title": "Тестовая программа",
+            "price": 10000,
+            "status": "published",
+            "enrollment": "actual",
+        },
+    )
+    headers = {"x-cart-session": str(uuid4())}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        body = {"type": "dpo", "ref_id": row["slug"]}
+        assert (await client.post("/cart", headers=headers, json=body)).status_code == 200
+        cart = (await app.state.store.read("carts", limit=1))[0]
+        await app.state.store.update("programs", identity, id=row["id"])
+        denied = await client.post("/cart", headers=headers, json=body)
+        assert denied.status_code == 400
+        assert "hse.ru" in denied.json()["error"]
+        checkout = await client.post("/orders", headers=headers, json=contact())
+        assert checkout.status_code == 409
+        with pytest.raises(ApiError, match="доступность"):
+            await app.state.checkout.commit(
+                session=headers["x-cart-session"],
+                key=str(uuid4()),
+                request_hash="synthetic",
+                cart_id=cart["id"],
+                cart_items=cart["items_json"],
+                base={"alumni_id": None, "items_json": cart["items_json"]},
+            )
+        assert not await app.state.store.read("orders", limit=-1)

@@ -1,4 +1,4 @@
-const FIELDS = ["direction", "format", "document", "enrollment"];
+const FIELDS = ["direction", "format", "document", "enrollment", "organizer"];
 let restoreFilters = null;
 window.addEventListener("popstate", () => restoreFilters?.());
 
@@ -36,7 +36,13 @@ export function prepareCatalogFilters(root, programs, endings, url) {
       if (input.type === "checkbox") input.checked = params.getAll(input.name).includes(input.value);
       else input.value = params.get(input.name) || (input.name === "sort" ? "title" : "");
     }
-    for (const name of FIELDS) if (picker.elements[name]) picker.elements[name].value = params.get(name) || "";
+    for (const name of FIELDS) if (name !== "organizer" && picker.elements[name]) picker.elements[name].value = params.get(name) || "";
+    const organizer = picker.querySelector("[data-picker-organizer]");
+    organizer.replaceChildren();
+    for (const value of params.getAll("organizer")) {
+      const input = document.createElement("input");
+      input.type = "hidden"; input.name = "organizer"; input.value = value; organizer.append(input);
+    }
     preview();
   }
 

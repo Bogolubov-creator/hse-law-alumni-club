@@ -1,9 +1,11 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import save,add_cart %}
 {% block content %}
+{% set organizer=program_organizer(item) %}
 <main id="main" class="site-container program-page" data-reading-title="{{ item.title }}" data-reading-kind="dpo">
 <a href="/dpo">← Каталог программ</a>
 <header class="site-masthead">
+<span class="dpo-organizer" data-organizer="{{ organizer }}">{{ organizer_labels[organizer] }}</span>
 <span class="club-caps">{{ item.direction }}</span>
 <h1>{{ item.title }}</h1>
 <p>{{ item.tagline or item.description or '' }}</p>
@@ -64,6 +66,8 @@
 <aside class="site-panel">
 <h2>Обучение</h2>
 <dl>
+<dt>Организатор</dt>
+<dd>{{ organizer_labels[organizer] }}</dd>
 <dt>Формат</dt>
 <dd>{{ format_labels.get(item.format,item.format) }}</dd>
 <dt>Продолжительность</dt>
@@ -75,11 +79,12 @@
 <dt>Стоимость</dt>
 <dd>{{ item.price|rub }}</dd>
 </dl>
-{% if item.source_url|safe_url %}
-<a href="{{ item.source_url|safe_url }}" class="site-primary" target="_blank" rel="noopener noreferrer">Перейти к организатору ↗</a>
-{% elif item.enrollment=='nonactual' %}
+{% if item.enrollment=='nonactual' %}
 <p role="status">Набор закрыт</p>
-{% else %}{{ add_cart(item,'dpo') }}{% endif %}{{ save(path,item.title,'dpo') }}<p>Скидка выпускника применяется сервером при оформлении заявки только на ДПО.</p>
+{% elif organizer=='hse' %}
+{% if item.source_url|safe_url %}<a href="{{ item.source_url|safe_url }}" class="site-primary" target="_blank" rel="noopener noreferrer">Записаться на сайте ВШЭ ↗</a>{% else %}<p role="status">Ссылка на запись уточняется у факультета.</p>{% endif %}
+{% else %}{{ add_cart(item,'dpo') }}{% endif %}{{ save(path,item.title,'dpo') }}
+{% if organizer=='hse' %}<p>Запись и оплата проходят в НИУ ВШЭ. Условия и скидки уточняются у факультета; скидка Клуба здесь не применяется.</p>{% else %}<p>Заявка оформляется на сайте Клуба. Скидка выпускника рассчитывается при оформлении.</p>{% endif %}
 </aside>
 </div>
 </main>

@@ -105,7 +105,7 @@ async def add_cart(request: HttpRequest):
     if body.type == "dpo":
         if info["enrollment"] == "nonactual":
             raise ApiError(400, "Набор на эту программу закрыт")
-        if info["source_url"]:
+        if info["external_enrollment"]:
             raise ApiError(400, "Запись на эту программу – на hse.ru")
     elif info["variants"]:
         if not body.variant_sku:
