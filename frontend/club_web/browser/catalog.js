@@ -1,3 +1,5 @@
+import { prepareCatalogFilters } from "./catalog-filters.js";
+
 const MAX_PROGRAMS = 3;
 let restoreCatalog = null;
 window.addEventListener("popstate", () => restoreCatalog?.());
@@ -16,6 +18,7 @@ export function prepareCatalog(url, notice) {
   if (root.dataset.catalogReady) return;
   root.dataset.catalogReady = "true";
   const programs = JSON.parse(source.textContent);
+  prepareCatalogFilters(root, programs, source.dataset.searchEndings, url);
   const bySlug = new Map(programs.map(program => [program.slug, program]));
   const byId = new Map(programs.map(program => [program.id, program]));
   const bar = root.querySelector("#program-compare");
@@ -23,7 +26,24 @@ export function prepareCatalog(url, notice) {
   let selected = new Set();
   let trigger = null;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  root.querySelectorAll("[data-program-start]").forEach(row => { row.hidden = row.dataset.programStart < today; });
+  const starts = root.querySelector(".dpo-starts-grid");
+  const upcoming = programs.filter(program => program.start_day >= today && program.enrollment === "actual").sort((a, b) => a.start_day.localeCompare(b.start_day) || a.title_order - b.title_order).slice(0, Number(starts.dataset.upcomingLimit));
+  starts.replaceChildren();
+  for (const program of upcoming) {
+    const row = node("article", undefined, { "data-program-start": program.start_day });
+    const date = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Moscow" }).format(new Date(program.start_day + "T12:00:00Z"));
+    const heading = node("h3");
+    heading.append(node("a", program.title, { href: url("dpo/" + program.slug) }));
+    row.append(node("time", date, { datetime: program.start_day }), heading, node("p", program.price_label));
+    starts.append(row);
+  }
+  root.querySelectorAll("[data-calendar-start]").forEach(row => { row.hidden = row.dataset.calendarStart < today; });
+  root.querySelectorAll("[data-start-month]").forEach(group => {
+    group.hidden = !group.querySelector("[data-calendar-start]:not([hidden])");
+    root.querySelector(`[data-start-month-link='${group.dataset.startMonth}']`).hidden = group.hidden;
+  });
+  const calendar = root.querySelector(".dpo-calendar");
+  if (calendar) calendar.hidden = !root.querySelector("[data-calendar-start]:not([hidden])");
   root.querySelector("[data-starts-empty]").hidden = !!root.querySelector("[data-program-start]:not([hidden])");
 
   function render() {
@@ -69,10 +89,22 @@ export function prepareCatalog(url, notice) {
     dialog.querySelector("thead").replaceChildren(head);
     const body = dialog.querySelector("tbody");
     body.replaceChildren();
-    for (const [key, label] of [["direction", "Направление"], ["document", "Документ"], ["format_label", "Формат"], ["duration", "Длительность"], ["start_label", "Дата старта"], ["price_label", "Стоимость"], ["enrollment", "Набор"]]) {
+    for (const [key, label] of [["direction", "Направление"], ["document", "Документ"], ["format_label", "Формат"], ["duration", "Длительность"], ["start_label", "Дата старта"], ["price_label", "Стоимость"], ["enrollment", "Набор"], ["module_labels", "Модули"], ["teacher_labels", "Преподаватели"], ["audience_labels", "Для кого"]]) {
       const row = node("tr");
-      row.append(node("th", label, { scope: "row" }));
-      for (const program of rows) row.append(node("td", key === "enrollment" ? ({ actual: "Набор открыт", nonactual: "Набор закрыт" }[program[key]] || "Уточняется") : program[key] || "Не указано"));
+      const heading = node("th", label, { scope: "row" });
+      const different = new Set(rows.map(program => JSON.stringify(program[key] || ""))).size > 1;
+      if (different) { row.className = "dpo-compare-different"; heading.append(node("small", "Различается")); }
+      row.append(heading);
+      for (const program of rows) {
+        const cell = node("td");
+        const value = program[key];
+        if (Array.isArray(value) && value.length) {
+          const list = node("ul");
+          for (const text of value) list.append(node("li", text));
+          cell.append(list);
+        } else cell.textContent = key === "enrollment" ? ({ actual: "Набор открыт", nonactual: "Набор закрыт" }[value] || "Уточняется") : value && !Array.isArray(value) ? value : "Не указано";
+        row.append(cell);
+      }
       body.append(row);
     }
     dialog.querySelector("[data-compare-fallback]").hidden = true;
