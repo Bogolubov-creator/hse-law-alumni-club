@@ -27,7 +27,7 @@
 <dd>{{ me.level.level_title }}</dd>
 <dt>Баллы</dt>
 <dd>{{ me.level.points }}</dd>
-<dt>Скидка на ДПО</dt>
+<dt>Скидка на программы Клуба</dt>
 <dd>{{ me.level.discount }}%</dd>
 {% if me.level.next_level %}
 <dt>До «{{ me.level.next_level }}»</dt>
@@ -91,7 +91,7 @@
 <h3>Заявка {{ order.number }}</h3>
 <p>{{ order.created_at|date }} · {{ {'new':'Новая','confirmed':'Подтверждена','in_progress':'В работе','done':'Исполнена','canceled':'Отменена','expired':'Резерв истёк'}.get(order.status,order.status) }}</p>
 <p>{{ order.total_estimate|rub }} · {{ 'Оплачено' if order.payment_status=='succeeded' else 'Не оплачено' }}</p>
-<p>До скидки: {{ order.subtotal|rub }} · скидка на ДПО: {{ order.member_discount or 0 }}% · {{ 'Доставка' if order.fulfillment=='delivery' else 'Самовывоз' }}.</p>
+<p>До скидки: {{ order.subtotal|rub }} · скидка на программы Клуба: {{ order.member_discount or 0 }}% · {{ 'Доставка' if order.fulfillment=='delivery' else 'Самовывоз' }}.</p>
 {% for line in order.items_json or [] %}
 <p>{{ line.title }} × {{ line.qty }}</p>
 {% endfor %}

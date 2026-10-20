@@ -20,7 +20,7 @@
 <div class="site-panel">
 <h1>{{ title }}</h1>
 {% if path=='/join' %}
-<p>Заполните анкету. Учебный офис подтвердит выпуск – после этого откроются кабинет и цена выпускника на ДПО.</p>
+<p>Заполните анкету. Учебный офис подтвердит выпуск – после этого откроются кабинет и скидка на программы Клуба.</p>
 <form data-api="/auth/register" data-registration>{{ field('fio','ФИО') }}{{ field('email','Почта',type='email') }}{{ field('cohort','Год выпуска') }}<label class="site-field">Уровень образования<select name="edu_level">
 {% for level in ['бакалавриат','магистратура','специалитет','аспирантура'] %}
 <option>{{ level }}</option>

@@ -1431,3 +1431,58 @@ def test_mirror_organizer_filter_and_picker_preserve_selection(chromium, mirror_
     expect(page.locator("[data-program-id]:visible")).to_have_count(31)
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
     context.close()
+
+
+def test_service_worker_upgrade_refreshes_assets_with_fresh_http_cache(chromium):
+    state = {"release": "old"}
+    worker = (Path(__file__).resolve().parents[2] / "club_web/browser/service-worker.js").read_text()
+    worker = worker.replace("const BUILT_ASSETS = [];", 'const BUILT_ASSETS = ["./assets/release.js"];')
+
+    class Handler(SimpleHTTPRequestHandler):
+        def do_GET(self):
+            release = state["release"]
+            if self.path == "/sw.js":
+                content = worker.replace("${CACHE_PREFIX}v8", "${CACHE_PREFIX}test-" + release)
+                kind, policy = "text/javascript", "no-cache"
+            elif self.path == "/assets/release.js":
+                content = "document.documentElement.dataset.release = '" + release + "';"
+                kind, policy = "text/javascript", "public, max-age=3600"
+            elif self.path == "/":
+                content = "<html><body><script src='/assets/release.js'></script><script>navigator.serviceWorker.register('/sw.js');</script></body></html>"
+                kind, policy = "text/html", "no-store"
+            else:
+                self.send_error(404)
+                return
+            body = content.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", kind)
+            self.send_header("Cache-Control", policy)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *_args):
+            pass
+
+    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        context = chromium.new_context()
+        try:
+            page = context.new_page()
+            page.goto(f"http://127.0.0.1:{server.server_port}/")
+            page.wait_for_function("navigator.serviceWorker.controller")
+            expect(page.locator("html")).to_have_attribute("data-release", "old")
+            state["release"] = "new"
+            page.evaluate("""async () => {
+                const registration = await navigator.serviceWorker.ready;
+                const changed = new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, {once:true}));
+                await registration.update();
+                await changed;
+            }""")
+            page.reload()
+            expect(page.locator("html")).to_have_attribute("data-release", "new")
+        finally:
+            context.close()
+            server.shutdown()
+            thread.join(timeout=5)
