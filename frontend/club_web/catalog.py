@@ -4,6 +4,8 @@ from zoneinfo import ZoneInfo
 
 from club_web.formatting import FORMAT_LABELS, MONTHS, rub
 
+UPCOMING_LIMIT = 6
+
 
 def start_day(value):
     if not isinstance(value, str) or not value.strip():
@@ -56,7 +58,7 @@ def prepare_catalog(items, params, today=None):
     upcoming = sorted(
         (item for item in programs if item["start_day"] >= today.isoformat() and item.get("enrollment") == "actual"),
         key=lambda item: (item["start_day"], item["title"].casefold()),
-    )[:6]
+    )[:UPCOMING_LIMIT]
     public_fields = (
         "id",
         "slug",

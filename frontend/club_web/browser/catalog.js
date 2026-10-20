@@ -1,3 +1,4 @@
+const MAX_PROGRAMS = 3;
 let restoreCatalog = null;
 window.addEventListener("popstate", () => restoreCatalog?.());
 
@@ -28,7 +29,7 @@ export function prepareCatalog(url, notice) {
   function render() {
     bar.hidden = !selected.size;
     root.querySelectorAll("[data-action='compare']").forEach(button => button.setAttribute("aria-pressed", String(selected.has(byId.get(button.dataset.id)?.slug))));
-    bar.querySelector("[data-compare-count]").textContent = "Выбрано " + selected.size + " из 3";
+    bar.querySelector("[data-compare-count]").textContent = "Выбрано " + selected.size + " из " + MAX_PROGRAMS;
     const chips = bar.querySelector("[data-compare-selected]");
     chips.replaceChildren();
     for (const slug of selected) chips.append(node("button", bySlug.get(slug).title + " ×", { type: "button", "data-compare-remove": slug, "aria-label": "Убрать из сравнения: " + bySlug.get(slug).title }));
@@ -37,8 +38,11 @@ export function prepareCatalog(url, notice) {
 
   function restore() {
     const raw = new URLSearchParams(location.search).get("compare") || "";
-    selected = new Set(raw.split(",").slice(0, 100).filter(slug => bySlug.has(slug)));
-    selected = new Set([...selected].slice(0, 3));
+    selected = new Set();
+    for (const slug of raw.split(",")) {
+      if (bySlug.has(slug)) selected.add(slug);
+      if (selected.size === MAX_PROGRAMS) break;
+    }
     render();
   }
 
@@ -84,7 +88,7 @@ export function prepareCatalog(url, notice) {
       const slug = byId.get(button.dataset.id)?.slug;
       if (!slug) return;
       if (selected.has(slug)) selected.delete(slug);
-      else if (selected.size < 3) selected.add(slug);
+      else if (selected.size < MAX_PROGRAMS) selected.add(slug);
       else { notice("Можно сравнить до трёх программ. Уберите одну из выбранных."); return; }
       persist();
     } else if (action === "clear-compare") { selected.clear(); persist(); root.querySelector("[data-action='compare']")?.focus(); }
