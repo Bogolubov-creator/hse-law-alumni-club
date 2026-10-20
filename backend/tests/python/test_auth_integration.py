@@ -115,8 +115,6 @@ async def test_registration_confirmation_and_secret_projection(database_app):
     await app.state.database.execute(
         "UPDATE alumni SET consent_version='2026-07-02' WHERE id=%s", (previous_alumni_id,)
     )
-    role_id = str(uuid4())
-    await app.state.database.execute("INSERT INTO directus_roles(id,name) VALUES(%s,'alumni')", (role_id,))
     body = {
         "fio": "Тестовая анкета",
         "email": "synthetic@example.test",
