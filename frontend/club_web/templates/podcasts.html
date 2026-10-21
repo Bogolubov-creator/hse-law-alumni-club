@@ -1,37 +1,46 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import empty,save %}
+{% from 'podcast-artwork.html' import artwork %}
 {% block content %}
-<main id="main" class="site-container">
-<header class="site-masthead">
+<main id="main" class="site-container podcast-page">
+<header class="site-masthead podcast-head">
 <h1>Правовая грамотность</h1>
 <p>Подкасты клуба. Пробный выпуск открыт всем; остальные доступны по годовой подписке.</p>
 </header>
-<section class="site-panel" id="podcast-subscription">
-<h2>Подписка на год</h2>
-<p>{{ domain.limits.podcast_year_price|rub }} · 12 месяцев</p>
-{% if mirror %}<p>Демонстрация без оплаты и настоящей подписки.</p><button data-mirror-subscription>Проверить как подписчик</button>{% elif podcasts.subscribed %}
-<p role="status">Подписка активна до {{ podcasts.sub_until|date }}</p>
-<p>Продление добавит 12 месяцев к текущему сроку подписки.</p>
+{% set trial=items|selectattr('is_free')|first %}
+<div class="podcast-intro{% if not trial %} podcast-intro--single{% endif %}">
+{% if trial %}
+<section class="podcast-feature club-dark" aria-labelledby="podcast-trial-title">
+<a href="/podcasts/{{ trial.id }}" class="podcast-feature__art" aria-label="Открыть выпуск: {{ trial.title }}">{{ artwork(trial) }}</a>
+<div class="podcast-feature__body"><p class="podcast-feature__meta">Открытый выпуск{% if trial.duration %} · {{ trial.duration }}{% endif %}</p><h2 id="podcast-trial-title">{{ trial.title }}</h2>
+<p>Послушайте перед оформлением подписки.</p><a class="site-primary" href="/podcasts/{{ trial.id }}">Слушать открытый выпуск <span aria-hidden="true">↗</span></a></div>
+</section>
+{% endif %}
+<section class="podcast-subscription" id="podcast-subscription" aria-labelledby="podcast-subscription-title">
+<h2 id="podcast-subscription-title">Подписка на год</h2>
+<p class="podcast-subscription__price">{{ domain.limits.podcast_year_price|rub }} <span>· 12 месяцев</span></p>
+{% if mirror %}<p class="podcast-subscription__note">Демонстрация без оплаты и настоящей подписки.</p><button data-mirror-subscription>Проверить как подписчик</button>{% elif podcasts.subscribed %}
+<p class="podcast-subscription__status" role="status">Подписка активна до {{ podcasts.sub_until|date }}</p>
+<p class="podcast-subscription__note">Продление добавит 12 месяцев к текущему сроку подписки.</p>
 <button class="site-primary" data-api="/podcasts/subscribe" data-member-action>Продлить на год</button>
 {% else %}
+<p class="podcast-subscription__note">Доступ к остальным выпускам серии на 12 месяцев.</p>
 <button class="site-primary" data-api="/podcasts/subscribe" data-member-action>Оформить подписку</button>
 <a href="/lk?next=/podcasts%23podcast-subscription">Войти в кабинет</a>
 {% endif %}
 </section>
-<div class="site-catalog">
+</div>
+<section class="podcast-catalog" aria-labelledby="podcast-catalog-title"><h2 id="podcast-catalog-title">Все выпуски</h2>
+<div class="podcast-grid">
 {% for item in items %}
-<article class="site-catalog-card">
-{% if item.cover|media %}
-<img src="{{ item.cover|media }}" alt="{{ item.title }}" width="480" height="480" loading="lazy">
-{% endif %}
-<div>
-<span class="club-caps">{{ 'Открытый выпуск' if item.is_free else 'По подписке' }} · {{ item.duration or '' }}</span>
-<h2>
-<a href="/podcasts/{{ item.id }}">{{ item.title }}</a>
-</h2>
-<p>{{ item.description or '' }}</p>{{ save('/podcasts/'+item.id,item.title,'podcasts') }}</div>
+<article class="podcast-card" data-podcast-card>
+<a class="podcast-card__cover" href="/podcasts/{{ item.id }}" aria-label="Открыть выпуск: {{ item.title }}">{{ artwork(item) }}</a>
+<div class="podcast-card__body"><p class="podcast-card__meta"><span>{{ 'Открытый выпуск' if item.is_free else 'По подписке' }}</span>{% if item.duration %}<span>{{ item.duration }}</span>{% endif %}</p>
+<span class="podcast-card__topic-label">Тема выпуска</span><h3><a href="/podcasts/{{ item.id }}">{{ item.title }}</a></h3>
+{% if item.description %}<p class="podcast-card__description">{{ item.description }}</p>{% endif %}
+<div class="podcast-card__actions"><a class="podcast-listen" href="/podcasts/{{ item.id }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z" fill="currentColor"/></svg>{{ 'Слушать' if item.audio_url|safe_url or (mirror and item.is_free) else 'Открыть выпуск' }}</a>{{ save('/podcasts/'+item.id,item.title,'podcasts') }}</div></div>
 </article>
 {% else %}{{ empty('Выпуски пока не опубликованы.') }}{% endfor %}
-</div>
+</div></section>
 </main>
 {% endblock %}

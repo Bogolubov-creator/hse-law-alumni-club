@@ -1,8 +1,8 @@
 [
   {
     "id": "mirror-pod-danyukov",
-    "title": "Правовая грамотность с Данилом Данюковым",
-    "description": "Выпуск серии «Правовая грамотность».",
+    "title": "Правовая грамотность: открытый выпуск",
+    "description": "Открытый выпуск серии «Правовая грамотность».",
     "duration": "35 мин",
     "is_free": true,
     "audio_url": "https://github.com/Bogolubov-creator/hse-law-alumni-club/releases/download/podcast-audio-v1/danyukov.mp3",
@@ -14,8 +14,8 @@
   },
   {
     "id": "mirror-pod-volos",
-    "title": "Правовая грамотность с Алексеем Волосом",
-    "description": "Выпуск серии «Правовая грамотность».",
+    "title": "Договоры",
+    "description": "Гость – Алексей Волос.",
     "duration": "108 мин",
     "is_free": false,
     "audio_url": null,
@@ -27,8 +27,8 @@
   },
   {
     "id": "mirror-pod-besedin",
-    "title": "Правовая грамотность с Глебом Бесединым",
-    "description": "Выпуск серии «Правовая грамотность».",
+    "title": "Уголовное право",
+    "description": "Гость – Глеб Беседин. Уголовное право, смежные дисциплины и вопросы ответственности несовершеннолетних.",
     "duration": "71 мин",
     "is_free": false,
     "audio_url": null,
@@ -40,8 +40,8 @@
   },
   {
     "id": "mirror-pod-balashov",
-    "title": "Правовая грамотность с Дмитрием Балашовым",
-    "description": "Выпуск серии «Правовая грамотность».",
+    "title": "Введение в право",
+    "description": "Гость – Дмитрий Балашов.",
     "duration": "112 мин",
     "is_free": false,
     "audio_url": null,
@@ -53,8 +53,8 @@
   },
   {
     "id": "mirror-pod-matveeva",
-    "title": "Правовая грамотность с Марией Матвеевой",
-    "description": "Выпуск серии «Правовая грамотность».",
+    "title": "Семья и собственность",
+    "description": "Гость – Мария Матвеева.",
     "duration": "115 мин",
     "is_free": false,
     "audio_url": null,
@@ -66,8 +66,8 @@
   },
   {
     "id": "mirror-pod-dzgoeva",
-    "title": "Правовая грамотность с Фатимой Дзгоевой",
-    "description": "Выпуск серии «Правовая грамотность».",
+    "title": "Трудовые отношения",
+    "description": "Гость – Фатима Дзгоева.",
     "duration": "76 мин",
     "is_free": false,
     "audio_url": null,
@@ -79,8 +79,8 @@
   },
   {
     "id": "mirror-pod-nikolaev",
-    "title": "Правовая грамотность с Николаем Николаевым",
-    "description": "Выпуск серии «Правовая грамотность».",
+    "title": "Законотворчество",
+    "description": "Гость – Николай Николаев.",
     "duration": "117 мин",
     "is_free": false,
     "audio_url": null,

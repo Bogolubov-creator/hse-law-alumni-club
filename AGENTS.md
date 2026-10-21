@@ -76,7 +76,7 @@
 uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
 uv sync --directory frontend --frozen
-uv run --directory frontend playwright install chromium
+uv run --directory frontend playwright install chromium webkit
 uv run --directory backend python manage.py check
 uv run --directory frontend python manage.py check
 uv run --directory backend ruff check club_api tests/python ../scripts/club_ops

@@ -52,16 +52,20 @@
 </div>
 <div class="home-dpo__grid">
 {% for program in featured %}
-<article>
-<a href="/dpo/{{ program.slug }}">
+<article class="home-dpo__item">
+<a href="/dpo/{{ program.slug }}" class="home-dpo__link">
 {% if program.cover|media %}
 <span class="site-card-media site-card-media--program"><img src="{{ program.cover|media }}" alt="{{ program.title }}" width="560" height="380" loading="lazy" decoding="async"></span>
+{% else %}
+<span class="site-card-media home-dpo__no-cover">{{ program.title }}</span>
 {% endif %}
 <span class="dpo-organizer">{{ organizer_labels[program_organizer(program)] }}</span>
-<h3>{{ program.title }}</h3>
+<h3 class="home-dpo__title">{{ program.title }}</h3>
 </a>
-<p>{{ program.duration }} · {{ format_labels.get(program.format,program.format) }}</p>
-<strong>{{ program.price|rub }}</strong>
+<div class="home-dpo__details">
+<p class="home-dpo__meta">{{ program.duration }} · {{ format_labels.get(program.format,program.format) }}</p>
+<strong class="home-dpo__price">{{ program.price|rub }}</strong>
+</div>
 </article>
 {% else %}
 <p>На главной пока нет программ. Посмотрите весь каталог.</p>

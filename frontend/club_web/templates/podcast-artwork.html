@@ -1,0 +1,9 @@
+{% macro artwork(item) %}
+<div class="podcast-artwork{% if item.is_free %} podcast-artwork--free{% endif %}" aria-hidden="true">
+{% if item.cover|media %}
+<img src="{{ item.cover|media }}" alt="" width="480" height="480" loading="lazy" decoding="async">
+{% else %}
+<div class="podcast-artwork__type"><span>Клуб выпускников<br>факультета права Вышки</span><strong>Правовая<br>грамотность</strong></div>
+{% endif %}
+</div>
+{% endmacro %}

@@ -2,35 +2,35 @@
 {% from 'macros.html' import save,empty %}
 {% block content %}
 <main id="main" class="site-container changes-page{% if item %} changes-page--reading{% endif %}">
-<header class="site-masthead changes-head"><h1>Изменения в праве</h1><p>Справки, обзоры и опубликованные правовые акты.</p></header>
+<header class="changes-head"><h1>Изменения в праве</h1><p>Справки, обзоры и опубликованные правовые акты.</p></header>
 {% if snapshot.syncStatus=='unavailable' %}<div class="site-panel changes-notice" role="status">Источник временно недоступен. Показаны сохранённые материалы.{% if snapshot.lastSuccessAt %} Последнее успешное обновление: {{ snapshot.lastSuccessAt|date(true) }}.{% endif %}<p><a href="{{ changes_back }}">Повторить загрузку</a></p></div>{% endif %}
 <section class="changes-controls" aria-label="Фильтры материалов">
-<p class="changes-muted">{{ 'Попытка обновления' if snapshot.syncStatus=='unavailable' else 'Проверено' }}: {{ snapshot.checkedAt|date(true) }}. Период: {{ snapshot.periodFrom|date }} – {{ snapshot.periodTo|date }}.</p>
+<div class="changes-sync"><p>{{ 'Попытка обновления' if snapshot.syncStatus=='unavailable' else 'Проверено' }}: {{ snapshot.checkedAt|date(true) }}</p><p>Период: {{ snapshot.periodFrom|date }} – {{ snapshot.periodTo|date }}</p></div>
 <button type="button" class="changes-button changes-filter-launch" data-changes-filter-open>Поиск и фильтры</button>
-<div data-changes-filter-home><form method="get" action="/changes" class="site-filters" data-changes-form>
-<label>Материалы<select aria-label="Материалы" name="view"><option value="digest">Справки и обзоры</option><option value="act" {% if query.get('view')=='act' %}selected{% endif %}>Архив актов</option><option value="all" {% if query.get('view')=='all' %}selected{% endif %}>Всё</option></select></label>
-<label>Название, номер или ключевые слова<input type="search" name="q" maxlength="200" value="{{ query.get('q','') }}"></label>
-{% for name,values in filters.items() %}<label>{{ 'Тип материала' if name=='kind' else 'Рубрика' }}<select aria-label="{{ 'Тип материала' if name=='kind' else 'Рубрика' }}" name="{{ name }}"><option value="">Все</option>{% for value in values %}<option {% if query.get(name)==value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>{% endfor %}
-<label>Опубликовано с<input type="date" name="from" value="{{ query.get('from','') }}"></label><label>Опубликовано по<input type="date" name="to" value="{{ query.get('to','') }}"></label>
-<label>Порядок<select aria-label="Порядок" name="sort"><option value="newest">Сначала новые</option><option value="oldest" {% if query.get('sort')=='oldest' %}selected{% endif %}>Сначала старые</option></select></label><button>Показать</button><a href="/changes">Сбросить</a>
+<div data-changes-filter-home><form id="changes-filter-form" method="get" action="/changes" class="changes-filter-form" data-changes-form>
+<label class="changes-field changes-field--wide">Название, номер или ключевые слова<input type="search" name="q" maxlength="200" value="{{ query.get('q','') }}" placeholder="Например, номер закона или тема"></label>
+<label class="changes-field changes-field--wide">Материалы<select aria-label="Материалы" name="view"><option value="digest">Справки и обзоры</option><option value="act" {% if query.get('view')=='act' %}selected{% endif %}>Архив актов</option><option value="all" {% if query.get('view')=='all' %}selected{% endif %}>Всё</option></select></label>
+{% for name,values in filters.items() %}<label class="changes-field">{{ 'Тип материала' if name=='kind' else 'Рубрика' }}<select aria-label="{{ 'Тип материала' if name=='kind' else 'Рубрика' }}" name="{{ name }}"><option value="">Все</option>{% for value in values %}<option {% if query.get(name)==value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>{% endfor %}
+<label class="changes-field">Опубликовано с<input type="date" name="from" value="{{ query.get('from','') }}"></label><label class="changes-field">Опубликовано по<input type="date" name="to" value="{{ query.get('to','') }}"></label>
+<div class="changes-filter-actions"><label class="changes-field">Порядок<select aria-label="Порядок" name="sort"><option value="newest">Сначала новые</option><option value="oldest" {% if query.get('sort')=='oldest' %}selected{% endif %}>Сначала старые</option></select></label><a href="/changes">Сбросить</a><button type="submit" class="site-primary">Показать</button></div>
 </form></div>
-<dialog class="changes-dialog" data-changes-filters aria-labelledby="changes-filter-title"><h2 id="changes-filter-title">Поиск и фильтры</h2><div data-changes-filter-body></div><div class="changes-dialog-footer"><button type="button" data-changes-filter-cancel>Отмена</button></div></dialog>
+<dialog class="changes-dialog" data-changes-filters aria-labelledby="changes-filter-title"><header class="changes-dialog-head"><h2 id="changes-filter-title">Поиск и фильтры</h2><button type="button" data-changes-filter-cancel aria-label="Закрыть фильтры">×</button></header><div class="changes-dialog-body" data-changes-filter-body></div><div class="changes-dialog-footer"><button type="button" data-changes-filter-cancel>Отмена</button><button type="submit" form="changes-filter-form" class="site-primary">Показать</button></div></dialog>
 </section>
 <div class="changes-workspace"><section class="changes-list" aria-label="Список материалов">
-<label class="changes-reading-filter"><input type="checkbox" data-unread-filter> Только непрочитанные в этом браузере</label><p role="status" data-changes-count>Найдено: {{ total }}</p>
-<div class="site-editorial-list">
+<div class="changes-list-tools"><p role="status" data-changes-count>Найдено: {{ total }}</p><label class="changes-reading-filter"><input type="checkbox" data-unread-filter> Только непрочитанные в этом браузере</label></div>
+<div class="changes-items">
 {% for entry in items %}
 <article class="changes-row{% if item and entry.id==item.id %} is-selected{% endif %}" data-reading-path="/changes/{{ entry.id }}" data-change-row='{{ {"id":entry.id,"title":entry.title,"number":entry.number,"summary":entry.summary,"text":entry.blocks|map(attribute="segments")|sum(start=[])|map(attribute="text")|join(" "),"kind":entry.kind,"topic":entry.topic,"date":entry.sourcePublishedAt or entry.published,"entryType":entry.entryType}|tojson }}'>
-<div class="changes-row-meta"><time>{{ (entry.sourcePublishedAt or entry.published)|date }}</time><span>{{ entry.kind }} · {{ entry.topic }}</span></div>
+<div class="changes-row-meta"><time>{{ (entry.sourcePublishedAt or entry.published)|date }}</time><span>{{ entry.kind }}{% if entry.topic and entry.topic!=entry.kind %} · {{ entry.topic }}{% endif %}</span></div>
 <h2><a href="/changes/{{ entry.id }}{{ changes_suffix }}" data-change-open="{{ entry.id }}" {% if item and entry.id==item.id %}aria-current="page"{% endif %}>{{ entry.title }}</a></h2><p class="changes-row-summary">{{ entry.summary }}</p>
-<div class="site-actions">{{ save('/changes/'+entry.id,entry.title,'change') }}<button data-action="mark-read" data-href="/changes/{{ entry.id }}" aria-pressed="false">Отметить прочитанным</button></div>
+<div class="changes-row-actions">{{ save('/changes/'+entry.id,entry.title,'change') }}<button type="button" data-action="mark-read" data-href="/changes/{{ entry.id }}" aria-pressed="false">Отметить прочитанным</button></div>
 </article>{% endfor %}</div>
-{% if not items %}<div class="changes-empty" role="status">{{ 'По выбранным фильтрам ничего не найдено.' if snapshot['items'] else 'Материалы пока не опубликованы.' }}{% if snapshot['items'] %} <a href="/changes">Сбросить фильтры</a>{% endif %}</div>{% endif %}
+<div class="changes-empty" data-catalog-empty role="status" {% if items %}hidden{% endif %}><h2>{{ 'Материалы не найдены' if snapshot['items'] else 'Материалы пока не опубликованы' }}</h2>{% if snapshot['items'] %}<p>Попробуйте изменить запрос или убрать часть условий.</p><a href="/changes">Сбросить фильтры</a>{% endif %}</div>
 <nav class="changes-pagination" aria-label="Страницы материалов" data-changes-pagination>{% if previous_page %}<a href="{{ previous_page }}">← Предыдущая</a>{% endif %}<span>Страница {{ page_number }}</span>{% if next_page %}<a href="{{ next_page }}">Следующая страница →</a>{% endif %}</nav>
 </section>
 {% if item %}<article class="changes-reader" data-reading-title="{{ item.title }}" data-reading-kind="change">
 <a class="changes-back" href="{{ changes_back }}" data-changes-back>← Все материалы</a>
-<div data-changes-text><h1>{{ item.title }}</h1><p>{{ item.kind }} · {{ item.topic }}</p>
+<div data-changes-text><h1>{{ item.title }}</h1><p class="changes-reader-meta">{{ item.kind }}{% if item.topic and item.topic!=item.kind %} · {{ item.topic }}{% endif %}</p>
 <dl class="changes-facts"><div><dt>Опубликовано</dt><dd>{{ (item.sourcePublishedAt or item.published)|date }}</dd></div><div><dt>Вступление в силу</dt><dd>{{ item.effectiveDate|date if item.effectiveDate else 'Не указано в источнике' }}</dd></div></dl>
 {% if item.entryType=='digest' %}<p class="changes-attribution">Материал загружен автоматически из источника. Редакционная проверка не проводилась.</p>{% endif %}
 {% if item.summary %}<p class="site-prose">{{ item.summary }}</p>{% endif %}

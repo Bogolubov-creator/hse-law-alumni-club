@@ -179,25 +179,29 @@
 {% endif %}
 </div>
 </div>
-<dialog id="support-bot" aria-labelledby="bot-title">
-<header class="site-actions">
+<dialog id="support-bot" class="club-bot-panel" aria-labelledby="bot-title">
+<header class="club-bot-head">
 <h2 id="bot-title">Поддержка клуба</h2>
-<button data-action="close-bot" aria-label="Закрыть поддержку">×</button>
+<button type="button" class="club-bot-close" data-action="close-bot" aria-label="Закрыть поддержку">×</button>
 </header>
-<div class="club-bot-log" aria-live="polite">
-<p>Спрашивайте про программы ДПО, вступление в клуб, подкасты, мерч, события или кабинет.</p>
+<div class="club-bot-log" role="log" aria-label="Переписка с поддержкой" aria-live="polite">
+<p class="club-bot-intro">Помогу найти программу, разобраться со вступлением в клуб, событиями или кабинетом.</p>
 </div>
-<div class="club-bot-hints">
+<div class="club-bot-hints" aria-label="Быстрые вопросы">
 {% for hint in ['Подобрать программу','Как вступить','Подкасты','Скидка выпускника','Онлайн'] %}
-<button data-action="bot-hint" data-question="{{ hint }}">{{ hint }}</button>
+<button type="button" data-action="bot-hint" data-question="{{ hint }}">{{ hint }}</button>
 {% endfor %}
 </div>
-<form data-bot-form>
-<label>Вопрос<input name="question" minlength="2" maxlength="500" required autocomplete="off">
-</label>
-<button>Спросить</button>
+<div class="club-bot-compose">
+<form class="club-bot-form" data-bot-form>
+<label for="bot-question">Вопрос</label>
+<div class="club-bot-input-row">
+<input id="bot-question" name="question" minlength="2" maxlength="500" required autocomplete="off" placeholder="Что вы хотите узнать?">
+<button type="submit" class="site-primary">Спросить</button>
+</div>
 </form>
-<a href="/support">Написать человеку</a>
+<div class="club-bot-foot"><a href="/support" class="club-bot-human">Написать человеку</a></div>
+</div>
 </dialog>
 <div id="toast" role="status" aria-live="polite" hidden>
 </div>

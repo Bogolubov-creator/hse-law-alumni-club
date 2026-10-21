@@ -265,7 +265,7 @@
     "direction": "Корпоративное и договорное право",
     "format": "online",
     "duration": "68 часов",
-    "price": 2200000,
+    "price": 3000000,
     "dates": {
       "start": "31 августа 2026"
     },
@@ -1174,7 +1174,7 @@
     "enrollment": "nonactual",
     "source_url": "https://www.hse.ru/edu/dpo/1162952114",
     "hse_id": "1162952114",
-    "cover": null
+    "cover": "/assets/programs/1162952114.webp"
   },
   {
     "slug": "imuschestvennye-otnosheniya-v-seme-pravo-i-mediaciya-934858556",
@@ -1187,7 +1187,7 @@
     "enrollment": "actual",
     "source_url": "https://www.hse.ru/edu/dpo/934858556",
     "hse_id": "934858556",
-    "cover": null
+    "cover": "/assets/programs/934858556.jpg"
   },
   {
     "slug": "intellektualnaya-sobstvennost-ot-zakona-k-praktike-816497962",
@@ -1464,7 +1464,7 @@
     "enrollment": "nonactual",
     "source_url": "https://www.hse.ru/edu/dpo/474413637",
     "hse_id": "474413637",
-    "cover": null
+    "cover": "/assets/programs/474413637.jpg"
   },
   {
     "slug": "islamskie-finansy-pravovye-osnovy-komplaens-i-biznes-praktik-814248062",
@@ -2658,7 +2658,7 @@
   },
   {
     "slug": "personalnyy-assistent-pro-829977883",
-    "title": "Персональный ассистент PRO",
+    "title": "Персональный ассистент",
     "direction": "Практика, переговоры и отраслевое регулирование",
     "format": "blended",
     "duration": "68 часов",
@@ -2781,7 +2781,7 @@
     "direction": "Иностранные языки для юристов",
     "format": "blended",
     "duration": "272 часа",
-    "price": 13000000,
+    "price": 14000000,
     "dates": {
       "start": "30 сентября 2026"
     },
@@ -3764,6 +3764,6 @@
     "enrollment": "nonactual",
     "source_url": "https://www.hse.ru/edu/dpo/1029651795",
     "hse_id": "1029651795",
-    "cover": null
+    "cover": "/assets/programs/1029651795.jpg"
   }
 ]

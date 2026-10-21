@@ -1,274 +1,122 @@
 .club-bot-panel {
+  --bot-gap: max(24px, calc(var(--tabs-h, 0px) + var(--cookie-h, 0px) + 16px));
   position: fixed;
-  right: 16px;
-  bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px));
-  z-index: 50;
-  width: min(380px, calc(100vw - 32px));
-  max-height: min(70vh, 560px);
-  display: flex;
+  inset: auto 24px calc(var(--bot-viewport-bottom, 0px) + var(--bot-gap)) auto;
+  margin: 0;
+  padding: 0;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(560px, calc(var(--bot-viewport-height, 100dvh) - var(--bot-gap) - 16px));
+  display: none;
   flex-direction: column;
-  background: var(--c-bg);
-  color: var(--c-text);
-  border: 1px solid var(--c-line);
-  border-radius: 18px 18px 0 0;
   overflow: hidden;
-  box-shadow: 0 24px 60px color-mix(in srgb, var(--c-text) 28%, transparent);
-  font: 15px/1.45 var(--f-body);
+  color: var(--c-text);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line-control);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-ambient-lift);
+  font: 16px/1.5 var(--f-body);
 }
 
+.club-bot-panel[open] { display: flex; }
+.club-bot-panel::backdrop { background: rgb(20 24 31 / 0.32); }
+
 .club-bot-head {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 10px 14px 8px;
+  gap: 12px;
+  padding: 12px 16px 12px 20px;
   border-bottom: 1px solid var(--c-line);
-  flex: none;
 }
 
-.club-bot-brand h2 {
-  margin: 0;
-  font: 600 1.1875rem/1.3 var(--f-display);
-}
-
+.club-bot-head h2 { margin: 0; font: 400 22px/1.25 var(--f-display); }
 .club-bot-close {
-  width: 44px;
-  height: 44px;
-  flex: none;
-  border-radius: 999px;
-  border: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
   background: transparent;
-  color: var(--c-text);
-  font-size: 1.25rem;
+  font-size: 24px;
   line-height: 1;
-  cursor: pointer;
 }
-
-.club-bot-close:hover {
-  background: var(--c-bg-sunken);
-}
+.club-bot-close:hover { background: var(--c-bg-sunken); }
 
 .club-bot-log {
   flex: 1 1 auto;
+  min-height: 0;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 14px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  overflow-wrap: anywhere;
+  padding: 20px;
 }
 
-.club-bot-say,
-.club-bot-mine {
+.club-bot-intro { margin: 0; color: var(--c-text-2); }
+.club-bot-say, .club-bot-mine {
+  flex: none;
   margin: 0;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  border-radius: 16px;
-  padding: 10px 14px;
-  max-width: 92%;
-}
-
-.club-bot-say {
-  background: var(--c-bg-sunken);
-  align-self: flex-start;
-}
-
-.club-bot-mine {
-  background: var(--p-blue);
-  color: white;
-  align-self: flex-end;
-}
-
-.club-bot-typing {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  align-self: flex-start;
+  max-width: 94%;
   padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--c-bg-sunken);
+  border-radius: var(--r-lg);
+  font-size: 15px;
+  line-height: 1.5;
 }
-
-.club-bot-typing i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--c-text) 45%, transparent);
-  animation: clubBotDot 1.05s infinite ease-in-out;
-}
-
-.club-bot-typing i:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.club-bot-typing i:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes clubBotDot {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.45;
-  }
-  30% {
-    transform: translateY(-4px);
-    opacity: 1;
-  }
-}
+.club-bot-say { background: var(--c-bg-sunken); }
+.club-bot-mine { align-self: flex-end; background: var(--c-surface-warm); }
+.club-bot-status { flex: none; margin: 0; font-size: 14px; color: var(--c-text-3); }
 
 .club-bot-hints {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 0 20px 16px;
 }
-
 .club-bot-hints button {
-  font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  flex: none;
   min-height: 44px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--p-blue) 35%, transparent);
-  background: var(--c-bg);
-  color: var(--c-accent-text);
-  cursor: pointer;
-}
-
-.club-bot-hints button:hover {
+  padding: 8px 12px;
+  border-color: var(--c-line);
+  border-radius: var(--r-sm);
   background: var(--c-bg-sunken);
+  font-size: 14px;
+  line-height: 1.35;
 }
+.club-bot-hints button:hover { border-color: var(--c-line-control); }
 
-.club-bot-more {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--c-accent-text);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
+.club-bot-compose { flex: none; border-top: 1px solid var(--c-line); }
+.club-bot-form { display: block; padding: 16px 20px 0; }
+.club-bot-form label { display: block; margin-bottom: 8px; font-size: 14px; }
+.club-bot-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.club-bot-input-row input { min-width: 0; min-height: 48px; font-size: 16px; }
+.club-bot-input-row button { min-height: 48px; padding: 10px 16px; }
+.club-bot-foot { display: flex; padding: 4px 20px 8px; }
+.club-bot-human { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; color: var(--c-link); }
+.club-bot-panel :is(button, input, a):focus-visible { outline: 3px solid var(--c-accent); outline-offset: 2px; }
 
-.club-bot-apply {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 0;
-  background: var(--p-blue);
-  color: white;
-  text-decoration: none;
-  cursor: pointer;
-}
+.club-bot-more { flex: none; display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--c-accent-text); }
+.club-bot-card { flex: none; width: 100%; padding: 14px; border: 1px solid var(--c-line); border-radius: var(--r-lg); }
+.club-bot-card a { font-size: 15px; font-weight: 600; color: var(--c-text); text-decoration: none; }
+.club-bot-card a:hover { text-decoration: underline; }
+.club-bot-card p { margin: 6px 0 0; font-size: 14px; color: var(--c-text-3); }
 
-.club-bot-card {
-  border: 1px solid var(--c-line);
-  border-radius: 16px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.club-bot-card a {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--c-text);
-  text-decoration: none;
-}
-
-.club-bot-card a:hover {
-  text-decoration: underline;
-}
-
-.club-bot-card p {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--c-text-2);
-}
-
-.club-bot-form {
-  display: flex;
-  gap: 8px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--c-line);
-  flex: none;
-}
-
-.club-bot-form input {
-  flex: 1;
-  font: inherit;
-  font-size: 0.9375rem;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid var(--c-line-control);
-  background: var(--c-bg);
-  color: var(--c-text);
-}
-
-.club-bot-form input:focus-visible {
-  outline: none;
-  border-color: var(--c-accent-text);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-blue) 18%, transparent);
-}
-
-.club-bot-form button {
-  font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 0;
-  background: var(--p-blue);
-  color: white;
-  cursor: pointer;
-}
-
-.club-bot-foot {
-  padding: 0 14px 12px;
-  flex: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 18px;
-  align-items: center;
-}
-
-.club-bot-human {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--c-text-2);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
+.club-bot-panel[data-compact] { --bot-gap: 12px; }
+.club-bot-panel[data-compact] .club-bot-hints { display: none; }
+.club-bot-panel[data-compact] .club-bot-head { padding-block: 6px; }
+.club-bot-panel[data-compact] .club-bot-form { padding-top: 8px; }
 
 @media (max-width: 700px) {
-  .club-bot-panel {
-    left: 0;
-    right: 0;
-    bottom: calc(var(--tabs-h, 0px) + var(--cookie-h, 0px));
-    width: 100%;
-    max-height: min(82dvh, calc(100dvh - var(--tabs-h, 0px) - var(--cookie-h, 0px) - 24px));
-    border-radius: 18px 18px 0 0;
-  }
+  .club-bot-panel { right: 16px; }
+  .club-bot-hints { flex-wrap: nowrap; overflow-x: auto; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .club-bot-typing i {
-    animation: none;
-  }
-}
+html.pwa-shell .club-bot-panel { right: max(16px, calc(50% - 215px + 16px)); width: min(398px, calc(100vw - 32px)); }

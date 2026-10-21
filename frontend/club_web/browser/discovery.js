@@ -93,7 +93,7 @@ function prepareChanges(url) {
       dialog.querySelector("[data-changes-filter-body]").append(form);
       dialog.showModal();
     });
-    dialog.querySelector("[data-changes-filter-cancel]").addEventListener("click", () => dialog.close());
+    dialog.querySelectorAll("[data-changes-filter-cancel]").forEach(button => button.addEventListener("click", () => dialog.close()));
     dialog.addEventListener("close", () => {
       [...form.elements].forEach((input, index) => { input.value = original[index]; });
       home.append(form);

@@ -5,14 +5,33 @@ import pathlib
 import secrets
 import shlex
 import shutil
+import socket
+import time
 from urllib.parse import urlsplit
 
 from mariadb_common import FILES, HELPERS, REPO, Context, connection_url, create_database, directory, output, run, sql
+
+LOCAL_INSTALL_PORTS = (9080, 9443, 8025)
+PUBLIC_INSTALL_PORTS = (80, 443)
+
+
+def verify_install_ports(local):
+    address = "127.0.0.1" if local else "0.0.0.0"
+    for port in LOCAL_INSTALL_PORTS if local else PUBLIC_INSTALL_PORTS:
+        try:
+            with socket.socket() as listener:
+                listener.bind((address, port))
+        except OSError:
+            raise ValueError(
+                f"Порт {port} занят или недоступен. Проверьте `sudo ss -lntp`; "
+                "остановите конфликтующий сервис только после проверки его назначения и повторите установку."
+            ) from None
 
 
 def install(config, local):
     from mariadb_native import deploy
 
+    started = time.monotonic()
     HELPERS["config_directory"](config)
     metadata_path = config / "install.json"
     if metadata_path.exists():
@@ -28,8 +47,11 @@ def install(config, local):
         if config.exists() and any(config.iterdir()):
             raise ValueError("Каталог содержит прежнюю конфигурацию; файлы не перезаписаны")
         if not local:
+            if not os.isatty(0):
+                raise ValueError("Для мастера нужен терминал; для локального стенда укажите --local")
             choice = HELPERS["prompt"]("Контур: 1 – локальная репетиция, 2 – публичный HTTPS", "1", HELPERS["mode"])
             local = choice == "1"
+        verify_install_ports(local)
         values = HELPERS["configuration"](True)
         certificate = key = None
         if not local:
@@ -44,14 +66,15 @@ def install(config, local):
             values["OFFICE_EMAIL"] = HELPERS["prompt"]("Email получателя заявок", check=HELPERS["email"])
             certificate = pathlib.Path(HELPERS["prompt"]("Абсолютный путь к fullchain.pem")).resolve(strict=True)
             key = pathlib.Path(HELPERS["prompt"]("Абсолютный путь к privkey.pem")).resolve(strict=True)
-        run(["bash", str(REPO / "scripts/setup-ubuntu.sh")])
-        run(["apt-get", "install", "-y", "--no-install-recommends", "mariadb-server", "mariadb-client"])
+        print("[1/4] Подготовка Ubuntu, Docker и MariaDB", flush=True)
+        run(["bash", str(REPO / "scripts/setup-ubuntu.sh"), "--mariadb"])
         run(["systemctl", "enable", "--now", "mariadb"])
         addresses = output(["ss", "-H", "-lnt", "sport = :3306"]).splitlines()
         for line in addresses:
             address = line.split()[3].rsplit(":", 1)[0].strip("[]")
             if not ipaddress.ip_address(address).is_loopback:
                 raise ValueError("MariaDB слушает внешний адрес; настройте loopback перед установкой")
+        print("[2/4] Создание отдельной базы, конфигурации и сертификата", flush=True)
         suffix = secrets.token_hex(6)
         database = "club_" + suffix
         operator, api = database + "_ops", database + "_api"
@@ -172,11 +195,15 @@ def install(config, local):
             HELPERS["write_new"](config / name, content)
     context = Context(config / "compose.env")
     with context.lock():
+        print("[3/4] Сборка и запуск приложения", flush=True)
         deploy(context)
+    print(f"[4/4] Сайт и API готовы. Установщик работал {time.monotonic() - started:.0f} с.", flush=True)
+    print("Сайт: " + context.runtime["PUBLIC_URL"])
     print("Офис: " + context.runtime["PUBLIC_URL"] + "/admin")
     print("Первичные данные администратора: sudo cat " + shlex.quote(str(config / "initial-admin.txt")))
     if metadata["mode"] == "local":
         print("Локальная CA: " + str(config / "local-ca.crt") + "; письма: http://localhost:8025")
+        print("На удалённой Ubuntu адрес localhost открывают через SSH-туннель; команда есть в README.")
 
 
 def prepare_restore(context, config, port, mail_port):

@@ -44,7 +44,7 @@
 </label>
 <input type="text" name="website" class="site-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
 {% endmacro %}
-{% macro add_cart(item,kind) %}
+{% macro add_cart(item,kind,compact=false) %}
 <form data-api="/cart" data-cart>
 <input type="hidden" name="type" value="{{ kind }}">
 <input type="hidden" name="ref_id" value="{{ item.slug }}">
@@ -57,8 +57,8 @@
 </select>
 </label>
 {% endif %}
-<label class="site-field">Количество<input type="number" name="qty" value="1" min="1" max="99">
-</label>
+{% if compact %}<input type="number" name="qty" value="1" min="1" max="99" hidden>{% else %}<label class="site-field">Количество<input type="number" name="qty" value="1" min="1" max="99">
+</label>{% endif %}
 <button class="site-primary" {% if kind == 'merch' and not item.stock and not item.variants_json %}disabled{% endif %}>В корзину</button>
 <p role="alert" data-error hidden>
 </p>

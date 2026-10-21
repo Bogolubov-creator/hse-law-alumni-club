@@ -1,39 +1,33 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import save %}
+{% from 'podcast-artwork.html' import artwork %}
 {% block content %}
-<main id="main" class="site-article" data-reading-title="{{ item.title }}" data-reading-kind="podcasts">
-<a href="/podcasts">← Подкасты</a>
-<header class="site-masthead">
-<h1>{{ item.title }}</h1>
-<p>{{ item.description or '' }}</p>
-</header>
+<main id="main" class="episode-page" data-reading-title="{{ item.title }}" data-reading-kind="podcasts">
+<a class="episode-back" href="/podcasts">← Подкасты</a>
+<div class="episode-layout">
+<div class="episode-cover">{{ artwork(item) }}</div>
+<div class="episode-content">
+<header><p class="episode-meta">{{ 'Открытый выпуск' if item.is_free else 'По подписке' }}{% if item.duration %} · {{ item.duration }}{% endif %}</p>
+<p class="episode-topic-label">Тема выпуска</p><h1>{{ item.title }}</h1>
+{% if item.description %}<p class="episode-description">{{ item.description }}</p>{% endif %}</header>
 {% if item.audio_url|safe_url or mirror %}
-<section class="site-player" data-episode="{{ item.id }}" {% if mirror and not item.is_free %}data-mirror-paid hidden{% endif %}>
-<audio controls preload="none"><source src="{{ item.audio_url|safe_url }}" {% if mirror %}data-mirror-audio="{{ item.demo_audio_url|safe_url }}" type="audio/mpeg"{% endif %}>
-</audio>
-<div class="site-actions">
-<button data-action="audio-back">−15 секунд</button>
-<button data-action="audio-forward">+15 секунд</button>
-<label>Скорость<select aria-label="Скорость" data-audio-rate>
-{% for speed in [0.75,1,1.25,1.5,2] %}
-<option value="{{ speed }}" {% if speed==1 %}selected{% endif %}>{{ speed }}×</option>
-{% endfor %}
-</select>
-</label>
+<section class="site-player episode-player" data-episode="{{ item.id }}" {% if mirror and not item.is_free %}data-mirror-paid hidden{% endif %} aria-label="Прослушивание выпуска">
+<h2>Слушать выпуск</h2>
+<audio controls preload="none" aria-label="Плеер выпуска"><source src="{{ item.audio_url|safe_url }}" {% if mirror %}data-mirror-audio="{{ item.demo_audio_url|safe_url }}" type="audio/mpeg"{% endif %}></audio>
+<div class="episode-controls">
+<button class="episode-skip" data-action="audio-back">−15 секунд</button>
+<button class="episode-skip" data-action="audio-forward">+15 секунд</button>
+<label>Скорость<select aria-label="Скорость" data-audio-rate>{% for speed in [0.75,1,1.25,1.5,2] %}<option value="{{ speed }}" {% if speed==1 %}selected{% endif %}>{{ speed }}×</option>{% endfor %}</select></label>
 </div>
-<p role="alert" data-audio-error hidden>
-</p>
-<button data-audio-retry hidden>Повторить загрузку</button>
+<p role="alert" data-audio-error hidden></p><button data-audio-retry hidden>Повторить загрузку</button>
 </section>
 {% else %}
-<div class="site-panel">
-<p>Выпуск доступен по подписке клуба.</p>
-<a href="/podcasts#podcast-subscription" class="site-primary">Условия подписки</a>
-<a href="/lk?next=/podcasts%23podcast-subscription">Войти</a>
-</div>
+<section class="episode-access">
+<h2>Выпуск по подписке</h2><p>Выпуск доступен по подписке клуба.</p>
+<div class="episode-access__actions"><a href="/podcasts#podcast-subscription" class="site-primary">Условия подписки</a><a href="/lk?next=/podcasts%23podcast-subscription">Войти</a></div>
+</section>
 {% endif %}
-{% if mirror and not item.is_free %}<div data-mirror-locked><p>Демонстрация без оплаты и настоящей подписки.</p><button data-mirror-subscription>Проверить как подписчик</button></div>{% endif %}
-{% if item.video_url %}
-<button data-action="video" data-video="{{ item.video_url|safe_url }}">Смотреть видео на RuTube</button>
-{% endif %}{{ save(path,item.title,'podcasts') }}</main>
+{% if mirror and not item.is_free %}<section class="episode-access" data-mirror-locked><h2>Доступ к выпуску</h2><p>Демонстрация без оплаты и настоящей подписки.</p><button data-mirror-subscription>Проверить как подписчик</button></section>{% endif %}
+<div class="episode-actions">{{ save(path,item.title,'podcasts') }}{% if item.video_url %}<button data-action="video" data-video="{{ item.video_url|safe_url }}">Смотреть видео на RuTube</button>{% endif %}</div>
+</div></div></main>
 {% endblock %}

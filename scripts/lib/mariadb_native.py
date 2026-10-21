@@ -58,6 +58,7 @@ def deploy(context):
     commit = revision()
     if os.geteuid() != 0:
         raise ValueError("Обслуживание нативной MariaDB выполняется через sudo")
+    print("Проверка конфигурации, базы и свободного места", flush=True)
     preflight(context)
     previous = context.state / "last-deploy.json"
     if previous.exists():
@@ -71,9 +72,12 @@ def deploy(context):
                 context.project + "-operator:retained-" + deployed["commit"],
             ]
         )
+    print("Сборка образов. Первый запуск скачивает системные и Python-пакеты; вывод сборки появится ниже.", flush=True)
+    build_started = time.monotonic()
     context.execute(
         "--profile", "operator", "build", "--build-arg", "VCS_REF=" + commit, "api", "web", "operator", "nginx"
     )
+    print(f"Сборка завершена за {time.monotonic() - build_started:.0f} с. Проверка рабочих настроек.", flush=True)
     context.execute(
         "run",
         "--rm",
@@ -88,16 +92,21 @@ def deploy(context):
     )
     running = bool(context.capture("ps", "--status", "running", "-q", "api"))
     if running:
+        print("Резервная копия существующей установки", flush=True)
         backup(context)
     context.stop_writers()
     try:
+        print("Применение миграций базы", flush=True)
         context.operator_command("migrate")
+        print("Проверка прав API и первичного администратора", flush=True)
         context.operator_command("configure-mariadb-role")
         context.operator_command("bootstrap")
         if context.values.get("COMPOSE_PROFILES") == "local":
             context.execute("up", "-d", "mailpit")
+        print("Запуск API, сайта и nginx; ожидание готовности", flush=True)
         context.execute("up", "-d", "--wait", "api", "web")
         context.execute("up", "-d", "--wait", "--force-recreate", "nginx")
+        print("Проверка HTTPS, главной страницы и /api/ready", flush=True)
         context.verify_http()
         operator_image = output(["docker", "image", "inspect", "-f", "{{.Id}}", context.values["CLUB_OPERATOR_IMAGE"]])
         output(["docker", "image", "tag", operator_image, context.project + "-operator:retained-" + commit])

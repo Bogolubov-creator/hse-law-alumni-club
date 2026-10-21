@@ -14,7 +14,7 @@
 uv sync --directory backend --frozen
 uv sync --directory frontend --frozen
 uv sync --directory scripts --frozen
-uv run --directory frontend playwright install chromium
+uv run --directory frontend playwright install chromium webkit
 uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
 uv run --directory backend ruff format --check club_api tests/python ../scripts/club_ops
 uv run --directory frontend ruff check club_web tests/python
@@ -32,6 +32,12 @@ python3 scripts/tests/test-install.py
 
 Без тестовой БД SQL-сценарии пропускаются. Пропуск не означает успешной проверки
 сохранения данных. Live-сценарии выполняются отдельной командой ниже.
+
+Проверки поддержки, карточек ДПО, подкастов, кабинета и списка изменений
+выполняются в Chromium и WebKit на компьютерной и мобильной ширине.
+WebKit помогает проверять поведение движка Safari; физический iPhone или Safari
+на macOS эти тесты не заменяют. В CI браузеры устанавливаются с `--with-deps`,
+чтобы добавить необходимые системные библиотеки Ubuntu.
 
 ## Что проверяют тесты
 

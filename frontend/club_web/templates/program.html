@@ -3,88 +3,66 @@
 {% block content %}
 {% set organizer=program_organizer(item) %}
 <main id="main" class="site-container program-page" data-reading-title="{{ item.title }}" data-reading-kind="dpo">
-<a href="/dpo">← Каталог программ</a>
-<header class="site-masthead">
+<a class="program-back" href="/dpo">← Каталог программ</a>
+<header class="site-masthead program-header">
 <span class="dpo-organizer" data-organizer="{{ organizer }}">{{ organizer_labels[organizer] }}</span>
-<span class="club-caps">{{ item.direction }}</span>
+{% if item.direction %}<span class="program-direction">{{ item.direction }}</span>{% endif %}
 <h1>{{ item.title }}</h1>
-<p>{{ item.tagline or item.description or '' }}</p>
+{% if item.tagline or item.description %}<p>{{ item.tagline or item.description }}</p>{% endif %}
 </header>
-<div class="site-two-col">
-<div>
-{% if item.cover|media %}
-<img class="site-cover site-program-cover" src="{{ item.cover|media }}" alt="{{ item.title }}" width="900" height="600">
-{% endif %}
+<nav class="program-nav" aria-label="О программе">
+{% for key,label in [('description','О программе'),('audience','Для кого'),('results','Результаты'),('modules','Программа обучения'),('teachers','Преподаватели')] %}
+{% if item[key] %}<a href="#program-{{ key }}">{{ label }}</a>{% endif %}{% endfor %}
+<a href="#program-enrollment">Стоимость и запись</a>
+</nav>
+<div class="program-layout">
+<div class="program-content">
+{% if item.cover|media %}<div class="program-cover"><img class="site-program-cover" src="{{ item.cover|media }}" alt="{{ item.title }}" width="900" height="600"></div>{% endif %}
+{% if item.description %}<section id="program-description" class="program-section"><h2>О программе</h2><p class="site-prose">{{ item.description }}</p></section>{% endif %}
 {% for key,label in [('audience','Для кого'),('results','Результаты обучения'),('advantages','Преимущества')] %}
-{% if item[key] %}
-<section>
-<h2>{{ label }}</h2>
-{% if item[key] is string %}
-<p class="site-prose">{{ item[key] }}</p>
-{% else %}
-<ul>
-{% for text in item[key] %}
-<li>{{ text }}</li>
-{% endfor %}
-</ul>
-{% endif %}
-</section>
-{% endif %}
+{% if item[key] %}<section id="program-{{ key }}" class="program-section"><h2>{{ label }}</h2>
+{% if item[key] is string %}<p class="site-prose">{{ item[key] }}</p>{% else %}<ul class="program-list">{% for text in item[key] %}<li>{{ text }}</li>{% endfor %}</ul>{% endif %}
+</section>{% endif %}
 {% endfor %}
 {% if item.modules %}
-<section>
-<h2>Программа обучения</h2>
-{% for module in item.modules %}
-<details>
-<summary>{{ module if module is string else module.title }}</summary>
-<p class="site-prose">{{ module.description or module.content or '' }}</p>
-<ul>
-{% for point in module.points or [] %}
-<li>{{ point }}</li>
-{% endfor %}
-</ul>
-{% if module.hours %}
-<p>{{ module.hours }} часов</p>
-{% endif %}
-</details>
-{% endfor %}
-</section>
-{% endif %}
+<section id="program-modules" class="program-section"><h2>Программа обучения</h2>
+<div class="program-modules">{% for module in item.modules %}
+{% if module.description or module.content or module.points or module.hours %}
+<details><summary><span class="program-module-number" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span><span>{{ module if module is string else module.title }}</span><span class="program-module-toggle" aria-hidden="true">+</span></summary>
+<div class="program-module-body">
+{% if module.description or module.content %}<p class="site-prose">{{ module.description or module.content }}</p>{% endif %}
+{% if module.points %}<ul>{% for point in module.points %}<li>{{ point }}</li>{% endfor %}</ul>{% endif %}
+{% if module.hours %}<p>{{ module.hours }} часов</p>{% endif %}
+</div></details>
+{% else %}<div class="program-module-static"><span class="program-module-number" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span><h3>{{ module if module is string else module.title }}</h3></div>{% endif %}
+{% endfor %}</div>
+</section>{% endif %}
 {% if item.teachers %}
-<section>
-<h2>Преподаватели</h2>
-{% for teacher in item.teachers %}
-<article>
+<section id="program-teachers" class="program-section"><h2>Преподаватели</h2>
+<div class="program-teachers">{% for teacher in item.teachers %}<article class="program-teacher">
 {% if teacher.photo|media %}<img class="site-teacher-photo" src="{{ teacher.photo|media }}" alt="{{ teacher.name or teacher.fio }}" width="200" height="200" loading="lazy">{% endif %}
-<h3>{{ teacher if teacher is string else teacher.name or teacher.fio }}</h3>
-<p>{{ teacher.bio or teacher.role or teacher.position or '' }}</p>
-</article>
-{% endfor %}
-</section>
-{% endif %}
+<div><h3>{{ teacher if teacher is string else teacher.name or teacher.fio }}</h3>{% if teacher.bio or teacher.role or teacher.position %}<p>{{ teacher.bio or teacher.role or teacher.position }}</p>{% endif %}</div>
+</article>{% endfor %}</div>
+</section>{% endif %}
 </div>
-<aside class="site-panel">
-<h2>Обучение</h2>
+<aside class="program-summary" id="program-enrollment" aria-labelledby="program-enrollment-title">
+<p class="program-summary__eyebrow">Стоимость и запись</p><h2 id="program-enrollment-title">Обучение</h2>
+<p class="program-summary__price">{{ item.price|rub if item.get('price') is not none else 'Стоимость уточняется' }}</p>
+<p class="program-summary__status" data-enrollment="{{ item.enrollment }}">{{ {'actual':'Набор открыт','nonactual':'Набор закрыт'}.get(item.enrollment,'Набор уточняется') }}</p>
 <dl>
-<dt>Организатор</dt>
-<dd>{{ organizer_labels[organizer] }}</dd>
-<dt>Формат</dt>
-<dd>{{ format_labels.get(item.format,item.format) }}</dd>
-<dt>Продолжительность</dt>
-<dd>{{ item.duration }}</dd>
-<dt>Начало</dt>
-<dd>{{ (item.dates or {}).get('start','По мере набора')|date }}</dd>
-<dt>Документ</dt>
-<dd>{{ item.document or 'Уточняется у организатора' }}</dd>
-<dt>Стоимость</dt>
-<dd>{{ item.price|rub }}</dd>
+<div><dt>Организатор</dt><dd>{{ organizer_labels[organizer] }}</dd></div>
+<div><dt>Формат</dt><dd>{{ format_labels.get(item.format,item.format) or 'Формат уточняется' }}</dd></div>
+<div><dt>Продолжительность</dt><dd>{{ item.duration or 'Уточняется у организатора' }}</dd></div>
+<div><dt>Начало</dt><dd>{{ (item.dates or {}).get('start')|date if (item.dates or {}).get('start') else 'Начало уточняется' }}</dd></div>
+<div><dt>Документ</dt><dd>{{ item.document or 'Уточняется у организатора' }}</dd></div>
 </dl>
-{% if item.enrollment=='nonactual' %}
-<p role="status">Набор закрыт</p>
+<div class="program-summary__actions">
+{% if item.enrollment=='nonactual' %}<p role="status">Набор закрыт</p>
 {% elif organizer=='hse' %}
 {% if item.source_url|safe_url %}<a href="{{ item.source_url|safe_url }}" class="site-primary" target="_blank" rel="noopener noreferrer">Записаться на сайте ВШЭ ↗</a>{% else %}<p role="status">Ссылка на запись уточняется у факультета.</p>{% endif %}
 {% else %}{{ add_cart(item,'dpo') }}{% endif %}{{ save(path,item.title,'dpo') }}
-{% if organizer=='hse' %}<p>Запись и оплата проходят в НИУ ВШЭ. Условия и скидки уточняются у факультета; скидка Клуба здесь не применяется.</p>{% else %}<p>Заявка оформляется на сайте Клуба. Скидка выпускника рассчитывается при оформлении.</p>{% endif %}
+</div>
+{% if organizer=='hse' %}<p class="program-summary__note">Запись и оплата проходят в НИУ ВШЭ. Условия и скидки уточняются у факультета; скидка Клуба здесь не применяется.</p>{% else %}<p class="program-summary__note">Заявка оформляется на сайте Клуба. Скидка выпускника рассчитывается при оформлении.</p>{% endif %}
 </aside>
 </div>
 </main>
