@@ -4,6 +4,7 @@ import json
 import pathlib
 import os
 import subprocess
+import socket
 import sys
 import tarfile
 import tempfile
@@ -18,6 +19,18 @@ backup = importlib.import_module('mariadb_backup')
 
 
 class NativeDatabaseGuards(unittest.TestCase):
+    def test_occupied_install_port_stops_before_dependencies_database_and_configuration(self):
+        with socket.socket() as listener, tempfile.TemporaryDirectory() as temp:
+            listener.bind(('127.0.0.1', 0))
+            listener.listen()
+            port = listener.getsockname()[1]
+            config = pathlib.Path(temp).resolve()
+            with patch.object(installer, 'LOCAL_INSTALL_PORTS', (port,), create=True), patch.object(installer, 'run', side_effect=AssertionError('Изменение системы до проверки порта')), patch.object(installer, 'create_database') as create:
+                with self.assertRaisesRegex(ValueError, str(port)):
+                    installer.install(config, True)
+                create.assert_not_called()
+                self.assertEqual(list(config.iterdir()), [])
+
     def test_low_docker_disk_space_stops_before_build_backup_or_writes(self):
         from unittest.mock import Mock
 

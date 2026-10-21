@@ -17,4 +17,4 @@ if ! command -v python3 >/dev/null; then
 fi
 exec 8>/run/lock/club-install.lock
 flock -n 8 || { echo 'Другая установка уже выполняется' >&2; exit 1; }
-exec python3 "$repo/scripts/lib/install-config.py" "$@"
+exec python3 -u "$repo/scripts/lib/install-config.py" "$@"
