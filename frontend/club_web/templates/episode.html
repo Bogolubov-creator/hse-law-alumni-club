@@ -8,7 +8,7 @@
 <div class="episode-cover">{{ artwork(item) }}</div>
 <div class="episode-content">
 <header><p class="episode-meta">{{ 'Открытый выпуск' if item.is_free else 'По подписке' }}{% if item.duration %} · {{ item.duration }}{% endif %}</p>
-<h1>{{ item.title }}</h1>
+<p class="episode-topic-label">Тема выпуска</p><h1>{{ item.title }}</h1>
 {% if item.description %}<p class="episode-description">{{ item.description }}</p>{% endif %}</header>
 {% if item.audio_url|safe_url or mirror %}
 <section class="site-player episode-player" data-episode="{{ item.id }}" {% if mirror and not item.is_free %}data-mirror-paid hidden{% endif %} aria-label="Прослушивание выпуска">

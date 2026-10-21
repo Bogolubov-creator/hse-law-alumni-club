@@ -17,6 +17,7 @@
 .podcast-card__meta { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 10px; font-size: 14px; line-height: 1.5; color: var(--c-text-3); }
 .podcast-card__meta > span:first-child { color: var(--c-accent-text); }
 .podcast-card h3 { margin: 0; font: 600 20px/1.35 var(--f-body); overflow-wrap: anywhere; }
+.podcast-card__topic-label { display: inline-block; color: var(--c-accent-text); font-size: 14px; margin-bottom: 6px; }
 .podcast-card h3 a { color: var(--c-text); text-decoration: none; }
 .podcast-card h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .podcast-card__description { margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: var(--c-text-3); }

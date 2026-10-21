@@ -127,3 +127,27 @@ def test_mirror_podcast_demo_keeps_locked_and_free_states(chromium, mirror_site)
     page.get_by_role("button", name="Выключить деморежим подписчика", exact=True).click()
     expect(page.locator("audio")).not_to_be_visible()
     context.close()
+
+
+def test_mirror_podcasts_show_topics_separately_from_guests(chromium, mirror_site):
+    context = chromium.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+    page = context.new_page()
+    page.goto(mirror_site + "podcasts/")
+    for identifier, title, guest in (
+        ("volos", "Договоры", "Алексей Волос"),
+        ("besedin", "Уголовное право", "Глеб Беседин"),
+        ("balashov", "Введение в право", "Дмитрий Балашов"),
+        ("matveeva", "Семья и собственность", "Мария Матвеева"),
+        ("dzgoeva", "Трудовые отношения", "Фатима Дзгоева"),
+        ("nikolaev", "Законотворчество", "Николай Николаев"),
+    ):
+        card = page.locator("[data-podcast-card]").filter(has=page.locator(f'a[href$="/mirror-pod-{identifier}"]'))
+        expect(card.get_by_role("heading", name=title, exact=True)).to_be_visible()
+        expect(card).to_contain_text("Гость – " + guest)
+    expect(page.locator("#main")).not_to_contain_text("Данилом Данюковым")
+    page.goto(mirror_site + "podcasts/mirror-pod-volos/")
+    expect(page.get_by_role("heading", name="Договоры", exact=True)).to_be_visible()
+    expect(page.locator(".episode-description")).to_contain_text("Гость – Алексей Волос")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+    context.close()
