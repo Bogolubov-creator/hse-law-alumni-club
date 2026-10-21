@@ -29,7 +29,13 @@ def fixtures(root):
 
 def snapshot(data):
     faq = resource("faq-data.json")
+    domain = resource("domain-data.json")
     alumni = data["alumni"][0]
+    points = alumni.get("points_cached", 0)
+    level_index = max(index for index, level in enumerate(domain["levels"]) if points >= level["min_points"])
+    level = domain["levels"][level_index]
+    following = domain["levels"][level_index + 1 : level_index + 2]
+    demo_progress = {"office_seal": 1, "patron": points, "legend": level_index + 1}
     profile = {
         "alumni": {
             **alumni,
@@ -39,9 +45,24 @@ def snapshot(data):
             "referral_code": "DEMO",
             "telegram_linked": False,
         },
-        "level": {"level_title": "Участник", "points": alumni.get("points_cached", 0), "discount": 5},
-        "achievements": [],
+        "level": {
+            "level_title": level["title"],
+            "points": points,
+            "discount": level["discount_percent"],
+            "next_level": following[0]["title"] if following else None,
+            "to_next": following[0]["min_points"] - points if following else 0,
+        },
+        "achievements": [
+            {
+                **{key: row[key] for key in ("key", "title", "description", "icon", "kind")},
+                "current": min(demo_progress.get(row["key"], 0), row["rule_json"]["gte"]),
+                "target": row["rule_json"]["gte"],
+                "earned": demo_progress.get(row["key"], 0) >= row["rule_json"]["gte"],
+            }
+            for row in domain["achievements"]
+        ],
         "activity": [],
+        "social": {"subscription": "not_linked", "reactions_available": False},
     }
     result = {
         "/programs": data["programs"],

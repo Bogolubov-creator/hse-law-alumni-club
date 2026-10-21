@@ -348,14 +348,21 @@ function alignOfficeNavigation() {
 let cabinetSectionOpened = false;
 
 function openCabinetSection() {
-  if (cabinetSectionOpened || currentPath() !== "/lk") return;
+  if (currentPath() !== "/lk") return;
   const section = location.hash.slice(1) || new URLSearchParams(location.search).get("section");
+  for (const link of document.querySelectorAll(".cabinet-nav a")) {
+    if (link.hash === "#" + (section || "club-overview")) link.setAttribute("aria-current", "location");
+    else link.removeAttribute("aria-current");
+  }
+  if (cabinetSectionOpened) return;
   if (!["club-overview", "orders", "community", "achievements"].includes(section)) return;
   const target = document.getElementById(section);
   if (!target) return;
   target.scrollIntoView({ block: "start", behavior: "instant" });
   cabinetSectionOpened = true;
 }
+
+window.addEventListener("hashchange", openCabinetSection);
 
 function setupPage() {
   prepareDiscovery(url, mirror);
