@@ -67,8 +67,7 @@ def install(config, local):
             certificate = pathlib.Path(HELPERS["prompt"]("Абсолютный путь к fullchain.pem")).resolve(strict=True)
             key = pathlib.Path(HELPERS["prompt"]("Абсолютный путь к privkey.pem")).resolve(strict=True)
         print("[1/4] Подготовка Ubuntu, Docker и MariaDB", flush=True)
-        run(["bash", str(REPO / "scripts/setup-ubuntu.sh")])
-        run(["apt-get", "install", "-y", "--no-install-recommends", "mariadb-server", "mariadb-client"])
+        run(["bash", str(REPO / "scripts/setup-ubuntu.sh"), "--mariadb"])
         run(["systemctl", "enable", "--now", "mariadb"])
         addresses = output(["ss", "-H", "-lnt", "sport = :3306"]).splitlines()
         for line in addresses:
