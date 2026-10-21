@@ -98,6 +98,8 @@ def site():
             return httpx.Response(404, json={"error": "Новость удалена"})
         if path == "/events" and records.get("unavailable_events"):
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
+        if path in ("/auth/admin-session", "/me") and records.get("session_failure_status"):
+            return httpx.Response(records["session_failure_status"], json={"error": "Попробуйте позже"})
         if path == "/me/polls" and records.get("unavailable_polls"):
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         if path == "/programs" and records.get("unavailable_programs"):

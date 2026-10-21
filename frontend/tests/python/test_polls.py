@@ -141,6 +141,23 @@ def test_poll_error_does_not_claim_no_polls(page, site):
     expect(page.locator("#polls")).not_to_contain_text("Сейчас опросов нет")
 
 
+@pytest.mark.parametrize("path,token", [("/admin/polls", "club_admin_token"), ("/lk#polls", "club_token")])
+@pytest.mark.parametrize("status", [429, 503])
+def test_session_outage_does_not_present_login_or_clear_token(page, site, path, token, status):
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.add_init_script("localStorage.setItem('" + token + "','session-qa');")
+    site[1]["session_failure_status"] = status
+    with page.expect_response(lambda response: response.url.endswith("/views" + path.split("#")[0])) as unavailable:
+        page.goto(path)
+    assert unavailable.value.status == status
+    expect(page.get_by_role("heading", name="Не удалось загрузить страницу", exact=True)).to_be_visible()
+    expect(page.get_by_role("button", name="Войти", exact=True)).to_have_count(0)
+    assert page.evaluate("localStorage.getItem('" + token + "')") == "session-qa"
+    site[1].pop("session_failure_status")
+    page.locator("#main").get_by_role("button", name="Повторить", exact=True).click()
+    expect(page.get_by_role("heading", name="Не удалось загрузить страницу", exact=True)).to_have_count(0)
+
+
 def test_mirror_polls_are_labelled_and_writes_disabled(chromium, mirror_site):
     context = chromium.new_context(viewport={"width": 390, "height": 844})
     context.add_init_script("localStorage.setItem('club_cookie_consent','essential');")

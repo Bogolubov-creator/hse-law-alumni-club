@@ -154,6 +154,12 @@ async def context(api, path, params, authorized=False):
             data["errors"].append(error.message)
             if error.status in (401, 403):
                 data["access_error"] = error.status
+            elif key in ("me", "session"):
+                data.update(
+                    template="unavailable.html",
+                    title="Не удалось загрузить страницу",
+                    status=429 if error.status == 429 else 503,
+                )
             if key == "item" and error.status >= 500:
                 data.update(template="unavailable.html", title="Не удалось загрузить страницу", status=503)
             if key == "item" and error.status == 404:

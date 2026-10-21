@@ -32,6 +32,23 @@ pytestmark = pytest.mark.skipif(
 )
 IMAGE = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jN1sAAAAASUVORK5CYII=")
 AUDIO = b"ID3\x04\x00\x00\x00\x00\x00\x00" + bytes(1024)
+API_RATE_WINDOW_SECONDS = 60
+
+
+@pytest.fixture(scope="module")
+def write_schedule():
+    return {"finished_at": None}
+
+
+@pytest.fixture
+def scenario_rate_window(write_schedule):
+    if value("E2E_LIVE_PHASE") == "write" and write_schedule["finished_at"] is not None:
+        remaining = API_RATE_WINDOW_SECONDS - (time.monotonic() - write_schedule["finished_at"])
+        if remaining > 0:
+            time.sleep(remaining)
+    yield
+    if value("E2E_LIVE_PHASE") == "write":
+        write_schedule["finished_at"] = time.monotonic()
 
 
 def value(name):
@@ -181,7 +198,7 @@ def media(office, request, token, name):
 
 
 @pytest.mark.parametrize("name,width,height", [("desktop", 1440, 1000), ("mobile", 390, 844)])
-def test_live_system(name, width, height):
+def test_live_system(name, width, height, scenario_rate_window):
     state_path = Path(value("E2E_STATE_DIR")) / (name + ".json")
     with sync_playwright() as playwright:
         browser = launch_browser(playwright)

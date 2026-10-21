@@ -169,9 +169,10 @@ async function refresh() {
       store(path.startsWith("/admin") ? officeKey : memberKey, null);
       return refresh();
     }
-    if (!response.ok) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     const parsed = new DOMParser().parseFromString(await response.text(), "text/html");
     const next = parsed.querySelector("#page");
+    const unavailable = [429, 503].includes(response.status) && next?.querySelector("[data-page-unavailable]");
+    if (!response.ok && !unavailable) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     if (!next) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     const contacts = path === "/cart" ? [...page.querySelectorAll("form[data-checkout] [name]")].map(input => ({ name: input.name, value: input.value, checked: input.checked })) : [];
     page.replaceWith(document.importNode(next, true));
