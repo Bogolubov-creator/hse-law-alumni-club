@@ -1,0 +1,25 @@
+{% from 'macros.html' import save,add_cart %}
+<article class="site-catalog-card dpo-card" data-program-id="{{ item.id }}" data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","price":item.price,"document":item.document or ""}|tojson }}'>
+<a class="dpo-card__media" href="/dpo/{{ item.slug }}" tabindex="-1" aria-hidden="true">
+<span class="site-card-media site-card-media--program">
+{% if item.cover|media %}<img src="{{ item.cover|media }}" alt="" loading="lazy" decoding="async" width="560" height="380">
+{% else %}<span class="dpo-card__placeholder" aria-hidden="true"><span>Образование<br>в области права</span><strong>{{ 'Клуб' if item.organizer=='club' else 'ВШЭ' }}</strong><span>Программа обучения</span></span>{% endif %}
+</span>
+</a>
+<div class="dpo-card__content">
+<span class="dpo-organizer" data-organizer="{{ item.organizer }}">{{ item.organizer_label }}</span>
+{% if item.direction %}<span class="dpo-card__direction">{{ item.direction }}</span>{% endif %}
+<h2><a class="dpo-card__link" href="/dpo/{{ item.slug }}">{{ item.title }}</a></h2>
+<div class="dpo-card__tags"><span>{{ item.format_label }}</span>{% if item.duration %}<span>{{ item.duration }}</span>{% endif %}
+{% if item.document %}<span>{{ 'Переподготовка' if 'переподготов' in item.document|lower else 'Повышение квалификации' if 'повышени' in item.document|lower else item.document }}</span>{% endif %}</div>
+</div>
+<div class="dpo-card__footer">
+<p class="dpo-card__start">{{ 'Начало: '+(item.start_label|date) if item.start_label else 'Начало уточняется' }}</p>
+<p class="dpo-card__enrollment" data-enrollment="{{ item.enrollment }}">{{ {'actual':'Набор открыт','nonactual':'Набор закрыт'}.get(item.enrollment,'Набор уточняется') }}</p>
+<p class="dpo-card__price">{{ item.price_label }}</p>
+<div class="dpo-card__actions">
+{% if item.organizer=='club' and item.enrollment!='nonactual' %}{{ add_cart(item,'dpo',compact=true) }}{% else %}<a href="/dpo/{{ item.slug }}" class="site-primary">Подробнее <span aria-hidden="true">↗</span></a>{% endif %}
+{{ save('/dpo/'+item.slug,item.title,'dpo') }}<button data-action="compare" data-id="{{ item.id }}" aria-pressed="false">Сравнить</button>
+</div>
+</div>
+</article>

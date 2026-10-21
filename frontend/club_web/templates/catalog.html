@@ -1,12 +1,17 @@
 {% extends 'base.html' %}
-{% from 'macros.html' import save,add_cart %}
+{% from 'macros.html' import save %}
 {% block content %}
 {% set filter_labels={'direction':'Направление','format':'Формат','document':'Документ','enrollment':'Набор','organizer':'Организатор','category':'Категория'} %}
-<main id="main" class="site-container">
-<header class="site-masthead">
+<main id="main" class="site-container{% if kind=='dpo' %} dpo-catalog{% endif %}">
+<header class="site-masthead{% if kind=='dpo' %} dpo-catalog-header{% endif %}">
+{% if kind=='dpo' %}<span class="dpo-catalog-eyebrow">Дополнительное образование</span>{% endif %}
 <h1>{{ title }}</h1>
 <p>{{ 'Обучение в Клубе выпускников и на факультете права НИУ ВШЭ.' if kind == 'dpo' else 'Одежда и аксессуары с символикой клуба.' }}</p>
+{% if kind=='dpo' and not load_errors.get('items') %}<a class="dpo-catalog-header__link" href="#program-list">Перейти к каталогу <span aria-hidden="true">↓</span></a>{% endif %}
 </header>
+{% if load_errors.get('items') %}
+<section class="dpo-catalog-unavailable"><h2>Каталог временно недоступен</h2><p>Не удалось получить программы. Попробуйте открыть каталог ещё раз.</p><a class="site-primary" href="{{ path }}">Повторить загрузку</a></section>
+{% else %}
 {% if kind=='dpo' %}
 <section class="dpo-organizers" aria-label="Где проходит запись">
 <div><h2>Программы Клуба</h2><p>Запись и оформление заявки – на этом сайте.</p></div>
@@ -51,7 +56,6 @@
 {% include 'catalog-filters.html' %}
 {% else %}
 <form class="site-filters" method="get" id="program-list">
-{% if kind=='dpo' %}<input type="hidden" name="compare" value="{{ query.get('compare','') }}">{% endif %}
 <label>Поиск<input type="search" name="q" value="{{ query.get('q','') }}" placeholder="Название">
 </label>
 {% for name,values in filters.items() %}
@@ -81,33 +85,15 @@
 <p role="status" {% if kind=='dpo' %}data-catalog-count{% endif %}>Найдено: {{ items|length }}{% if kind=='dpo' %} из {{ catalog_total }}{% endif %}</p>
 <div class="site-catalog">
 {% for item in items %}
-<article class="site-catalog-card" data-reveal {% if kind=='dpo' %}data-program-id="{{ item.id }}"{% endif %} data-catalog-row='{{ {"title":item.title,"direction":item.direction or "","format":item.format or "","enrollment":item.enrollment or "","category":item.category or "","price":item.price,"document":item.document or ""}|tojson }}'>
-{% set image = item.cover if kind=='dpo' else (item.images or [])|first %}
-{% if image|media %}
-<a href="/{{ kind }}/{{ item.slug }}" class="site-card-media site-card-media--{{ 'program' if kind=='dpo' else 'product' }}">
-<img src="{{ image|media }}" alt="{{ item.title }}" loading="lazy" decoding="async" width="560" height="380">
-</a>
-{% endif %}
-<div>
-{% if kind=='dpo' %}<span class="dpo-organizer" data-organizer="{{ item.organizer }}">{{ item.organizer_label }}</span>{% endif %}
-<span class="club-caps">{{ item.direction if kind=='dpo' else item.category }}</span>
-<h2>
-<a href="/{{ kind }}/{{ item.slug }}">{{ item.title }}</a>
-</h2>
-{% if kind=='dpo' %}
-<p>{{ format_labels.get(item.format,item.format) }} · {{ item.duration }}</p>
-<p>{{ 'Набор закрыт' if item.enrollment=='nonactual' else 'Набор открыт' }}</p>
-{% endif %}
-{% if kind=='dpo' and item.start_label %}<p class="dpo-card-start">Начало: {{ item.start_label|date }}</p>{% endif %}
-<p class="site-price">{{ item.price_label if kind=='dpo' else item.price|rub }}</p>
-<div class="site-actions">
-<a href="/{{ kind }}/{{ item.slug }}" class="site-primary">Подробнее</a>{{ save('/'+kind+'/'+item.slug,item.title,kind) }}{% if kind=='dpo' and item.organizer=='club' and item.enrollment!='nonactual' %}{{ add_cart(item,kind) }}{% endif %}
-{% if kind=='dpo' %}
-<button data-action="compare" data-id="{{ item.id }}" aria-pressed="false">Сравнить</button>
-{% endif %}
-</div>
-</div>
+{% if kind=='dpo' %}{% include 'program-card.html' %}{% else %}
+<article class="site-catalog-card" data-reveal data-catalog-row='{{ {"title":item.title,"category":item.category or "","price":item.price}|tojson }}'>
+{% set image = (item.images or [])|first %}
+{% if image|media %}<a href="/merch/{{ item.slug }}" class="site-card-media site-card-media--product"><img src="{{ image|media }}" alt="{{ item.title }}" loading="lazy" decoding="async" width="560" height="380"></a>{% endif %}
+<div><span class="club-caps">{{ item.category }}</span><h2><a href="/merch/{{ item.slug }}">{{ item.title }}</a></h2>
+<p class="site-price">{{ item.price|rub }}</p>
+<div class="site-actions"><a href="/merch/{{ item.slug }}" class="site-primary">Подробнее</a>{{ save('/merch/'+item.slug,item.title,'merch') }}</div></div>
 </article>
+{% endif %}
 {% endfor %}
 <div data-catalog-empty {% if items %}hidden{% endif %}><p>По выбранным фильтрам ничего не найдено.</p><a href="{{ path }}">Сбросить фильтры</a></div>
 </div>
@@ -123,6 +109,7 @@
 <label data-compare-fallback hidden>Ссылка для копирования<input readonly type="text"></label>
 <p data-compare-message role="status"></p>
 </dialog>
+{% endif %}
 {% endif %}
 </main>
 {% endblock %}

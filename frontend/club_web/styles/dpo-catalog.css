@@ -1,0 +1,109 @@
+.dpo-catalog .dpo-catalog-header { max-width: none; padding: 36px 32px; margin: 32px 0 24px; background: var(--c-surface-blue); border-radius: var(--r-lg); border-left: 4px solid var(--c-accent); }
+.dpo-catalog-eyebrow { display: block; font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.dpo-catalog-header h1 { margin: 0 0 16px; }
+.dpo-catalog-header p { margin: 0; max-width: 50ch; }
+.dpo-catalog-header__link { display: inline-flex; align-items: center; gap: 24px; min-height: 44px; margin-top: 20px; color: var(--c-text); font-weight: 600; text-decoration: none; }
+.dpo-catalog-header__link span { color: var(--c-accent-text); }
+.dpo-catalog .dpo-organizers { gap: 16px; margin-bottom: 24px; }
+.dpo-catalog .dpo-organizers > div { border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: 20px 24px; background: var(--c-bg-raised); }
+.dpo-catalog .dpo-organizers h2 { font: 600 20px/1.3 var(--f-head); margin-bottom: 8px; }
+.dpo-catalog .dpo-organizers p { font-size: 14px; color: var(--c-text-3); }
+.dpo-catalog .dpo-picker { border-color: var(--c-line); background: var(--c-bg-sunken); margin-bottom: 28px; }
+.dpo-catalog .dpo-picker > summary { font-size: 18px; }
+.dpo-catalog .dpo-starts { margin-block: 28px 36px; }
+.dpo-catalog .dpo-starts > h2 { font-size: 28px; margin: 0 0 8px; }
+.dpo-catalog .dpo-starts > p { color: var(--c-text-3); margin: 0 0 20px; }
+.dpo-catalog .dpo-starts-grid { gap: 16px; }
+.dpo-catalog .dpo-starts-grid article { display: flex; flex-direction: column; border: 1px solid var(--c-line); border-top: 3px solid var(--c-accent); border-radius: var(--r-lg); padding: 20px; }
+.dpo-catalog .dpo-starts-grid time { font-size: 16px; }
+.dpo-catalog .dpo-starts-grid .dpo-organizer { font-size: 14px; margin: 10px 0 0; color: var(--c-text-3); }
+.dpo-catalog .dpo-starts-grid h3 { margin: 10px 0 14px; font-size: 18px; }
+.dpo-starts-grid h3 a { color: var(--c-text); text-decoration: none; }
+.dpo-starts-grid h3 a:hover { text-decoration: underline; }
+.dpo-catalog .dpo-starts-grid p { margin: auto 0 0; }
+.dpo-catalog .dpo-catalog-controls { padding: 24px; border: 1px solid var(--c-line); border-radius: var(--r-lg); background: var(--c-bg-sunken); }
+.dpo-catalog .dpo-filter-form label { font-size: 14px; }
+.dpo-catalog .site-catalog { gap: 24px; align-items: stretch; }
+.dpo-catalog .dpo-card { display: flex; flex-direction: column; border: 1px solid var(--c-line); border-radius: var(--r-lg); background: var(--c-bg-raised); overflow: hidden; min-width: 0; }
+.dpo-card__link { display: block; color: var(--c-text); text-decoration: none; }
+.dpo-card__link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.dpo-card__media { display: block; }
+.dpo-card .site-card-media { border-radius: 0; }
+.dpo-card__placeholder { display: flex; flex-direction: column; justify-content: space-between; position: absolute; inset: 0; padding: 24px; background: var(--c-surface-blue); color: var(--c-anchor); border-left: 4px solid var(--c-accent); }
+.dpo-card__placeholder > span { font-size: 14px; line-height: 1.4; }
+.dpo-card__placeholder strong { align-self: end; font: 400 42px/1 var(--f-display); }
+.dpo-card .dpo-card__content { padding: 20px 22px 0; }
+.dpo-card .dpo-organizer { font-size: 14px; margin-bottom: 10px; color: var(--c-text-3); }
+.dpo-card__direction { display: block; font-size: 14px; color: var(--c-accent-text); margin-bottom: 10px; }
+.dpo-catalog .dpo-card h2 { font: 600 22px/1.3 var(--f-head); margin: 0 0 16px; overflow-wrap: anywhere; }
+.dpo-card__tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.dpo-card__tags span { display: inline-block; font-size: 14px; line-height: 1.4; padding: 5px 8px; background: var(--c-bg-sunken); border-radius: var(--r-sm); }
+.dpo-card .dpo-card__footer { padding: 20px 22px 22px; margin-top: auto; }
+.dpo-card__start { margin: 0 0 8px; font-size: 14px; color: var(--c-text-3); }
+.dpo-card__enrollment { margin: 0; font-size: 14px; font-weight: 500; }
+.dpo-card__enrollment[data-enrollment=actual] { color: var(--c-ok-text); }
+.dpo-card__enrollment[data-enrollment=nonactual] { color: var(--c-text-3); }
+.dpo-card__price { margin: 16px 0; font-size: 26px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.dpo-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.dpo-card__actions > .site-primary, .dpo-card__actions > form { grid-column: 1 / -1; }
+.dpo-card__actions > .site-primary { justify-content: space-between; }
+.dpo-card__actions form button { width: 100%; }
+.dpo-card__actions > button { min-width: 0; padding: 10px; font-size: 14px; }
+.dpo-card__actions button[aria-pressed=true] { background: var(--c-surface-warm); border-color: var(--c-accent-text); color: var(--c-accent-text); }
+.dpo-catalog-unavailable { padding: 28px; border: 1px solid var(--c-line); background: var(--c-bg-sunken); border-radius: var(--r-lg); }
+.dpo-catalog-unavailable h2 { margin: 0 0 16px; }
+.site-container.program-page { padding-top: 24px; }
+.program-back { display: inline-flex; align-items: center; min-height: 44px; color: var(--c-text-3); }
+.program-page .program-header { padding: 24px 0; max-width: 980px; }
+.program-header .dpo-organizer { color: var(--c-text-3); }
+.program-direction { display: block; color: var(--c-accent-text); font-size: 14px; margin-bottom: 16px; }
+.program-header h1 { margin-bottom: 20px; }
+.program-header p { margin: 0; max-width: 70ch; }
+.program-nav { display: flex; flex-wrap: wrap; gap: 6px 24px; padding: 12px 0; border-block: 1px solid var(--c-line); margin-bottom: 32px; }
+.program-nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--c-text); font-weight: 500; text-decoration: none; }
+.program-nav a:hover { text-decoration: underline; text-decoration-color: var(--c-accent); }
+.program-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 36px; align-items: start; }
+.program-content { min-width: 0; }
+.program-cover { padding: 24px; background: var(--c-bg-sunken); border-radius: var(--r-lg); margin-bottom: 32px; }
+.program-cover img { max-height: 440px; }
+.program-section { margin-bottom: 40px; }
+.program-section > h2 { font-size: 28px; margin: 0 0 20px; }
+.program-section .site-prose { line-height: 1.7; margin: 0; }
+.program-list { list-style: none; padding: 0; margin: 0; }
+.program-list li { padding: 14px 0 14px 24px; border-bottom: 1px solid var(--c-line); position: relative; }
+.program-list li::before { content: ''; position: absolute; top: 24px; left: 0; width: 6px; height: 6px; background: var(--c-accent); }
+.program-modules { border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden; }
+.program-modules details { border: 0; padding: 0; }
+.program-modules details + details { border-top: 1px solid var(--c-line); }
+.program-modules summary { display: flex; align-items: start; gap: 16px; padding: 20px; min-height: 64px; font-size: 18px; }
+.program-module-number { flex: 0 0 24px; font-size: 14px; color: var(--c-text-3); line-height: 24px; font-weight: 400; }
+.program-module-toggle { margin-left: auto; color: var(--c-accent-text); font-weight: 400; }
+.program-modules details[open] .program-module-toggle { visibility: hidden; }
+.program-modules details[open] > summary { background: var(--c-bg-sunken); }
+.program-module-body { padding: 20px 24px; }
+.program-module-body p:first-child, .program-module-body ul:first-child { margin-top: 0; }
+.program-module-body li + li { margin-top: 10px; }
+.program-module-static { display: flex; align-items: start; gap: 16px; padding: 20px; border-bottom: 1px solid var(--c-line); }
+.program-module-static h3 { margin: 0; font-size: 18px; }
+.program-module-static:last-child { border-bottom: 0; }
+.program-teachers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.program-teacher { padding: 20px; border: 1px solid var(--c-line); border-radius: var(--r-lg); min-width: 0; }
+.program-teacher .site-teacher-photo { max-width: min(100%, 160px); max-height: 200px; margin-bottom: 18px; }
+.program-teacher h3 { margin: 0 0 10px; font-size: 20px; }
+.program-teacher p { margin: 0; color: var(--c-text-3); font-size: 14px; overflow-wrap: anywhere; }
+.program-summary { border: 1px solid var(--c-line); border-top: 3px solid var(--c-accent); border-radius: var(--r-lg); padding: 26px; background: var(--c-bg-raised); scroll-margin-top: 100px; }
+.program-summary__eyebrow { margin: 0 0 12px; color: var(--c-text-3); font-size: 14px; }
+.program-summary h2 { margin: 0 0 18px; font-size: 26px; }
+.program-summary__price { margin: 0 0 10px; font-size: 30px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+.program-summary__status { color: var(--c-text-3); font-size: 14px; margin: 0 0 24px; }
+.program-summary__status[data-enrollment=actual] { color: var(--c-ok-text); }
+.program-summary dl { margin: 0 0 24px; }
+.program-summary dl > div { padding: 12px 0; border-top: 1px solid var(--c-line); }
+.program-summary dt { font-size: 14px; color: var(--c-text-3); margin-bottom: 4px; }
+.program-summary dd { margin: 0; }
+.program-summary__actions { display: grid; gap: 12px; }
+.program-summary__actions > .site-primary, .program-summary__actions form > button { width: 100%; }
+.program-summary__note { font-size: 14px; color: var(--c-text-3); margin: 20px 0 0; }
+@media (max-width: 1000px) { .program-layout { grid-template-columns: minmax(0, 1fr) 310px; gap: 24px; } .program-teachers { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .program-layout { grid-template-columns: 1fr; } .program-summary { grid-row: 1; } .program-teachers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .dpo-catalog .dpo-catalog-header { padding: 24px; margin-top: 24px; } .dpo-catalog .dpo-organizers > div { padding: 20px; } .dpo-catalog .dpo-catalog-controls { padding: 16px; } .dpo-catalog .site-catalog { gap: 20px; } .dpo-card .dpo-card__content, .dpo-card .dpo-card__footer { padding-inline: 20px; } .dpo-card__placeholder { padding: 20px; } .dpo-catalog .dpo-card h2 { font-size: 22px; } .program-page .program-header { padding: 16px 0 24px; } .program-header h1 { font-size: 32px; } .program-nav { gap: 0 20px; margin-bottom: 24px; } .program-summary { padding: 22px; } .program-cover { padding: 16px; } .program-teachers { grid-template-columns: 1fr; } .program-modules summary { padding: 16px; gap: 12px; } .program-module-body { padding: 20px; } }
