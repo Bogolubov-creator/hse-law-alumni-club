@@ -8,6 +8,7 @@ const mirror = document.body.dataset.mirror === "true";
 const memberKey = "club_token";
 const officeKey = "club_admin_token";
 const readingKey = "club-reading-v1";
+const BOT_COMPACT_VIEWPORT_HEIGHT = 480;
 let pendingCart = 0;
 let pendingCheckout = false;
 let installPrompt = null;
@@ -455,8 +456,10 @@ async function askBot(question) {
   const dialog = document.querySelector("#support-bot");
   const log = dialog.querySelector(".club-bot-log");
   log.append(element("p", question, { class: "club-bot-mine" }));
-  const busy = element("p", "Загружаю ответ…", { role: "status" });
+  const busy = element("p", "Загружаю ответ…", { role: "status", class: "club-bot-status" });
   log.append(busy);
+  log.setAttribute("aria-busy", "true");
+  log.scrollTop = log.scrollHeight;
   try {
     const response = mirror && window.clubMirrorReply ? await window.clubMirrorReply(question) : await request("/support/ask", "POST", { question });
     log.append(element("p", response.text, { class: "club-bot-say" }));
@@ -468,7 +471,7 @@ async function askBot(question) {
     }
     for (const hint of response.hints || []) log.append(element("button", hint, { "data-action": "bot-hint", "data-question": hint }));
   } catch (error) { log.append(element("p", error.message + " Обратитесь в поддержку.", { role: "alert" }), element("a", "Написать человеку", { href: url("support") })); }
-  finally { busy.remove(); log.scrollTop = log.scrollHeight; }
+  finally { busy.remove(); log.removeAttribute("aria-busy"); log.scrollTop = log.scrollHeight; }
 }
 
 function queueBot(question) {
@@ -476,9 +479,30 @@ function queueBot(question) {
   return botQueue;
 }
 
-function openBot() {
+function openBot(trigger = document.activeElement) {
   const dialog = document.querySelector("#support-bot");
-  dialog.showModal(); dialog.querySelector("input").focus();
+  if (dialog.open) return;
+  const origin = trigger instanceof HTMLElement && trigger.matches("a,button") ? trigger : document.querySelector(".club-crow-hit");
+  const viewport = window.visualViewport;
+  const fit = () => {
+    const height = viewport?.height || innerHeight;
+    dialog.style.setProperty("--bot-viewport-height", `${height}px`);
+    dialog.style.setProperty("--bot-viewport-bottom", `${Math.max(0, innerHeight - height - (viewport?.offsetTop || 0))}px`);
+    dialog.toggleAttribute("data-compact", height < BOT_COMPACT_VIEWPORT_HEIGHT);
+  };
+  dialog.addEventListener("close", () => {
+    viewport?.removeEventListener("resize", fit);
+    viewport?.removeEventListener("scroll", fit);
+    window.removeEventListener("resize", fit);
+    if (dialog.contains(document.activeElement)) document.activeElement.blur();
+    if (origin?.isConnected) origin.focus({ preventScroll: true });
+  }, { once: true });
+  fit();
+  viewport?.addEventListener("resize", fit);
+  viewport?.addEventListener("scroll", fit);
+  window.addEventListener("resize", fit);
+  dialog.showModal();
+  dialog.querySelector("input").focus({ preventScroll: true });
 }
 
 async function download(button) {
@@ -512,7 +536,7 @@ document.addEventListener("click", async event => {
     if (target.dataset.download) { await download(target); return; }
     if (target.dataset.api) { await perform(target, target.dataset.method === "GET" || target.dataset.method === "DELETE" ? undefined : target.dataset.body ? JSON.parse(target.dataset.body) : {}); return; }
     const action = target.dataset.action;
-    if (action === "support") openBot();
+    if (action === "support") openBot(target);
     else if (action === "close-bot") document.querySelector("#support-bot").close();
     else if (action === "bot-hint") await queueBot(target.dataset.question);
     else if (action === "refresh") await refresh();
