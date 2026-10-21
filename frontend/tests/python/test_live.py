@@ -212,7 +212,14 @@ def test_live_system(name, width, height):
             event = next(event for event in events if event["id"] == state["event"])
             assert event["my_rsvp"] and event["my_attended"]
             assert result(request.get("/api/podcasts", headers=auth(state["token"])))["subscribed"]
+            polls = result(request.get("/api/me/polls", headers=auth(state["token"])))["items"]
+            poll = next(row for row in polls if row["id"] == state["poll"]["id"])
+            assert poll["status"] == "closed" and poll["my_option_id"] == state["poll"]["option_id"]
             page.add_init_script("localStorage.setItem('club_token'," + json.dumps(state["token"]) + ");")
+            page.goto("/lk#polls")
+            expect(page.locator('[data-poll-id="' + state["poll"]["id"] + '"] .poll-answer-selected')).to_contain_text(
+                "Гражданское право"
+            )
             page.goto("/lk?section=orders")
             expect(page.locator("#orders")).to_contain_text(state["order"])
             page.screenshot(path=str(state_path.with_suffix(".orders.png")), full_page=True)
@@ -366,7 +373,7 @@ def test_live_system(name, width, height):
             == 403
         )
         assert request.get("/api/admin/support", headers=auth(editor)).status == 403
-        poll_voting(office, page, request, headers, name, state_path.parent)
+        poll_record = poll_voting(office, page, request, headers, name, state_path.parent)
         section_walk(page, office)
         page.goto("/lk")
         page.get_by_role("button", name="Выйти", exact=True).click()
@@ -404,6 +411,7 @@ def test_live_system(name, width, height):
             "name": updated_name,
             "product": program["slug"],
             "event": event["id"],
+            "poll": poll_record,
         }
         descriptor = os.open(state_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(descriptor, "w") as output:

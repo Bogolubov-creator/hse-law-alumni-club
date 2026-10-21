@@ -121,6 +121,7 @@ def poll_voting(office, page, request, headers, name, directory):
     expect(row.locator(".poll-state")).to_have_text("Завершён")
     page.reload()
     expect(card.locator(".poll-state")).to_have_text("Завершён")
+    return {"id": poll["id"], "option_id": poll["options"][1]["id"]}
 
 
 def news_sources(office, request, headers, name, directory):
