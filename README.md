@@ -128,7 +128,7 @@ PostgreSQL, запускаются отдельно. Для работающег
 | uv / Ruff | 0.13.0 / 0.17.0 |
 | nginx новых установок | 1.30.5, стабильная линия |
 | PostgreSQL / Caddy прежних установок | 16.15 / 2.11.7 |
-| Go для сборки Caddy и gosu | 1.27.2 |
+| Go для сборки Caddy и gosu | 1.27.3 |
 
 Последний проверенный функциональный выпуск –
 [`6bb1a46`](https://github.com/Bogolubov-creator/hse-law-alumni-club/commit/6bb1a4659d71b09128d7e0b980b13db7177ac690),
