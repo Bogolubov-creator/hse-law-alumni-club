@@ -70,6 +70,37 @@ class AlumniAchievements(models.Model):
         db_table = "alumni_achievements"
 
 
+class Poll(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, db_default=DatabaseUUID())
+    question = models.CharField(max_length=240)
+    options_json = models.JSONField()
+    status = models.CharField(max_length=12, db_default="draft")
+    created_at = models.DateTimeField(db_default=Now())
+    opened_at = models.DateTimeField(null=True)
+    closed_at = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "club_polls"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(status__in=["draft", "active", "closed"]), name="club_poll_status"
+            ),
+        ]
+        indexes = [models.Index(fields=["status", "-created_at"], name="club_poll_status_created")]
+
+
+class PollVote(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, db_default=DatabaseUUID())
+    poll = models.ForeignKey("Poll", on_delete=models.CASCADE, db_column="poll_id", related_name="+")
+    alumni = models.ForeignKey("Alumnus", on_delete=models.CASCADE, db_column="alumni_id", related_name="+")
+    option_id = models.UUIDField()
+    created_at = models.DateTimeField(db_default=Now())
+
+    class Meta:
+        db_table = "club_poll_votes"
+        constraints = [models.UniqueConstraint(fields=["poll", "alumni"], name="club_poll_vote_once")]
+
+
 class AlumniFriends(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, db_default=DatabaseUUID())
     alumni = models.ForeignKey("Alumnus", on_delete=models.CASCADE, db_column="alumni_id", related_name="+", null=True)

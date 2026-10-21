@@ -121,6 +121,7 @@ function formBody(form) {
   const body = {};
   for (const input of form.elements) {
     if (!input.name || input.disabled || input.type === "submit") continue;
+    if (input.type === "radio" && !input.checked) continue;
     let value = input.value;
     if (input.type === "checkbox") {
       if (input.name === "interests") { body.interests ||= []; if (input.checked) body.interests.push(value); continue; }
@@ -129,6 +130,8 @@ function formBody(form) {
       if (!value) continue;
       value = Number(value);
       if (!Number.isFinite(value)) throw new Error("Укажите корректное число.");
+    } else if (input.hasAttribute("data-lines")) {
+      value = value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     } else if (input.hasAttribute("data-json")) {
       if (!value.trim()) continue;
       try { value = JSON.parse(value); } catch { throw new Error("Проверьте формат JSON в поле «" + input.closest("label").childNodes[0].textContent.trim() + "»."); }
@@ -166,9 +169,10 @@ async function refresh() {
       store(path.startsWith("/admin") ? officeKey : memberKey, null);
       return refresh();
     }
-    if (!response.ok) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     const parsed = new DOMParser().parseFromString(await response.text(), "text/html");
     const next = parsed.querySelector("#page");
+    const unavailable = [429, 503].includes(response.status) && next?.querySelector("[data-page-unavailable]");
+    if (!response.ok && !unavailable) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     if (!next) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     const contacts = path === "/cart" ? [...page.querySelectorAll("form[data-checkout] [name]")].map(input => ({ name: input.name, value: input.value, checked: input.checked })) : [];
     page.replaceWith(document.importNode(next, true));

@@ -64,6 +64,19 @@ def snapshot(data):
         "activity": [],
         "social": {"subscription": "not_linked", "reactions_available": False},
     }
+    poll = {
+        "id": "mirror-poll-1",
+        "question": "Какая тема вам интереснее?",
+        "status": "active",
+        "created_at": "2026-10-22T09:00:00Z",
+        "opened_at": "2026-10-22T09:00:00Z",
+        "closed_at": None,
+        "options": [
+            {"id": "mirror-option-1", "label": "Трудовое право", "count": 12, "percent": 50.0},
+            {"id": "mirror-option-2", "label": "Гражданское право", "count": 8, "percent": 33.3},
+            {"id": "mirror-option-3", "label": "Уголовное право", "count": 4, "percent": 16.7},
+        ],
+    }
     result = {
         "/programs": data["programs"],
         "/products": data["products"],
@@ -80,6 +93,18 @@ def snapshot(data):
         "/me/classmates": [{**row, "friend_status": None} for row in data["alumni"][1:]],
         "/me/events": [],
         "/me/ledger": [],
+        "/me/polls": {
+            "items": [
+                {
+                    **poll,
+                    "options": [{"id": row["id"], "label": row["label"]} for row in poll["options"]],
+                    "my_option_id": None,
+                }
+            ],
+            "total": 1,
+            "limit": 20,
+            "page": 1,
+        },
         "/cart": {"items": [], "subtotal": 0, "count": 0},
         "/auth/admin-session": {"role": "admin"},
         "/support/config": {"enabled": False},
@@ -88,6 +113,7 @@ def snapshot(data):
         "/admin/analytics": {"pulse": {}, "series": {}},
         "/admin/orders": [],
         "/admin/members": data["alumni"],
+        "/admin/polls": {"items": [{**poll, "total_votes": 24}], "total": 1, "limit": 20, "page": 1},
         "/admin/podcast-subs": {"items": []},
         "/admin/news-sources": {"sources": [], "items": []},
         "/admin/pages/home": {"blocks": {}},

@@ -83,6 +83,47 @@ def home_form(office, name):
     submit(office, form, "/admin/pages/home", "PATCH")
 
 
+def poll_voting(office, page, request, headers, name, directory):
+    office.goto("/admin/polls")
+    form = office.locator('form[data-api="/admin/polls"]')
+    question = "Тема встречи клуба " + name
+    form.get_by_label("Вопрос", exact=True).fill(question)
+    form.get_by_label("Варианты, по одному в строке").fill("Трудовое право\nГражданское право\nУголовное право")
+    with office.expect_response(
+        lambda response: response.url.endswith("/api/admin/polls") and response.request.method == "POST"
+    ) as created:
+        form.get_by_role("button", name="Создать черновик").click()
+    assert created.value.status == 200
+    poll = created.value.json()
+    row = office.locator('[data-poll-id="' + poll["id"] + '"]')
+    office.once("dialog", lambda dialog: dialog.accept())
+    row.get_by_role("button", name="Запустить опрос").click()
+    expect(row.get_by_role("button", name="Закрыть голосование")).to_be_visible()
+    page.goto("/lk#polls")
+    card = page.locator('[data-poll-id="' + poll["id"] + '"]')
+    card.get_by_label("Гражданское право", exact=True).check()
+    with page.expect_response(lambda response: response.url.endswith("/api/me/polls/" + poll["id"] + "/vote")) as voted:
+        card.get_by_role("button", name="Проголосовать").click()
+    assert voted.value.status == 200
+    expect(card.locator(".poll-answer-selected")).to_contain_text("Гражданское право")
+    page.reload()
+    expect(card).to_contain_text("Ваш голос принят")
+    office.reload()
+    expect(row.locator(".poll-total")).to_contain_text("1")
+    expect(row.get_by_role("meter").nth(1)).to_have_attribute("value", "100.0")
+    assert not any(
+        key in str(request.get("/api/admin/polls", headers=headers).json()) for key in ("alumni_id", "user_id", "fio")
+    )
+    office.screenshot(path=str(directory / (name + ".poll-results.png")), full_page=True)
+    page.screenshot(path=str(directory / (name + ".poll-vote.png")), full_page=True)
+    office.once("dialog", lambda dialog: dialog.accept())
+    row.get_by_role("button", name="Закрыть голосование").click()
+    expect(row.locator(".poll-state")).to_have_text("Завершён")
+    page.reload()
+    expect(card.locator(".poll-state")).to_have_text("Завершён")
+    return {"id": poll["id"], "option_id": poll["options"][1]["id"]}
+
+
 def news_sources(office, request, headers, name, directory):
     office.goto("/admin/news-sources")
     expect(office.locator("#main")).to_contain_text("Тестовая ошибка загрузки источника")

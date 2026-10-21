@@ -18,6 +18,7 @@ from live_features import (
     news_sources,
     office_exports,
     order_form,
+    poll_voting,
     profile_tools,
     section_walk,
     support_conversation,
@@ -31,6 +32,23 @@ pytestmark = pytest.mark.skipif(
 )
 IMAGE = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jN1sAAAAASUVORK5CYII=")
 AUDIO = b"ID3\x04\x00\x00\x00\x00\x00\x00" + bytes(1024)
+API_RATE_WINDOW_SECONDS = 60
+
+
+@pytest.fixture(scope="module")
+def write_schedule():
+    return {"finished_at": None}
+
+
+@pytest.fixture
+def scenario_rate_window(write_schedule):
+    if value("E2E_LIVE_PHASE") == "write" and write_schedule["finished_at"] is not None:
+        remaining = API_RATE_WINDOW_SECONDS - (time.monotonic() - write_schedule["finished_at"])
+        if remaining > 0:
+            time.sleep(remaining)
+    yield
+    if value("E2E_LIVE_PHASE") == "write":
+        write_schedule["finished_at"] = time.monotonic()
 
 
 def value(name):
@@ -180,7 +198,7 @@ def media(office, request, token, name):
 
 
 @pytest.mark.parametrize("name,width,height", [("desktop", 1440, 1000), ("mobile", 390, 844)])
-def test_live_system(name, width, height):
+def test_live_system(name, width, height, scenario_rate_window):
     state_path = Path(value("E2E_STATE_DIR")) / (name + ".json")
     with sync_playwright() as playwright:
         browser = launch_browser(playwright)
@@ -211,7 +229,14 @@ def test_live_system(name, width, height):
             event = next(event for event in events if event["id"] == state["event"])
             assert event["my_rsvp"] and event["my_attended"]
             assert result(request.get("/api/podcasts", headers=auth(state["token"])))["subscribed"]
+            polls = result(request.get("/api/me/polls", headers=auth(state["token"])))["items"]
+            poll = next(row for row in polls if row["id"] == state["poll"]["id"])
+            assert poll["status"] == "closed" and poll["my_option_id"] == state["poll"]["option_id"]
             page.add_init_script("localStorage.setItem('club_token'," + json.dumps(state["token"]) + ");")
+            page.goto("/lk#polls")
+            expect(page.locator('[data-poll-id="' + state["poll"]["id"] + '"] .poll-answer-selected')).to_contain_text(
+                "Гражданское право"
+            )
             page.goto("/lk?section=orders")
             expect(page.locator("#orders")).to_contain_text(state["order"])
             page.screenshot(path=str(state_path.with_suffix(".orders.png")), full_page=True)
@@ -365,6 +390,7 @@ def test_live_system(name, width, height):
             == 403
         )
         assert request.get("/api/admin/support", headers=auth(editor)).status == 403
+        poll_record = poll_voting(office, page, request, headers, name, state_path.parent)
         section_walk(page, office)
         page.goto("/lk")
         page.get_by_role("button", name="Выйти", exact=True).click()
@@ -402,6 +428,7 @@ def test_live_system(name, width, height):
             "name": updated_name,
             "product": program["slug"],
             "event": event["id"],
+            "poll": poll_record,
         }
         descriptor = os.open(state_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(descriptor, "w") as output:

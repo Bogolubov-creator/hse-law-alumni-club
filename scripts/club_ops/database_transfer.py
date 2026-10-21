@@ -17,6 +17,7 @@ from psycopg.rows import dict_row
 
 FORMAT = "club-database-transfer-v1"
 MAX_SNAPSHOT_BYTES = 256 * 1024 * 1024
+POLL_TABLES = frozenset(("club_polls", "club_poll_votes"))
 
 
 def model_tables():
@@ -148,14 +149,15 @@ def transfer_lock():
 def import_snapshot(path):
     snapshot = read_snapshot(path)
     tables = model_tables()
-    if snapshot.get("format") != FORMAT or set(snapshot.get("tables", {})) != set(tables):
+    source_tables = set(snapshot.get("tables", {}))
+    if snapshot.get("format") != FORMAT or source_tables not in (set(tables), set(tables) - POLL_TABLES):
         raise ValueError("Снимок имеет неподдерживаемый формат или неполный состав таблиц")
     if connection.vendor != "mysql" or not connection.mysql_is_mariadb:
         raise ValueError("Перенос разрешён только в MariaDB")
     source = {}
     expected = {}
     for name, model in tables.items():
-        values = snapshot["tables"][name]
+        values = snapshot["tables"].get(name, [])
         if not isinstance(values, list):
             raise ValueError("Некорректная таблица в снимке")
         source[name] = [converted_row(model, row) for row in values]

@@ -24,6 +24,7 @@
 <p>Учебный офис сверяет выпуск с реестром факультета. Кабинет и скидка откроются после подтверждения.</p>
 <div class="site-actions"><a href="/lk/profile">Загрузить фото профиля</a><a href="/support">Поддержка</a></div>
 </section>
+{% include 'member-polls.html' %}
 {% else %}
 <section class="cabinet-membership" aria-label="Участие в клубе">
 <div class="cabinet-level">
@@ -40,8 +41,9 @@
 </dl>
 </section>
 <nav class="cabinet-nav" aria-label="Разделы кабинета">
-<a href="#club-overview">Обзор</a><a href="#achievements">Достижения{% if achievements %} <span>{{ earned|length }}</span>{% endif %}</a><a href="#orders">Мои заявки</a><a href="#community">Сообщество</a>
+<a href="#club-overview">Обзор</a><a href="#polls">Опросы</a><a href="#achievements">Достижения{% if achievements %} <span>{{ earned|length }}</span>{% endif %}</a><a href="#orders">Мои заявки</a><a href="#community">Сообщество</a>
 </nav>
+{% include 'member-polls.html' %}
 <div class="cabinet-layout">
 <div class="cabinet-content">
 <section id="club-overview" class="cabinet-section">

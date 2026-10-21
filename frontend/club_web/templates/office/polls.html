@@ -1,0 +1,31 @@
+<div class="office-poll-layout">
+<section class="poll-editor site-panel" aria-labelledby="new-poll-heading">
+<h2 id="new-poll-heading">Новый опрос</h2><p>Подготовьте вопрос и варианты. Участники увидят опрос после запуска.</p>
+<form data-api="/admin/polls">
+<label>Вопрос<input name="question" required minlength="3" maxlength="240" placeholder="Какая тема вам интереснее?"></label>
+<label>Варианты, по одному в строке<textarea name="options" data-lines required rows="6" maxlength="1620" placeholder="Трудовое право&#10;Гражданское право&#10;Уголовное право"></textarea></label>
+<p class="poll-hint">От 2 до 10 разных вариантов, до 160 символов каждый. После запуска вопрос и варианты не меняются.</p>
+<div class="site-error" data-error role="alert" hidden></div><button type="submit" class="site-primary">Создать черновик</button>
+</form>
+</section>
+<section class="office-poll-list" aria-labelledby="poll-list-heading">
+<div class="poll-section-heading"><div><h2 id="poll-list-heading">Опросы и результаты</h2><p>Один голос от аккаунта. Итоги без списка участников.</p></div></div>
+{% if mirror %}<p class="poll-notice">Показаны вымышленные опросы и результаты. Управление отключено.</p>{% endif %}
+{% if load_errors.get('records') %}<div class="site-error" role="alert">Не удалось загрузить опросы. Обновите страницу позже.</div>
+{% else %}
+{% for poll in rows or [] %}
+<article class="poll-card" data-poll-id="{{ poll.id }}">
+<div class="poll-card-meta"><span class="poll-state" data-status="{{ poll.status }}">{{ {'draft':'Черновик','active':'Идёт голосование','closed':'Завершён'}.get(poll.status,poll.status) }}</span><time>{{ poll.created_at|date }}</time></div>
+<h3>{{ poll.question }}</h3>
+<p class="poll-total">Голосов: <strong>{{ poll.total_votes }}</strong></p>
+<div class="poll-results">{% for option in poll.options %}<div class="poll-result"><div><span>{{ option.label }}</span><strong>{{ option.count }} · {{ option.percent }}%</strong></div><meter aria-label="{{ option.label }}: {{ option.count }} голосов, {{ option.percent }}%" value="{{ option.percent }}" min="0" max="100">{{ option.percent }}%</meter></div>{% endfor %}</div>
+{% if poll.opened_at %}<p class="poll-hint">Запущен {{ poll.opened_at|date }}{% if poll.closed_at %} · закрыт {{ poll.closed_at|date }}{% endif %}</p>{% endif %}
+<div class="site-actions">
+{% if poll.status=='draft' %}<button class="site-primary" data-api="/admin/polls/{{ poll.id }}/launch" data-confirm="Запустить опрос? После запуска вопрос и варианты изменить нельзя.">Запустить опрос</button>
+{% elif poll.status=='active' %}<button data-api="/admin/polls/{{ poll.id }}/close" data-confirm="Завершить голосование? Новые голоса приниматься не будут.">Закрыть голосование</button>{% endif %}
+</div>
+</article>
+{% else %}<div class="site-panel"><h3>Первый вопрос участникам</h3><p>Создайте черновик и запустите опрос. После первого голоса здесь появятся результаты.</p></div>{% endfor %}
+{% endif %}
+</section>
+</div>

@@ -195,6 +195,8 @@ async def test_operator_cli_imports_with_django_async_dispatch(database_app, tmp
             return tables
 
         tables = await connection.run(source)
+    tables.pop("club_polls")
+    tables.pop("club_poll_votes")
     path = tmp_path / "source.json"
     path.write_text(json.dumps({"format": FORMAT, "tables": tables}))
     path.chmod(0o600)
@@ -210,6 +212,6 @@ async def test_operator_cli_imports_with_django_async_dispatch(database_app, tmp
         timeout=30,
     )
     assert result.returncode == 0, result.stderr
-    assert "таблиц 41, записей 1" in result.stdout
+    assert "таблиц 43, записей 1" in result.stdout
     async with database_app.state.database.connection() as connection:
         assert await connection.run(lambda: Alumnus.objects.get().fio) == "Перенос через команду оператора"

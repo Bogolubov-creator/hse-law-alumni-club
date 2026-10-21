@@ -51,6 +51,7 @@ OFFICE_NAV = [
     ("analytics", "Аналитика"),
     ("orders", "Заявки"),
     ("members", "Выпускники"),
+    ("polls", "Опросы"),
     ("subs", "Подписки"),
     ("programs", "ДПО"),
     ("products", "Мерч"),
@@ -69,6 +70,7 @@ OFFICE_ENDPOINTS = {
     "analytics": "/admin/analytics",
     "orders": "/admin/orders",
     "members": "/admin/members",
+    "polls": "/admin/polls",
     "subs": "/admin/podcast-subs",
     "programs": "/admin/programs",
     "products": "/admin/products",
@@ -152,6 +154,12 @@ async def context(api, path, params, authorized=False):
             data["errors"].append(error.message)
             if error.status in (401, 403):
                 data["access_error"] = error.status
+            elif key in ("me", "session"):
+                data.update(
+                    template="unavailable.html",
+                    title="Не удалось загрузить страницу",
+                    status=429 if error.status == 429 else 503,
+                )
             if key == "item" and error.status >= 500:
                 data.update(template="unavailable.html", title="Не удалось загрузить страницу", status=503)
             if key == "item" and error.status == 404:
@@ -321,6 +329,18 @@ async def context(api, path, params, authorized=False):
         }
     elif path in ("/lk", "/lk/profile") and authorized:
         await load("me", "/me", {})
+        if path == "/lk" and data["me"]:
+            poll_page = pagination_page(params.get("poll_page", "1"))
+            await load("polls", "/me/polls?page=" + str(poll_page), {})
+            data["poll_rows"] = page_items(data["polls"])
+            poll_data = data["polls"] if isinstance(data["polls"], dict) else {}
+            poll_limit = poll_data.get("limit") or 20
+            data["poll_previous"] = "/lk?poll_page=" + str(poll_page - 1) + "#polls" if poll_page > 1 else ""
+            data["poll_next"] = (
+                "/lk?poll_page=" + str(poll_page + 1) + "#polls"
+                if poll_data.get("total", 0) > poll_page * poll_limit
+                else ""
+            )
         if path == "/lk" and data["me"].get("alumni", {}).get("verification_status") == "verified":
             await asyncio.gather(
                 load("orders", "/me/orders", []),
@@ -351,8 +371,10 @@ async def context(api, path, params, authorized=False):
                 data["role"] = data["session"]["role"]
                 if section == "support":
                     await load("bot", "/admin/bot-status", {})
-                if section == "support" and data["role"] not in ("admin", "Administrator"):
+                if section in ("support", "polls") and data["role"] not in ("admin", "Administrator"):
                     data["records"] = []
+                    if section == "polls":
+                        data["access_error"] = 403
                 elif section == "pages":
                     await load("record", "/admin/pages/home", {})
                 else:
