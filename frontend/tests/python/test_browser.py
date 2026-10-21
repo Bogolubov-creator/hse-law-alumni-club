@@ -1272,13 +1272,19 @@ def test_cart_changes_include_type_when_slugs_match(page, site, width):
     page.goto("/cart")
     row = page.locator(".site-cart-row").filter(has=page.get_by_role("heading", name=PRODUCT["title"], exact=True))
     row.get_by_role("spinbutton", name="Количество").fill("3")
-    with page.expect_response("**/api/cart"):
+    with page.expect_response(
+        lambda response: response.url.endswith("/api/cart") and response.request.method == "PATCH"
+    ) as changed:
         row.get_by_role("button", name="Обновить", exact=True).click()
+    assert changed.value.status == 200
     assert writes[-1]["body"] == {"type": "merch", "ref_id": PROGRAM["slug"], "variant_sku": None, "qty": 3}
     records["/cart"] = {"items": items, "subtotal": 20000, "count": 2}
     page.goto("/cart")
-    with page.expect_response("**/api/cart"):
+    with page.expect_response(
+        lambda response: response.url.endswith("/api/cart") and response.request.method == "PATCH"
+    ) as changed:
         row.get_by_role("button", name="Удалить", exact=True).click()
+    assert changed.value.status == 200
     assert writes[-1]["body"] == {"type": "merch", "ref_id": PROGRAM["slug"], "variant_sku": None, "qty": 0}
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
 
