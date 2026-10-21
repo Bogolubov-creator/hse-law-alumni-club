@@ -33,6 +33,7 @@ from club_api.modules.notifications.push import ROUTE_LIMITS as PUSH_LIMITS
 from club_api.modules.notifications.push import Push
 from club_api.modules.office.routes import ROUTE_LIMITS as OFFICE_LIMITS
 from club_api.modules.podcasts.routes import ROUTE_LIMITS as PODCAST_LIMITS
+from club_api.modules.polls.routes import ROUTE_LIMITS as POLL_LIMITS
 from club_api.modules.support.routes import ROUTE_LIMITS as SUPPORT_LIMITS
 from club_api.modules.telegram.bot import Telegram
 from club_api.modules.telegram.routes import ROUTE_LIMITS as TELEGRAM_LIMITS
@@ -83,6 +84,7 @@ def create_app(settings=None):
         settings=settings,
         route_limits={
             **ROUTE_LIMITS,
+            **POLL_LIMITS,
             **CART_LIMITS,
             **ORDER_LIMITS,
             **PAYMENT_LIMITS,

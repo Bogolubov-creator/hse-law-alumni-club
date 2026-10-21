@@ -14,6 +14,7 @@ from club_api.db.config import database_config
 JSON_FIELDS = frozenset(
     {
         "rule_json",
+        "options_json",
         "contacts_json",
         "interests_json",
         "detail",

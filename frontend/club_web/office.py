@@ -1,5 +1,5 @@
 GROUPS = [
-    ("Работа клуба", ("overview", "orders", "members", "subs", "support")),
+    ("Работа клуба", ("overview", "orders", "members", "polls", "subs", "support")),
     ("Публикации", ("programs", "products", "news", "news-sources", "events", "podcasts", "timeline")),
     ("Управление", ("analytics", "pages", "media", "audit")),
 ]
@@ -8,6 +8,7 @@ DESCRIPTIONS = {
     "analytics": "Участники, заявки и активность за выбранный период.",
     "orders": "Заявки на программы, мерч и подписки.",
     "members": "Профили выпускников, проверка статуса и возможности клуба.",
+    "polls": "Вопросы участникам, запуск голосования и сводные итоги.",
     "subs": "Доступ к подкастам и прослушивания выпусков.",
     "programs": "Каталог программ дополнительного образования.",
     "products": "Товары клуба, варианты и остатки.",
@@ -22,6 +23,7 @@ DESCRIPTIONS = {
     "support": "Обращения посетителей и работа бота клуба.",
 }
 ICONS = {
+    "polls": "M4 3v18h17M8 17v-5M13 17V8M18 17V4",
     "overview": "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
     "orders": "M8 3h8v4H8zM8 5H5v16h14V5h-3M8 12h8M8 16h5",
     "members": "M15 21v-3a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v3M21 21v-3a4 4 0 0 0-3-4M18 3a4 4 0 0 1 0 8M12 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",

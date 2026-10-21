@@ -133,7 +133,7 @@ async def export(request: HttpRequest):
     response = JsonResponse({}, safe=False)
     alumni = await require_alumni(request)
     store, id = (request.services.store, alumni["id"])
-    profile, orders, ledger, friends, subscriptions = await asyncio.gather(
+    profile, orders, ledger, friends, subscriptions, poll_votes = await asyncio.gather(
         store.read(
             "alumni",
             filters={"id": {"_eq": id}},
@@ -189,6 +189,12 @@ async def export(request: HttpRequest):
             limit=-1,
         ),
         store.read("push_subs", filters={"alumni_id": {"_eq": id}}, fields=("endpoint", "created_at"), limit=-1),
+        store.read(
+            "club_poll_votes",
+            filters={"alumni_id": {"_eq": id}},
+            fields=("poll_id", "option_id", "created_at"),
+            limit=-1,
+        ),
     )
     await audit(request, "alumni.self_export", actor="alumni:" + id, subject="alumni:" + id)
     response.headers["content-disposition"] = 'attachment; filename="moi-dannye-kluba.json"'
@@ -200,6 +206,7 @@ async def export(request: HttpRequest):
             "points_ledger": ledger,
             "friends": friends,
             "push_subscriptions": subscriptions,
+            "poll_votes": poll_votes,
         },
         safe=False,
     ).content

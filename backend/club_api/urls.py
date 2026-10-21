@@ -19,6 +19,7 @@ import club_api.modules.news.routes as news_routes
 import club_api.modules.notifications.push as notifications_push
 import club_api.modules.office.routes as office_routes
 import club_api.modules.podcasts.routes as podcasts_routes
+import club_api.modules.polls.routes as polls_routes
 import club_api.modules.support.routes as support_routes
 import club_api.modules.telegram.routes as telegram_routes
 from club_api.core.api import build_api
@@ -50,6 +51,11 @@ routes = (
         path("points", endpoint({"POST": gamification_routes.points})),
         path("decay/run", endpoint({"POST": gamification_routes.decay})),
         path("me/ledger", endpoint({"GET": gamification_routes.ledger})),
+        path("me/polls", endpoint({"GET": polls_routes.member_polls})),
+        path("me/polls/<str:id>/vote", endpoint({"POST": polls_routes.vote})),
+        path("admin/polls", endpoint({"GET": polls_routes.admin_polls, "POST": polls_routes.create_poll})),
+        path("admin/polls/<str:id>/launch", endpoint({"POST": polls_routes.launch_poll})),
+        path("admin/polls/<str:id>/close", endpoint({"POST": polls_routes.close_poll})),
         path("admin/dpo-sync", endpoint({"POST": catalog_sync.sync})),
         path("admin/pages/<str:slug>", endpoint({"GET": content_admin.admin_page, "PATCH": content_admin.patch_page})),
         path("robots.txt", endpoint({"GET": content_routes.robots})),

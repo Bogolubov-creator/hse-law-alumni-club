@@ -1,0 +1,27 @@
+<section id="polls" class="cabinet-section member-polls" aria-labelledby="polls-heading">
+<div class="poll-section-heading"><div><h2 id="polls-heading">Голос клуба</h2><p>Выбирайте темы и помогайте планировать встречи.</p></div><span class="poll-section-mark" aria-hidden="true">✓</span></div>
+{% if mirror %}<p class="poll-notice">Демонстрация опросов. Голоса здесь не отправляются.</p>{% endif %}
+{% if load_errors.get('polls') %}<div class="cabinet-empty" role="alert"><p>Не удалось загрузить опросы. Обновите страницу позже.</p></div>
+{% else %}
+<div class="poll-grid">
+{% for poll in poll_rows or [] %}
+<article class="poll-card" data-poll-id="{{ poll.id }}">
+<div class="poll-card-meta"><span class="poll-state" data-status="{{ poll.status }}">{{ 'Идёт голосование' if poll.status=='active' else 'Завершён' }}</span>{% if poll.opened_at %}<time>{{ poll.opened_at|date }}</time>{% endif %}</div>
+{% if poll.status=='active' and not poll.my_option_id %}
+<form data-api="/me/polls/{{ poll.id }}/vote" data-member-action>
+<fieldset><legend>{{ poll.question }}</legend><p class="poll-hint">Один вариант. После отправки изменить ответ нельзя.</p>
+{% for option in poll.options %}<label class="poll-choice"><input type="radio" name="option_id" value="{{ option.id }}" required><span>{{ option.label }}</span></label>{% endfor %}
+</fieldset>
+<div class="site-error" data-error role="alert" hidden></div><button type="submit" class="site-primary">Проголосовать</button>
+</form>
+{% else %}
+<h3>{{ poll.question }}</h3>
+<ul class="poll-answers">{% for option in poll.options %}<li{% if poll.my_option_id==option.id %} class="poll-answer-selected"{% endif %}>{{ option.label }}{% if poll.my_option_id==option.id %}<span>Ваш ответ ✓</span>{% endif %}</li>{% endfor %}</ul>
+<p class="poll-hint">{{ 'Ваш голос принят. Спасибо за участие.' if poll.my_option_id else 'Голосование завершено.' }}</p>
+{% endif %}
+</article>
+{% else %}<div class="cabinet-empty"><p>Сейчас опросов нет. Новые вопросы появятся здесь.</p></div>{% endfor %}
+</div>
+{% if poll_previous or poll_next %}<nav class="site-actions" aria-label="Страницы опросов">{% if poll_previous %}<a href="{{ poll_previous }}">← Предыдущие</a>{% endif %}{% if poll_next %}<a href="{{ poll_next }}">Следующие →</a>{% endif %}</nav>{% endif %}
+{% endif %}
+</section>

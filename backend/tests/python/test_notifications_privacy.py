@@ -141,6 +141,7 @@ class MemoryConnection:
         if query.startswith(
             (
                 "DELETE FROM club_social",
+                "DELETE FROM club_poll_votes",
                 "DELETE FROM alumni_friends",
                 "DELETE FROM push_subs",
                 "UPDATE orders",

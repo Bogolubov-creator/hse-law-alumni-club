@@ -16,7 +16,7 @@
 {% set names=dict(office_nav) %}
 {% for group,keys in office_groups %}
 <div class="office-nav-group"><p>{{ group }}</p>
-{% for key in keys %}
+{% for key in keys if key!='polls' or role in ('admin','Administrator') %}
 <a href="/admin{{ '/'+key if key!='overview' else '' }}" {% if section==key %}aria-current="page"{% endif %}>{{ icon(key) }}<span>{{ names[key] }}</span></a>
 {% endfor %}
 <hr></div>

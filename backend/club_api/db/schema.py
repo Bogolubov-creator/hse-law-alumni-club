@@ -90,6 +90,8 @@ DATA_COLUMNS = {
     "pages": ("id", "slug", "title", "status", "sort"),
     "pages_blocks": ("id", "collection", "item", "sort", "pages_id"),
     "podcast_plays": ("id", "podcast_id", "alumni_id", "created_at"),
+    "club_polls": ("id", "question", "options_json", "status", "created_at", "opened_at", "closed_at"),
+    "club_poll_votes": ("id", "poll_id", "alumni_id", "option_id", "created_at"),
     "podcasts": (
         "id",
         "title",
@@ -148,6 +150,7 @@ DATA_COLUMNS = {
 }
 
 JSON_COLUMNS = {
+    "club_polls": ("options_json",),
     "achievements": ("rule_json",),
     "alumni": ("contacts_json", "interests_json"),
     "audit_log": ("detail",),

@@ -18,6 +18,7 @@ from live_features import (
     news_sources,
     office_exports,
     order_form,
+    poll_voting,
     profile_tools,
     section_walk,
     support_conversation,
@@ -365,6 +366,7 @@ def test_live_system(name, width, height):
             == 403
         )
         assert request.get("/api/admin/support", headers=auth(editor)).status == 403
+        poll_voting(office, page, request, headers, name, state_path.parent)
         section_walk(page, office)
         page.goto("/lk")
         page.get_by_role("button", name="Выйти", exact=True).click()
