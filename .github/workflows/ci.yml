@@ -31,10 +31,10 @@ jobs:
           uv sync --directory backend --frozen
           uv sync --directory scripts --frozen
 
-      - name: Install web dependencies and Chromium
+      - name: Install web dependencies and browser engines
         run: |
           uv sync --directory frontend --frozen
-          uv run --directory frontend playwright install --with-deps chromium
+          uv run --directory frontend playwright install --with-deps chromium webkit
       - name: Check Python and browser source
         run: |
           uv run --directory backend python manage.py check

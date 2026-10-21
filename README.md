@@ -100,7 +100,7 @@ cd club
 uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
 uv sync --directory frontend --frozen
-uv run --directory frontend playwright install chromium
+uv run --directory frontend playwright install chromium webkit
 uv run --directory frontend python -m club_web.build --output /tmp/club-web
 uv run --directory frontend python ../scripts/checks/check-web-build.py /tmp/club-web
 uv run --directory frontend pytest -q
@@ -722,7 +722,7 @@ Docker Engine нужен для проверки Compose и интеграцио
 uv sync --directory backend --frozen
 uv sync --directory scripts --frozen
 uv sync --directory frontend --frozen
-uv run --directory frontend playwright install chromium
+uv run --directory frontend playwright install chromium webkit
 uv run --directory backend ruff check club_api tests/python ../scripts/club_ops
 uv run --directory backend ruff format --check club_api tests/python ../scripts/club_ops
 uv run --directory frontend ruff check club_web tests/python
