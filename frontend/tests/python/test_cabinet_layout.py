@@ -79,9 +79,7 @@ def test_cabinet_displays_server_progress_and_distinct_achievement_states(page, 
     expect(page.locator("#achievements > h2")).to_be_in_viewport()
     expect(page.locator(".cabinet-nav a[aria-current]")).to_contain_text("Достижения")
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
-    assert page.locator(".cabinet-membership").evaluate(
-        "node => node.scrollWidth <= node.clientWidth + 1"
-    )
+    assert page.locator(".cabinet-membership").evaluate("node => node.scrollWidth <= node.clientWidth + 1")
     assert locked.evaluate("node => node.scrollWidth <= node.clientWidth + 1")
 
 
@@ -92,7 +90,9 @@ def test_unverified_member_does_not_see_verified_benefits_or_awards(page, site, 
     site[1]["/me"] = profile
     page.add_init_script("localStorage.setItem('club_token','member-qa');")
     page.goto("/lk")
-    expect(page.get_by_role("heading", name="Заявка отклонена" if status == "rejected" else "Заявка на проверке")).to_be_visible()
+    expect(
+        page.get_by_role("heading", name="Заявка отклонена" if status == "rejected" else "Заявка на проверке")
+    ).to_be_visible()
     expect(page.locator(".cabinet-membership")).to_have_count(0)
     expect(page.locator("[data-achievement-key]")).to_have_count(0)
 
@@ -111,7 +111,10 @@ def test_cabinet_avatar_uses_existing_avatar_endpoint(page, site):
     identifier = "00000000-0000-4000-8000-000000000001"
     profile["alumni"]["avatar"] = identifier
     site[1]["/me"] = profile
-    page.route("**/api/avatars/" + identifier, lambda route: route.fulfill(path=Path(__file__).resolve().parents[2] / "public/icon-192.png"))
+    page.route(
+        "**/api/avatars/" + identifier,
+        lambda route: route.fulfill(path=Path(__file__).resolve().parents[2] / "public/icon-192.png"),
+    )
     page.add_init_script("localStorage.setItem('club_token','member-qa');")
     page.goto("/lk")
     avatar = page.locator(".cabinet-avatar")

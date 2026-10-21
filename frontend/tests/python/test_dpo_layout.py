@@ -30,7 +30,9 @@ def faculty_program(identifier, **changes):
 def test_dpo_cards_reserve_media_and_align_footer_without_losing_actions(page, site, width, pwa):
     site[1]["/programs"] = [
         {**PROGRAM, "title": "А. Программа Клуба"},
-        faculty_program("second", title="Б. Юридические требования к внедрению цифровых инструментов в кадровую работу"),
+        faculty_program(
+            "second", title="Б. Юридические требования к внедрению цифровых инструментов в кадровую работу"
+        ),
         faculty_program("third", title="В. Контрактное право", cover="/assets/programs/472681893.jpg"),
     ]
     page.set_viewport_size({"width": width, "height": 1000})
@@ -43,9 +45,11 @@ def test_dpo_cards_reserve_media_and_align_footer_without_losing_actions(page, s
         expect(card.locator(".site-card-media")).to_be_visible()
         card.get_by_role("button", name="Сохранить", exact=True).scroll_into_view_if_needed()
         assert card.evaluate("node => node.scrollWidth <= node.clientWidth + 1")
-        geometry.append(card.evaluate(
-            "node => ({top:node.offsetTop,media:node.querySelector('.site-card-media').clientHeight,price:node.querySelector('.dpo-card__price').getBoundingClientRect().top + scrollY,foot:node.querySelector('.dpo-card__actions').getBoundingClientRect().bottom + scrollY})"
-        ))
+        geometry.append(
+            card.evaluate(
+                "node => ({top:node.offsetTop,media:node.querySelector('.site-card-media').clientHeight,price:node.querySelector('.dpo-card__price').getBoundingClientRect().top + scrollY,foot:node.querySelector('.dpo-card__actions').getBoundingClientRect().bottom + scrollY})"
+            )
+        )
     for left in geometry:
         for right in geometry:
             if abs(left["top"] - right["top"]) < 2:
