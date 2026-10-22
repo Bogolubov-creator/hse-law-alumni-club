@@ -1,23 +1,28 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import save,add_cart %}
+{% from 'merch-media.html' import placeholder %}
 {% block content %}
-<main id="main" class="site-container">
-<a href="/merch">← Мерч клуба</a>
+<main id="main" class="site-container merch-product">
+<nav class="merch-product__back" aria-label="Навигация по мерчу"><a href="/merch">← Мерч клуба</a></nav>
 <header class="site-masthead">
-<span class="club-caps">{{ item.category }}</span>
+{% if item.category %}<span class="merch-card__category">{{ item.category }}</span>{% endif %}
 <h1>{{ item.title }}</h1>
 </header>
-<div class="site-two-col">
+<div class="site-two-col merch-product__layout">
 <div class="site-gallery">
-{% for image in item.images or [] %}
-{% if image|media %}
-<div class="site-product-photo"><img src="{{ image|media }}" alt="{{ item.title }}" width="800" height="800" loading="lazy" decoding="async"></div>
-{% endif %}
+{% set images = (item.images or [])|map('media')|select|list %}
+{% for image in images %}
+<div class="site-product-photo" data-merch-media><img src="{{ image }}" alt="{{ item.title }}" width="800" height="800" loading="lazy" decoding="async" data-merch-image>{{ placeholder(item.title,hidden=true) }}</div>
+{% else %}
+<div class="site-product-photo" data-merch-media>{{ placeholder(item.title) }}</div>
 {% endfor %}
 </div>
-<aside class="site-panel">
+<aside class="site-panel merch-product__summary" aria-label="Выбор товара">
 <p class="site-price">{{ item.price|rub }}</p>
-<p class="site-prose">{{ item.description or '' }}</p>{{ add_cart(item,'merch') }}{{ save(path,item.title,'merch') }}<p>Скидка выпускника на мерч не распространяется.</p>
+{{ add_cart(item,'merch') }}
+<div class="merch-product__save">{{ save(path,item.title,'merch') }}</div>
+<p class="merch-product__note">Скидка выпускника на мерч не распространяется.</p>
+{% if item.description %}<section class="merch-product__description" aria-labelledby="merch-description-title"><h2 id="merch-description-title">О товаре</h2><p class="site-prose">{{ item.description }}</p></section>{% endif %}
 </aside>
 </div>
 </main>

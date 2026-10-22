@@ -222,6 +222,7 @@ async def context(api, path, params, authorized=False):
         if kind == "dpo":
             data.update(prepare_catalog(data["items"], params))
         else:
+            data["catalog_total"] = len(data["items"])
             fields = ("category",)
             data["filters"] = {
                 field: sorted({str(item.get(field) or "") for item in data["items"]} - {""}) for field in fields

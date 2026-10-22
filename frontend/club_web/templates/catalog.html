@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
-{% from 'macros.html' import save %}
 {% block content %}
 {% set filter_labels={'direction':'Направление','format':'Формат','document':'Документ','enrollment':'Набор','organizer':'Организатор','category':'Категория'} %}
-<main id="main" class="site-container{% if kind=='dpo' %} dpo-catalog{% endif %}">
-<header class="site-masthead{% if kind=='dpo' %} dpo-catalog-header{% endif %}">
+<main id="main" class="site-container{% if kind=='dpo' %} dpo-catalog{% else %} merch-catalog{% endif %}">
+<header class="site-masthead{% if kind=='dpo' %} dpo-catalog-header{% else %} merch-catalog-header{% endif %}">
 {% if kind=='dpo' %}<span class="dpo-catalog-eyebrow">Дополнительное образование</span>{% endif %}
 <h1>{{ title }}</h1>
 <p>{{ 'Обучение в Клубе выпускников и на факультете права НИУ ВШЭ.' if kind == 'dpo' else 'Одежда и аксессуары с символикой клуба.' }}</p>
 {% if kind=='dpo' and not load_errors.get('items') %}<a class="dpo-catalog-header__link" href="#program-list">Перейти к каталогу <span aria-hidden="true">↓</span></a>{% endif %}
+{% if kind=='merch' %}<a class="merch-catalog-header__cart" href="/cart">Корзина <span aria-hidden="true">↗</span></a>{% endif %}
 </header>
 {% if load_errors.get('items') %}
-<section class="dpo-catalog-unavailable"><h2>Каталог временно недоступен</h2><p>Не удалось получить программы. Попробуйте открыть каталог ещё раз.</p><a class="site-primary" href="{{ path }}">Повторить загрузку</a></section>
+<section class="dpo-catalog-unavailable"><h2>Каталог временно недоступен</h2><p>{{ 'Не удалось получить программы.' if kind=='dpo' else 'Не удалось загрузить товары.' }} Попробуйте открыть каталог ещё раз.</p><a class="site-primary" href="{{ path }}">Повторить загрузку</a></section>
 {% else %}
 {% if kind=='dpo' %}
 <section class="dpo-organizers" aria-label="Где проходит запись">
@@ -55,7 +55,7 @@
 {% if kind=='dpo' %}
 {% include 'catalog-filters.html' %}
 {% else %}
-<form class="site-filters" method="get" id="program-list">
+<form class="site-filters merch-filters" method="get" id="program-list" role="search" aria-label="Поиск мерча">
 <label>Поиск<input type="search" name="q" value="{{ query.get('q','') }}" placeholder="Название">
 </label>
 {% for name,values in filters.items() %}
@@ -73,8 +73,8 @@
 <option value="price-desc" {% if query.get('sort')=='price-desc' %}selected{% endif %}>Сначала дороже</option>
 </select>
 </label>
-<button>Показать</button>
-<a href="{{ path }}">Сбросить</a>
+<button class="site-primary">Показать</button>
+<a class="merch-filters__reset" href="{{ path }}">Сбросить</a>
 </form>
 {% endif %}
 {% if kind=='dpo' %}<aside id="program-compare" class="dpo-compare-bar site-panel" aria-label="Выбранные программы" hidden>
@@ -82,20 +82,12 @@
 <button data-action="show-compare">Сравнить выбранные программы</button>
 <button data-action="clear-compare">Очистить</button>
 </aside>{% endif %}
-<p role="status" {% if kind=='dpo' %}data-catalog-count{% endif %}>Найдено: {{ items|length }}{% if kind=='dpo' %} из {{ catalog_total }}{% endif %}</p>
+<p role="status" {% if kind=='dpo' %}data-catalog-count{% else %}class="merch-catalog__count"{% endif %}>Найдено: {{ items|length }}{% if kind=='dpo' %} из {{ catalog_total }}{% endif %}</p>
 <div class="site-catalog">
 {% for item in items %}
-{% if kind=='dpo' %}{% include 'program-card.html' %}{% else %}
-<article class="site-catalog-card" data-reveal data-catalog-row='{{ {"title":item.title,"category":item.category or "","price":item.price}|tojson }}'>
-{% set image = (item.images or [])|first %}
-{% if image|media %}<a href="/merch/{{ item.slug }}" class="site-card-media site-card-media--product"><img src="{{ image|media }}" alt="{{ item.title }}" loading="lazy" decoding="async" width="560" height="380"></a>{% endif %}
-<div><span class="club-caps">{{ item.category }}</span><h2><a href="/merch/{{ item.slug }}">{{ item.title }}</a></h2>
-<p class="site-price">{{ item.price|rub }}</p>
-<div class="site-actions"><a href="/merch/{{ item.slug }}" class="site-primary">Подробнее</a>{{ save('/merch/'+item.slug,item.title,'merch') }}</div></div>
-</article>
-{% endif %}
+{% if kind=='dpo' %}{% include 'program-card.html' %}{% else %}{% include 'merch-card.html' %}{% endif %}
 {% endfor %}
-<div data-catalog-empty {% if items %}hidden{% endif %}><p>По выбранным фильтрам ничего не найдено.</p><a href="{{ path }}">Сбросить фильтры</a></div>
+<div data-catalog-empty {% if kind=='merch' %}class="merch-catalog__empty"{% endif %} {% if items %}hidden{% endif %}>{% if kind=='merch' and not catalog_total %}<h2>Товары пока не опубликованы</h2><p>Сейчас в каталоге нет опубликованных товаров.</p>{% else %}{% if kind=='merch' %}<h2>Ничего не нашлось</h2>{% endif %}<p>По выбранным фильтрам ничего не найдено.</p><a href="{{ path }}">Сбросить фильтры</a>{% endif %}</div>
 </div>
 {% if kind=='dpo' %}
 

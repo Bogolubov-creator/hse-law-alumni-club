@@ -1,0 +1,7 @@
+{% macro placeholder(title,hidden=false) %}
+<span class="merch-placeholder" data-merch-placeholder {% if hidden %}hidden{% endif %}>
+<span class="merch-placeholder__club">Клуб выпускников</span>
+<strong>{{ title }}</strong>
+<span class="merch-placeholder__caption">Фото пока нет</span>
+</span>
+{% endmacro %}

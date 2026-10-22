@@ -104,6 +104,8 @@ def site():
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         if path == "/programs" and records.get("unavailable_programs"):
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
+        if path == "/products" and records.get("unavailable_products"):
+            return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         if path == "/pages/home" and records.get("unavailable_home"):
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         return httpx.Response(200, json=records.get(path, []))
