@@ -1129,7 +1129,7 @@ def test_changes_filters_reader_back_and_copy_fallback(page, width):
     page.get_by_role("button", name="Копировать текст").click()
     expect(page.get_by_role("textbox", name="Текст для ручного копирования")).to_be_visible()
     page.get_by_role("link", name="← Все материалы", exact=True).click()
-    expect(page).to_have_url(re.compile(r"/changes\?view=all&sort=oldest$"))
+    expect(page).to_have_url(re.compile(r"/changes\?view=all&sort=oldest#change-" + re.escape(target) + "$"))
     expect(page.locator('[data-change-open="' + target + '"]')).to_be_focused()
 
 
