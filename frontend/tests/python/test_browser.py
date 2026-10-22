@@ -96,6 +96,8 @@ def site():
             return httpx.Response(200, json={"ok": True})
         if path == "/news/news-one" and records.get("deleted_news"):
             return httpx.Response(404, json={"error": "Новость удалена"})
+        if path == "/news" and records.get("unavailable_news"):
+            return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         if path == "/events" and records.get("unavailable_events"):
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         if path in ("/auth/admin-session", "/me") and records.get("session_failure_status"):
@@ -1127,7 +1129,7 @@ def test_changes_filters_reader_back_and_copy_fallback(page, width):
     page.get_by_role("button", name="Копировать текст").click()
     expect(page.get_by_role("textbox", name="Текст для ручного копирования")).to_be_visible()
     page.get_by_role("link", name="← Все материалы", exact=True).click()
-    expect(page).to_have_url(re.compile(r"/changes\?view=all&sort=oldest$"))
+    expect(page).to_have_url(re.compile(r"/changes\?view=all&sort=oldest#change-" + re.escape(target) + "$"))
     expect(page.locator('[data-change-open="' + target + '"]')).to_be_focused()
 
 
@@ -1164,6 +1166,23 @@ def test_mirror_changes_search_reading_and_dialog_are_independent(chromium, mirr
     context.close()
 
 
+def expect_change_return_focus(page, identifier):
+    try:
+        expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
+    except AssertionError as error:
+        state = page.evaluate(
+            """identifier => {
+              const link = [...document.querySelectorAll('[data-change-open]')].find(node => node.dataset.changeOpen === identifier);
+              const active = document.activeElement;
+              return {url:location.href,prepared:document.querySelector('.changes-page')?.dataset.prepared,
+                saved:sessionStorage.getItem('club-changes-return'),target:link ? {id:link.id,href:link.href,connected:link.isConnected} : null,
+                active:{tag:active?.tagName,id:active?.id,material:active?.dataset.changeOpen}};
+            }""",
+            identifier,
+        )
+        pytest.fail(str(error) + "\nReturn focus state: " + json.dumps(state, ensure_ascii=False))
+
+
 def test_changes_reader_navigation_preserves_list_return(page):
     page.goto("/changes?view=all")
     page.locator("[data-change-open]").first.click()
@@ -1171,7 +1190,41 @@ def test_changes_reader_navigation_preserves_list_return(page):
     identifier = second.get_attribute("data-change-open")
     second.click()
     page.get_by_role("link", name="← Все материалы", exact=True).click()
-    expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
+    expect_change_return_focus(page, identifier)
+
+
+@pytest.mark.parametrize("previous", [None, "tg-18"])
+def test_changes_return_keeps_selected_material_with_missing_or_stale_click_state(page, previous):
+    page.goto("/changes/tg-17?view=all")
+    page.evaluate(
+        """previous => {
+          sessionStorage.removeItem('club-changes-return');
+          if (previous) sessionStorage.setItem('club-changes-return', JSON.stringify({url:'/changes?view=all',scroll:0,focus:previous,unread:false}));
+        }""",
+        previous,
+    )
+    page.get_by_role("link", name="← Все материалы", exact=True).click()
+    expect_change_return_focus(page, "tg-17")
+
+
+@pytest.mark.parametrize("previous", [None, "tg-18"])
+def test_mirror_changes_return_keeps_selected_material_with_missing_or_stale_click_state(
+    chromium, mirror_site, previous
+):
+    context = chromium.new_context(viewport={"width": 390, "height": 1000}, service_workers="block")
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+    page = context.new_page()
+    page.goto(mirror_site + "changes/tg-17/?view=all")
+    page.evaluate(
+        """previous => {
+          sessionStorage.removeItem('club-changes-return');
+          if (previous) sessionStorage.setItem('club-changes-return', JSON.stringify({url:document.body.dataset.base+'changes?view=all',scroll:0,focus:previous,unread:false}));
+        }""",
+        previous,
+    )
+    page.get_by_role("link", name="← Все материалы", exact=True).click()
+    expect_change_return_focus(page, "tg-17")
+    context.close()
 
 
 def test_mirror_reader_back_restores_focus(chromium, mirror_site):

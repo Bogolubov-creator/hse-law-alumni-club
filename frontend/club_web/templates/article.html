@@ -1,21 +1,31 @@
 {% extends 'base.html' %}
 {% from 'macros.html' import save %}
 {% block content %}
-<main id="main" class="site-article" data-reading-title="{{ item.title }}" data-reading-kind="news">
-<a href="/news">← Новости</a>
-<time>{{ item.published_at|date }}</time>
-<h1>{{ item.title }}</h1>
-{% if item.excerpt %}
-<p class="site-lead">{{ item.excerpt }}</p>
-{% endif %}
-<div class="site-prose">
-{% for paragraph in (item.body or '').split('\n\n') if paragraph.strip() %}
-<p>{{ paragraph }}</p>
-{% endfor %}
+<main id="main" class="site-container news-post" data-reading-title="{{ item.title }}" data-reading-kind="news">
+<nav class="news-post__back" aria-label="Навигация по новостям"><a href="/news">← Все новости</a></nav>
+<article>
+<header class="news-post__header">
+<div class="news-meta">
+{% if item.published_iso %}<time datetime="{{ item.published_iso }}">{{ item.published_at|date }}</time>{% endif %}
+{% if item.source_href %}<a class="news-source" href="{{ item.source_href }}" target="_blank" rel="noopener noreferrer">{{ item.source_name }} <span aria-hidden="true">↗</span></a>{% endif %}
 </div>
-{% if item.source_url|safe_url %}
-<p>
-<a href="{{ item.source_url|safe_url }}" target="_blank" rel="noopener noreferrer">Источник ↗</a>
-</p>
-{% endif %}{{ save(path,item.title,'news') }}</main>
+<h1>{{ item.title }}</h1>
+{% if item.excerpt %}<p class="site-lead">{{ item.excerpt }}</p>{% endif %}
+<div class="news-post__tools">{{ save(path,item.title,'news') }}</div>
+</header>
+{% if item.photo %}
+<figure class="news-post__photo" data-news-media>
+<img src="{{ base }}assets/photos/{{ item.photo.file }}" alt="{{ item.photo.alt }}" width="{{ item.photo.width }}" height="{{ item.photo.height }}" decoding="async" data-news-image>
+<figcaption><a href="{{ item.photo.source_url|safe_url }}" target="_blank" rel="noopener noreferrer">{{ item.photo.caption }}</a></figcaption>
+</figure>
+{% endif %}
+<div class="site-prose news-post__body">
+{% for paragraph in (item.body or '').split('\n\n') if paragraph.strip() %}<p>{{ paragraph }}</p>{% endfor %}
+</div>
+<footer class="news-post__footer">
+<a href="/news">← Вернуться к новостям</a>
+{% if item.source_href %}<a href="{{ item.source_href }}" target="_blank" rel="noopener noreferrer">Полная публикация в источнике ↗</a>{% endif %}
+</footer>
+</article>
+</main>
 {% endblock %}

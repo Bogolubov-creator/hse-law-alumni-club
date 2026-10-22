@@ -9,6 +9,7 @@ from club_web.catalog import prepare_catalog
 from club_web.changes import parse_changes, select_changes
 from club_web.client import ApiFailure
 from club_web.formatting import page_items
+from club_web.news import prepare_news
 from club_web.office import DESCRIPTIONS, FIELDS, GROUPS, ICONS, LABELS, METRICS, filter_content
 from club_web.search import search_groups
 
@@ -246,6 +247,8 @@ async def context(api, path, params, authorized=False):
         await load("item", endpoint + quote(path.rsplit("/", 1)[1], safe=""), {})
         if data["item"]:
             data["title"] = data["item"]["title"]
+            if path.startswith("/news/"):
+                data["item"] = prepare_news(data["item"], resource("news-media.json"))
     elif path.startswith("/merch/"):
         await load("products", "/products", [])
         data["item"] = next((item for item in data["products"] if item["slug"] == path.rsplit("/", 1)[1]), None)
@@ -280,6 +283,11 @@ async def context(api, path, params, authorized=False):
         data["found"] = sum(len(group["items"]) for group in groups) + len(data["sections"])
     elif path == "/news":
         await load("items", "/news", [])
+        photos = resource("news-media.json")
+        data["items"] = [
+            prepare_news(item, photos)
+            for item in sorted(data["items"], key=lambda row: instant(row.get("published_at")), reverse=True)
+        ]
     elif path == "/events" or path.startswith("/events/"):
         event_id = path.removeprefix("/events/") if path != "/events" else params.get("event")
         endpoint = "/events"

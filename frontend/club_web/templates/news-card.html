@@ -1,0 +1,21 @@
+{% from 'macros.html' import save %}
+<article class="news-card{% if featured %} news-card--featured{% endif %}">
+{% if item.photo %}
+<a href="/news/{{ item.slug }}" class="news-card__media" data-news-media tabindex="-1" aria-hidden="true">
+<img src="{{ base }}assets/photos/{{ item.photo.file }}" alt="" width="{{ item.photo.width }}" height="{{ item.photo.height }}" loading="{{ 'eager' if featured else 'lazy' }}" decoding="async" data-news-image>
+</a>
+{% endif %}
+<div class="news-card__content">
+<div class="news-meta">
+{% if item.published_iso %}<time datetime="{{ item.published_iso }}">{{ item.published_at|date }}</time>{% endif %}
+{% if featured and item.published_iso %}<span class="news-meta__latest">Последняя публикация</span>{% endif %}
+</div>
+<h2><a href="/news/{{ item.slug }}">{{ item.title }}</a></h2>
+{% if item.excerpt %}<p class="news-card__excerpt">{{ item.excerpt }}</p>{% endif %}
+{% if item.source_href %}<a class="news-source" href="{{ item.source_href }}" target="_blank" rel="noopener noreferrer">{{ item.source_name }} <span aria-hidden="true">↗</span></a>{% endif %}
+<div class="news-card__actions">
+<a href="/news/{{ item.slug }}" class="news-card__read">Читать новость <span aria-hidden="true">→</span></a>
+{{ save('/news/'+item.slug,item.title,'news') }}
+</div>
+</div>
+</article>

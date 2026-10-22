@@ -1,20 +1,26 @@
 {% extends 'base.html' %}
-{% from 'macros.html' import save,empty %}
 {% block content %}
-<main id="main" class="site-container">
-<header class="site-masthead">
-<h1>Новости</h1>
-<p>Новости факультета и клуба выпускников.</p>
+<main id="main" class="site-container news-index">
+<header class="site-masthead news-index__header">
+<div><h1>Новости</h1><p>Новости факультета и клуба выпускников.</p></div>
+<a href="/saved" class="news-index__saved">Сохранённые материалы <span aria-hidden="true">↗</span></a>
 </header>
-<div class="site-editorial-list">
-{% for item in items %}
-<article>
-<time>{{ item.published_at|date }}</time>
-<h2>
-<a href="/news/{{ item.slug }}">{{ item.title }}</a>
-</h2>
-<p>{{ item.excerpt or '' }}</p>{{ save('/news/'+item.slug,item.title,'news') }}</article>
-{% else %}{{ empty('Новостей пока нет.') }}{% endfor %}
+{% if load_errors.get('items') %}
+<section class="news-state" aria-labelledby="news-state-title">
+<h2 id="news-state-title">Новости временно недоступны</h2>
+<p>Не удалось загрузить публикации. Попробуйте ещё раз.</p>
+<button type="button" data-action="refresh">Повторить загрузку</button>
+</section>
+{% elif items %}
+<div class="news-list">
+{% for item in items %}{% set featured = loop.first %}{% include 'news-card.html' %}{% endfor %}
 </div>
+{% else %}
+<section class="news-state" aria-labelledby="news-state-title">
+<h2 id="news-state-title">Новостей пока нет</h2>
+<p>Здесь появятся публикации факультета и клуба выпускников.</p>
+<a href="/events" class="news-card__read">Посмотреть события <span aria-hidden="true">→</span></a>
+</section>
+{% endif %}
 </main>
 {% endblock %}
