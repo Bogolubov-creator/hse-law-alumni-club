@@ -1,0 +1,19 @@
+{% from 'macros.html' import save %}
+{% from 'merch-media.html' import placeholder %}
+{% set images = (item.images or [])|map('media')|select|list %}
+<article class="site-catalog-card merch-card" data-reveal data-catalog-row='{{ {"title":item.title,"category":item.category or "","price":item.price}|tojson }}'>
+<a href="/merch/{{ item.slug }}" class="merch-card__media" tabindex="-1" aria-hidden="true">
+<span class="site-card-media site-card-media--product" data-merch-media>
+{% if images %}<img src="{{ images[0] }}" alt="" loading="lazy" decoding="async" width="560" height="560" data-merch-image>{% endif %}
+{{ placeholder(item.title,hidden=images|length>0) }}
+</span>
+</a>
+<div class="merch-card__content">
+{% if item.category %}<span class="merch-card__category">{{ item.category }}</span>{% endif %}
+<h2><a href="/merch/{{ item.slug }}">{{ item.title }}</a></h2>
+</div>
+<footer class="merch-card__footer">
+<p class="site-price">{{ item.price|rub }}</p>
+<div class="site-actions"><a href="/merch/{{ item.slug }}" class="site-primary">Подробнее</a>{{ save('/merch/'+item.slug,item.title,'merch') }}</div>
+</footer>
+</article>

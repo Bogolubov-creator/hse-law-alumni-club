@@ -371,6 +371,16 @@ window.addEventListener("hashchange", openCabinetSection);
 function setupPage() {
   prepareDiscovery(url, mirror);
   prepareCatalog(url, notice);
+  document.querySelectorAll("[data-merch-image]").forEach(image => {
+    if (image.dataset.fallbackReady) return;
+    image.dataset.fallbackReady = "true";
+    const fallback = () => {
+      image.hidden = true;
+      image.closest("[data-merch-media]").querySelector("[data-merch-placeholder]").hidden = false;
+    };
+    image.addEventListener("error", fallback, { once: true });
+    if (image.complete && !image.naturalWidth) fallback();
+  });
   alignOfficeNavigation();
   openCabinetSection();
   const recent = document.querySelector("[data-reading-title]");
