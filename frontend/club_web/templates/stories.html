@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<main id="main" class="stories-page site-container">
+<header class="stories-page__intro">
+<a href="/#alumni-stories" class="story-back foc">← На главную</a>
+<h1>Истории <em>выпускников</em></h1>
+<p class="site-lead">Как складывается профессиональный путь после факультета права Вышки.</p>
+</header>
+<div class="stories-grid">
+{% for story in stories %}
+{% include 'alumni-story-card.html' %}
+{% else %}
+<p>Истории готовятся к публикации.</p>
+{% endfor %}
+</div>
+</main>
+{% endblock %}

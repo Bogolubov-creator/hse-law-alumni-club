@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<main id="main" class="alumni-story site-container">
+<nav class="story-breadcrumbs" aria-label="Путь к истории">
+<a href="/#alumni-stories" class="story-back foc">← На главную</a>
+<a href="/stories" class="foc">Все истории выпускников</a>
+</nav>
+<article>
+<header class="story-hero">
+<figure class="story-hero__portrait">
+<img src="{{ base }}assets/photos/{{ story.photo.file }}" alt="{{ story.name }}" width="{{ story.photo.width }}" height="{{ story.photo.height }}" decoding="async" fetchpriority="high" data-offline-image>
+<figcaption>{{ story.photo.caption }}</figcaption>
+</figure>
+<div class="story-hero__copy">
+<p class="story-eyebrow">Истории выпускников · {{ story.study.label }}</p>
+<h1>{{ story.name }}</h1>
+<p class="story-hero__role">{{ story.role }}</p>
+<p class="story-hero__lead">{{ story.teaser }}</p>
+<dl class="story-study">
+<div><dt>Учёба в Вышке</dt><dd>{{ story.study.description }}</dd></div>
+<div><dt>{{ story.study.year_label }}</dt><dd>{{ story.study.years|join(', ') }}</dd></div>
+<div><dt>Сфера</dt><dd>{{ story.field }}</dd></div>
+</dl>
+</div>
+</header>
+<div class="story-body">
+<section class="story-biography" aria-labelledby="story-biography-title">
+<h2 id="story-biography-title">После факультета</h2>
+{% for paragraph in story.biography %}<p>{{ paragraph }}</p>{% endfor %}
+</section>
+<section class="story-career" aria-labelledby="story-career-title">
+<h2 id="story-career-title">Карьера и проекты</h2>
+<ol class="story-timeline">
+{% for step in story.career %}
+<li><span class="story-timeline__date">{{ step.period }}</span><div><h3>{{ step.title }}</h3><p>{{ step.text }}</p></div></li>
+{% endfor %}
+</ol>
+</section>
+<section class="story-sources" aria-labelledby="story-sources-title">
+<h2 id="story-sources-title">Источники</h2>
+<p>По материалам НИУ ВШЭ. Сведения сверены {{ story.verified_at|date }}.</p>
+<ul>{% for source in story.sources %}<li><a href="{{ source.url|safe_url }}" target="_blank" rel="noopener noreferrer" class="foc">{{ source.title }} ↗</a></li>{% endfor %}</ul>
+</section>
+</div>
+</article>
+{% if related_stories %}
+<section class="story-related" aria-labelledby="related-stories-title">
+<div class="stories-heading"><h2 id="related-stories-title">Другие истории</h2><a href="/stories" class="stories-all foc">Все истории →</a></div>
+<div class="stories-grid stories-grid--related">
+{% for story in related_stories %}{% include 'alumni-story-card.html' %}{% endfor %}
+</div>
+</section>
+{% endif %}
+</main>
+{% endblock %}

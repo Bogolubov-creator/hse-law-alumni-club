@@ -19,6 +19,7 @@ PUBLIC_PAGES = {
     "/merch": ("catalog.html", "Мерч клуба"),
     "/events": ("events.html", "События клуба"),
     "/news": ("news.html", "Новости"),
+    "/stories": ("stories.html", "Истории выпускников"),
     "/podcasts": ("podcasts.html", "Подкасты клуба"),
     "/changes": ("changes.html", "Изменения в праве"),
     "/saved": ("saved.html", "Сохранённое"),
@@ -102,6 +103,7 @@ def select_page(path):
         ("/dpo/", "program.html"),
         ("/merch/", "product.html"),
         ("/news/", "article.html"),
+        ("/stories/", "alumni-story.html"),
         ("/events/", "events.html"),
         ("/podcasts/", "episode.html"),
         ("/changes/", "changes.html"),
@@ -166,6 +168,8 @@ async def context(api, path, params, authorized=False):
                 data.update(template="not-found.html", title="Страница не найдена", status=404)
         return data[key]
 
+    if path == "/" or path == "/stories" or path.startswith("/stories/"):
+        data["stories"] = resource("alumni-stories.json")["items"]
     if path == "/":
         await asyncio.gather(
             load("page", "/pages/home", {}),
@@ -203,6 +207,14 @@ async def context(api, path, params, authorized=False):
         data["recent_changes"] = select_changes(
             snapshot["items"], {"view": "digest" if snapshot["mode"] == "channel" else "all"}
         )[:3]
+    elif path.startswith("/stories/") and template == "alumni-story.html":
+        slug = path.removeprefix("/stories/")
+        data["story"] = next((row for row in data["stories"] if row["slug"] == slug), None)
+        if data["story"] is None:
+            data.update(template="not-found.html", title="История не найдена", status=404)
+        else:
+            data["title"] = data["story"]["name"]
+            data["related_stories"] = [row for row in data["stories"] if row["slug"] != slug][:2]
     elif path in ("/dpo", "/merch"):
         kind = "dpo" if path == "/dpo" else "merch"
         await load("items", "/programs" if kind == "dpo" else "/products", [])

@@ -110,17 +110,22 @@
 <a href="/events" class="foc home-btn home-btn--ghost">Встречи клуба →</a>
 </div>
 </section>
-<section class="home-voice" data-reveal>
-<div class="home-voice__photo">
-{{ photo(base,'alumni-voice','Екатерина Салугина-Сорокова, выпускница факультета права 2006 года',1083,720) }}
+{% if stories %}
+<section id="alumni-stories" class="home-stories" aria-labelledby="alumni-stories-title" data-reveal>
+<div class="stories-heading">
+<div>
+<h2 id="alumni-stories-title">Истории <em>выпускников</em></h2>
+<p>Карьера, собственные проекты и жизнь после факультета права.</p>
 </div>
-<div class="home-voice__copy">
-<h2>Екатерина Салугина-Сорокова, <em>выпуск 2006</em>
-</h2>
-<p>Первый вице-президент Газпромбанка – о факультете, карьере и о том, зачем выпускникам клуб.</p>
-<a href="https://pravo.hse.ru/businessandlaw/alumni" target="_blank" rel="noopener noreferrer" class="foc home-btn home-btn--ghost">Читать интервью ↗</a>
+<a href="/stories" class="stories-all foc">Все истории <span aria-hidden="true">→</span></a>
+</div>
+<div class="stories-grid">
+{% for story in stories[:3] %}
+{% include 'alumni-story-card.html' %}
+{% endfor %}
 </div>
 </section>
+{% endif %}
 <section class="site-container site-opportunities">
 <h2>Возможности клуба</h2>
 <div class="site-catalog">

@@ -1,5 +1,6 @@
 import pytest
 from playwright.sync_api import expect, sync_playwright
+from test_browser import mirror_site as mirror_site
 from test_browser import page as page
 from test_browser import site as site
 from test_pages import PROGRAM
@@ -11,6 +12,46 @@ def chromium(request):
         instance = getattr(playwright, request.param).launch()
         yield instance
         instance.close()
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+@pytest.mark.parametrize("javascript", [True, False])
+def test_mirror_support_stays_closed_with_cached_legacy_styles(chromium, mirror_site, width, javascript):
+    context = chromium.new_context(
+        viewport={"width": width, "height": 900}, java_script_enabled=javascript, service_workers="block"
+    )
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+
+    def legacy_styles(route):
+        response = route.fetch()
+        route.fulfill(response=response, body=response.text() + "\n.club-bot-panel { display: flex; }\n")
+
+    page.route("**/assets/site.css", legacy_styles)
+    page.goto(mirror_site)
+    dialog = page.locator("#support-bot")
+    assert dialog.get_attribute("open") is None
+    expect(dialog).to_be_hidden()
+    if javascript:
+        launcher = page.get_by_role("button", name="Открыть бота поддержки", exact=True)
+        launcher.click()
+        expect(dialog).to_be_visible()
+        assert dialog.get_attribute("open") is not None
+        page.get_by_role("button", name="Закрыть поддержку", exact=True).click()
+        expect(dialog).to_be_hidden()
+        expect(launcher).to_be_focused()
+        launcher.press("Enter")
+        expect(dialog).to_be_visible()
+        page.keyboard.press("Escape")
+        expect(dialog).to_be_hidden()
+    page.reload()
+    expect(dialog).to_be_hidden()
+    page.goto(mirror_site + "news/")
+    expect(dialog).to_be_hidden()
+    assert not errors
+    context.close()
 
 
 @pytest.mark.parametrize("width,height", [(1440, 1000), (390, 844), (320, 568), (390, 420)])
