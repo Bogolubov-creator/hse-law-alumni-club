@@ -11,7 +11,7 @@ cleanup() {
 docker run --rm -d --name "$CONTAINER" --tmpfs /var/lib/postgresql/data \
   -e POSTGRES_DB=django_migration_test -e POSTGRES_USER=club \
   -e POSTGRES_PASSWORD=integration-test-only -p 127.0.0.1::5432 \
-  postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea >/dev/null
+  postgres:16.15-alpine@sha256:deb28ee471183cb0c303113dac9b2433c51eeeeb678def7af9a9ec5820367815 >/dev/null
 trap cleanup EXIT
 READY=false
 for attempt in $(seq 1 30); do
