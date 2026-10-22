@@ -1,0 +1,20 @@
+{% from 'macros.html' import save %}
+{% set event = item %}
+<article class="club-event-detail club-event-detail--page" data-reading-title="{{ item.title }}" data-reading-kind="events" data-event-instant="{{ event.starts_iso }}" data-event-state="{{ event.status }}">
+<nav class="club-event-detail__nav" aria-label="Навигация по событиям"><a href="{{ events_back }}" data-events-back>← Все события</a>{{ save('/events/'+event.id,event.title,'events') }}</nav>
+<header class="club-event-detail__header"><div class="club-event-detail__tags"><span>{{ format_labels.get(event.format,event.format or '') }}</span><span data-event-heading-status>{% if event.past %}{{ 'Событие отменено' if event.canceled else 'Событие завершено' }}{% endif %}</span></div><h1>{{ event.title }}</h1></header>
+<div class="club-event-detail__body">
+<div class="club-event-detail__story">
+{% if event.cover|media %}<img class="club-event-detail__cover" src="{{ event.cover|media }}" alt="{{ event.title }}" loading="lazy" decoding="async">{% endif %}
+{% if event.description %}<h2>О встрече</h2>{% for paragraph in event.description.split('\n\n') if paragraph.strip() %}<p>{{ paragraph }}</p>{% endfor %}{% else %}<p>Описание встречи не опубликовано.</p>{% endif %}
+</div>
+<aside class="club-event-detail__info" aria-label="Участие во встрече"><dl>
+<div><dt>Дата и время</dt><dd>{% if event.starts_iso %}<time datetime="{{ event.starts_iso }}">{{ event.starts_iso|date(true) }}</time><br><span>Московское время</span>{% else %}Дата не указана{% endif %}</dd></div>
+{% if event.location %}<div><dt>Место</dt><dd>{{ event.location }}</dd></div>{% endif %}
+{% if event.points is defined and event.points is not none %}<div><dt>За участие</dt><dd>{{ event.points }} баллов</dd></div>{% endif %}
+</dl>
+<div class="club-event-detail__actions">{% include 'event-actions.html' %}</div>
+{% if event.calendar_url %}<div class="club-event-detail__calendar"><span>Добавить в календарь</span><a href="{{ '/calendar/' if mirror else '/api/events/' }}{{ event.id }}.ics" download>Файл .ics</a><a href="{{ event.calendar_url }}" target="_blank" rel="noopener noreferrer">Google Календарь ↗</a></div>{% endif %}
+</aside>
+</div>
+</article>

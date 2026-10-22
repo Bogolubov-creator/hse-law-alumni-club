@@ -1,0 +1,7 @@
+{% if event.past %}
+<span class="event-status" data-event-status>{{ 'Событие отменено' if event.canceled else 'Событие завершено' }}</span>
+{% elif event.reg_url|safe_url %}
+<a href="{{ event.reg_url|safe_url }}" target="_blank" rel="noopener noreferrer" class="site-primary" data-event-register>Регистрация ↗</a>
+{% else %}
+<button class="site-primary" data-api="/events/{{ event.id }}/rsvp" data-member-action data-event-register>{{ 'Отменить запись' if event.my_rsvp else 'Записаться' }}</button>
+{% endif %}
