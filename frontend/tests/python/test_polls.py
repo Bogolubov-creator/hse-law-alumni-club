@@ -86,7 +86,7 @@ def test_poll_offline_vote_is_not_queued(page, site):
     assert not site[2]
 
 
-@pytest.mark.parametrize("width", [390, 1440])
+@pytest.mark.parametrize("width", [320, 390, 768, 1440])
 def test_admin_poll_form_and_results(page, site, width):
     poll = {
         **POLL,
@@ -170,3 +170,57 @@ def test_mirror_polls_are_labelled_and_writes_disabled(chromium, mirror_site):
     expect(page.locator(".poll-total")).to_contain_text("24")
     expect(page.get_by_role("button", name="Создать черновик")).to_be_disabled()
     context.close()
+
+
+@pytest.mark.parametrize("width,pwa", [(320, False), (390, False), (768, False), (1440, False), (1440, True)])
+def test_poll_choices_remain_compact_and_keyboard_accessible(page, site, width, pwa):
+    record = deepcopy(POLL)
+    site[1]["/me/polls"] = {"items": [record], "total": 1}
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script("localStorage.setItem('club_token','member-qa');")
+    page.goto("/lk?pwa=1#polls" if pwa else "/lk#polls")
+    choices = page.locator("#polls .poll-choice")
+    expect(choices).to_have_count(3)
+    for choice in choices.all():
+        radio = choice.get_by_role("radio")
+        size = radio.bounding_box()
+        assert 16 <= size["width"] <= 24 and 16 <= size["height"] <= 24, size
+        assert choice.bounding_box()["height"] <= 80
+        assert choice.locator("span").bounding_box()["width"] >= 100
+        assert choice.evaluate("node => node.scrollWidth <= node.clientWidth + 1")
+    first = choices.first.get_by_role("radio")
+    first.focus()
+    page.keyboard.press("Space")
+    expect(first).to_be_checked()
+    page.keyboard.press("ArrowDown")
+    expect(choices.nth(1).get_by_role("radio")).to_be_checked()
+    expect(first).not_to_be_checked()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+    record["my_option_id"] = "option-2"
+    page.get_by_role("button", name="Проголосовать", exact=True).click()
+    expect(page.locator(".poll-answer-selected")).to_contain_text("Гражданское право")
+
+
+@pytest.mark.parametrize("width", [320, 1440])
+def test_poll_long_labels_wrap_and_submission_error_preserves_choice(page, site, width):
+    record = deepcopy(POLL)
+    label = "Правовые вопросы использования цифровых технологий, обработки персональных данных и защиты трудовых прав сотрудников при дистанционной работе"
+    record["options"][0]["label"] = label
+    site[1]["/me/polls"] = {"items": [record], "total": 1}
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script("localStorage.setItem('club_token','member-qa');")
+    page.goto("/lk#polls")
+    radio = page.get_by_role("radio", name=label, exact=True)
+    radio.check()
+    choice = radio.locator("..")
+    assert choice.locator("span").bounding_box()["width"] >= 100
+    assert choice.evaluate("node => node.scrollWidth <= node.clientWidth + 1")
+    page.route(
+        "**/api/me/polls/poll-1/vote",
+        lambda route: route.fulfill(status=503, json={"error": "Не удалось отправить голос. Повторите позже."}),
+    )
+    page.get_by_role("button", name="Проголосовать", exact=True).click()
+    expect(page.locator("#polls [data-error]")).to_contain_text("Не удалось отправить голос")
+    expect(radio).to_be_checked()
+    expect(page.get_by_role("button", name="Проголосовать", exact=True)).to_be_enabled()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
