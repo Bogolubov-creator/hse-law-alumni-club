@@ -116,12 +116,19 @@ function prepareChanges(url) {
   if (!page.classList.contains("changes-page--reading")) {
     try {
       const saved = JSON.parse(sessionStorage.getItem("club-changes-return") || "null");
-      if (saved?.url?.replace(/\/(?=\?|$)/, "") === (location.pathname + location.search).replace(/\/(?=\?|$)/, "")) {
+      const savedMatches = saved?.url?.replace(/\/(?=\?|$)/, "") === (location.pathname + location.search).replace(/\/(?=\?|$)/, "");
+      const target = document.getElementById(location.hash.slice(1));
+      const hashLink = target?.matches("[data-change-open]") && page.contains(target) ? target : null;
+      if (hashLink || savedMatches) {
         sessionStorage.removeItem("club-changes-return");
-        const link = [...page.querySelectorAll("[data-change-open]")].find(link => link.dataset.changeOpen === saved.focus);
-        if (link) requestAnimationFrame(() => { link.focus({ preventScroll: true }); scrollTo(0, Number(saved.scroll) || 0); });
+        const link = hashLink || [...page.querySelectorAll("[data-change-open]")].find(link => link.dataset.changeOpen === saved.focus);
+        if (link) requestAnimationFrame(() => {
+          link.focus({ preventScroll: true });
+          if (savedMatches && saved.focus === link.dataset.changeOpen) scrollTo(0, Number(saved.scroll) || 0);
+          else link.scrollIntoView({ block: "center", behavior: "instant" });
+        });
         const unread = page.querySelector("[data-unread-filter]");
-        if (unread) unread.checked = !!saved.unread;
+        if (unread && savedMatches) unread.checked = !!saved.unread;
       }
     } catch {}
   }
@@ -142,7 +149,7 @@ function prepareChanges(url) {
   page.querySelectorAll("[data-changes-back]").forEach(link => {
     if (document.body.dataset.mirror !== "true") return;
     const query = location.search;
-    link.href = url("changes") + query;
+    link.href = url("changes") + query + new URL(link.href).hash;
   });
 }
 

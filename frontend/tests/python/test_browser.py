@@ -1176,6 +1176,40 @@ def test_changes_reader_navigation_preserves_list_return(page):
     expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
 
 
+@pytest.mark.parametrize("previous", [None, "tg-18"])
+def test_changes_return_keeps_selected_material_with_missing_or_stale_click_state(page, previous):
+    page.goto("/changes/tg-17?view=all")
+    page.evaluate(
+        """previous => {
+          sessionStorage.removeItem('club-changes-return');
+          if (previous) sessionStorage.setItem('club-changes-return', JSON.stringify({url:'/changes?view=all',scroll:0,focus:previous,unread:false}));
+        }""",
+        previous,
+    )
+    page.get_by_role("link", name="← Все материалы", exact=True).click()
+    expect(page.locator('[data-change-open="tg-17"]')).to_be_focused()
+
+
+@pytest.mark.parametrize("previous", [None, "tg-18"])
+def test_mirror_changes_return_keeps_selected_material_with_missing_or_stale_click_state(
+    chromium, mirror_site, previous
+):
+    context = chromium.new_context(viewport={"width": 390, "height": 1000}, service_workers="block")
+    context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+    page = context.new_page()
+    page.goto(mirror_site + "changes/tg-17/?view=all")
+    page.evaluate(
+        """previous => {
+          sessionStorage.removeItem('club-changes-return');
+          if (previous) sessionStorage.setItem('club-changes-return', JSON.stringify({url:document.body.dataset.base+'changes?view=all',scroll:0,focus:previous,unread:false}));
+        }""",
+        previous,
+    )
+    page.get_by_role("link", name="← Все материалы", exact=True).click()
+    expect(page.locator('[data-change-open="tg-17"]')).to_be_focused()
+    context.close()
+
+
 def test_mirror_reader_back_restores_focus(chromium, mirror_site):
     context = chromium.new_context(viewport={"width": 1440, "height": 1000})
     context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
