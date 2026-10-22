@@ -62,3 +62,16 @@ def test_static_content_change_updates_worker_version(build_source, tmp_path, as
     other_destination = tmp_path / "other-output"
     build.build_public(other_destination)
     assert (other_destination / "sw.js").read_bytes() == changed_worker
+
+
+def test_demo_cart_module_is_only_in_mirror_build(build_source, tmp_path):
+    browser = build.ROOT / "browser"
+    for name in ("mirror.js", "mirror-cart.js", "cart.js"):
+        (browser / name).write_text("export const value = 1;")
+    destination = tmp_path / "output"
+    build.build_public(destination, mirror=True)
+    assert (destination / "assets/mirror-cart.js").is_file()
+    build.build_public(destination)
+    assert not (destination / "assets/mirror.js").exists()
+    assert not (destination / "assets/mirror-cart.js").exists()
+    assert (destination / "assets/cart.js").is_file()

@@ -33,7 +33,8 @@ def build_public(destination, *, mirror=False):
     assets = destination / "assets"
     assets.mkdir(exist_ok=True)
     if not mirror:
-        (assets / "mirror.js").unlink(missing_ok=True)
+        for demo_file in assets.glob("mirror*.js"):
+            demo_file.unlink()
     styles = ROOT / "styles"
     files = [
         styles / "tokens.css",
@@ -51,7 +52,7 @@ def build_public(destination, *, mirror=False):
         if (
             browser_file.name.startswith(".")
             or browser_file.name == "service-worker.js"
-            or browser_file.name == "mirror.js"
+            or browser_file.name.startswith("mirror")
             and not mirror
         ):
             continue

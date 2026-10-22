@@ -94,6 +94,8 @@ def site():
             if path.endswith("login"):
                 return httpx.Response(200, json={"token": "member-qa"})
             return httpx.Response(200, json={"ok": True})
+        if path == "/cart" and records.get("unavailable_cart"):
+            return httpx.Response(503, json={"error": "Корзина временно недоступна"})
         if path == "/news/news-one" and records.get("deleted_news"):
             return httpx.Response(404, json={"error": "Новость удалена"})
         if path == "/news" and records.get("unavailable_news"):
