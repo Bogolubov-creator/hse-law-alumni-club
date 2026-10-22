@@ -188,6 +188,7 @@ async def export(destination, base, data):
     ):
         paths.extend(f"/{prefix}/{row[identifier]}" for row in data[key])
     paths.extend("/changes/" + row["id"] for row in changes["items"])
+    paths.extend("/stories/" + row["slug"] for row in resource("alumni-stories.json")["items"])
     paths.append("/404")
     initialize_django()
     renderer = templates()

@@ -1,0 +1,14 @@
+<article class="story-card" data-alumni-story>
+<a href="/stories/{{ story.slug }}" class="story-card__link foc">
+<div class="story-card__photo">
+<img src="{{ base }}assets/photos/{{ story.photo.file }}" alt="{{ story.name }}" width="{{ story.photo.width }}" height="{{ story.photo.height }}" loading="lazy" decoding="async" data-offline-image>
+</div>
+<div class="story-card__copy">
+<p class="story-card__year">{{ story.study.label }}</p>
+<h3>{{ story.name }}</h3>
+<p class="story-card__role">{{ story.role }}</p>
+<p class="story-card__summary">{{ story.teaser }}</p>
+<span class="story-card__action">Читать историю <span aria-hidden="true">↗</span></span>
+</div>
+</a>
+</article>

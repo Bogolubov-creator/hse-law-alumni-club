@@ -737,7 +737,12 @@ function offlineNotice() {
 function saveReadingPage() {
   if (readingPageSaved || !navigator.onLine || document.documentElement.dataset.offlineCopy || document.body.dataset.offlineReading !== "true" || !navigator.serviceWorker.controller) return;
   readingPageSaved = true;
-  void fetch(location.href, { credentials: "omit", headers: { "x-club-save-page": "1" } }).catch(() => { readingPageSaved = false; });
+  void fetch(location.href, { credentials: "omit", headers: { "x-club-save-page": "1" } }).then(response => {
+    if (!response.ok || response.headers.get("X-Club-Offline") !== "public") return;
+    const assets = new URL(url("assets/"), location.href);
+    const images = [...document.querySelectorAll("img[data-offline-image]")].map(image => new URL(image.currentSrc || image.src, location.href));
+    return Promise.all(images.filter(image => image.origin === assets.origin && image.pathname.startsWith(assets.pathname)).map(image => fetch(image, { credentials: "omit" })));
+  }).catch(() => { readingPageSaved = false; });
 }
 
 document.querySelector("[data-action='reload-online']")?.addEventListener("click", () => location.reload());

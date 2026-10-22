@@ -1324,7 +1324,7 @@ def test_home_photos_keep_people_in_frame(page, width, pwa):
     expect(hero).to_be_visible()
     hero.evaluate("image => image.decode()")
     assert hero.evaluate("image => image.currentSrc.endsWith('.avif')")
-    for selector in (".home-agenda__photo", ".home-meeting__photo", ".home-voice__photo"):
+    for selector in (".home-agenda__photo", ".home-meeting__photo", ".home-voice__photo", ".story-card__photo"):
         for frame in page.locator(selector).all():
             frame.scroll_into_view_if_needed()
             image = frame.locator("img")
