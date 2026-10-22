@@ -1166,6 +1166,23 @@ def test_mirror_changes_search_reading_and_dialog_are_independent(chromium, mirr
     context.close()
 
 
+def expect_change_return_focus(page, identifier):
+    try:
+        expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
+    except AssertionError as error:
+        state = page.evaluate(
+            """identifier => {
+              const link = [...document.querySelectorAll('[data-change-open]')].find(node => node.dataset.changeOpen === identifier);
+              const active = document.activeElement;
+              return {url:location.href,prepared:document.querySelector('.changes-page')?.dataset.prepared,
+                saved:sessionStorage.getItem('club-changes-return'),target:link ? {id:link.id,href:link.href,connected:link.isConnected} : null,
+                active:{tag:active?.tagName,id:active?.id,material:active?.dataset.changeOpen}};
+            }""",
+            identifier,
+        )
+        pytest.fail(str(error) + "\nReturn focus state: " + json.dumps(state, ensure_ascii=False))
+
+
 def test_changes_reader_navigation_preserves_list_return(page):
     page.goto("/changes?view=all")
     page.locator("[data-change-open]").first.click()
@@ -1173,7 +1190,7 @@ def test_changes_reader_navigation_preserves_list_return(page):
     identifier = second.get_attribute("data-change-open")
     second.click()
     page.get_by_role("link", name="← Все материалы", exact=True).click()
-    expect(page.locator('[data-change-open="' + identifier + '"]')).to_be_focused()
+    expect_change_return_focus(page, identifier)
 
 
 @pytest.mark.parametrize("previous", [None, "tg-18"])
@@ -1187,7 +1204,7 @@ def test_changes_return_keeps_selected_material_with_missing_or_stale_click_stat
         previous,
     )
     page.get_by_role("link", name="← Все материалы", exact=True).click()
-    expect(page.locator('[data-change-open="tg-17"]')).to_be_focused()
+    expect_change_return_focus(page, "tg-17")
 
 
 @pytest.mark.parametrize("previous", [None, "tg-18"])
@@ -1206,7 +1223,7 @@ def test_mirror_changes_return_keeps_selected_material_with_missing_or_stale_cli
         previous,
     )
     page.get_by_role("link", name="← Все материалы", exact=True).click()
-    expect(page.locator('[data-change-open="tg-17"]')).to_be_focused()
+    expect_change_return_focus(page, "tg-17")
     context.close()
 
 
