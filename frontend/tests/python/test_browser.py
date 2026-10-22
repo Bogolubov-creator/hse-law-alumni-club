@@ -96,6 +96,8 @@ def site():
             return httpx.Response(200, json={"ok": True})
         if path == "/news/news-one" and records.get("deleted_news"):
             return httpx.Response(404, json={"error": "Новость удалена"})
+        if path == "/news" and records.get("unavailable_news"):
+            return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         if path == "/events" and records.get("unavailable_events"):
             return httpx.Response(503, json={"error": "Сервис временно недоступен"})
         if path in ("/auth/admin-session", "/me") and records.get("session_failure_status"):

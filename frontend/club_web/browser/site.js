@@ -371,6 +371,13 @@ window.addEventListener("hashchange", openCabinetSection);
 function setupPage() {
   prepareDiscovery(url, mirror);
   prepareCatalog(url, notice);
+  document.querySelectorAll("[data-news-image]").forEach(image => {
+    if (image.dataset.fallbackReady) return;
+    image.dataset.fallbackReady = "true";
+    const fallback = () => { image.closest("[data-news-media]").hidden = true; };
+    image.addEventListener("error", fallback);
+    if (image.complete && !image.naturalWidth) fallback();
+  });
   document.querySelectorAll("[data-merch-image]").forEach(image => {
     if (image.dataset.fallbackReady) return;
     image.dataset.fallbackReady = "true";
