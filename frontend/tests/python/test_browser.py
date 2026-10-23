@@ -89,11 +89,17 @@ def site():
                 return httpx.Response(
                     200, json={"number": "ORD-QA", "total_estimate": 300000, "notified": {"ok": True}}
                 )
+            if path.startswith("/events/") and path.endswith("/rsvp"):
+                record = next(event for event in records["/events"] if event["id"] == path.split("/")[2])
+                record["my_rsvp"] = not record.get("my_rsvp", False)
+                return httpx.Response(200, json={"going": record["my_rsvp"]})
             if path == "/support/ask":
                 return httpx.Response(200, json={"text": "Подайте заявку на сайте.", "anchor": "/join"})
             if path.endswith("login"):
                 return httpx.Response(200, json={"token": "member-qa"})
             return httpx.Response(200, json={"ok": True})
+        if path == "/cart" and records.get("unavailable_cart"):
+            return httpx.Response(503, json={"error": "Корзина временно недоступна"})
         if path == "/news/news-one" and records.get("deleted_news"):
             return httpx.Response(404, json={"error": "Новость удалена"})
         if path == "/news" and records.get("unavailable_news"):

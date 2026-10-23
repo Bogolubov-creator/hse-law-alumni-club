@@ -46,3 +46,6 @@ frontend/public/sw.js
 frontend/public/assets/discovery.js
 frontend/public/assets/catalog.js
 frontend/public/assets/catalog-filters.js
+
+frontend/public/assets/cart.js
+frontend/public/assets/mirror-cart.js

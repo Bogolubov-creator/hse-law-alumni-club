@@ -1,57 +1,55 @@
 {% extends 'base.html' %}
-{% from 'macros.html' import field,consent,empty %}
+{% from 'macros.html' import field,consent %}
+{% from 'cart-parts.html' import empty_cart,cart_row %}
 {% block content %}
-<main id="main" class="site-container">
-<header class="site-masthead">
-<h1>Корзина</h1>
-<p>Заявки на программы ДПО и мерч клуба.</p>
+<main id="main" class="site-container cart-page">
+<header class="site-masthead cart-heading">
+<div><h1>Корзина</h1><p>Программы Клуба и мерч в одной заявке.</p></div>
+<a href="/saved" class="cart-heading__link">Сохранённое <span aria-hidden="true">↗</span></a>
 </header>
-{% if mirror %}<section data-mirror-cart></section>{% elif cart and cart['items'] %}
-<div class="site-two-col">
-<div>
-{% for item in cart['items'] %}
-<article class="site-cart-row">
-<div>
-<h2>{{ item.title }}</h2>
-<p>{{ item.variant_sku or '' }} · {{ item.price|rub }}</p>
+{% if mirror %}
+<section data-mirror-cart aria-busy="true" aria-label="Содержимое корзины"><div class="cart-state" role="status"><h2>Загружаем корзину</h2><p>Проверяем выбранные позиции.</p></div></section>
+<template data-cart-empty-template>{{ empty_cart() }}</template>
+<template data-cart-row-template>{{ cart_row({'type':'merch','ref_id':'','title':'','price':0,'qty':1}) }}</template>
+<template data-cart-filled-template>
+<div class="cart-layout">
+<section class="cart-selection" aria-labelledby="cart-selection-title">
+<div class="cart-selection__heading"><h2 id="cart-selection-title" tabindex="-1">Выбранные позиции</h2><button class="cart-clear" data-api="/cart" data-method="DELETE" data-cart>Очистить корзину</button></div>
+<div data-cart-items></div><nav class="cart-continue" aria-label="Продолжить выбор"><a href="/dpo">Добавить программу</a><a href="/merch">Добавить мерч</a></nav>
+</section>
+<aside class="cart-summary" aria-labelledby="cart-summary-title"><h2 id="cart-summary-title">Ваша заявка</h2><p class="cart-summary__total"><span>Итого в демо-корзине</span><strong data-cart-total></strong></p><div class="cart-demo" role="note"><strong>Вы смотрите демоверсию</strong><p>Можно менять количество и удалять позиции. Отправка заявки отключена.</p></div><p class="cart-summary__note">На рабочем сайте стоимость, наличие и скидка выпускника проверяются при оформлении.</p></aside>
 </div>
-<form data-api="/cart" data-method="PATCH" data-cart>
-<input type="hidden" name="type" value="{{ item.type }}">
-<input type="hidden" name="ref_id" value="{{ item.ref_id }}">
-<input type="hidden" name="variant_sku" value="{{ item.variant_sku or '' }}">
-<label>Количество<input type="number" name="qty" min="0" max="99" value="{{ item.qty }}">
-</label>
-<button>Обновить</button>
-<p role="alert" data-error hidden>
-</p>
-</form>
-<button data-api="/cart" data-method="PATCH" data-body='{{ {"type":item.type,"ref_id":item.ref_id,"variant_sku":item.get("variant_sku"),"qty":0}|tojson }}' data-cart>Удалить</button>
-</article>
-{% endfor %}
-<button data-api="/cart" data-method="DELETE" data-cart>Очистить корзину</button>
-</div>
-<aside class="site-panel">
-<h2>Оформить заявку</h2>
-<p class="site-price">{{ (cart.estimated_total if cart.estimated_total is defined else cart.subtotal)|rub }}</p>
-<p>Скидка выпускника на программы Клуба: {{ cart.member_discount or 0 }}%.</p>
-<p>Итоговая сумма и скидка выпускника рассчитываются сервером при оформлении заявки. На мерч скидка не распространяется.</p>
-<form data-api="/orders" data-checkout>{{ field('contact_fio','ФИО') }}{{ field('contact_phone','Телефон',type='tel') }}{{ field('contact_email','Почта',type='email') }}{% if cart['items']|selectattr('type','equalto','merch')|list %}
-<label class="site-field">Получение<select name="fulfillment">
-<option value="pickup">Самовывоз</option>
-<option value="delivery">Доставка</option>
-</select>
-</label>{{ field('address','Адрес доставки',required=false) }}{% else %}
-<input type="hidden" name="fulfillment" value="pickup">
-{% endif %}{{ field('comment','Комментарий',type='textarea',required=false) }}{{ consent('order') }}<button class="site-primary">Отправить заявку</button>
-<p role="alert" data-error hidden>
-</p>
+</template>
+{% elif load_errors.get('cart') %}
+<section class="cart-state" role="status"><h2>Не удалось загрузить корзину</h2><p>Повторите загрузку, чтобы увидеть выбранные позиции.</p><button class="site-primary" data-action="refresh">Повторить загрузку</button></section>
+{% elif cart is not defined %}
+<section class="cart-state" data-cart-loading role="status"><h2>Загружаем корзину</h2><p>Проверяем выбранные позиции.</p></section>
+<noscript><p>Для работы с корзиной включите JavaScript в браузере.</p></noscript>
+{% elif cart['items'] %}
+<div class="cart-layout">
+<section class="cart-selection" aria-labelledby="cart-selection-title">
+<div class="cart-selection__heading"><h2 id="cart-selection-title" tabindex="-1">Выбранные позиции</h2><button class="cart-clear" data-api="/cart" data-method="DELETE" data-cart>Очистить корзину</button></div>
+{% for item in cart['items'] %}{{ cart_row(item) }}{% endfor %}
+<nav class="cart-continue" aria-label="Продолжить выбор"><a href="/dpo">Добавить программу</a><a href="/merch">Добавить мерч</a></nav>
+</section>
+<aside class="cart-summary" aria-labelledby="cart-summary-title">
+<h2 id="cart-summary-title">Ваша заявка</h2>
+<dl class="cart-totals"><div><dt>Стоимость позиций</dt><dd>{{ cart.subtotal|rub }}</dd></div>{% if cart.member_discount %}<div><dt>Скидка на программы Клуба</dt><dd>{{ cart.member_discount }}%</dd></div>{% endif %}</dl>
+<p class="cart-summary__total"><span>Предварительный итог</span><strong>{{ (cart.estimated_total if cart.estimated_total is defined else cart.subtotal)|rub }}</strong></p>
+<p class="cart-summary__note">Стоимость и доступность проверяются при отправке заявки. Скидка выпускника не распространяется на мерч.</p>
+<form data-api="/orders" data-checkout class="cart-checkout">
+<h3>Контакты для связи</h3>
+{{ field('contact_fio','ФИО') }}{{ field('contact_phone','Телефон',type='tel') }}{{ field('contact_email','Почта',type='email') }}
+{% if cart['items']|selectattr('type','equalto','merch')|list %}
+<div class="site-field"><label for="cart-fulfillment">Получение</label><select name="fulfillment" id="cart-fulfillment"><option value="pickup">Самовывоз</option><option value="delivery">Доставка</option></select></div>
+{{ field('address','Адрес доставки',required=false) }}
+{% else %}<input type="hidden" name="fulfillment" value="pickup">{% endif %}
+{{ field('comment','Комментарий',type='textarea',required=false) }}{{ consent('order') }}
+<p role="alert" data-error hidden></p><button class="site-primary">Отправить заявку</button>
+<p class="cart-checkout__hint">Учебный офис свяжется с вами и уточнит детали заявки.</p>
 </form>
 </aside>
 </div>
-{% else %}{{ empty('В корзине пока ничего нет.') }}<div class="site-actions">
-<a href="/dpo" class="site-primary">Выбрать программу</a>
-<a href="/merch">Мерч клуба</a>
-</div>
-{% endif %}
+{% else %}{{ empty_cart() }}{% endif %}
 </main>
 {% endblock %}

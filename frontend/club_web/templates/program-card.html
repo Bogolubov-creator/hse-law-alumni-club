@@ -19,7 +19,7 @@
 <p class="dpo-card__price">{{ item.price_label }}</p>
 <div class="dpo-card__actions">
 {% if item.organizer=='club' and item.enrollment!='nonactual' %}{{ add_cart(item,'dpo',compact=true) }}{% else %}<a href="/dpo/{{ item.slug }}" class="site-primary">Подробнее <span aria-hidden="true">↗</span></a>{% endif %}
-{{ save('/dpo/'+item.slug,item.title,'dpo') }}<button data-action="compare" data-id="{{ item.id }}" aria-pressed="false">Сравнить</button>
+{{ save('/dpo/'+item.slug,item.title,'dpo') }}<button data-action="compare" data-id="{{ item.id }}" aria-pressed="false" disabled>Сравнить</button>
 </div>
 </div>
 </article>

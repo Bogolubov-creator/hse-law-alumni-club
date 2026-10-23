@@ -107,8 +107,18 @@ def month_view(events, selected, now=None):
         "selected": f"{year:04}-{month:02}",
         "previous": previous.strftime("%Y-%m"),
         "next": following.strftime("%Y-%m"),
+        "current": now.strftime("%Y-%m"),
+        "today": now.strftime("%Y-%m-%d"),
         "weeks": [
-            [{"day": day, "events": grouped.get(day, [])} for day in week]
+            [
+                {
+                    "day": day,
+                    "date": f"{year:04}-{month:02}-{day:02}" if day else "",
+                    "events": grouped.get(day, []),
+                    "today": (year, month, day) == (now.year, now.month, now.day),
+                }
+                for day in week
+            ]
             for week in calendar.monthcalendar(year, month)
         ],
     }

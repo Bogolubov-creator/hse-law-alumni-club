@@ -26,6 +26,28 @@ def faculty_program(identifier, **changes):
     }
 
 
+def test_comparison_waits_for_browser_initialization(page):
+    checked = []
+    button = page.get_by_role("button", name="Сравнить", exact=True).first
+
+    def release_module(route):
+        try:
+            expect(button).to_be_visible()
+            expect(button).to_be_disabled()
+            checked.append(True)
+        finally:
+            route.continue_()
+
+    page.route("**/assets/catalog.js", release_module, times=1)
+    page.goto("/dpo")
+    assert checked == [True]
+    button.click()
+    expect(button).to_have_attribute("aria-pressed", "true")
+    assert "compare=" + PROGRAM["slug"] in page.url
+    page.reload()
+    expect(page.get_by_role("button", name="Сравнить", exact=True).first).to_have_attribute("aria-pressed", "true")
+
+
 @pytest.mark.parametrize("width,pwa", [(320, False), (390, False), (768, False), (1440, False), (1440, True)])
 def test_dpo_cards_reserve_media_and_align_footer_without_losing_actions(page, site, width, pwa):
     site[1]["/programs"] = [

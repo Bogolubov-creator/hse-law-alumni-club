@@ -1,0 +1,34 @@
+{% macro empty_cart() %}
+<div class="cart-empty-layout">
+<section class="cart-empty" aria-labelledby="cart-empty-title">
+<span class="cart-symbol" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 23h30l-3 31H20l-3-31Z"/><path d="M25 23v-6a7 7 0 0 1 14 0v6M26 34h12"/></svg></span>
+<h2 id="cart-empty-title" tabindex="-1">В корзине пока ничего нет.</h2>
+<p>Здесь будут выбранные программы Клуба и мерч. Добавьте то, что вам интересно, и оформите заявку.</p>
+<div class="cart-empty__actions"><a href="/dpo" class="site-primary">Выбрать программу</a><a href="/merch" class="cart-secondary">Посмотреть мерч</a></div>
+</section>
+<aside class="cart-guide" aria-labelledby="cart-guide-title">
+<h2 id="cart-guide-title">Как оформить</h2>
+<ol><li><strong>Выберите программу или мерч</strong><span>Добавляйте позиции с кнопкой «В корзину».</span></li><li><strong>Оставьте контакты</strong><span>Укажите, как с вами связаться по заявке.</span></li><li><strong>Дождитесь ответа офиса</strong><span>Учебный офис уточнит детали по указанным контактам.</span></li></ol>
+<p>На программы факультета запись проходит отдельно на сайте ВШЭ.</p>
+</aside>
+</div>
+{% endmacro %}
+{% macro cart_row(item) %}
+<article class="site-cart-row cart-item" data-cart-line>
+<div class="cart-item__details">
+<span class="cart-item__type" data-cart-type>{{ 'Программа Клуба' if item.type == 'dpo' else 'Мерч клуба' }}</span>
+<h2 data-cart-title>{{ item.title }}</h2>
+<p class="cart-item__variant" data-cart-variant {% if not item.variant_sku %}hidden{% endif %}>Вариант: {{ item.variant_sku or '' }}</p>
+<p class="cart-item__price"><strong data-cart-price>{{ item.price|rub }}</strong><span>за единицу</span></p>
+</div>
+<form data-api="/cart" data-method="PATCH" data-cart class="cart-item__quantity">
+<input type="hidden" name="type" value="{{ item.type }}">
+<input type="hidden" name="ref_id" value="{{ item.ref_id }}">
+<input type="hidden" name="variant_sku" value="{{ item.variant_sku or '' }}">
+<label>Количество<input type="number" name="qty" min="0" max="99" value="{{ item.qty }}" required inputmode="numeric"></label>
+<button>Обновить</button>
+<p role="alert" data-error hidden></p>
+</form>
+<button class="cart-item__remove" data-api="/cart" data-method="PATCH" data-body='{{ {"type":item.type,"ref_id":item.ref_id,"variant_sku":item.get("variant_sku"),"qty":0}|tojson }}' data-cart>Удалить</button>
+</article>
+{% endmacro %}

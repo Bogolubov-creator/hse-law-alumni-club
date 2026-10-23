@@ -4,10 +4,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
-from club_web.calendar import google_calendar, instant, month_view
+from club_web.calendar import instant, month_view
 from club_web.catalog import prepare_catalog
 from club_web.changes import parse_changes, select_changes
 from club_web.client import ApiFailure
+from club_web.events import event_order, prepare_event
 from club_web.formatting import page_items
 from club_web.news import prepare_news
 from club_web.office import DESCRIPTIONS, FIELDS, GROUPS, ICONS, LABELS, METRICS, filter_content
@@ -44,6 +45,7 @@ NAV = [
     ("/dpo", "ДПО"),
     ("/events", "События"),
     ("/news", "Новости"),
+    ("/stories", "Истории выпускников"),
     ("/podcasts", "Подкасты"),
     ("/changes", "Изменения в праве"),
     ("/merch", "Мерч"),
@@ -296,13 +298,17 @@ async def context(api, path, params, authorized=False):
         elif params.get("month"):
             endpoint += "?month=" + month_view([], params["month"])["selected"]
         await load("items", endpoint, [])
-        for event in data["items"]:
-            event["calendar_url"] = google_calendar(event)
-            event["past"] = event.get("status") in ("done", "canceled") or instant(
-                event.get("starts_at")
-            ) < datetime.now(UTC)
+        data["items"] = sorted([prepare_event(event) for event in data["items"]], key=event_order)
         data["calendar"] = month_view(data["items"], params.get("month"))
+        data["events_count"] = sum(
+            event["start_day"].startswith(data["calendar"]["selected"]) for event in data["items"]
+        )
+        data["events_back"] = "/events?month=" + data["calendar"]["selected"]
         data["item"] = next((item for item in data["items"] if item["id"] == event_id), None)
+        if data["item"]:
+            data["title"] = data["item"]["title"]
+            if not params.get("month") and data["item"]["start_day"]:
+                data["events_back"] = "/events?month=" + data["item"]["start_day"][:7]
         if event_id and "items" in data["load_errors"]:
             data.update(template="unavailable.html", title="Не удалось загрузить страницу", status=503)
         elif event_id and not data["item"]:

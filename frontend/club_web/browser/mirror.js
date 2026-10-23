@@ -1,3 +1,5 @@
+import { renderMirrorCart } from "./mirror-cart.js";
+
 const base = document.body.dataset.base;
 const normalized = value => String(value || "").toLocaleLowerCase("ru").replace(/ё/g, "е");
 const path = document.querySelector("#page").dataset.path;
@@ -101,32 +103,78 @@ window.clubMirrorReply = async question => {
 
 function calendar() {
   const section = document.querySelector("[data-calendar-events]");
+  const timed = document.querySelectorAll("[data-event-instant]");
+  if (!section && !timed.length) return;
+  const now = Date.now();
+  const validMonth = value => /^20[0-9]{2}-(0[1-9]|1[0-2])$/.test(value || "");
+  const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" });
+  const today = formatter.format(new Date(now));
+  const selected = validMonth(query.get("month")) ? query.get("month") : today.slice(0, 7);
+  const back = document.querySelector("[data-events-back]");
+  if (back && validMonth(query.get("month"))) back.href = base + "events/?month=" + selected;
+  for (const row of timed) {
+    const past = ["done", "canceled"].includes(row.dataset.eventState) || Date.parse(row.dataset.eventInstant) < now;
+    if (!past) continue;
+    row.classList.add("event-card--past");
+    const label = row.dataset.eventState === "canceled" ? "Событие отменено" : "Событие завершено";
+    for (const action of row.querySelectorAll("[data-event-register]")) {
+      const state = document.createElement("span");
+      state.className = "event-status"; state.dataset.eventStatus = ""; state.textContent = label;
+      action.replaceWith(state);
+    }
+    const heading = row.querySelector("[data-event-heading-status]");
+    if (heading) heading.textContent = label;
+  }
   if (!section) return;
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit" }).format(new Date());
-  const selected = /^20[0-9]{2}-(0[1-9]|1[0-2])$/.test(query.get("month") || "") ? query.get("month") : today;
   const [year, month] = selected.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, 1));
-  section.querySelector("h2").textContent = new Intl.DateTimeFormat("ru", { timeZone: "UTC", month: "long", year: "numeric" }).format(date);
+  const title = new Intl.DateTimeFormat("ru-RU", { timeZone: "UTC", month: "long", year: "numeric" }).format(date);
+  section.querySelector("h2").textContent = title;
+  document.querySelector("[data-events-period]").textContent = title;
   for (const [key, delta] of [["previous", -1], ["next", 1]]) {
     const adjacent = new Date(Date.UTC(year, month - 1 + delta, 1));
     section.querySelector(`[data-calendar-month='${key}']`).href = "?month=" + adjacent.toISOString().slice(0, 7);
   }
+  section.querySelector("[data-calendar-month='current']").href = "?month=" + today.slice(0, 7);
   const events = JSON.parse(section.dataset.calendarEvents);
+  events.sort((left, right) => {
+    const a = Date.parse(left.starts_at), b = Date.parse(right.starts_at);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return Number(!Number.isFinite(a)) - Number(!Number.isFinite(b));
+    const pastA = ["done", "canceled"].includes(left.status) || a < now;
+    const pastB = ["done", "canceled"].includes(right.status) || b < now;
+    return Number(pastA) - Number(pastB) || (pastA ? b - a : a - b) || left.id.localeCompare(right.id);
+  });
+  const positions = new Map(events.map((event, index) => [event.id, index]));
+  const cards = [...document.querySelectorAll("[data-event-start]")].sort((left, right) => positions.get(left.dataset.eventId) - positions.get(right.dataset.eventId));
+  let count = 0;
+  for (const row of cards) {
+    document.querySelector(".events-agenda").append(row);
+    row.hidden = !row.dataset.eventStart.startsWith(selected);
+    if (!row.hidden) count++;
+    for (const link of row.querySelectorAll("[data-event-link]")) link.href = base + "events/" + encodeURIComponent(row.dataset.eventId) + "/?month=" + selected;
+  }
+  document.querySelector("[data-events-count]").textContent = "Событий: " + count;
+  document.querySelector("[data-events-empty]").hidden = count > 0;
   const grid = section.querySelector(".site-calendar-grid");
   grid.replaceChildren();
   for (const label of ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]) { const node = document.createElement("strong"); node.textContent = label; grid.append(node); }
   const offset = (date.getUTCDay() + 6) % 7;
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" });
   for (let index = 0; index < Math.ceil((offset + days) / 7) * 7; index++) {
     const cell = document.createElement("div");
     const day = index - offset + 1;
     if (day > 0 && day <= days) {
-      const number = document.createElement("span"); number.textContent = day; cell.append(number);
       const value = selected + "-" + String(day).padStart(2, "0");
-      for (const event of events) {
-        if (!Number.isFinite(Date.parse(event.starts_at)) || formatter.format(new Date(event.starts_at)) !== value) continue;
-        const link = document.createElement("a"); link.href = base + "events/" + event.id; link.textContent = event.title; cell.append(link);
+      cell.dataset.calendarDate = value;
+      const number = document.createElement("span"); number.textContent = day; cell.append(number);
+      if (value === today) number.setAttribute("aria-current", "date");
+      const matches = events.filter(event => Number.isFinite(Date.parse(event.starts_at)) && formatter.format(new Date(event.starts_at)) === value);
+      if (matches.length) {
+        cell.className = "has-events";
+        const link = document.createElement("a");
+        link.href = "#event-" + matches[0].id;
+        link.setAttribute("aria-label", new Intl.DateTimeFormat("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "long" }).format(new Date(matches[0].starts_at)) + ". " + matches.map(event => event.title).join("; "));
+        cell.append(link);
       }
     }
     grid.append(cell);
@@ -146,24 +194,26 @@ let cartSession = "python-preview";
 try { cartSession = localStorage.getItem("club_cart") || crypto.randomUUID(); localStorage.setItem("club_cart",cartSession); } catch {}
 const cartStorage = "club_mirror_cart:" + cartSession;
 let snapshotPromise;
-const snapshot = () => snapshotPromise ||= fetch(base + "data/mirror-api.json").then(response => response.json());
+const snapshot = () => snapshotPromise ||= fetch(base + "data/mirror-api.json").then(response => { if (!response.ok) throw new Error("Не удалось загрузить каталог. Повторите действие."); return response.json(); }).catch(error => { snapshotPromise = null; throw error; });
 
 window.clubMirrorCart = async (method, body) => {
   let items;
   try { items = JSON.parse(sessionStorage.getItem(cartStorage) || '{"items":[]}').items; }
   catch { throw new Error("Демо-корзина повреждена. Очистите данные этой вкладки."); }
-  if (!Array.isArray(items)) throw new Error("Демо-корзина повреждена.");
+  if (!Array.isArray(items) || items.some(item => !item || !["dpo", "merch"].includes(item.type) || typeof item.ref_id !== "string" || typeof item.title !== "string" || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > 99 || !Number.isSafeInteger(item.price) || item.price < 0)) throw new Error("Демо-корзина повреждена. Очистите данные этой вкладки.");
   if (method === "DELETE") items = [];
   else if (method !== "GET") {
     if (!body || !Number.isInteger(body.qty) || body.qty < (method === "PATCH" ? 0 : 1) || body.qty > 99) throw new Error("Количество должно быть целым числом от 1 до 99.");
     const data = await snapshot();
-    const row = [...data["/programs"], ...data["/products"]].find(item => item.slug === body.ref_id);
+    const candidates = body.type === "dpo" ? data["/programs"] : body.type === "merch" ? data["/products"] : [...data["/programs"], ...data["/products"]];
+    const row = candidates.find(item => item.slug === body.ref_id);
     if (!row) throw new Error("Позиция не найдена.");
     const type = body.type || (Object.hasOwn(row, "stock") ? "merch" : "dpo");
     const variant = row.variants_json?.find(item => item.sku === body.variant_sku);
     if (row.variants_json?.length && !variant) throw new Error("Выберите размер и цвет.");
-    const existing = items.find(item => item.ref_id === body.ref_id && item.variant_sku === (body.variant_sku || null));
-    const qty = method === "PATCH" ? body.qty : (existing?.qty || 0) + body.qty;
+    const existing = items.find(item => item.type === type && item.ref_id === body.ref_id && item.variant_sku === (body.variant_sku || null));
+    const requested = method === "PATCH" ? body.qty : (existing?.qty || 0) + body.qty;
+    const qty = type === "dpo" && requested ? 1 : requested;
     if (qty > 99 || type === "merch" && qty > (variant?.stock ?? row.stock)) throw new Error("Недостаточно товара в наличии.");
     if (!existing && items.length >= 30) throw new Error("В корзине уже 30 разных позиций.");
     items = items.filter(item => item !== existing);
@@ -174,34 +224,7 @@ window.clubMirrorCart = async (method, body) => {
   return cart;
 };
 
-const make = (tag, text, attributes = {}) => {
-  const node = document.createElement(tag);
-  if (text !== undefined) node.textContent = text;
-  for (const [key,value] of Object.entries(attributes)) node.setAttribute(key,value);
-  return node;
-};
-const money = value => new Intl.NumberFormat("ru", { style:"currency",currency:"RUB" }).format(value / 100);
-
-async function cart() {
-  const data = await window.clubMirrorCart("GET");
-  for (const badge of document.querySelectorAll("[data-cart-count]")) badge.textContent = data.count || "";
-  const container = document.querySelector("[data-mirror-cart]");
-  if (!container) return;
-  container.replaceChildren();
-  if (!data.items.length) container.append(make("p", "В корзине пока ничего нет.", { role:"status" }),make("a","Выбрать программу",{href:base+"dpo"}));
-  for (const item of data.items) {
-    const row = make("article",undefined,{class:"site-cart-row"});
-    const detail = make("div");
-    detail.append(make("h2",item.title),make("p",money(item.price)+(item.variant_sku ? " · "+item.variant_sku : "")));
-    const form = make("form",undefined,{"data-api":"/cart","data-method":"PATCH","data-cart":""});
-    form.append(make("input",undefined,{type:"hidden",name:"ref_id",value:item.ref_id}),make("input",undefined,{type:"hidden",name:"variant_sku",value:item.variant_sku||""}));
-    const label = make("label","Количество");label.append(make("input",undefined,{type:"number",name:"qty",min:"0",max:"99",value:item.qty}));
-    form.append(label,make("button","Обновить"));
-    row.append(detail,form,make("button","Удалить",{"data-api":"/cart","data-method":"PATCH","data-cart":"","data-body":JSON.stringify({ref_id:item.ref_id,variant_sku:item.variant_sku,qty:0})}));
-    container.append(row);
-  }
-  if (data.items.length) container.append(make("p","Итого в демо-корзине: "+money(data.subtotal)),make("p","Отправка заявки отключена. На рабочем сайте сумму и скидку проверяет сервер."),make("button","Очистить корзину",{"data-api":"/cart","data-method":"DELETE","data-cart":""}));
-}
+const cart = () => renderMirrorCart(window.clubMirrorCart);
 
 function subscription() {
   const active = sessionStorage.getItem("club:mirror-podcast-demo") === "1";
