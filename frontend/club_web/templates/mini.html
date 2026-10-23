@@ -6,24 +6,31 @@
 <h1>Свои люди.<br>
 <em>Новые возможности.</em>
 </h1>
-<p>Вышка объединяет. Клуб продолжает.</p>
+<p>Встречи, знания и связи, которые остаются с вами после выпуска.</p>
 </section>
+<div class="mini-preview"><span data-mini-preview>Предпросмотр мини-приложения</span><a href="/?site=1" data-action="leave-mini">Вернуться на сайт</a></div>
+<section class="mini-membership" aria-labelledby="mini-cabinet-title">
+<span class="mini-eyebrow">Ваше участие в клубе</span>
+<h2 id="mini-cabinet-title">Мой кабинет</h2>
+<p>Заявки, баллы, достижения и скидка на программы Клуба.</p>
+<button class="club-btn site-primary" data-action="telegram-login" hidden>Войти через Telegram</button>
+<a class="club-btn site-primary" href="/lk">Войти по почте</a>
+<small>Статус выпускника подтверждает учебный офис.</small>
+</section>
+<nav class="mini-shortcuts" aria-label="Разделы приложения">
+{% for href,label,description in [('/events','События','Встречи, лекции и календарь клуба'),('/dpo','Обучение','Программы Клуба и факультета права'),('/podcasts','Подкасты','Разговоры о праве и профессии'),('/stories','Истории выпускников','Карьера и опыт нашего сообщества'),('/changes','Изменения в праве','Обзоры и новые документы'),('/news','Новости','Что происходит в клубе и на факультете'),('/saved','Сохранённое','Материалы и история чтения'),('/merch','Мерч','Одежда и аксессуары клуба')] %}
+<a href="{{ href }}"><h2>{{ label }} <span aria-hidden="true">↗</span></h2><p>{{ description }}</p></a>
+{% endfor %}
+</nav>
 <section class="mini-agenda">
 <img src="{{ base }}assets/photos/alumni-meeting.jpg" alt="Встреча клуба выпускников" width="1100" height="330">
-<a href="/events" class="mini-agenda__link">Есть повод встретиться →</a>
+<a href="/events" class="mini-agenda__link"><span class="mini-agenda__body"><span class="mini-eyebrow">Сообщество</span><strong>Есть повод встретиться</strong><span>Выберите событие и добавьте его в свой календарь.</span></span><span class="mini-arrow" aria-hidden="true">→</span></a>
 </section>
-<p data-mini-preview>Предпросмотр мини-приложения</p>
-<a class="site-primary" href="/?site=1" data-action="leave-mini">Вернуться на сайт</a>
-<section class="mini-membership">
-<h2>Мой кабинет</h2>
-<p>Баллы, заявки и привилегии выпускника</p>
-<button class="site-primary" data-action="telegram-login" hidden>Войти через Telegram</button>
-<a href="/lk">Войти по почте</a>
-</section>
-<section class="site-catalog">
-{% for href,label in nav %}
-<a class="site-panel" href="{{ href }}">{{ label }} →</a>
-{% endfor %}
+<section class="mini-offline" aria-labelledby="mini-offline-title">
+<h2 id="mini-offline-title">Клуб под рукой</h2>
+<p>Добавьте приложение на главный экран. Открытые новости, истории, программы и события можно читать без сети до семи дней. Для входа и заявок нужен интернет.</p>
+<button type="button" data-action="install">Как установить приложение</button>
+<a href="/saved">Мои сохранённые материалы →</a>
 </section>
 </main>
 {% endblock %}

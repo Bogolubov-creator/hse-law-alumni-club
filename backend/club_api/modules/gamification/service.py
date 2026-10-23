@@ -6,6 +6,7 @@ from club_api.core.models import parse_date
 from club_api.db.queries import Query, acquire_lock
 from club_api.db.store import normalize
 from club_api.domain import ACHIEVEMENTS, DOMAIN, LEVELS, compute_level, decay_delta
+from club_api.modules.gamification.social import MEMBERSHIP_QUERY, REACTIONS_QUERY
 
 logger = logging.getLogger("club.points")
 POINT_REASONS = ("program", "event", "referral", "mentorship", "order", "decay", "manual", "achievement")
@@ -39,6 +40,23 @@ class Gamification:
         )
         result = stats_from_ledger(alumni, ledger)
         result["orders_count"] = max(result["orders_count"], (await cursor.fetchone())["count"])
+        if (
+            alumni.get("verification_status") == "verified"
+            and alumni.get("telegram_id")
+            and self.state.settings.secret("TELEGRAM_BOT_TOKEN")
+        ):
+            cursor = await connection.execute(
+                MEMBERSHIP_QUERY,
+                (alumni["id"], alumni.get("telegram_id")),
+            )
+            membership = await cursor.fetchone()
+            result["telegram_subscribed"] = int(bool(membership and membership["subscribed"]))
+            if self.state.settings.TELEGRAM_REACTIONS_CHAT_ID:
+                cursor = await connection.execute(
+                    REACTIONS_QUERY,
+                    (alumni["id"], self.state.settings.TELEGRAM_REACTIONS_CHAT_ID),
+                )
+                result["telegram_reactions"] = (await cursor.fetchone())["count"]
         return result
 
     async def recompute(self, connection, alumni_id):
@@ -108,7 +126,8 @@ class Gamification:
     async def grant_achievements(self, alumni_id):
         async with self.state.database.transaction() as connection:
             cursor = await connection.execute(
-                "SELECT id,points_cached,verification_status FROM alumni WHERE id=%s FOR UPDATE", (alumni_id,)
+                "SELECT id,points_cached,verification_status,telegram_id FROM alumni WHERE id=%s FOR UPDATE",
+                (alumni_id,),
             )
             alumni = await cursor.fetchone()
             if not alumni:

@@ -244,10 +244,9 @@ def profile_tools(page, request, headers, image):
         page.get_by_role("button", name="Скачать мои данные", exact=True).click()
     exported = json.loads(downloaded.value.path().read_text())
     assert exported["profile"]["fio"] and "password" not in json.dumps(exported)
-    with page.expect_response(lambda response: response.url.endswith("/api/me/tg-link")) as link:
-        page.get_by_role("button", name="Подключить Telegram", exact=True).click()
-    assert link.value.status == 503
-    expect(page.locator("#toast")).to_contain_text("Telegram пока не подключён")
+    expect(page.get_by_role("button", name="Подключить Telegram", exact=True)).to_have_count(0)
+    expect(page.locator(".telegram-subscription")).to_contain_text("Проверка подписки пока не подключена")
+    assert request.get("/api/me/tg-link", headers=headers).status == 503
 
 
 def office_exports(office):

@@ -1,5 +1,5 @@
 export function miniStartRoute(value) {
-  const sections = { club: "tg", dpo: "dpo", events: "events", news: "news", podcasts: "podcasts", merch: "merch", lk: "lk", support: "support" };
+  const sections = { club: "tg", dpo: "dpo", events: "events", news: "news", stories: "stories", podcasts: "podcasts", merch: "merch", changes: "changes", saved: "saved", lk: "lk", support: "support" };
   if (Object.hasOwn(sections, value || "")) return sections[value];
   return /^p_[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value || "") ? "dpo/" + value.slice(2) : null;
 }
@@ -7,7 +7,9 @@ export function miniStartRoute(value) {
 export function prepareMini(path, url) {
   if (path === "/admin" || path.startsWith("/admin/")) return;
   const query = new URLSearchParams(location.search);
-  const entry = path === "/tg";
+  const entry = path === "/tg" || path === "/";
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (standalone) document.querySelectorAll("[data-action='install']").forEach(node => { node.hidden = true; });
   let preview = false;
   try {
     if (query.get("site") === "1") {
@@ -15,24 +17,27 @@ export function prepareMini(path, url) {
       sessionStorage.removeItem("club_pwa");
       if (!window.Telegram?.WebApp?.initData) return;
     }
-    if (query.get("pwa") === "1" || query.get("source") === "pwa" || matchMedia("(display-mode: standalone)").matches) sessionStorage.setItem("club_pwa", "1");
+    if (query.get("pwa") === "1" || query.get("source") === "pwa" || standalone) sessionStorage.setItem("club_pwa", "1");
     if (sessionStorage.getItem("club_pwa") === "1") document.documentElement.classList.add("pwa-shell");
-    if (entry || query.has("tgWebAppData") || new URLSearchParams(location.hash.slice(1)).has("tgWebAppData")) sessionStorage.setItem("club_telegram_preview", "1");
+    if (path === "/tg" || entry && query.has("startapp") || query.has("tgWebAppStartParam") || query.has("tgWebAppData") || new URLSearchParams(location.hash.slice(1)).has("tgWebAppData")) sessionStorage.setItem("club_telegram_preview", "1");
     preview = sessionStorage.getItem("club_telegram_preview") === "1";
   } catch {}
   if (document.documentElement.classList.contains("pwa-shell")) {
-    document.querySelectorAll("[data-mini-preview]").forEach(node => { node.textContent = "Мобильный просмотр"; });
+    document.querySelectorAll("[data-mini-preview]").forEach(node => { node.textContent = "Мобильный просмотр"; node.hidden = standalone; });
+    document.querySelectorAll("[data-action='leave-mini']").forEach(node => { node.hidden = standalone; });
     document.querySelectorAll("[data-mobile-preview]").forEach(node => {
       node.textContent = "Обычный сайт";
       node.href = url("?site=1");
     });
+    const club = document.querySelector(".mobile-tabs a");
+    if (club) club.href = url("tg");
   }
   if (!preview && !window.Telegram?.WebApp?.initData) return;
   document.documentElement.classList.add("telegram-mini");
   const club = document.querySelector(".mobile-tabs a");
   if (club) club.href = url("tg");
-  const start = miniStartRoute(query.get("startapp"));
-  if (entry && start && start !== "tg") { location.replace(url(start)); return; }
+  const start = miniStartRoute(window.Telegram?.WebApp?.initDataUnsafe?.start_param || query.get("tgWebAppStartParam") || query.get("startapp"));
+  if (entry && start && path !== "/" + start) { location.replace(url(start)); return; }
   function connected() {
     const app = window.Telegram?.WebApp;
     if (!app?.initData) return;
@@ -59,7 +64,7 @@ export function prepareMini(path, url) {
     app.BackButton?.onClick?.(back);
     window.addEventListener("pagehide", () => { app.BackButton?.offClick?.(back); app.offEvent?.("safeAreaChanged", applyInsets); app.offEvent?.("contentSafeAreaChanged", applyInsets); }, { once: true });
     const sdkStart = miniStartRoute(app.initDataUnsafe?.start_param);
-    if (entry && sdkStart && sdkStart !== "tg" && !query.has("startapp")) location.replace(url(sdkStart));
+    if (entry && sdkStart && path !== "/" + sdkStart) location.replace(url(sdkStart));
   }
   if (window.Telegram?.WebApp) connected();
   else if (!document.documentElement.classList.contains("pwa-shell") || query.has("tgWebAppData") || new URLSearchParams(location.hash.slice(1)).has("tgWebAppData")) {

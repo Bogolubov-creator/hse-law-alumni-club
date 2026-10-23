@@ -32,8 +32,9 @@
 {% endif %}
 <section>
 <h2>Telegram</h2>
-<p>{{ 'Профиль связан с Telegram.' if me.alumni.telegram_linked else 'Подключите Telegram, чтобы входить в мини-приложение клуба.' }}</p>
-<button data-api="/me/tg-link" data-method="GET">{{ 'Проверить привязку' if me.alumni.telegram_linked else 'Подключить Telegram' }}</button>
+<p>{{ 'Профиль связан с Telegram.' if me.alumni.telegram_linked else 'Привяжите Telegram для входа в мини-приложение и проверки подписки на канал.' }}</p>
+{% if not mirror and me.alumni.verification_status=='verified' and me.alumni.telegram_available and not me.alumni.telegram_linked %}<button data-api="/me/tg-link" data-method="GET">Подключить Telegram</button>{% endif %}
+{% include 'telegram-subscription.html' %}
 </section>
 <section>
 <h2>Ваши данные</h2>

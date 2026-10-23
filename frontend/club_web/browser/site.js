@@ -304,6 +304,9 @@ async function perform(target, body) {
     } else if (path === "/me/tg-link" && result.url) {
       const link = safeLink(result.url);
       if (link && new URL(link).hostname === "t.me") target.after(element("a", "Открыть Telegram", { href: link, target: "_blank", rel: "noopener noreferrer" }));
+    } else if (path === "/me/telegram-subscription") {
+      await refresh();
+      notice(result.subscription === "subscribed" ? "Подписка подтверждена. Достижение «На радаре» получено." : "Подписка пока не найдена. Подпишитесь на @AlumniLawHSE и повторите проверку.");
     } else if (target.dataset.success) {
       notice(target.dataset.success);
       target.reset();
@@ -683,8 +686,14 @@ document.addEventListener("click", async event => {
       target.replaceWith(element("iframe", undefined, { src: href, title: "Видео подкаста", allow: "fullscreen", allowfullscreen: "", loading: "lazy", class: "site-video" }));
     } else if (action === "leave-mini") {
       sessionStorage.removeItem("club_telegram_preview"); sessionStorage.removeItem("club_pwa"); location.href = url("");
-    } else if (action === "install" && installPrompt) {
-      await installPrompt.prompt(); installPrompt = null; target.hidden = true;
+    } else if (action === "install") {
+      if (installPrompt) {
+        await installPrompt.prompt(); installPrompt = null; document.querySelector("#install-app").hidden = true;
+      } else {
+        const content = document.querySelector("#dialog-content");
+        content.replaceChildren(element("h2", "Установка приложения"), element("p", "На iPhone и iPad откройте сайт в Safari: «Поделиться» → «На экран Домой». В Chrome и Edge выберите «Установить приложение» в меню браузера. На Mac в Safari: «Файл» → «Добавить в Dock»."), element("p", "Если установка недоступна, сохраните сайт в закладки. Для первого запуска нужен интернет."));
+        document.querySelector("#site-dialog").showModal();
+      }
     } else if (action === "telegram-login") {
       const initData = window.Telegram?.WebApp?.initData;
       if (!initData) throw new Error("Откройте мини-приложение клуба в Telegram или войдите по почте.");

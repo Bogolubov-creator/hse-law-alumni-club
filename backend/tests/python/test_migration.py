@@ -46,8 +46,9 @@ def test_all_legacy_routes_are_present():
         ("POST", "/admin/polls"),
         ("POST", "/admin/polls/{id}/launch"),
         ("POST", "/admin/polls/{id}/close"),
+        ("POST", "/me/telegram-subscription"),
     }
-    assert actual == expected | added and len(actual) == 125
+    assert actual == expected | added and len(actual) == 126
 
 
 def test_hse_state_dates_and_manual_fields():

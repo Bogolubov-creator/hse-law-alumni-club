@@ -13,7 +13,7 @@ html.telegram-mini { --mini-top: 0px; --mini-bottom: 0px; }
 .mini-preview { padding: 8px 16px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--c-bg-sunken); font-size: 11px; color: var(--c-text-2); }
 .mini-preview button { background: none; border: 0; font: inherit; text-decoration: underline; color: inherit; cursor: pointer; }
 .mini-home { max-width: 680px; margin-inline: auto; padding: 24px 20px 32px; }
- .mini-welcome { margin-bottom: 22px; }
+.mini-welcome { margin-bottom: 22px; }
 .mini-eyebrow { display: block; font: 500 10px/1.4 var(--f-body); letter-spacing: .12em; text-transform: uppercase; }
 .mini-welcome .mini-eyebrow { margin: 0 0 12px; color: var(--c-accent-text); }
 .mini-welcome h1 { font: 400 35px/1.12 var(--f-display); margin: 0; letter-spacing: -.025em; overflow-wrap: anywhere; }
@@ -60,3 +60,17 @@ html.telegram-mini { --mini-top: 0px; --mini-bottom: 0px; }
 .mini-catalog-options summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; font-size: 14px; color: var(--c-accent-text); }
 .mini-catalog-options > div { display: grid; gap: 12px; padding-bottom: 12px; }
 .telegram-mini .club-dpo-status { font-size: 12px; }
+.mini-home .mini-preview { margin: 0 0 20px; padding: 0; background: transparent; font-size: 12px; align-items: center; }
+.mini-preview:has(> [hidden]):not(:has(> :not([hidden]))) { display: none; }
+.mini-preview a { color: var(--c-text-2); min-height: 44px; align-content: center; }
+.mini-shortcuts a:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 4px; }
+.mini-membership [data-action='telegram-login']:not([hidden]) + a { margin-top: 12px; }
+.mini-offline { padding: 20px; background: var(--c-bg-sunken); border-radius: 12px; }
+.mini-offline h2 { margin: 0 0 8px; font: 400 24px/1.2 var(--f-display); }
+.mini-offline p { font-size: 13px; line-height: 1.6; color: var(--c-text-2); margin: 0 0 16px; }
+.mini-offline button { width: 100%; font-size: 13px; }
+.mini-offline a { display: block; margin-top: 12px; min-height: 44px; align-content: center; color: var(--c-accent-text); font-size: 13px; }
+.telegram-subscription { display: grid; gap: 10px; margin-top: 12px; }
+.telegram-subscription p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--c-text-2); }
+.telegram-subscription a { overflow-wrap: anywhere; }
+.telegram-subscription button { justify-self: start; font-size: 13px; }

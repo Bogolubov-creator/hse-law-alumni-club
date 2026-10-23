@@ -3,9 +3,16 @@ import logging
 from club_api.db.queries import Query
 
 logger = logging.getLogger("club.social")
+MEMBERSHIP_QUERY = Query(
+    "SELECT m.subscribed FROM club_social_membership m JOIN alumni a ON a.id=m.alumni_id AND a.telegram_id=m.telegram_id WHERE a.id=%s AND a.telegram_id=%s AND m.checked_at > now() - interval '5 minutes'",
+    "SELECT m.subscribed FROM club_social_membership m JOIN alumni a ON a.id=m.alumni_id AND a.telegram_id=m.telegram_id WHERE a.id=%s AND a.telegram_id=%s AND m.checked_at > now() - INTERVAL 5 MINUTE",
+)
+REACTIONS_QUERY = (
+    "SELECT count(*) AS count FROM club_social_reactions WHERE alumni_id=%s AND chat_id=%s AND active=true"
+)
 
 
-async def social_progress(state, alumni_id, telegram_id=None):
+async def social_progress(state, alumni_id, telegram_id=None, *, refresh=False):
     stats = {
         "telegram_subscribed": 0,
         "telegram_reactions": 0,
@@ -15,13 +22,7 @@ async def social_progress(state, alumni_id, telegram_id=None):
     if not telegram_id or not state.settings.secret("TELEGRAM_BOT_TOKEN") or not state.database.pool:
         return stats
     try:
-        rows = await state.database.rows(
-            Query(
-                "SELECT subscribed FROM club_social_membership WHERE alumni_id=%s AND telegram_id=%s AND checked_at > now() - interval '5 minutes'",
-                "SELECT subscribed FROM club_social_membership WHERE alumni_id=%s AND telegram_id=%s AND checked_at > now() - INTERVAL 5 MINUTE",
-            ),
-            (alumni_id, telegram_id),
-        )
+        rows = [] if refresh else await state.database.rows(MEMBERSHIP_QUERY, (alumni_id, telegram_id))
         checked = bool(rows)
         if rows:
             stats["telegram_subscribed"] = int(rows[0]["subscribed"])
@@ -51,10 +52,7 @@ async def social_progress(state, alumni_id, telegram_id=None):
                 logger.warning("Не удалось проверить подписку Telegram")
         if state.settings.TELEGRAM_REACTIONS_CHAT_ID:
             rows = await state.database.rows(
-                Query(
-                    "SELECT count(*)::int AS count FROM club_social_reactions WHERE alumni_id=%s AND chat_id=%s AND active=true",
-                    "SELECT count(*) AS count FROM club_social_reactions WHERE alumni_id=%s AND chat_id=%s AND active=true",
-                ),
+                REACTIONS_QUERY,
                 (alumni_id, state.settings.TELEGRAM_REACTIONS_CHAT_ID),
             )
             stats["telegram_reactions"] = rows[0]["count"]
