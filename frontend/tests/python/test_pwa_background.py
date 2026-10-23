@@ -2,8 +2,11 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
+import pytest
 from playwright.sync_api import expect, sync_playwright
+from test_browser import mirror_site as mirror_site
 from test_browser import site as site
+from test_mobile_shell import test_mirror_pwa_starts_offline_without_caching_private_sections as check_mirror_offline
 
 
 def test_public_page_is_saved_during_webkit_navigation(site):
@@ -58,3 +61,13 @@ def test_public_page_is_saved_during_webkit_navigation(site):
                 browser.close()
                 server.shutdown()
                 thread.join(timeout=5)
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_webkit_mirror_starts_offline_without_caching_private_sections(mirror_site, width):
+    with sync_playwright() as playwright:
+        browser = playwright.webkit.launch()
+        try:
+            check_mirror_offline(browser, mirror_site, width)
+        finally:
+            browser.close()

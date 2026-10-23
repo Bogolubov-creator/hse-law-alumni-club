@@ -145,6 +145,7 @@ def test_installed_mobile_hub_starts_offline_from_manifest(chromium, site, width
         expect(page.locator("#offline-notice")).to_contain_text("Сохранённая копия от")
         expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
         expect(page.get_by_role("button", name="Как установить приложение", exact=True)).to_be_hidden()
+        expect(page.locator(".mini-agenda img")).to_have_js_property("naturalWidth", 1100)
         assert not errors
     finally:
         context.close()
@@ -180,6 +181,7 @@ def test_mirror_pwa_starts_offline_without_caching_private_sections(chromium, mi
         expect(page.locator(".mini-home")).to_be_visible()
         expect(page.locator("#offline-notice")).to_contain_text("Сохранённая копия от")
         expect(page.locator("html")).to_have_class(re.compile("pwa-shell"))
-        assert not errors
+        expect(page.locator(".mini-agenda img")).to_have_js_property("naturalWidth", 1100)
+        assert not errors, errors
     finally:
         context.close()

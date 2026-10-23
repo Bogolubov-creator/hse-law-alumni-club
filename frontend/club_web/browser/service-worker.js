@@ -25,6 +25,7 @@ const PRECACHE = [
   "./icon-167.png",
   "./favicon.ico",
   "./fonts/fonts.css",
+  "./assets/photos/alumni-meeting.jpg",
   ...MIRROR_ASSETS,
   ...BUILT_ASSETS,
 ].map(scoped);
