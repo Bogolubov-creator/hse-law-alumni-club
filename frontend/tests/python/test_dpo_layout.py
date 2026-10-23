@@ -26,6 +26,22 @@ def faculty_program(identifier, **changes):
     }
 
 
+def test_comparison_waits_for_browser_initialization(page):
+    pending = []
+    page.route("**/assets/catalog.js", lambda route: pending.append(route), times=1)
+    page.goto("/dpo", wait_until="commit")
+    button = page.get_by_role("button", name="Сравнить", exact=True).first
+    expect(button).to_be_visible()
+    expect(button).to_be_disabled()
+    assert len(pending) == 1
+    pending.pop().continue_()
+    button.click()
+    expect(button).to_have_attribute("aria-pressed", "true")
+    assert "compare=" + PROGRAM["slug"] in page.url
+    page.reload()
+    expect(page.get_by_role("button", name="Сравнить", exact=True).first).to_have_attribute("aria-pressed", "true")
+
+
 @pytest.mark.parametrize("width,pwa", [(320, False), (390, False), (768, False), (1440, False), (1440, True)])
 def test_dpo_cards_reserve_media_and_align_footer_without_losing_actions(page, site, width, pwa):
     site[1]["/programs"] = [

@@ -143,4 +143,5 @@ export function prepareCatalog(url, notice) {
   dialog.addEventListener("close", () => { if (trigger?.isConnected) trigger.focus(); });
   restoreCatalog = restore;
   restore();
+  root.querySelectorAll("[data-action='compare']").forEach(button => { button.disabled = false; });
 }
