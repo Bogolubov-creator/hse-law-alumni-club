@@ -112,10 +112,33 @@ def test_stories_have_a_separate_navigation_entry_and_active_section(page, width
     expect(page.get_by_role("heading", name=STORIES[0]["name"], exact=True)).to_be_visible()
     expect(menu.locator("a[aria-current]")).to_have_text("Истории выпускников")
     expect(page.locator(".club-header__nav a[aria-current]")).to_have_text("Истории выпускников")
-    page.locator(".club-footer").get_by_role("link", name="Истории выпускников", exact=True).click()
+    page.locator(".club-footer").get_by_role("link", name="Истории выпускников", exact=True).click(no_wait_after=True)
     expect(page.locator(".stories-page")).to_be_visible()
     expect(page.locator("[data-alumni-story]")).to_have_count(len(STORIES))
     page.evaluate("document.fonts.ready")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
+@pytest.mark.parametrize("width", [1281, 1440])
+@pytest.mark.parametrize("member", [False, True])
+def test_wide_navigation_fits_without_brand_fonts(page, width, member):
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.route("**/*.woff2", lambda route: route.abort())
+    if member:
+        page.add_init_script("localStorage.setItem('club_token','member-qa')")
+    page.goto("/stories")
+    page.evaluate("document.fonts.ready")
+    navigation = page.get_by_role("navigation", name="Разделы", exact=True)
+    expect(navigation.get_by_role("link", name="Истории выпускников", exact=True)).to_be_visible()
+    assert page.locator(".club-header__inner").evaluate("""node => {
+        const header = node.getBoundingClientRect();
+        const left = header.left + parseFloat(getComputedStyle(node).paddingLeft);
+        const right = header.right - parseFloat(getComputedStyle(node).paddingRight);
+        return [...node.querySelectorAll('nav > a, nav > div')].every(item => {
+            const box = item.getBoundingClientRect();
+            return box.left >= left - 1 && box.right <= right + 1 && box.height <= header.height;
+        });
+    }""")
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
 
 

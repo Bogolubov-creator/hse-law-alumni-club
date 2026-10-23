@@ -327,6 +327,7 @@ function renderReading() {
     const on = data.saved.some(item => item.path === button.dataset.href);
     button.setAttribute("aria-pressed", String(on));
     button.textContent = on ? "Сохранено" : "Сохранить";
+    button.disabled = false;
   });
   document.querySelectorAll("[data-action='mark-read']").forEach(button => {
     const on = data.read.includes(button.dataset.href);

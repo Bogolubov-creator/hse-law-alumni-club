@@ -149,6 +149,21 @@ def test_mirror_merch_filters_sort_save_and_cart(chromium, mirror_site, width):
     context.close()
 
 
+def test_saved_action_waits_for_browser_initialization(page):
+    pending = []
+    page.route("**/assets/site.js", lambda route: pending.append(route), times=1)
+    page.goto("/merch", wait_until="commit")
+    button = page.get_by_role("button", name="Сохранить", exact=True).first
+    expect(button).to_be_visible()
+    expect(button).to_be_disabled()
+    assert len(pending) == 1
+    pending.pop().continue_()
+    button.click()
+    expect(page.get_by_role("button", name="Сохранено", exact=True)).to_have_attribute("aria-pressed", "true")
+    page.reload()
+    expect(page.get_by_role("button", name="Сохранено", exact=True)).to_have_attribute("aria-pressed", "true")
+
+
 def test_merch_error_and_empty_catalog_are_distinct(page, site):
     site[1]["unavailable_products"] = True
     page.goto("/merch")
