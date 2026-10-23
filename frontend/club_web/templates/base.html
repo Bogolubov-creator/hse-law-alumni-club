@@ -17,16 +17,17 @@
 <link rel="apple-touch-icon" sizes="167x167" href="{{ base }}icon-167.png">
 <link rel="apple-touch-icon" sizes="152x152" href="{{ base }}icon-152.png">
 <link rel="stylesheet" href="{{ base }}fonts/fonts.css">
-<link rel="stylesheet" href="{{ base }}assets/site.css">
-<script type="module" src="{{ base }}assets/site.js">
+<link rel="stylesheet" href="{{ base }}assets/{{ assets.get('site.css','site.css') }}">
+<script type="module" src="{{ base }}assets/{{ assets.get('site.js','site.js') }}">
 </script>
 {% if mirror %}
-<script type="module" src="{{ base }}assets/mirror.js">
+<script type="module" src="{{ base }}assets/{{ assets.get('mirror.js','mirror.js') }}">
 </script>
 {% endif %}
 </head>
 <body data-base="{{ base }}" data-mirror="{{ 'true' if mirror else 'false' }}" data-offline-reading="{{ 'true' if offline_reading else 'false' }}">
 <a href="#main" class="skip">К содержанию страницы</a>
+<noscript><p class="site-notice">Для входа и отправки форм включите JavaScript в настройках браузера.</p></noscript>
 {% if mirror %}
 <aside class="site-notice">
 <span>Демоверсия · отправка заявок отключена</span>

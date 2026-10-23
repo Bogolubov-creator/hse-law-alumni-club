@@ -1,7 +1,7 @@
 <div class="office-poll-layout">
 <section class="poll-editor site-panel" aria-labelledby="new-poll-heading">
 <h2 id="new-poll-heading">Новый опрос</h2><p>Подготовьте вопрос и варианты. Участники увидят опрос после запуска.</p>
-<form data-api="/admin/polls">
+<form method="post" data-api="/admin/polls">
 <label>Вопрос<input name="question" required minlength="3" maxlength="240" placeholder="Какая тема вам интереснее?"></label>
 <label>Варианты, по одному в строке<textarea name="options" data-lines required rows="6" maxlength="1620" placeholder="Трудовое право&#10;Гражданское право&#10;Уголовное право"></textarea></label>
 <p class="poll-hint">От 2 до 10 разных вариантов, до 160 символов каждый. После запуска вопрос и варианты не меняются.</p>

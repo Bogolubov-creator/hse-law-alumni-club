@@ -499,6 +499,67 @@ def test_office_logout_failure_clears_private_view(page, width):
     assert page.evaluate("localStorage.getItem('club_admin_token')") is None
 
 
+@pytest.mark.parametrize("endpoint", ["api/cart", "views/lk"])
+@pytest.mark.parametrize("width", [390, 1440])
+def test_delayed_expired_request_does_not_end_a_new_login(page, endpoint, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    page.add_init_script(
+        "localStorage.setItem('club_token','previous-session');localStorage.setItem('club_cart','cart-qa');"
+    )
+    pending = []
+    page.route("**/" + endpoint, lambda route: pending.append(route), times=1)
+    page.goto("/lk")
+    if endpoint == "api/cart":
+        expect(page.get_by_role("button", name="Выйти", exact=True)).to_be_visible()
+        page.get_by_role("button", name="Выйти", exact=True).click()
+    expect(page.get_by_role("button", name="Войти в кабинет", exact=True)).to_be_visible()
+    page.get_by_label("Почта", exact=True).fill("member@example.invalid")
+    page.get_by_label("Пароль", exact=True).fill("test-password")
+    page.get_by_role("button", name="Войти в кабинет", exact=True).click()
+    expect(page.get_by_role("button", name="Выйти", exact=True)).to_be_visible()
+    assert page.evaluate("localStorage.getItem('club_token')") == "member-qa"
+    assert len(pending) == 1
+    pending[0].fulfill(status=401, json={"error": "Прежняя сессия завершилась"})
+    page.wait_for_load_state("networkidle")
+    assert page.evaluate("localStorage.getItem('club_token')") == "member-qa"
+    expect(page.get_by_role("button", name="Выйти", exact=True)).to_be_visible()
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_expired_session_refresh_preserves_login_fields(page, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    page.add_init_script("localStorage.setItem('club_token','previous-session');")
+    pending = []
+    page.route("**/views/lk", lambda route: pending.append(route), times=1)
+    page.goto("/lk")
+    page.get_by_label("Почта", exact=True).fill("member@example.invalid")
+    page.get_by_label("Пароль", exact=True).fill("test-password")
+    assert len(pending) == 1
+    pending[0].fulfill(status=401, json={"error": "Прежняя сессия завершилась"})
+    page.wait_for_load_state("networkidle")
+    expect(page.get_by_label("Почта", exact=True)).to_have_value("member@example.invalid")
+    expect(page.get_by_label("Пароль", exact=True)).to_have_value("test-password")
+    expect(page.get_by_label("Пароль", exact=True)).to_be_focused()
+
+
+@pytest.mark.parametrize("path", ["/lk", "/admin", "/forgot"])
+def test_forms_do_not_put_credentials_in_url_without_javascript(chromium, site, path):
+    context = chromium.new_context(base_url=site[0], java_script_enabled=False, service_workers="block")
+    try:
+        page = context.new_page()
+        page.goto(path)
+        page.get_by_label("Почта", exact=True).fill("member@example.invalid")
+        password = page.get_by_label("Пароль", exact=True)
+        if password.count():
+            password.fill("test-password")
+        with page.expect_navigation() as submitted:
+            page.locator("form[data-api] button").first.click()
+        assert "?" not in page.url
+        assert submitted.value.status == 405
+    finally:
+        context.close()
+
+
 def test_checkout_blocks_cart_mutation_and_restores_fields_on_error(page, site):
     page.goto("/dpo/course-one")
     page.get_by_role("button", name="В корзину", exact=True).click()

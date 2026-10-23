@@ -29,7 +29,7 @@ def test_mirror_support_stays_closed_with_cached_legacy_styles(chromium, mirror_
         response = route.fetch()
         route.fulfill(response=response, body=response.text() + "\n.club-bot-panel { display: flex; }\n")
 
-    page.route("**/assets/site.css", legacy_styles)
+    page.route("**/assets/site-*.css", legacy_styles)
     page.goto(mirror_site)
     dialog = page.locator("#support-bot")
     assert dialog.get_attribute("open") is None

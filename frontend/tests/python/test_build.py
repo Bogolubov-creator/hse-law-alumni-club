@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from club_web import build
+from club_web.rendering import asset_manifest
 
 
 @pytest.fixture
@@ -75,3 +76,27 @@ def test_demo_cart_module_is_only_in_mirror_build(build_source, tmp_path):
     assert not (destination / "assets/mirror.js").exists()
     assert not (destination / "assets/mirror-cart.js").exists()
     assert (destination / "assets/cart.js").is_file()
+    assert not any(name.startswith("mirror") for name in asset_manifest(destination))
+    assert not list((destination / "assets").glob("mirror*.js"))
+
+
+def test_dependency_and_styles_are_linked_to_the_same_release(build_source, tmp_path):
+    browser = build.ROOT / "browser"
+    (browser / "site.js").write_text('import { value } from "./dependency.js"; document.title = value;')
+    (browser / "dependency.js").write_text('export const value = "old";')
+    destination = tmp_path / "output"
+    build.build_public(destination)
+    original = asset_manifest(destination)
+    assert original["dependency.js"] in (destination / "assets" / original["site.js"]).read_text()
+    assert original["site.css"] in (destination / "sw.js").read_text()
+    assert original["site.js"] in (destination / "sw.js").read_text()
+    build.build_public(destination)
+    assert asset_manifest(destination) == original
+
+    (browser / "dependency.js").write_text('export const value = "new";')
+    build.build_public(destination)
+    current = asset_manifest(destination)
+    assert all(current[name] != previous for name, previous in original.items())
+    assert current["dependency.js"] in (destination / "assets" / current["site.js"]).read_text()
+    assert original["dependency.js"] not in (destination / "assets" / current["site.js"]).read_text()
+    assert not (destination / "assets" / original["site.js"]).exists()

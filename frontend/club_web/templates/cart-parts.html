@@ -21,7 +21,7 @@
 <p class="cart-item__variant" data-cart-variant {% if not item.variant_sku %}hidden{% endif %}>Вариант: {{ item.variant_sku or '' }}</p>
 <p class="cart-item__price"><strong data-cart-price>{{ item.price|rub }}</strong><span>за единицу</span></p>
 </div>
-<form data-api="/cart" data-method="PATCH" data-cart class="cart-item__quantity">
+<form method="post" data-api="/cart" data-method="PATCH" data-cart class="cart-item__quantity">
 <input type="hidden" name="type" value="{{ item.type }}">
 <input type="hidden" name="ref_id" value="{{ item.ref_id }}">
 <input type="hidden" name="variant_sku" value="{{ item.variant_sku or '' }}">

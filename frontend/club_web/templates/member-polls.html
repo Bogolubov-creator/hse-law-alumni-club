@@ -8,7 +8,7 @@
 <article class="poll-card" data-poll-id="{{ poll.id }}">
 <div class="poll-card-meta"><span class="poll-state" data-status="{{ poll.status }}">{{ 'Идёт голосование' if poll.status=='active' else 'Завершён' }}</span>{% if poll.opened_at %}<time>{{ poll.opened_at|date }}</time>{% endif %}</div>
 {% if poll.status=='active' and not poll.my_option_id %}
-<form data-api="/me/polls/{{ poll.id }}/vote" data-member-action>
+<form method="post" data-api="/me/polls/{{ poll.id }}/vote" data-member-action>
 <fieldset><legend>{{ poll.question }}</legend><p class="poll-hint">Один вариант. После отправки изменить ответ нельзя.</p>
 {% for option in poll.options %}<label class="poll-choice"><input type="radio" name="option_id" value="{{ option.id }}" required><span>{{ option.label }}</span></label>{% endfor %}
 </fieldset>

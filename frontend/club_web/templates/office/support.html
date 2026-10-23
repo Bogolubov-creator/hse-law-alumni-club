@@ -18,7 +18,7 @@
 <div class="office-message" data-author="{{ 'visitor' if message.author=='visitor' else 'office' }}"><strong>{{ 'Посетитель' if message.author=='visitor' else 'Поддержка' }}</strong><p>{{ message.text }}</p></div>
 {% endfor %}
 </div>
-<form class="site-admin-form" data-api="/admin/support/{{ ticket.id }}" data-method="PATCH">{{ field('message','Ответ',type='textarea',required=false) }}<label>Статус<select name="status" aria-label="Статус">
+<form method="post" class="site-admin-form" data-api="/admin/support/{{ ticket.id }}" data-method="PATCH">{{ field('message','Ответ',type='textarea',required=false) }}<label>Статус<select name="status" aria-label="Статус">
 <option value="answered">Отвечено</option>
 <option value="closed">Закрыто</option>
 </select>

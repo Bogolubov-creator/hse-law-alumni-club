@@ -19,7 +19,7 @@
 <a href="{{ item.source_url|safe_url }}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
 {% endif %}
 {% if item.state=='new' %}
-<form class="site-admin-form" data-api="/admin/news-sources/{{ item.id }}/import">{{ field('title','Заголовок',item.title) }}{{ field('excerpt','Краткое описание',item.excerpt,required=false) }}<button class="site-primary">Добавить в новости</button>
+<form method="post" class="site-admin-form" data-api="/admin/news-sources/{{ item.id }}/import">{{ field('title','Заголовок',item.title) }}{{ field('excerpt','Краткое описание',item.excerpt,required=false) }}<button class="site-primary">Добавить в новости</button>
 <p role="alert" data-error hidden>
 </p>
 </form>
