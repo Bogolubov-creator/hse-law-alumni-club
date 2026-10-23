@@ -22,7 +22,7 @@
 <section>
 <h2>Написать в поддержку</h2>
 {% if support.enabled %}
-<form data-api="/support" data-support-create>
+<form method="post" data-api="/support" data-support-create>
 <label class="site-field">Тема<select name="topic">
 <option value="account">Доступ в кабинет</option>
 <option value="order">Заявка или заказ</option>
@@ -47,7 +47,7 @@
 </section>
 <section>
 <h2>Проверить обращение</h2>
-<form data-support-open>{{ field('id','Номер обращения') }}{{ field('key','Код доступа') }}<button>Открыть переписку</button>
+<form method="post" data-support-open>{{ field('id','Номер обращения') }}{{ field('key','Код доступа') }}<button>Открыть переписку</button>
 <p role="alert" data-error hidden>
 </p>
 </form>

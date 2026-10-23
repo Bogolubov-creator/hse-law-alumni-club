@@ -10,6 +10,28 @@ from club_web.offline import PWA_PARAMS
 ROOT = Path(__file__).parent
 
 
+def version_assets(assets, names):
+    for name in names:
+        file = Path(name)
+        for previous in assets.glob(file.stem + "-*" + file.suffix):
+            if re.fullmatch(re.escape(file.stem) + r"-[a-f0-9]{16}" + re.escape(file.suffix), previous.name):
+                previous.unlink()
+    digest = hashlib.sha256()
+    for name in sorted(names):
+        content = (assets / name).read_bytes()
+        digest.update(name.encode() + b"\0" + len(content).to_bytes(8, "big") + content)
+    version = digest.hexdigest()[:16]
+    manifest = {name: f"{Path(name).stem}-{version}{Path(name).suffix}" for name in names}
+    for name, target in manifest.items():
+        content = (assets / name).read_text(encoding="utf-8")
+        if name.endswith(".js"):
+            for dependency, replacement in manifest.items():
+                for quote in ('"', "'"):
+                    content = content.replace(quote + "./" + dependency + quote, quote + "./" + replacement + quote)
+        (assets / target).write_text(content, encoding="utf-8")
+    (assets / "manifest.json").write_text(json.dumps(manifest, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def responsive_css(css):
     additions = []
     for match in re.finditer(r"@media\s*\(max-width:\s*(\d+)px\)\s*\{", css):
@@ -48,6 +70,7 @@ def build_public(destination, *, mirror=False):
     (assets / "site.css").write_text(
         "\n".join(responsive_css(path.read_text(encoding="utf-8")) for path in files), encoding="utf-8"
     )
+    browser_names = []
     for browser_file in (ROOT / "browser").glob("*.js"):
         if (
             browser_file.name.startswith(".")
@@ -57,10 +80,11 @@ def build_public(destination, *, mirror=False):
         ):
             continue
         shutil.copyfile(browser_file, assets / browser_file.name)
+        browser_names.append(browser_file.name)
+    version_assets(assets, ["site.css", *browser_names])
     worker = (ROOT / "browser/service-worker.js").read_text(encoding="utf-8")
-    files = ["./assets/" + path.name for path in sorted(assets.glob("*.js"))]
+    files = ["./assets/" + path.name for path in sorted(assets.iterdir()) if path.suffix in (".js", ".css")]
     files += [
-        "./assets/site.css",
         *["./fonts/" + path.name for path in sorted((destination / "fonts").glob("*.woff2"))],
     ]
     worker = worker.replace("const BUILT_ASSETS = [];", "const BUILT_ASSETS = " + json.dumps(files) + ";")

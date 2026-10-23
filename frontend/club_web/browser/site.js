@@ -17,6 +17,7 @@ let mirrorApi = null;
 let botQueue = Promise.resolve();
 let readingPageSaved = false;
 let removedReading = null;
+let refreshSequence = 0;
 
 function stored(key, fallback = null) {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -85,7 +86,7 @@ async function request(path, method = "GET", body, extra = {}) {
   let data;
   try { data = await response.json(); } catch { throw new Error("Не удалось получить ответ. Попробуйте позже."); }
   if (!response.ok) {
-    if (response.status === 401 && session) {
+    if (response.status === 401 && session && token() === session) {
       store(currentPath().startsWith("/admin") ? officeKey : memberKey, null);
       notice("Сессия завершилась. Войдите снова.");
       if (currentPath().startsWith("/admin") || currentPath().startsWith("/lk")) void refresh();
@@ -160,21 +161,35 @@ async function refresh(cartReturn = null) {
   const page = document.querySelector("#page");
   if (!page) return;
   const path = currentPath();
+  const session = token();
+  const sequence = ++refreshSequence;
   const headers = {};
-  if (token()) headers.authorization = `Bearer ${token()}`;
+  if (session) headers.authorization = `Bearer ${session}`;
   const endpoint = mirror ? "views/" + (path === "/" ? "home" : path.slice(1)) + ".html" : "views" + (path === "/" ? "/" : path) + location.search;
   try {
     if (path === "/cart") headers["x-cart-session"] = cartSession();
     const response = await fetch(url(endpoint), { headers, cache: "no-store" });
+    if (sequence !== refreshSequence || session !== token() || !page.isConnected) return false;
     if (response.status === 401) {
       store(path.startsWith("/admin") ? officeKey : memberKey, null);
       return refresh();
     }
-    const parsed = new DOMParser().parseFromString(await response.text(), "text/html");
+    const html = await response.text();
+    if (sequence !== refreshSequence || session !== token() || !page.isConnected) return false;
+    const parsed = new DOMParser().parseFromString(html, "text/html");
     const next = parsed.querySelector("#page");
     const unavailable = [429, 503].includes(response.status) && next?.querySelector("[data-page-unavailable]");
     if (!response.ok && !unavailable) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     if (!next) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
+    const login = page.querySelector("form[data-login]");
+    const nextLogin = next.querySelector("form[data-login]");
+    const loginFocus = login?.contains(document.activeElement) ? document.activeElement.name : null;
+    if (login && nextLogin && login.dataset.login === nextLogin.dataset.login) {
+      for (const input of login.elements) {
+        const replacement = input.name && nextLogin.elements.namedItem(input.name);
+        if (replacement) replacement.value = input.value;
+      }
+    }
     const contacts = path === "/cart" ? [...page.querySelectorAll("form[data-checkout] [name]")].map(input => ({ name: input.name, value: input.value, checked: input.checked })) : [];
     const focus = path === "/cart" ? cartReturn || cartFocus() : null;
     if (focus) next.dataset.cartFocus = JSON.stringify(focus);
@@ -184,9 +199,11 @@ async function refresh(cartReturn = null) {
       if (input) { input.value = saved.value; if (input.type === "checkbox") input.checked = saved.checked; }
     }
     setupPage();
+    if (loginFocus) document.querySelector("form[data-login]")?.elements.namedItem(loginFocus)?.focus({ preventScroll: true });
     void updateCartCount();
     return true;
   } catch (error) {
+    if (sequence !== refreshSequence || session !== token() || !page.isConnected) return false;
     const loading = page.querySelector("[data-cart-loading]");
     if (loading) {
       loading.replaceChildren(element("h2", "Не удалось загрузить корзину"), element("p", error.message), element("button", "Повторить загрузку", { "data-action": "refresh", class: "site-primary" }));

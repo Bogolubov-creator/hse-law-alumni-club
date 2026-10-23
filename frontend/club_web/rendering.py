@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from django.template import engines
@@ -16,6 +17,11 @@ from club_web.formatting import (
 )
 
 ROOT = Path(__file__).parent
+
+
+def asset_manifest(destination):
+    manifest = Path(destination) / "assets/manifest.json"
+    return json.loads(manifest.read_text(encoding="utf-8")) if manifest.is_file() else {}
 
 
 def environment(**options):

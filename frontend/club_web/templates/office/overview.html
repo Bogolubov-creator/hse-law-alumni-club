@@ -31,7 +31,7 @@
 {% if role in ('admin','Administrator') %}
 <details class="office-create">
 <summary>Отправить уведомление участникам</summary>
-<form class="site-admin-form" data-api="/admin/push/broadcast" data-confirm="Отправить уведомление всем подписчикам?">{{ field('title','Заголовок') }}{{ field('body','Текст') }}{{ field('url','Раздел сайта','/') }}<button class="site-primary">Отправить</button>
+<form method="post" class="site-admin-form" data-api="/admin/push/broadcast" data-confirm="Отправить уведомление всем подписчикам?">{{ field('title','Заголовок') }}{{ field('body','Текст') }}{{ field('url','Раздел сайта','/') }}<button class="site-primary">Отправить</button>
 <p role="alert" data-error hidden>
 </p>
 </form>

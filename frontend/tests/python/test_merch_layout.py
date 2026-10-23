@@ -161,7 +161,7 @@ def test_saved_action_waits_for_browser_initialization(page):
         finally:
             route.continue_()
 
-    page.route("**/assets/site.js", release_module, times=1)
+    page.route("**/assets/site-*.js", release_module, times=1)
     page.goto("/merch")
     assert checked == [True]
     button.click()

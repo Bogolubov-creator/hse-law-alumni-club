@@ -37,7 +37,7 @@
 <dl class="cart-totals"><div><dt>Стоимость позиций</dt><dd>{{ cart.subtotal|rub }}</dd></div>{% if cart.member_discount %}<div><dt>Скидка на программы Клуба</dt><dd>{{ cart.member_discount }}%</dd></div>{% endif %}</dl>
 <p class="cart-summary__total"><span>Предварительный итог</span><strong>{{ (cart.estimated_total if cart.estimated_total is defined else cart.subtotal)|rub }}</strong></p>
 <p class="cart-summary__note">Стоимость и доступность проверяются при отправке заявки. Скидка выпускника не распространяется на мерч.</p>
-<form data-api="/orders" data-checkout class="cart-checkout">
+<form method="post" data-api="/orders" data-checkout class="cart-checkout">
 <h3>Контакты для связи</h3>
 {{ field('contact_fio','ФИО') }}{{ field('contact_phone','Телефон',type='tel') }}{{ field('contact_email','Почта',type='email') }}
 {% if cart['items']|selectattr('type','equalto','merch')|list %}

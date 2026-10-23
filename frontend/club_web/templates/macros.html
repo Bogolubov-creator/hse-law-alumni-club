@@ -24,7 +24,7 @@
 {% if office %}<span>Заявки и проверка выпускников</span><span>Программы, события и публикации</span><span>Поддержка и показатели клуба</span>{% else %}<span>Программы Клуба со скидкой выпускника</span><span>События и подкасты клуба</span><span>Ваши заявки и статус участия</span>{% endif %}
 </div>
 </aside>
-<form class="cabinet-gate__form" data-api="/auth/{{ 'admin-login' if office else 'login' }}" data-login="{{ 'office' if office else 'member' }}">
+<form method="post" class="cabinet-gate__form" data-api="/auth/{{ 'admin-login' if office else 'login' }}" data-login="{{ 'office' if office else 'member' }}">
 <h1>{{ 'Панель учебного офиса' if office else 'Вход для выпускников' }}</h1>
 <p>{{ 'Служебный вход для редакторов и администраторов учебного офиса.' if office else 'Доступ открывается после верификации учебным офисом.' }}</p>{{ field('email','Почта',type='email') }}{{ field('password','Пароль',type='password') }}<p role="alert" data-error hidden>
 </p>
@@ -45,7 +45,7 @@
 <input type="text" name="website" class="site-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
 {% endmacro %}
 {% macro add_cart(item,kind,compact=false) %}
-<form data-api="/cart" data-cart>
+<form method="post" data-api="/cart" data-cart>
 <input type="hidden" name="type" value="{{ kind }}">
 <input type="hidden" name="ref_id" value="{{ item.slug }}">
 {% if item.variants_json %}
