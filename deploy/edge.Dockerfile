@@ -1,4 +1,4 @@
-FROM golang:1.27.3-alpine@sha256:d530cf60723abf1ffae0cd16bb546b379ec0550d2f3815e5b16ed69dbc00fba4 AS edge-source
+FROM golang:1.27.3-alpine@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c AS edge-source
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOMAXPROCS=2
 WORKDIR /caddy
 COPY deploy/caddy/go.mod deploy/caddy/go.sum ./locked/
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     GOMEMLIMIT=2GiB GOFLAGS=-mod=vendor \
     /go/bin/govulncheck -show verbose,traces ./...
 
-FROM alpine:3.24.3@sha256:b3413572228e34bd1c9245f5565e6cd127005655e8a7899aef33d8e83255c9e6 AS caddy
+FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS caddy
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.version="v2.11.7" \
