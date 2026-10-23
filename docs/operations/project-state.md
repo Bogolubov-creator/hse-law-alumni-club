@@ -1,5 +1,37 @@
 # Состояние работ по Клубу
 
+## PWA и проверка подписки Telegram – 23.10.2026
+
+Исходная ревизия – `9a41416dac65a0a1310018e962d7ab056d8996cb`.
+Мобильная главная `/tg` объединяет актуальные разделы, кабинет и сохранённое.
+Обновлены манифест и инструкция установки; установленная версия на iPhone
+распознаётся через standalone. Исправлены запуск по `tgWebAppStartParam`,
+приоритет параметра SDK и возврат на мобильную главную.
+
+Для зеркала добавлен список публичных страниц, поскольку GitHub Pages не выдаёт
+серверный заголовок разрешения офлайн-чтения. Рабочая web-сборка этот список
+и синтетические справочники не содержит. Холодный запуск `/tg` без сети проверен
+в браузере отдельно для рабочего web и зеркала с базовым путём.
+
+Достижение «На радаре» получило повторную серверную проверку без прежнего кэша.
+Социальные достижения теперь сохраняются в реестре наград. На отдельной MariaDB
+проверены повторная выдача, привязанный ID, истёкшая проверка и права аккаунтов.
+Награда не добавляет баллы. Отрицательный ответ Telegram и сбой API различаются.
+
+Проверка Bot API подтвердила бота @pravohse_alumni_bot и Main Mini App, но список
+участников @AlumniLawHSE недоступен боту. На локальной Ubuntu токен отсутствует.
+Владелец выбрал оставить интеграцию неподключённой. Ни настройки канала,
+ни токен Ubuntu в этой работе не менялись. Установка на физический телефон
+и вход из настоящего Telegram не подтверждены браузерными тестами.
+
+Команды и сценарии: `frontend/.venv/bin/pytest -q frontend/tests/python/test_mobile_shell.py
+frontend/tests/python/test_pwa_updates.py frontend/tests/python/test_build.py
+frontend/tests/python/test_browser.py -k 'offline or mini or telegram or pwa or build'`;
+для API – `backend/.venv/bin/pytest -q backend/tests/python/test_telegram_subscription.py
+backend/tests/python/test_telegram_access.py backend/tests/python/test_domain_regressions.py`
+с `CLUB_TEST_DATABASE_URL` отдельной `django_migration_test`.
+Состав подключения описан в [интеграции Telegram](../integrations/telegram-mini-links.md).
+
 ## Повторная проверка пользовательских сбоев – 23.10.2026
 
 Отправная ревизия – `b0435776972c456bfff5d0996fe13726b6202580`.

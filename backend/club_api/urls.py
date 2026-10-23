@@ -105,6 +105,7 @@ routes = (
         path("admin/bot-status", endpoint({"GET": support_routes.bot_status})),
         path("telegram/webhook", endpoint({"POST": telegram_routes.webhook})),
         path("me/tg-link", endpoint({"GET": members_profile.telegram_link})),
+        path("me/telegram-subscription", endpoint({"POST": members_profile.telegram_subscription})),
         path("me", endpoint({"GET": members_profile.me})),
         path("me/profile", endpoint({"PATCH": members_profile.profile})),
         path("me/export", endpoint({"GET": members_profile.export})),

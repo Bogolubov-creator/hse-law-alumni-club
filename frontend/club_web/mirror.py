@@ -7,9 +7,10 @@ from pathlib import Path
 import httpx
 
 from club_web.asgi import initialize_django
-from club_web.build import build_public
+from club_web.build import build_public, write_worker
 from club_web.calendar import calendar_file
 from club_web.client import Api
+from club_web.offline import can_save_page
 from club_web.pages import OFFICE_NAV, PUBLIC_PAGES, context, resource
 from club_web.rendering import asset_manifest, templates
 from club_web.search import search_groups
@@ -168,7 +169,7 @@ async def export(destination, base, data):
     )
     manifest_path = destination / "manifest.webmanifest"
     manifest = json.loads(manifest_path.read_text())
-    manifest.update(start_url=base + "tg?pwa=1", scope=base, id=base)
+    manifest.update(start_url=base + "tg/?source=pwa", scope=base, id=base)
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
 
     def upstream(request):
@@ -193,6 +194,7 @@ async def export(destination, base, data):
     paths.append("/404")
     initialize_django()
     renderer = templates()
+    offline_pages = []
     async with httpx.AsyncClient(transport=httpx.MockTransport(upstream), base_url="http://mirror.test") as client:
         for path in paths:
             page = await context(
@@ -207,7 +209,10 @@ async def export(destination, base, data):
                 page["groups"] = search_groups(
                     data["programs"], data["news"], data["events"], data["podcasts"], changes["items"]
                 )
-            page.update(base=base, mirror=True, request=None, assets=assets)
+            offline_reading = can_save_page(path, {}, page, fragment=False, authorized=False)
+            if offline_reading:
+                offline_pages.append(path)
+            page.update(base=base, mirror=True, request=None, assets=assets, offline_reading=offline_reading)
             target = destination / path.lstrip("/") / "index.html" if path != "/404" else destination / "404.html"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(
@@ -220,6 +225,13 @@ async def export(destination, base, data):
                 relocate(renderer.env.get_template(page["template"]).render(**page, fragment=True), base),
                 encoding="utf-8",
             )
+    mirror_assets = ["./data/mirror-api.json", "./data/faq.json", "./data/changes.json"]
+    worker = (destination / "sw.js").read_text(encoding="utf-8")
+    worker = worker.replace("const MIRROR_PAGES = [];", "const MIRROR_PAGES = " + json.dumps(offline_pages) + ";")
+    worker = worker.replace("const MIRROR_ASSETS = [];", "const MIRROR_ASSETS = " + json.dumps(mirror_assets) + ";")
+    write_worker(
+        destination, worker, [manifest_path, *[destination / path.removeprefix("./") for path in mirror_assets]]
+    )
     (destination / ".nojekyll").touch()
     print(f"Зеркало: {len(paths)} страниц, отправка данных отключена")
 

@@ -1,0 +1,16 @@
+<div class="telegram-subscription">
+<a href="https://t.me/AlumniLawHSE" target="_blank" rel="noopener noreferrer">Канал @AlumniLawHSE ↗</a>
+{% if mirror %}
+<p>В демоверсии подписка не проверяется.</p>
+{% elif me.alumni.verification_status!='verified' %}
+<p>Привязка Telegram и проверка подписки доступны после подтверждения выпуска учебным офисом.</p>
+{% elif not me.alumni.telegram_available %}
+<p>Проверка подписки пока не подключена. После подключения бота она появится здесь.</p>
+{% elif not me.alumni.telegram_linked %}
+<p>Для достижения «На радаре» привяжите свой Telegram в профиле.</p>
+<a href="/lk/profile">Открыть профиль →</a>
+{% else %}
+<p>{{ {'subscribed':'Подписка подтверждена.','not_subscribed':'Подписка пока не найдена. Подпишитесь на канал и повторите проверку.','unavailable':'Не удалось проверить подписку. Повторите позже.'}.get(me.social.subscription, 'Подписку можно проверить сейчас.') }}</p>
+<button type="button" data-api="/me/telegram-subscription" data-method="POST">Проверить подписку</button>
+{% endif %}
+</div>

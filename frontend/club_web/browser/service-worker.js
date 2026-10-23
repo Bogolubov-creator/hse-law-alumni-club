@@ -7,6 +7,8 @@ const MAX_ASSETS = 384;
 const PAGE_LIFETIME = 7 * 24 * 60 * 60 * 1000;
 const BUILT_ASSETS = [];
 const PWA_PARAMS = {};
+const MIRROR_PAGES = [];
+const MIRROR_ASSETS = [];
 
 function scoped(path) {
   return new URL(String(path).replace(/^\//, ""), SCOPE).href;
@@ -23,11 +25,14 @@ const PRECACHE = [
   "./icon-167.png",
   "./favicon.ico",
   "./fonts/fonts.css",
+  ...MIRROR_ASSETS,
   ...BUILT_ASSETS,
 ].map(scoped);
 
 function pageKey(request) {
   const url = new URL(request.url);
+  const root = new URL(SCOPE).pathname;
+  if (url.pathname !== root) url.pathname = url.pathname.replace(/\/+$/, "") || "/";
   for (const [name, value] of Object.entries(PWA_PARAMS)) if (url.searchParams.get(name) === value) url.searchParams.delete(name);
   return new Request(url.href);
 }
@@ -40,13 +45,14 @@ async function put(cache, request, response, limit, pinned = []) {
 }
 
 async function savePage(request, response) {
-  if (response.headers.get("X-Club-Offline") !== "public" || !response.ok || response.redirected) return;
+  const path = pathInScope(new URL(request.url).pathname)?.replace(/\/+$/, "") || "/";
+  if ((response.headers.get("X-Club-Offline") !== "public" && !MIRROR_PAGES.includes(path)) || !response.ok || response.redirected) return;
   const headers = new Headers(response.headers);
   headers.delete("Content-Encoding");
   headers.delete("Content-Length");
   headers.set("X-Club-Saved-At", String(Date.now()));
   const saved = new Response(await response.clone().arrayBuffer(), { status: response.status, headers });
-  await put(await caches.open(PAGES_CACHE), pageKey(request), saved, MAX_PAGES, [scoped("./"), scoped("./saved")]);
+  await put(await caches.open(PAGES_CACHE), pageKey(request), saved, MAX_PAGES, ["./", "./saved", "./tg"].map(path => pageKey(new Request(scoped(path))).url));
 }
 
 async function savedPage(request) {
@@ -85,7 +91,7 @@ self.addEventListener("install", (e) => {
       await Promise.all(
         PRECACHE.map((u) => c.add(new Request(u, { cache: "reload" })).catch(() => {})),
       );
-      await Promise.all(["./", "./saved"].map(async path => {
+      await Promise.all(["./", "./tg", "./tg/", "./saved", "./saved/"].map(async path => {
         const request = new Request(scoped(path), { credentials: "omit" });
         try { await savePage(request, await fetch(request)); } catch {}
       }));

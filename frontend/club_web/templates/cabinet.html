@@ -92,7 +92,7 @@
 <progress aria-label="Прогресс достижения {{ achievement.title }}" value="{{ achievement.current }}" max="{{ achievement.target or 1 }}">{{ achievement.current }}/{{ achievement.target }}</progress>
 <span>{{ achievement.current }} / {{ achievement.target }}{% if achievement.kind %} · {{ achievement.kind }}{% endif %}</span>
 {% endif %}
-{% if not achievement.earned and achievement.key=='on_radar' and not me.alumni.telegram_linked %}<a href="/lk/profile">Привязать Telegram →</a>{% endif %}
+{% if achievement.key=='on_radar' %}{% include 'telegram-subscription.html' %}{% endif %}
 </div>
 </article>
 {% endfor %}

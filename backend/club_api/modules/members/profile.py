@@ -16,7 +16,7 @@ from club_api.modules.members.service import anonymize
 from club_api.modules.telegram.links import make_link
 from club_api.observability.audit import audit
 
-ROUTE_LIMITS = {"/me/tg-link": 10, "/me/profile": 20, "/me/export": 5, "/me/delete": 3}
+ROUTE_LIMITS = {"/me/tg-link": 10, "/me/telegram-subscription": 6, "/me/profile": 20, "/me/export": 5, "/me/delete": 3}
 MONTHS = ("янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек")
 
 
@@ -107,6 +107,21 @@ async def me(request: HttpRequest):
     if social:
         result["social"] = {key: social[key] for key in ("subscription", "reactions_available")}
     return result
+
+
+@api_view
+async def telegram_subscription(request: HttpRequest):
+    alumni = await verified_alumni(request)
+    state = request.services
+    if not state.settings.secret("TELEGRAM_BOT_TOKEN"):
+        raise ApiError(503, "Проверка подписки Telegram пока не подключена")
+    if not alumni["telegram_id"]:
+        raise ApiError(400, "Сначала привяжите Telegram в профиле")
+    progress = await social_progress(state, alumni["id"], alumni["telegram_id"], refresh=True)
+    if progress["subscription"] == "unavailable":
+        raise ApiError(503, "Не удалось проверить подписку. Повторите позже")
+    await state.gamification.refresh_achievements(alumni["id"])
+    return {"subscription": progress["subscription"]}
 
 
 @api_view(body=ProfileBody)
