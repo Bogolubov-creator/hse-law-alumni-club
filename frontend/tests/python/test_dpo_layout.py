@@ -27,14 +27,20 @@ def faculty_program(identifier, **changes):
 
 
 def test_comparison_waits_for_browser_initialization(page):
-    pending = []
-    page.route("**/assets/catalog.js", lambda route: pending.append(route), times=1)
-    page.goto("/dpo", wait_until="commit")
+    checked = []
     button = page.get_by_role("button", name="Сравнить", exact=True).first
-    expect(button).to_be_visible()
-    expect(button).to_be_disabled()
-    assert len(pending) == 1
-    pending.pop().continue_()
+
+    def release_module(route):
+        try:
+            expect(button).to_be_visible()
+            expect(button).to_be_disabled()
+            checked.append(True)
+        finally:
+            route.continue_()
+
+    page.route("**/assets/catalog.js", release_module, times=1)
+    page.goto("/dpo")
+    assert checked == [True]
     button.click()
     expect(button).to_have_attribute("aria-pressed", "true")
     assert "compare=" + PROGRAM["slug"] in page.url

@@ -150,14 +150,20 @@ def test_mirror_merch_filters_sort_save_and_cart(chromium, mirror_site, width):
 
 
 def test_saved_action_waits_for_browser_initialization(page):
-    pending = []
-    page.route("**/assets/site.js", lambda route: pending.append(route), times=1)
-    page.goto("/merch", wait_until="commit")
+    checked = []
     button = page.get_by_role("button", name="Сохранить", exact=True).first
-    expect(button).to_be_visible()
-    expect(button).to_be_disabled()
-    assert len(pending) == 1
-    pending.pop().continue_()
+
+    def release_module(route):
+        try:
+            expect(button).to_be_visible()
+            expect(button).to_be_disabled()
+            checked.append(True)
+        finally:
+            route.continue_()
+
+    page.route("**/assets/site.js", release_module, times=1)
+    page.goto("/merch")
+    assert checked == [True]
     button.click()
     expect(page.get_by_role("button", name="Сохранено", exact=True)).to_have_attribute("aria-pressed", "true")
     page.reload()
