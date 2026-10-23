@@ -76,6 +76,49 @@ async def test_empty_editorial_catalog_has_no_placeholder_people(browser_client,
     assert 'id="alumni-stories"' not in response.text
 
 
+@pytest.mark.parametrize("width", [320, 390, 768, 1280, 1281, 1440])
+def test_stories_have_a_separate_navigation_entry_and_active_section(page, width):
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script("localStorage.setItem('club_token','member-qa')")
+    page.goto("/")
+    page.evaluate("document.fonts.ready")
+    expect(page.locator(".club-header__nav [data-member-link]")).to_have_text("Мой кабинет")
+    menu = page.locator("#club-menu")
+    navigation = page.get_by_role("navigation", name="Разделы", exact=True)
+    if width <= 1280:
+        expect(navigation).to_be_hidden()
+        button = page.locator(".club-header__burger")
+        button.focus()
+        page.keyboard.press("Enter")
+        expect(button).to_have_attribute("aria-expanded", "true")
+        navigation = menu
+    else:
+        expect(navigation).to_be_visible()
+        assert page.locator(".club-header__inner").evaluate("node => node.scrollWidth <= node.clientWidth")
+        assert page.locator(".club-header__inner").evaluate("""node => {
+            const header = node.getBoundingClientRect();
+            const button = node.querySelector('[data-member-link]').getBoundingClientRect();
+            return button.height <= header.height && button.right <= header.right - parseFloat(getComputedStyle(node).paddingRight) + 1;
+        }""")
+    link = navigation.get_by_role("link", name="Истории выпускников", exact=True)
+    expect(link).to_have_attribute("href", "/stories")
+    link.focus()
+    page.keyboard.press("Enter")
+    expect(page.locator(".stories-page h1")).to_have_text("Истории выпускников")
+    assert urlsplit(page.url).path.rstrip("/") == "/stories"
+    expect(page.locator(".club-header__nav a[aria-current]")).to_have_text("Истории выпускников")
+    expect(menu.locator("a[aria-current]")).to_have_text("Истории выпускников")
+    page.locator(".stories-grid [data-alumni-story] a").first.click(no_wait_after=True)
+    expect(page.get_by_role("heading", name=STORIES[0]["name"], exact=True)).to_be_visible()
+    expect(menu.locator("a[aria-current]")).to_have_text("Истории выпускников")
+    expect(page.locator(".club-header__nav a[aria-current]")).to_have_text("Истории выпускников")
+    page.locator(".club-footer").get_by_role("link", name="Истории выпускников", exact=True).click()
+    expect(page.locator(".stories-page")).to_be_visible()
+    expect(page.locator("[data-alumni-story]")).to_have_count(len(STORIES))
+    page.evaluate("document.fonts.ready")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+
+
 @pytest.mark.parametrize("width", [320, 390, 768, 1440])
 def test_home_story_cards_open_complete_pages_without_cropping_or_overflow(page, width):
     page.set_viewport_size({"width": width, "height": 1000})
@@ -133,7 +176,14 @@ def test_mirror_story_links_and_photos_keep_repository_prefix(chromium, mirror_s
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(mirror_site)
-    page.locator("#alumni-stories [data-alumni-story] a").first.click()
+    navigation = page.get_by_role("navigation", name="Разделы", exact=True)
+    if width <= 1280:
+        page.get_by_role("button", name="Открыть меню", exact=True).click()
+        navigation = page.get_by_role("navigation", name="Меню", exact=True)
+    navigation.get_by_role("link", name="Истории выпускников", exact=True).click()
+    assert urlsplit(page.url).path.rstrip("/") == "/club-preview/stories"
+    expect(page.locator(".stories-page")).to_be_visible()
+    page.locator(".stories-grid [data-alumni-story] a").first.click()
     for story in STORIES:
         response = page.goto(mirror_site + "stories/" + story["slug"] + "/")
         assert response.status == 200

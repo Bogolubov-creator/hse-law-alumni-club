@@ -92,7 +92,7 @@
 <nav id="club-menu" class="club-menu" data-open="false" aria-label="Меню">
 <a href="/search">Поиск по клубу</a>
 {% for href,label in nav %}
-<a href="{{ href }}">{{ label }}</a>
+<a href="{{ href }}" {% if path.startswith(href) %}aria-current="page"{% endif %}>{{ label }}</a>
 {% endfor %}
 <a href="/saved">Сохранённое</a>
 <a href="/cart">Корзина</a>

@@ -31,7 +31,7 @@
   height: 64px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 .club-header__brand {
   display: flex;
@@ -75,13 +75,16 @@
 .club-header__nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-left: auto;
 }
 .club-header__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--c-text-2);
   text-decoration: none;
-  padding: 10px 12px;
+  padding: 10px 6px;
   border-radius: var(--r-sm);
   white-space: nowrap;
 }
@@ -98,7 +101,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: 12px;
+  margin-left: 8px;
 }
 .club-header__tools .club-chrome-icon-btn {
   border-color: transparent;
@@ -127,7 +130,9 @@
   text-align: center;
 }
 .club-header__cta {
-  margin-left: 8px;
+  margin-left: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .club-header__burger {
   margin-left: auto;
