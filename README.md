@@ -130,8 +130,8 @@ sudo ./scripts/install.sh --local
 | Python | 3.14.9; текущая линия приложения 3.14 |
 | Django / Django Ninja | 6.1.2 / 1.7.1; Django одинаковый в API и web |
 | Pydantic / Gunicorn | 2.14.1 / 26.2.0 |
-| Pillow / certifi | 13.0.0 / 2026.10.19 |
-| uv / Ruff | 0.13.5 / 0.17.1 |
+| Pillow / certifi | 13.0.0 / 2026.10.23 |
+| uv / Ruff | 0.13.5 / 0.17.2 |
 | nginx новых установок | 1.30.6, стабильная линия |
 | PostgreSQL / Caddy прежних установок | 16.15 / 2.11.7 |
 | Go для сборки Caddy и gosu | 1.27.3 |
@@ -284,13 +284,13 @@ sudo ./scripts/install.sh --local
 | bcrypt / Argon2 / PyJWT | 5.0.0 / 25.1.0 / 2.15.1 | BCryptSHA256 для новых паролей, прежние PHC-хеши и JWT-сессии |
 | Pillow | 13.0.0 | Проверка медиа и аватары 256×256; multipart принимает Django |
 | HTTPX / Beautiful Soup | 0.28.1 / 4.15.0 | Проверяемые внешние запросы и разбор HTML |
-| certifi | 2026.10.19 | Корневые сертификаты для HTTPS-клиентов; закреплены во всех трёх uv.lock |
+| certifi | 2026.10.23 | Корневые сертификаты для HTTPS-клиентов; закреплены во всех трёх uv.lock |
 | aiosmtplib / pywebpush | 5.1.3 / 2.5.0 | SMTP и Web Push |
-| Sentry SDK | 2.72.0 | Только коды ошибок без запросов и персональных данных |
-| pytest / Ruff | 9.1.1 / 0.17.1 | Проверки Python, MariaDB и PostgreSQL |
+| Sentry SDK | 2.73.0 | Только коды ошибок без запросов и персональных данных |
+| pytest / Ruff | 9.1.1 / 0.17.2 | Проверки Python, MariaDB и PostgreSQL |
 | MariaDB / PostgreSQL | Пакет Ubuntu / 16.15 | Новая установка / совместимость и откат |
 | nginx / Caddy | 1.30.6 / 2.11.7 | Новая установка / совместимость и откат |
-| Playwright | 1.64.0 | Браузерные проверки на компьютере и ширине телефона; в рабочий образ не входит |
+| Playwright | 1.64.1 | Браузерные проверки на компьютере и ширине телефона; в рабочий образ не входит |
 | Docker Compose / Ubuntu | Проверяемые версии стенда – в журнале | Контейнеры и серверная ОС |
 | systemd / Bash / Python | Пакеты Ubuntu 24.04 | Таймеры, операции выпуска, проверки конфигурации и копий |
 | Git / GitHub Actions | [ci.yml](.github/workflows/ci.yml) | История версий и автоматические проверки коммитов и PR |
