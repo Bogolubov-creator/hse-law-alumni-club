@@ -2,6 +2,7 @@ import { crowMascotApi } from "./crow-mascot.js";
 import { prepareMini } from "./mini.js";
 import { prepareDiscovery } from "./discovery.js";
 import { prepareCatalog } from "./catalog.js";
+import { cartFocus, prepareCart } from "./cart.js";
 
 const base = document.body.dataset.base || "/";
 const mirror = document.body.dataset.mirror === "true";
@@ -154,16 +155,16 @@ function formError(form, message) {
   else notice(message);
 }
 
-async function refresh() {
+async function refresh(cartReturn = null) {
   if (!navigator.onLine || document.documentElement.dataset.offlineCopy) return;
   const page = document.querySelector("#page");
   if (!page) return;
   const path = currentPath();
   const headers = {};
   if (token()) headers.authorization = `Bearer ${token()}`;
-  if (path === "/cart") headers["x-cart-session"] = cartSession();
   const endpoint = mirror ? "views/" + (path === "/" ? "home" : path.slice(1)) + ".html" : "views" + (path === "/" ? "/" : path) + location.search;
   try {
+    if (path === "/cart") headers["x-cart-session"] = cartSession();
     const response = await fetch(url(endpoint), { headers, cache: "no-store" });
     if (response.status === 401) {
       store(path.startsWith("/admin") ? officeKey : memberKey, null);
@@ -175,6 +176,8 @@ async function refresh() {
     if (!response.ok && !unavailable) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     if (!next) throw new Error("Не удалось обновить страницу. Попробуйте позже.");
     const contacts = path === "/cart" ? [...page.querySelectorAll("form[data-checkout] [name]")].map(input => ({ name: input.name, value: input.value, checked: input.checked })) : [];
+    const focus = path === "/cart" ? cartReturn || cartFocus() : null;
+    if (focus) next.dataset.cartFocus = JSON.stringify(focus);
     page.replaceWith(document.importNode(next, true));
     for (const saved of contacts) {
       const input = document.querySelector("form[data-checkout]")?.elements.namedItem(saved.name);
@@ -183,7 +186,14 @@ async function refresh() {
     setupPage();
     void updateCartCount();
     return true;
-  } catch (error) { notice(error.message); return false; }
+  } catch (error) {
+    const loading = page.querySelector("[data-cart-loading]");
+    if (loading) {
+      loading.replaceChildren(element("h2", "Не удалось загрузить корзину"), element("p", error.message), element("button", "Повторить загрузку", { "data-action": "refresh", class: "site-primary" }));
+    }
+    notice(error.message);
+    return false;
+  }
 }
 
 async function updateCartCount() {
@@ -218,6 +228,7 @@ async function perform(target, body) {
   const method = target.dataset.method || "POST";
   const cart = target.hasAttribute("data-cart");
   const checkout = target.hasAttribute("data-checkout");
+  const cartReturn = cart ? cartFocus(target) : null;
   if (checkout && pendingCart) throw new Error("Дождитесь обновления корзины.");
   if (cart && pendingCheckout) throw new Error("Дождитесь отправки заявки.");
   const buttons = target.tagName === "FORM" ? [...target.querySelectorAll("button[type='submit'],button:not([type])")] : [target];
@@ -286,7 +297,7 @@ async function perform(target, body) {
       if (cart && currentPath() !== "/cart") {
         void updateCartCount();
         notice("Корзина обновлена");
-      } else if (await refresh()) notice(cart ? "Корзина обновлена" : "Изменения сохранены");
+      } else if (await refresh(cartReturn)) notice(cart ? "Корзина обновлена" : "Изменения сохранены");
     }
   } finally {
     if (checkout) pendingCheckout = false;
@@ -448,6 +459,7 @@ function setupPage() {
     });
   });
   if (mirror) document.querySelectorAll("[data-api] button,button[data-api],input[type='file']").forEach(button => { if (!button.closest("[data-cart]")) { button.disabled = true; button.title = "Демоверсия: изменение данных отключено"; } });
+  prepareCart();
   document.dispatchEvent(new Event("club-page-ready"));
 }
 

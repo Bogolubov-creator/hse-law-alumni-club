@@ -49,10 +49,6 @@ pre{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere}
 .site-editorial-list time,.site-article>time{color:var(--c-text-3);font-size:14px}
 .site-cover{width:100%;object-fit:cover;border-radius:var(--r-md)}
 .site-gallery{display:grid;gap:18px}
-.site-cart-row{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:22px 0;border-top:1px solid var(--c-line)}
-.site-cart-row>div{flex:1 1 240px}
-.site-cart-row form{display:flex;gap:12px;align-items:end}
-.site-cart-row form input{width:100px!important}
 .site-player audio{width:100%}
 .site-video{width:100%;aspect-ratio:16/9;border:0}
 .site-avatar{object-fit:cover;border-radius:12px;width:120px;height:120px}
