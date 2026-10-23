@@ -101,32 +101,78 @@ window.clubMirrorReply = async question => {
 
 function calendar() {
   const section = document.querySelector("[data-calendar-events]");
+  const timed = document.querySelectorAll("[data-event-instant]");
+  if (!section && !timed.length) return;
+  const now = Date.now();
+  const validMonth = value => /^20[0-9]{2}-(0[1-9]|1[0-2])$/.test(value || "");
+  const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" });
+  const today = formatter.format(new Date(now));
+  const selected = validMonth(query.get("month")) ? query.get("month") : today.slice(0, 7);
+  const back = document.querySelector("[data-events-back]");
+  if (back && validMonth(query.get("month"))) back.href = base + "events/?month=" + selected;
+  for (const row of timed) {
+    const past = ["done", "canceled"].includes(row.dataset.eventState) || Date.parse(row.dataset.eventInstant) < now;
+    if (!past) continue;
+    row.classList.add("event-card--past");
+    const label = row.dataset.eventState === "canceled" ? "Событие отменено" : "Событие завершено";
+    for (const action of row.querySelectorAll("[data-event-register]")) {
+      const state = document.createElement("span");
+      state.className = "event-status"; state.dataset.eventStatus = ""; state.textContent = label;
+      action.replaceWith(state);
+    }
+    const heading = row.querySelector("[data-event-heading-status]");
+    if (heading) heading.textContent = label;
+  }
   if (!section) return;
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit" }).format(new Date());
-  const selected = /^20[0-9]{2}-(0[1-9]|1[0-2])$/.test(query.get("month") || "") ? query.get("month") : today;
   const [year, month] = selected.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, 1));
-  section.querySelector("h2").textContent = new Intl.DateTimeFormat("ru", { timeZone: "UTC", month: "long", year: "numeric" }).format(date);
+  const title = new Intl.DateTimeFormat("ru-RU", { timeZone: "UTC", month: "long", year: "numeric" }).format(date);
+  section.querySelector("h2").textContent = title;
+  document.querySelector("[data-events-period]").textContent = title;
   for (const [key, delta] of [["previous", -1], ["next", 1]]) {
     const adjacent = new Date(Date.UTC(year, month - 1 + delta, 1));
     section.querySelector(`[data-calendar-month='${key}']`).href = "?month=" + adjacent.toISOString().slice(0, 7);
   }
+  section.querySelector("[data-calendar-month='current']").href = "?month=" + today.slice(0, 7);
   const events = JSON.parse(section.dataset.calendarEvents);
+  events.sort((left, right) => {
+    const a = Date.parse(left.starts_at), b = Date.parse(right.starts_at);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return Number(!Number.isFinite(a)) - Number(!Number.isFinite(b));
+    const pastA = ["done", "canceled"].includes(left.status) || a < now;
+    const pastB = ["done", "canceled"].includes(right.status) || b < now;
+    return Number(pastA) - Number(pastB) || (pastA ? b - a : a - b) || left.id.localeCompare(right.id);
+  });
+  const positions = new Map(events.map((event, index) => [event.id, index]));
+  const cards = [...document.querySelectorAll("[data-event-start]")].sort((left, right) => positions.get(left.dataset.eventId) - positions.get(right.dataset.eventId));
+  let count = 0;
+  for (const row of cards) {
+    document.querySelector(".events-agenda").append(row);
+    row.hidden = !row.dataset.eventStart.startsWith(selected);
+    if (!row.hidden) count++;
+    for (const link of row.querySelectorAll("[data-event-link]")) link.href = base + "events/" + encodeURIComponent(row.dataset.eventId) + "/?month=" + selected;
+  }
+  document.querySelector("[data-events-count]").textContent = "Событий: " + count;
+  document.querySelector("[data-events-empty]").hidden = count > 0;
   const grid = section.querySelector(".site-calendar-grid");
   grid.replaceChildren();
   for (const label of ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]) { const node = document.createElement("strong"); node.textContent = label; grid.append(node); }
   const offset = (date.getUTCDay() + 6) % 7;
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" });
   for (let index = 0; index < Math.ceil((offset + days) / 7) * 7; index++) {
     const cell = document.createElement("div");
     const day = index - offset + 1;
     if (day > 0 && day <= days) {
-      const number = document.createElement("span"); number.textContent = day; cell.append(number);
       const value = selected + "-" + String(day).padStart(2, "0");
-      for (const event of events) {
-        if (!Number.isFinite(Date.parse(event.starts_at)) || formatter.format(new Date(event.starts_at)) !== value) continue;
-        const link = document.createElement("a"); link.href = base + "events/" + event.id; link.textContent = event.title; cell.append(link);
+      cell.dataset.calendarDate = value;
+      const number = document.createElement("span"); number.textContent = day; cell.append(number);
+      if (value === today) number.setAttribute("aria-current", "date");
+      const matches = events.filter(event => Number.isFinite(Date.parse(event.starts_at)) && formatter.format(new Date(event.starts_at)) === value);
+      if (matches.length) {
+        cell.className = "has-events";
+        const link = document.createElement("a");
+        link.href = "#event-" + matches[0].id;
+        link.setAttribute("aria-label", new Intl.DateTimeFormat("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "long" }).format(new Date(matches[0].starts_at)) + ". " + matches.map(event => event.title).join("; "));
+        cell.append(link);
       }
     }
     grid.append(cell);

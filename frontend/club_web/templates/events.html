@@ -1,62 +1,54 @@
 {% extends 'base.html' %}
-{% from 'macros.html' import save,empty %}
 {% block content %}
-<main id="main" class="site-container">
-<header class="site-masthead">
-<h1>{{ item.title if item else 'События клуба' }}</h1>
-<p>Встречи выпускников, лекции и события факультета.</p>
+<main id="main" class="site-container events-page">
+{% if item %}
+{% include 'event-detail.html' %}
+{% else %}
+<header class="site-masthead events-masthead">
+<div><h1>События клуба</h1><p>Встречи выпускников, лекции и события факультета.</p></div>
+<a href="/saved" class="events-saved">Сохранённые материалы <span aria-hidden="true">↗</span></a>
 </header>
-{% if not item %}
-<section class="site-calendar" aria-label="Календарь событий" {% if mirror %}data-calendar-events='{{ items|tojson }}'{% endif %}>
-<header class="site-actions">
+{% if load_errors.get('items') %}
+<section class="events-state" aria-labelledby="events-error-title">
+<h2 id="events-error-title">События временно недоступны</h2>
+<p>Не удалось загрузить встречи. Попробуйте ещё раз.</p>
+<button type="button" data-action="refresh">Повторить загрузку</button>
+</section>
+{% else %}
+<div class="events-board">
+<section class="site-calendar events-calendar" aria-label="Календарь событий" {% if mirror %}data-calendar-events='{{ items|tojson }}'{% endif %}>
+<header class="events-calendar__header">
+<h2 id="events-month-title">{{ calendar.title }}</h2>
+<nav aria-label="Выбрать месяц">
 <a href="?month={{ calendar.previous }}" data-calendar-month="previous" aria-label="Предыдущий месяц">←</a>
-<h2>{{ calendar.title }}</h2>
 <a href="?month={{ calendar.next }}" data-calendar-month="next" aria-label="Следующий месяц">→</a>
+</nav>
 </header>
-<div class="site-calendar-grid">
-{% for label in ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] %}
-<strong>{{ label }}</strong>
-{% endfor %}
-{% for week in calendar.weeks %}
-{% for cell in week %}
-<div>
+<div class="site-calendar-grid" aria-labelledby="events-month-title">
+{% for label in ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] %}<strong>{{ label }}</strong>{% endfor %}
+{% for week in calendar.weeks %}{% for cell in week %}
+<div{% if cell.events %} class="has-events"{% endif %}{% if cell.day %} data-calendar-date="{{ cell.date }}"{% endif %}>
 {% if cell.day %}
-<span>{{ cell.day }}</span>
-{% for event in cell.events %}
-<a href="/events/{{ event.id }}">{{ event.title }}</a>
-{% endfor %}
+<span{% if cell.today %} aria-current="date"{% endif %}>{{ cell.day }}</span>
+{% if cell.events %}<a href="#event-{{ cell.events[0].id }}" aria-label="{{ cell.day }} {{ cell.events[0].month_label }}. {{ cell.events|map(attribute='title')|join('; ') }}"></a>{% endif %}
 {% endif %}
 </div>
-{% endfor %}
-{% endfor %}
+{% endfor %}{% endfor %}
+</div>
+<div class="events-calendar__footer"><a href="?month={{ calendar.current }}" data-calendar-month="current">Этот месяц</a><span>Время московское</span></div>
+<p class="events-calendar__hint"><span aria-hidden="true"></span>Выберите отмеченную дату, чтобы перейти к встрече.</p>
+</section>
+<section class="events-program" aria-labelledby="events-program-title">
+<header class="events-program__header"><div><h2 id="events-program-title">Встречи и лекции</h2><p data-events-period>{{ calendar.title }}</p></div><span data-events-count role="status">Событий: {{ events_count }}</span></header>
+<div class="events-agenda">
+{% for event in items %}{% include 'event-card.html' %}{% endfor %}
+</div>
+<div class="events-state" data-events-empty {% if events_count %}hidden{% endif %}>
+<h3>В этом месяце событий пока нет</h3><p>Выберите другой месяц в календаре. Опубликованные встречи появятся здесь.</p>
 </div>
 </section>
-{% endif %}
-{% for event in ([item] if item else items) %}
-<article class="site-event" data-reveal>
-{% if event.cover|media %}
-<img src="{{ event.cover|media }}" alt="{{ event.title }}" width="560" height="380" loading="lazy">
-{% endif %}
-<div>
-<time>{{ event.starts_at|date(true) }}</time>
-<h2>
-<a href="/events/{{ event.id }}">{{ event.title }}</a>
-</h2>
-<p>{{ event.location or format_labels.get(event.format,event.format) }}</p>
-<p class="site-prose">{{ event.description or '' }}</p>
-<p>За участие: {{ event.points }} баллов</p>
-<div class="site-actions">
-{% if event.past %}
-<span>Событие завершено</span>
-{% elif event.reg_url|safe_url %}
-<a href="{{ event.reg_url|safe_url }}" target="_blank" rel="noopener noreferrer" class="site-primary">Регистрация ↗</a>
-{% else %}
-<button class="site-primary" data-api="/events/{{ event.id }}/rsvp" data-member-action>{{ 'Отменить запись' if event.my_rsvp else 'Записаться' }}</button>
-{% endif %}
-<a href="{{ "/calendar/" if mirror else "/api/events/" }}{{ event.id }}.ics" download>Файл .ics</a>
-<a href="{{ event.calendar_url }}" target="_blank" rel="noopener noreferrer">Google Календарь ↗</a>{{ save('/events/'+event.id,event.title,'events') }}</div>
 </div>
-</article>
-{% else %}{{ empty('Ближайших событий пока нет.') }}{% endfor %}
+{% endif %}
+{% endif %}
 </main>
 {% endblock %}
