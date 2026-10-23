@@ -23,6 +23,7 @@ from live_features import (
     section_walk,
     support_conversation,
 )
+from live_merch import merch_publication
 from playwright.sync_api import TimeoutError as BrowserTimeout
 from playwright.sync_api import expect, sync_playwright
 from test_browser import wait_for_offline_page
@@ -480,4 +481,37 @@ def test_live_offline_reading(width):
         context.set_offline(False)
         page.goto(path)
         expect(page.locator("#offline-notice")).to_be_hidden()
+        browser.close()
+
+
+@pytest.mark.parametrize("name,width,height", [("desktop", 1440, 1000), ("mobile", 390, 844)])
+def test_live_merch_publication_edit_and_delete(name, width, height, scenario_rate_window):
+    if value("E2E_LIVE_PHASE") != "write":
+        pytest.skip("Цикл публикации выполняется на этапе записи")
+    with sync_playwright() as playwright:
+        browser = launch_browser(playwright)
+        context = browser.new_context(
+            base_url=value("E2E_BASE_URL"),
+            viewport={"width": width, "height": height},
+            reduced_motion="reduce",
+            service_workers="block",
+        )
+        context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+        office = context.new_page()
+        guest_context = browser.new_context(
+            base_url=value("E2E_BASE_URL"),
+            viewport={"width": width, "height": height},
+            reduced_motion="reduce",
+            service_workers="block",
+        )
+        guest_context.add_init_script("localStorage.setItem('club_cookie_consent','essential')")
+        visitor = guest_context.new_page()
+        errors = []
+        office.on("pageerror", lambda error: errors.append(str(error)))
+        visitor.on("pageerror", lambda error: errors.append(str(error)))
+        admin_token = login(office, value("ADMIN_EMAIL"), value("ADMIN_PASSWORD"), office=True)
+        merch_publication(office, visitor, context.request, auth(admin_token), name, value("E2E_STATE_DIR"))
+        assert not errors
+        context.close()
+        guest_context.close()
         browser.close()
