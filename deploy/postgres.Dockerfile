@@ -9,7 +9,7 @@ RUN go get golang.org/x/sys@v0.49.0 github.com/moby/sys/user@v0.4.1 && go mod ti
     grep -E 'dep[[:space:]]+golang.org/x/sys[[:space:]]+v0.49.0[[:space:]]' /tmp/gosu-build-info.txt && \
     grep -E 'dep[[:space:]]+github.com/moby/sys/user[[:space:]]+v0.4.1[[:space:]]' /tmp/gosu-build-info.txt
 
-FROM postgres:16.15-alpine@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36
+FROM postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
 COPY --from=gosu /usr/local/bin/gosu /usr/local/bin/gosu
 COPY --from=gosu /tmp/gosu-1.20/LICENSE /usr/share/licenses/club-gosu/LICENSE
 RUN apk add --no-cache 'zlib>=1.3.2-r1' && gosu nobody true
