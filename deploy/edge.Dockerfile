@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     go build -mod=vendor -p 2 -trimpath -ldflags='-s -w' -o /usr/bin/caddy . && \
     go version -m /usr/bin/caddy > /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+github.com/caddyserver/caddy/v2[[:space:]]+v2.11.7[[:space:]]' /caddy/build-info.txt && \
-    grep -E 'dep[[:space:]]+cel.dev/cel-go[[:space:]]+v0.33.0[[:space:]]' /caddy/build-info.txt && \
+    grep -E 'dep[[:space:]]+cel.dev/cel-go[[:space:]]+v0.33.1[[:space:]]' /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+github.com/KimMachineGun/automemlimit[[:space:]]+v1.0.1[[:space:]]' /caddy/build-info.txt && \
     ! grep -F 'github.com/google/cel-go' /caddy/build-info.txt
 
