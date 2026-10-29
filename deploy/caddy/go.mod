@@ -65,7 +65,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.24 // indirect
 	github.com/googleapis/gax-go/v2 v2.27.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/hashicorp/go-uuid v1.0.3 // indirect
+	github.com/hashicorp/go-uuid v1.0.4 // indirect
 	github.com/huandu/xstrings v1.6.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
