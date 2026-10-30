@@ -328,7 +328,7 @@ CI выполняет `govulncheck` по тем же vendor-исходникам
 
 | Родительская библиотека | Требование | В lockfile |
 |---|---|---|
-| Pydantic 2.14.1 | `pydantic-core ==2.50.1` | pydantic-core 2.50.1 |
+| Pydantic 2.14.2 | `pydantic-core ==2.50.2` | pydantic-core 2.50.2 |
 | Playwright 1.64.1 | `pyee >=13,<15` | pyee 14.0.0 |
 
 Версии за пределами этих диапазонов требуют обновления родительской библиотеки.
