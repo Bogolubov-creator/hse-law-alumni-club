@@ -6,7 +6,7 @@ require (
 	cel.dev/cel-go v0.32.0
 	github.com/caddyserver/caddy/v2 v2.11.7
 	github.com/go-chi/chi/v5 v5.5.0
-	github.com/go-jose/go-jose/v4 v4.1.6
+	github.com/go-jose/go-jose/v4 v4.1.7
 	github.com/klauspost/compress v1.20.3
 	github.com/quic-go/quic-go v0.64.1
 )
