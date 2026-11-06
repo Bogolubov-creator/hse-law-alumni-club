@@ -5,7 +5,8 @@ description = "API Клуба выпускников факультета пра
 requires-python = ">=3.14,<3.15"
 dependencies = [
   "pydantic-settings==2.16.2",
-  "psycopg[binary]==3.3.6",
+  "pydantic==2.14.3",
+  "psycopg[binary]==3.3.8",
   "psycopg-pool==3.3.3",
   "PyJWT==2.15.1",
   "argon2-cffi==25.1.0",
@@ -15,8 +16,8 @@ dependencies = [
   "pywebpush==2.5.0",
   "aiohttp==3.14.5",
   "aiosmtplib==5.1.3",
-  "sentry-sdk==2.73.0",
-  "django==6.1.2",
+  "sentry-sdk==2.74.0",
+  "django==6.1.3",
   "django-ninja==1.7.3",
   "gunicorn==26.2.0",
   "mysqlclient==2.3.0",
@@ -26,8 +27,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest==9.2.0",
-    "pytest-asyncio==1.4.1",
-    "ruff==0.17.3",
+    "pytest-asyncio==1.4.1.post1",
+    "ruff==0.17.4",
     "pip-audit==2.10.1",
     "pytest-django==4.14.0",
 ]

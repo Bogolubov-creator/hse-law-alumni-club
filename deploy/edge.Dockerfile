@@ -1,4 +1,4 @@
-FROM golang:1.27.3-alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS edge-source
+FROM golang:1.27.3-alpine@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS edge-source
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOMAXPROCS=2
 WORKDIR /caddy
 COPY deploy/caddy/go.mod deploy/caddy/go.sum ./locked/
@@ -23,9 +23,9 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     ! grep -E '^golang.org/x/crypto/openpgp(/|$)' /caddy/dependencies.txt && \
     go build -mod=vendor -p 2 -trimpath -ldflags='-s -w' -o /usr/bin/caddy . && \
     go version -m /usr/bin/caddy > /caddy/build-info.txt && \
-    grep -E 'dep[[:space:]]+github.com/caddyserver/caddy/v2[[:space:]]+v2.11.7[[:space:]]' /caddy/build-info.txt && \
+    grep -E 'dep[[:space:]]+github.com/caddyserver/caddy/v2[[:space:]]+v2.11.9[[:space:]]' /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+cel.dev/cel-go[[:space:]]+v0.33.2[[:space:]]' /caddy/build-info.txt && \
-    grep -E 'dep[[:space:]]+github.com/go-jose/go-jose/v4[[:space:]]+v4.1.7[[:space:]]' /caddy/build-info.txt && \
+    grep -E 'dep[[:space:]]+github.com/go-jose/go-jose/v4[[:space:]]+v4.1.8[[:space:]]' /caddy/build-info.txt && \
     grep -E 'dep[[:space:]]+github.com/KimMachineGun/automemlimit[[:space:]]+v1.0.1[[:space:]]' /caddy/build-info.txt && \
     ! grep -F 'github.com/google/cel-go' /caddy/build-info.txt
 
@@ -41,9 +41,9 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS caddy
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF \
-      org.opencontainers.image.version="v2.11.7" \
+      org.opencontainers.image.version="v2.11.9" \
       org.opencontainers.image.licenses="Apache-2.0"
-ENV CADDY_VERSION=v2.11.7 XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
+ENV CADDY_VERSION=v2.11.9 XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data
 RUN apk add --no-cache ca-certificates curl mailcap 'zlib>=1.3.2-r1' && \
     mkdir -p /config/caddy /data/caddy /etc/caddy /usr/share/caddy && \
     chmod 1777 /config/caddy /data/caddy

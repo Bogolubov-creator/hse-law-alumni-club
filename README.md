@@ -125,15 +125,15 @@ sudo ./scripts/install.sh --local
 закреплены в манифестах, трёх `uv.lock` и Docker-файлах; установка использует
 `--frozen`, а образы закреплены по digest.
 
-| Компонент | Закреплённая версия по проверке 31 октября 2026 года |
+| Компонент | Закреплённая версия по проверке 6 ноября 2026 года |
 |---|---|
 | Python | 3.14.10; официальный Alpine-образ закреплён по digest |
-| Django / Django Ninja | 6.1.2 / 1.7.3; Django одинаковый в API и web |
-| Pydantic / Gunicorn | 2.14.2 / 26.2.0 |
+| Django / Django Ninja | 6.1.3 / 1.7.3; Django одинаковый в API и web |
+| Pydantic / psycopg / Sentry / Gunicorn | 2.14.3 / 3.3.8 / 2.74.0 / 26.2.0 |
 | Pillow / certifi | 13.0.0 / 2026.10.23 |
-| uv / Ruff | 0.13.6 / 0.17.3 |
+| uv / Ruff | 0.13.7 / 0.17.4 |
 | nginx новых установок | 1.30.6, стабильная линия |
-| PostgreSQL / Caddy прежних установок | 16.15 / 2.11.7 |
+| PostgreSQL / Caddy прежних установок | 16.15 / 2.11.9 |
 | Go / gosu | 1.27.3 / 1.20; сборка Caddy и PostgreSQL-образа |
 
 Обновление зависимостей в [PR №133](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/133)
