@@ -1,5 +1,54 @@
 # Состояние работ по Клубу
 
+## Проверка зависимостей – 14 ноября 2026 года
+
+В существующем PR №133 обновлены Python-пакеты и три lock-файла: Django Ninja
+1.8.0, pydantic-settings 2.16.3, psycopg 3.3.9, Sentry SDK 2.75.0,
+Gunicorn 27.0.1, mysqlclient 2.3.1, pytest-asyncio 1.5.0 и Ruff 0.17.5.
+Django 6.1.3 остаётся одинаковым в API и web. Образы закреплены по digest:
+Python 3.14.10, Alpine 3.24.4, Go 1.27.4, nginx 1.30.6, Trivy 0.76.2
+и Mailpit 1.33.1. Зависимости в трёх окружениях проверены `uv tree --outdated`;
+открытые Dependabot PR для Python и setup-uv не дублировались.
+
+Go 1.27.4 опубликован 10 ноября и содержит security fixes для cgo, go command,
+compiler, linker и net/http. Стабильный релиз Alpine 3.24.4 содержит исправления
+безопасности. Caddy остаётся на стабильной 2.11.9; официальный образ этого тега
+доступен с digest. Образы PostgreSQL 16.15 и Python 3.14.10 проверены в registry.
+В Go graph также обновлены go-jose/v4 4.1.9, x/crypto 0.59.0 и
+x509roots/fallback; klauspost/compress обновлён до 1.20.4 с исправлениями zstd,
+gzip, flate, zip и LZ4. Для go-jose/v4 4.1.9 разработчик указывает, что изменены
+ошибки/поддержка ключей и прекращена поддержка Go 1.23; проект использует Go 1.27.
+quic-go 0.65.0 не выбран из-за несовместимого интерфейса Caddy.
+
+В официальном PostgreSQL 16.16 от 12 ноября исправлены уязвимости и ошибки;
+обновление не требует dump/restore, но release notes указывают на возможную
+необходимость REINDEX для затронутых индексов. Версия контейнера PostgreSQL
+оставлена 16.15 до отдельного решения владельца. Новые установки используют
+MariaDB Ubuntu; старые установки PostgreSQL/Caddy не переключаются автоматически.
+
+Локальные проверки: три `uv lock --check`, Django checks, Ruff, сборка web,
+проверка артефакта и проверка отсутствия комментариев прошли. Тесты установщика,
+MariaDB-операций и security inventory прошли. Полный frontend прогон дал 596
+успешных, 7 пропущенных и 5 нестабильных ошибок WebKit в сценариях историй;
+повторный запуск файла сценариев прошёл: 50 успешных, 1 пропущенный. Повторная
+проверка изолированного live-стека прошла: 6 сценариев записи, резервная копия,
+два bootstrap без изменения учётных записей и контента, затем 4 теста чтения
+после перезапуска (2 пропущены). Проверка Caddy прошла: TLS/CA, reload, маршруты,
+статика, CSP, gzip, client IP, три лимита тела запроса, лимит заголовков и память
+cgroup. Для локального запуска на macOS `flock` обеспечен временным shim на
+Python `fcntl`; в репозитории и штатной Linux-конфигурации он не менялся.
+`live-stack` исходного PR №133 ранее падал на BrokenPipe при проверке body limit;
+после изменения клиента `test-edge.py` проходит локально. GitHub CI для нового
+коммита всё ещё требуется и не заменяется этими локальными проверками.
+
+Официальные источники: [Go 1.27.4](https://go.dev/doc/devel/release#go1.27.4),
+[Alpine 3.24.4](https://www.alpinelinux.org/posts/alpine-3.21.10-3.22.8-3.23.8-3.24.4-released/),
+[PostgreSQL 16.16](https://www.postgresql.org/about/news/postgresql-187-1712-1616-1520-1425-and-19-rc-2-released-3442/),
+[uv 0.13.8](https://github.com/astral-sh/uv/releases/tag/0.13.8),
+[Trivy 0.76.2](https://github.com/aquasecurity/trivy/releases/tag/v0.76.2),
+[go-jose v4.1.9](https://github.com/go-jose/go-jose/releases/tag/v4.1.9),
+[klauspost/compress v1.20.4](https://github.com/klauspost/compress/releases/tag/v1.20.4).
+
 ## Проверка зависимостей – 6 ноября 2026 года
 
 В существующем PR №133 обновлены Django 6.1.3 в API и web, Pydantic 2.14.3,

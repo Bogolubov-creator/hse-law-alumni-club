@@ -125,16 +125,18 @@ sudo ./scripts/install.sh --local
 закреплены в манифестах, трёх `uv.lock` и Docker-файлах; установка использует
 `--frozen`, а образы закреплены по digest.
 
-| Компонент | Закреплённая версия по проверке 6 ноября 2026 года |
+| Компонент | Закреплённая версия по проверке 14 ноября 2026 года |
 |---|---|
 | Python | 3.14.10; официальный Alpine-образ закреплён по digest |
-| Django / Django Ninja | 6.1.3 / 1.7.3; Django одинаковый в API и web |
-| Pydantic / psycopg / Sentry / Gunicorn | 2.14.3 / 3.3.8 / 2.74.0 / 26.2.0 |
+| Django / Django Ninja | 6.1.3 / 1.8.0; Django одинаковый в API и web |
+| Pydantic / psycopg / Sentry / Gunicorn | 2.14.3 / 3.3.9 / 2.75.0 / 27.0.1 |
 | Pillow / certifi | 13.0.0 / 2026.10.23 |
-| uv / Ruff | 0.13.7 / 0.17.4 |
+| uv / Ruff | 0.13.8 / 0.17.5 |
 | nginx новых установок | 1.30.6, стабильная линия |
 | PostgreSQL / Caddy прежних установок | 16.15 / 2.11.9 |
-| Go / gosu | 1.27.3 / 1.20; сборка Caddy и PostgreSQL-образа |
+| Go / gosu | 1.27.4 / 1.20; сборка Caddy и PostgreSQL-образа |
+| Alpine / Trivy / Mailpit | 3.24.4 / 0.76.2 / 1.33.1 |
+| Caddy Go modules | go-jose 4.1.9, compress 1.20.4, x/crypto 0.59.0, x/net 0.62.0; quic-go remains 0.64.1 for Caddy API compatibility |
 
 Обновление зависимостей в [PR №133](https://github.com/Bogolubov-creator/hse-law-alumni-club/pull/133)
 пока не готово к выпуску: сканер образа Caddy сообщает High в go-jose/v3,
@@ -281,21 +283,21 @@ sudo ./scripts/install.sh --local
 
 | Компонент | Версия | Назначение |
 |---|---|---|
-| Python / uv | 3.14.10 / 0.13.6 в сборке и CI | Сайт, API, команды оператора и экспорт зеркала; зависимости закреплены в uv.lock |
-| Django / Django Ninja / Pydantic | 6.1.2 / 1.7.3 / 2.14.2 | Модели, миграции, HTTP API и проверка запросов |
-| Gunicorn | 26.2.0 | ASGI-сервер API и сайта; Uvicorn используется только в тестах web |
+| Python / uv | 3.14.10 / 0.13.8 в сборке и CI | Сайт, API, команды оператора и экспорт зеркала; зависимости закреплены в uv.lock |
+| Django / Django Ninja / Pydantic | 6.1.3 / 1.8.0 / 2.14.3 | Модели, миграции, HTTP API и проверка запросов |
+| Gunicorn | 27.0.1 | ASGI-сервер API и сайта; Uvicorn используется только в тестах web |
 | Jinja2 | 3.1.6 | Серверные HTML-шаблоны сайта, кабинета и офиса |
-| mysqlclient / Psycopg | 2.3.0 / 3.3.6 | MariaDB и совместимость с прежней PostgreSQL на время перехода |
+| mysqlclient / Psycopg | 2.3.1 / 3.3.9 | MariaDB и совместимость с прежней PostgreSQL на время перехода |
 | bcrypt / Argon2 / PyJWT | 5.0.0 / 25.1.0 / 2.15.1 | BCryptSHA256 для новых паролей, прежние PHC-хеши и JWT-сессии |
 | Pillow | 13.0.0 | Проверка медиа и аватары 256×256; multipart принимает Django |
 | HTTPX / Beautiful Soup | 0.28.1 / 4.15.0 | Проверяемые внешние запросы и разбор HTML |
 | certifi | 2026.10.23 | Корневые сертификаты для HTTPS-клиентов; закреплены во всех трёх uv.lock |
 | aiosmtplib / pywebpush | 5.1.3 / 2.5.0 | SMTP и Web Push |
-| Sentry SDK | 2.73.0 | Только коды ошибок без запросов и персональных данных |
-| pytest / Ruff | 9.2.0 / 0.17.3 | Проверки Python, MariaDB и PostgreSQL |
-| MariaDB / PostgreSQL | Пакет Ubuntu / 16.15 | Новая установка / совместимость и откат |
-| nginx / Caddy | 1.30.6 / 2.11.7 | Новая установка / совместимость и откат |
-| Playwright | 1.64.1 | Браузерные проверки на компьютере и ширине телефона; в рабочий образ не входит |
+| Sentry SDK | 2.75.0 | Только коды ошибок без запросов и персональных данных |
+| pytest / Ruff | 9.2.0 / 0.17.5 | Проверки Python, MariaDB и PostgreSQL |
+| MariaDB / PostgreSQL | Пакет Ubuntu / 16.15 | Новая установка / совместимость и откат; PostgreSQL 16.16 ожидает решения по обновлению |
+| nginx / Caddy | 1.30.6 / 2.11.9 | Новая установка / совместимость и откат |
+| Playwright | 1.65.2 | Браузерные проверки на компьютере и ширине телефона; в рабочий образ не входит |
 | Docker Compose / Ubuntu | Проверяемые версии стенда – в журнале | Контейнеры и серверная ОС |
 | systemd / Bash / Python | Пакеты Ubuntu 24.04 | Таймеры, операции выпуска, проверки конфигурации и копий |
 | Git / GitHub Actions | [ci.yml](.github/workflows/ci.yml) | История версий и автоматические проверки коммитов и PR |

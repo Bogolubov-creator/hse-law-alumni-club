@@ -25,7 +25,7 @@ jobs:
           python-version: "3.14.10"
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
-          version: "0.13.7"
+          version: "0.13.8"
       - name: Install Python dependencies
         run: |
           sudo apt-get update
@@ -92,7 +92,7 @@ jobs:
           python-version: "3.14.10"
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
-          version: "0.13.7"
+          version: "0.13.8"
       - name: Install Python dependencies
         run: |
           sudo apt-get update
@@ -114,7 +114,7 @@ jobs:
           python-version: "3.14.10"
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
-          version: "0.13.7"
+          version: "0.13.8"
       - name: Install MariaDB from Ubuntu and Python dependencies
         run: |
           sudo apt-get update
@@ -147,7 +147,7 @@ jobs:
           python-version: "3.14.10"
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
-          version: "0.13.7"
+          version: "0.13.8"
       - name: Install browser tests
         run: |
           uv sync --directory frontend --frozen
@@ -173,7 +173,7 @@ jobs:
             report="trivy-$service.json"
             if ! docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
               -v /tmp/club-image-raw:/reports \
-              aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c \
+              aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb \
               image --scanners vuln --list-all-pkgs --format json --output "/reports/$report" --exit-code 0 "club-ci-live-$service"; then
               status=1
               continue
