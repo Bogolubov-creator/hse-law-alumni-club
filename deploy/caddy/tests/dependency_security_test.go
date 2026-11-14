@@ -2,6 +2,8 @@ package edge_test
 
 import (
 	"bytes"
+	"crypto"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"math/big"
@@ -89,5 +91,12 @@ func TestJOSERejectsOversizedRSAJWK(t *testing.T) {
 		if bits == 4097 && err == nil {
 			t.Fatal("oversized RSA public key accepted")
 		}
+	}
+}
+
+func TestJOSERejectsInvalidRSAThumbprint(t *testing.T) {
+	key := jose.JSONWebKey{Key: &rsa.PublicKey{N: big.NewInt(17), E: 0}}
+	if _, err := key.Thumbprint(crypto.SHA256); err == nil {
+		t.Fatal("RSA key with zero exponent accepted")
 	}
 }

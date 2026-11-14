@@ -4,13 +4,13 @@ import argparse
 import gzip
 import http.client
 import json
-from pathlib import Path
 import re
 import ssl
 import subprocess
 import tempfile
 import time
 import uuid
+from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 MIB = 1024 * 1024
@@ -113,7 +113,11 @@ def run(args):
                 connection = (http.client.HTTPSConnection('localhost', number, context=context, timeout=30)
                               if port == '443/tcp' else http.client.HTTPConnection('127.0.0.1', number, timeout=30))
                 try:
-                    connection.request('GET' if body is None else 'POST', path, body=body, headers=headers or {})
+                    try:
+                        connection.request('GET' if body is None else 'POST', path, body=body, headers=headers or {})
+                    except (BrokenPipeError, ConnectionResetError):
+                        if body is None:
+                            raise
                     response = connection.getresponse()
                     return response.status, dict((key.lower(), value) for key, value in response.getheaders()), response.read()
                 finally:
